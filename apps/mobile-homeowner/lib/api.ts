@@ -1,0 +1,72 @@
+import { getAuthToken } from './auth';
+
+const API_BASE_URL = __DEV__ 
+  ? 'http://localhost:3001/api' 
+  : 'https://api.buildmyhouse.com/api';
+
+async function getHeaders() {
+  const token = await getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+}
+
+export const api = {
+  get: async (endpoint: string) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      headers: await getHeaders(),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Failed to fetch data');
+    }
+    
+    return response.json();
+  },
+
+  post: async (endpoint: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: await getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Failed to create resource');
+    }
+
+    return response.json();
+  },
+
+  patch: async (endpoint: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: await getHeaders(),
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Failed to update resource');
+    }
+
+    return response.json();
+  },
+
+  delete: async (endpoint: string) => {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: 'DELETE',
+      headers: await getHeaders(),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: 'Request failed' }));
+      throw new Error(error.message || 'Failed to delete resource');
+    }
+
+    return response.json();
+  },
+};

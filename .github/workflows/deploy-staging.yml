@@ -1,0 +1,100 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://api-staging.buildmyhouse.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @buildmyhouse/backend prisma:generate
+
+      - name: Build backend
+        run: pnpm --filter @buildmyhouse/backend build
+
+      - name: Build Docker image
+        run: |
+          docker build -t buildmyhouse-backend:staging \
+            -f apps/backend/Dockerfile \
+            --build-arg NODE_ENV=production \
+            .
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying backend to staging..."
+          # Add your deployment commands here
+          # Examples:
+          # - Push to container registry
+          # - Deploy to cloud platform (AWS, GCP, Azure, etc.)
+          # - Update Kubernetes deployment
+          # - Run database migrations
+          echo "✅ Deployment complete"
+
+  deploy-admin-dashboard:
+    name: Deploy Admin Dashboard to Staging
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://admin-staging.buildmyhouse.com
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin dashboard
+        run: pnpm --filter @buildmyhouse/admin-dashboard build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.STAGING_API_URL }}
+
+      - name: Deploy to staging
+        run: |
+          echo "🚀 Deploying admin dashboard to staging..."
+          # Add your deployment commands here
+          # Examples:
+          # - Deploy to Vercel: vercel --prod
+          # - Deploy to Netlify: netlify deploy --prod
+          # - Deploy to AWS S3 + CloudFront
+          # - Deploy to custom server
+          echo "✅ Deployment complete"
+

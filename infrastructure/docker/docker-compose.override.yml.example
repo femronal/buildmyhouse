@@ -1,0 +1,24 @@
+# Example override file for local development
+# Copy to docker-compose.override.yml to customize
+
+version: '3.8'
+
+services:
+  postgres:
+    # Override port if 5432 is in use
+    ports:
+      - "5433:5432"
+  
+  redis:
+    # Override port if 6379 is in use
+    ports:
+      - "6380:6379"
+  
+  backend:
+    # Add additional environment variables
+    environment:
+      - DEBUG=*
+    # Override port if 3001 is in use
+    ports:
+      - "3002:3001"
+

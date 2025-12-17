@@ -1,0 +1,24 @@
+{
+  "name": "@buildmyhouse/shared-ui",
+  "version": "1.0.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "19.1.0",
+    "react-native": "0.81.5",
+    "lucide-react-native": "^0.479.0"
+  },
+  "devDependencies": {
+    "@types/react": "~19.1.10",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "react": "19.1.0",
+    "react-native": "0.81.5"
+  },
+  "private": true
+}
+
