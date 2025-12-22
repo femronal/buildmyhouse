@@ -26,6 +26,21 @@ export default function EmailLoginScreen() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        if (!data.token) {
+          alert('Login error: No token received from server');
+          return;
+        }
+
+        // ROLE VALIDATION: Only allow homeowners
+        const userRole = data.user?.role;
+        if (!userRole || userRole !== 'homeowner') {
+          alert(
+            `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app to sign in.`
+          );
+          return;
+        }
+        
         await storeAuthToken(data.token);
         router.replace('/(tabs)/home');
       } else {
@@ -33,7 +48,6 @@ export default function EmailLoginScreen() {
         alert(error.message || 'Login failed');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
       alert('Login failed. Make sure backend is running.');
     } finally {
       setLoading(false);

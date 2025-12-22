@@ -69,3 +69,7 @@ venv/
 env/
 ENV/
 
+
+# Local auth files with secrets (for development only)
+apps/mobile-homeowner/lib/auth.ts
+apps/mobile-contractor/lib/auth.ts

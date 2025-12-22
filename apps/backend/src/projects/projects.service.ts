@@ -146,6 +146,33 @@ export class ProjectsService {
             phone: true,
           },
         },
+        projectRequests: {
+          where: {
+            status: 'accepted',
+          },
+          include: {
+            contractor: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                contractorProfile: {
+                  select: {
+                    id: true,
+                    name: true,
+                    specialty: true,
+                    rating: true,
+                    reviews: true,
+                    projects: true,
+                    verified: true,
+                    location: true,
+                  },
+                },
+              },
+            },
+          },
+          take: 1, // Get the accepted request
+        },
         stages: {
           orderBy: { order: 'asc' },
         },
@@ -207,6 +234,13 @@ export class ProjectsService {
       data: {
         name: createProjectDto.name,
         address: createProjectDto.address,
+        street: createProjectDto.street,
+        city: createProjectDto.city,
+        state: createProjectDto.state,
+        zipCode: createProjectDto.zipCode,
+        country: createProjectDto.country,
+        latitude: createProjectDto.latitude,
+        longitude: createProjectDto.longitude,
         budget: createProjectDto.budget,
         homeownerId,
         generalContractorId: createProjectDto.generalContractorId,
@@ -269,6 +303,13 @@ export class ProjectsService {
       data: {
         ...(updateProjectDto.name && { name: updateProjectDto.name }),
         ...(updateProjectDto.address && { address: updateProjectDto.address }),
+        ...(updateProjectDto.street && { street: updateProjectDto.street }),
+        ...(updateProjectDto.city && { city: updateProjectDto.city }),
+        ...(updateProjectDto.state && { state: updateProjectDto.state }),
+        ...(updateProjectDto.zipCode && { zipCode: updateProjectDto.zipCode }),
+        ...(updateProjectDto.country && { country: updateProjectDto.country }),
+        ...(updateProjectDto.latitude !== undefined && { latitude: updateProjectDto.latitude }),
+        ...(updateProjectDto.longitude !== undefined && { longitude: updateProjectDto.longitude }),
         ...(updateProjectDto.budget !== undefined && { budget: updateProjectDto.budget }),
         ...(updateProjectDto.spent !== undefined && { spent: updateProjectDto.spent }),
         ...(updateProjectDto.progress !== undefined && { progress: updateProjectDto.progress }),

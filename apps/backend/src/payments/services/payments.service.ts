@@ -47,24 +47,41 @@ export class PaymentsService {
       }
     }
 
-    // Get or create Stripe customer
-    const customer = await this.stripeService.getOrCreateCustomer(
-      project.homeowner.email,
-      userId,
-    );
-
-    // Create payment intent
-    const paymentIntent = await this.stripeService.createPaymentIntent({
-      amount,
-      currency,
-      description: description || `Payment for project: ${project.name}`,
-      metadata: {
-        projectId,
-        stageId: stageId || '',
+    let customer;
+    let paymentIntent;
+    
+    try {
+      // Get or create Stripe customer
+      customer = await this.stripeService.getOrCreateCustomer(
+        project.homeowner.email,
         userId,
-        customerId: customer.id,
-      },
-    });
+      );
+
+      // Create payment intent
+      paymentIntent = await this.stripeService.createPaymentIntent({
+        amount,
+        currency,
+        description: description || `Payment for project: ${project.name}`,
+        metadata: {
+          projectId,
+          stageId: stageId || '',
+          userId,
+          customerId: customer.id,
+        },
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to create payment intent: ${error.message}`);
+      
+      // Handle Stripe API errors
+      if (error.type === 'StripeAuthenticationError' || error.message?.includes('Invalid API Key')) {
+        throw new BadRequestException(
+          'Stripe API key is invalid or not configured. Please check your STRIPE_SECRET_KEY in the backend .env file.'
+        );
+      }
+      
+      // Re-throw other errors
+      throw new BadRequestException(`Failed to create payment intent: ${error.message}`);
+    }
 
     // Create payment record in database
     const payment = await this.prisma.payment.create({

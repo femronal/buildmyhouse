@@ -4,6 +4,12 @@ export { useProject } from './useProject';
 export { useCreateProject } from './useCreateProject';
 export { useUpdateProject } from './useUpdateProject';
 export { useDeleteProject } from './useDeleteProject';
+export { 
+  useRecommendedGCs, 
+  useSendGCRequests, 
+  useCheckGCAcceptance, 
+  useActivateProject 
+} from './useProjects';
 
 // User hooks
 export { useCurrentUser } from './useCurrentUser';
@@ -29,4 +35,20 @@ export {
   useUpdateMaterial,
   useDeleteMaterial,
 } from './useVendor';
+
+// GC (General Contractor) hooks
+export {
+  usePendingRequests,
+  useAcceptRequest,
+  useRejectRequest,
+} from './useGC';
+
+// Plan upload hooks
+export {
+  useUploadPlan,
+  useProjectAnalysis,
+} from './usePlan';
+
+// Payment hooks
+export { useCreatePaymentIntent } from './usePayment';
 

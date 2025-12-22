@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase } from "lucide-react-native";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { clearAuthToken } from '@/lib/auth';
 
@@ -45,6 +45,27 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6">
+        {/* General Contractor Dashboard Button */}
+        {userRole === 'general_contractor' && (
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-dashboard')}
+            className="bg-blue-600 rounded-2xl p-6 mb-6 flex-row items-center"
+          >
+            <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+              <Briefcase size={24} color="#3B82F6" strokeWidth={2.5} />
+            </View>
+            <View className="flex-1 ml-4">
+              <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                GC Dashboard
+              </Text>
+              <Text className="text-blue-100 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Manage projects & requests
+              </Text>
+            </View>
+            <ChevronRight size={24} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+        )}
+
         {/* Vendor Dashboard Button */}
         {userRole === 'vendor' && (
           <TouchableOpacity

@@ -31,6 +31,7 @@ model User {
   contractorProfile     Contractor? @relation("UserContractor")
   orders                Order[] @relation("UserOrders")
   reviews               Review[] @relation("UserReviews")
+  contractorRequests    ProjectRequest[] @relation("ContractorRequests")
   
   @@map("users")
 }
@@ -38,7 +39,14 @@ model User {
 model Project {
   id                  String        @id @default(uuid())
   name                String
-  address             String
+  address             String        // Full formatted address
+  street              String?       // Street address
+  city                String?       // City
+  state               String?       // State/Province
+  zipCode             String?       // ZIP/Postal code
+  country             String?       // Country
+  latitude            Float?        // Latitude coordinate
+  longitude           Float?        // Longitude coordinate
   homeownerId        String
   generalContractorId String?
   status              String        @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
@@ -48,6 +56,13 @@ model Project {
   currentStage        String?
   startDate           DateTime?
   dueDate             DateTime?
+  
+  // Plan Upload & AI Analysis
+  planPdfUrl          String?       // URL to uploaded PDF plan
+  planFileName        String?       // Original filename
+  aiAnalysis          Json?         // AI-generated analysis of the plan
+  aiProcessedAt       DateTime?     // When AI processing completed
+  
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -57,6 +72,7 @@ model Project {
   stages              Stage[]
   payments            Payment[]
   orders              Order[] @relation("ProjectOrders")
+  projectRequests     ProjectRequest[]
   
   @@map("projects")
 }
@@ -179,14 +195,23 @@ model Contractor {
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  userId      String
-  projectId   String?
-  type        String      // 'material' | 'contractor'
-  status      String      @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-  totalAmount Float
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  userId          String
+  projectId       String?
+  type            String      // 'material' | 'contractor'
+  status          String      @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  totalAmount     Float
+  // Delivery Address (defaults to project address if projectId is set)
+  deliveryAddress String?
+  deliveryStreet  String?
+  deliveryCity    String?
+  deliveryState   String?
+  deliveryZipCode String?
+  deliveryCountry String?
+  deliveryLat     Float?
+  deliveryLng     Float?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 
   // Relations
   user        User        @relation("UserOrders", fields: [userId], references: [id])
@@ -227,5 +252,29 @@ model Review {
   contractor  Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
   
   @@map("reviews")
+}
+
+model ProjectRequest {
+  id                String   @id @default(uuid())
+  projectId         String
+  contractorId      String   // GC who received the request
+  status            String   @default("pending") // 'pending' | 'accepted' | 'rejected' | 'withdrawn'
+  
+  // GC's edited estimates (optional)
+  estimatedBudget   Float?
+  estimatedDuration String?
+  estimatedStartDate DateTime?
+  gcNotes           String?  // GC's comments/modifications
+  
+  sentAt            DateTime @default(now())
+  respondedAt       DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractor        User     @relation("ContractorRequests", fields: [contractorId], references: [id])
+  
+  @@map("project_requests")
 }
 

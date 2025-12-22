@@ -1,7 +1,8 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar } from "lucide-react-native";
 import { useState } from "react";
+import { usePendingRequests } from "../../hooks/useGC";
 
 const activeProjects = [
   {
@@ -48,8 +49,13 @@ const recentActivity = [
 ];
 
 export default function GCDashboardScreen() {
+  console.log('🚀 [GC Dashboard] Component loaded - NEW VERSION WITH REQUESTS BUTTON!');
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
+  
+  // Fetch real pending requests
+  const { data: pendingRequests = [], isLoading: loadingPendingRequests } = usePendingRequests();
+  console.log('📊 [GC Dashboard] Pending requests count:', pendingRequests.length);
 
   const totalEarnings = activeProjects.reduce((sum, p) => sum + p.earned, 0);
   const totalBudget = activeProjects.reduce((sum, p) => sum + p.budget, 0);
@@ -101,7 +107,7 @@ export default function GCDashboardScreen() {
                 <Clock size={18} color="#F59E0B" strokeWidth={2} />
                 <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
               </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{pendingProjects.length}</Text>
+              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{pendingRequests.length}</Text>
             </View>
           </View>
 
@@ -188,52 +194,80 @@ export default function GCDashboardScreen() {
                 </View>
               </TouchableOpacity>
             ))
+          ) : loadingPendingRequests ? (
+            <View className="py-10 items-center">
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Loading pending requests...
+              </Text>
+            </View>
+          ) : pendingRequests.length === 0 ? (
+            <View className="items-center py-10">
+              <Clock size={48} color="#6B7280" strokeWidth={1.5} />
+              <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                No Pending Requests
+              </Text>
+              <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                New project requests will appear here
+              </Text>
+            </View>
           ) : (
-            pendingProjects.map((project) => (
+            pendingRequests.map((request) => (
               <TouchableOpacity
-                key={project.id}
+                key={request.id}
                 className="bg-[#1E3A5F] rounded-2xl p-4 mb-4 border border-yellow-700/50"
+                onPress={() => router.push(`/contractor/gc-request-detail?id=${request.id}`)}
               >
                 <View className="flex-row justify-between items-start mb-3">
                   <View className="flex-1">
-                    <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>{project.name}</Text>
-                    <Text className="text-gray-400 text-base" style={{ fontFamily: 'Poppins_400Regular' }}>{project.client}</Text>
+                    <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+                      {request.project.name || 'Project Request'}
+                    </Text>
+                    <Text className="text-gray-400 text-base" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {request.project.homeowner.fullName}
+                    </Text>
                   </View>
                   <View className="bg-yellow-600/20 rounded-full px-3 py-1">
-                    <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>New Request</Text>
+                    <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      New Request
+                    </Text>
                   </View>
                 </View>
-                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>{project.address}</Text>
+                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {request.project.address}
+                </Text>
                 <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                    <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.budget.toLocaleString()}</Text>
+                    <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                      ${request.project.budget?.toLocaleString() || 'N/A'}
+                    </Text>
                   </View>
                   <View className="flex-row">
                     <TouchableOpacity 
-                      onPress={() => {
-                        // Handle decline
-                        console.log('Decline project:', project.id);
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        console.log('Decline request:', request.id);
                       }}
                       className="bg-red-600/20 rounded-full px-5 py-3 mr-2"
                     >
                       <Text className="text-red-400 text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Decline</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
-                      onPress={() => {
-                        // Handle accept
-                        console.log('Accept project:', project.id);
-                        router.push(`/contractor/gc-project-detail?id=${project.id}`);
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        console.log('Accept request:', request.id);
+                        router.push(`/contractor/gc-request-detail?id=${request.id}`);
                       }}
                       className="bg-blue-600 rounded-full px-5 py-3"
                     >
-                      <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Accept</Text>
+                      <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Review</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))
-          )}
+              </TouchableOpacity> 
+            )) 
+          )} 
         </View>
 
         {/* Recent Activity */}
@@ -272,23 +306,36 @@ export default function GCDashboardScreen() {
           </View>
           <Text className="text-blue-400 text-base mt-1" style={{ fontFamily: 'Poppins_700Bold' }}>Projects</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity  
           onPress={() => router.push('/contractor/chat')}
           className="flex-1 items-center active:opacity-70"
         >
           <View className="p-3 rounded-2xl bg-[#1E3A5F] mb-1">
             <Users size={30} color="#6B7280" strokeWidth={2.5} />
           </View>
+        
           <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Team</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          onPress={() => {/* Navigate to schedule */}}
+          onPress={() => {
+            console.log('🔔 Requests button clicked! Navigating to /contractor/gc-requests');
+            router.push('/contractor/gc-requests');
+          }}
           className="flex-1 items-center active:opacity-70"
         >
-          <View className="p-3 rounded-2xl bg-[#1E3A5F] mb-1">
-            <Calendar size={30} color="#6B7280" strokeWidth={2.5} />
+          <View className="p-3 rounded-2xl bg-yellow-600/20 mb-1 relative border border-yellow-600/50">
+            <Bell size={30} color="#F59E0B" strokeWidth={2.5} />
+            {pendingRequests.length > 0 && (
+              <View className="absolute -top-1 -right-1 bg-yellow-500 rounded-full w-6 h-6 items-center justify-center">
+                <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {pendingRequests.length}
+                </Text>
+              </View>
+            )}
           </View>
-          <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Schedule</Text>
+          <Text className="text-yellow-400 text-base mt-1 font-bold" style={{ fontFamily: 'Poppins_700Bold' }}>
+            REQUESTS
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => {/* Navigate to earnings */}}

@@ -1,46 +1,80 @@
 import { api } from '@/lib/api';
-import { Project } from '@buildmyhouse/shared-types';
 
-export interface CreateProjectData {
+export interface RecommendedGC {
+  id: string;
+  userId: string;
   name: string;
-  address: string;
-  budget: number;
-  startDate?: string;
-  dueDate?: string;
-  generalContractorId?: string;
-}
-
-export interface UpdateProjectData {
-  name?: string;
-  address?: string;
-  budget?: number;
-  spent?: number;
-  progress?: number;
-  currentStage?: string;
-  status?: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
-  startDate?: string;
-  dueDate?: string;
-  generalContractorId?: string;
+  specialty: string;
+  rating: number;
+  reviews: number;
+  projects: number;
+  verified: boolean;
+  location: string;
+  matchScore: number;
+  user: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
 }
 
 export const projectService = {
-  getProjects: async (): Promise<Project[]> => {
-    return api.get('/projects');
+  /**
+   * Get recommended GCs for a project
+   */
+  getRecommendedGCs: async (projectId: string): Promise<RecommendedGC[]> => {
+    try {
+      // API client returns response.json() which is the direct data from NestJS
+      const response = await api.get(`/contractors/recommend/${projectId}`);
+      
+      // NestJS returns the array directly, not wrapped
+      const gcList = Array.isArray(response) ? response : [];
+      return gcList;
+    } catch (error: any) {
+      // Return empty array on error so UI doesn't break
+      return [];
+    }
   },
 
-  getProject: async (id: string): Promise<Project> => {
-    return api.get(`/projects/${id}`);
+  /**
+   * Send project requests to selected GCs
+   */
+  sendGCRequests: async (projectId: string, contractorIds: string[]) => {
+    const response = await api.post('/contractors/requests/send', {
+      projectId,
+      contractorIds,
+    });
+    return response.data;
   },
 
-  createProject: async (data: CreateProjectData): Promise<Project> => {
-    return api.post('/projects', data);
+  /**
+   * Check if any GC has accepted the project
+   */
+  checkGCAcceptance: async (projectId: string) => {
+    try {
+      const response = await api.get(`/projects/${projectId}`);
+      
+      // Handle both direct response and nested data
+      const project = response.data || response;
+      const hasAccepted = !!project.generalContractorId;
+      
+      return {
+        hasAcceptedGC: hasAccepted,
+        project,
+      };
+    } catch (error: any) {
+      throw error;
+    }
   },
 
-  updateProject: async (id: string, data: UpdateProjectData): Promise<Project> => {
-    return api.patch(`/projects/${id}`, data);
-  },
-
-  deleteProject: async (id: string): Promise<void> => {
-    return api.delete(`/projects/${id}`);
+  /**
+   * Activate project (start building)
+   */
+  activateProject: async (projectId: string) => {
+    const response = await api.patch(`/projects/${projectId}`, {
+      status: 'active',
+      startDate: new Date().toISOString(),
+    });
+    return response.data;
   },
 };

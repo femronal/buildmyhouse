@@ -6,8 +6,9 @@ import { ChatModule } from './chat/chat.module';
 import { MarketplaceModule } from './marketplace/marketplace.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AuthModule } from './auth/auth.module';
-// Import modules as you create them
-// import { UsersModule } from './users/users.module';
+import { OpenAIModule } from './openai/openai.module';
+import { PlansModule } from './plans/plans.module';
+import { ContractorsModule } from './contractors/contractors.module';
 
 @Module({
   imports: [
@@ -20,8 +21,9 @@ import { AuthModule } from './auth/auth.module';
     ChatModule,
     MarketplaceModule,
     PaymentsModule,
-    // Add modules here as you create them
-    // UsersModule,
+    OpenAIModule,
+    PlansModule,
+    ContractorsModule,
   ],
   controllers: [],
   providers: [],

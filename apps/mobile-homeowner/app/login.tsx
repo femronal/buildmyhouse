@@ -12,7 +12,17 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const result = await signInWithGoogle();
-      if (result?.token) {
+      if (result?.token && result?.user) {
+        // ROLE VALIDATION: Only allow homeowners
+        const userRole = result.user.role;
+        if (!userRole || userRole !== 'homeowner') {
+          console.error('❌ Invalid role for homeowner app:', userRole);
+          alert(
+            `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app to sign in.`
+          );
+          return;
+        }
+        
         await storeAuthToken(result.token);
         router.replace('/(tabs)/home');
       } else {

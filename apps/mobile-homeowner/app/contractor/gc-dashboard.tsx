@@ -1,7 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar } from "lucide-react-native";
+import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, MapPin } from "lucide-react-native";
 import { useState } from "react";
+import { usePendingRequests } from '@/hooks';
+import { useCurrentUser } from '@/hooks';
 
 const activeProjects = [
   {
@@ -30,17 +32,6 @@ const activeProjects = [
   },
 ];
 
-const pendingProjects = [
-  {
-    id: 3,
-    name: "Luxury Penthouse",
-    client: "Chidi Okonkwo",
-    address: "789 Victoria Island, Lagos",
-    budget: 520000,
-    requestDate: "2 days ago",
-  },
-];
-
 const recentActivity = [
   { id: 1, type: "payment", message: "Payment received for Foundation stage", amount: 35000, time: "2 hours ago" },
   { id: 2, type: "message", message: "New message from Ifeoma Obi-Uchendu", time: "5 hours ago" },
@@ -50,9 +41,30 @@ const recentActivity = [
 export default function GCDashboardScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
+  const { data: currentUser } = useCurrentUser();
+  
+  // Fetch pending requests
+  const { 
+    data: pendingRequests = [], 
+    isLoading: pendingLoading, 
+    refetch: refetchPending,
+    isRefetching
+  } = usePendingRequests();
 
   const totalEarnings = activeProjects.reduce((sum, p) => sum + p.earned, 0);
   const totalBudget = activeProjects.reduce((sum, p) => sum + p.budget, 0);
+  
+  const formatTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -60,13 +72,15 @@ export default function GCDashboardScreen() {
       <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Image
-            source={{ uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" }}
+            source={{ uri: currentUser?.pictureUrl || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" }}
             className="w-12 h-12 rounded-full"
             resizeMode="cover"
           />
           <View className="ml-3">
             <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>Chukwuemeka O.</Text>
+            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {currentUser?.fullName || 'Contractor'}
+            </Text>
           </View>
         </View>
         <View className="flex-row">
@@ -85,7 +99,17 @@ export default function GCDashboardScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        className="flex-1" 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={refetchPending}
+            tintColor="#3B82F6"
+          />
+        }
+      >
         {/* Stats Cards */}
         <View className="px-6 mb-6">
           <View className="flex-row">
@@ -101,7 +125,7 @@ export default function GCDashboardScreen() {
                 <Clock size={18} color="#F59E0B" strokeWidth={2} />
                 <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
               </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{pendingProjects.length}</Text>
+              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{pendingRequests.length}</Text>
             </View>
           </View>
 
@@ -189,25 +213,58 @@ export default function GCDashboardScreen() {
               </TouchableOpacity>
             ))
           ) : (
-            pendingProjects.map((project) => (
-              <TouchableOpacity
-                key={project.id}
-                className="bg-[#1E3A5F] rounded-2xl p-4 mb-4 border border-yellow-700/50"
-              >
-                <View className="flex-row justify-between items-start mb-3">
-                  <View className="flex-1">
-                    <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>{project.name}</Text>
-                    <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>{project.client}</Text>
-                  </View>
-                  <View className="bg-yellow-600/20 rounded-full px-3 py-1">
-                    <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>New Request</Text>
-                  </View>
+            <>
+              {pendingLoading ? (
+                <View className="items-center justify-center py-12">
+                  <ActivityIndicator size="large" color="#3B82F6" />
+                  <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Loading requests...
+                  </Text>
                 </View>
-                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>{project.address}</Text>
-                <View className="flex-row justify-between items-center">
+              ) : pendingRequests.length === 0 ? (
+                <View className="bg-[#1E3A5F] rounded-2xl p-8 items-center border border-blue-900">
+                  <FileText size={48} color="#3B82F6" strokeWidth={2} />
+                  <Text className="text-white text-lg mt-4" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    No Pending Requests
+                  </Text>
+                  <Text className="text-gray-400 text-sm text-center mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    New project requests will appear here
+                  </Text>
+                </View>
+              ) : (
+                pendingRequests.map((request) => (
+                  <TouchableOpacity
+                    key={request.id}
+                    onPress={() => router.push(`/contractor/gc-request-detail?requestId=${request.id}`)}
+                    className="bg-[#1E3A5F] rounded-2xl p-4 mb-4 border border-yellow-700/50"
+                  >
+                    <View className="flex-row justify-between items-start mb-3">
+                      <View className="flex-1">
+                        <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                          {request.project.name}
+                        </Text>
+                        <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {request.project.homeowner.fullName}
+                        </Text>
+                      </View>
+                      <View className="bg-yellow-600/20 rounded-full px-3 py-1">
+                        <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          New Request
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View className="flex-row items-center mb-3">
+                      <MapPin size={14} color="#9CA3AF" strokeWidth={2} />
+                      <Text className="text-gray-500 text-sm ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {request.project.address}
+                      </Text>
+                    </View>
+                    
+                    <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                    <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.budget.toLocaleString()}</Text>
+                    <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${request.project.budget.toLocaleString()}</Text>
                   </View>
                   <View className="flex-row">
                     <TouchableOpacity className="bg-red-600/20 rounded-full px-4 py-2 mr-2">
@@ -221,6 +278,8 @@ export default function GCDashboardScreen() {
               </TouchableOpacity>
             ))
           )}
+          </>
+        )}
         </View>
 
         {/* Recent Activity */}
