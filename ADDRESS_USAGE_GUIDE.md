@@ -214,7 +214,11 @@ async function assignContractor(
 ) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    include: { address: true, latitude: true, longitude: true },
+    select: {
+      address: true,
+      latitude: true,
+      longitude: true,
+    },
   });
 
   // Notify contractor with work location
@@ -238,9 +242,10 @@ async function assignContractor(
 async function trackDelivery(orderId: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: {
+    select: {
       deliveryLat: true,
       deliveryLng: true,
+      deliveryAddress: true,
     },
   });
 
