@@ -9,12 +9,22 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.buildmyhouse.app",
+      "config": {
+        "googleMapsApiKey": "AIzaSyDJJ1acllPA41MzxJenjIpY-C7H1BnOQ5k"
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.buildmyhouse.app",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDJJ1acllPA41MzxJenjIpY-C7H1BnOQ5k"
+        }
       }
     },
     "web": {

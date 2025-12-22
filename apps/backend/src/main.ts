@@ -33,6 +33,9 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true, // Automatically convert string to number
+      },
     }),
   );
 

@@ -23,13 +23,25 @@ export default function ContractorStartScreen() {
       
       <TouchableOpacity
         onPress={() => router.push('/contractor')}
+        className="bg-[#1E3A5F] border-2 border-blue-600 rounded-full py-5 px-8 w-full max-w-sm mb-4"
+      >
+        <Text 
+          className="text-blue-400 text-lg text-center"
+          style={{ fontFamily: 'Poppins_700Bold' }}
+        >
+          Get Started (New Account)
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push('/login')}
         className="bg-blue-600 rounded-full py-5 px-8 w-full max-w-sm"
       >
         <Text 
           className="text-white text-lg text-center"
           style={{ fontFamily: 'Poppins_700Bold' }}
         >
-          Get Started
+          Sign In (Existing Account)
         </Text>
       </TouchableOpacity>
     </View>

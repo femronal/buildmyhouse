@@ -7,6 +7,8 @@ export default function ContractorLayout() {
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="verification" />
       <Stack.Screen name="gc-dashboard" />
+      <Stack.Screen name="gc-requests" />
+      <Stack.Screen name="gc-request-detail" />
       <Stack.Screen name="gc-project-detail" />
       <Stack.Screen name="gc-stage-management" />
       <Stack.Screen name="sub-dashboard" />

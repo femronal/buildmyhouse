@@ -372,7 +372,7 @@ Set up GitHub Actions (`.github/workflows/ci.yml`):
 
 ### Phase 4: Payments (Week 7-8)
 - [ ] Payment processing
-- [ ] Invoice generation
+- [ ] Invoice generationimage.png
 - [ ] Payouts to contractors
 - [ ] Financial tracking
 
