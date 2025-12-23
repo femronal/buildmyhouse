@@ -26,3 +26,4 @@ export class CreateContractorDto {
   @IsString()
   imageUrl?: string;
 }
+

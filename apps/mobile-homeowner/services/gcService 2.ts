@@ -59,4 +59,3 @@ export const gcService = {
     return response.data;
   },
 };
-

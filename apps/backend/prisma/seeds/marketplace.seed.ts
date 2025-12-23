@@ -359,3 +359,4 @@ export async function seedMarketplace() {
   console.log(`✅ Created ${contractors.length} contractors`);
   console.log('✅ Marketplace seeding complete!');
 }
+

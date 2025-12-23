@@ -43,3 +43,4 @@ export function useProjectAnalysis(projectId: string | null) {
     refetchOnMount: true,
   });
 }
+

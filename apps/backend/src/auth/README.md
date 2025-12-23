@@ -138,3 +138,4 @@ Currently, the User model in Prisma doesn't have a password field. To fully impl
 
 For now, the login endpoint will work for any existing user (password check is bypassed).
 
+

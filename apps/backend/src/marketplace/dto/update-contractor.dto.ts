@@ -26,3 +26,4 @@ export class UpdateContractorDto {
   @IsString()
   imageUrl?: string;
 }
+

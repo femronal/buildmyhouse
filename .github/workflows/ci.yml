@@ -249,3 +249,4 @@ jobs:
           pnpm --filter mobile-homeowner exec tsc --noEmit || true
           pnpm --filter mobile-contractor exec tsc --noEmit || true
 
+

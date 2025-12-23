@@ -94,3 +94,4 @@ export class PlansController {
     return this.plansService.getProjectWithAnalysis(projectId, userId);
   }
 }
+

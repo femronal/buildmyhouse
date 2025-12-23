@@ -32,3 +32,4 @@ export const vendorService = {
     return api.delete(`/marketplace/materials/${id}`);
   },
 };
+

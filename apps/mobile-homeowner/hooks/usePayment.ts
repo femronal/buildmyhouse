@@ -9,3 +9,4 @@ export function useCreatePaymentIntent() {
     mutationFn: (data: CreatePaymentIntentData) => paymentService.createPaymentIntent(data),
   });
 }
+

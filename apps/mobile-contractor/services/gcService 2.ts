@@ -80,4 +80,3 @@ export const gcService = {
     return api.post(`/contractors/requests/${requestId}/reject`, {});
   },
 };
-

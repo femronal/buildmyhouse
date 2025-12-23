@@ -114,3 +114,4 @@ Currently, user authentication is handled via query parameters. In production, y
 2. Extract user ID from the token
 3. Store authenticated user info with the socket connection
 
+

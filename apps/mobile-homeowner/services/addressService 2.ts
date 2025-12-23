@@ -113,4 +113,3 @@ export const formatAddressDisplay = (address: Partial<AddressDetails>): string =
   
   return parts.join(', ');
 };
-

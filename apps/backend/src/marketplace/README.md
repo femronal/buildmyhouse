@@ -133,3 +133,4 @@ Currently, authentication is commented out with TODO markers. When JWT auth is f
 - Rating is rounded to 1 decimal place
 - Review count is maintained automatically
 
+
