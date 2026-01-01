@@ -58,7 +58,7 @@ export class UpdateProjectDto {
   currentStage?: string;
 
   @IsOptional()
-  @IsEnum(['draft', 'active', 'paused', 'completed', 'cancelled'])
+  @IsEnum(['draft', 'pending_payment', 'active', 'paused', 'completed', 'cancelled'])
   status?: string;
 
   @IsOptional()
@@ -73,5 +73,6 @@ export class UpdateProjectDto {
   @IsString()
   generalContractorId?: string;
 }
+
 
 

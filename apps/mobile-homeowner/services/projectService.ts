@@ -20,6 +20,15 @@ export interface RecommendedGC {
 
 export const projectService = {
   /**
+   * Get a single project by ID
+   */
+  getProject: async (projectId: string) => {
+    const response = await api.get(`/projects/${projectId}`);
+    // API returns the project directly
+    return response;
+  },
+
+  /**
    * Get recommended GCs for a project
    */
   getRecommendedGCs: async (projectId: string): Promise<RecommendedGC[]> => {
@@ -76,5 +85,65 @@ export const projectService = {
       startDate: new Date().toISOString(),
     });
     return response.data;
+  },
+
+  /**
+   * Save project for later (pending payment)
+   */
+  saveProjectForLater: async (projectId: string, projectData: any) => {
+    // Use PATCH endpoint to update project status to pending_payment
+    const response = await api.patch(`/projects/${projectId}`, {
+      status: 'pending_payment',
+    });
+    return response.data;
+  },
+
+  /**
+   * Get pending projects (projects waiting for payment)
+   */
+  getPendingProjects: async () => {
+    const response = await api.get('/projects?status=pending_payment');
+    return response.data || response;
+  },
+
+  /**
+   * Get active projects (projects that have been paid for)
+   */
+  getActiveProjects: async () => {
+    const response = await api.get('/projects?status=active');
+    return response.data || response;
+  },
+
+  /**
+   * Delete pending project
+   */
+  deletePendingProject: async (projectId: string) => {
+    const response = await api.delete(`/projects/${projectId}`);
+    return response.data;
+  },
+
+  /**
+   * Create project from design and send request to GC
+   */
+  createProjectFromDesign: async (data: {
+    designId: string;
+    address: string;
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
+    latitude?: number;
+    longitude?: number;
+  }) => {
+    console.log('📤 [projectService] Creating project from design:', data);
+    try {
+      const response = await api.post('/projects/from-design', data);
+      console.log('✅ [projectService] Project created successfully:', response);
+      return response.data || response;
+    } catch (error: any) {
+      console.error('❌ [projectService] Error creating project from design:', error);
+      throw error;
+    }
   },
 };

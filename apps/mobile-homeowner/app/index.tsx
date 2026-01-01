@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, ImageBackground } from "react-native";
 import { useRouter } from "expo-router";
-import { Home, Upload, User, Bell } from "lucide-react-native";
+import { Home, Upload, Bell, ArrowLeft } from "lucide-react-native";
 
 export default function StartScreen() {
   const router = useRouter();
@@ -9,12 +9,21 @@ export default function StartScreen() {
     <View className="flex-1 bg-white">
       {/* Header */}
       <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
+        <View className="flex-row items-center gap-3">
+          <TouchableOpacity 
+            onPress={() => router.back()}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+          >
+            <ArrowLeft size={20} color="#000000" strokeWidth={2} />
+          </TouchableOpacity>
+          
         <TouchableOpacity 
-          onPress={() => router.push('/profile')}
-          className="w-12 h-12 bg-black rounded-full items-center justify-center"
+            onPress={() => router.push('/dashboard')}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
         >
-          <User size={24} color="#FFFFFF" strokeWidth={2} />
+            <Home size={20} color="#000000" strokeWidth={2} />
         </TouchableOpacity>
+        </View>
         
         <Text 
           className="text-2xl text-black"

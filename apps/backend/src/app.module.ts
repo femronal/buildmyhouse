@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { OpenAIModule } from './openai/openai.module';
 import { PlansModule } from './plans/plans.module';
 import { ContractorsModule } from './contractors/contractors.module';
+import { DesignsModule } from './designs/designs.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ContractorsModule } from './contractors/contractors.module';
     OpenAIModule,
     PlansModule,
     ContractorsModule,
+    DesignsModule,
   ],
   controllers: [],
   providers: [],

@@ -318,32 +318,11 @@ export default function PaymentModal({
             )}
 
             {/* Action Buttons */}
-            <View className="flex-row gap-3 mb-4">
-              <TouchableOpacity
-                onPress={onClose}
-                disabled={isProcessing || paymentStatus === 'processing'}
-                className={`flex-1 rounded-xl py-4 px-6 border-2 ${
-                  isProcessing || paymentStatus === 'processing'
-                    ? 'border-gray-200 bg-gray-100'
-                    : 'border-gray-300 bg-white'
-                }`}
-              >
-                <Text
-                  className={`text-center text-base ${
-                    isProcessing || paymentStatus === 'processing'
-                      ? 'text-gray-400'
-                      : 'text-gray-700'
-                  }`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-
+            <View className="mb-4">
               <TouchableOpacity
                 onPress={handlePayment}
                 disabled={isProcessing || paymentStatus === 'processing' || paymentStatus === 'success' || paymentStatus === 'loading' || !clientSecret}
-                className={`flex-1 rounded-xl py-4 px-6 ${
+                className={`w-full rounded-xl py-4 px-6 ${
                   isProcessing || paymentStatus === 'processing' || paymentStatus === 'success' || paymentStatus === 'loading' || !clientSecret
                     ? 'bg-gray-300'
                     : 'bg-black'
@@ -392,6 +371,28 @@ export default function PaymentModal({
                 )}
               </TouchableOpacity>
             </View>
+            
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={onClose}
+              disabled={isProcessing || paymentStatus === 'processing'}
+              className={`w-full rounded-xl py-3 px-6 border-2 ${
+                isProcessing || paymentStatus === 'processing'
+                  ? 'border-gray-200 bg-gray-100'
+                  : 'border-gray-300 bg-white'
+              }`}
+            >
+              <Text
+                className={`text-center text-base ${
+                  isProcessing || paymentStatus === 'processing'
+                    ? 'text-gray-400'
+                    : 'text-gray-700'
+                }`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Close
+              </Text>
+            </TouchableOpacity>
 
             {/* Security Note */}
             <View className="bg-blue-50 border border-blue-200 rounded-xl p-4">

@@ -77,7 +77,7 @@ export default function RootLayout() {
             <Stack.Screen name="profile" options={{ headerShown: false }} />
             <Stack.Screen name="notifications" options={{ headerShown: false }} />
             <Stack.Screen name="chat" options={{ headerShown: false }} />
-            <Stack.Screen name="tempobook" options={{ headerShown: false }} />
+            <Stack.Screen name="pending-projects" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
         </ThemeProvider>

@@ -32,6 +32,7 @@ model User {
   orders                Order[] @relation("UserOrders")
   reviews               Review[] @relation("UserReviews")
   contractorRequests    ProjectRequest[] @relation("ContractorRequests")
+  designs               Design[] @relation("UserDesigns")
   
   @@map("users")
 }
@@ -276,5 +277,48 @@ model ProjectRequest {
   contractor        User     @relation("ContractorRequests", fields: [contractorId], references: [id])
   
   @@map("project_requests")
+}
+
+model Design {
+  id                String        @id @default(uuid())
+  name              String        // e.g., "Modern Minimalist", "Classic Colonial"
+  description       String?
+  createdById       String        // GC or Admin who created the design
+  bedrooms          Int
+  bathrooms         Int
+  squareFootage     Float         // in square feet
+  squareMeters      Float?        // in square meters (calculated)
+  estimatedCost     Float         // Estimated construction cost
+  floors            Int?          // Number of floors
+  estimatedDuration String?       // e.g., "12-18 months"
+  rooms             String[]      // Array of room names
+  materials         String[]      // Array of material names
+  features          String[]      // Array of feature descriptions
+  constructionPhases Json?        // Array of phase objects: { name, description, estimatedDuration, estimatedCost }
+  rating            Float         @default(0)
+  reviews           Int           @default(0)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  // Relations
+  createdBy         User          @relation("UserDesigns", fields: [createdById], references: [id])
+  images            DesignImage[]
+  
+  @@map("designs")
+}
+
+model DesignImage {
+  id          String   @id @default(uuid())
+  designId    String
+  url         String   // Image URL
+  label       String?  // e.g., "Exterior", "Kitchen", "Bathroom"
+  order       Int      @default(0) // Display order
+  createdAt   DateTime @default(now())
+
+  // Relations
+  design      Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+  
+  @@map("design_images")
 }
 

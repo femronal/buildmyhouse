@@ -15,10 +15,13 @@ async function main() {
   await prisma.contractor.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.stage.deleteMany();
-  await prisma.project.deleteMany();
-  await prisma.message.deleteMany();
-  await prisma.conversation.deleteMany();
-  await prisma.user.deleteMany();
+// Delete in order to respect foreign key constraints
+await prisma.designImage.deleteMany();
+await prisma.design.deleteMany();
+await prisma.project.deleteMany();
+await prisma.message.deleteMany();
+await prisma.conversation.deleteMany();
+await prisma.user.deleteMany();
 
   // Hash password for all users
   const hashedPassword = await bcrypt.hash('password123', 10);
@@ -588,5 +591,6 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
 
 

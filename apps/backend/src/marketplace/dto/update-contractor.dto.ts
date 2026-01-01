@@ -27,3 +27,4 @@ export class UpdateContractorDto {
   imageUrl?: string;
 }
 
+

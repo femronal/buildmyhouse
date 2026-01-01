@@ -1,9 +1,22 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Keyboard, Platform, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, DollarSign, Star, HardHat, Send, CheckCircle, Clock, AlertCircle } from "lucide-react-native";
-import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, DollarSign, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQueryClient } from '@tanstack/react-query';
-import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject } from '@/hooks';
+import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
+import { reverseGeocode, AddressDetails } from '@/services/addressService';
+
+// Conditionally import GooglePlacesAutocomplete only on native platforms
+let GooglePlacesAutocomplete: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    const GPA = require('react-native-google-places-autocomplete');
+    GooglePlacesAutocomplete = GPA.default || GPA.GooglePlacesAutocomplete;
+  } catch (e) {
+    console.warn('GooglePlacesAutocomplete not available:', e);
+  }
+}
+import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater, useDesign, useCreateProjectFromDesign } from '@/hooks';
 import { useProjectAnalysis } from '@/hooks/usePlan';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
@@ -24,19 +37,85 @@ export default function HouseSummaryScreen() {
   const [projectBudget, setProjectBudget] = useState<number>(0);
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
+  const autocompleteRef = useRef<any>(null);
 
-  // Get projectId from params
+  // Check if this is a design selection flow (designId present) or project flow (projectId present)
+  const designId = params.designId as string | undefined;
+  const isDesignSelection = !!designId;
+
+  // Fetch design if designId is present
+  const { data: designData, isLoading: loadingDesign } = useDesign(designId);
+
+  // Get projectId from params (only if not design selection)
   useEffect(() => {
+    if (!isDesignSelection) {
     const paramProjectId = params.projectId as string;
     if (paramProjectId) {
       setProjectId(paramProjectId);
     } else {
       setProjectId('test-project-123');
     }
-  }, [params.projectId]);
+    }
+  }, [params.projectId, isDesignSelection]);
 
-  // Fetch real project analysis - refetch when GC accepts
-  const { data: projectAnalysisData, isLoading: loadingAnalysis, error: analysisError, isFetching: fetchingAnalysis, refetch: refetchAnalysis } = useProjectAnalysis(projectId);
+  // Use real data from design for design selection flow
+  const designAnalysis = useMemo(() => {
+    if (!designData) return null;
+    
+    return {
+      bedrooms: designData.bedrooms,
+      bathrooms: designData.bathrooms,
+      squareFootage: designData.squareFootage,
+      floors: designData.floors || Math.ceil(designData.bedrooms / 4) || 2,
+      estimatedBudget: designData.estimatedCost,
+      estimatedDuration: designData.estimatedDuration || '12-18 months',
+      confidence: 95,
+      notes: 'Detailed analysis based on design specifications',
+      phases: (() => {
+        if (!designData.constructionPhases) return [];
+        
+        let phasesData = designData.constructionPhases;
+        
+        // If it's a string, try to parse it
+        if (typeof phasesData === 'string') {
+          try {
+            phasesData = JSON.parse(phasesData);
+          } catch {
+            return [];
+          }
+        }
+        
+        // If it's an object with construction_phases property, extract it
+        if (phasesData && typeof phasesData === 'object' && !Array.isArray(phasesData)) {
+          if ('construction_phases' in phasesData && Array.isArray(phasesData.construction_phases)) {
+            phasesData = phasesData.construction_phases;
+          } else {
+            return [];
+          }
+        }
+        
+        // If it's an array, map to expected format
+        if (Array.isArray(phasesData)) {
+          return phasesData.map((phase: any) => ({
+            name: phase.name || phase.phase_name || phase.phaseName || '',
+            description: phase.description || '',
+            estimatedDuration: phase.estimatedDuration || phase.time_period || phase.timePeriod || '',
+            estimatedCost: phase.estimatedCost || phase.estimated_cost || 0,
+          }));
+        }
+        
+        return [];
+      })(),
+      rooms: designData.rooms || [],
+      materials: designData.materials || [],
+      features: designData.features || [],
+    };
+  }, [designData]);
+
+  // Fetch real project analysis - refetch when GC accepts (only for project flow)
+  const { data: projectAnalysisData, isLoading: loadingAnalysis, error: analysisError, isFetching: fetchingAnalysis, refetch: refetchAnalysis } = useProjectAnalysis(isDesignSelection ? null : projectId);
   // Backend returns project with aiAnalysis nested inside
   const originalAiAnalysis = projectAnalysisData?.aiAnalysis || null;
   
@@ -75,11 +154,33 @@ export default function HouseSummaryScreen() {
   }
   
   // Use GC's edited analysis if available, otherwise use original AI analysis
-  const aiAnalysis = gcEditedAnalysis || originalAiAnalysis;
+  // For design selection, use real design data
+  const aiAnalysis = isDesignSelection ? designAnalysis : (gcEditedAnalysis || originalAiAnalysis);
 
-  // Fetch real recommended GCs
-  const { data: recommendedGCsData = [], isLoading: loadingGCs, error: gcError } = useRecommendedGCs(projectId);
+  // For design selection, show only the GC who uploaded the design
+  // For project flow, fetch recommended GCs
+  const { data: recommendedGCsData = [], isLoading: loadingGCs, error: gcError } = useRecommendedGCs(isDesignSelection ? null : projectId);
   const recommendedGCs = recommendedGCsData || [];
+
+  // Create GC object from design creator for design selection flow
+  const designGC = useMemo(() => {
+    if (!isDesignSelection || !designData?.createdBy) return null;
+    
+    const contractorProfile = (designData.createdBy as any)?.contractorProfile;
+    
+    return {
+      id: designData.createdBy.id,
+      name: contractorProfile?.name || designData.createdBy.fullName,
+      specialty: contractorProfile?.specialty || 'General Construction',
+      location: contractorProfile?.location || 'Lagos, Nigeria',
+      verified: contractorProfile?.verified || false,
+      rating: contractorProfile?.rating || 4.8,
+      reviews: contractorProfile?.reviews || 24,
+      projects: contractorProfile?.projects || 15,
+      matchScore: 98, // High match since they created the design
+      email: designData.createdBy.email,
+    };
+  }, [isDesignSelection, designData]);
 
   // Check GC acceptance status - poll every 5 seconds if we haven't detected acceptance yet
   // Keep polling until we detect acceptance OR we're already in 'accepted' state
@@ -91,6 +192,8 @@ export default function HouseSummaryScreen() {
 
   const activateProjectMutation = useActivateProject();
   const createPaymentIntentMutation = useCreatePaymentIntent();
+  const saveProjectForLaterMutation = useSaveProjectForLater();
+  const createProjectFromDesignMutation = useCreateProjectFromDesign();
 
   // Check initial project status and update when GC accepts
   useEffect(() => {
@@ -123,7 +226,10 @@ export default function HouseSummaryScreen() {
 
   // Only show loading if we're truly loading for the first time AND don't have analysis yet
   // Don't show loading during background refetches (polling)
-  const isLoading = (loadingAnalysis && !projectAnalysisData) || (loadingGCs && recommendedGCs.length === 0) || (loadingAcceptance && !gcAcceptanceData);
+  // For design selection, check if design is loading
+  const isLoading = isDesignSelection 
+    ? (loadingDesign && !designData)
+    : ((loadingAnalysis && !projectAnalysisData) || (loadingGCs && recommendedGCs.length === 0) || (loadingAcceptance && !gcAcceptanceData));
 
   const toggleSection = (section: string) => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -260,26 +366,82 @@ export default function HouseSummaryScreen() {
     }
 
     try {
-      // Activate project after successful payment
+      console.log('🔄 Activating project after payment success...');
+      
+      // Activate project after successful payment - this marks it as "active" and "paid"
       await activateProjectMutation.mutateAsync(currentProjectId);
       
-      // Close modal and reset state
-      setIsProcessingPayment(false);
-      setShowPaymentModal(false);
-      setPaymentClientSecret(null);
+      console.log('✅ Project activated successfully');
       
-      // Navigate to dashboard
+      // Invalidate all project queries to refresh the lists
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', currentProjectId] });
+      
+      // Don't close modal here - the PaymentModal will handle closing after showing success
+      // The modal shows success for 3 seconds, then calls this handler, then we close
+      setIsProcessingPayment(false);
+      
+      // Close modal and navigate after a brief delay to ensure everything is processed
       setTimeout(() => {
+        console.log('🔄 Closing payment modal and navigating...');
+        setShowPaymentModal(false);
+        setPaymentClientSecret(null);
+        // Navigate to dashboard/home to see the updated project list
         router.replace('/(tabs)/home');
       }, 500);
     } catch (error: any) {
+      console.error('Error activating project after payment:', error);
       // If activation fails, still close modal but show error
       setIsProcessingPayment(false);
       setShowPaymentModal(false);
       setPaymentClientSecret(null);
+      setPaymentError(error?.message || 'Failed to activate project. Please contact support.');
       // Error will be shown via toast or alert
     }
-  }, [projectId, activateProjectMutation, router]);
+  }, [projectId, activateProjectMutation, router, queryClient]);
+
+  const handleSaveForLater = useCallback(async () => {
+    if (!projectId || gcRequestStatus !== 'accepted') {
+      return;
+    }
+
+    try {
+      // Prepare project data to save
+      const projectDataToSave = {
+        projectId,
+        name: params.projectName || projectAnalysisData?.name,
+        address: params.address || projectAnalysisData?.address,
+        gcEditedAnalysis: gcEditedAnalysis || aiAnalysis,
+        acceptedRequest: {
+          estimatedBudget: acceptedRequest?.estimatedBudget,
+          estimatedDuration: acceptedRequest?.estimatedDuration,
+          contractor: acceptedGC,
+        },
+        budget: acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0,
+        paymentAmount: (acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 0.5,
+      };
+
+      await saveProjectForLaterMutation.mutateAsync({
+        projectId,
+        projectData: projectDataToSave,
+      });
+
+      // Invalidate queries to refresh pending projects list
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+
+      // Show success and navigate to home
+      setTimeout(() => {
+        router.push('/(tabs)/home');
+      }, 300);
+    } catch (error: any) {
+      console.error('Error saving project for later:', error);
+      // Error will be handled by mutation
+    }
+  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, designGC, designData, designAnalysis, saveProjectForLaterMutation, router, queryClient]);
 
   const handleStartBuilding = useCallback(() => {
     // Prevent multiple calls
@@ -308,18 +470,12 @@ export default function HouseSummaryScreen() {
       return;
     }
 
-    // Store payment details and show modal
+    // Store payment details and show modal (simulated payment - no clientSecret needed)
     setPaymentAmount(calculatedAmount);
     setProjectBudget(calculatedBudget);
-    setPaymentClientSecret(null);
-    setIsProcessingPayment(true);
+    setPaymentClientSecret('simulated'); // Set a dummy value so modal works
+    setIsProcessingPayment(false); // Don't set to true, let modal handle it
     setShowPaymentModal(true);
-    
-    // Create payment intent after state is set and modal is visible
-    // Use a longer delay to ensure state updates are complete
-    setTimeout(() => {
-      handleCreatePaymentIntent();
-    }, 300);
   }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis, handleCreatePaymentIntent]);
 
   // Show loading state only if we don't have analysis yet AND we're actually loading
@@ -329,9 +485,9 @@ export default function HouseSummaryScreen() {
       <View className="flex-1 bg-white items-center justify-center">
         <ActivityIndicator size="large" color="#000" />
         <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_500Medium' }}>
-          Loading project analysis...
+          {isDesignSelection ? 'Loading design details...' : 'Loading project analysis...'}
         </Text>
-        {projectId && (
+        {!isDesignSelection && projectId && (
           <Text className="text-gray-400 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
             AI is analyzing your plan...
           </Text>
@@ -371,13 +527,15 @@ export default function HouseSummaryScreen() {
           className="text-sm text-gray-500"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          AI-analyzed specifications for {params.projectName || 'your project'}
+          {isDesignSelection 
+            ? `Detailed specifications for ${params.designName || designData?.name || 'selected design'}`
+            : `AI-analyzed specifications for ${params.projectName || 'your project'}`}
         </Text>
       </View>
 
       <ScrollView className="flex-1 px-6">
-        {/* Analysis Badge - Show if edited by GC or original AI */}
-        {aiAnalysis ? (
+        {/* Analysis Badge - Show if edited by GC or original AI (hide for design selection) */}
+        {!isDesignSelection && aiAnalysis ? (
           <View className={`${gcEditedAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-2xl p-4 mb-6 flex-row items-center`}>
             {gcEditedAnalysis ? (
               <>
@@ -405,7 +563,7 @@ export default function HouseSummaryScreen() {
               </>
             )}
           </View>
-        ) : (
+        ) : !isDesignSelection && !aiAnalysis ? (
           <View className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 flex-row items-center">
             <Clock size={24} color="#d97706" strokeWidth={2} />
             <View className="ml-3 flex-1">
@@ -417,7 +575,7 @@ export default function HouseSummaryScreen() {
               </Text>
             </View>
           </View>
-        )}
+        ) : null}
 
         {/* Project Overview */}
         <View className="bg-gray-50 rounded-3xl p-6 mb-6 border border-gray-200">
@@ -425,14 +583,14 @@ export default function HouseSummaryScreen() {
             className="text-2xl text-black mb-4"
             style={{ fontFamily: 'Poppins_700Bold' }}
           >
-            {params.projectName}
+            {isDesignSelection ? (params.designName || designData?.name || 'Design Plan') : (params.projectName || 'Project')}
           </Text>
 
           <Text 
             className="text-sm text-gray-600 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            📍 {params.address}
+            📍 {params.address || (isDesignSelection ? 'Location to be determined' : 'Address not available')}
           </Text>
 
           {/* Specs Pills */}
@@ -473,7 +631,10 @@ export default function HouseSummaryScreen() {
                 Estimated Cost
               </Text>
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ${(acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+                ${(isDesignSelection 
+                  ? (aiAnalysis?.estimatedBudget || designData?.estimatedCost || 0)
+                  : (acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0)
+                ).toLocaleString()}
               </Text>
             </View>
             
@@ -482,7 +643,9 @@ export default function HouseSummaryScreen() {
                 Duration
               </Text>
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                {acceptedRequest?.estimatedDuration || aiAnalysis?.estimatedDuration || aiAnalysis?.timeline || 'N/A'}
+                {isDesignSelection
+                  ? (aiAnalysis?.estimatedDuration || '12-18 months')
+                  : (acceptedRequest?.estimatedDuration || aiAnalysis?.estimatedDuration || aiAnalysis?.timeline || 'N/A')}
               </Text>
             </View>
           </View>
@@ -495,7 +658,7 @@ export default function HouseSummaryScreen() {
         >
           <View className="flex-row justify-between items-center">
             <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Construction Phases ({aiAnalysis?.phases?.length || 0})
+              Construction Phases ({Array.isArray(aiAnalysis?.phases) ? aiAnalysis.phases.length : 0})
             </Text>
             {expandedSection === 'phases' ? (
               <ChevronUp size={24} color="#000000" strokeWidth={2} />
@@ -506,7 +669,8 @@ export default function HouseSummaryScreen() {
           
           {expandedSection === 'phases' && (
             <View className="mt-4">
-              {(aiAnalysis?.phases || []).map((phase: any, index: number) => (
+              {Array.isArray(aiAnalysis?.phases) && aiAnalysis.phases.length > 0 ? (
+                aiAnalysis.phases.map((phase: any, index: number) => (
                 <View key={index} className="bg-white rounded-xl p-4 mb-3 border border-gray-200">
                   <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {index + 1}. {phase.name}
@@ -526,7 +690,12 @@ export default function HouseSummaryScreen() {
                     </Text>
                   </View>
                 </View>
-              ))}
+                ))
+              ) : (
+                <Text className="text-gray-500 text-sm text-center py-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  No construction phases available
+                </Text>
+              )}
             </View>
           )}
         </TouchableOpacity>
@@ -588,7 +757,71 @@ export default function HouseSummaryScreen() {
         </TouchableOpacity>
 
         {/* GC Section - Show accepted GC or recommended GCs */}
-        {gcRequestStatus === 'accepted' && acceptedRequest ? (
+        {/* For design selection, show only the GC who uploaded the design */}
+        {isDesignSelection && designGC ? (
+          <View className="mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Design Creator
+              </Text>
+              <View className="bg-blue-100 rounded-full px-3 py-1">
+                <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Design Owner
+                </Text>
+              </View>
+            </View>
+
+            <View className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
+              <View className="flex-row items-start justify-between mb-3">
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-1">
+                    <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                      {designGC.name}
+                    </Text>
+                    {designGC.verified && (
+                      <View className="ml-2 bg-green-500 rounded-full w-5 h-5 items-center justify-center">
+                        <Text className="text-white text-xs">✓</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-sm mb-2 text-gray-600" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {designGC.specialty}
+                  </Text>
+                  {designGC.location && (
+                    <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      📍 {designGC.location}
+                    </Text>
+                  )}
+                  {designGC.email && (
+                    <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      📧 {designGC.email}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              <View className="flex-row items-center mb-3">
+                <Star size={16} color="#000" strokeWidth={2} fill="#000" />
+                <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {designGC.rating.toFixed(1)}
+                </Text>
+                <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  ({designGC.reviews} reviews) • {designGC.projects} projects
+                </Text>
+              </View>
+
+              <View className="mt-3 pt-3 border-t border-blue-200">
+                <Text className="text-blue-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  This contractor created and uploaded this design plan
+                </Text>
+                <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  They have expertise in this design type
+                </Text>
+              </View>
+            </View>
+
+          </View>
+        ) : gcRequestStatus === 'accepted' && acceptedRequest ? (
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -792,7 +1025,95 @@ export default function HouseSummaryScreen() {
         )}
 
         {/* Action Buttons */}
-        {gcRequestStatus === 'none' && (
+        {/* For design selection, create project and send request to GC */}
+        {isDesignSelection && designGC && gcRequestStatus === 'none' && (
+          <TouchableOpacity
+            onPress={async () => {
+              console.log('🔘 [house-summary] Work with This Contractor button clicked');
+              console.log('🔘 [house-summary] designId:', designId);
+              console.log('🔘 [house-summary] params:', params);
+              
+              if (!designId) {
+                console.error('❌ [house-summary] No designId found');
+                Alert.alert('Error', 'Design ID is missing. Please try again.');
+                return;
+              }
+              
+              try {
+                setIsSendingRequests(true);
+                console.log('📤 [house-summary] Starting project creation from design...');
+                
+                // Get address from params (passed from explore/design-library)
+                const address = params.address as string;
+                console.log('📍 [house-summary] Address from params:', address);
+                
+                if (!address) {
+                  console.log('⚠️ [house-summary] No address found, showing address form');
+                  setIsSendingRequests(false);
+                  setShowAddressModal(true);
+                  return;
+                }
+                
+                const projectData = {
+                  designId,
+                  address,
+                  street: params.street as string,
+                  city: params.city as string,
+                  state: params.state as string,
+                  zipCode: params.zipCode as string,
+                  country: params.country as string,
+                  latitude: params.latitude ? parseFloat(params.latitude as string) : undefined,
+                  longitude: params.longitude ? parseFloat(params.longitude as string) : undefined,
+                };
+                
+                console.log('📤 [house-summary] Creating project with data:', projectData);
+                
+                // Create project from design and send request to GC
+                const project = await createProjectFromDesignMutation.mutateAsync(projectData);
+                
+                console.log('✅ [house-summary] Project created successfully:', project);
+                
+                // Set project ID and status to pending
+                setProjectId(project.id);
+                setGcRequestStatus('pending');
+                console.log('✅ [house-summary] Project ID set:', project.id, 'Status: pending');
+              } catch (error: any) {
+                console.error('❌ [house-summary] Error creating project from design:', error);
+                console.error('❌ [house-summary] Error details:', {
+                  message: error?.message,
+                  response: error?.response,
+                  stack: error?.stack,
+                });
+                Alert.alert(
+                  'Error',
+                  error?.message || 'Failed to send request to contractor. Please try again.',
+                  [{ text: 'OK' }]
+                );
+              } finally {
+                setIsSendingRequests(false);
+                console.log('🏁 [house-summary] Request process completed');
+              }
+            }}
+            disabled={createProjectFromDesignMutation.isPending || isSendingRequests}
+            className={`bg-black rounded-full py-5 px-8 mb-4 ${(createProjectFromDesignMutation.isPending || isSendingRequests) ? 'opacity-50' : ''}`}
+            activeOpacity={0.7}
+          >
+            {createProjectFromDesignMutation.isPending || isSendingRequests ? (
+              <View className="flex-row items-center justify-center">
+                <ActivityIndicator size="small" color="#FFFFFF" />
+                <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Sending Request...
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-white text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Work with This Contractor
+              </Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {!isDesignSelection && gcRequestStatus === 'none' && (
           <TouchableOpacity
             onPress={handleSendRequests}
             disabled={selectedGCs.size === 0 || isSendingRequests}
@@ -825,7 +1146,9 @@ export default function HouseSummaryScreen() {
               </Text>
             </View>
             <Text className="text-yellow-800 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Your request has been sent to {selectedGCs.size} contractor(s). They will review and respond within 24-48 hours.
+              {isDesignSelection 
+                ? 'Your request has been sent to the contractor. They will review and respond within 24-48 hours.'
+                : `Your request has been sent to ${selectedGCs.size} contractor(s). They will review and respond within 24-48 hours.`}
             </Text>
           </View>
         )}
@@ -835,12 +1158,15 @@ export default function HouseSummaryScreen() {
             <View className="flex-row items-center mb-2">
               <CheckCircle size={20} color="#059669" strokeWidth={2} />
               <Text className="text-green-900 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                GC Accepted!
+                {isDesignSelection ? 'Ready to Build!' : 'GC Accepted!'}
               </Text>
             </View>
             <Text className="text-green-800 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-              A contractor has accepted your project. You can now start building!
+              {isDesignSelection 
+                ? 'You\'ve selected this contractor to build your design. Review the details and proceed to payment.'
+                : 'A contractor has accepted your project. You can now start building!'}
             </Text>
+            {!isDesignSelection && (
             <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mt-3">
               <View className="flex-row items-start">
                 <AlertCircle size={16} color="#d97706" strokeWidth={2} className="mt-0.5" />
@@ -849,37 +1175,57 @@ export default function HouseSummaryScreen() {
                 </Text>
               </View>
             </View>
+            )}
           </View>
         )}
 
-        {/* Start Building Button */}
-        <TouchableOpacity
-          onPress={handleStartBuilding}
-          disabled={gcRequestStatus !== 'accepted' || isProcessingPayment || createPaymentIntentMutation.isPending || activateProjectMutation.isPending}
-          className={`rounded-full py-5 px-8 mb-8 ${
-            (gcRequestStatus === 'accepted' && !createPaymentIntentMutation.isPending && !activateProjectMutation.isPending) 
-              ? 'bg-black' 
-              : 'bg-gray-200'
-          }`}
-        >
-          {(createPaymentIntentMutation.isPending || activateProjectMutation.isPending) ? (
-            <View className="flex-row items-center justify-center">
-              <ActivityIndicator size="small" color="#FFFFFF" />
-              <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Processing...
-              </Text>
-            </View>
-          ) : (
-            <Text 
-              className={`text-lg text-center ${
-                gcRequestStatus === 'accepted' ? 'text-white' : 'text-gray-400'
-              }`}
-              style={{ fontFamily: 'Poppins_700Bold' }}
+        {/* Action Buttons - Pay and Save for Later */}
+        {/* Show for both design selection and project flow when GC is accepted */}
+        {gcRequestStatus === 'accepted' && (isDesignSelection || acceptedRequest) && (
+          <View className="flex-row gap-3 mb-8">
+            <TouchableOpacity
+              onPress={handleSaveForLater}
+              disabled={saveProjectForLaterMutation.isPending}
+              className="flex-1 rounded-full py-5 px-8 border-2 border-black bg-white"
             >
-              {gcRequestStatus === 'accepted' ? 'Start Building' : 'Start Building (Locked)'}
-            </Text>
-          )}
-        </TouchableOpacity>
+              {saveProjectForLaterMutation.isPending ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator size="small" color="#000000" />
+                  <Text className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Saving...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-black text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Save for Later
+                </Text>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={handleStartBuilding}
+              disabled={isProcessingPayment || createPaymentIntentMutation.isPending || activateProjectMutation.isPending}
+              className={`flex-1 rounded-full py-5 px-8 ${
+                (!createPaymentIntentMutation.isPending && !activateProjectMutation.isPending) 
+                  ? 'bg-black' 
+                  : 'bg-gray-200'
+              }`}
+            >
+              {(createPaymentIntentMutation.isPending || activateProjectMutation.isPending) ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Processing...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-white text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Pay & Start Building
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
         
       </ScrollView>
 
@@ -900,6 +1246,240 @@ export default function HouseSummaryScreen() {
         clientSecret={paymentClientSecret || undefined}
         externalError={paymentError || undefined}
       />
+
+      {/* Address Input Modal */}
+      <Modal
+        visible={showAddressModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowAddressModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl px-6 pt-6 pb-8 max-h-[90%]">
+            {/* Header */}
+            <View className="flex-row items-center justify-between mb-6">
+              <View className="flex-1">
+                <Text className="text-2xl text-black mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Enter Project Location
+                </Text>
+                <Text className="text-sm text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Search for an address where you want to build
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowAddressModal(false);
+                  setSelectedAddress(null);
+                }}
+                className="ml-4"
+              >
+                <X size={24} color="#000000" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Address Input */}
+            <View className="mb-4">
+              {GooglePlacesAutocomplete ? (
+                <GooglePlacesAutocomplete
+                  ref={autocompleteRef}
+                  placeholder="Search for an address..."
+                  fetchDetails={true}
+                  onPress={async (data: any, details: any) => {
+                    if (!details?.geometry?.location) return;
+
+                    const { lat, lng } = details.geometry.location;
+                    
+                    // Get full address details
+                    const addressDetails = await reverseGeocode(lat, lng);
+                    
+                    if (addressDetails) {
+                      setSelectedAddress(addressDetails);
+                      Keyboard.dismiss();
+                    }
+                  }}
+                  query={{
+                    key: GOOGLE_MAPS_CONFIG.apiKey,
+                    language: 'en',
+                    components: 'country:ng',
+                  }}
+                  styles={{
+                    container: {
+                      flex: 0,
+                    },
+                    textInputContainer: {
+                      backgroundColor: '#F9FAFB',
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: '#E5E7EB',
+                      paddingHorizontal: 4,
+                    },
+                    textInput: {
+                      height: 48,
+                      color: '#000',
+                      fontSize: 16,
+                      fontFamily: 'Poppins_400Regular',
+                      backgroundColor: 'transparent',
+                    },
+                    predefinedPlacesDescription: {
+                      color: '#1faadb',
+                    },
+                    listView: {
+                      backgroundColor: 'white',
+                      borderRadius: 12,
+                      marginTop: 4,
+                      elevation: 3,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      maxHeight: 200,
+                    },
+                    row: {
+                      padding: 12,
+                      height: 'auto',
+                      minHeight: 48,
+                    },
+                    description: {
+                      fontFamily: 'Poppins_400Regular',
+                      fontSize: 14,
+                    },
+                  }}
+                  enablePoweredByContainer={false}
+                  renderLeftButton={() => (
+                    <View className="absolute left-4 top-3 z-10">
+                      <Search size={20} color="#9CA3AF" strokeWidth={2} />
+                    </View>
+                  )}
+                  textInputProps={{
+                    placeholderTextColor: '#A3A3A3',
+                    style: { paddingLeft: 36 },
+                  }}
+                />
+              ) : (
+                // Web fallback: Simple text input
+                <View className="bg-gray-100 rounded-2xl px-4 py-3 flex-row items-center border border-gray-300">
+                  <Search size={20} color="#9CA3AF" strokeWidth={2} />
+                  <TextInput
+                    placeholder="Enter address (e.g., 123 Main St, Lagos, Nigeria)"
+                    placeholderTextColor="#A3A3A3"
+                    value={selectedAddress?.formattedAddress || ''}
+                    onChangeText={(text) => {
+                      if (text.trim()) {
+                        // Create a basic address object for web
+                        const parts = text.split(',');
+                        setSelectedAddress({
+                          formattedAddress: text,
+                          street: parts[0]?.trim() || '',
+                          city: parts[1]?.trim() || '',
+                          state: parts[2]?.trim() || '',
+                          zipCode: '',
+                          country: 'Nigeria',
+                          latitude: 0,
+                          longitude: 0,
+                        });
+                      } else {
+                        setSelectedAddress(null);
+                      }
+                    }}
+                    className="flex-1 ml-3 text-black text-base"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* Selected Address Display */}
+            {selectedAddress && (
+              <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                <View className="flex-row items-start mb-2">
+                  <MapPin size={20} color="#059669" strokeWidth={2} className="mt-0.5" />
+                  <View className="flex-1 ml-3">
+                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {selectedAddress.formattedAddress}
+                    </Text>
+                    <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {selectedAddress.city}, {selectedAddress.state} {selectedAddress.zipCode}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
+
+            {/* Continue Button */}
+            <TouchableOpacity
+              onPress={async () => {
+                if (!selectedAddress) {
+                  Alert.alert('Address Required', 'Please select an address from the search results');
+                  return;
+                }
+
+                try {
+                  setIsSendingRequests(true);
+                  setShowAddressModal(false);
+                  
+                  const projectData = {
+                    designId,
+                    address: selectedAddress.formattedAddress,
+                    street: selectedAddress.street,
+                    city: selectedAddress.city,
+                    state: selectedAddress.state,
+                    zipCode: selectedAddress.zipCode,
+                    country: selectedAddress.country,
+                    latitude: selectedAddress.latitude,
+                    longitude: selectedAddress.longitude,
+                  };
+                  
+                  console.log('📤 [house-summary] Creating project with selected address:', projectData);
+                  
+                  // Create project from design and send request to GC
+                  const project = await createProjectFromDesignMutation.mutateAsync(projectData);
+                  
+                  console.log('✅ [house-summary] Project created successfully:', project);
+                  
+                  // Set project ID and status to pending
+                  setProjectId(project.id);
+                  setGcRequestStatus('pending');
+                  setSelectedAddress(null);
+                  console.log('✅ [house-summary] Project ID set:', project.id, 'Status: pending');
+                } catch (error: any) {
+                  console.error('❌ [house-summary] Error creating project from design:', error);
+                  Alert.alert(
+                    'Error',
+                    error?.message || 'Failed to send request to contractor. Please try again.',
+                    [{ text: 'OK' }]
+                  );
+                } finally {
+                  setIsSendingRequests(false);
+                }
+              }}
+              disabled={!selectedAddress || createProjectFromDesignMutation.isPending || isSendingRequests}
+              className={`rounded-full py-4 px-8 ${
+                selectedAddress && !createProjectFromDesignMutation.isPending && !isSendingRequests
+                  ? 'bg-black'
+                  : 'bg-gray-200'
+              }`}
+            >
+              {createProjectFromDesignMutation.isPending || isSendingRequests ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Sending Request...
+                  </Text>
+                </View>
+              ) : (
+                <Text
+                  className={`text-lg text-center ${
+                    selectedAddress ? 'text-white' : 'text-gray-400'
+                  }`}
+                  style={{ fontFamily: 'Poppins_700Bold' }}
+                >
+                  Continue
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

@@ -1,8 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Filter, CreditCard, Receipt, FileText, TrendingUp, ChevronRight, DollarSign, Building, ChevronDown } from "lucide-react-native";
+import { User, Filter, CreditCard, Receipt, FileText, Home, ChevronRight, DollarSign, Building, ChevronDown } from "lucide-react-native";
 import { useState, useRef } from "react";
-import { useInvestments } from '@/contexts/InvestmentContext';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const recentPayments = [
@@ -21,19 +20,41 @@ const loanOptions = [
   { id: 2, name: "Building Finance", provider: "GTBank", rate: "11.9%", maxAmount: "$750,000", term: "Up to 20 years" },
 ];
 
+const homePurchases = [
+  {
+    id: 1,
+    name: "Luxury Modern Villa",
+    location: "Victoria Island, Lagos",
+    price: 285000,
+    purchaseDate: "Dec 10, 2024",
+    status: "In Progress",
+    bedrooms: 4,
+    bathrooms: 3,
+    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
+  },
+  {
+    id: 2,
+    name: "Contemporary Family Home",
+    location: "Lekki Phase 1, Lagos",
+    price: 195000,
+    purchaseDate: "Nov 15, 2024",
+    status: "Completed",
+    bedrooms: 3,
+    bathrooms: 2,
+    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80",
+  },
+];
+
 export default function FinanceScreen() {
   const router = useRouter();
-  const { userInvestments, getTotalInvested, getTotalCurrentValue } = useInvestments();
   const { data: currentUser } = useCurrentUser();
-  const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'invoices' | 'loans' | 'investments'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'invoices' | 'loans' | 'homePurchases'>('overview');
   const [showFilters, setShowFilters] = useState(false);
   const filterAnim = useRef(new Animated.Value(0)).current;
   
   const userPicture = currentUser?.pictureUrl;
 
-  const totalInvested = getTotalInvested();
-  const totalCurrentValue = getTotalCurrentValue();
-  const totalReturns = totalInvested > 0 ? (((totalCurrentValue - totalInvested) / totalInvested) * 100).toFixed(2) : "0";
+  const totalSpent = homePurchases.reduce((sum, home) => sum + home.price, 0);
 
   const toggleFilters = () => {
     const toValue = showFilters ? 0 : 1;
@@ -68,11 +89,11 @@ export default function FinanceScreen() {
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-4">
           {[
-            { key: 'overview', label: 'Overview', icon: TrendingUp },
+            { key: 'overview', label: 'Overview', icon: Home },
             { key: 'payments', label: 'Payments', icon: CreditCard },
             { key: 'invoices', label: 'Invoices', icon: Receipt },
             { key: 'loans', label: 'Loans', icon: Building },
-            { key: 'investments', label: 'Investments', icon: TrendingUp },
+            { key: 'homePurchases', label: 'Home Purchases', icon: Home },
           ].map((tab) => (
             <TouchableOpacity key={tab.key} onPress={() => setActiveTab(tab.key as any)} className={`px-4 py-2 rounded-full mr-3 flex-row items-center ${activeTab === tab.key ? 'bg-black' : 'bg-gray-100'}`}>
               <tab.icon size={16} color={activeTab === tab.key ? '#FFFFFF' : '#000000'} strokeWidth={2} />
@@ -169,30 +190,45 @@ export default function FinanceScreen() {
           </View>
         )}
 
-        {activeTab === 'investments' && (
+        {activeTab === 'homePurchases' && (
           <View className="pb-8">
             <View className="bg-black rounded-3xl p-6 mb-6">
-              <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-3xl mb-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalInvested.toLocaleString()}</Text>
+              <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Spent</Text>
+              <Text className="text-white text-3xl mb-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalSpent.toLocaleString()}</Text>
               <View className="flex-row justify-between">
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalCurrentValue.toLocaleString()}</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Returns</Text><Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>+{totalReturns}%</Text></View>
+                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Properties</Text><Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>{homePurchases.length}</Text></View>
+                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Completed</Text><Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>{homePurchases.filter(h => h.status === 'Completed').length}</Text></View>
               </View>
             </View>
-            <Text className="text-lg text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Your Investments</Text>
-            {userInvestments.map((inv) => (
-              <View key={inv.id} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
-                <View className="flex-row justify-between items-start mb-3">
-                  <Text className="text-lg text-black flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>{inv.name}</Text>
-                  <View className="bg-black rounded-full px-3 py-1"><Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{inv.status}</Text></View>
+            <Text className="text-lg text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Your Home Purchases</Text>
+            {homePurchases.map((home) => (
+              <TouchableOpacity key={home.id} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
+                <View className="flex-row items-start mb-3">
+                  <Image source={{ uri: home.image }} className="w-20 h-20 rounded-2xl mr-4" resizeMode="cover" />
+                  <View className="flex-1">
+                    <View className="flex-row justify-between items-start mb-2">
+                      <Text className="text-lg text-black flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>{home.name}</Text>
+                      <View className={`rounded-full px-3 py-1 ${home.status === 'Completed' ? 'bg-green-100' : 'bg-blue-100'}`}>
+                        <Text className={`text-xs ${home.status === 'Completed' ? 'text-green-700' : 'text-blue-700'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>{home.status}</Text>
+                      </View>
+                    </View>
+                    <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>{home.location}</Text>
+                    <View className="flex-row items-center mb-2">
+                      <Text className="text-gray-500 text-xs mr-3" style={{ fontFamily: 'Poppins_400Regular' }}>{home.bedrooms} Bed • {home.bathrooms} Bath</Text>
+                    </View>
+                    <View className="flex-row justify-between items-center">
+                      <View>
+                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Purchase Date</Text>
+                        <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>{home.purchaseDate}</Text>
+                      </View>
+                      <View className="items-end">
+                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Price</Text>
+                        <Text className="text-black text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${home.price.toLocaleString()}</Text>
+                      </View>
+                    </View>
+                  </View>
                 </View>
-                <View className="flex-row justify-between mb-3">
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Invested</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${inv.invested.toLocaleString()}</Text></View>
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${inv.currentValue.toLocaleString()}</Text></View>
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>ROI</Text><Text className="text-black" style={{ fontFamily: 'Poppins_700Bold' }}>+{inv.roi}</Text></View>
-                </View>
-                <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Maturity: {inv.maturity} • {inv.units} units</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}

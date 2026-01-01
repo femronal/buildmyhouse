@@ -11,7 +11,7 @@ export class ProjectsService {
   constructor(private readonly wsService: WebSocketService) {}
 
   /**
-   * Update project status and emit real-time update
+   * Update project status and emit real-time updateimage.png
    */
   async updateProjectStatus(projectId: string, status: string) {
     const project = await this.prisma.project.update({
@@ -34,6 +34,7 @@ export class ProjectsService {
   /**
    * Update project budget and emit real-time update
    */
+  
   async updateProjectBudget(projectId: string, budget: number) {
     const project = await this.prisma.project.update({
       where: { id: projectId },
@@ -227,6 +228,97 @@ export class ProjectsService {
   }
 
   /**
+   * Create a project from a design and send request to GC
+   */
+  async createProjectFromDesign(
+    homeownerId: string,
+    designId: string,
+    address: string,
+    street?: string,
+    city?: string,
+    state?: string,
+    zipCode?: string,
+    country?: string,
+    latitude?: number,
+    longitude?: number,
+  ) {
+    // Get design with creator info
+    const design = await this.prisma.design.findUnique({
+      where: { id: designId, isActive: true },
+      include: {
+        createdBy: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!design) {
+      throw new NotFoundException('Design not found');
+    }
+
+    // Create project from design
+    const project = await this.prisma.project.create({
+      data: {
+        name: design.name,
+        address,
+        street: street || null,
+        city: city || null,
+        state: state || null,
+        zipCode: zipCode || null,
+        country: country || null,
+        latitude: latitude || null,
+        longitude: longitude || null,
+        budget: design.estimatedCost,
+        homeownerId,
+        status: 'draft',
+        progress: 0,
+        spent: 0,
+        aiAnalysis: {
+          bedrooms: design.bedrooms,
+          bathrooms: design.bathrooms,
+          squareFootage: design.squareFootage,
+          floors: design.floors || Math.ceil(design.bedrooms / 4) || 2,
+          estimatedBudget: design.estimatedCost,
+          estimatedDuration: design.estimatedDuration || '12-18 months',
+          phases: design.constructionPhases || [],
+          rooms: design.rooms || [],
+          materials: design.materials || [],
+          features: design.features || [],
+        },
+      },
+      include: {
+        homeowner: {
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    // Create project request for the GC who created the design
+    await this.prisma.projectRequest.create({
+      data: {
+        projectId: project.id,
+        contractorId: design.createdById,
+        status: 'pending',
+      },
+    });
+
+    // Emit real-time update
+    this.wsService.emitProjectUpdate(project.id, {
+      type: 'status_change',
+      data: { ...project, event: 'project_created_from_design' },
+    });
+
+    return project;
+  }
+
+  /**
    * Create a new project
    */
   async createProject(homeownerId: string, createProjectDto: CreateProjectDto) {
@@ -357,6 +449,12 @@ export class ProjectsService {
   async deleteProject(projectId: string, userId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      include: {
+        payments: true,
+        stages: true,
+        projectRequests: true,
+        orders: true,
+      },
     });
 
     if (!project) {
@@ -368,6 +466,49 @@ export class ProjectsService {
       throw new ForbiddenException('Only the project owner can delete this project');
     }
 
+    // Delete related records first to avoid foreign key constraint errors
+    // Payments have ON DELETE RESTRICT, so we need to delete them first
+    // Always try to delete, even if not included in query
+    try {
+      await this.prisma.payment.deleteMany({
+        where: { projectId },
+      });
+    } catch (error) {
+      console.error(`[ProjectsService] Error deleting payments for project ${projectId}:`, error);
+      // Continue - payments might not exist
+    }
+
+    // Delete stages (these have ON DELETE CASCADE, but being explicit for safety)
+    try {
+      await this.prisma.stage.deleteMany({
+        where: { projectId },
+      });
+    } catch (error) {
+      console.error(`[ProjectsService] Error deleting stages for project ${projectId}:`, error);
+      // Continue - stages might not exist
+    }
+
+    // Delete project requests (these have ON DELETE CASCADE, but being explicit)
+    try {
+      await this.prisma.projectRequest.deleteMany({
+        where: { projectId },
+      });
+    } catch (error) {
+      console.error(`[ProjectsService] Error deleting project requests for project ${projectId}:`, error);
+      // Continue - project requests might not exist
+    }
+
+    // Delete orders related to this project
+    try {
+      await this.prisma.order.deleteMany({
+        where: { projectId },
+      });
+    } catch (error) {
+      console.error(`[ProjectsService] Error deleting orders for project ${projectId}:`, error);
+      // Continue - orders might not exist
+    }
+
+    // Now delete the project
     await this.prisma.project.delete({
       where: { id: projectId },
     });

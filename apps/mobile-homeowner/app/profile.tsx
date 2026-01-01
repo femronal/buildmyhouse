@@ -1,7 +1,9 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
+import { useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useActiveProjects, usePendingProjects } from '@/hooks';
 import { clearAuthToken } from '@/lib/auth';
 
 const menuItems = [
@@ -18,6 +20,9 @@ const menuItems = [
 export default function ProfileScreen() {
   const router = useRouter();
   const { data: currentUser, isLoading } = useCurrentUser();
+  const { data: activeProjects = [] } = useActiveProjects();
+  const { data: pendingProjects = [] } = usePendingProjects();
+  const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending'>('active');
 
   const handleLogout = async () => {
     await clearAuthToken();
@@ -28,6 +33,10 @@ export default function ProfileScreen() {
   const userEmail = currentUser?.email || '';
   const userPicture = currentUser?.pictureUrl;
   const userRole = currentUser?.role;
+  
+  // Filter completed projects (status === 'completed')
+  const completedProjects = activeProjects.filter((p: any) => p.status === 'completed');
+  const trulyActiveProjects = activeProjects.filter((p: any) => p.status === 'active');
 
   return (
     <View className="flex-1 bg-white">
@@ -134,7 +143,7 @@ export default function ProfileScreen() {
               className="text-3xl text-black"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
             >
-              2
+              {trulyActiveProjects.length}
             </Text>
             <Text 
               className="text-gray-500 text-sm"
@@ -148,7 +157,7 @@ export default function ProfileScreen() {
               className="text-3xl text-black"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
             >
-              1
+              {completedProjects.length}
             </Text>
             <Text 
               className="text-gray-500 text-sm"
@@ -157,6 +166,119 @@ export default function ProfileScreen() {
               Completed
             </Text>
           </View>
+        </View>
+
+        {/* Projects Section with Tabs */}
+        <View className="mb-6">
+          <Text 
+            className="text-xl text-black mb-4"
+            style={{ fontFamily: 'Poppins_700Bold' }}
+          >
+            My Projects
+          </Text>
+          
+          {/* Tabs */}
+          <View className="flex-row bg-gray-100 rounded-2xl p-1 mb-4">
+            <TouchableOpacity
+              onPress={() => setActiveTab('active')}
+              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'active' ? 'bg-black' : ''}`}
+            >
+              <Text 
+                className={`text-center text-sm ${activeTab === 'active' ? 'text-white' : 'text-gray-600'}`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Active ({trulyActiveProjects.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab('completed')}
+              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'completed' ? 'bg-black' : ''}`}
+            >
+              <Text 
+                className={`text-center text-sm ${activeTab === 'completed' ? 'text-white' : 'text-gray-600'}`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Completed ({completedProjects.length})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                setActiveTab('pending');
+                router.push('/pending-projects');
+              }}
+              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'pending' ? 'bg-black' : ''}`}
+            >
+              <View className="flex-row items-center justify-center">
+                <Clock size={14} color={activeTab === 'pending' ? '#FFFFFF' : '#6B7280'} strokeWidth={2} />
+                <Text 
+                  className={`ml-1 text-sm ${activeTab === 'pending' ? 'text-white' : 'text-gray-600'}`}
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Pending ({pendingProjects.length})
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Projects List */}
+          {activeTab === 'active' && (
+            <View>
+              {trulyActiveProjects.length === 0 ? (
+                <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                  <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No active projects
+                  </Text>
+                </View>
+              ) : (
+                trulyActiveProjects.slice(0, 3).map((project: any) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
+                    className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
+                  >
+                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {project.name}
+                    </Text>
+                    <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {project.address}
+                    </Text>
+                    <View className="flex-row items-center mt-2">
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Progress: {project.progress}%
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'completed' && (
+            <View>
+              {completedProjects.length === 0 ? (
+                <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                  <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No completed projects
+                  </Text>
+                </View>
+              ) : (
+                completedProjects.slice(0, 3).map((project: any) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
+                    className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
+                  >
+                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {project.name}
+                    </Text>
+                    <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {project.address}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
         </View>
 
         {/* Menu Items */}

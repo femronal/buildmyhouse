@@ -1,62 +1,148 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from "react-native";
-import { useRouter } from "expo-router";
-import { ArrowLeft, Home, Bed, Bath, Maximize, Star } from "lucide-react-native";
-import { useState } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, TextInput } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { ArrowLeft, Home, Bed, Bath, Maximize, Star, Filter, Search, ChevronDown } from "lucide-react-native";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { useDesigns } from '@/hooks';
 
-const designs = [
-  {
-    id: 1,
-    name: "Modern Minimalist",
-    rooms: 3,
-    baths: 2,
-    sqm: 180,
-    cost: 285000,
-    rating: 4.8,
-    reviews: 124,
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80",
-  },
-  {
-    id: 2,
-    name: "Classic Colonial",
-    rooms: 4,
-    baths: 3,
-    sqm: 240,
-    cost: 385000,
-    rating: 4.9,
-    reviews: 89,
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&q=80",
-  },
-  {
-    id: 3,
-    name: "Contemporary Ranch",
-    rooms: 3,
-    baths: 2,
-    sqm: 200,
-    cost: 310000,
-    rating: 4.7,
-    reviews: 156,
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
-  },
-  {
-    id: 4,
-    name: "Urban Loft",
-    rooms: 2,
-    baths: 2,
-    sqm: 150,
-    cost: 245000,
-    rating: 4.6,
-    reviews: 203,
-    image: "https://images.unsplash.com/photo-1600607687644-c7171b42498f?w=800&q=80",
-  },
-];
+// Helper to get full image URL from backend
+const getImageUrl = (imageUrl: string) => {
+  if (imageUrl.startsWith('http')) {
+    return imageUrl;
+  }
+  // If relative path, prepend backend URL
+  const API_BASE_URL = __DEV__ 
+    ? 'http://localhost:3001' 
+    : 'https://api.buildmyhouse.com';
+  return `${API_BASE_URL}${imageUrl}`;
+};
 
 export default function DesignLibraryScreen() {
   const router = useRouter();
-  const [selectedDesign, setSelectedDesign] = useState<typeof designs[0] | null>(null);
+  const { width: screenWidth } = useWindowDimensions();
+  const params = useLocalSearchParams();
+  const { data: designs = [], isLoading: designsLoading } = useDesigns();
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
+  const filterAnim = useRef(new Animated.Value(0)).current;
+  const lastScrollY = useRef(0);
 
-  const handleUseDesign = () => {
-    setSelectedDesign(null);
-    router.push('/house-summary');
+  // Extract location params
+  const locationParams = useMemo(() => {
+    return {
+      address: params.address as string,
+      street: params.street as string,
+      city: params.city as string,
+      state: params.state as string,
+      zipCode: params.zipCode as string,
+      country: params.country as string,
+      latitude: params.latitude as string,
+      longitude: params.longitude as string,
+    };
+  }, [params]);
+
+  const toggleFilters = () => {
+    const toValue = showFilters ? 0 : 1;
+    Animated.timing(filterAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+    setShowFilters(!showFilters);
+  };
+
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const currentScrollY = event.nativeEvent.contentOffset.y;
+    if (currentScrollY > lastScrollY.current && currentScrollY > 50 && showFilters) {
+      Animated.timing(filterAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+      setShowFilters(false);
+    }
+    lastScrollY.current = currentScrollY;
+  };
+
+  const handleImageScroll = useCallback((designId: string, event: any) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const imageWidth = event.nativeEvent.layoutMeasurement.width;
+    const index = Math.round(contentOffset / imageWidth);
+    setActiveImageIndex(prev => ({ ...prev, [designId]: index }));
+  }, []);
+
+  const filterHeight = filterAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 60],
+  });
+
+  const filterOpacity = filterAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
+  const cardWidth = (screenWidth - 48 - 12) / 2;
+
+  // Filter designs based on search query and active filter
+  const filteredDesigns = useMemo(() => {
+    let filtered = designs;
+
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter((design: any) => 
+        design.name.toLowerCase().includes(query) ||
+        design.description?.toLowerCase().includes(query)
+      );
+    }
+
+    // Filter by active filter tag
+    if (activeFilter !== 'All') {
+      switch (activeFilter) {
+        case '2 Beds':
+          filtered = filtered.filter((d: any) => d.bedrooms === 2);
+          break;
+        case '3 Beds':
+          filtered = filtered.filter((d: any) => d.bedrooms === 3);
+          break;
+        case '4+ Beds':
+          filtered = filtered.filter((d: any) => d.bedrooms >= 4);
+          break;
+        case 'Under $300k':
+          filtered = filtered.filter((d: any) => d.estimatedCost < 300000);
+          break;
+        case 'Luxury':
+          filtered = filtered.filter((d: any) => d.estimatedCost >= 500000);
+          break;
+        default:
+          break;
+      }
+    }
+
+    return filtered;
+  }, [designs, searchQuery, activeFilter]);
+
+  const handleUseDesign = (design: any) => {
+    // Build query params with location data and design info
+    const queryParams = new URLSearchParams({
+      designId: design.id,
+      designName: design.name,
+      ...(locationParams.address && { address: locationParams.address }),
+      ...(locationParams.street && { street: locationParams.street }),
+      ...(locationParams.city && { city: locationParams.city }),
+      ...(locationParams.state && { state: locationParams.state }),
+      ...(locationParams.zipCode && { zipCode: locationParams.zipCode }),
+      ...(locationParams.country && { country: locationParams.country }),
+      ...(locationParams.latitude && { latitude: locationParams.latitude }),
+      ...(locationParams.longitude && { longitude: locationParams.longitude }),
+    });
+    
+    // Small delay to ensure modal closes smoothly before navigation
+    setTimeout(() => {
+      router.push(`/house-summary?${queryParams.toString()}`);
+    }, 100);
   };
 
   return (
@@ -87,174 +173,215 @@ export default function DesignLibraryScreen() {
           className="text-sm text-gray-500"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          Browse our curated collection of house plans
+          Browse designs uploaded by General Contractors
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
-        <View className="flex-row flex-wrap justify-between pb-8">
-          {designs.map((design) => (
-            <TouchableOpacity
-              key={design.id}
-              onPress={() => setSelectedDesign(design)}
-              className="w-[48%] mb-6 bg-white rounded-2xl overflow-hidden border border-gray-200"
-            >
-              <Image
-                source={{ uri: design.image }}
-                className="w-full h-40"
-                resizeMode="cover"
-              />
-              <View className="p-4">
-                <Text 
-                  className="text-lg text-black mb-2"
-                  style={{ fontFamily: 'Poppins_700Bold' }}
-                >
-                  {design.name}
-                </Text>
-                
-                <View className="flex-row items-center mb-2">
-                  <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
-                  <Text 
-                    className="text-black ml-1 text-sm"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {design.rating}
-                  </Text>
-                  <Text 
-                    className="text-gray-500 ml-1 text-xs"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    ({design.reviews})
-                  </Text>
-                </View>
+      {/* Search & Filter */}
+      <View className="px-6 mb-4">
+        <View className="flex-row items-center">
+          <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
+            <Search size={20} color="#737373" strokeWidth={2} />
+            <TextInput
+              placeholder="Search designs..."
+              placeholderTextColor="#737373"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              className="flex-1 ml-3 text-black"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            />
+          </View>
+          <TouchableOpacity 
+            onPress={toggleFilters}
+            className={`w-12 h-12 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+          >
+            <Filter size={22} color="#000000" strokeWidth={2.5} />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-                <View className="flex-row items-center mb-2">
-                  <Bed size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2 mr-4"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {design.rooms} bed
-                  </Text>
-                  <Bath size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {design.baths} bath
-                  </Text>
-                </View>
-                <View className="flex-row items-center mb-3">
-                  <Maximize size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {design.sqm} m²
-                  </Text>
-                </View>
-                <Text 
-                  className="text-xl text-black"
-                  style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                >
-                  ${design.cost.toLocaleString()}
-                </Text>
-              </View>
+      {/* Animated Filter Tags */}
+      <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
+          {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under $300k', 'Luxury'].map((tag) => (
+            <TouchableOpacity 
+              key={tag}
+              onPress={() => setActiveFilter(tag)}
+              className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-black' : 'bg-gray-100'}`}
+            >
+              <Text 
+                className={activeFilter === tag ? 'text-white' : 'text-black'}
+                style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+              >
+                {tag}
+              </Text>
             </TouchableOpacity>
           ))}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </Animated.View>
 
-      {/* Design Detail Modal */}
-      <Modal
-        visible={!!selectedDesign}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setSelectedDesign(null)}
+      {/* Current Filter Indicator */}
+      {activeFilter !== 'All' && (
+        <View className="px-6 mb-3">
+          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
+            <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+            <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <ScrollView 
+        className="flex-1 px-6" 
+        contentContainerStyle={{ paddingBottom: 100 }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 max-h-[80%]">
-            {selectedDesign && (
-              <ScrollView>
-                <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
-                
-                <View className="flex-row justify-between items-start mb-6">
-                  <View className="flex-1">
+        {designsLoading ? (
+          <View className="items-center justify-center py-20">
+            <ActivityIndicator size="large" color="#000" />
+            <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Loading designs...
+            </Text>
+          </View>
+        ) : filteredDesigns.length === 0 ? (
+          <View className="items-center justify-center py-20">
+            <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              {searchQuery || activeFilter !== 'All' ? 'No designs match your filters' : 'No designs available yet'}
+            </Text>
+            <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {searchQuery || activeFilter !== 'All' 
+                ? 'Try adjusting your search or filters'
+                : 'General Contractors can upload design plans that will appear here'}
+            </Text>
+          </View>
+        ) : (
+          <View className="flex-row flex-wrap justify-between pb-8">
+            {filteredDesigns.map((design: any) => {
+              const images = design.images || [];
+              const squareMeters = design.squareMeters || (design.squareFootage * 0.092903);
+              return (
+                <TouchableOpacity
+                  key={design.id}
+                  onPress={() => handleUseDesign(design)}
+                  className="w-[48%] mb-6 bg-white rounded-2xl overflow-hidden border border-gray-200"
+                >
+                  <View className="relative">
+                    {images.length > 0 ? (
+                      <>
+                        <ScrollView
+                          horizontal
+                          pagingEnabled
+                          showsHorizontalScrollIndicator={false}
+                          onScroll={(e) => handleImageScroll(design.id, e)}
+                          scrollEventThrottle={16}
+                        >
+                          {images.map((image: any, index: number) => (
+                            <View key={image.id || index} style={{ width: cardWidth }} className="relative">
+                              <Image
+                                source={{ uri: getImageUrl(image.url) }}
+                                className="h-40"
+                                style={{ width: cardWidth }}
+                                resizeMode="cover"
+                              />
+                              {image.label && (
+                                <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-2 py-0.5">
+                                  <Text 
+                                    className="text-white text-xs"
+                                    style={{ fontFamily: 'Poppins_500Medium', fontSize: 10 }}
+                                  >
+                                    {image.label}
+                                  </Text>
+                                </View>
+                              )}
+                            </View>
+                          ))}
+                        </ScrollView>
+                        
+                        {/* Dots Indicator */}
+                        {images.length > 1 && (
+                          <View className="absolute bottom-2 right-2 flex-row">
+                            {images.slice(0, 5).map((_: any, index: number) => (
+                              <View
+                                key={index}
+                                className={`w-1 h-1 rounded-full mx-0.5 ${
+                                  index === (activeImageIndex[design.id] || 0) ? 'bg-white' : 'bg-white/50'
+                                }`}
+                              />
+                            ))}
+                          </View>
+                        )}
+                      </>
+                    ) : (
+                      <View style={{ width: cardWidth, height: 160 }} className="bg-gray-200 items-center justify-center">
+                        <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          No images
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View className="p-4">
                     <Text 
-                      className="text-3xl text-black mb-2"
-                      style={{ fontFamily: 'Poppins_800ExtraBold' }}
+                      className="text-lg text-black mb-2"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                      numberOfLines={1}
                     >
-                      {selectedDesign.name}
+                      {design.name}
                     </Text>
+                    
+                    <View className="flex-row items-center mb-2">
+                      <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
+                      <Text 
+                        className="text-black ml-1 text-sm"
+                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                      >
+                        {design.rating?.toFixed(1) || '0.0'}
+                      </Text>
+                      <Text 
+                        className="text-gray-500 ml-1 text-xs"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                      >
+                        ({design.reviews || 0})
+                      </Text>
+                    </View>
+
+                    <View className="flex-row items-center mb-2">
+                      <Bed size={16} color="#737373" strokeWidth={2} />
+                      <Text 
+                        className="text-sm text-gray-500 ml-2 mr-4"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                      >
+                        {design.bedrooms} bed
+                      </Text>
+                      <Bath size={16} color="#737373" strokeWidth={2} />
+                      <Text 
+                        className="text-sm text-gray-500 ml-2"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                      >
+                        {design.bathrooms} bath
+                      </Text>
+                    </View>
+                    <View className="flex-row items-center mb-3">
+                      <Maximize size={16} color="#737373" strokeWidth={2} />
+                      <Text 
+                        className="text-sm text-gray-500 ml-2"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                      >
+                        {Math.round(squareMeters)} m²
+                      </Text>
+                    </View>
                     <Text 
-                      className="text-2xl text-black"
+                      className="text-xl text-black"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      ${selectedDesign.cost.toLocaleString()}
+                      ${design.estimatedCost?.toLocaleString() || '0'}
                     </Text>
                   </View>
-                  <TouchableOpacity onPress={() => setSelectedDesign(null)}>
-                    <Text 
-                      className="text-gray-400 text-3xl"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      ×
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <Image
-                  source={{ uri: selectedDesign.image }}
-                  className="w-full h-64 rounded-2xl mb-6"
-                  resizeMode="cover"
-                />
-
-                <View className="flex-row justify-around mb-6 bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                  <View className="items-center">
-                    <Bed size={24} color="#000000" strokeWidth={2} />
-                    <Text 
-                      className="text-black mt-2"
-                      style={{ fontFamily: 'Poppins_500Medium' }}
-                    >
-                      {selectedDesign.rooms} Bedrooms
-                    </Text>
-                  </View>
-                  <View className="items-center">
-                    <Bath size={24} color="#000000" strokeWidth={2} />
-                    <Text 
-                      className="text-black mt-2"
-                      style={{ fontFamily: 'Poppins_500Medium' }}
-                    >
-                      {selectedDesign.baths} Bathrooms
-                    </Text>
-                  </View>
-                  <View className="items-center">
-                    <Maximize size={24} color="#000000" strokeWidth={2} />
-                    <Text 
-                      className="text-black mt-2"
-                      style={{ fontFamily: 'Poppins_500Medium' }}
-                    >
-                      {selectedDesign.sqm} m²
-                    </Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  onPress={handleUseDesign}
-                  className="bg-black rounded-full py-5 px-8"
-                >
-                  <Text 
-                    className="text-white text-lg text-center"
-                    style={{ fontFamily: 'Poppins_700Bold' }}
-                  >
-                    Use This Plan
-                  </Text>
                 </TouchableOpacity>
-              </ScrollView>
-            )}
+              );
+            })}
           </View>
-        </View>
-      </Modal>
+        )}
+      </ScrollView>
     </View>
   );
 }
