@@ -1,9 +1,17 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
+import { Request, Response } from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Serve static files from uploads directory
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
+  });
   
   // Enable CORS - allow all localhost ports in development
   app.enableCors({
@@ -43,7 +51,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // Health check endpoint
-  app.getHttpAdapter().get('/api/health', (req, res) => {
+  app.getHttpAdapter().get('/api/health', (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
   });

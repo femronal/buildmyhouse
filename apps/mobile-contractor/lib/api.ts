@@ -30,16 +30,27 @@ export const api = {
     return response.json();
   },
 
-  post: async (endpoint: string, data: any) => {
+  post: async (endpoint: string, data: any, options?: { headers?: any }) => {
     console.log('📤 [Contractor App] POST request:', endpoint);
     console.log('📦 [Contractor App] Request data:', data);
     
     try {
+      const isFormData = data instanceof FormData;
       const headers = await getHeaders();
+      
+      // For FormData, don't set Content-Type (browser will set it with boundary)
+      // For JSON, use application/json
+      const finalHeaders = isFormData
+        ? { ...(headers.Authorization && { Authorization: headers.Authorization }) }
+        : headers;
+
+      // Merge with any custom headers
+      const mergedHeaders = { ...finalHeaders, ...(options?.headers || {}) };
+      
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
-        headers,
-        body: JSON.stringify(data),
+        headers: mergedHeaders,
+        body: isFormData ? data : JSON.stringify(data),
       });
 
       console.log('📥 [Contractor App] Response status:', response.status);
@@ -90,16 +101,47 @@ export const api = {
   },
 
   delete: async (endpoint: string) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'DELETE',
-      headers: await getHeaders(),
-    });
+    console.log('🗑️ [Contractor App] DELETE request:', endpoint);
+    
+    try {
+      const headers = await getHeaders();
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'DELETE',
+        headers,
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Failed to delete resource');
+      console.log('🗑️ [Contractor App] DELETE response status:', response.status);
+      console.log('🗑️ [Contractor App] DELETE response ok:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+          console.error('❌ [Contractor App] DELETE error response:', errorData);
+        } catch (e) {
+          const text = await response.text();
+          console.error('❌ [Contractor App] DELETE error response (text):', text);
+          errorData = { message: text || 'Request failed' };
+        }
+        
+        const error = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        (error as any).status = response.status;
+        (error as any).data = errorData;
+        throw error;
+      }
+
+      // Handle 204 No Content responses
+      if (response.status === 204) {
+        console.log('✅ [Contractor App] DELETE successful (204 No Content)');
+        return { message: 'Deleted successfully' };
+      }
+
+      const result = await response.json();
+      console.log('✅ [Contractor App] DELETE successful:', result);
+      return result;
+    } catch (error: any) {
+      console.error('❌ [Contractor App] DELETE error:', error);
+      throw error;
     }
-
-    return response.json();
   },
 };

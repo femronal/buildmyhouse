@@ -69,8 +69,93 @@ export function useActivateProject() {
 
   return useMutation({
     mutationFn: (projectId: string) => projectService.activateProject(projectId),
+    onSuccess: (_, projectId) => {
+      // Invalidate all project-related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+    },
+  });
+}
+
+/**
+ * Save project for later (pending payment)
+ */
+export function useSaveProjectForLater() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, projectData }: { projectId: string; projectData: any }) =>
+      projectService.saveProjectForLater(projectId, projectData),
+    onSuccess: (_, variables) => {
+      // Invalidate all project-related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId] });
+    },
+  });
+}
+
+/**
+ * Get pending projects
+ */
+export function usePendingProjects() {
+  return useQuery({
+    queryKey: ['projects', 'pending'],
+    queryFn: () => projectService.getPendingProjects(),
+  });
+}
+
+/**
+ * Get active projects
+ */
+export function useActiveProjects() {
+  return useQuery({
+    queryKey: ['projects', 'active'],
+    queryFn: () => projectService.getActiveProjects(),
+  });
+}
+
+/**
+ * Delete pending project
+ */
+export function useDeletePendingProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (projectId: string) => projectService.deletePendingProject(projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
+    },
+  });
+}
+
+/**
+ * Create project from design and send request to GC
+ */
+export function useCreateProjectFromDesign() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: {
+      designId: string;
+      address: string;
+      street?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+      latitude?: number;
+      longitude?: number;
+    }) => projectService.createProjectFromDesign(data),
+    onSuccess: (project) => {
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', project.id] });
+      queryClient.invalidateQueries({ queryKey: ['projects', project.id, 'gc-acceptance'] });
     },
   });
 }

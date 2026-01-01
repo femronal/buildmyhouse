@@ -1,64 +1,65 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar } from "lucide-react-native";
-import { useState } from "react";
+import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X } from "lucide-react-native";
+import { useState, useMemo } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
-
-const activeProjects = [
-  {
-    id: 1,
-    name: "Modern Minimalist Villa",
-    client: "Ifeoma Obi-Uchendu",
-    address: "123 Main Street, Lekki, Lagos",
-    progress: 25,
-    currentStage: "Foundation",
-    budget: 285000,
-    earned: 71250,
-    dueDate: "Mar 2025",
-    image: "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80",
-  },
-  {
-    id: 2,
-    name: "Classic Colonial Estate",
-    client: "Adaeze Nwosu",
-    address: "456 Oak Avenue, Abuja",
-    progress: 65,
-    currentStage: "Electrical",
-    budget: 385000,
-    earned: 250250,
-    dueDate: "Dec 2024",
-    image: "https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&q=80",
-  },
-];
-
-const pendingProjects = [
-  {
-    id: 3,
-    name: "Luxury Penthouse",
-    client: "Chidi Okonkwo",
-    address: "789 Victoria Island, Lagos",
-    budget: 520000,
-    requestDate: "2 days ago",
-  },
-];
-
-const recentActivity = [
-  { id: 1, type: "payment", message: "Payment received for Foundation stage", amount: 35000, time: "2 hours ago" },
-  { id: 2, type: "message", message: "New message from Ifeoma Obi-Uchendu", time: "5 hours ago" },
-  { id: 3, type: "stage", message: "Site Preparation marked complete", project: "Modern Minimalist Villa", time: "1 day ago" },
-];
+import { useActiveProjects, useUnpaidProjects } from "../../hooks/useProjects";
 
 export default function GCDashboardScreen() {
   console.log('🚀 [GC Dashboard] Component loaded - NEW VERSION WITH REQUESTS BUTTON!');
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
+  const [showUnpaidModal, setShowUnpaidModal] = useState(false);
+  const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
   
   // Fetch real pending requests
   const { data: pendingRequests = [], isLoading: loadingPendingRequests } = usePendingRequests();
   console.log('📊 [GC Dashboard] Pending requests count:', pendingRequests.length);
 
-  const totalEarnings = activeProjects.reduce((sum, p) => sum + p.earned, 0);
-  const totalBudget = activeProjects.reduce((sum, p) => sum + p.budget, 0);
+  // Fetch real projects
+  const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
+  const { data: unpaidProjects = [], isLoading: loadingUnpaid } = useUnpaidProjects();
+  
+  console.log('📊 [GC Dashboard] Active projects count:', activeProjects.length);
+  console.log('📊 [GC Dashboard] Unpaid projects count:', unpaidProjects.length);
+
+  const handleUnpaidProjectPress = (project: any) => {
+    setSelectedUnpaidProject(project);
+    setShowUnpaidModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowUnpaidModal(false);
+    setSelectedUnpaidProject(null);
+  };
+
+  // Calculate totals from real data
+  const totalEarnings = useMemo(() => {
+    return activeProjects.reduce((sum, p) => sum + (p.spent || 0), 0);
+  }, [activeProjects]);
+
+  const totalBudget = useMemo(() => {
+    return activeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
+  }, [activeProjects]);
+
+  // Format date helper
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${month} ${year}`;
+  };
+
+  // Get project image - use plan PDF or default
+  const getProjectImage = (project: any) => {
+    if (project.planPdfUrl) {
+      // If there's a plan PDF, we could use a thumbnail
+      // For now, use a default image based on project name
+      return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
+    }
+    return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
+  };
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -82,11 +83,17 @@ export default function GCDashboardScreen() {
           >
             <MessageCircle size={20} color="#3B82F6" strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2">
+          <TouchableOpacity 
+            onPress={() => router.push('/contractor/gc-notifications')}
+            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
+          >
             <Bell size={20} color="#3B82F6" strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center">
-            <Settings size={20} color="#3B82F6" strokeWidth={2} />
+          <TouchableOpacity 
+            onPress={() => router.push('/contractor/gc-profile')}
+            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center"
+          >
+            <User size={20} color="#3B82F6" strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -105,9 +112,9 @@ export default function GCDashboardScreen() {
             <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 ml-2 border border-blue-900">
               <View className="flex-row items-center mb-2">
                 <Clock size={18} color="#F59E0B" strokeWidth={2} />
-                <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
+                <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Unpaid</Text>
               </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{pendingRequests.length}</Text>
+              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{unpaidProjects.length}</Text>
             </View>
           </View>
 
@@ -146,154 +153,220 @@ export default function GCDashboardScreen() {
                 onPress={() => setActiveTab('pending')}
                 className={`px-4 py-2 rounded-full ${activeTab === 'pending' ? 'bg-blue-600' : ''}`}
               >
-                <Text className={`text-xs ${activeTab === 'pending' ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>Pending</Text>
+                <Text className={`text-xs ${activeTab === 'pending' ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>Unpaid</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {activeTab === 'active' ? (
-            activeProjects.map((project) => (
+            loadingActive ? (
+              <View className="py-10 items-center">
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Loading active projects...
+                </Text>
+              </View>
+            ) : activeProjects.length === 0 ? (
+              <View className="items-center py-10">
+                <Briefcase size={48} color="#6B7280" strokeWidth={1.5} />
+                <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  No Active Projects
+                </Text>
+                <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Projects you've reviewed and been paid for will appear here
+                </Text>
+              </View>
+            ) : (
+              activeProjects.map((project) => (
+                <TouchableOpacity
+                  key={project.id}
+                  onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
+                  className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
+                >
+                  <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
+                  <View className="p-4">
+                    <View className="flex-row justify-between items-start mb-2">
+                      <View className="flex-1">
+                        <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
+                        <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
+                          {project.homeowner?.fullName || 'Unknown Client'}
+                        </Text>
+                      </View>
+                      <View className="bg-green-600/20 rounded-full px-3 py-1">
+                        <Text className="text-green-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Active</Text>
+                      </View>
+                    </View>
+                    
+                    {project.currentStage && (
+                      <View className="mb-2">
+                        <View className="bg-blue-600/20 rounded-full px-3 py-1 self-start">
+                          <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.currentStage}</Text>
+                        </View>
+                      </View>
+                    )}
+                    
+                    <View className="mb-3">
+                      <View className="flex-row justify-between mb-1">
+                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
+                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.progress || 0}%</Text>
+                      </View>
+                      <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
+                        <View className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress || 0}%` }} />
+                      </View>
+                    </View>
+
+                    <View className="flex-row justify-between items-center">
+                      <View>
+                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.spent || 0).toLocaleString()}</Text>
+                      </View>
+                      <View>
+                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
+                      </View>
+                      <View>
+                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
+                        <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>{formatDate(project.dueDate)}</Text>
+                      </View>
+                      <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))
+            )
+          ) : loadingUnpaid ? (
+            <View className="py-10 items-center">
+              <ActivityIndicator size="large" color="#3B82F6" />
+              <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Loading unpaid projects...
+              </Text>
+            </View>
+          ) : unpaidProjects.length === 0 ? (
+            <View className="items-center py-10">
+              <Clock size={48} color="#6B7280" strokeWidth={1.5} />
+              <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                No Unpaid Projects
+              </Text>
+              <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Projects you've reviewed but haven't been paid for will appear here
+              </Text>
+            </View>
+          ) : (
+            unpaidProjects.map((project) => (
               <TouchableOpacity
                 key={project.id}
-                onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
-                className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
+                onPress={() => handleUnpaidProjectPress(project)}
+                className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-orange-900"
               >
-                <Image source={{ uri: project.image }} className="w-full h-32" resizeMode="cover" />
+                <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
                 <View className="p-4">
                   <View className="flex-row justify-between items-start mb-2">
                     <View className="flex-1">
                       <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
-                      <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>{project.client}</Text>
+                      <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {project.homeowner?.fullName || 'Unknown Client'}
+                      </Text>
                     </View>
-                    <View className="bg-blue-600/20 rounded-full px-3 py-1">
-                      <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.currentStage}</Text>
+                    <View className="bg-orange-600/20 rounded-full px-3 py-1">
+                      <Text className="text-orange-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Unpaid</Text>
                     </View>
                   </View>
                   
-                  <View className="mb-3">
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
-                      <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.progress}%</Text>
-                    </View>
-                    <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
-                      <View className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress}%` }} />
-                    </View>
-                  </View>
+                  <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {project.address}
+                  </Text>
 
-                  <View className="flex-row justify-between">
+                  <View className="flex-row justify-between items-center">
                     <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
-                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.earned.toLocaleString()}</Text>
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
+                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
                     </View>
                     <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
-                      <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>{project.dueDate}</Text>
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Status</Text>
+                      <Text className="text-orange-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.status === 'pending_payment' ? 'Pending Payment' : project.status}
+                      </Text>
                     </View>
                     <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
                   </View>
                 </View>
               </TouchableOpacity>
             ))
-          ) : loadingPendingRequests ? (
-            <View className="py-10 items-center">
-              <ActivityIndicator size="large" color="#3B82F6" />
-              <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Loading pending requests...
-              </Text>
-            </View>
-          ) : pendingRequests.length === 0 ? (
-            <View className="items-center py-10">
-              <Clock size={48} color="#6B7280" strokeWidth={1.5} />
-              <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                No Pending Requests
-              </Text>
-              <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                New project requests will appear here
-              </Text>
-            </View>
-          ) : (
-            pendingRequests.map((request) => (
-              <TouchableOpacity
-                key={request.id}
-                className="bg-[#1E3A5F] rounded-2xl p-4 mb-4 border border-yellow-700/50"
-                onPress={() => router.push(`/contractor/gc-request-detail?id=${request.id}`)}
-              >
-                <View className="flex-row justify-between items-start mb-3">
-                  <View className="flex-1">
-                    <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      {request.project.name || 'Project Request'}
-                    </Text>
-                    <Text className="text-gray-400 text-base" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {request.project.homeowner.fullName}
-                    </Text>
-                  </View>
-                  <View className="bg-yellow-600/20 rounded-full px-3 py-1">
-                    <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      New Request
-                    </Text>
-                  </View>
-                </View>
-                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {request.project.address}
-                </Text>
-                <View className="flex-row justify-between items-center">
-                  <View>
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                    <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${request.project.budget?.toLocaleString() || 'N/A'}
-                    </Text>
-                  </View>
-                  <View className="flex-row">
-                    <TouchableOpacity 
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        console.log('Decline request:', request.id);
-                      }}
-                      className="bg-red-600/20 rounded-full px-5 py-3 mr-2"
-                    >
-                      <Text className="text-red-400 text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Decline</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        console.log('Accept request:', request.id);
-                        router.push(`/contractor/gc-request-detail?id=${request.id}`);
-                      }}
-                      className="bg-blue-600 rounded-full px-5 py-3"
-                    >
-                      <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Review</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity> 
-            )) 
-          )} 
-        </View>
-
-        {/* Recent Activity */}
-        <View className="px-6 pb-8">
-            <Text className="text-white text-3xl mb-4" style={{ fontFamily: 'Poppins_800ExtraBold' }}>Recent Activity</Text>
-          {recentActivity.map((activity) => (
-            <View key={activity.id} className="bg-[#1E3A5F] rounded-xl p-4 mb-3 flex-row items-center border border-blue-900">
-              <View className={`w-10 h-10 rounded-full items-center justify-center ${
-                activity.type === 'payment' ? 'bg-green-600/20' : 
-                activity.type === 'message' ? 'bg-blue-600/20' : 'bg-purple-600/20'
-              }`}>
-                {activity.type === 'payment' ? <DollarSign size={20} color="#10B981" strokeWidth={2} /> :
-                 activity.type === 'message' ? <MessageCircle size={20} color="#3B82F6" strokeWidth={2} /> :
-                 <CheckCircle size={20} color="#A855F7" strokeWidth={2} />}
-              </View>
-              <View className="flex-1 ml-3">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>{activity.message}</Text>
-                <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{activity.time}</Text>
-              </View>
-              {activity.amount && (
-                <Text className="text-green-400" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>+${activity.amount.toLocaleString()}</Text>
-              )}
-            </View>
-          ))}
+          )}
         </View>
       </ScrollView>
+
+      {/* Unpaid Project Modal */}
+      <Modal
+        visible={showUnpaidModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCloseModal}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
+            {/* Warning Icon */}
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-orange-600/20 rounded-full items-center justify-center mb-3">
+                <AlertCircle size={32} color="#F59E0B" strokeWidth={2} />
+              </View>
+              <Text className="text-white text-xl text-center mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Project Dashboard Unavailable
+              </Text>
+              <Text className="text-gray-300 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                The project dashboard for "{selectedUnpaidProject?.name || 'this project'}" cannot be accessed at this time.
+              </Text>
+            </View>
+
+            {/* Warning Message */}
+            <View className="bg-orange-900/30 border border-orange-700/50 rounded-xl p-4 mb-6">
+              <View className="flex-row items-start">
+                <View className="mr-2 mt-0.5">
+                  <DollarSign size={18} color="#F59E0B" strokeWidth={2} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    The homeowner has not yet paid at least 50% of the project fees. Once payment is received and the project status becomes active, you'll be able to access the full project dashboard.
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Project Info */}
+            {selectedUnpaidProject && (
+              <View className="bg-[#0A1628] rounded-xl p-4 mb-6 border border-blue-900">
+                <Text className="text-gray-400 text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Project Details
+                </Text>
+                <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {selectedUnpaidProject.name}
+                </Text>
+                <Text className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {selectedUnpaidProject.homeowner?.fullName || 'Unknown Client'}
+                </Text>
+                <View className="flex-row items-center justify-between pt-2 border-t border-blue-900">
+                  <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Budget
+                  </Text>
+                  <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ${(selectedUnpaidProject.budget || 0).toLocaleString()}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Action Button */}
+            <TouchableOpacity
+              onPress={handleCloseModal}
+              className="bg-blue-600 rounded-xl py-4 items-center"
+            >
+              <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Understood
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Bottom Navigation - Bigger, Clearer */}
       <View className="flex-row bg-[#0A1628] border-t border-blue-900 px-4 py-4">
@@ -336,6 +409,15 @@ export default function GCDashboardScreen() {
           <Text className="text-yellow-400 text-base mt-1 font-bold" style={{ fontFamily: 'Poppins_700Bold' }}>
             REQUESTS
           </Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => router.push('/contractor/gc-plans')}
+          className="flex-1 items-center active:opacity-70"
+        >
+          <View className="p-3 rounded-2xl bg-[#1E3A5F] mb-1">
+            <FileText size={30} color="#6B7280" strokeWidth={2.5} />
+          </View>
+          <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Plans</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => {/* Navigate to earnings */}}

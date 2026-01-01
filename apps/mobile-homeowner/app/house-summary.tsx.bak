@@ -1,0 +1,958 @@
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, DollarSign, Star, HardHat, Send, CheckCircle, Clock, AlertCircle } from "lucide-react-native";
+import { useState, useEffect, useCallback } from "react";
+import { useQueryClient } from '@tanstack/react-query';
+import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater } from '@/hooks';
+import { useProjectAnalysis } from '@/hooks/usePlan';
+import { useCreatePaymentIntent } from '@/hooks/usePayment';
+import PaymentModal from '@/components/PaymentModal';
+
+export default function HouseSummaryScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  const queryClient = useQueryClient();
+  
+  const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [selectedGCs, setSelectedGCs] = useState<Set<string>>(new Set());
+  const [isSendingRequests, setIsSendingRequests] = useState(false);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [gcRequestStatus, setGcRequestStatus] = useState<'none' | 'pending' | 'accepted'>('none');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState<number>(0);
+  const [projectBudget, setProjectBudget] = useState<number>(0);
+  const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+
+  // Get projectId from params
+  useEffect(() => {
+    const paramProjectId = params.projectId as string;
+    if (paramProjectId) {
+      setProjectId(paramProjectId);
+    } else {
+      setProjectId('test-project-123');
+    }
+  }, [params.projectId]);
+
+  // Fetch real project analysis - refetch when GC accepts
+  const { data: projectAnalysisData, isLoading: loadingAnalysis, error: analysisError, isFetching: fetchingAnalysis, refetch: refetchAnalysis } = useProjectAnalysis(projectId);
+  // Backend returns project with aiAnalysis nested inside
+  const originalAiAnalysis = projectAnalysisData?.aiAnalysis || null;
+  
+  // Get accepted GC's edited analysis from project request
+  const acceptedRequest = projectAnalysisData?.projectRequests?.[0];
+  let gcEditedAnalysis: any = null;
+  let acceptedGC: any = null;
+  
+  if (acceptedRequest) {
+    // Parse the edited analysis from gcNotes
+    if (acceptedRequest.gcNotes) {
+      try {
+        // Format: "[Edited AI Analysis]\n{JSON}" or just "{JSON}" if notes start with it
+        let jsonString = '';
+        const notesMatch = acceptedRequest.gcNotes.match(/\[Edited AI Analysis\]\s*\n(.*)/s);
+        if (notesMatch && notesMatch[1]) {
+          jsonString = notesMatch[1].trim();
+        } else {
+          // Try to find JSON in the notes (might be at the end)
+          const jsonMatch = acceptedRequest.gcNotes.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            jsonString = jsonMatch[0];
+          }
+        }
+        
+        if (jsonString) {
+          gcEditedAnalysis = JSON.parse(jsonString);
+        }
+      } catch (error) {
+        // Silently fail - use original analysis if parsing fails
+      }
+    }
+    
+    // Get accepted GC info - contractorProfile is nested under contractor
+    acceptedGC = acceptedRequest.contractor?.contractorProfile || null;
+  }
+  
+  // Use GC's edited analysis if available, otherwise use original AI analysis
+  const aiAnalysis = gcEditedAnalysis || originalAiAnalysis;
+
+  // Fetch real recommended GCs
+  const { data: recommendedGCsData = [], isLoading: loadingGCs, error: gcError } = useRecommendedGCs(projectId);
+  const recommendedGCs = recommendedGCsData || [];
+
+  // Check GC acceptance status - poll every 5 seconds if we haven't detected acceptance yet
+  // Keep polling until we detect acceptance OR we're already in 'accepted' state
+  const shouldPoll = gcRequestStatus !== 'accepted';
+  const { data: gcAcceptanceData, isLoading: loadingAcceptance } = useCheckGCAcceptance(
+    projectId,
+    shouldPoll ? 5000 : undefined // Poll every 5 seconds if not accepted yet
+  );
+
+  const activateProjectMutation = useActivateProject();
+  const createPaymentIntentMutation = useCreatePaymentIntent();
+  const saveProjectForLaterMutation = useSaveProjectForLater();
+
+  // Check initial project status and update when GC accepts
+  useEffect(() => {
+    if (gcAcceptanceData) {
+      if (gcAcceptanceData.hasAcceptedGC) {
+        if (gcRequestStatus !== 'accepted') {
+          setGcRequestStatus('accepted');
+          
+          // Invalidate and refetch project analysis query to get GC's edited data
+          queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
+          // Force refetch immediately
+          setTimeout(() => {
+            refetchAnalysis();
+          }, 500);
+        }
+      }
+    }
+  }, [gcAcceptanceData, gcRequestStatus, projectId, queryClient, refetchAnalysis]);
+
+  // Refetch analysis when status changes to accepted (to get GC edits)
+  useEffect(() => {
+    if (gcRequestStatus === 'accepted' && projectId) {
+      // Small delay to ensure backend has processed the acceptance
+      const timeoutId = setTimeout(() => {
+        refetchAnalysis();
+      }, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [gcRequestStatus, projectId, refetchAnalysis]);
+
+  // Only show loading if we're truly loading for the first time AND don't have analysis yet
+  // Don't show loading during background refetches (polling)
+  const isLoading = (loadingAnalysis && !projectAnalysisData) || (loadingGCs && recommendedGCs.length === 0) || (loadingAcceptance && !gcAcceptanceData);
+
+  const toggleSection = (section: string) => {
+    setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const toggleGCSelection = (gcId: string) => {
+    const newSelected = new Set(selectedGCs);
+    if (newSelected.has(gcId)) {
+      newSelected.delete(gcId);
+    } else {
+      newSelected.add(gcId);
+    }
+    setSelectedGCs(newSelected);
+  };
+
+  const sendGCRequestsMutation = useSendGCRequests();
+
+  const handleSendRequests = async () => {
+    if (selectedGCs.size === 0) {
+      return;
+    }
+
+    if (!projectId) {
+      return;
+    }
+
+    setIsSendingRequests(true);
+
+    try {
+      await sendGCRequestsMutation.mutateAsync({
+        projectId,
+        contractorIds: Array.from(selectedGCs),
+      });
+
+      setGcRequestStatus('pending');
+    } catch (error) {
+      // Error handled by mutation
+    } finally {
+      setIsSendingRequests(false);
+    }
+  };
+
+  const handlePaymentError = useCallback((error: string) => {
+    // Don't close modal on error - let user see the error and retry
+    setIsProcessingPayment(false);
+    setPaymentError(error);
+    
+    // If authentication error, suggest logging in
+    if (error?.includes('401') || error?.includes('Unauthorized') || error?.includes('Authentication')) {
+      // Error message will be shown in modal
+      // User can close modal and log in again
+    }
+  }, []);
+
+  const handleCreatePaymentIntent = useCallback(async () => {
+    const currentProjectId = projectId;
+    const currentPaymentAmount = paymentAmount;
+    
+    if (!currentProjectId) {
+      handlePaymentError('Project ID is missing. Please refresh the page and try again.');
+      return;
+    }
+    
+    if (!currentPaymentAmount || currentPaymentAmount <= 0) {
+      // Try to recalculate budget from available sources
+      // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
+      const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
+      const recalculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
+      const recalculatedAmount = recalculatedBudget * 0.5;
+      
+      if (recalculatedAmount > 0) {
+        // Update state with recalculated values
+        setPaymentAmount(recalculatedAmount);
+        setProjectBudget(recalculatedBudget);
+        // Retry with new values
+        setTimeout(() => {
+          handleCreatePaymentIntent();
+        }, 100);
+        return;
+      }
+      
+      handlePaymentError(`Invalid payment amount (${currentPaymentAmount}). Budget information may be missing. Please contact support.`);
+      return;
+    }
+
+    try {
+      setIsProcessingPayment(true);
+      setPaymentError(null); // Clear previous errors
+      
+      // Use the current payment amount (either from state or recalculated)
+      const amountToUse = currentPaymentAmount;
+      
+      // Create payment intent
+      const paymentResult = await createPaymentIntentMutation.mutateAsync({
+        amount: amountToUse,
+        projectId: currentProjectId,
+        currency: 'usd',
+        description: `Project activation payment - ${projectAnalysisData?.name || 'Project'}`,
+      });
+
+      // Store client secret for Stripe payment
+      if (paymentResult?.paymentIntent?.clientSecret) {
+        setPaymentClientSecret(paymentResult.paymentIntent.clientSecret);
+        setIsProcessingPayment(false);
+        setPaymentError(null); // Clear any errors
+      } else {
+        // Don't close modal, error will be shown in modal
+        setPaymentClientSecret(null);
+        setIsProcessingPayment(false);
+        handlePaymentError('Payment intent created but no client secret received. Please try again.');
+      }
+    } catch (error: any) {
+      // Don't close modal on error - let user see the error and retry
+      setPaymentClientSecret(null);
+      setIsProcessingPayment(false);
+      
+      // If it's a 401 error, the user needs to log in again
+      const errorMessage = error?.message || 'Failed to create payment intent';
+      if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
+        handlePaymentError('Authentication required. Please log out and log in again to continue with payment.');
+      } else {
+        handlePaymentError(errorMessage);
+      }
+    }
+  }, [projectId, paymentAmount, projectAnalysisData, acceptedRequest, aiAnalysis, gcAcceptanceData, createPaymentIntentMutation, handlePaymentError]);
+
+  const handlePaymentSuccess = useCallback(async () => {
+    const currentProjectId = projectId;
+    if (!currentProjectId) {
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
+      setPaymentClientSecret(null);
+      return;
+    }
+
+    try {
+      // Activate project after successful payment
+      await activateProjectMutation.mutateAsync(currentProjectId);
+      
+      // Close modal and reset state
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
+      setPaymentClientSecret(null);
+      
+      // Navigate to dashboard
+      setTimeout(() => {
+        router.replace('/(tabs)/home');
+      }, 500);
+    } catch (error: any) {
+      // If activation fails, still close modal but show error
+      setIsProcessingPayment(false);
+      setShowPaymentModal(false);
+      setPaymentClientSecret(null);
+      // Error will be shown via toast or alert
+    }
+  }, [projectId, activateProjectMutation, router]);
+
+  const handleSaveForLater = useCallback(async () => {
+    if (!projectId || gcRequestStatus !== 'accepted') {
+      return;
+    }
+
+    try {
+      // Prepare project data to save
+      const projectDataToSave = {
+        projectId,
+        name: params.projectName || projectAnalysisData?.name,
+        address: params.address || projectAnalysisData?.address,
+        gcEditedAnalysis: gcEditedAnalysis || aiAnalysis,
+        acceptedRequest: {
+          estimatedBudget: acceptedRequest?.estimatedBudget,
+          estimatedDuration: acceptedRequest?.estimatedDuration,
+          contractor: acceptedGC,
+        },
+        budget: acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0,
+        paymentAmount: (acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 0.5,
+      };
+
+      await saveProjectForLaterMutation.mutateAsync({
+        projectId,
+        projectData: projectDataToSave,
+      });
+
+      // Show success and navigate
+      router.push('/(tabs)/home');
+    } catch (error: any) {
+      console.error('Error saving project for later:', error);
+      // Error will be handled by mutation
+    }
+  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, saveProjectForLaterMutation, router]);
+
+  const handleStartBuilding = useCallback(() => {
+    // Prevent multiple calls
+    if (isProcessingPayment) {
+      return;
+    }
+    
+    if (gcRequestStatus !== 'accepted') {
+      return;
+    }
+
+    if (!projectId) {
+      return;
+    }
+
+    // Calculate payment amount - 50% of GC's estimated budget
+    // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
+    const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
+    const calculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
+    const calculatedAmount = calculatedBudget * 0.5; // 50% deposit
+
+    if (calculatedAmount <= 0 || calculatedBudget <= 0) {
+      // Show error in modal instead of silently returning
+      setShowPaymentModal(true);
+      setPaymentError(`Budget information is missing or invalid (Budget: ${calculatedBudget}). Please ensure the GC has set an estimated budget.`);
+      return;
+    }
+
+    // Store payment details and show modal
+    setPaymentAmount(calculatedAmount);
+    setProjectBudget(calculatedBudget);
+    setPaymentClientSecret(null);
+    setIsProcessingPayment(true);
+    setShowPaymentModal(true);
+    
+    // Create payment intent after state is set and modal is visible
+    // Use a longer delay to ensure state updates are complete
+    setTimeout(() => {
+      handleCreatePaymentIntent();
+    }, 300);
+  }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis, handleCreatePaymentIntent]);
+
+  // Show loading state only if we don't have analysis yet AND we're actually loading
+  // Don't block rendering if we're just polling in the background
+  if (isLoading && !aiAnalysis) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#000" />
+        <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_500Medium' }}>
+          Loading project analysis...
+        </Text>
+        {projectId && (
+          <Text className="text-gray-400 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            AI is analyzing your plan...
+          </Text>
+        )}
+      </View>
+    );
+  }
+
+  // Allow page to render even if analysis isn't ready yet
+  // This prevents constant reloading - we'll show a message instead
+
+  return (
+    <View className="flex-1 bg-white">
+      <View className="pt-16 px-6 pb-4">
+        <View className="flex-row items-center mb-4">
+          <TouchableOpacity 
+            onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+          >
+            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/home')} 
+            className="w-10 h-10 bg-black rounded-full items-center justify-center"
+          >
+            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        
+        <Text 
+          className="text-3xl text-black mb-2"
+          style={{ fontFamily: 'Poppins_800ExtraBold' }}
+        >
+          Project Summary
+        </Text>
+        <Text 
+          className="text-sm text-gray-500"
+          style={{ fontFamily: 'Poppins_400Regular' }}
+        >
+          AI-analyzed specifications for {params.projectName || 'your project'}
+        </Text>
+      </View>
+
+      <ScrollView className="flex-1 px-6">
+        {/* Analysis Badge - Show if edited by GC or original AI */}
+        {aiAnalysis ? (
+          <View className={`${gcEditedAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-2xl p-4 mb-6 flex-row items-center`}>
+            {gcEditedAnalysis ? (
+              <>
+                <HardHat size={24} color="#2563eb" strokeWidth={2} />
+                <View className="ml-3 flex-1">
+                  <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Project Summary (Reviewed & Updated by GC) ✏️
+                  </Text>
+                  <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Your General Contractor has reviewed and updated the project analysis with their professional estimates. The details below reflect their changes.
+                  </Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <CheckCircle size={24} color="#059669" strokeWidth={2} />
+                <View className="ml-3 flex-1">
+                  <Text className="text-green-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    AI Analysis Complete ({aiAnalysis?.confidence || 0}% confident)
+                  </Text>
+                  <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {aiAnalysis?.notes || 'AI analysis complete'}
+                  </Text>
+                </View>
+              </>
+            )}
+          </View>
+        ) : (
+          <View className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 flex-row items-center">
+            <Clock size={24} color="#d97706" strokeWidth={2} />
+            <View className="ml-3 flex-1">
+              <Text className="text-yellow-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                AI Analysis In Progress
+              </Text>
+              <Text className="text-yellow-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Your plan is being analyzed. This page will update automatically when ready.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Project Overview */}
+        <View className="bg-gray-50 rounded-3xl p-6 mb-6 border border-gray-200">
+          <Text 
+            className="text-2xl text-black mb-4"
+            style={{ fontFamily: 'Poppins_700Bold' }}
+          >
+            {params.projectName}
+          </Text>
+
+          <Text 
+            className="text-sm text-gray-600 mb-4"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
+            📍 {params.address}
+          </Text>
+
+          {/* Specs Pills */}
+          <View className="flex-row flex-wrap mb-6">
+            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
+              <Bed size={18} color="#000000" strokeWidth={2} />
+              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {aiAnalysis?.bedrooms || 'N/A'} Bedrooms
+              </Text>
+            </View>
+            
+            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
+              <Bath size={18} color="#000000" strokeWidth={2} />
+              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {aiAnalysis?.bathrooms || 'N/A'} Bathrooms
+              </Text>
+            </View>
+            
+            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
+              <Maximize size={18} color="#000000" strokeWidth={2} />
+              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {aiAnalysis?.squareFootage || 'N/A'} sqft
+              </Text>
+            </View>
+
+            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
+              <Home size={18} color="#000000" strokeWidth={2} />
+              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {aiAnalysis?.floors || 'N/A'} Floors
+              </Text>
+            </View>
+          </View>
+
+          {/* Cost & Duration */}
+          <View className="flex-row justify-between">
+            <View>
+              <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Estimated Cost
+              </Text>
+              <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                ${(acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+              </Text>
+            </View>
+            
+            <View>
+              <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Duration
+              </Text>
+              <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                {acceptedRequest?.estimatedDuration || aiAnalysis?.estimatedDuration || aiAnalysis?.timeline || 'N/A'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Construction Phases Accordion */}
+        <TouchableOpacity 
+          onPress={() => toggleSection('phases')}
+          className="bg-gray-50 rounded-2xl p-5 mb-4 border border-gray-200"
+        >
+          <View className="flex-row justify-between items-center">
+            <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Construction Phases ({aiAnalysis?.phases?.length || 0})
+            </Text>
+            {expandedSection === 'phases' ? (
+              <ChevronUp size={24} color="#000000" strokeWidth={2} />
+            ) : (
+              <ChevronDown size={24} color="#000000" strokeWidth={2} />
+            )}
+          </View>
+          
+          {expandedSection === 'phases' && (
+            <View className="mt-4">
+              {(aiAnalysis?.phases || []).map((phase: any, index: number) => (
+                <View key={index} className="bg-white rounded-xl p-4 mb-3 border border-gray-200">
+                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {index + 1}. {phase.name}
+                  </Text>
+                  <Text className="text-gray-600 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {phase.description}
+                  </Text>
+                  <View className="flex-row justify-between">
+                    <View className="flex-row items-center">
+                      <Clock size={14} color="#6b7280" strokeWidth={2} />
+                      <Text className="text-gray-500 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {phase.estimatedDuration}
+                      </Text>
+                    </View>
+                    <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                      ${phase.estimatedCost.toLocaleString()}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Materials & Features */}
+        <TouchableOpacity 
+          onPress={() => toggleSection('details')}
+          className="bg-gray-50 rounded-2xl p-5 mb-6 border border-gray-200"
+        >
+          <View className="flex-row justify-between items-center">
+            <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Materials & Features
+            </Text>
+            {expandedSection === 'details' ? (
+              <ChevronUp size={24} color="#000000" strokeWidth={2} />
+            ) : (
+              <ChevronDown size={24} color="#000000" strokeWidth={2} />
+            )}
+          </View>
+          
+          {expandedSection === 'details' && (
+            <View className="mt-4">
+              <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Rooms:
+              </Text>
+              <View className="flex-row flex-wrap mb-4">
+                {(aiAnalysis?.rooms || []).map((room: string, index: number) => (
+                  <View key={index} className="bg-white rounded-full px-3 py-2 mr-2 mb-2 border border-gray-200">
+                    <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {room}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Key Materials:
+              </Text>
+              <View className="mb-4">
+                {(aiAnalysis?.materials || []).map((material: string, index: number) => (
+                  <Text key={index} className="text-gray-600 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    • {material}
+                  </Text>
+                ))}
+              </View>
+
+              <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Features:
+              </Text>
+              <View>
+                {(aiAnalysis?.features || []).map((feature: string, index: number) => (
+                  <Text key={index} className="text-gray-600 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    • {feature}
+                  </Text>
+                ))}
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* GC Section - Show accepted GC or recommended GCs */}
+        {gcRequestStatus === 'accepted' && acceptedRequest ? (
+          <View className="mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Your General Contractor
+              </Text>
+              <View className="bg-green-100 rounded-full px-3 py-1">
+                <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Accepted ✅
+                </Text>
+              </View>
+            </View>
+
+            <View className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 mb-4">
+              <View className="flex-row items-start justify-between mb-3">
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-1">
+                    <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                      {acceptedGC?.name || acceptedRequest.contractor?.fullName || 'General Contractor'}
+                    </Text>
+                    {(acceptedGC?.verified || false) && (
+                      <View className="ml-2 bg-green-500 rounded-full w-5 h-5 items-center justify-center">
+                        <Text className="text-white text-xs">✓</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text className="text-sm mb-2 text-gray-600" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {acceptedGC?.specialty || 'General Construction'}
+                  </Text>
+                  {acceptedGC?.location && (
+                    <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      📍 {acceptedGC.location}
+                    </Text>
+                  )}
+                  {acceptedRequest.contractor?.email && (
+                    <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      📧 {acceptedRequest.contractor.email}
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {(acceptedGC?.rating || acceptedGC?.reviews || acceptedGC?.projects) && (
+                <View className="flex-row items-center mb-3">
+                  <Star size={16} color="#000" strokeWidth={2} fill="#000" />
+                  <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {acceptedGC?.rating?.toFixed(1) || 'N/A'}
+                  </Text>
+                  <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    ({acceptedGC?.reviews || 0} reviews) • {acceptedGC?.projects || 0} projects
+                  </Text>
+                </View>
+              )}
+
+              <View className="mt-3 pt-3 border-t border-green-200">
+                <Text className="text-green-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  GC's Estimated Budget: ${(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+                </Text>
+                {acceptedRequest.estimatedDuration && (
+                  <Text className="text-green-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Estimated Duration: {acceptedRequest.estimatedDuration}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View className="mb-6">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Recommended GCs
+              </Text>
+              <View className="bg-blue-100 rounded-full px-3 py-1">
+                <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Top {recommendedGCs.length} Matches
+                </Text>
+              </View>
+            </View>
+
+            <Text className="text-gray-500 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Based on your location, project type, and budget. Select 2-3 to send your project request.
+            </Text>
+
+          {loadingGCs ? (
+            <View className="bg-gray-50 rounded-2xl p-6 items-center">
+              <ActivityIndicator size="small" color="#000" />
+              <Text className="text-gray-500 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Loading recommended GCs...
+              </Text>
+            </View>
+          ) : recommendedGCs.length === 0 ? (
+            <View className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+              <Text className="text-yellow-900 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                No GCs Available
+              </Text>
+              <Text className="text-yellow-700 text-sm text-center mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                {gcError 
+                  ? `Error loading GCs: ${gcError.message || 'Unknown error'}. Please try again later.`
+                  : 'No General Contractors are currently available. Please check back later or contact support.'}
+              </Text>
+              {gcError && (
+                <TouchableOpacity
+                  onPress={() => {
+                    // Force refetch
+                    window.location.reload();
+                  }}
+                  className="bg-yellow-600 rounded-full px-6 py-3 mt-4 self-center"
+                >
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Retry
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : (
+            recommendedGCs.map((gc) => {
+            // Use user.id (not contractor profile id) for sending requests
+            const gcUserId = gc.user?.id || gc.userId || gc.id;
+            return (
+            <TouchableOpacity
+              key={gc.id}
+              onPress={() => toggleGCSelection(gcUserId)}
+              className={`rounded-2xl p-5 mb-4 border-2 ${
+                selectedGCs.has(gcUserId) 
+                  ? 'bg-black border-black' 
+                  : 'bg-white border-gray-200'
+              }`}
+            >
+              <View className="flex-row items-start justify-between mb-3">
+                <View className="flex-1">
+                  <View className="flex-row items-center mb-1">
+                    <Text 
+                      className={`text-lg ${selectedGCs.has(gcUserId) ? 'text-white' : 'text-black'}`}
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                    >
+                      {gc.name}
+                    </Text>
+                    {gc.verified && (
+                      <View className="ml-2 bg-green-500 rounded-full w-5 h-5 items-center justify-center">
+                        <Text className="text-white text-xs">✓</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text 
+                    className={`text-sm mb-2 ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-600'}`}
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
+                    {gc.specialty}
+                  </Text>
+                </View>
+                <View className={`rounded-full px-3 py-1 ${
+                  selectedGCs.has(gcUserId) ? 'bg-white/20' : 'bg-green-100'
+                }`}>
+                  <Text 
+                    className={`text-xs ${selectedGCs.has(gcUserId) ? 'text-white' : 'text-green-700'}`}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {gc.matchScore}% Match
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row items-center mb-3">
+                <Star size={16} color={selectedGCs.has(gcUserId) ? '#fff' : '#000'} strokeWidth={2} fill={selectedGCs.has(gcUserId) ? '#fff' : '#000'} />
+                <Text 
+                  className={`ml-1 ${selectedGCs.has(gcUserId) ? 'text-white' : 'text-black'}`}
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  {gc.rating}
+                </Text>
+                <Text 
+                  className={`ml-1 ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-500'}`}
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                >
+                  ({gc.reviews} reviews) • {gc.projects} projects
+                </Text>
+              </View>
+
+              <View className="flex-row justify-between pt-3 border-t border-white/20">
+                <View>
+                  <Text className={`text-xs ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-500'}`} style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Experience
+                  </Text>
+                  <Text className={`${selectedGCs.has(gcUserId) ? 'text-white' : 'text-black'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {gc.projects}+ projects
+                  </Text>
+                </View>
+                <View>
+                  <Text className={`text-xs ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-500'}`} style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Location
+                  </Text>
+                  <Text className={`${selectedGCs.has(gcUserId) ? 'text-white' : 'text-black'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {gc.location || 'N/A'}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+            );
+          })
+          )}
+          </View>
+        )}
+
+        {/* Action Buttons */}
+        {gcRequestStatus === 'none' && (
+          <TouchableOpacity
+            onPress={handleSendRequests}
+            disabled={selectedGCs.size === 0 || isSendingRequests}
+            className={`rounded-full py-5 px-8 mb-4 flex-row items-center justify-center ${
+              selectedGCs.size > 0 && !isSendingRequests ? 'bg-blue-600' : 'bg-gray-200'
+            }`}
+          >
+            {isSendingRequests ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <>
+                <Send size={20} color={selectedGCs.size > 0 ? "#FFFFFF" : "#A3A3A3"} strokeWidth={2} />
+                <Text 
+                  className={`text-lg ml-2 ${selectedGCs.size > 0 ? 'text-white' : 'text-gray-400'}`}
+                  style={{ fontFamily: 'Poppins_700Bold' }}
+                >
+                  Send Request to {selectedGCs.size} GC{selectedGCs.size !== 1 ? 's' : ''}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {gcRequestStatus === 'pending' && (
+          <View className="bg-yellow-50 border border-yellow-200 rounded-2xl p-5 mb-4">
+            <View className="flex-row items-center mb-2">
+              <Clock size={20} color="#d97706" strokeWidth={2} />
+              <Text className="text-yellow-900 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Waiting for GC Response
+              </Text>
+            </View>
+            <Text className="text-yellow-800 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Your request has been sent to {selectedGCs.size} contractor(s). They will review and respond within 24-48 hours.
+            </Text>
+          </View>
+        )}
+
+        {gcRequestStatus === 'accepted' && (
+          <View className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-4">
+            <View className="flex-row items-center mb-2">
+              <CheckCircle size={20} color="#059669" strokeWidth={2} />
+              <Text className="text-green-900 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                GC Accepted!
+              </Text>
+            </View>
+            <Text className="text-green-800 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              A contractor has accepted your project. You can now start building!
+            </Text>
+            <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mt-3">
+              <View className="flex-row items-start">
+                <AlertCircle size={16} color="#d97706" strokeWidth={2} className="mt-0.5" />
+                <Text className="text-yellow-900 text-xs ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  <Text style={{ fontFamily: 'Poppins_700Bold' }}>Important:</Text> Please review the project summary above as your General Contractor may have made changes to the initial AI analysis (budget, timeline, materials, phases, etc.) before accepting your project.
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Action Buttons - Pay and Save for Later */}
+        {gcRequestStatus === 'accepted' && (
+          <View className="flex-row gap-3 mb-8">
+            <TouchableOpacity
+              onPress={handleSaveForLater}
+              disabled={saveProjectForLaterMutation.isPending}
+              className="flex-1 rounded-full py-5 px-8 border-2 border-black bg-white"
+            >
+              {saveProjectForLaterMutation.isPending ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator size="small" color="#000000" />
+                  <Text className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Saving...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-black text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Save for Later
+                </Text>
+              )}
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              onPress={handleStartBuilding}
+              disabled={isProcessingPayment || createPaymentIntentMutation.isPending || activateProjectMutation.isPending}
+              className={`flex-1 rounded-full py-5 px-8 ${
+                (!createPaymentIntentMutation.isPending && !activateProjectMutation.isPending) 
+                  ? 'bg-black' 
+                  : 'bg-gray-200'
+              }`}
+            >
+              {(createPaymentIntentMutation.isPending || activateProjectMutation.isPending) ? (
+                <View className="flex-row items-center justify-center">
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Processing...
+                  </Text>
+                </View>
+              ) : (
+                <Text className="text-white text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Pay & Start Building
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+        
+      </ScrollView>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        visible={showPaymentModal}
+        onClose={() => {
+          setShowPaymentModal(false);
+          setIsProcessingPayment(false);
+          setPaymentClientSecret(null);
+          setPaymentError(null);
+        }}
+        amount={paymentAmount}
+        projectBudget={projectBudget}
+        projectName={projectAnalysisData?.name || 'Project'}
+        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentError={handlePaymentError}
+        clientSecret={paymentClientSecret || undefined}
+        externalError={paymentError || undefined}
+      />
+    </View>
+  );
+}

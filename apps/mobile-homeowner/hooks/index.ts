@@ -8,7 +8,12 @@ export {
   useRecommendedGCs, 
   useSendGCRequests, 
   useCheckGCAcceptance, 
-  useActivateProject 
+  useActivateProject,
+  useSaveProjectForLater,
+  usePendingProjects,
+  useActiveProjects,
+  useDeletePendingProject,
+  useCreateProjectFromDesign,
 } from './useProjects';
 
 // User hooks
@@ -51,5 +56,8 @@ export {
 
 // Payment hooks
 export { useCreatePaymentIntent } from './usePayment';
+
+// Design hooks
+export { useDesigns, useDesign } from './useDesigns';
 
 

@@ -80,6 +80,17 @@ export const api = {
       throw new Error(error.message || 'Failed to delete resource');
     }
 
-    return response.json();
+    // Handle 204 No Content responses
+    if (response.status === 204) {
+      return { message: 'Deleted successfully' };
+    }
+
+    // Try to parse JSON, but handle empty responses
+    try {
+      const text = await response.text();
+      return text ? JSON.parse(text) : { message: 'Deleted successfully' };
+    } catch {
+      return { message: 'Deleted successfully' };
+    }
   },
 };

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Alert, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { 
   ArrowLeft, 
@@ -14,7 +14,9 @@ import {
   ChevronRight,
   Plus,
   Upload,
-  AlertCircle
+  AlertCircle,
+  Download,
+  FileText
 } from "lucide-react-native";
 import { useState } from "react";
 
@@ -68,6 +70,28 @@ export default function GCProjectDetailScreen() {
     }
   };
 
+  const handleDownloadPDF = async () => {
+    // In a real app, you would fetch the project data and get planPdfUrl
+    // For now, we'll use a placeholder URL or show an alert
+    const planPdfUrl = projectData.planPdfUrl; // This would come from API
+    
+    if (planPdfUrl) {
+      try {
+        const supported = await Linking.canOpenURL(planPdfUrl);
+        if (supported) {
+          await Linking.openURL(planPdfUrl);
+        } else {
+          Alert.alert('Error', 'Cannot open PDF URL');
+        }
+      } catch (error) {
+        console.error('Error opening PDF:', error);
+        Alert.alert('Error', 'Failed to open PDF. Please try again.');
+      }
+    } else {
+      Alert.alert('No Plan Available', 'The project plan PDF is not available.');
+    }
+  };
+
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header Image */}
@@ -112,6 +136,32 @@ export default function GCProjectDetailScreen() {
             <TouchableOpacity className="bg-blue-600 rounded-full px-4 py-2">
               <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>Contact</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Plan PDF Download Section */}
+          <View className="bg-[#1E3A5F] rounded-xl p-4 mt-4 border border-blue-900">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="w-10 h-10 bg-blue-600/20 rounded-full items-center justify-center">
+                  <FileText size={20} color="#3B82F6" strokeWidth={2} />
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>Project Plan PDF</Text>
+                  <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Download architectural plans
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                onPress={handleDownloadPDF}
+                className="bg-blue-600 rounded-full px-4 py-2 flex-row items-center"
+              >
+                <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Download
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 

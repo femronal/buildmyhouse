@@ -29,6 +29,38 @@ export class ProjectsController {
     return this.projectsService.createProject(userId, createProjectDto);
   }
 
+  @Post('from-design')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner', 'admin')
+  createFromDesign(
+    @Request() req: any,
+    @Body() body: {
+      designId: string;
+      address: string;
+      street?: string;
+      city?: string;
+      state?: string;
+      zipCode?: string;
+      country?: string;
+      latitude?: number;
+      longitude?: number;
+    },
+  ) {
+    const userId = req.user.sub;
+    return this.projectsService.createProjectFromDesign(
+      userId,
+      body.designId,
+      body.address,
+      body.street,
+      body.city,
+      body.state,
+      body.zipCode,
+      body.country,
+      body.latitude,
+      body.longitude,
+    );
+  }
+
   @Get()
   @UseGuards(JwtAuthGuard)
   findAll(@Request() req: any) {
@@ -82,5 +114,6 @@ export class ProjectsController {
     return this.projectsService.deleteProject(id, userId);
   }
 }
+
 
 
