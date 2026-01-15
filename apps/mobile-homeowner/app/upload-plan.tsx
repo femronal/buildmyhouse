@@ -49,7 +49,6 @@ export default function UploadPlanScreen() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedPdf(file);
-        console.log('📄 PDF selected:', file.name, file.size);
       }
     } catch (error) {
       console.error('Error picking PDF:', error);
@@ -88,8 +87,6 @@ export default function UploadPlanScreen() {
     let progressInterval: NodeJS.Timeout | null = null;
 
     try {
-      console.log('📤 Starting plan upload...');
-      
       // Simulate upload progress
       progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -115,16 +112,11 @@ export default function UploadPlanScreen() {
         budget: parseFloat(budget),
       };
 
-      console.log('📊 Upload data:', uploadData);
-      console.log('📄 PDF file:', selectedPdf);
-
       // Call real API
       const result = await uploadPlanMutation.mutateAsync({
         planData: uploadData,
         pdfFile: selectedPdf,
       });
-
-      console.log('✅ Upload successful, result:', result);
 
       // Complete progress
       setUploadProgress(100);
@@ -138,10 +130,6 @@ export default function UploadPlanScreen() {
         console.error('❌ No project ID in response:', result);
         throw new Error('No project ID returned from server. Please try again.');
       }
-
-      console.log('✅ Project ID:', projectId);
-      console.log('✅ Project data:', result?.project);
-      console.log('✅ AI Analysis:', result?.aiAnalysis ? 'Available' : 'Not available yet');
 
       // Wait a moment for AI processing to start
       await new Promise(resolve => setTimeout(resolve, 1000));

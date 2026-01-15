@@ -22,7 +22,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "prisma:delete-projects": "ts-node prisma/delete-projects.ts"
+    "prisma:delete-projects": "ts-node prisma/delete-projects.ts",
+    "prisma:delete-test-reviews": "ts-node prisma/delete-test-reviews.ts"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",

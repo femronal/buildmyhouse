@@ -43,7 +43,7 @@ export default function PendingProjectsScreen() {
 
   const handlePay = async (project: any) => {
     const budget = project.budget || project.gcEditedAnalysis?.budget || project.gcEditedAnalysis?.estimatedBudget || project.acceptedRequest?.estimatedBudget || 0;
-    let amount = budget * 0.5;
+    let amount = budget * 1.0;
     
     if (amount <= 0) {
       Alert.alert('Error', 'Budget information is missing. Cannot proceed with payment.');
@@ -110,13 +110,6 @@ export default function PendingProjectsScreen() {
 
   const handleDelete = (project: any) => {
     const projectId = getProjectId(project);
-    console.log('🗑️ [Pending Projects] Delete button clicked for project:', {
-      extractedId: projectId,
-      id: project.id,
-      projectId: project.projectId,
-      name: project.name,
-      fullProject: project,
-    });
     
     if (!projectId) {
       Alert.alert('Error', 'Unable to identify project. Please try again.');
@@ -133,19 +126,12 @@ export default function PendingProjectsScreen() {
     setIsDeleting(true);
     try {
       const projectId = getProjectId(projectToDelete);
-      
-      console.log('🗑️ [Pending Projects] Attempting to delete project:', {
-        projectId,
-        projectName: projectToDelete.name,
-        fullProject: projectToDelete,
-      });
 
       if (!projectId) {
         throw new Error('Project ID not found. Cannot delete project.');
       }
 
       await deleteProjectMutation.mutateAsync(projectId);
-      console.log('✅ [Pending Projects] Project deleted successfully');
       setShowDeleteConfirm(false);
       setProjectToDelete(null);
       setIsDeleting(false);
@@ -233,7 +219,7 @@ export default function PendingProjectsScreen() {
           pendingProjects.map((project: any, index: number) => {
             const gcAnalysis = project.gcEditedAnalysis || project.acceptedRequest?.gcEditedAnalysis || project.aiAnalysis;
             const budget = project.budget || project.acceptedRequest?.estimatedBudget || gcAnalysis?.budget || gcAnalysis?.estimatedBudget || 0;
-            const paymentAmount = budget * 0.5;
+            const paymentAmount = budget * 1.0;
             const gc = project.acceptedRequest?.contractor || project.acceptedRequest?.contractorProfile;
             const projectId = project.id || project.projectId || `pending-${index}`;
             const uniqueKey = `pending-${projectId}-${index}`;

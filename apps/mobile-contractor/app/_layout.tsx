@@ -21,6 +21,7 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InvestmentProvider } from '../contexts/InvestmentContext';
+import { AppAlertProvider } from "../components/AppAlertProvider";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -53,12 +54,14 @@ export default function RootLayout() {
     <InvestmentProvider>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider value={DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="contractor" options={{ headerShown: false }} />
-            <Stack.Screen name="chat" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style="auto" />
+          <AppAlertProvider>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="contractor" options={{ headerShown: false }} />
+              <Stack.Screen name="chat" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style="auto" />
+          </AppAlertProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </InvestmentProvider>

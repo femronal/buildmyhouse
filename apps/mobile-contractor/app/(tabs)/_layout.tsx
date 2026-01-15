@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Compass, ShoppingBag, Wallet } from "lucide-react-native";
+import { Home, Wallet } from "lucide-react-native";
 import { View, Text, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 
@@ -60,28 +60,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className={`p-2 rounded-xl ${focused ? 'bg-black' : ''}`}>
               <Home size={22} color={focused ? '#FFFFFF' : color} strokeWidth={2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Explore",
-          tabBarIcon: ({ color, focused }) => (
-            <View className={`p-2 rounded-xl ${focused ? 'bg-black' : ''}`}>
-              <Compass size={22} color={focused ? '#FFFFFF' : color} strokeWidth={2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="shop"
-        options={{
-          title: "Shop",
-          tabBarIcon: ({ color, focused }) => (
-            <View className={`p-2 rounded-xl ${focused ? 'bg-black' : ''}`}>
-              <ShoppingBag size={22} color={focused ? '#FFFFFF' : color} strokeWidth={2.5} />
             </View>
           ),
         }}

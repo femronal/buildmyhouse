@@ -6,61 +6,252 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Starting database seed...');
 
-  // Clear existing data (optional - comment out if you want to keep existing data)
-  console.log('🧹 Cleaning existing data...');
-  await prisma.review.deleteMany();
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.material.deleteMany();
-  await prisma.contractor.deleteMany();
-  await prisma.payment.deleteMany();
-  await prisma.stage.deleteMany();
-// Delete in order to respect foreign key constraints
-await prisma.designImage.deleteMany();
-await prisma.design.deleteMany();
-await prisma.project.deleteMany();
-await prisma.message.deleteMany();
-await prisma.conversation.deleteMany();
-await prisma.user.deleteMany();
+  // IMPORTANT: Set RESET_DB=true in environment to clear existing data
+  // This prevents accidental data loss during development
+  const shouldReset = process.env.RESET_DB === 'true';
+  
+  if (shouldReset) {
+    // Clear existing data (only if RESET_DB=true)
+    console.log('🧹 Cleaning existing data...');
+    await prisma.review.deleteMany();
+    await prisma.orderItem.deleteMany();
+    await prisma.order.deleteMany();
+    await prisma.material.deleteMany();
+    await prisma.contractor.deleteMany();
+    await prisma.payment.deleteMany();
+    await prisma.stage.deleteMany();
+    // Delete in order to respect foreign key constraints
+    await prisma.designImage.deleteMany();
+    await prisma.design.deleteMany();
+    await prisma.project.deleteMany();
+    await prisma.message.deleteMany();
+    await prisma.conversation.deleteMany();
+    await prisma.user.deleteMany();
+  } else {
+    console.log('⚠️  Skipping data deletion (RESET_DB not set to "true")');
+    console.log('   To reset database, run: RESET_DB=true pnpm prisma:seed');
+    console.log('   Existing data will be preserved and seed data will be added if users don\'t exist.');
+  }
 
   // Hash password for all users
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Create Users
+  // Create Users (only if they don't exist)
   console.log('👥 Creating users...');
   
-  const homeowner = await prisma.user.create({
-    data: {
-      email: 'homeowner@example.com',
-      password: hashedPassword,
-      fullName: 'John Homeowner',
-      phone: '+1234567890',
-      role: 'homeowner',
-      verified: true,
-    },
+  let homeowner = await prisma.user.findUnique({
+    where: { email: 'homeowner@example.com' },
   });
+  
+  if (!homeowner) {
+    homeowner = await prisma.user.create({
+      data: {
+        email: 'homeowner@example.com',
+        password: hashedPassword,
+        fullName: 'John Homeowner',
+        phone: '+1234567890',
+        role: 'homeowner',
+        verified: true,
+      },
+    });
+  } else {
+    console.log('   Homeowner user already exists, skipping creation');
+  }
 
-  const generalContractor = await prisma.user.create({
-    data: {
-      email: 'gc@example.com',
-      password: hashedPassword,
-      fullName: 'Mike Contractor',
-      phone: '+1234567891',
-      role: 'general_contractor',
-      verified: true,
-    },
+  let generalContractor = await prisma.user.findUnique({
+    where: { email: 'gc@example.com' },
   });
+  
+  if (!generalContractor) {
+    generalContractor = await prisma.user.create({
+      data: {
+        email: 'gc@example.com',
+        password: hashedPassword,
+        fullName: 'Mike Contractor',
+        phone: '+1234567891',
+        role: 'general_contractor',
+        verified: true,
+      },
+    });
+  } else {
+    console.log('   General Contractor user already exists, skipping creation');
+  }
 
-  const subcontractor = await prisma.user.create({
-    data: {
-      email: 'sub@example.com',
-      password: hashedPassword,
-      fullName: 'Sarah Subcontractor',
-      phone: '+1234567892',
-      role: 'subcontractor',
-      verified: true,
+  // Create Subcontractors with different specialties
+  console.log('🔧 Creating subcontractors...');
+  const subcontractorsData = [
+    {
+      email: 'electrical@example.com',
+      fullName: 'PowerLine Electricals',
+      phone: '+2348011111111',
+      contractor: {
+        name: 'PowerLine Electricals',
+        specialty: 'Electrical',
+        type: 'subcontractor',
+        hiringFee: 3500,
+        rating: 4.9,
+        reviews: 156,
+        projects: 89,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Professional electrical installation and repair services',
+        imageUrl: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&q=80',
+      },
     },
-  });
+    {
+      email: 'plumbing@example.com',
+      fullName: 'AquaFlow Plumbing Co.',
+      phone: '+2348022222222',
+      contractor: {
+        name: 'AquaFlow Plumbing Co.',
+        specialty: 'Plumbing',
+        type: 'subcontractor',
+        hiringFee: 3200,
+        rating: 4.8,
+        reviews: 124,
+        projects: 67,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Expert plumbing services for residential and commercial projects',
+        imageUrl: 'https://images.unsplash.com/photo-1581244277943-fe4a9c777189?w=400&q=80',
+      },
+    },
+    {
+      email: 'foundation@example.com',
+      fullName: 'Emeka Builders',
+      phone: '+2348033333333',
+      contractor: {
+        name: 'Emeka Builders',
+        specialty: 'Foundation',
+        type: 'subcontractor',
+        hiringFee: 4500,
+        rating: 4.9,
+        reviews: 98,
+        projects: 72,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Specialized foundation and concrete work',
+        imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
+      },
+    },
+    {
+      email: 'roofing@example.com',
+      fullName: 'TopRoof Contractors',
+      phone: '+2348044444444',
+      contractor: {
+        name: 'TopRoof Contractors',
+        specialty: 'Roofing',
+        type: 'subcontractor',
+        hiringFee: 4000,
+        rating: 4.7,
+        reviews: 112,
+        projects: 85,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Quality roofing solutions for all building types',
+        imageUrl: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=400&q=80',
+      },
+    },
+    {
+      email: 'hvac@example.com',
+      fullName: 'CoolAir HVAC Services',
+      phone: '+2348055555555',
+      contractor: {
+        name: 'CoolAir HVAC Services',
+        specialty: 'HVAC',
+        type: 'subcontractor',
+        hiringFee: 3800,
+        rating: 4.6,
+        reviews: 87,
+        projects: 64,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Heating, ventilation, and air conditioning installation',
+        imageUrl: 'https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=400&q=80',
+      },
+    },
+    {
+      email: 'painting@example.com',
+      fullName: 'Perfect Paint Pro',
+      phone: '+2348066666666',
+      contractor: {
+        name: 'Perfect Paint Pro',
+        specialty: 'Painting',
+        type: 'subcontractor',
+        hiringFee: 2500,
+        rating: 4.5,
+        reviews: 95,
+        projects: 78,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Professional interior and exterior painting services',
+        imageUrl: 'https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=400&q=80',
+      },
+    },
+    {
+      email: 'flooring@example.com',
+      fullName: 'Elite Flooring Solutions',
+      phone: '+2348077777777',
+      contractor: {
+        name: 'Elite Flooring Solutions',
+        specialty: 'Flooring',
+        type: 'subcontractor',
+        hiringFee: 3000,
+        rating: 4.8,
+        reviews: 103,
+        projects: 76,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Premium flooring installation and repair',
+        imageUrl: 'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&q=80',
+      },
+    },
+    {
+      email: 'carpentry@example.com',
+      fullName: 'Master Carpenters Ltd',
+      phone: '+2348088888888',
+      contractor: {
+        name: 'Master Carpenters Ltd',
+        specialty: 'Carpentry',
+        type: 'subcontractor',
+        hiringFee: 2800,
+        rating: 4.7,
+        reviews: 89,
+        projects: 65,
+        verified: true,
+        location: 'Lagos, Nigeria',
+        description: 'Expert carpentry and woodworking services',
+        imageUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=400&q=80',
+      },
+    },
+  ];
+
+  const createdSubcontractors = [];
+  for (const subData of subcontractorsData) {
+    const user = await prisma.user.create({
+      data: {
+        email: subData.email,
+        password: hashedPassword,
+        fullName: subData.fullName,
+        phone: subData.phone,
+        role: 'subcontractor',
+        verified: subData.contractor.verified,
+      },
+    });
+
+    const contractor = await prisma.contractor.create({
+      data: {
+        userId: user.id,
+        ...subData.contractor,
+      },
+    });
+    createdSubcontractors.push({ user, contractor });
+  }
+
+  console.log(`✅ Created ${subcontractorsData.length} subcontractors`);
+
+  // Keep the original subcontractor for backward compatibility
+  const subcontractor = createdSubcontractors[0].user;
 
   const vendor = await prisma.user.create({
     data: {
@@ -336,30 +527,44 @@ await prisma.user.deleteMany();
 
   console.log(`✅ Created ${additionalGCs.length} additional General Contractors`);
 
-  // Create Projects
+  // Create Projects (only if they don't exist)
   console.log('🏠 Creating projects...');
-  const project1 = await prisma.project.create({
-    data: {
+  let project1 = await prisma.project.findFirst({
+    where: {
       name: 'Modern Family Home',
-      address: '123 Main St, Anytown, CA 94102, USA',
-      street: '123 Main St',
-      city: 'Anytown',
-      state: 'California',
-      zipCode: '94102',
-      country: 'USA',
-      latitude: 37.7749,
-      longitude: -122.4194,
       homeownerId: homeowner.id,
-      generalContractorId: generalContractor.id,
-      status: 'active',
-      budget: 250000,
-      spent: 125000,
-      progress: 50,
-      currentStage: 'Framing',
-      startDate: new Date('2024-01-15'),
-      dueDate: new Date('2024-12-31'),
     },
   });
+  
+  let project1WasCreated = false;
+  if (!project1) {
+    project1 = await prisma.project.create({
+      data: {
+        name: 'Modern Family Home',
+        address: '123 Main St, Anytown, CA 94102, USA',
+        street: '123 Main St',
+        city: 'Anytown',
+        state: 'California',
+        zipCode: '94102',
+        country: 'USA',
+        latitude: 37.7749,
+        longitude: -122.4194,
+        homeownerId: homeowner.id,
+        generalContractorId: generalContractor.id,
+        status: 'active',
+        budget: 250000,
+        spent: 0, // Start from scratch - no money spent yet
+        progress: 0, // Start from scratch - 0% progress
+        currentStage: null, // No current stage - project just started
+        startDate: new Date(), // Use current date as start date
+        dueDate: new Date('2024-12-31'),
+      },
+    });
+    project1WasCreated = true;
+    console.log('   Created seed project: Modern Family Home (starting from scratch)');
+  } else {
+    console.log('   Seed project already exists, skipping creation (preserving your progress!)');
+  }
 
   const project2 = await prisma.project.create({
     data: {
@@ -380,29 +585,26 @@ await prisma.user.deleteMany();
     },
   });
 
-  // Create Stages
+  // Create Stages (all starting from scratch - not_started)
   console.log('📋 Creating project stages...');
   const stages = [
     {
       projectId: project1.id,
       name: 'Foundation',
-      status: 'completed',
+      status: 'not_started', // Start from scratch
       order: 1,
       estimatedCost: 30000,
-      actualCost: 28000,
       estimatedDuration: '2 weeks',
-      startDate: new Date('2024-01-15'),
-      completionDate: new Date('2024-01-29'),
+      // No actualCost, startDate, or completionDate - project just started
     },
     {
       projectId: project1.id,
       name: 'Framing',
-      status: 'in_progress',
+      status: 'not_started', // Start from scratch
       order: 2,
       estimatedCost: 50000,
-      actualCost: 45000,
       estimatedDuration: '3 weeks',
-      startDate: new Date('2024-02-01'),
+      // No actualCost, startDate, or completionDate - project just started
     },
     {
       projectId: project1.id,
@@ -430,8 +632,14 @@ await prisma.user.deleteMany();
     },
   ];
 
-  for (const stageData of stages) {
-    await prisma.stage.create({ data: stageData });
+  // Only create stages if project was just created (not if it already existed)
+  if (project1WasCreated) {
+    for (const stageData of stages) {
+      await prisma.stage.create({ data: stageData });
+    }
+    console.log(`   Created ${stages.length} stages for project (all starting from scratch)`);
+  } else {
+    console.log('   Stages already exist for project, skipping creation (preserving your progress!)');
   }
 
   // Create Materials
@@ -544,22 +752,27 @@ await prisma.user.deleteMany();
   });
 
   // Create Payments
+  // Note: Since project starts from scratch, we only create the initial activation payment
+  // Stage payments will be created as stages are completed in real-time
   console.log('💳 Creating payments...');
-  const foundationStage = await prisma.stage.findFirst({
-    where: { projectId: project1.id, order: 1 },
-  });
-
-  if (foundationStage) {
+  
+  // Only create activation payment if project was just created
+  if (project1WasCreated) {
+    // Initial project activation payment (100% of budget to activate project)
+    // This is required to activate the project, but stages start from scratch
     await prisma.payment.create({
       data: {
         projectId: project1.id,
-        stageId: foundationStage.id,
-        amount: 28000,
+        amount: 250000, // 100% of $250,000 budget - required for activation
         status: 'completed',
         method: 'stripe',
-        transactionId: 'txn_test_123456',
+        transactionId: 'txn_activation_123456',
       },
     });
+    console.log('   Created activation payment for project');
+    // No stage payments - project starts from scratch, payments will be made as stages progress
+  } else {
+    console.log('   Payments already exist for project, skipping creation (preserving your progress!)');
   }
 
   console.log('✅ Database seed completed successfully!');
@@ -571,9 +784,12 @@ await prisma.user.deleteMany();
   console.log('\nGeneral Contractor:');
   console.log('  Email: gc@example.com');
   console.log('  Password: password123');
-  console.log('\nSubcontractor:');
-  console.log('  Email: sub@example.com');
-  console.log('  Password: password123');
+  console.log('\nSubcontractors:');
+  subcontractorsData.forEach((sub, index) => {
+    console.log(`  ${index + 1}. ${sub.contractor.specialty}:`);
+    console.log(`     Email: ${sub.email}`);
+    console.log(`     Password: password123`);
+  });
   console.log('\nVendor:');
   console.log('  Email: vendor@example.com');
   console.log('  Password: password123');

@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
+  Query,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -63,15 +64,209 @@ export class ProjectsController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Request() req: any) {
+  findAll(@Request() req: any, @Query('status') status?: string) {
     const userId = req.user.sub;
     const userRole = req.user.role;
 
     // Admin can see all projects, others see only their own
     if (userRole === 'admin') {
-      return this.projectsService.getAllProjects();
+      return this.projectsService.getAllProjects(status);
     }
-    return this.projectsService.getUserProjects(userId);
+    return this.projectsService.getUserProjects(userId, status);
+  }
+
+  // Stages route must come BEFORE :id route to avoid route matching conflicts
+  @Patch(':projectId/stages/:stageId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin', 'homeowner')
+  async updateStage(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: { status: 'not_started' | 'in_progress' | 'completed' | 'blocked' },
+  ) {
+    const userId = req.user.sub;
+    const userRole = req.user.role;
+    
+    // Verify user has permission
+    const project = await this.projectsService.getProject(projectId);
+    
+    // Admins can always update
+    if (userRole === 'admin') {
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+    }
+    
+    // Homeowners can only set status to 'in_progress' (approve payment) for their own projects
+    if (userRole === 'homeowner') {
+      if (project.homeownerId !== userId) {
+        throw new ForbiddenException('You do not have permission to update stages for this project');
+      }
+      if (body.status !== 'in_progress') {
+        throw new ForbiddenException('Homeowners can only approve payment (set status to in_progress)');
+      }
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+    }
+    
+    // GCs can update if they're the contractor for this project
+    if (userRole === 'general_contractor' && project.generalContractorId === userId) {
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+    }
+
+    throw new ForbiddenException('You do not have permission to update stages for this project');
+  }
+
+  // ==================== Stage Documentation Endpoints ====================
+
+  // Team Members
+  @Post(':projectId/stages/:stageId/team-members')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async addTeamMember(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    const userId = req.user.sub;
+    const project = await this.projectsService.getProject(projectId);
+    if (project.generalContractorId !== userId && req.user.role !== 'admin') {
+      throw new ForbiddenException('You do not have permission to add team members');
+    }
+    return this.projectsService.addStageTeamMember(stageId, body);
+  }
+
+  @Get(':projectId/stages/:stageId/team-members')
+  @UseGuards(JwtAuthGuard)
+  async getTeamMembers(@Param('stageId') stageId: string) {
+    return this.projectsService.getStageTeamMembers(stageId);
+  }
+
+  @Patch('stages/team-members/:teamMemberId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async updateTeamMember(@Param('teamMemberId') teamMemberId: string, @Body() body: any) {
+    return this.projectsService.updateStageTeamMember(teamMemberId, body);
+  }
+
+  @Delete('stages/team-members/:teamMemberId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async deleteTeamMember(@Param('teamMemberId') teamMemberId: string) {
+    return this.projectsService.deleteStageTeamMember(teamMemberId);
+  }
+
+  // Materials
+  @Post(':projectId/stages/:stageId/materials')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async addMaterial(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    const userId = req.user.sub;
+    const project = await this.projectsService.getProject(projectId);
+    if (project.generalContractorId !== userId && req.user.role !== 'admin') {
+      throw new ForbiddenException('You do not have permission to add materials');
+    }
+    return this.projectsService.addStageMaterial(stageId, body);
+  }
+
+  @Get(':projectId/stages/:stageId/materials')
+  @UseGuards(JwtAuthGuard)
+  async getMaterials(@Param('stageId') stageId: string) {
+    return this.projectsService.getStageMaterials(stageId);
+  }
+
+  @Patch('stages/materials/:materialId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async updateMaterial(@Param('materialId') materialId: string, @Body() body: any) {
+    return this.projectsService.updateStageMaterial(materialId, body);
+  }
+
+  @Delete('stages/materials/:materialId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async deleteMaterial(@Param('materialId') materialId: string) {
+    return this.projectsService.deleteStageMaterial(materialId);
+  }
+
+  // Media
+  @Post(':projectId/stages/:stageId/media')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async addMedia(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    const userId = req.user.sub;
+    const project = await this.projectsService.getProject(projectId);
+    if (project.generalContractorId !== userId && req.user.role !== 'admin') {
+      throw new ForbiddenException('You do not have permission to add media');
+    }
+    return this.projectsService.addStageMedia(stageId, body);
+  }
+
+  @Get(':projectId/stages/:stageId/media')
+  @UseGuards(JwtAuthGuard)
+  async getMedia(@Param('stageId') stageId: string) {
+    return this.projectsService.getStageMedia(stageId);
+  }
+
+  @Patch('stages/media/:mediaId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async updateMedia(@Param('mediaId') mediaId: string, @Body() body: any) {
+    return this.projectsService.updateStageMedia(mediaId, body);
+  }
+
+  @Delete('stages/media/:mediaId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async deleteMedia(@Param('mediaId') mediaId: string) {
+    return this.projectsService.deleteStageMedia(mediaId);
+  }
+
+  // Documents
+  @Post(':projectId/stages/:stageId/documents')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async addDocument(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    const userId = req.user.sub;
+    const project = await this.projectsService.getProject(projectId);
+    if (project.generalContractorId !== userId && req.user.role !== 'admin') {
+      throw new ForbiddenException('You do not have permission to add documents');
+    }
+    return this.projectsService.addStageDocument(stageId, body);
+  }
+
+  @Get(':projectId/stages/:stageId/documents')
+  @UseGuards(JwtAuthGuard)
+  async getDocuments(@Param('stageId') stageId: string) {
+    return this.projectsService.getStageDocuments(stageId);
+  }
+
+  @Patch('stages/documents/:documentId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async updateDocument(@Param('documentId') documentId: string, @Body() body: any) {
+    return this.projectsService.updateStageDocument(documentId, body);
+  }
+
+  @Delete('stages/documents/:documentId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  async deleteDocument(@Param('documentId') documentId: string) {
+    return this.projectsService.deleteStageDocument(documentId);
   }
 
   @Get(':id')
@@ -82,16 +277,24 @@ export class ProjectsController {
 
     const project = await this.projectsService.getProject(id);
 
-    // Check authorization: user must be homeowner, contractor, or admin
-    if (
-      userRole !== 'admin' &&
-      project.homeownerId !== userId &&
-      project.generalContractorId !== userId
-    ) {
-      throw new ForbiddenException('You do not have permission to view this project');
+    // Check authorization: user must be homeowner, contractor, admin, or subcontractor with accepted request
+    if (userRole === 'admin') {
+      return project;
     }
 
-    return project;
+    if (project.homeownerId === userId || project.generalContractorId === userId) {
+      return project;
+    }
+
+    // Check if user is a subcontractor with an accepted request for this project
+    if (userRole === 'subcontractor') {
+      const hasAcceptedRequest = await this.projectsService.hasAcceptedRequestForProject(userId, id);
+      if (hasAcceptedRequest) {
+        return project;
+      }
+    }
+
+    throw new ForbiddenException('You do not have permission to view this project');
   }
 
   @Patch(':id')
@@ -108,10 +311,11 @@ export class ProjectsController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('homeowner', 'admin')
+  @Roles('homeowner', 'general_contractor', 'admin')
   remove(@Param('id') id: string, @Request() req: any) {
     const userId = req.user.sub;
-    return this.projectsService.deleteProject(id, userId);
+    const userRole = req.user.role;
+    return this.projectsService.deleteProject(id, userId, userRole);
   }
 }
 

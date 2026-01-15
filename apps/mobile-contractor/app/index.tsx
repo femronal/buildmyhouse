@@ -18,7 +18,7 @@ export default function ContractorStartScreen() {
         className="text-lg text-blue-400 mb-12 text-center"
         style={{ fontFamily: 'Poppins_600SemiBold' }}
       >
-        Contractor & Vendor Portal
+        General Contractor Portal
       </Text>
       
       <TouchableOpacity

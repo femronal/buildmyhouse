@@ -75,26 +75,7 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Vendor Dashboard Button */}
-        {userRole === 'vendor' && (
-          <TouchableOpacity
-            onPress={() => router.push('/contractor/vendor-dashboard')}
-            className="bg-green-600 rounded-2xl p-6 mb-6 flex-row items-center"
-          >
-            <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
-              <Package size={24} color="#10B981" strokeWidth={2.5} />
-            </View>
-            <View className="flex-1 ml-4">
-              <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Vendor Dashboard
-              </Text>
-              <Text className="text-green-100 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Manage your products & orders
-              </Text>
-            </View>
-            <ChevronRight size={24} color="#FFFFFF" strokeWidth={2} />
-          </TouchableOpacity>
-        )}
+        {/* Vendor features removed for MVP */}
         {/* Profile Card */}
         <View className="bg-black rounded-3xl p-6 mb-6 flex-row items-center">
           {isLoading ? (

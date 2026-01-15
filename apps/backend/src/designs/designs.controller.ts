@@ -31,7 +31,6 @@ export class DesignsController {
     const uploadsDir = join(process.cwd(), 'uploads', 'designs');
     if (!existsSync(uploadsDir)) {
       mkdirSync(uploadsDir, { recursive: true });
-      console.log('📁 Created uploads directory:', uploadsDir);
     }
   }
 
@@ -78,18 +77,11 @@ export class DesignsController {
     @Body() body: any,
   ) {
     try {
-      console.log('📥 [DesignsController] Received create design request');
-      console.log('📥 [DesignsController] Files:', files?.length || 0);
-      console.log('📥 [DesignsController] Body keys:', Object.keys(body));
-      console.log('📥 [DesignsController] constructionPhases:', body.constructionPhases ? (typeof body.constructionPhases === 'string' ? body.constructionPhases.substring(0, 100) + '...' : body.constructionPhases) : 'not provided');
-
       if (!files || files.length === 0) {
         throw new BadRequestException('At least one image is required');
       }
 
       const userId = req.user?.sub;
-      console.log('👤 [DesignsController] User ID:', userId);
-      console.log('👤 [DesignsController] User object:', req.user);
 
       if (!userId) {
         console.error('❌ [DesignsController] No user ID found in request');
@@ -113,8 +105,6 @@ export class DesignsController {
         images: [], // Will be populated below
       };
 
-      console.log('📋 [DesignsController] Parsed DTO:', createDesignDto);
-
       // Parse image labels if sent as array or individual fields
       const imageLabels: string[] = [];
       if (Array.isArray(body.imageLabels)) {
@@ -123,8 +113,6 @@ export class DesignsController {
         imageLabels.push(body.imageLabels);
       }
 
-      console.log('🏷️ [DesignsController] Image labels:', imageLabels);
-
       // Map uploaded files to image DTOs
       const images = files.map((file, index) => ({
         url: `/uploads/designs/${file.filename}`, // In production, upload to S3
@@ -132,14 +120,10 @@ export class DesignsController {
         order: index,
       }));
 
-      console.log('🖼️ [DesignsController] Mapped images:', images);
-
       const result = await this.designsService.createDesign(userId, {
         ...createDesignDto,
         images,
       });
-
-      console.log('✅ [DesignsController] Design created successfully:', result.id);
       return result;
     } catch (error: any) {
       console.error('❌ [DesignsController] Error creating design:', error);
@@ -174,16 +158,13 @@ export class DesignsController {
   @Roles('general_contractor', 'admin')
   async deleteDesign(@Param('id') id: string, @Request() req: any) {
     try {
-      console.log('🗑️ [DesignsController] Delete request for design:', id);
       const userId = req.user?.sub;
-      console.log('👤 [DesignsController] User ID:', userId);
       
       if (!userId) {
         throw new BadRequestException('User ID not found in token');
       }
 
       const result = await this.designsService.deleteDesign(id, userId);
-      console.log('✅ [DesignsController] Design deleted successfully:', id);
       return result;
     } catch (error: any) {
       console.error('❌ [DesignsController] Error deleting design:', error);

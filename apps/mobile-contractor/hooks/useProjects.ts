@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/projectService';
+import { requestService } from '@/services/requestService';
 
 /**
  * Get all projects for the logged-in GC
@@ -39,6 +40,40 @@ export function useProject(projectId: string | null) {
     queryKey: ['gc-projects', projectId],
     queryFn: () => projectService.getProject(projectId!),
     enabled: !!projectId,
+  });
+}
+
+/**
+ * Update stage status
+ */
+export function useUpdateStageStatus() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ projectId, stageId, status }: { projectId: string; stageId: string; status: 'not_started' | 'in_progress' | 'completed' | 'blocked' }) =>
+      projectService.updateStageStatus(projectId, stageId, status),
+    onSuccess: (_, variables) => {
+      // Invalidate project queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', variables.projectId] });
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', 'all'] });
+    },
+  });
+}
+
+/**
+ * Delete a project
+ */
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (projectId: string) => projectService.deleteProject(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', 'unpaid'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', 'active'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', 'all'] });
+    },
   });
 }
 

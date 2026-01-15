@@ -1,23 +1,38 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, FileText, MapPin, DollarSign, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3 } from "lucide-react-native";
+import { ArrowLeft, FileText, MapPin, DollarSign, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
+import { useAppAlert } from "../../components/AppAlertProvider";
+
+function moneyToCents(value: unknown): number {
+  const n =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value.replace(/[^0-9.-]/g, ""))
+        : NaN;
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 100);
+}
+
+function sumPhaseCostCents(phases: any[]): number {
+  return phases.reduce((sum, p) => {
+    const cents = moneyToCents(p?.estimatedCost);
+    return sum + (Number.isFinite(cents) ? cents : 0);
+  }, 0);
+}
 
 export default function GCRequestDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { showAlert } = useAppAlert();
   const { data: pendingRequests = [], refetch, isLoading } = usePendingRequests();
   const acceptRequestMutation = useAcceptRequest();
   const rejectRequestMutation = useRejectRequest();
 
   // Find the specific request
-  const request = pendingRequests.find(r => r.id === id);
-  
-  console.log('🔍 [GCRequestDetail] Request ID from params:', id);
-  console.log('🔍 [GCRequestDetail] Pending requests count:', pendingRequests.length);
-  console.log('🔍 [GCRequestDetail] Found request:', request ? 'YES' : 'NO');
-  console.log('🔍 [GCRequestDetail] Is loading:', isLoading);
+  const request = pendingRequests.find((r) => r.id === id);
 
   // Editable AI Analysis fields
   const [editedAnalysis, setEditedAnalysis] = useState<any>(null);
@@ -71,28 +86,90 @@ export default function GCRequestDetailScreen() {
 
   const handleAccept = async () => {
     if (!request) {
-      console.warn('⚠️ [handleAccept] No request found');
+      showAlert('Error', 'Request not found. Please go back and try again.');
+      return;
+    }
+    const req = request;
+
+    const budgetCents = moneyToCents(estimatedBudget);
+    if (!estimatedBudget || !Number.isFinite(budgetCents) || budgetCents <= 0) {
+      showAlert('Required Fields', 'Please provide a valid estimated budget.');
+      return;
+    }
+    if (!estimatedDuration?.trim()) {
+      showAlert('Required Fields', 'Please provide an estimated duration.');
       return;
     }
 
-    if (!estimatedBudget || !estimatedDuration) {
-      Alert.alert('Required Fields', 'Please provide both estimated budget and duration.');
+    // Enforce all visible/expected analysis fields (GC Notes is optional)
+    const analysis = editedAnalysis || {};
+    const rooms = analysis.rooms;
+    const materials = analysis.materials;
+    const features = analysis.features;
+    const phases = analysis.phases;
+    const summary = analysis.summary;
+
+    if (!Array.isArray(rooms) || rooms.length === 0 || rooms.some((r: any) => !String(r || '').trim())) {
+      showAlert('Required Fields', 'Please fill in all Rooms (and ensure none are empty).');
+      return;
+    }
+    if (!Array.isArray(materials) || materials.length === 0 || materials.some((m: any) => !String(m || '').trim())) {
+      showAlert('Required Fields', 'Please fill in all Key Materials (and ensure none are empty).');
+      return;
+    }
+    if (!Array.isArray(features) || features.length === 0 || features.some((f: any) => !String(f || '').trim())) {
+      showAlert('Required Fields', 'Please fill in all Features (and ensure none are empty).');
+      return;
+    }
+    if (!Array.isArray(phases) || phases.length === 0) {
+      showAlert('Required Fields', 'Please add at least one Construction Phase.');
+      return;
+    }
+    for (let i = 0; i < phases.length; i++) {
+      const p = phases[i];
+      if (!String(p?.name || '').trim()) {
+        showAlert('Required Fields', `Please provide a name for phase ${i + 1}.`);
+        return;
+      }
+      if (!String(p?.description || '').trim()) {
+        showAlert('Required Fields', `Please provide a description for phase ${i + 1}.`);
+        return;
+      }
+      if (!String(p?.estimatedDuration || '').trim()) {
+        showAlert('Required Fields', `Please provide a duration for phase ${i + 1}.`);
+        return;
+      }
+      const costCents = moneyToCents(p?.estimatedCost);
+      if (!Number.isFinite(costCents) || costCents <= 0) {
+        showAlert('Required Fields', `Please provide a valid cost for phase ${i + 1}.`);
+        return;
+      }
+    }
+    if (!String(summary || '').trim()) {
+      showAlert('Required Fields', 'Please fill in the Project Summary.');
+      return;
+    }
+
+    // Budget integrity check: sum of phase costs must equal project estimated budget
+    const totalPhaseCents = sumPhaseCostCents(phases);
+    if (totalPhaseCents !== budgetCents) {
+      showAlert(
+        'Validation Error',
+        `The total of all phase costs must equal the estimated project budget.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nBudget: $${(budgetCents / 100).toLocaleString()}`
+      );
       return;
     }
 
     if (isSubmitting) {
-      console.warn('⚠️ [handleAccept] Already submitting, ignoring duplicate call');
       return;
     }
 
-    console.log('🚀 [handleAccept] Starting accept process');
     setIsSubmitting(true);
     
     // Safety timeout - if mutation takes longer than 30 seconds, reset state
-    let timeoutId: NodeJS.Timeout | null = setTimeout(() => {
-      console.error('⏱️ [handleAccept] Timeout - request took too long');
+    let timeoutId: ReturnType<typeof setTimeout> | null = setTimeout(() => {
       setIsSubmitting(false);
-      Alert.alert(
+      showAlert(
         'Request Timeout',
         'The request is taking longer than expected. Please check your connection and try again.',
         [{ text: 'OK' }]
@@ -100,21 +177,13 @@ export default function GCRequestDetailScreen() {
     }, 30000);
 
     try {
-      console.log('📤 [handleAccept] Starting accept process');
-      console.log('📊 [handleAccept] Request ID:', request.id);
-      console.log('📊 [handleAccept] Data:', {
-        estimatedBudget: parseFloat(estimatedBudget),
-        estimatedDuration,
-        gcNotes: gcNotes || undefined,
-      });
-
       // Include edited AI analysis in notes as JSON
       const notesWithAnalysis = gcNotes 
         ? `${gcNotes}\n\n[Edited AI Analysis]\n${JSON.stringify(editedAnalysis, null, 2)}`
         : `[Edited AI Analysis]\n${JSON.stringify(editedAnalysis, null, 2)}`;
 
       const acceptData = {
-        requestId: request.id,
+        requestId: req.id,
         data: {
           estimatedBudget: parseFloat(estimatedBudget),
           estimatedDuration,
@@ -122,13 +191,7 @@ export default function GCRequestDetailScreen() {
         },
       };
 
-      console.log('📤 [handleAccept] Calling mutation with:', acceptData);
-
-      const result = await acceptRequestMutation.mutateAsync(acceptData);
-
-      console.log('✅ [handleAccept] Mutation successful!');
-      console.log('✅ [handleAccept] Result type:', typeof result);
-      console.log('✅ [handleAccept] Result:', JSON.stringify(result, null, 2));
+      await acceptRequestMutation.mutateAsync(acceptData);
 
       // Clear timeout since we succeeded
       if (timeoutId) {
@@ -137,7 +200,7 @@ export default function GCRequestDetailScreen() {
       }
 
       // Show success and navigate immediately (don't wait for refetch)
-      Alert.alert(
+      showAlert(
         'Project Accepted! ✅',
         'You have successfully accepted this project request. The homeowner has been notified and can now proceed with the project.',
         [
@@ -145,7 +208,6 @@ export default function GCRequestDetailScreen() {
             text: 'OK',
             onPress: () => {
               // Navigate immediately - don't wait for refetch
-              console.log('🧭 [handleAccept] Navigating to dashboard immediately...');
               // Use setTimeout to ensure navigation happens after alert dismisses
               setTimeout(() => {
                 router.replace('/contractor/gc-dashboard');
@@ -154,7 +216,7 @@ export default function GCRequestDetailScreen() {
               // Refetch in background (don't await)
               setTimeout(() => {
                 refetch().catch((refetchError) => {
-                  console.error('❌ [handleAccept] Error refetching (background):', refetchError);
+                  // Background refetch failure shouldn't block navigation.
                 });
               }, 500);
             },
@@ -162,12 +224,7 @@ export default function GCRequestDetailScreen() {
         ]
       );
     } catch (error: any) {
-      console.error('❌ [handleAccept] Error caught:', error);
-      console.error('❌ [handleAccept] Error type:', typeof error);
-      console.error('❌ [handleAccept] Error message:', error?.message);
-      console.error('❌ [handleAccept] Error stack:', error?.stack);
-      console.error('❌ [handleAccept] Error status:', error?.status);
-      console.error('❌ [handleAccept] Error data:', error?.data);
+      console.error('❌ [handleAccept] Failed to accept request:', error);
       
       let errorMessage = 'Failed to accept request. Please try again.';
       if (error?.message) {
@@ -186,24 +243,19 @@ export default function GCRequestDetailScreen() {
         timeoutId = null;
       }
 
-      Alert.alert(
-        'Error Accepting Request',
-        errorMessage,
-        [{ text: 'OK' }]
-      );
+      showAlert('Error Accepting Request', errorMessage, [{ text: 'OK' }]);
     } finally {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
       setIsSubmitting(false);
-      console.log('🏁 [handleAccept] Finally block - isSubmitting set to false');
     }
   };
 
   const handleReject = async () => {
     if (!request) return;
 
-    Alert.alert(
+    showAlert(
       'Reject Request',
       'Are you sure you want to reject this project request?',
       [
@@ -215,7 +267,7 @@ export default function GCRequestDetailScreen() {
             setIsSubmitting(true);
             try {
               await rejectRequestMutation.mutateAsync(request.id);
-              Alert.alert(
+              showAlert(
                 'Request Rejected',
                 'The homeowner has been notified.',
                 [
@@ -227,7 +279,7 @@ export default function GCRequestDetailScreen() {
               );
             } catch (error: any) {
               console.error('Error rejecting request:', error);
-              Alert.alert('Error', error.message || 'Failed to reject request. Please try again.');
+              showAlert('Error', error.message || 'Failed to reject request. Please try again.');
             } finally {
               setIsSubmitting(false);
             }
@@ -244,14 +296,14 @@ export default function GCRequestDetailScreen() {
         if (supported) {
           await Linking.openURL(request.project.planPdfUrl);
         } else {
-          Alert.alert('Error', 'Cannot open PDF URL');
+          showAlert('Error', 'Cannot open PDF URL');
         }
       } catch (error) {
         console.error('Error opening PDF:', error);
-        Alert.alert('Error', 'Failed to open PDF. Please try again.');
+        showAlert('Error', 'Failed to open PDF. Please try again.');
       }
     } else {
-      Alert.alert('No Plan Available', 'The project plan PDF is not available.');
+      showAlert('No Plan Available', 'The project plan PDF is not available.');
     }
   };
 
@@ -289,7 +341,10 @@ export default function GCRequestDetailScreen() {
     );
   }
 
-  const aiAnalysis = editedAnalysis || request.project.aiAnalysis || {};
+  // At this point request is guaranteed by the guard above (TS doesn't narrow across JSX well),
+  // so we bind a non-null reference for the render path.
+  const req = request!;
+  const aiAnalysis = editedAnalysis || req.project.aiAnalysis || {};
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -320,24 +375,24 @@ export default function GCRequestDetailScreen() {
           {/* Project Header */}
           <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
             <Text className="text-white text-2xl mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
-              {request.project.name || 'New Project'}
+              {req.project.name || 'New Project'}
             </Text>
             <View className="flex-row items-center mb-3">
               <User size={16} color="#9CA3AF" strokeWidth={2} />
               <Text className="text-gray-400 text-base ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {request.project.homeowner.fullName}
+                {req.project.homeowner.fullName}
               </Text>
             </View>
             <View className="flex-row items-center">
               <MapPin size={16} color="#9CA3AF" strokeWidth={2} />
               <Text className="text-gray-400 text-sm ml-2 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {request.project.address}
+                {req.project.address}
               </Text>
             </View>
           </View>
 
           {/* Plan PDF Section */}
-          {request.project.planPdfUrl && (
+          {req.project.planPdfUrl && (
             <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
               <View className="flex-row items-center justify-between mb-3">
                 <View className="flex-row items-center">
@@ -356,9 +411,9 @@ export default function GCRequestDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              {request.project.planFileName && (
+              {req.project.planFileName && (
                 <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {request.project.planFileName}
+                  {req.project.planFileName}
                 </Text>
               )}
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -368,7 +423,7 @@ export default function GCRequestDetailScreen() {
           )}
 
           {/* Editable AI Analysis Section */}
-          <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border-2 border-yellow-600/30">
+          <View className="bg-[#1E3A5F] rounded-2xl mb-4 border-2 border-yellow-600/30" style={{ padding: 20 }}>
             <View className="flex-row items-center justify-between mb-4">
               <View className="flex-row items-center">
                 <Edit3 size={20} color="#F59E0B" strokeWidth={2} />
@@ -527,7 +582,7 @@ export default function GCRequestDetailScreen() {
                   Construction Phases
                 </Text>
                 {aiAnalysis.phases.map((phase: any, index: number) => (
-                  <View key={index} className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900">
+                  <View key={index} className="bg-[#0A1628] rounded-xl mb-3 border border-blue-900" style={{ padding: 16 }}>
                     <TextInput
                       className="bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-base mb-2"
                       style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -553,10 +608,10 @@ export default function GCRequestDetailScreen() {
                       }}
                       multiline
                     />
-                    <View className="flex-row space-x-2">
+                    <View className="flex-row items-center" style={{ gap: 8 }}>
                       <TextInput
                         className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
                         placeholder="Duration"
                         placeholderTextColor="#6B7280"
                         value={phase.estimatedDuration || ''}
@@ -568,7 +623,7 @@ export default function GCRequestDetailScreen() {
                       />
                       <TextInput
                         className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
                         placeholder="Cost"
                         placeholderTextColor="#6B7280"
                         value={phase.estimatedCost?.toString() || ''}
@@ -585,9 +640,10 @@ export default function GCRequestDetailScreen() {
                           phases.splice(index, 1);
                           updateAnalysisField('phases', phases);
                         }}
-                        className="bg-red-600/20 rounded-lg px-3 py-2 justify-center"
+                        className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                        style={{ minWidth: 40 }}
                       >
-                        <Text className="text-red-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>×</Text>
+                        <X size={18} color="#F87171" strokeWidth={2} />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -648,21 +704,22 @@ export default function GCRequestDetailScreen() {
               Contact Information
             </Text>
             <Text className="text-blue-400 text-base mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {request.project.homeowner.email}
+              {req.project.homeowner.email}
             </Text>
-            {request.project.homeowner.phone && (
+            {req.project.homeowner.phone && (
               <Text className="text-gray-300 text-base" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {request.project.homeowner.phone}
+                {req.project.homeowner.phone}
               </Text>
             )}
           </View>
 
           {/* Action Buttons */}
-          <View className="flex-row space-x-3 mb-8">
+          <View className="flex-row mb-8" style={{ gap: 12 }}>
             <TouchableOpacity
               onPress={handleReject}
               disabled={isSubmitting}
               className="flex-1 bg-red-600/20 border border-red-600/50 rounded-xl py-4 flex-row items-center justify-center"
+              style={{ marginRight: 6 }}
             >
               <XCircle size={20} color="#EF4444" strokeWidth={2.5} />
               <Text className="text-red-400 text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -672,10 +729,12 @@ export default function GCRequestDetailScreen() {
 
             <TouchableOpacity
               onPress={handleAccept}
-              disabled={isSubmitting || !estimatedBudget || !estimatedDuration}
+              // Keep this clickable so validation can show alerts instead of "nothing happens"
+              disabled={isSubmitting}
               className="flex-1 bg-blue-600 rounded-xl py-4 flex-row items-center justify-center"
               style={{
-                opacity: (!estimatedBudget || !estimatedDuration || isSubmitting) ? 0.5 : 1,
+                opacity: (isSubmitting) ? 0.5 : 1,
+                marginLeft: 6,
               }}
             >
               {isSubmitting ? (

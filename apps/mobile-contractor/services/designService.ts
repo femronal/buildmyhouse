@@ -28,9 +28,6 @@ export const designService = {
    * Create a new design with images
    */
   createDesign: async (designData: CreateDesignData, imageUris: Array<{ uri: string; label?: string }>) => {
-    console.log('🎨 [designService] Creating design with data:', designData);
-    console.log('🖼️ [designService] Images count:', imageUris.length);
-    
     const formData = new FormData();
     
     // Add design data fields
@@ -61,20 +58,6 @@ export const designService = {
       formData.append('constructionPhases', designData.constructionPhases);
     }
 
-    console.log('📝 [designService] FormData fields added:', {
-      name: designData.name,
-      bedrooms: designData.bedrooms,
-      bathrooms: designData.bathrooms,
-      squareFootage: designData.squareFootage,
-      estimatedCost: designData.estimatedCost,
-      floors: designData.floors,
-      estimatedDuration: designData.estimatedDuration,
-      rooms: designData.rooms,
-      materials: designData.materials,
-      features: designData.features,
-      constructionPhases: designData.constructionPhases,
-    });
-
     // For React Native, append images with uri, type, and name
     // Handle web and native platforms differently
     for (let index = 0; index < imageUris.length; index++) {
@@ -96,26 +79,12 @@ export const designService = {
         else if (ext === 'webp') type = 'image/webp';
       }
       
-      console.log(`📸 [designService] Processing image ${index + 1}:`, {
-        uri: img.uri.substring(0, 50) + '...',
-        type,
-        filename,
-        label: img.label,
-        platform: Platform.OS,
-      });
-      
       // For web platform, we need to fetch and convert to Blob/File
       if (Platform.OS === 'web') {
         try {
           const response = await fetch(img.uri);
           const blob = await response.blob();
           const file = new File([blob], filename || `image-${Date.now()}-${index}.jpg`, { type });
-          
-          console.log(`✅ [designService] Converted image ${index + 1} to File:`, {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          });
           
           formData.append('images', file);
         } catch (error) {
@@ -144,16 +113,11 @@ export const designService = {
       }
     }
 
-    console.log('📤 [designService] Sending FormData to /designs endpoint...');
-    
     try {
       const response = await api.post('/designs', formData);
-      console.log('✅ [designService] Design created successfully:', response);
       return response;
     } catch (error: any) {
       console.error('❌ [designService] Error creating design:', error);
-      console.error('❌ [designService] Error message:', error.message);
-      console.error('❌ [designService] Error stack:', error.stack);
       throw error;
     }
   },
@@ -178,10 +142,8 @@ export const designService = {
    * Delete a design
    */
   deleteDesign: async (designId: string) => {
-    console.log('🗑️ [designService] Deleting design:', designId);
     try {
       const response = await api.delete(`/designs/${designId}`);
-      console.log('✅ [designService] Design deleted successfully');
       return response;
     } catch (error: any) {
       console.error('❌ [designService] Error deleting design:', error);

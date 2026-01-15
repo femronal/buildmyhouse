@@ -60,14 +60,11 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <InvestmentProvider>
         <ThemeProvider value={DefaultTheme}>
-          <Stack
-            screenOptions={({ route }) => ({
-              headerShown: !route.name.startsWith("tempobook"),
-            })}
-          >
+          <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="location" options={{ headerShown: false }} />
+            <Stack.Screen name="choose-project-type" options={{ headerShown: false }} />
             <Stack.Screen name="design-library" options={{ headerShown: false }} />
             <Stack.Screen name="upload-plan" options={{ headerShown: false }} />
             <Stack.Screen name="house-summary" options={{ headerShown: false }} />

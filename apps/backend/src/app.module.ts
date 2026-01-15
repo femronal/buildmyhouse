@@ -10,6 +10,7 @@ import { OpenAIModule } from './openai/openai.module';
 import { PlansModule } from './plans/plans.module';
 import { ContractorsModule } from './contractors/contractors.module';
 import { DesignsModule } from './designs/designs.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DesignsModule } from './designs/designs.module';
     PlansModule,
     ContractorsModule,
     DesignsModule,
+    UploadModule,
   ],
   controllers: [],
   providers: [],

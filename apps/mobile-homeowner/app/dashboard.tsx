@@ -1,8 +1,13 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Calendar, DollarSign, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize } from "lucide-react-native";
+import { MessageCircle, Calendar, DollarSign, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import { useProjectAnalysis } from "@/hooks/usePlan";
+import { chatService } from "@/services/chatService";
+import { useConversationUnreadCount } from "@/hooks/useChat";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from "react";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -11,6 +16,28 @@ export default function DashboardScreen() {
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId || '');
   const { data: analysisData, isLoading: analysisLoading } = useProjectAnalysis(projectId || null);
+  const { data: currentUser } = useCurrentUser();
+  const queryClient = useQueryClient();
+  
+  // Get GC info for chat
+  const gcId = (project as any)?.generalContractorId || (project as any)?.generalContractor?.id;
+  
+  
+  // Get or create conversation with GC
+  const { data: conversation } = useQuery({
+    queryKey: ['conversation', projectId, gcId, currentUser?.id],
+    queryFn: async () => {
+      if (!gcId || !currentUser?.id) return null;
+      return chatService.getOrCreateConversation(
+        [gcId, currentUser.id],
+        projectId || undefined,
+      );
+    },
+    enabled: !!gcId && !!currentUser?.id && !!projectId,
+  });
+  
+  // Get unread count for this conversation
+  const { data: unreadCount = 0 } = useConversationUnreadCount(conversation?.id);
 
   if (!projectId) {
     return (
@@ -67,6 +94,21 @@ export default function DashboardScreen() {
   const completedStages = stages.filter((s: any) => s.status === 'completed').length;
   const totalStages = stages.length || phases.length;
   const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : project.progress || 0;
+  const isProjectComplete = totalStages > 0 && completedStages === totalStages;
+  
+  // Calculate spent from completed stages' estimatedCost
+  const calculatedSpent = stages
+    .filter((s: any) => s.status === 'completed')
+    .reduce((sum: number, stage: any) => sum + (stage.estimatedCost || 0), 0);
+  
+  // Use calculated spent if available, otherwise fallback to project.spent
+  const spent = calculatedSpent || (project.spent || 0);
+  
+  // Calculate total budget from all stages' estimatedCost
+  const calculatedBudget = stages.reduce((sum: number, stage: any) => sum + (stage.estimatedCost || 0), 0);
+  
+  // Use calculated budget if available, otherwise fallback to project.budget
+  const totalBudget = calculatedBudget > 0 ? calculatedBudget : (project.budget || 0);
 
   const getStageStatusIcon = (status: string) => {
     switch (status) {
@@ -276,7 +318,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${(project.budget || 0).toLocaleString()}
+              ${totalBudget.toLocaleString()}
             </Text>
           </View>
           
@@ -291,7 +333,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${(project.spent || 0).toLocaleString()}
+              ${spent.toLocaleString()}
             </Text>
           </View>
           
@@ -306,7 +348,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${((project.budget || 0) - (project.spent || 0)).toLocaleString()}
+              ${(totalBudget - spent).toLocaleString()}
             </Text>
           </View>
 
@@ -314,7 +356,7 @@ export default function DashboardScreen() {
           <View className="mt-4 h-3 bg-gray-200 rounded-full overflow-hidden">
             <View 
               className="h-full bg-black rounded-full" 
-              style={{ width: `${project.budget > 0 ? Math.min((project.spent || 0) / project.budget * 100, 100) : 0}%` }} 
+              style={{ width: `${totalBudget > 0 ? Math.min((spent / totalBudget * 100), 100) : 0}%` }} 
             />
           </View>
         </View>
@@ -400,6 +442,8 @@ export default function DashboardScreen() {
           })}
         </View>
 
+        {/* Ratings removed for MVP */}
+
         {/* Project Dates */}
         {(project.startDate || project.dueDate) && (
           <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
@@ -448,6 +492,59 @@ export default function DashboardScreen() {
             )}
         </View>
         )}
+
+        {/* Project Completion Congratulations & Rating */}
+        {isProjectComplete && (
+          <View className="bg-green-50 rounded-3xl p-6 mb-6 border border-green-200">
+            <View className="items-center mb-4">
+              <View className="w-16 h-16 bg-green-600 rounded-full items-center justify-center mb-3">
+                <PartyPopper size={32} color="#FFFFFF" strokeWidth={2} />
+              </View>
+              <Text 
+                className="text-2xl text-black mb-2 text-center"
+                style={{ fontFamily: 'Poppins_800ExtraBold' }}
+              >
+                🎉 Congratulations!
+              </Text>
+              <Text 
+                className="text-gray-700 text-center mb-1"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Your project is complete!
+              </Text>
+              <Text 
+                className="text-gray-600 text-sm text-center"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                All stages have been successfully completed. Thank you for building with us!
+              </Text>
+            </View>
+
+            {/* Important Notes */}
+            <View className="bg-white rounded-2xl p-4 mb-4 border border-green-200">
+              <Text 
+                className="text-black text-sm mb-2"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Important Notes:
+              </Text>
+              <Text 
+                className="text-gray-600 text-xs mb-2"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                • Even though your project is marked as complete, you can always contact your GC to rework any stage that needs attention.
+              </Text>
+              <Text 
+                className="text-gray-600 text-xs"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                • Your GC can still upload files, materials, and team members to any stage, as this project remains active forever.
+              </Text>
+            </View>
+
+            {/* Ratings removed for MVP */}
+          </View>
+        )}
       </ScrollView>
 
       {/* Floating Chat Button */}
@@ -456,6 +553,13 @@ export default function DashboardScreen() {
         className="absolute bottom-8 right-6 bg-black rounded-full p-5 shadow-lg"
       >
         <MessageCircle size={28} color="#FFFFFF" strokeWidth={2} />
+        {unreadCount > 0 && (
+          <View className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full items-center justify-center border-2 border-white">
+            <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Text>
+          </View>
+        )}
       </TouchableOpacity>
     </View>
   );

@@ -26,7 +26,6 @@ export function useSendGCRequests() {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       // Specifically invalidate GC acceptance check for this project
       queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId, 'gc-acceptance'] });
-      console.log('🔄 [useSendGCRequests] Queries invalidated for project:', variables.projectId);
     },
   });
 }
@@ -41,18 +40,26 @@ export function useCheckGCAcceptance(projectId: string | null, pollingInterval?:
     queryKey: ['projects', projectId, 'gc-acceptance'],
     queryFn: () => projectService.checkGCAcceptance(projectId!),
     enabled: !!projectId,
-    staleTime: 3000, // Consider data fresh for 3 seconds (shorter for faster updates)
+    staleTime: 2000, // Consider data fresh for 2 seconds (shorter for faster updates)
     refetchInterval: (query) => {
-      const hasAccepted = query.state.data?.hasAcceptedGC;
+      const data = query.state.data;
+      const hasAccepted = data?.hasAcceptedGC && (data.acceptedRequestsCount > 0 || false);
+      const hasPending = data?.hasPendingRequest || false;
       
-      // Stop polling if GC has already accepted
+      // Stop polling if GC has actually accepted (with confirmed accepted request)
       if (hasAccepted) {
         // Invalidate analysis query to get updated data with GC edits
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
         return false;
       }
-      // Only poll if interval is provided and GC hasn't accepted yet
-      return pollingInterval || false;
+      
+      // Continue polling if there's a pending request or if we're waiting for a response
+      // Only poll if interval is provided and we haven't accepted yet
+      if (pollingInterval && (hasPending || !data)) {
+        return pollingInterval;
+      }
+      
+      return false;
     },
     // Always refetch on window focus to catch updates
     refetchOnWindowFocus: true,
@@ -105,6 +112,12 @@ export function usePendingProjects() {
   return useQuery({
     queryKey: ['projects', 'pending'],
     queryFn: () => projectService.getPendingProjects(),
+    // Refetch when window/app comes into focus to catch updates
+    refetchOnWindowFocus: true,
+    // Refetch on mount to ensure fresh data
+    refetchOnMount: true,
+    // Consider data stale after 30 seconds to allow refetching
+    staleTime: 30000,
   });
 }
 
@@ -115,6 +128,12 @@ export function useActiveProjects() {
   return useQuery({
     queryKey: ['projects', 'active'],
     queryFn: () => projectService.getActiveProjects(),
+    // Refetch when window/app comes into focus to catch GC updates
+    refetchOnWindowFocus: true,
+    // Refetch on mount to ensure fresh data
+    refetchOnMount: true,
+    // Consider data stale after 30 seconds to allow refetching
+    staleTime: 30000,
   });
 }
 
@@ -159,4 +178,3 @@ export function useCreateProjectFromDesign() {
     },
   });
 }
-

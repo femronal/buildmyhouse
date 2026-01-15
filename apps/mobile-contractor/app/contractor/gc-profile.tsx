@@ -2,9 +2,12 @@ import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Ale
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, CreditCard, Settings, Shield, Bell, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, DollarSign, Banknote, CheckCircle, XCircle, Edit2, Plus, Trash2 } from "lucide-react-native";
 import { useState } from "react";
+import { clearAuthToken } from "@/lib/auth";
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function GCProfileScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState<'overview' | 'billing' | 'settings' | 'professional'>('overview');
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -61,14 +64,30 @@ export default function GCProfileScreen() {
   const handleDeletePaymentMethod = (id: number) => {
     Alert.alert('Delete Payment Method', 'Are you sure you want to remove this payment method?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => console.log('Delete:', id) },
+      { text: 'Delete', style: 'destructive', onPress: () => {} },
     ]);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: () => router.push('/contractor') },
+      { 
+        text: 'Logout', 
+        style: 'destructive', 
+        onPress: async () => {
+          try {
+            // Clear auth token
+            await clearAuthToken();
+            // Clear all cached queries
+            queryClient.clear();
+            // Navigate to contractor landing page
+            router.replace('/contractor');
+          } catch (error) {
+            console.error('Error during logout:', error);
+            Alert.alert('Error', 'Failed to logout. Please try again.');
+          }
+        }
+      },
     ]);
   };
 

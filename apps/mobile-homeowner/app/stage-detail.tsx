@@ -1,78 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download } from "lucide-react-native";
 import { useState } from "react";
-
-const materials = [
-  { 
-    name: "Premium Concrete Mix", 
-    quantity: "15 cubic yards", 
-    supplier: "Dangote Cement",
-    rating: 4.9,
-    reviews: 2341,
-    image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&q=80"
-  },
-  { 
-    name: "Rebar Steel 12mm", 
-    quantity: "2000 lbs", 
-    supplier: "BUA Steel",
-    rating: 4.8,
-    reviews: 1892,
-    image: "https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=400&q=80"
-  },
-  { 
-    name: "Waterproofing Membrane", 
-    quantity: "500 sq ft", 
-    supplier: "BuildCo Supply",
-    rating: 4.7,
-    reviews: 987,
-    image: "https://images.unsplash.com/photo-1632759145351-1d592919f522?w=400&q=80"
-  },
-  { 
-    name: "Gravel Base", 
-    quantity: "10 tons", 
-    supplier: "Local Quarry",
-    rating: 4.6,
-    reviews: 654,
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&q=80"
-  },
-];
-
-const team = [
-  { 
-    name: "John Smith", 
-    role: "Foundation Specialist", 
-    company: "Smith Concrete Co",
-    rating: 4.9,
-    reviews: 156,
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&q=80"
-  },
-  { 
-    name: "Mike Johnson", 
-    role: "Site Supervisor", 
-    company: "BuildRight Contractors",
-    rating: 4.8,
-    reviews: 124,
-    image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80"
-  },
-  { 
-    name: "David Williams", 
-    role: "Concrete Technician", 
-    company: "Smith Concrete Co",
-    rating: 4.7,
-    reviews: 89,
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80"
-  },
-];
-
-const files = [
-  { id: 1, name: "Foundation_Progress_Report.pdf", type: "pdf", date: "2 days ago" },
-  { id: 2, name: "Site_Walkthrough.mp4", type: "video", date: "3 days ago" },
-  { id: 3, name: "Concrete_Pour_Photo.jpg", type: "image", date: "4 days ago" },
-  { id: 4, name: "Inspection_Notes.docx", type: "doc", date: "5 days ago" },
-  { id: 5, name: "GC_Voice_Update.mp3", type: "audio", date: "1 week ago" },
-  { id: 6, name: "Rebar_Installation.png", type: "image", date: "1 week ago" },
-];
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useProject } from '@/hooks/useProject';
+import { projectService } from '@/services/projectService';
 
 const getFileIcon = (type: string) => {
   switch (type) {
@@ -92,21 +24,112 @@ const getFileIcon = (type: string) => {
 
 export default function StageDetailScreen() {
   const router = useRouter();
-  const { name, status } = useLocalSearchParams();
+  const { id, stageId, name, status, projectId } = useLocalSearchParams();
+  const actualStageId = stageId || id; // Handle both 'id' and 'stageId' params
   const [activeTab, setActiveTab] = useState<'materials' | 'team' | 'files'>('materials');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentApproved, setPaymentApproved] = useState(false);
+  
+  const queryClient = useQueryClient();
+  
+  // Approve payment mutation
+  const approvePaymentMutation = useMutation({
+    mutationFn: async () => {
+      const projId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
+      const stageIdValue = typeof actualStageId === 'string' ? actualStageId : actualStageId?.[0] || '';
+      if (!projId || !stageIdValue) {
+        throw new Error('Missing project ID or stage ID');
+      }
+      return projectService.approveStagePayment(projId, stageIdValue);
+    },
+    onSuccess: (_, variables) => {
+      const projId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
+      queryClient.invalidateQueries({ queryKey: ['project', projId] });
+      setPaymentApproved(true);
+      Alert.alert('Success', 'Payment approved! Work has begun on this stage.');
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error?.message || 'Failed to approve payment');
+    },
+  });
 
-  const isComplete = status === 'complete';
-  const isInProgress = status === 'in-progress';
+  // Fetch project to get stage data
+  const { data: project, isLoading: loadingProject } = useProject(projectId as string || '');
 
-  const handleApprovePayment = () => {
-    setPaymentApproved(true);
-    setTimeout(() => {
-      setShowPaymentModal(false);
-      router.canGoBack() ? router.back() : router.push('/(tabs)/home');
-    }, 1500);
+  const stage = project?.stages?.find((s: any) => s.id === actualStageId) as any;
+  
+  // Use actual stage status from project data, fallback to URL param
+  const actualStatus = stage?.status || status;
+  const isComplete = actualStatus === 'complete' || actualStatus === 'completed';
+  const isInProgress = actualStatus === 'in-progress' || actualStatus === 'in_progress';
+  const materials = stage?.materials || [];
+  const teamMembers = stage?.teamMembers || [];
+  const media = stage?.media || [];
+  const documents = stage?.documents || [];
+
+  const openReceipt = (url?: string) => {
+    if (!url) return;
+    Linking.openURL(url).catch(() => {});
   };
+
+  const callSupplier = (phone?: string) => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone}`).catch(() => {});
+  };
+
+  const callTeamMember = (phone?: string) => {
+    if (!phone) return;
+    Linking.openURL(`tel:${phone}`).catch(() => {});
+  };
+
+  const openInvoice = (url?: string) => {
+    if (!url) return;
+    Linking.openURL(url).catch(() => {});
+  };
+
+  const downloadFile = (url?: string, fileName?: string) => {
+    if (!url) return;
+    Linking.openURL(url).catch(() => {});
+  };
+  const allFiles = [
+    ...media.map((m: any) => ({ 
+      ...m, 
+      fileType: m.type === 'photo' ? 'image' : m.type === 'video' ? 'video' : 'file',
+      isMedia: true, 
+      name: m.caption || m.url?.split('/').pop() || 'Media',
+      date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent'
+    })),
+    ...documents.map((d: any) => ({ 
+      ...d, 
+      fileType: d.type === 'receipt' || d.type === 'invoice' ? 'pdf' : d.type === 'contract' ? 'doc' : 'file',
+      isMedia: false, 
+      name: d.name || d.url?.split('/').pop() || 'Document',
+      date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Recent'
+    })),
+  ];
+
+  const handleApprovePayment = async () => {
+    try {
+      await approvePaymentMutation.mutateAsync();
+      setTimeout(() => {
+        setShowPaymentModal(false);
+        router.canGoBack() ? router.back() : router.push('/(tabs)/home');
+      }, 1500);
+    } catch (error) {
+      // Error is handled in mutation onError
+    }
+  };
+
+  if (loadingProject) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#000000" />
+        <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+          Loading stage details...
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-white">
@@ -132,12 +155,12 @@ export default function StageDetailScreen() {
         >
           {name}
         </Text>
-        <View className={`rounded-full px-3 py-1 self-start ${isComplete ? 'bg-black' : 'bg-gray-100 border border-black'}`}>
+        <View className={`rounded-full px-3 py-1 self-start ${isComplete ? 'bg-black' : isInProgress ? 'bg-green-100 border border-green-600' : 'bg-gray-100 border border-black'}`}>
           <Text 
-            className={`text-xs ${isComplete ? 'text-white' : 'text-black'}`}
+            className={`text-xs ${isComplete ? 'text-white' : isInProgress ? 'text-green-700' : 'text-black'}`}
             style={{ fontFamily: 'Poppins_500Medium' }}
           >
-            {isComplete ? 'Complete' : 'In Progress'}
+            {isComplete ? 'Complete' : isInProgress ? 'Work in Progress' : 'Pending Payment'}
           </Text>
         </View>
       </View>
@@ -200,146 +223,213 @@ export default function StageDetailScreen() {
         {/* Materials Tab */}
         {activeTab === 'materials' && (
           <View className="pb-32">
-            {materials.map((material, index) => (
-              <View key={index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200">
-                <View className="flex-row">
-                  <Image
-                    source={{ uri: material.image }}
-                    className="w-24 h-24 bg-white"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1 p-4 justify-center">
-                    <Text 
-                      className="text-base text-black mb-1"
-                      style={{ fontFamily: 'Poppins_700Bold' }}
-                    >
-                      {material.name}
-                    </Text>
-                    <Text 
-                      className="text-gray-500 text-sm mb-2"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      {material.supplier} • {material.quantity}
-                    </Text>
-                    <View className="flex-row items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star 
-                          key={star} 
-                          size={14} 
-                          color="#000000" 
-                          strokeWidth={2} 
-                          fill={star <= Math.floor(material.rating) ? "#000000" : "transparent"} 
-                        />
-                      ))}
+            {materials.length === 0 ? (
+              <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                <Package size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  No Materials Yet
+                </Text>
+                <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Materials will appear here once your GC adds them
+                </Text>
+              </View>
+            ) : (
+              materials.map((material: any, index: number) => (
+                <View key={material.id || index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200 relative">
+                  <View className="flex-row">
+                    {material.photoUrl ? (
+                      <Image
+                        source={{ uri: material.photoUrl }}
+                        className="w-24 h-24 bg-gray-100"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-24 h-24 bg-gray-100 items-center justify-center">
+                        <Package size={32} color="#A3A3A3" strokeWidth={2} />
+                      </View>
+                    )}
+                    <View className="flex-1 p-4 justify-center">
                       <Text 
-                        className="text-black ml-2 text-sm"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        className="text-base text-black mb-1"
+                        style={{ fontFamily: 'Poppins_700Bold' }}
                       >
-                        {material.rating}
+                        {material.name}
                       </Text>
                       <Text 
-                        className="text-gray-500 ml-1 text-xs"
+                        className="text-gray-500 text-sm mb-2"
                         style={{ fontFamily: 'Poppins_400Regular' }}
                       >
-                        ({material.reviews})
+                        {material.supplier || 'No supplier'} • {material.quantity} {material.unit}
+                      </Text>
+                      {material.brand && (
+                        <Text 
+                          className="text-gray-500 text-xs mb-2"
+                          style={{ fontFamily: 'Poppins_400Regular' }}
+                        >
+                          Brand: {material.brand}
+                        </Text>
+                      )}
+                      <Text 
+                        className="text-black text-sm"
+                        style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                      >
+                        ${(material.totalPrice || 0).toLocaleString()}
                       </Text>
                     </View>
                   </View>
+                  {/* Quick actions - bottom right */}
+                  <View className="absolute bottom-3 right-3 flex-row">
+                    <TouchableOpacity
+                      onPress={() => openReceipt(material.receiptUrl)}
+                      className="w-8 h-8 rounded-full bg-black/80 items-center justify-center mr-2"
+                      accessibilityLabel="Download receipt"
+                    >
+                      <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => callSupplier(material.supplierContact || material.supplierPhone)}
+                      className="w-8 h-8 rounded-full bg-emerald-600 items-center justify-center"
+                      accessibilityLabel="Call supplier"
+                    >
+                      <Phone size={16} color="#FFFFFF" strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
 
         {/* Team Tab */}
         {activeTab === 'team' && (
           <View className="pb-32">
-            {team.map((member, index) => (
-              <View key={index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200">
-                <View className="flex-row p-4">
-                  <Image
-                    source={{ uri: member.image }}
-                    className="w-20 h-20 rounded-2xl bg-white"
-                    resizeMode="cover"
-                  />
-                  <View className="flex-1 ml-4 justify-center">
-                    <Text 
-                      className="text-lg text-black mb-1"
-                      style={{ fontFamily: 'Poppins_700Bold' }}
-                    >
-                      {member.name}
-                    </Text>
-                    <Text 
-                      className="text-black mb-1"
-                      style={{ fontFamily: 'Poppins_500Medium' }}
-                    >
-                      {member.role}
-                    </Text>
-                    <Text 
-                      className="text-gray-500 text-sm mb-2"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      {member.company}
-                    </Text>
-                    <View className="flex-row items-center">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star 
-                          key={star} 
-                          size={14} 
-                          color="#000000" 
-                          strokeWidth={2} 
-                          fill={star <= Math.floor(member.rating) ? "#000000" : "transparent"} 
-                        />
-                      ))}
+            {teamMembers.length === 0 ? (
+              <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                <Users size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  No Team Members Yet
+                </Text>
+                <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Team members will appear here once your GC adds them
+                </Text>
+              </View>
+            ) : (
+              teamMembers.map((member: any, index: number) => (
+                <View key={member.id || index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200 relative">
+                  <View className="flex-row p-4">
+                    {member.photoUrl ? (
+                      <Image
+                        source={{ uri: member.photoUrl }}
+                        className="w-20 h-20 rounded-2xl bg-white"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View className="w-20 h-20 bg-gray-100 rounded-2xl items-center justify-center">
+                        <Users size={32} color="#A3A3A3" strokeWidth={2} />
+                      </View>
+                    )}
+                    <View className="flex-1 ml-4 justify-center">
                       <Text 
-                        className="text-black ml-2 text-sm"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        className="text-lg text-black mb-1"
+                        style={{ fontFamily: 'Poppins_700Bold' }}
                       >
-                        {member.rating}
+                        {member.name}
                       </Text>
                       <Text 
-                        className="text-gray-500 ml-1 text-xs"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        className="text-black mb-1"
+                        style={{ fontFamily: 'Poppins_500Medium' }}
                       >
-                        ({member.reviews})
+                        {member.role}
                       </Text>
+                      {member.email && (
+                        <Text 
+                          className="text-gray-500 text-sm mb-1"
+                          style={{ fontFamily: 'Poppins_400Regular' }}
+                        >
+                          ✉️ {member.email}
+                        </Text>
+                      )}
+                      {member.dailyRate && (
+                        <Text 
+                          className="text-gray-500 text-xs mt-1"
+                          style={{ fontFamily: 'Poppins_400Regular' }}
+                        >
+                          ${member.dailyRate.toLocaleString()}/{member.rateType || 'day'}
+                        </Text>
+                      )}
                     </View>
                   </View>
+                  {/* Quick actions - bottom right */}
+                  <View className="absolute bottom-3 right-3 flex-row">
+                    <TouchableOpacity
+                      onPress={() => openInvoice(member.invoiceUrl)}
+                      className="w-8 h-8 rounded-full bg-black/80 items-center justify-center mr-2"
+                      accessibilityLabel="Download invoice"
+                    >
+                      <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => callTeamMember(member.phone)}
+                      className="w-8 h-8 rounded-full bg-emerald-600 items-center justify-center"
+                      accessibilityLabel="Call sub-contractor"
+                    >
+                      <Phone size={16} color="#FFFFFF" strokeWidth={2} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))
+            )}
           </View>
         )}
 
         {/* Files Tab */}
         {activeTab === 'files' && (
           <View className="pb-32">
-            {files.map((file) => (
-              <TouchableOpacity 
-                key={file.id}
-                className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row items-center border border-gray-200"
-              >
-                <View className="w-12 h-12 bg-black rounded-xl items-center justify-center">
-                  {getFileIcon(file.type)}
-                </View>
-                <View className="flex-1 ml-4">
-                  <Text 
-                    className="text-black text-base"
-                    style={{ fontFamily: 'Poppins_500Medium' }}
-                    numberOfLines={1}
+            {allFiles.length === 0 ? (
+              <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                <FileText size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  No Files Yet
+                </Text>
+                <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Files, photos, and videos will appear here once your GC uploads them
+                </Text>
+              </View>
+            ) : (
+              allFiles.map((file: any, index: number) => (
+                <View 
+                  key={file.id || index}
+                  className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row items-center border border-gray-200"
+                >
+                  <View className="w-12 h-12 bg-black rounded-xl items-center justify-center">
+                    {getFileIcon(file.fileType || 'file')}
+                  </View>
+                  <View className="flex-1 ml-4">
+                    <Text 
+                      className="text-black text-base"
+                      style={{ fontFamily: 'Poppins_500Medium' }}
+                      numberOfLines={1}
+                    >
+                      {file.name}
+                    </Text>
+                    <Text 
+                      className="text-gray-500 text-sm"
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                    >
+                      {file.date}
+                    </Text>
+                  </View>
+                  {/* Download button */}
+                  <TouchableOpacity
+                    onPress={() => downloadFile(file.url, file.name)}
+                    className="w-9 h-9 rounded-full bg-black items-center justify-center"
+                    accessibilityLabel="Download file"
                   >
-                    {file.name}
-                  </Text>
-                  <Text 
-                    className="text-gray-500 text-sm"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {file.date}
-                  </Text>
+                    <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                  </TouchableOpacity>
                 </View>
-                <ChevronRight size={20} color="#A3A3A3" strokeWidth={2} />
-              </TouchableOpacity>
-            ))}
+              ))
+            )}
           </View>
         )}
       </ScrollView>
@@ -364,24 +454,47 @@ export default function StageDetailScreen() {
               Congratulations! This stage has been successfully completed.
             </Text>
           </View>
+        ) : isInProgress ? (
+          <View className="bg-green-100 rounded-2xl p-5 border border-green-600">
+            <View className="flex-row items-center justify-center mb-2">
+              <CheckCircle size={24} color="#16A34A" strokeWidth={2} fill="#16A34A" />
+              <Text 
+                className="text-green-700 text-lg ml-2"
+                style={{ fontFamily: 'Poppins_700Bold' }}
+              >
+                Payment Approved... Work in Progress
+              </Text>
+            </View>
+            <Text 
+              className="text-green-600 text-center text-sm"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            >
+              Your GC is now working on this stage. They will mark it complete when finished.
+            </Text>
+          </View>
         ) : (
           <>
             <TouchableOpacity
               onPress={() => setShowPaymentModal(true)}
               className="bg-black rounded-full py-5 px-8"
+              disabled={approvePaymentMutation.isPending}
             >
-              <Text 
-                className="text-white text-lg text-center"
-                style={{ fontFamily: 'Poppins_700Bold' }}
-              >
-                Approve Payment
-              </Text>
+              {approvePaymentMutation.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text 
+                  className="text-white text-lg text-center"
+                  style={{ fontFamily: 'Poppins_700Bold' }}
+                >
+                  Approve Payment
+                </Text>
+              )}
             </TouchableOpacity>
             <Text 
               className="text-gray-500 text-xs text-center mt-3"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Your GC will mark this stage complete
+              Approve payment to allow your GC to commence work on this stage
             </Text>
           </>
         )}
@@ -432,7 +545,7 @@ export default function StageDetailScreen() {
                       className="text-2xl text-black"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      $28,500
+                      ${(stage?.estimatedCost || 0).toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -442,7 +555,7 @@ export default function StageDetailScreen() {
                     className="text-gray-600 text-sm text-center"
                     style={{ fontFamily: 'Poppins_400Regular' }}
                   >
-                    Once payment is approved, all materials and subcontractors will be deployed to the site ASAP.
+                    Once payment is approved, all materials and team members will be deployed to the site ASAP.
                   </Text>
                 </View>
 

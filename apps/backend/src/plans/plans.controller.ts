@@ -28,7 +28,6 @@ export class PlansController {
     const uploadsDir = join(process.cwd(), 'uploads', 'plans');
     if (!existsSync(uploadsDir)) {
       mkdirSync(uploadsDir, { recursive: true });
-      console.log('📁 Created uploads directory:', uploadsDir);
     }
   }
 
@@ -94,5 +93,6 @@ export class PlansController {
     return this.plansService.getProjectWithAnalysis(projectId, userId);
   }
 }
+
 
 

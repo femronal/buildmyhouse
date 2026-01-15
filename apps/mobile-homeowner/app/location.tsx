@@ -37,17 +37,11 @@ export default function LocationScreen() {
       longitude: selectedAddress.longitude,
     };
 
-    if (mode === 'explore') {
-      router.push({
-        pathname: '/design-library',
-        params: addressData,
-      });
-    } else {
-      router.push({
-        pathname: '/upload-plan',
-        params: addressData,
-      });
-    }
+    // Always go to choice page first, regardless of mode
+    router.push({
+      pathname: '/choose-project-type',
+      params: addressData,
+    });
   };
 
   const handleMapPress = async (event: any) => {

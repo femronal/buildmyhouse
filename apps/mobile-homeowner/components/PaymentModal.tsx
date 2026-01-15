@@ -186,7 +186,7 @@ export default function PaymentModal({
                 className="text-blue-700 text-sm"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                50% of GC's estimated budget: ${projectBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                100% of GC's estimated budget: ${projectBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </Text>
             </View>
 

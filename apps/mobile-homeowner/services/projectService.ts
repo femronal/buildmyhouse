@@ -58,6 +58,7 @@ export const projectService = {
 
   /**
    * Check if any GC has accepted the project
+   * Returns acceptance status and pending/accepted request info
    */
   checkGCAcceptance: async (projectId: string) => {
     try {
@@ -65,13 +66,26 @@ export const projectService = {
       
       // Handle both direct response and nested data
       const project = response.data || response;
-      const hasAccepted = !!project.generalContractorId;
+      
+      // Check for accepted project requests FIRST (most reliable indicator)
+      const allRequests = project.projectRequests || [];
+      const acceptedRequests = allRequests.filter((req: any) => req.status === 'accepted');
+      const pendingRequests = allRequests.filter((req: any) => req.status === 'pending');
+      
+      // GC has accepted if there's an accepted request
+      // generalContractorId should also be set when GC accepts, but check requests first
+      const hasAcceptedRequest = acceptedRequests.length > 0;
+      const hasAcceptedGC = hasAcceptedRequest || !!project.generalContractorId;
       
       return {
-        hasAcceptedGC: hasAccepted,
+        hasAcceptedGC,
+        hasPendingRequest: pendingRequests.length > 0,
+        pendingRequestsCount: pendingRequests.length,
+        acceptedRequestsCount: acceptedRequests.length,
         project,
       };
     } catch (error: any) {
+      console.error('❌ [projectService] Error checking GC acceptance:', error);
       throw error;
     }
   },
@@ -99,11 +113,28 @@ export const projectService = {
   },
 
   /**
+   * Approve payment for a stage (update stage status to in_progress)
+   */
+  approveStagePayment: async (projectId: string, stageId: string) => {
+    const response = await api.patch(`/projects/${projectId}/stages/${stageId}`, {
+      status: 'in_progress',
+    });
+    return response.data;
+  },
+
+  /**
    * Get pending projects (projects waiting for payment)
    */
   getPendingProjects: async () => {
-    const response = await api.get('/projects?status=pending_payment');
-    return response.data || response;
+    try {
+      const response = await api.get('/projects?status=pending_payment');
+      // NestJS returns the array directly, not wrapped in data
+      const projects = Array.isArray(response) ? response : (response.data || []);
+      return projects;
+    } catch (error: any) {
+      console.error('❌ [projectService] Error fetching pending projects:', error);
+      return [];
+    }
   },
 
   /**
@@ -136,14 +167,14 @@ export const projectService = {
     latitude?: number;
     longitude?: number;
   }) => {
-    console.log('📤 [projectService] Creating project from design:', data);
     try {
       const response = await api.post('/projects/from-design', data);
-      console.log('✅ [projectService] Project created successfully:', response);
       return response.data || response;
     } catch (error: any) {
       console.error('❌ [projectService] Error creating project from design:', error);
       throw error;
     }
   },
+
+  // Marketplace/contractor ratings removed for MVP
 };

@@ -6,7 +6,6 @@ const API_BASE_URL = __DEV__
 
 async function getHeaders() {
   const token = await getAuthToken();
-  console.log('🔑 [Contractor App] API Token:', token ? 'Token exists' : 'NO TOKEN FOUND');
   if (!token) {
     console.error('❌ [Contractor App] No auth token available for API request');
   }
@@ -31,9 +30,6 @@ export const api = {
   },
 
   post: async (endpoint: string, data: any, options?: { headers?: any }) => {
-    console.log('📤 [Contractor App] POST request:', endpoint);
-    console.log('📦 [Contractor App] Request data:', data);
-    
     try {
       const isFormData = data instanceof FormData;
       const headers = await getHeaders();
@@ -53,9 +49,6 @@ export const api = {
         body: isFormData ? data : JSON.stringify(data),
       });
 
-      console.log('📥 [Contractor App] Response status:', response.status);
-      console.log('📥 [Contractor App] Response ok:', response.ok);
-
       if (!response.ok) {
         let errorData;
         try {
@@ -74,7 +67,6 @@ export const api = {
       }
 
       const result = await response.json();
-      console.log('✅ [Contractor App] Response data:', result);
       return result;
     } catch (error: any) {
       console.error('❌ [Contractor App] POST error:', error);
@@ -101,17 +93,12 @@ export const api = {
   },
 
   delete: async (endpoint: string) => {
-    console.log('🗑️ [Contractor App] DELETE request:', endpoint);
-    
     try {
       const headers = await getHeaders();
       const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'DELETE',
         headers,
       });
-
-      console.log('🗑️ [Contractor App] DELETE response status:', response.status);
-      console.log('🗑️ [Contractor App] DELETE response ok:', response.ok);
 
       if (!response.ok) {
         let errorData;
@@ -132,12 +119,10 @@ export const api = {
 
       // Handle 204 No Content responses
       if (response.status === 204) {
-        console.log('✅ [Contractor App] DELETE successful (204 No Content)');
         return { message: 'Deleted successfully' };
       }
 
       const result = await response.json();
-      console.log('✅ [Contractor App] DELETE successful:', result);
       return result;
     } catch (error: any) {
       console.error('❌ [Contractor App] DELETE error:', error);
