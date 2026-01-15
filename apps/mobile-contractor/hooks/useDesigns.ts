@@ -18,12 +18,8 @@ export function useDeleteDesign() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (designId: string) => {
-      console.log('🗑️ [useDeleteDesign] Mutation called with designId:', designId);
-      return designService.deleteDesign(designId);
-    },
+    mutationFn: (designId: string) => designService.deleteDesign(designId),
     onSuccess: () => {
-      console.log('✅ [useDeleteDesign] Delete successful, invalidating queries...');
       // Invalidate both GC's designs and public designs list
       queryClient.invalidateQueries({ queryKey: ['designs', 'my-designs'] });
       queryClient.invalidateQueries({ queryKey: ['designs'] });

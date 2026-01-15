@@ -3,12 +3,14 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight, HardHat } from "lucide-react-native";
+import { useAppAlert } from "../components/AppAlertProvider";
 
-// Allowed roles for contractor app
-const ALLOWED_ROLES = ['general_contractor', 'subcontractor', 'vendor', 'admin'];
+// Allowed roles for contractor app (MVP: GC + admin only)
+const ALLOWED_ROLES = ['general_contractor', 'admin'];
 
 export default function LoginScreen() {
   const router = useRouter();
+  const { showAlert } = useAppAlert();
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
@@ -16,34 +18,26 @@ export default function LoginScreen() {
     try {
       const result = await signInWithGoogle();
       if (result?.token && result?.user) {
-        // ROLE VALIDATION: Only allow contractors, subs, vendors
+        // ROLE VALIDATION: Only allow GCs (and admin)
         const userRole = result.user.role;
         if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
           console.error('❌ Invalid role for contractor app:', userRole);
-          alert(
-            `This app is for contractors, subcontractors, and vendors only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the homeowner app to sign in.`
+          showAlert(
+            'Access Denied',
+            `This app is for General Contractors only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the homeowner app to sign in.`
           );
           return;
         }
         
         await storeAuthToken(result.token);
         
-        // Route based on role
-        if (userRole === 'general_contractor') {
-          router.replace('/contractor/gc-dashboard');
-        } else if (userRole === 'subcontractor') {
-          router.replace('/contractor/sub-dashboard');
-        } else if (userRole === 'vendor') {
-          router.replace('/contractor/vendor-dashboard');
-        } else {
-          router.replace('/contractor');
-        }
+        router.replace('/contractor/gc-dashboard');
       } else {
-        alert('Login failed. Please try again.');
+        showAlert('Login Failed', 'Please try again.');
       }
     } catch (error: any) {
       console.error('Login error:', error);
-      alert(error?.message || 'Login failed. Please check your Google Cloud Console redirect URIs.');
+      showAlert('Login Failed', error?.message || 'Please check your Google Cloud Console redirect URIs.');
     } finally {
       setLoading(false);
     }

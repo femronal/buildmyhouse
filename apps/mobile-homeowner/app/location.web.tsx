@@ -16,16 +16,24 @@ export default function LocationScreenWeb() {
     if (!address.trim()) return;
     
     setIsGeocoding(true);
-    const addressDetails = await geocodeAddress(address);
-    
-    if (addressDetails) {
-      setSelectedAddress(addressDetails);
-      Alert.alert('Success', 'Address found!');
-    } else {
-      Alert.alert('Error', 'Could not find this address. Please try a different one.');
+    try {
+      const addressDetails = await geocodeAddress(address);
+      
+      if (addressDetails) {
+        setSelectedAddress(addressDetails);
+        // Don't show alert on web, the UI already shows success
+      } else {
+        Alert.alert('Error', 'Could not find this address. Please try a different one.');
+      }
+    } catch (error: any) {
+      console.error('Geocoding error:', error);
+      Alert.alert(
+        'Geocoding Error',
+        error.message || 'Could not geocode this address. Please check your internet connection and try again.'
+      );
+    } finally {
+      setIsGeocoding(false);
     }
-    
-    setIsGeocoding(false);
   };
 
   const handleContinue = () => {
@@ -45,11 +53,11 @@ export default function LocationScreenWeb() {
       longitude: selectedAddress.longitude,
     };
 
-    if (mode === 'explore') {
-      router.push({ pathname: '/design-library', params: addressData });
-    } else {
-      router.push({ pathname: '/upload-plan', params: addressData });
-    }
+    // Always go to choice page first, regardless of mode
+    router.push({
+      pathname: '/choose-project-type',
+      params: addressData,
+    });
   };
 
   return (

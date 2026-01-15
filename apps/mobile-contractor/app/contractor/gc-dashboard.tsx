@@ -1,27 +1,32 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X } from "lucide-react-native";
+import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2 } from "lucide-react-native";
 import { useState, useMemo } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
-import { useActiveProjects, useUnpaidProjects } from "../../hooks/useProjects";
+import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
+import { useUserConversations } from "../../hooks/useChat";
+import { useAppAlert } from "../../components/AppAlertProvider";
 
 export default function GCDashboardScreen() {
-  console.log('🚀 [GC Dashboard] Component loaded - NEW VERSION WITH REQUESTS BUTTON!');
   const router = useRouter();
+  const { showAlert } = useAppAlert();
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
   const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
+  const deleteProjectMutation = useDeleteProject();
   
   // Fetch real pending requests
   const { data: pendingRequests = [], isLoading: loadingPendingRequests } = usePendingRequests();
-  console.log('📊 [GC Dashboard] Pending requests count:', pendingRequests.length);
 
   // Fetch real projects
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: unpaidProjects = [], isLoading: loadingUnpaid } = useUnpaidProjects();
   
-  console.log('📊 [GC Dashboard] Active projects count:', activeProjects.length);
-  console.log('📊 [GC Dashboard] Unpaid projects count:', unpaidProjects.length);
+  // Fetch conversations with unread counts
+  const { data: conversations = [] } = useUserConversations();
+  const totalUnreadCount = useMemo(() => {
+    return conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
+  }, [conversations]);
 
   const handleUnpaidProjectPress = (project: any) => {
     setSelectedUnpaidProject(project);
@@ -31,6 +36,33 @@ export default function GCDashboardScreen() {
   const handleCloseModal = () => {
     setShowUnpaidModal(false);
     setSelectedUnpaidProject(null);
+  };
+
+  const handleDeleteSelectedUnpaidProject = async () => {
+    if (!selectedUnpaidProject?.id) return;
+
+    showAlert(
+      'Delete Unpaid Project?',
+      `This will permanently delete "${selectedUnpaidProject.name}".\n\nOnly do this if the homeowner has taken too long to pay. This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteProjectMutation.mutateAsync(selectedUnpaidProject.id);
+              showAlert('Deleted', 'Project deleted successfully.', [{ text: 'OK' }]);
+              handleCloseModal();
+            } catch (error: any) {
+              showAlert('Delete Failed', error?.message || 'Failed to delete project. Please try again.', [
+                { text: 'OK' },
+              ]);
+            }
+          },
+        },
+      ],
+    );
   };
 
   // Calculate totals from real data
@@ -82,6 +114,13 @@ export default function GCDashboardScreen() {
             className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
           >
             <MessageCircle size={20} color="#3B82F6" strokeWidth={2} />
+            {totalUnreadCount > 0 && (
+              <View className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full items-center justify-center border-2 border-[#0A1628]">
+                <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/contractor/gc-notifications')}
@@ -177,17 +216,17 @@ export default function GCDashboardScreen() {
                 </Text>
               </View>
             ) : (
-              activeProjects.map((project) => (
-                <TouchableOpacity
-                  key={project.id}
-                  onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
-                  className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
-                >
+            activeProjects.map((project) => (
+              <TouchableOpacity
+                key={project.id}
+                onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
+                className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
+              >
                   <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
-                  <View className="p-4">
-                    <View className="flex-row justify-between items-start mb-2">
-                      <View className="flex-1">
-                        <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
+                <View className="p-4">
+                  <View className="flex-row justify-between items-start mb-2">
+                    <View className="flex-1">
+                      <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
                         <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
                           {project.homeowner?.fullName || 'Unknown Client'}
                         </Text>
@@ -200,39 +239,39 @@ export default function GCDashboardScreen() {
                     {project.currentStage && (
                       <View className="mb-2">
                         <View className="bg-blue-600/20 rounded-full px-3 py-1 self-start">
-                          <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.currentStage}</Text>
-                        </View>
-                      </View>
-                    )}
-                    
-                    <View className="mb-3">
-                      <View className="flex-row justify-between mb-1">
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.progress || 0}%</Text>
-                      </View>
-                      <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
-                        <View className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress || 0}%` }} />
-                      </View>
+                      <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.currentStage}</Text>
                     </View>
+                  </View>
+                    )}
+                  
+                  <View className="mb-3">
+                    <View className="flex-row justify-between mb-1">
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
+                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.progress || 0}%</Text>
+                    </View>
+                    <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
+                        <View className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress || 0}%` }} />
+                    </View>
+                  </View>
 
                     <View className="flex-row justify-between items-center">
-                      <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
+                    <View>
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
                         <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.spent || 0).toLocaleString()}</Text>
                       </View>
                       <View>
                         <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
                         <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
-                      </View>
-                      <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
-                        <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>{formatDate(project.dueDate)}</Text>
-                      </View>
-                      <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
                     </View>
+                    <View>
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
+                        <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>{formatDate(project.dueDate)}</Text>
+                    </View>
+                    <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
                   </View>
-                </TouchableOpacity>
-              ))
+                </View>
+              </TouchableOpacity>
+            ))
             )
           ) : loadingUnpaid ? (
             <View className="py-10 items-center">
@@ -261,38 +300,38 @@ export default function GCDashboardScreen() {
                 <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
                 <View className="p-4">
                   <View className="flex-row justify-between items-start mb-2">
-                    <View className="flex-1">
+                  <View className="flex-1">
                       <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
                       <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
                         {project.homeowner?.fullName || 'Unknown Client'}
-                      </Text>
-                    </View>
+                    </Text>
+                  </View>
                     <View className="bg-orange-600/20 rounded-full px-3 py-1">
                       <Text className="text-orange-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Unpaid</Text>
                     </View>
                   </View>
                   
-                  <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {project.address}
-                  </Text>
+                </Text>
 
-                  <View className="flex-row justify-between items-center">
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
+                <View className="flex-row justify-between items-center">
+                  <View>
+                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
                       <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
                     </View>
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Status</Text>
                       <Text className="text-orange-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                         {project.status === 'pending_payment' ? 'Pending Payment' : project.status}
-                      </Text>
-                    </View>
+                    </Text>
+                  </View>
                     <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
                   </View>
                 </View>
-              </TouchableOpacity>
-            ))
-          )}
+              </TouchableOpacity> 
+            )) 
+          )} 
         </View>
       </ScrollView>
 
@@ -326,7 +365,7 @@ export default function GCDashboardScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    The homeowner has not yet paid at least 50% of the project fees. Once payment is received and the project status becomes active, you'll be able to access the full project dashboard.
+                    The homeowner has not yet paid 100% of the project fees. Once payment is received and the project status becomes active, you'll be able to access the full project dashboard.
                   </Text>
                 </View>
               </View>
@@ -355,15 +394,36 @@ export default function GCDashboardScreen() {
               </View>
             )}
 
-            {/* Action Button */}
-            <TouchableOpacity
-              onPress={handleCloseModal}
-              className="bg-blue-600 rounded-xl py-4 items-center"
-            >
-              <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Understood
-              </Text>
-            </TouchableOpacity>
+            {/* Action Buttons */}
+            <View className="flex-row" style={{ gap: 12 }}>
+              <TouchableOpacity
+                onPress={handleCloseModal}
+                disabled={deleteProjectMutation.isPending}
+                className="flex-1 bg-blue-600 rounded-xl py-4 items-center"
+                style={{ opacity: deleteProjectMutation.isPending ? 0.6 : 1 }}
+              >
+                <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Close
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleDeleteSelectedUnpaidProject}
+                disabled={deleteProjectMutation.isPending}
+                className="flex-1 bg-red-600/20 border border-red-600/50 rounded-xl py-4 items-center flex-row justify-center"
+                style={{ opacity: deleteProjectMutation.isPending ? 0.6 : 1 }}
+              >
+                {deleteProjectMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <>
+                    <Trash2 size={18} color="#EF4444" strokeWidth={2.5} />
+                    <Text className="text-red-400 text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                      Delete
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -387,27 +447,23 @@ export default function GCDashboardScreen() {
             <Users size={30} color="#6B7280" strokeWidth={2.5} />
           </View>
         
-          <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Team</Text>
+          <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Clients</Text>
         </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => {
-            console.log('🔔 Requests button clicked! Navigating to /contractor/gc-requests');
             router.push('/contractor/gc-requests');
           }}
           className="flex-1 items-center active:opacity-70"
         >
-          <View className="p-3 rounded-2xl bg-yellow-600/20 mb-1 relative border border-yellow-600/50">
-            <Bell size={30} color="#F59E0B" strokeWidth={2.5} />
+          <View className="p-3 rounded-2xl bg-[#1E3A5F] mb-1 relative">
+            <Bell size={30} color="#6B7280" strokeWidth={2.5} />
             {pendingRequests.length > 0 && (
-              <View className="absolute -top-1 -right-1 bg-yellow-500 rounded-full w-6 h-6 items-center justify-center">
-                <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {pendingRequests.length}
-                </Text>
+              <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-4 h-4 items-center justify-center border-2 border-[#0A1628]">
               </View>
             )}
           </View>
-          <Text className="text-yellow-400 text-base mt-1 font-bold" style={{ fontFamily: 'Poppins_700Bold' }}>
-            REQUESTS
+          <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Requests
           </Text>
         </TouchableOpacity>
         <TouchableOpacity 

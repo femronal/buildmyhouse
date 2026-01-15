@@ -11,92 +11,183 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // Hashed password
-  phone     String?
-  fullName  String
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String // Hashed password
+  phone      String?
+  fullName   String
   pictureUrl String? // Profile picture URL from OAuth providers
-  role      String   // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
-  verified  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  role       String // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
+  verified   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  homeownerProjects     Project[] @relation("HomeownerProjects")
-  contractorProjects    Project[] @relation("ContractorProjects")
-  sentMessages          Message[] @relation("SentMessages")
-  receivedConversations Conversation[] @relation("Participants")
-  vendorMaterials       Material[] @relation("VendorMaterials")
-  contractorProfile     Contractor? @relation("UserContractor")
-  orders                Order[] @relation("UserOrders")
-  reviews               Review[] @relation("UserReviews")
+  homeownerProjects     Project[]        @relation("HomeownerProjects")
+  contractorProjects    Project[]        @relation("ContractorProjects")
+  sentMessages          Message[]        @relation("SentMessages")
+  receivedConversations Conversation[]   @relation("Participants")
+  vendorMaterials       Material[]       @relation("VendorMaterials")
+  contractorProfile     Contractor?      @relation("UserContractor")
+  orders                Order[]          @relation("UserOrders")
+  reviews               Review[]         @relation("UserReviews")
   contractorRequests    ProjectRequest[] @relation("ContractorRequests")
-  designs               Design[] @relation("UserDesigns")
-  
+  sentRequests          ProjectRequest[] @relation("SentRequests")
+  designs               Design[]         @relation("UserDesigns")
+
   @@map("users")
 }
 
 model Project {
-  id                  String        @id @default(uuid())
+  id                  String    @id @default(uuid())
   name                String
-  address             String        // Full formatted address
-  street              String?       // Street address
-  city                String?       // City
-  state               String?       // State/Province
-  zipCode             String?       // ZIP/Postal code
-  country             String?       // Country
-  latitude            Float?        // Latitude coordinate
-  longitude           Float?        // Longitude coordinate
-  homeownerId        String
+  address             String // Full formatted address
+  street              String? // Street address
+  city                String? // City
+  state               String? // State/Province
+  zipCode             String? // ZIP/Postal code
+  country             String? // Country
+  latitude            Float? // Latitude coordinate
+  longitude           Float? // Longitude coordinate
+  homeownerId         String
   generalContractorId String?
-  status              String        @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
+  status              String    @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
   budget              Float
-  spent               Float         @default(0)
-  progress            Int           @default(0)
+  spent               Float     @default(0)
+  progress            Int       @default(0)
   currentStage        String?
   startDate           DateTime?
   dueDate             DateTime?
-  
+
   // Plan Upload & AI Analysis
-  planPdfUrl          String?       // URL to uploaded PDF plan
-  planFileName        String?       // Original filename
-  aiAnalysis          Json?         // AI-generated analysis of the plan
-  aiProcessedAt       DateTime?     // When AI processing completed
-  
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  planPdfUrl    String? // URL to uploaded PDF plan
+  planFileName  String? // Original filename
+  aiAnalysis    Json? // AI-generated analysis of the plan
+  aiProcessedAt DateTime? // When AI processing completed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  homeowner           User          @relation("HomeownerProjects", fields: [homeownerId], references: [id])
-  generalContractor   User?         @relation("ContractorProjects", fields: [generalContractorId], references: [id])
-  stages              Stage[]
-  payments            Payment[]
-  orders              Order[] @relation("ProjectOrders")
-  projectRequests     ProjectRequest[]
-  
+  homeowner         User             @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  generalContractor User?            @relation("ContractorProjects", fields: [generalContractorId], references: [id])
+  stages            Stage[]
+  payments          Payment[]
+  orders            Order[]          @relation("ProjectOrders")
+  projectRequests   ProjectRequest[]
+
   @@map("projects")
 }
 
 model Stage {
-  id              String    @id @default(uuid())
-  projectId       String
-  name            String
-  status          String    @default("not_started") // 'not_started' | 'in_progress' | 'completed' | 'blocked'
-  order           Int
-  estimatedCost   Float
-  actualCost      Float?
+  id                String    @id @default(uuid())
+  projectId         String
+  name              String
+  status            String    @default("not_started") // 'not_started' | 'in_progress' | 'completed' | 'blocked'
+  order             Int
+  estimatedCost     Float
+  actualCost        Float?
   estimatedDuration String
-  startDate       DateTime?
-  completionDate  DateTime?
+  startDate         DateTime?
+  completionDate    DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  project         Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  payments        Payment[]
+  projectRequests ProjectRequest[]
+  teamMembers     StageTeamMember[]
+  materials       StageMaterial[]
+  media           StageMedia[]
+  documents       StageDocument[]
+
+  @@map("stages")
+}
+
+// Team members working on a stage
+model StageTeamMember {
+  id         String    @id @default(uuid())
+  stageId    String
+  name       String
+  role       String // e.g., "Foreman", "Mason", "Electrician", "Plumber"
+  phone      String?
+  email      String?
+  dailyRate  Float? // Daily or hourly rate
+  rateType   String? // 'daily' | 'hourly' | 'fixed'
+  startDate  DateTime?
+  endDate    DateTime?
+  photoUrl   String? // Photo of the team member
+  invoiceUrl String? // Invoice/receipt for payment
+  notes      String? // Additional notes
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@map("stage_team_members")
+}
+
+// Materials used in a stage
+model StageMaterial {
+  id              String    @id @default(uuid())
+  stageId         String
+  name            String
+  brand           String?
+  quantity        Float
+  unit            String // 'kg' | 'bags' | 'pieces' | 'liters' | 'meters' | etc.
+  unitPrice       Float
+  totalPrice      Float // quantity * unitPrice
+  supplier        String? // Supplier/vendor name
+  supplierContact String?
+  receiptUrl      String? // Receipt/invoice URL
+  photoUrl        String? // Photo of the material
+  deliveryDate    DateTime?
+  notes           String? // Additional notes
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
   // Relations
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  payments        Payment[]
-  
-  @@map("stages")
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@map("stage_materials")
+}
+
+// Media (photos/videos) for a stage
+model StageMedia {
+  id           String   @id @default(uuid())
+  stageId      String
+  type         String // 'photo' | 'video'
+  url          String // URL to the media file
+  thumbnailUrl String? // Thumbnail for videos
+  caption      String? // Optional caption/description
+  order        Int      @default(0) // Display order
+  createdAt    DateTime @default(now())
+
+  // Relations
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@map("stage_media")
+}
+
+// Documents (receipts, invoices, contracts) for a stage
+model StageDocument {
+  id        String   @id @default(uuid())
+  stageId   String
+  type      String // 'receipt' | 'invoice' | 'contract' | 'other'
+  name      String // Document name/description
+  url       String // URL to the document file
+  category  String? // 'team' | 'material' | 'general'
+  relatedId String? // Optional: ID of related team member or material
+  notes     String? // Additional notes
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@map("stage_documents")
 }
 
 model Payment {
@@ -111,9 +202,9 @@ model Payment {
   updatedAt     DateTime @updatedAt
 
   // Relations
-  project       Project  @relation(fields: [projectId], references: [id])
-  stage         Stage?   @relation(fields: [stageId], references: [id])
-  
+  project Project @relation(fields: [projectId], references: [id])
+  stage   Stage?  @relation(fields: [stageId], references: [id])
+
   @@map("payments")
 }
 
@@ -124,25 +215,25 @@ model Conversation {
   updatedAt DateTime @updatedAt
 
   // Relations
-  participants User[] @relation("Participants")
+  participants User[]    @relation("Participants")
   messages     Message[]
-  
+
   @@map("conversations")
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   conversationId String
   senderId       String
   content        String
-  type           String       @default("text") // 'text' | 'image' | 'file'
-  read           Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  type           String   @default("text") // 'text' | 'image' | 'file'
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   // Relations
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id])
+
   @@map("messages")
 }
 
@@ -151,7 +242,7 @@ model Material {
   name        String
   brand       String
   description String?
-  category    String   // 'cement' | 'steel' | 'wood' | 'paint' | 'plumbing' | 'electrical' | 'tiles' | 'fixtures' | 'other'
+  category    String // 'cement' | 'steel' | 'wood' | 'paint' | 'plumbing' | 'electrical' | 'tiles' | 'fixtures' | 'other'
   price       Float
   unit        String
   stock       Int      @default(0)
@@ -164,10 +255,10 @@ model Material {
   updatedAt   DateTime @updatedAt
 
   // Relations
-  vendor     User     @relation("VendorMaterials", fields: [vendorId], references: [id])
-  orderItems OrderItem[]
-  materialReviews Review[] @relation("MaterialReviews")
-  
+  vendor          User        @relation("VendorMaterials", fields: [vendorId], references: [id])
+  orderItems      OrderItem[]
+  materialReviews Review[]    @relation("MaterialReviews")
+
   @@map("materials")
 }
 
@@ -184,23 +275,23 @@ model Contractor {
   verified    Boolean  @default(false)
   imageUrl    String?
   hiringFee   Float
-  type        String   // 'general_contractor' | 'subcontractor'
+  type        String // 'general_contractor' | 'subcontractor'
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  user      User     @relation("UserContractor", fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation("UserContractor", fields: [userId], references: [id], onDelete: Cascade)
   contractorReviews Review[] @relation("ContractorReviews")
-  
+
   @@map("contractors")
 }
 
 model Order {
-  id              String      @id @default(uuid())
+  id              String   @id @default(uuid())
   userId          String
   projectId       String?
-  type            String      // 'material' | 'contractor'
-  status          String      @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  type            String // 'material' | 'contractor'
+  status          String   @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
   totalAmount     Float
   // Delivery Address (defaults to project address if projectId is set)
   deliveryAddress String?
@@ -211,114 +302,117 @@ model Order {
   deliveryCountry String?
   deliveryLat     Float?
   deliveryLng     Float?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  user        User        @relation("UserOrders", fields: [userId], references: [id])
-  project     Project?    @relation("ProjectOrders", fields: [projectId], references: [id])
-  items       OrderItem[]
-  
+  user    User        @relation("UserOrders", fields: [userId], references: [id])
+  project Project?    @relation("ProjectOrders", fields: [projectId], references: [id])
+  items   OrderItem[]
+
   @@map("orders")
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
+  id         String   @id @default(uuid())
+  orderId    String
   materialId String?
-  quantity  Int
-  price     Float
-  createdAt DateTime @default(now())
+  quantity   Int
+  price      Float
+  createdAt  DateTime @default(now())
 
   // Relations
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  material  Material? @relation(fields: [materialId], references: [id])
-  
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  material Material? @relation(fields: [materialId], references: [id])
+
   @@map("order_items")
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  userId      String
-  materialId  String?
+  id           String   @id @default(uuid())
+  userId       String
+  materialId   String?
   contractorId String?
-  rating      Int      // 1-5
-  comment     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  rating       Int // 1-5
+  comment      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  user        User     @relation("UserReviews", fields: [userId], references: [id])
-  material    Material? @relation("MaterialReviews", fields: [materialId], references: [id], onDelete: Cascade)
-  contractor  Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
-  
+  user       User        @relation("UserReviews", fields: [userId], references: [id])
+  material   Material?   @relation("MaterialReviews", fields: [materialId], references: [id], onDelete: Cascade)
+  contractor Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
+
   @@map("reviews")
 }
 
 model ProjectRequest {
-  id                String   @id @default(uuid())
-  projectId         String
-  contractorId      String   // GC who received the request
-  status            String   @default("pending") // 'pending' | 'accepted' | 'rejected' | 'withdrawn'
-  
+  id           String  @id @default(uuid())
+  projectId    String
+  contractorId String // GC or Subcontractor who received the request
+  senderId     String? // User who sent the request (GC or Homeowner)
+  status       String  @default("pending") // 'pending' | 'accepted' | 'rejected' | 'withdrawn'
+
   // GC's edited estimates (optional)
-  estimatedBudget   Float?
-  estimatedDuration String?
+  estimatedBudget    Float?
+  estimatedDuration  String?
   estimatedStartDate DateTime?
-  gcNotes           String?  // GC's comments/modifications
-  
-  sentAt            DateTime @default(now())
-  respondedAt       DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  gcNotes            String? // GC's comments/modifications (used for workDetails)
+  stageId            String? // Specific stage the request is for
+
+  sentAt      DateTime  @default(now())
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Relations
-  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  contractor        User     @relation("ContractorRequests", fields: [contractorId], references: [id])
-  
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  contractor User    @relation("ContractorRequests", fields: [contractorId], references: [id])
+  sender     User?   @relation("SentRequests", fields: [senderId], references: [id])
+  stage      Stage?  @relation(fields: [stageId], references: [id])
+
   @@map("project_requests")
 }
 
 model Design {
-  id                String        @id @default(uuid())
-  name              String        // e.g., "Modern Minimalist", "Classic Colonial"
-  description       String?
-  createdById       String        // GC or Admin who created the design
-  bedrooms          Int
-  bathrooms         Int
-  squareFootage     Float         // in square feet
-  squareMeters      Float?        // in square meters (calculated)
-  estimatedCost     Float         // Estimated construction cost
-  floors            Int?          // Number of floors
-  estimatedDuration String?       // e.g., "12-18 months"
-  rooms             String[]      // Array of room names
-  materials         String[]      // Array of material names
-  features          String[]      // Array of feature descriptions
-  constructionPhases Json?        // Array of phase objects: { name, description, estimatedDuration, estimatedCost }
-  rating            Float         @default(0)
-  reviews           Int           @default(0)
-  isActive          Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  id                 String   @id @default(uuid())
+  name               String // e.g., "Modern Minimalist", "Classic Colonial"
+  description        String?
+  createdById        String // GC or Admin who created the design
+  bedrooms           Int
+  bathrooms          Int
+  squareFootage      Float // in square feet
+  squareMeters       Float? // in square meters (calculated)
+  estimatedCost      Float // Estimated construction cost
+  floors             Int? // Number of floors
+  estimatedDuration  String? // e.g., "12-18 months"
+  rooms              String[] // Array of room names
+  materials          String[] // Array of material names
+  features           String[] // Array of feature descriptions
+  constructionPhases Json? // Array of phase objects: { name, description, estimatedDuration, estimatedCost }
+  rating             Float    @default(0)
+  reviews            Int      @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   // Relations
-  createdBy         User          @relation("UserDesigns", fields: [createdById], references: [id])
-  images            DesignImage[]
-  
+  createdBy User          @relation("UserDesigns", fields: [createdById], references: [id])
+  images    DesignImage[]
+
   @@map("designs")
 }
 
 model DesignImage {
-  id          String   @id @default(uuid())
-  designId    String
-  url         String   // Image URL
-  label       String?  // e.g., "Exterior", "Kitchen", "Bathroom"
-  order       Int      @default(0) // Display order
-  createdAt   DateTime @default(now())
+  id        String   @id @default(uuid())
+  designId  String
+  url       String // Image URL
+  label     String? // e.g., "Exterior", "Kitchen", "Bathroom"
+  order     Int      @default(0) // Display order
+  createdAt DateTime @default(now())
 
   // Relations
-  design      Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
-  
+  design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
+
   @@map("design_images")
 }
-

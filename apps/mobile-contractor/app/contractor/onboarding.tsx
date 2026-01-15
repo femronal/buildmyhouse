@@ -5,19 +5,15 @@ import { useState } from "react";
 
 const accountTypeLabels = {
   gc: "General Contractor",
-  sub: "Subcontractor",
-  vendor: "Product Vendor",
 };
 
 const requiredDocs = {
   gc: ["Government ID", "Contractor License", "Business Registration", "Insurance Certificate", "Portfolio"],
-  sub: ["Government ID", "Trade License", "Business Registration", "Portfolio"],
-  vendor: ["Government ID", "Business Registration", "Tax Certificate", "Product Catalog"],
 };
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { type } = useLocalSearchParams<{ type: 'gc' | 'sub' | 'vendor' }>();
+  const { type } = useLocalSearchParams<{ type: 'gc' }>();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: "",
@@ -29,7 +25,7 @@ export default function OnboardingScreen() {
   });
   const [uploadedDocs, setUploadedDocs] = useState<string[]>([]);
 
-  const accountType = type || 'gc';
+  const accountType = 'gc';
   const docs = requiredDocs[accountType as keyof typeof requiredDocs] || requiredDocs.gc;
 
   const handleDocUpload = (docName: string) => {

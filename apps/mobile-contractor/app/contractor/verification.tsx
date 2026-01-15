@@ -5,19 +5,11 @@ import { useState, useEffect, useRef } from "react";
 
 export default function VerificationScreen() {
   const router = useRouter();
-  const { type } = useLocalSearchParams<{ type: 'gc' | 'sub' | 'vendor' }>();
+  const { type } = useLocalSearchParams<{ type: 'gc' }>();
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
-  const accountType = type || 'gc';
-
-  const getDashboardRoute = () => {
-    switch (accountType) {
-      case 'sub': return '/contractor/sub-dashboard';
-      case 'vendor': return '/contractor/vendor-dashboard';
-      default: return '/contractor/gc-dashboard';
-    }
-  };
+  const getDashboardRoute = () => '/contractor/gc-dashboard';
 
   useEffect(() => {
     // Pulse animation for pending status

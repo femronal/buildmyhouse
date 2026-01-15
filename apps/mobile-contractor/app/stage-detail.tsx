@@ -442,7 +442,7 @@ export default function StageDetailScreen() {
                     className="text-gray-600 text-sm text-center"
                     style={{ fontFamily: 'Poppins_400Regular' }}
                   >
-                    Once payment is approved, all materials and subcontractors will be deployed to the site ASAP.
+                    Once payment is approved, all materials and team members will be deployed to the site ASAP.
                   </Text>
                 </View>
 

@@ -1,9 +1,38 @@
-import { View, Text, TouchableOpacity, ImageBackground } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Home, Upload, Bell, ArrowLeft } from "lucide-react-native";
+import { useEffect } from "react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function StartScreen() {
   const router = useRouter();
+  const { data: currentUser, isLoading } = useCurrentUser();
+
+  // Redirect authenticated users to the home tabs
+  useEffect(() => {
+    if (!isLoading && currentUser) {
+      // User is authenticated, redirect to home tabs
+      router.replace('/(tabs)/home');
+    }
+  }, [currentUser, isLoading, router]);
+
+  // Show loading indicator while checking authentication
+  if (isLoading) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#000000" />
+      </View>
+    );
+  }
+
+  // If user is authenticated, don't render the landing page (will redirect)
+  if (currentUser) {
+    return (
+      <View className="flex-1 bg-white justify-center items-center">
+        <ActivityIndicator size="large" color="#000000" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-white">

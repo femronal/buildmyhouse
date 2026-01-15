@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, Modal, TextInput, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Bell, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, DollarSign, Bed, Bath, Maximize, Shield, Car } from "lucide-react-native";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, usePendingProjects } from '@/hooks';
@@ -197,7 +197,7 @@ export default function HomeScreen() {
     } else {
       // Unpaid project - show payment modal
       const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
-      let amount = budget * 0.5;
+      let amount = budget * 1.0;
       
       // Stripe maximum amount is $999,999.99 (in dollars, not cents)
       const STRIPE_MAX_AMOUNT = 999999.99;
@@ -350,7 +350,7 @@ export default function HomeScreen() {
 
         {/* Start New Project */}
         <TouchableOpacity
-          onPress={() => router.push('/')}
+          onPress={() => router.push('/location?mode=explore')}
           className="bg-black rounded-3xl p-6 mb-8 flex-row items-center justify-between"
         >
           <View className="flex-1">
@@ -400,7 +400,7 @@ export default function HomeScreen() {
               const uniqueKey = project.uniqueKey || `${project.isPaid ? 'active' : 'pending'}-${projectId}`;
               const isPaid = project.isPaid;
               const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
-              const paymentAmount = budget * 0.5;
+              const paymentAmount = budget * 1.0;
               
               return (
                 <TouchableOpacity
@@ -519,7 +519,7 @@ export default function HomeScreen() {
                             className="text-yellow-800 text-sm mb-2"
                             style={{ fontFamily: 'Poppins_400Regular' }}
                           >
-                            GC has reviewed your project. Pay 50% to start building.
+                            GC has reviewed your project. Pay 100% to start building.
                           </Text>
                           <View className="flex-row justify-between items-center">
                             <Text 

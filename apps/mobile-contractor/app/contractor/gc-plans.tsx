@@ -1,15 +1,33 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, DollarSign, Edit, Trash2, Plus, Info } from "lucide-react-native";
+import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, DollarSign, Edit, Trash2, Plus, Info, Calendar, Edit3 } from "lucide-react-native";
 import { useState, useRef } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import { designService } from '@/services/designService';
 import { useMyDesigns, useDeleteDesign, useUpdateDesign } from '@/hooks/useDesigns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAppAlert } from "../../components/AppAlertProvider";
 
 interface ImageWithLabel {
   uri: string;
   label: string;
+}
+
+function moneyToCents(value: unknown): number {
+  const n =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string'
+        ? Number(value.replace(/[^0-9.-]/g, ''))
+        : NaN;
+  if (!Number.isFinite(n)) return NaN;
+  return Math.round(n * 100);
+}
+
+function sumConstructionPhaseCents(
+  phases: Array<{ estimatedCost: number }>,
+): number {
+  return phases.reduce((sum, p) => sum + (moneyToCents(p?.estimatedCost) || 0), 0);
 }
 
 // Helper to get full image URL from backend
@@ -25,6 +43,7 @@ const getImageUrl = (imageUrl: string) => {
 
 function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
   const router = useRouter();
+  const { showAlert } = useAppAlert();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -34,10 +53,15 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const [estimatedCost, setEstimatedCost] = useState("");
   const [floors, setFloors] = useState("");
   const [estimatedDuration, setEstimatedDuration] = useState("");
-  const [rooms, setRooms] = useState("");
-  const [materials, setMaterials] = useState("");
-  const [features, setFeatures] = useState("");
-  const [constructionPhases, setConstructionPhases] = useState("");
+  const [rooms, setRooms] = useState<string[]>([]);
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [features, setFeatures] = useState<string[]>([]);
+  const [constructionPhases, setConstructionPhases] = useState<Array<{
+    name: string;
+    description: string;
+    estimatedDuration: string;
+    estimatedCost: number;
+  }>>([]);
   const [images, setImages] = useState<ImageWithLabel[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
@@ -57,9 +81,6 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
 
   const handlePickImage = async () => {
     try {
-      console.log('📸 [GC Plans] Starting image picker...');
-      console.log('📸 [GC Plans] Platform:', Platform.OS);
-      
       // On web, the label handles the click automatically - no need to do anything here
       if (Platform.OS === 'web') {
         // The label will automatically trigger the file input when clicked
@@ -69,22 +90,17 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       
       // For iOS/Android, use expo-image-picker
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      console.log('📸 [GC Plans] Permission status:', status);
       
       if (status !== 'granted') {
-        Alert.alert('Permission needed', 'We need camera roll permissions to upload images');
+        showAlert('Permission needed', 'We need camera roll permissions to upload images');
         return;
       }
-
-      console.log('📸 [GC Plans] Launching image library...');
       
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsMultipleSelection: Platform.OS === 'ios', // iOS supports multiple selection
       });
-
-      console.log('📸 [GC Plans] Image picker result:', result);
 
       // Handle both new API (assets array) and old API (uri directly)
       if (!result.canceled) {
@@ -99,25 +115,16 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         }
 
         if (selectedAssets.length > 0) {
-          console.log('📸 [GC Plans] Processing', selectedAssets.length, 'selected images...');
           const newImages = selectedAssets.map((asset, index) => ({
             uri: asset.uri,
             label: `Image ${images.length + index + 1}`,
           }));
-          console.log('📸 [GC Plans] New images to add:', newImages);
           setImages([...images, ...newImages]);
-          console.log('📸 [GC Plans] Images updated successfully. Total images:', images.length + newImages.length);
-        } else {
-          console.log('📸 [GC Plans] No valid image assets found in result');
         }
-      } else {
-        console.log('📸 [GC Plans] Image picker was canceled by user');
       }
     } catch (error: any) {
       console.error('❌ [GC Plans] Error picking images:', error);
-      console.error('❌ [GC Plans] Error message:', error.message);
-      console.error('❌ [GC Plans] Error stack:', error.stack);
-      Alert.alert('Error', error.message || 'Failed to pick images. Please try again.');
+      showAlert('Error', error.message || 'Failed to pick images. Please try again.');
     }
   };
 
@@ -132,58 +139,117 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   };
 
   const handleSubmit = async () => {
-    console.log('📤 [GC Plans] Upload button clicked');
-    console.log('📤 [GC Plans] Form data:', { name, bedrooms, bathrooms, squareFootage, estimatedCost, imagesCount: images.length });
-    
     if (!name.trim()) {
-      console.log('❌ [GC Plans] Validation failed: name is empty');
-      Alert.alert('Validation Error', 'Please enter a design name');
+      showAlert('Validation Error', 'Please enter a design name');
+      return;
+    }
+    if (!description.trim()) {
+      showAlert('Validation Error', 'Please enter a design description');
       return;
     }
     if (!bedrooms || parseInt(bedrooms) < 1) {
-      console.log('❌ [GC Plans] Validation failed: invalid bedrooms');
-      Alert.alert('Validation Error', 'Please enter a valid number of bedrooms');
+      showAlert('Validation Error', 'Please enter a valid number of bedrooms');
       return;
     }
     if (!bathrooms || parseInt(bathrooms) < 1) {
-      console.log('❌ [GC Plans] Validation failed: invalid bathrooms');
-      Alert.alert('Validation Error', 'Please enter a valid number of bathrooms');
+      showAlert('Validation Error', 'Please enter a valid number of bathrooms');
       return;
     }
     if (!squareFootage || parseFloat(squareFootage) < 1) {
-      console.log('❌ [GC Plans] Validation failed: invalid square footage');
-      Alert.alert('Validation Error', 'Please enter a valid square footage');
+      showAlert('Validation Error', 'Please enter a valid square footage');
       return;
     }
-    if (!estimatedCost || parseFloat(estimatedCost) < 0) {
-      console.log('❌ [GC Plans] Validation failed: invalid estimated cost');
-      Alert.alert('Validation Error', 'Please enter a valid estimated cost');
+    if (!estimatedCost || parseFloat(estimatedCost) <= 0) {
+      showAlert('Validation Error', 'Please enter a valid estimated cost');
       return;
+    }
+    if (!floors || parseInt(floors) < 1) {
+      showAlert('Validation Error', 'Please enter the number of floors');
+      return;
+    }
+    if (!estimatedDuration.trim()) {
+      showAlert('Validation Error', 'Please enter an estimated duration');
+      return;
+    }
+    if (rooms.length === 0 || rooms.some((r) => !r.trim())) {
+      showAlert('Validation Error', 'Please add rooms and ensure none are empty');
+      return;
+    }
+    if (materials.length === 0 || materials.some((m) => !m.trim())) {
+      showAlert('Validation Error', 'Please add materials and ensure none are empty');
+      return;
+    }
+    if (features.length === 0 || features.some((f) => !f.trim())) {
+      showAlert('Validation Error', 'Please add features and ensure none are empty');
+      return;
+    }
+    if (constructionPhases.length === 0) {
+      showAlert('Validation Error', 'Please add at least one construction phase');
+      return;
+    }
+    for (let i = 0; i < constructionPhases.length; i++) {
+      const p = constructionPhases[i];
+      if (!p.name?.trim()) {
+        showAlert('Validation Error', `Please enter a name for phase ${i + 1}`);
+        return;
+      }
+      if (!p.description?.trim()) {
+        showAlert('Validation Error', `Please enter a description for phase ${i + 1}`);
+        return;
+      }
+      if (!p.estimatedDuration?.trim()) {
+        showAlert('Validation Error', `Please enter a duration for phase ${i + 1}`);
+        return;
+      }
+      const cents = moneyToCents(p.estimatedCost);
+      if (!Number.isFinite(cents) || cents <= 0) {
+        showAlert('Validation Error', `Please enter a valid cost for phase ${i + 1}`);
+        return;
+      }
     }
     if (images.length === 0) {
-      console.log('❌ [GC Plans] Validation failed: no images');
-      Alert.alert('Validation Error', 'Please upload at least one image');
+      showAlert('Validation Error', 'Please upload at least one image');
+      return;
+    }
+    if (images.some((img) => !img?.label?.trim())) {
+      showAlert('Validation Error', 'Please provide a label for every image');
       return;
     }
 
-    console.log('✅ [GC Plans] All validations passed, starting upload...');
+    // Budget integrity check: sum of phase costs must equal estimatedCost
+    const estCostCents = moneyToCents(estimatedCost);
+    const totalPhaseCents = sumConstructionPhaseCents(constructionPhases);
+    if (!Number.isFinite(estCostCents) || totalPhaseCents !== estCostCents) {
+      showAlert(
+        'Validation Error',
+        `The total of all phase costs must equal the estimated cost.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: $${(estCostCents / 100).toLocaleString()}`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       // Prepare design data
       const designData = {
         name: name.trim(),
-        description: description.trim() || undefined,
+        description: description.trim(),
         bedrooms: parseInt(bedrooms, 10),
         bathrooms: parseInt(bathrooms, 10),
         squareFootage: parseFloat(squareFootage),
         estimatedCost: parseFloat(estimatedCost),
-        floors: floors ? parseInt(floors, 10) : undefined,
-        estimatedDuration: estimatedDuration.trim() || undefined,
-        rooms: rooms.trim() || undefined,
-        materials: materials.trim() || undefined,
-        features: features.trim() || undefined,
-        constructionPhases: constructionPhases.trim() || undefined,
+        floors: parseInt(floors, 10),
+        estimatedDuration: estimatedDuration.trim(),
+        // Convert arrays to comma-separated strings for backend compatibility
+        rooms: rooms.filter(r => r.trim()).map(r => r.trim()).join(', '),
+        materials: materials.filter(m => m.trim()).map(m => m.trim()).join(', '),
+        features: features.filter(f => f.trim()).map(f => f.trim()).join(', '),
+        constructionPhases: JSON.stringify(constructionPhases.map(p => ({
+          name: p.name.trim(),
+          description: p.description.trim(),
+          estimatedDuration: p.estimatedDuration.trim(),
+          estimatedCost: p.estimatedCost,
+        }))),
         images: images.map((img, index) => ({
           uri: img.uri,
           label: img.label || `Image ${index + 1}`,
@@ -196,18 +262,12 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         label: img.label || 'Image' 
       }));
 
-      console.log('📤 [GC Plans] Calling mutation with:', {
-        designDataKeys: Object.keys(designData),
-        imageUrisCount: imageUris.length,
-      });
-
       // Use mutate with promise wrapper to avoid React development mode issues
       await new Promise<void>((resolve, reject) => {
         createDesignMutation.mutate(
           { designData, imageUris },
           {
             onSuccess: () => {
-              console.log('✅ [GC Plans] Mutation successful');
               resolve();
             },
             onError: (error) => {
@@ -227,21 +287,20 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       setEstimatedCost("");
       setFloors("");
       setEstimatedDuration("");
-      setRooms("");
-      setMaterials("");
-      setFeatures("");
-      setConstructionPhases("");
+      setRooms([]);
+      setMaterials([]);
+      setFeatures([]);
+      setConstructionPhases([]);
       setImages([]);
 
-      Alert.alert(
+      showAlert(
         'Success! 🎉',
         'Your design plan has been uploaded successfully and is now visible to homeowners in the Explore section.',
         [{ text: 'OK' }],
-        { cancelable: false }
       );
     } catch (error: any) {
       console.error('❌ [GC Plans] Error uploading design:', error);
-      Alert.alert('Upload Failed', error.message || 'Failed to upload design. Please try again.');
+      showAlert('Upload Failed', error.message || 'Failed to upload design. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -340,30 +399,6 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
           
           <View className="flex-1 ml-2">
             <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-              <DollarSign size={18} color="#6B7280" strokeWidth={2} />
-              <TextInput
-                className="flex-1 ml-3 text-white text-base"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-                placeholder="Est. Cost"
-                placeholderTextColor="#6B7280"
-                value={estimatedCost}
-                onChangeText={setEstimatedCost}
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* Additional Details */}
-      <View className="mb-6">
-        <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
-          Additional Details
-        </Text>
-
-        <View className="flex-row mb-3">
-          <View className="flex-1 mr-2">
-            <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
               <TextInput
                 className="flex-1 text-white text-base"
                 style={{ fontFamily: 'Poppins_400Regular' }}
@@ -375,67 +410,244 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               />
             </View>
           </View>
-          
-          <View className="flex-1 ml-2">
-            <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-              <TextInput
-                className="flex-1 text-white text-base"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-                placeholder="Duration (e.g., 8-10 months)"
-                placeholderTextColor="#6B7280"
-                value={estimatedDuration}
-                onChangeText={setEstimatedDuration}
-              />
-            </View>
+        </View>
+      </View>
+
+      {/* Edit Project Analysis Section - Matching Review Project Page Format */}
+      <View className="bg-[#1E3A5F] rounded-2xl mb-4 border-2 border-yellow-600/30" style={{ padding: 20 }}>
+        <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center">
+            <Edit3 size={20} color="#F59E0B" strokeWidth={2} />
+            <Text className="text-yellow-400 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Edit Project Analysis
+            </Text>
           </View>
         </View>
 
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Rooms (comma-separated, e.g., Kitchen, Living Room, Master Bedroom)"
-            placeholderTextColor="#6B7280"
-            value={rooms}
-            onChangeText={setRooms}
-            multiline
-          />
+        {/* Budget */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Estimated Budget *
+          </Text>
+          <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+            <DollarSign size={20} color="#6B7280" strokeWidth={2} />
+            <TextInput
+              className="flex-1 ml-3 text-white text-base"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+              placeholder="Enter estimated budget"
+              placeholderTextColor="#6B7280"
+              value={estimatedCost}
+              onChangeText={setEstimatedCost}
+              keyboardType="numeric"
+            />
+          </View>
         </View>
 
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Materials (comma-separated, e.g., Concrete, Steel, Wood)"
-            placeholderTextColor="#6B7280"
-            value={materials}
-            onChangeText={setMaterials}
-            multiline
-          />
+        {/* Duration */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Estimated Duration *
+          </Text>
+          <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+            <Calendar size={20} color="#6B7280" strokeWidth={2} />
+            <TextInput
+              className="flex-1 ml-3 text-white text-base"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+              placeholder="e.g., 6-8 months"
+              placeholderTextColor="#6B7280"
+              value={estimatedDuration}
+              onChangeText={setEstimatedDuration}
+            />
+          </View>
         </View>
 
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Features (comma-separated, e.g., Solar Panels, Smart Home, Pool)"
-            placeholderTextColor="#6B7280"
-            value={features}
-            onChangeText={setFeatures}
-            multiline
-          />
+        {/* Rooms */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Rooms
+          </Text>
+          {rooms.map((room, index) => (
+            <View key={index} className="flex-row items-center mb-2">
+              <TextInput
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+                placeholder="Room name (e.g., Kitchen, Living Room)"
+                placeholderTextColor="#6B7280"
+                value={room}
+                onChangeText={(value) => {
+                  const updated = [...rooms];
+                  updated[index] = value;
+                  setRooms(updated);
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setRooms(rooms.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setRooms([...rooms, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Room
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 100 }}
-            placeholder="Construction Phases (JSON format or description)"
-            placeholderTextColor="#6B7280"
-            value={constructionPhases}
-            onChangeText={setConstructionPhases}
-            multiline
-          />
+        {/* Materials */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Key Materials
+          </Text>
+          {materials.map((material, index) => (
+            <View key={index} className="flex-row items-center mb-2">
+              <TextInput
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+                placeholder="Material name (e.g., Concrete, Steel, Wood)"
+                placeholderTextColor="#6B7280"
+                value={material}
+                onChangeText={(value) => {
+                  const updated = [...materials];
+                  updated[index] = value;
+                  setMaterials(updated);
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setMaterials(materials.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setMaterials([...materials, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Material
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Features */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Features
+          </Text>
+          {features.map((feature, index) => (
+            <View key={index} className="flex-row items-center mb-2">
+              <TextInput
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+                placeholder="Feature name (e.g., Solar Panels, Smart Home)"
+                placeholderTextColor="#6B7280"
+                value={feature}
+                onChangeText={(value) => {
+                  const updated = [...features];
+                  updated[index] = value;
+                  setFeatures(updated);
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setFeatures(features.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setFeatures([...features, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Feature
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Construction Phases */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Construction Phases
+          </Text>
+          {constructionPhases.map((phase, index) => (
+            <View key={index} className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900">
+              <TextInput
+                className="bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-base mb-2"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+                placeholder="Phase name (e.g., Foundation, Framing)"
+                placeholderTextColor="#6B7280"
+                value={phase.name}
+                onChangeText={(value) => {
+                  const updated = [...constructionPhases];
+                  updated[index] = { ...updated[index], name: value };
+                  setConstructionPhases(updated);
+                }}
+              />
+              <TextInput
+                className="bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm mb-2"
+                style={{ fontFamily: 'Poppins_400Regular', minHeight: 60 }}
+                placeholder="Description"
+                placeholderTextColor="#6B7280"
+                value={phase.description}
+                onChangeText={(value) => {
+                  const updated = [...constructionPhases];
+                  updated[index] = { ...updated[index], description: value };
+                  setConstructionPhases(updated);
+                }}
+                multiline
+              />
+              <View className="flex-row items-center" style={{ gap: 8 }}>
+                <TextInput
+                  className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                  style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                  placeholder="Duration (e.g., 4-6 weeks)"
+                  placeholderTextColor="#6B7280"
+                  value={phase.estimatedDuration}
+                  onChangeText={(value) => {
+                    const updated = [...constructionPhases];
+                    updated[index] = { ...updated[index], estimatedDuration: value };
+                    setConstructionPhases(updated);
+                  }}
+                />
+                <TextInput
+                  className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                  style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                  placeholder="Cost"
+                  placeholderTextColor="#6B7280"
+                  value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
+                  onChangeText={(value) => {
+                    const updated = [...constructionPhases];
+                    updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
+                    setConstructionPhases(updated);
+                  }}
+                  keyboardType="numeric"
+                />
+                <TouchableOpacity
+                  onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
+                  className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                  style={{ minWidth: 40 }}
+                >
+                  <X size={18} color="#F87171" strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setConstructionPhases([...constructionPhases, { name: '', description: '', estimatedDuration: '', estimatedCost: 0 }])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Construction Phase
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -499,7 +711,6 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                 }}
                 onChange={(e: any) => {
                   const files = Array.from(e.target.files || []) as File[];
-                  console.log('📸 [GC Plans] Files selected:', files.length);
                   
                   if (files.length > 0) {
                     setImages(prev => {
@@ -510,8 +721,6 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                           label: `Image ${prev.length + index + 1}`,
                         };
                       });
-                      
-                      console.log('📸 [GC Plans] New images to add:', newImages.length);
                       return [...prev, ...newImages];
                     });
                   }
@@ -543,11 +752,12 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       </View>
 
       {/* Buttons */}
-      <View className="flex-row mb-8" style={{ gap: 12 }}>
+      <View className="flex-row mb-8 px-0" style={{ gap: 12 }}>
         <TouchableOpacity
           onPress={onCancel}
           disabled={isSubmitting}
-          className="flex-1 bg-[#1E3A5F] rounded-full py-4 items-center"
+          className="flex-1 bg-[#1E3A5F] rounded-full py-4 items-center justify-center"
+          style={{ marginRight: 6 }}
         >
           <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
             Cancel
@@ -555,12 +765,12 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         </TouchableOpacity>
         <TouchableOpacity
           onPress={(e) => {
-            console.log('🔘 [GC Plans] Upload button TouchableOpacity onPress fired', e);
             handleSubmit();
           }}
           disabled={isSubmitting}
-          className={`flex-1 bg-blue-600 rounded-full py-4 items-center ${isSubmitting ? 'opacity-50' : ''}`}
+          className={`flex-1 bg-blue-600 rounded-full py-4 items-center justify-center ${isSubmitting ? 'opacity-50' : ''}`}
           activeOpacity={0.7}
+          style={{ marginLeft: 6 }}
         >
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
@@ -576,6 +786,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
 }
 
 function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () => void; onCancel: () => void }) {
+  const { showAlert } = useAppAlert();
   const [name, setName] = useState(design.name || "");
   const [description, setDescription] = useState(design.description || "");
   const [bedrooms, setBedrooms] = useState(design.bedrooms?.toString() || "");
@@ -584,34 +795,106 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   const [estimatedCost, setEstimatedCost] = useState(design.estimatedCost?.toString() || "");
   const [floors, setFloors] = useState(design.floors?.toString() || "");
   const [estimatedDuration, setEstimatedDuration] = useState(design.estimatedDuration || "");
-  const [rooms, setRooms] = useState(Array.isArray(design.rooms) ? design.rooms.join(', ') : "");
-  const [materials, setMaterials] = useState(Array.isArray(design.materials) ? design.materials.join(', ') : "");
-  const [features, setFeatures] = useState(Array.isArray(design.features) ? design.features.join(', ') : "");
-  const [constructionPhases, setConstructionPhases] = useState(
-    design.constructionPhases ? (typeof design.constructionPhases === 'string' ? design.constructionPhases : JSON.stringify(design.constructionPhases)) : ""
-  );
+  const [rooms, setRooms] = useState<string[]>(Array.isArray(design.rooms) ? design.rooms : (design.rooms ? design.rooms.split(',').map((r: string) => r.trim()).filter((r: string) => r) : []));
+  const [materials, setMaterials] = useState<string[]>(Array.isArray(design.materials) ? design.materials : (design.materials ? design.materials.split(',').map((m: string) => m.trim()).filter((m: string) => m) : []));
+  const [features, setFeatures] = useState<string[]>(Array.isArray(design.features) ? design.features : (design.features ? design.features.split(',').map((f: string) => f.trim()).filter((f: string) => f) : []));
+  const [constructionPhases, setConstructionPhases] = useState<Array<{
+    name: string;
+    description: string;
+    estimatedDuration: string;
+    estimatedCost: number;
+  }>>(() => {
+    if (!design.constructionPhases) return [];
+    try {
+      const phases = typeof design.constructionPhases === 'string' 
+        ? JSON.parse(design.constructionPhases) 
+        : design.constructionPhases;
+      return Array.isArray(phases) ? phases : [];
+    } catch {
+      return [];
+    }
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const updateDesignMutation = useUpdateDesign();
 
   const handleSubmit = async () => {
     if (!name.trim()) {
-      Alert.alert('Validation Error', 'Please enter a design name');
+      showAlert('Validation Error', 'Please enter a design name');
+      return;
+    }
+    if (!description.trim()) {
+      showAlert('Validation Error', 'Please enter a design description');
       return;
     }
     if (!bedrooms || parseInt(bedrooms) < 1) {
-      Alert.alert('Validation Error', 'Please enter a valid number of bedrooms');
+      showAlert('Validation Error', 'Please enter a valid number of bedrooms');
       return;
     }
     if (!bathrooms || parseInt(bathrooms) < 1) {
-      Alert.alert('Validation Error', 'Please enter a valid number of bathrooms');
+      showAlert('Validation Error', 'Please enter a valid number of bathrooms');
       return;
     }
     if (!squareFootage || parseFloat(squareFootage) < 1) {
-      Alert.alert('Validation Error', 'Please enter a valid square footage');
+      showAlert('Validation Error', 'Please enter a valid square footage');
       return;
     }
-    if (!estimatedCost || parseFloat(estimatedCost) < 0) {
-      Alert.alert('Validation Error', 'Please enter a valid estimated cost');
+    if (!estimatedCost || parseFloat(estimatedCost) <= 0) {
+      showAlert('Validation Error', 'Please enter a valid estimated cost');
+      return;
+    }
+    if (!floors || parseInt(floors) < 1) {
+      showAlert('Validation Error', 'Please enter the number of floors');
+      return;
+    }
+    if (!estimatedDuration.trim()) {
+      showAlert('Validation Error', 'Please enter an estimated duration');
+      return;
+    }
+    if (rooms.length === 0 || rooms.some((r) => !r.trim())) {
+      showAlert('Validation Error', 'Please add rooms and ensure none are empty');
+      return;
+    }
+    if (materials.length === 0 || materials.some((m) => !m.trim())) {
+      showAlert('Validation Error', 'Please add materials and ensure none are empty');
+      return;
+    }
+    if (features.length === 0 || features.some((f) => !f.trim())) {
+      showAlert('Validation Error', 'Please add features and ensure none are empty');
+      return;
+    }
+    if (constructionPhases.length === 0) {
+      showAlert('Validation Error', 'Please add at least one construction phase');
+      return;
+    }
+    for (let i = 0; i < constructionPhases.length; i++) {
+      const p = constructionPhases[i];
+      if (!p.name?.trim()) {
+        showAlert('Validation Error', `Please enter a name for phase ${i + 1}`);
+        return;
+      }
+      if (!p.description?.trim()) {
+        showAlert('Validation Error', `Please enter a description for phase ${i + 1}`);
+        return;
+      }
+      if (!p.estimatedDuration?.trim()) {
+        showAlert('Validation Error', `Please enter a duration for phase ${i + 1}`);
+        return;
+      }
+      const cents = moneyToCents(p.estimatedCost);
+      if (!Number.isFinite(cents) || cents <= 0) {
+        showAlert('Validation Error', `Please enter a valid cost for phase ${i + 1}`);
+        return;
+      }
+    }
+
+    // Budget integrity check: sum of phase costs must equal estimatedCost
+    const estCostCents = moneyToCents(estimatedCost);
+    const totalPhaseCents = sumConstructionPhaseCents(constructionPhases);
+    if (!Number.isFinite(estCostCents) || totalPhaseCents !== estCostCents) {
+      showAlert(
+        'Validation Error',
+        `The total of all phase costs must equal the estimated cost.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: $${(estCostCents / 100).toLocaleString()}`
+      );
       return;
     }
 
@@ -622,24 +905,30 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
         designId: design.id,
         updateData: {
           name: name.trim(),
-          description: description.trim() || undefined,
+          description: description.trim(),
           bedrooms: parseInt(bedrooms),
           bathrooms: parseInt(bathrooms),
           squareFootage: parseFloat(squareFootage),
           estimatedCost: parseFloat(estimatedCost),
-          floors: floors ? parseInt(floors) : undefined,
-          estimatedDuration: estimatedDuration.trim() || undefined,
-          rooms: rooms.trim() || undefined,
-          materials: materials.trim() || undefined,
-          features: features.trim() || undefined,
-          constructionPhases: constructionPhases.trim() || undefined,
+          floors: parseInt(floors),
+          estimatedDuration: estimatedDuration.trim(),
+          // Convert arrays to comma-separated strings for backend compatibility
+          rooms: rooms.filter(r => r.trim()).map(r => r.trim()).join(', '),
+          materials: materials.filter(m => m.trim()).map(m => m.trim()).join(', '),
+          features: features.filter(f => f.trim()).map(f => f.trim()).join(', '),
+          constructionPhases: JSON.stringify(constructionPhases.map(p => ({
+            name: p.name.trim(),
+            description: p.description.trim(),
+            estimatedDuration: p.estimatedDuration.trim(),
+            estimatedCost: p.estimatedCost,
+          }))),
         },
       });
       
-      Alert.alert('Success', 'Design updated successfully!', [{ text: 'OK', onPress: onSuccess }]);
+      showAlert('Success', 'Design updated successfully!', [{ text: 'OK', onPress: onSuccess }]);
     } catch (error: any) {
       console.error('❌ [Edit Form] Error updating design:', error);
-      Alert.alert('Error', error.message || 'Failed to update design. Please try again.');
+      showAlert('Error', error.message || 'Failed to update design. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -739,111 +1028,265 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             
             <View className="flex-1 ml-2">
               <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-                <DollarSign size={18} color="#6B7280" strokeWidth={2} />
                 <TextInput
-                  className="flex-1 ml-3 text-white text-base"
+                  className="flex-1 text-white text-base"
                   style={{ fontFamily: 'Poppins_400Regular' }}
-                  placeholder="Est. Cost"
+                  placeholder="Floors"
                   placeholderTextColor="#6B7280"
-                  value={estimatedCost}
-                  onChangeText={setEstimatedCost}
+                  value={floors}
+                  onChangeText={setFloors}
                   keyboardType="numeric"
                 />
+              </View>
             </View>
           </View>
         </View>
-      </View>
 
-      {/* Additional Details */}
-      <View className="mb-4">
-        <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
-          Additional Details
-        </Text>
+        {/* Edit Project Analysis Section - Matching Review Project Page */}
+        <View className="bg-[#1E3A5F] rounded-2xl mb-4 border-2 border-yellow-600/30" style={{ padding: 20 }}>
+          <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center">
+            <Edit3 size={20} color="#F59E0B" strokeWidth={2} />
+            <Text className="text-yellow-400 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Edit Project Analysis
+            </Text>
+          </View>
+        </View>
 
-        <View className="flex-row mb-3">
-          <View className="flex-1 mr-2">
-            <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+        {/* Budget */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Estimated Budget *
+          </Text>
+          <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+            <DollarSign size={20} color="#6B7280" strokeWidth={2} />
+            <TextInput
+              className="flex-1 ml-3 text-white text-base"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+              placeholder="Enter estimated budget"
+              placeholderTextColor="#6B7280"
+              value={estimatedCost}
+              onChangeText={setEstimatedCost}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
+
+        {/* Duration */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Estimated Duration *
+          </Text>
+          <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+            <Calendar size={20} color="#6B7280" strokeWidth={2} />
+            <TextInput
+              className="flex-1 ml-3 text-white text-base"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+              placeholder="e.g., 6-8 months"
+              placeholderTextColor="#6B7280"
+              value={estimatedDuration}
+              onChangeText={setEstimatedDuration}
+            />
+          </View>
+        </View>
+
+        {/* Rooms */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Rooms
+          </Text>
+          {rooms.map((room, index) => (
+            <View key={index} className="flex-row items-center mb-2">
               <TextInput
-                className="flex-1 text-white text-base"
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
                 style={{ fontFamily: 'Poppins_400Regular' }}
-                placeholder="Floors"
+                placeholder="Room name (e.g., Kitchen, Living Room)"
                 placeholderTextColor="#6B7280"
-                value={floors}
-                onChangeText={setFloors}
-                keyboardType="numeric"
+                value={room}
+                onChangeText={(value) => {
+                  const updated = [...rooms];
+                  updated[index] = value;
+                  setRooms(updated);
+                }}
               />
+              <TouchableOpacity
+                onPress={() => setRooms(rooms.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
             </View>
-          </View>
-          
-          <View className="flex-1 ml-2">
-            <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
+          ))}
+          <TouchableOpacity
+            onPress={() => setRooms([...rooms, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Room
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Materials */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Key Materials
+          </Text>
+          {materials.map((material, index) => (
+            <View key={index} className="flex-row items-center mb-2">
               <TextInput
-                className="flex-1 text-white text-base"
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
                 style={{ fontFamily: 'Poppins_400Regular' }}
-                placeholder="Duration (e.g., 8-10 months)"
+                placeholder="Material name (e.g., Concrete, Steel, Wood)"
                 placeholderTextColor="#6B7280"
-                value={estimatedDuration}
-                onChangeText={setEstimatedDuration}
+                value={material}
+                onChangeText={(value) => {
+                  const updated = [...materials];
+                  updated[index] = value;
+                  setMaterials(updated);
+                }}
               />
+              <TouchableOpacity
+                onPress={() => setMaterials(materials.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
             </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setMaterials([...materials, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Material
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Features */}
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Features
+          </Text>
+          {features.map((feature, index) => (
+            <View key={index} className="flex-row items-center mb-2">
+              <TextInput
+                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+                placeholder="Feature name (e.g., Solar Panels, Smart Home)"
+                placeholderTextColor="#6B7280"
+                value={feature}
+                onChangeText={(value) => {
+                  const updated = [...features];
+                  updated[index] = value;
+                  setFeatures(updated);
+                }}
+              />
+              <TouchableOpacity
+                onPress={() => setFeatures(features.filter((_, i) => i !== index))}
+                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+              >
+                <X size={20} color="#F87171" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity
+            onPress={() => setFeatures([...features, ''])}
+            className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+          >
+            <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              + Add Feature
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+          {/* Construction Phases */}
+          <View className="mb-4">
+            <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Construction Phases
+            </Text>
+            {constructionPhases.map((phase, index) => (
+              <View key={index} className="bg-[#0A1628] rounded-xl mb-3 border border-blue-900" style={{ padding: 16 }}>
+                <TextInput
+                  className="bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-base mb-2"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  placeholder="Phase name (e.g., Foundation, Framing)"
+                  placeholderTextColor="#6B7280"
+                  value={phase.name}
+                  onChangeText={(value) => {
+                    const updated = [...constructionPhases];
+                    updated[index] = { ...updated[index], name: value };
+                    setConstructionPhases(updated);
+                  }}
+                />
+                <TextInput
+                  className="bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm mb-2"
+                  style={{ fontFamily: 'Poppins_400Regular', minHeight: 60 }}
+                  placeholder="Description"
+                  placeholderTextColor="#6B7280"
+                  value={phase.description}
+                  onChangeText={(value) => {
+                    const updated = [...constructionPhases];
+                    updated[index] = { ...updated[index], description: value };
+                    setConstructionPhases(updated);
+                  }}
+                  multiline
+                />
+                <View className="flex-row items-center" style={{ gap: 8 }}>
+                  <TextInput
+                    className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                    style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                    placeholder="Duration (e.g., 4-6 weeks)"
+                    placeholderTextColor="#6B7280"
+                    value={phase.estimatedDuration}
+                    onChangeText={(value) => {
+                      const updated = [...constructionPhases];
+                      updated[index] = { ...updated[index], estimatedDuration: value };
+                      setConstructionPhases(updated);
+                    }}
+                  />
+                  <TextInput
+                    className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                    style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                    placeholder="Cost"
+                    placeholderTextColor="#6B7280"
+                    value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
+                    onChangeText={(value) => {
+                      const updated = [...constructionPhases];
+                      updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
+                      setConstructionPhases(updated);
+                    }}
+                    keyboardType="numeric"
+                  />
+                  <TouchableOpacity
+                    onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
+                    className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                    style={{ minWidth: 40 }}
+                  >
+                    <X size={18} color="#F87171" strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity
+              onPress={() => setConstructionPhases([...constructionPhases, { name: '', description: '', estimatedDuration: '', estimatedCost: 0 }])}
+              className="bg-blue-600/20 border border-blue-600 rounded-xl px-4 py-3"
+            >
+              <Text className="text-blue-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                + Add Construction Phase
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
-
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Rooms (comma-separated, e.g., Kitchen, Living Room, Master Bedroom)"
-            placeholderTextColor="#6B7280"
-            value={rooms}
-            onChangeText={setRooms}
-            multiline
-          />
-        </View>
-
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Materials (comma-separated, e.g., Concrete, Steel, Wood)"
-            placeholderTextColor="#6B7280"
-            value={materials}
-            onChangeText={setMaterials}
-            multiline
-          />
-        </View>
-
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 50 }}
-            placeholder="Features (comma-separated, e.g., Solar Panels, Smart Home, Pool)"
-            placeholderTextColor="#6B7280"
-            value={features}
-            onChangeText={setFeatures}
-            multiline
-          />
-        </View>
-
-        <View className="mb-3">
-          <TextInput
-            className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-            style={{ fontFamily: 'Poppins_400Regular', minHeight: 100 }}
-            placeholder="Construction Phases (JSON format or description)"
-            placeholderTextColor="#6B7280"
-            value={constructionPhases}
-            onChangeText={setConstructionPhases}
-            multiline
-          />
-        </View>
-      </View>
 
         {/* Buttons */}
-        <View className="flex-row mt-4 mb-8" style={{ gap: 12 }}>
+        <View className="flex-row mt-4 mb-8 px-0" style={{ gap: 12 }}>
           <TouchableOpacity
             onPress={onCancel}
             disabled={isSubmitting}
-            className="flex-1 bg-[#1E3A5F] rounded-full py-4 items-center"
+            className="flex-1 bg-[#1E3A5F] rounded-full py-4 items-center justify-center"
+            style={{ marginRight: 6 }}
           >
             <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
               Cancel
@@ -852,7 +1295,8 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
           <TouchableOpacity
             onPress={handleSubmit}
             disabled={isSubmitting}
-            className={`flex-1 bg-blue-600 rounded-full py-4 items-center ${isSubmitting ? 'opacity-50' : ''}`}
+            className={`flex-1 bg-blue-600 rounded-full py-4 items-center justify-center ${isSubmitting ? 'opacity-50' : ''}`}
+            style={{ marginLeft: 6 }}
           >
             {isSubmitting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
@@ -871,6 +1315,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
 export default function GCPlansScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { showAlert } = useAppAlert();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingDesign, setEditingDesign] = useState<any | null>(null);
   const [designToDelete, setDesignToDelete] = useState<any | null>(null);
@@ -879,7 +1324,6 @@ export default function GCPlansScreen() {
   const deleteDesignMutation = useDeleteDesign();
 
   const handleDelete = (design: any) => {
-    console.log('🗑️ [GC Plans] Delete button clicked for design:', design.id, design.name);
     setDesignToDelete(design);
   };
 
@@ -888,23 +1332,16 @@ export default function GCPlansScreen() {
 
     setIsDeleting(true);
     try {
-      console.log('🗑️ [GC Plans] Attempting to delete design:', designToDelete.id);
       await deleteDesignMutation.mutateAsync(designToDelete.id);
-      console.log('✅ [GC Plans] Design deleted successfully');
       setDesignToDelete(null);
       setIsDeleting(false);
       
       // Show success message
-      Alert.alert('Success', 'Design deleted successfully');
+      showAlert('Success', 'Design deleted successfully');
     } catch (error: any) {
       console.error('❌ [GC Plans] Error deleting design:', error);
-      console.error('❌ [GC Plans] Error details:', {
-        message: error.message,
-        status: error.status,
-        data: error.data,
-      });
       setIsDeleting(false);
-      Alert.alert('Error', error.message || 'Failed to delete design');
+      showAlert('Error', error.message || 'Failed to delete design');
     }
   };
 
@@ -964,7 +1401,6 @@ export default function GCPlansScreen() {
         {/* Upload Button */}
         <TouchableOpacity
           onPress={(e) => {
-            console.log('🔘 [GC Plans] "Upload New Design Plan" button clicked', e);
             setShowUploadForm(true);
           }}
           className="bg-blue-600 rounded-2xl p-6 mb-6 flex-row items-center justify-center"

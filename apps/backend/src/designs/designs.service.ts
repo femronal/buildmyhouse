@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CreateDesignDto } from './dto/create-design.dto';
 
@@ -6,11 +6,79 @@ import { CreateDesignDto } from './dto/create-design.dto';
 export class DesignsService {
   private prisma = new PrismaClient();
 
+  private moneyToCents(value: unknown): number {
+    const n =
+      typeof value === 'number'
+        ? value
+        : typeof value === 'string'
+          ? Number(value.replace(/[^0-9.-]/g, ''))
+          : NaN;
+    if (!Number.isFinite(n)) return NaN;
+    return Math.round(n * 100);
+  }
+
+  private assertDesignValidity(input: {
+    name: string;
+    description: string | null | undefined;
+    bedrooms: number;
+    bathrooms: number;
+    squareFootage: number;
+    estimatedCost: number;
+    floors: number | null | undefined;
+    estimatedDuration: string | null | undefined;
+    rooms: string[];
+    materials: string[];
+    features: string[];
+    constructionPhases: any;
+  }) {
+    if (!input.name || !input.name.trim()) throw new BadRequestException('Design name is required');
+    if (!input.description || !input.description.trim()) throw new BadRequestException('Design description is required');
+    if (!input.bedrooms || input.bedrooms < 1) throw new BadRequestException('Bedrooms must be at least 1');
+    if (!input.bathrooms || input.bathrooms < 1) throw new BadRequestException('Bathrooms must be at least 1');
+    if (!input.squareFootage || input.squareFootage < 1) throw new BadRequestException('Square footage must be at least 1');
+
+    const estCostCents = this.moneyToCents(input.estimatedCost);
+    if (!Number.isFinite(estCostCents) || estCostCents <= 0) {
+      throw new BadRequestException('Estimated cost must be greater than 0');
+    }
+
+    if (!input.floors || input.floors < 1) throw new BadRequestException('Floors must be at least 1');
+    if (!input.estimatedDuration || !input.estimatedDuration.trim()) throw new BadRequestException('Estimated duration is required');
+
+    if (!Array.isArray(input.rooms) || input.rooms.length === 0 || input.rooms.some((r) => !String(r).trim())) {
+      throw new BadRequestException('Rooms are required (none can be empty)');
+    }
+    if (!Array.isArray(input.materials) || input.materials.length === 0 || input.materials.some((m) => !String(m).trim())) {
+      throw new BadRequestException('Materials are required (none can be empty)');
+    }
+    if (!Array.isArray(input.features) || input.features.length === 0 || input.features.some((f) => !String(f).trim())) {
+      throw new BadRequestException('Features are required (none can be empty)');
+    }
+
+    if (!Array.isArray(input.constructionPhases) || input.constructionPhases.length === 0) {
+      throw new BadRequestException('Construction phases are required');
+    }
+
+    let totalPhaseCents = 0;
+    for (let i = 0; i < input.constructionPhases.length; i++) {
+      const p = input.constructionPhases[i];
+      if (!String(p?.name || '').trim()) throw new BadRequestException(`Phase ${i + 1}: name is required`);
+      if (!String(p?.description || '').trim()) throw new BadRequestException(`Phase ${i + 1}: description is required`);
+      if (!String(p?.estimatedDuration || '').trim()) throw new BadRequestException(`Phase ${i + 1}: estimatedDuration is required`);
+      const cents = this.moneyToCents(p?.estimatedCost);
+      if (!Number.isFinite(cents) || cents <= 0) throw new BadRequestException(`Phase ${i + 1}: estimatedCost must be greater than 0`);
+      totalPhaseCents += cents;
+    }
+
+    if (totalPhaseCents !== estCostCents) {
+      throw new BadRequestException(
+        `Construction phase costs must sum exactly to estimatedCost. Phase total: ${(totalPhaseCents / 100).toFixed(2)}, estimatedCost: ${(estCostCents / 100).toFixed(2)}`,
+      );
+    }
+  }
+
   async createDesign(userId: string, createDesignDto: CreateDesignDto) {
     try {
-      console.log('🎨 [DesignsService] Creating design for user:', userId);
-      console.log('🎨 [DesignsService] Design data:', JSON.stringify(createDesignDto, null, 2));
-
       // Validate user exists
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
@@ -22,32 +90,13 @@ export class DesignsService {
         throw new Error(`User with ID ${userId} not found in database`);
       }
 
-      console.log('✅ [DesignsService] User found:', user.id, 'Role:', user.role);
-
       // Validate required fields
-      if (!createDesignDto.name || !createDesignDto.name.trim()) {
-        throw new Error('Design name is required');
-      }
-      if (!createDesignDto.bedrooms || createDesignDto.bedrooms < 1) {
-        throw new Error('Bedrooms must be at least 1');
-      }
-      if (!createDesignDto.bathrooms || createDesignDto.bathrooms < 1) {
-        throw new Error('Bathrooms must be at least 1');
-      }
-      if (!createDesignDto.squareFootage || createDesignDto.squareFootage < 1) {
-        throw new Error('Square footage must be at least 1');
-      }
-      if (!createDesignDto.estimatedCost || createDesignDto.estimatedCost < 0) {
-        throw new Error('Estimated cost must be 0 or greater');
-      }
       if (!createDesignDto.images || createDesignDto.images.length === 0) {
-        throw new Error('At least one image is required');
+        throw new BadRequestException('At least one image is required');
       }
 
       // Calculate square meters (1 sqft = 0.092903 sqm)
       const squareMeters = createDesignDto.squareFootage * 0.092903;
-
-      console.log('💾 [DesignsService] Saving to database...');
 
       // Parse string arrays from comma-separated values
       const parseStringArray = (str?: string): string[] => {
@@ -61,18 +110,36 @@ export class DesignsService {
         try {
           // Try to parse as JSON first
           const parsed = JSON.parse(str);
-          console.log('📋 [DesignsService] Parsed constructionPhases:', typeof parsed, Array.isArray(parsed) ? 'array' : typeof parsed);
           return parsed;
         } catch (error) {
           console.error('❌ [DesignsService] Failed to parse constructionPhases as JSON:', error);
-          console.log('📋 [DesignsService] constructionPhases value:', str);
           // If not JSON, return null (don't store invalid data)
           return null;
         }
       };
 
       const parsedConstructionPhases = parseConstructionPhases(createDesignDto.constructionPhases);
-      console.log('📋 [DesignsService] Saving constructionPhases:', parsedConstructionPhases);
+
+      const parsedRooms = parseStringArray(createDesignDto.rooms);
+      const parsedMaterials = parseStringArray(createDesignDto.materials);
+      const parsedFeatures = parseStringArray(createDesignDto.features);
+
+      // Strict validation: all fields required (no optional notes field in designs),
+      // and construction phases must sum exactly to estimatedCost.
+      this.assertDesignValidity({
+        name: createDesignDto.name,
+        description: createDesignDto.description,
+        bedrooms: createDesignDto.bedrooms,
+        bathrooms: createDesignDto.bathrooms,
+        squareFootage: createDesignDto.squareFootage,
+        estimatedCost: createDesignDto.estimatedCost,
+        floors: createDesignDto.floors ?? null,
+        estimatedDuration: createDesignDto.estimatedDuration ?? null,
+        rooms: parsedRooms,
+        materials: parsedMaterials,
+        features: parsedFeatures,
+        constructionPhases: parsedConstructionPhases,
+      });
 
       const design = await this.prisma.design.create({
         data: {
@@ -86,9 +153,9 @@ export class DesignsService {
           estimatedCost: createDesignDto.estimatedCost,
           floors: createDesignDto.floors || null,
           estimatedDuration: createDesignDto.estimatedDuration || null,
-          rooms: parseStringArray(createDesignDto.rooms),
-          materials: parseStringArray(createDesignDto.materials),
-          features: parseStringArray(createDesignDto.features),
+          rooms: parsedRooms,
+          materials: parsedMaterials,
+          features: parsedFeatures,
           constructionPhases: parsedConstructionPhases,
           images: {
             create: createDesignDto.images.map((img) => ({
@@ -112,12 +179,9 @@ export class DesignsService {
         },
       });
 
-      console.log('✅ [DesignsService] Design created successfully:', design.id);
       return design;
     } catch (error: any) {
       console.error('❌ [DesignsService] Error creating design:', error);
-      console.error('❌ [DesignsService] Error code:', error.code);
-      console.error('❌ [DesignsService] Error meta:', error.meta);
       
       // If it's a Prisma error, provide more context
       if (error.code === 'P2002') {
@@ -246,7 +310,22 @@ export class DesignsService {
     // Check if design exists and belongs to user
     const design = await this.prisma.design.findUnique({
       where: { id: designId },
-      select: { createdById: true },
+      select: {
+        id: true,
+        createdById: true,
+        name: true,
+        description: true,
+        bedrooms: true,
+        bathrooms: true,
+        squareFootage: true,
+        estimatedCost: true,
+        floors: true,
+        estimatedDuration: true,
+        rooms: true,
+        materials: true,
+        features: true,
+        constructionPhases: true,
+      },
     });
 
     if (!design) {
@@ -306,9 +385,39 @@ export class DesignsService {
         }
       };
       updatePayload.constructionPhases = parseConstructionPhases(updateData.constructionPhases);
-      console.log('📋 [DesignsService] Updating constructionPhases:', updatePayload.constructionPhases);
     }
     if (updateData.isActive !== undefined) updatePayload.isActive = updateData.isActive;
+
+    // Validate merged result so updates cannot create invalid designs
+    const merged = {
+      name: updatePayload.name ?? design.name,
+      description: updatePayload.description ?? design.description,
+      bedrooms: updatePayload.bedrooms ?? design.bedrooms,
+      bathrooms: updatePayload.bathrooms ?? design.bathrooms,
+      squareFootage: updatePayload.squareFootage ?? design.squareFootage,
+      estimatedCost: updatePayload.estimatedCost ?? design.estimatedCost,
+      floors: updatePayload.floors ?? design.floors,
+      estimatedDuration: updatePayload.estimatedDuration ?? design.estimatedDuration,
+      rooms: updatePayload.rooms ?? design.rooms,
+      materials: updatePayload.materials ?? design.materials,
+      features: updatePayload.features ?? design.features,
+      constructionPhases: updatePayload.constructionPhases ?? design.constructionPhases,
+    };
+
+    this.assertDesignValidity({
+      name: merged.name,
+      description: merged.description,
+      bedrooms: merged.bedrooms,
+      bathrooms: merged.bathrooms,
+      squareFootage: merged.squareFootage,
+      estimatedCost: merged.estimatedCost,
+      floors: merged.floors,
+      estimatedDuration: merged.estimatedDuration,
+      rooms: merged.rooms,
+      materials: merged.materials,
+      features: merged.features,
+      constructionPhases: merged.constructionPhases,
+    });
 
     const updatedDesign = await this.prisma.design.update({
       where: { id: designId },

@@ -255,16 +255,16 @@ export default function DesignLibraryScreen() {
             </Text>
           </View>
         ) : (
-          <View className="flex-row flex-wrap justify-between pb-8">
+        <View className="flex-row flex-wrap justify-between pb-8">
             {filteredDesigns.map((design: any) => {
               const images = design.images || [];
               const squareMeters = design.squareMeters || (design.squareFootage * 0.092903);
               return (
-                <TouchableOpacity
-                  key={design.id}
+            <TouchableOpacity
+              key={design.id}
                   onPress={() => handleUseDesign(design)}
-                  className="w-[48%] mb-6 bg-white rounded-2xl overflow-hidden border border-gray-200"
-                >
+              className="w-[48%] mb-6 bg-white rounded-2xl overflow-hidden border border-gray-200"
+            >
                   <View className="relative">
                     {images.length > 0 ? (
                       <>
@@ -277,12 +277,12 @@ export default function DesignLibraryScreen() {
                         >
                           {images.map((image: any, index: number) => (
                             <View key={image.id || index} style={{ width: cardWidth }} className="relative">
-                              <Image
+              <Image
                                 source={{ uri: getImageUrl(image.url) }}
                                 className="h-40"
                                 style={{ width: cardWidth }}
-                                resizeMode="cover"
-                              />
+                resizeMode="cover"
+              />
                               {image.label && (
                                 <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-2 py-0.5">
                                   <Text 
@@ -319,60 +319,60 @@ export default function DesignLibraryScreen() {
                       </View>
                     )}
                   </View>
-                  <View className="p-4">
-                    <Text 
-                      className="text-lg text-black mb-2"
-                      style={{ fontFamily: 'Poppins_700Bold' }}
+              <View className="p-4">
+                <Text 
+                  className="text-lg text-black mb-2"
+                  style={{ fontFamily: 'Poppins_700Bold' }}
                       numberOfLines={1}
-                    >
-                      {design.name}
-                    </Text>
-                    
-                    <View className="flex-row items-center mb-2">
-                      <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
-                      <Text 
-                        className="text-black ml-1 text-sm"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
-                      >
+                >
+                  {design.name}
+                </Text>
+                
+                <View className="flex-row items-center mb-2">
+                  <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
+                  <Text 
+                    className="text-black ml-1 text-sm"
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
                         {design.rating?.toFixed(1) || '0.0'}
-                      </Text>
-                      <Text 
-                        className="text-gray-500 ml-1 text-xs"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                      >
+                  </Text>
+                  <Text 
+                    className="text-gray-500 ml-1 text-xs"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
                         ({design.reviews || 0})
-                      </Text>
-                    </View>
+                  </Text>
+                </View>
 
-                    <View className="flex-row items-center mb-2">
-                      <Bed size={16} color="#737373" strokeWidth={2} />
-                      <Text 
-                        className="text-sm text-gray-500 ml-2 mr-4"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                      >
+                <View className="flex-row items-center mb-2">
+                  <Bed size={16} color="#737373" strokeWidth={2} />
+                  <Text 
+                    className="text-sm text-gray-500 ml-2 mr-4"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
                         {design.bedrooms} bed
-                      </Text>
-                      <Bath size={16} color="#737373" strokeWidth={2} />
-                      <Text 
-                        className="text-sm text-gray-500 ml-2"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                      >
+                  </Text>
+                  <Bath size={16} color="#737373" strokeWidth={2} />
+                  <Text 
+                    className="text-sm text-gray-500 ml-2"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
                         {design.bathrooms} bath
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center mb-3">
-                      <Maximize size={16} color="#737373" strokeWidth={2} />
-                      <Text 
-                        className="text-sm text-gray-500 ml-2"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                      >
+                  </Text>
+                </View>
+                <View className="flex-row items-center mb-3">
+                  <Maximize size={16} color="#737373" strokeWidth={2} />
+                  <Text 
+                    className="text-sm text-gray-500 ml-2"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
                         {Math.round(squareMeters)} m²
-                      </Text>
-                    </View>
-                    <Text 
-                      className="text-xl text-black"
-                      style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                    >
+                  </Text>
+                </View>
+                <Text 
+                  className="text-xl text-black"
+                  style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                >
                       ${design.estimatedCost?.toLocaleString() || '0'}
                     </Text>
                   </View>

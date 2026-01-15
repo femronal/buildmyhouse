@@ -19,28 +19,7 @@ export {
 // User hooks
 export { useCurrentUser } from './useCurrentUser';
 
-// Marketplace hooks
-export {
-  useMaterials,
-  useMaterial,
-  useContractors,
-  useContractor,
-  useSearch,
-  useSearchSuggestions,
-  usePopularItems,
-  useCreateReview,
-  useMaterialReviews,
-  useContractorReviews,
-} from './useMarketplace';
-
-// Vendor hooks
-export {
-  useMyMaterials,
-  useCreateMaterial,
-  useUpdateMaterial,
-  useDeleteMaterial,
-} from './useVendor';
-
+// Marketplace/Vendor hooks removed for MVP (no shop/material marketplace yet)
 // GC (General Contractor) hooks
 export {
   usePendingRequests,

@@ -29,7 +29,8 @@ export class WebSocketService {
     id: string;
     name: string;
     status: string;
-    completionDate: Date;
+    completionDate?: Date | null;
+    startDate?: Date | null;
   }) {
     this.gateway.emitStageCompletion(projectId, stage);
   }

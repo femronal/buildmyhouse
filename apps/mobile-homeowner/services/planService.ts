@@ -19,11 +19,7 @@ export const planService = {
    */
   uploadPlan: async (planData: UploadPlanData, pdfFile: any) => {
     const formData = new FormData();
-    
-    console.log('📄 PDF File object:', pdfFile);
-    console.log('📄 PDF File URI:', pdfFile.uri);
-    console.log('📄 PDF File name:', pdfFile.name);
-    
+
     // Add PDF file - backend expects field name 'planPdf'
     // For React Native web, expo-document-picker returns a file object
     // We need to fetch the file and create a proper File/Blob
@@ -38,21 +34,17 @@ export const planService = {
         fileToUpload = new File([blob], pdfFile.name || 'plan.pdf', { 
           type: 'application/pdf' 
         });
-        console.log('✅ Created File object from URI');
       } else if (pdfFile instanceof File) {
         // Already a File object
         fileToUpload = pdfFile;
-        console.log('✅ Using existing File object');
       } else if (pdfFile instanceof Blob) {
         // Convert Blob to File
         fileToUpload = new File([pdfFile], pdfFile.name || 'plan.pdf', { 
           type: 'application/pdf' 
         });
-        console.log('✅ Converted Blob to File');
       } else {
         // Fallback: try to use as-is
         fileToUpload = pdfFile as any;
-        console.log('⚠️ Using file as-is (may not work)');
       }
     } catch (error) {
       console.error('❌ Error preparing file:', error);
@@ -82,18 +74,9 @@ export const planService = {
     }
     formData.append('budget', planData.budget.toString());
 
-    console.log('📤 FormData prepared:');
-    console.log('  - planPdf:', fileToUpload.name, fileToUpload.size, 'bytes');
-    console.log('  - name:', planData.name);
-    console.log('  - budget:', planData.budget.toString());
-    console.log('  - latitude:', planData.latitude?.toString());
-    console.log('  - longitude:', planData.longitude?.toString());
-
     // For FormData, don't set Content-Type header - browser will set it automatically with boundary
     const response = await api.post('/plans/upload', formData);
-    
-    console.log('📥 Upload response:', response);
-    
+
     // Response structure: { project: { id, ... }, aiAnalysis: {...} }
     return response;
   },
@@ -107,5 +90,6 @@ export const planService = {
     return response;
   },
 };
+
 
 

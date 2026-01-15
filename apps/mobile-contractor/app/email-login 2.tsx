@@ -4,8 +4,8 @@ import { useState } from "react";
 import { storeAuthToken } from "@/lib/auth";
 import { ArrowLeft, Mail, Lock } from "lucide-react-native";
 
-// Allowed roles for contractor app
-const ALLOWED_ROLES = ['general_contractor', 'subcontractor', 'vendor', 'admin'];
+// Allowed roles for contractor app (MVP: GC + admin only)
+const ALLOWED_ROLES = ['general_contractor', 'admin'];
 
 export default function EmailLoginScreen() {
   const router = useRouter();
@@ -29,9 +29,6 @@ export default function EmailLoginScreen() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Login successful, received token:', data.token ? 'Token exists' : 'NO TOKEN IN RESPONSE');
-        console.log('👤 User:', data.user);
-        console.log('🔑 User role:', data.user?.role);
         
         if (!data.token) {
           console.error('❌ Backend did not return a token!');
@@ -39,31 +36,21 @@ export default function EmailLoginScreen() {
           return;
         }
 
-        // ROLE VALIDATION: Only allow contractors, subs, vendors
+        // ROLE VALIDATION: Only allow GCs (and admin)
         const userRole = data.user?.role;
         if (!userRole || !ALLOWED_ROLES.includes(userRole)) {
           console.error('❌ Invalid role for contractor app:', userRole);
           Alert.alert(
             'Access Denied',
-            `This app is for contractors, subcontractors, and vendors only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the homeowner app to sign in.`,
+            `This app is for General Contractors only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the homeowner app to sign in.`,
             [{ text: 'OK' }]
           );
           return;
         }
         
         await storeAuthToken(data.token);
-        console.log('✅ Token stored successfully');
         
-        // Route based on role
-        if (userRole === 'general_contractor') {
-          router.replace('/contractor/gc-dashboard');
-        } else if (userRole === 'subcontractor') {
-          router.replace('/contractor/sub-dashboard');
-        } else if (userRole === 'vendor') {
-          router.replace('/contractor/vendor-dashboard');
-        } else {
-          router.replace('/contractor');
-        }
+        router.replace('/contractor/gc-dashboard');
       } else {
         const error = await response.json();
         console.error('❌ Login failed:', error);
@@ -158,8 +145,6 @@ export default function EmailLoginScreen() {
           </Text>
           <Text className="text-blue-200 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
             GC: gc@example.com{'\n'}
-            Subcontractor: sub@example.com{'\n'}
-            Vendor: vendor@example.com{'\n'}
             Password: password123
           </Text>
         </View>

@@ -135,7 +135,6 @@ export default function EmailLoginScreen() {
           </Text>
           <Text className="text-blue-800 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
             Homeowner: homeowner@example.com{'\n'}
-            Vendor: vendor@example.com{'\n'}
             Password: password123
           </Text>
         </View>
@@ -161,5 +160,6 @@ export default function EmailLoginScreen() {
     </KeyboardAvoidingView>
   );
 }
+
 
 

@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = __DEV__ 
   ? 'http://localhost:3001' 
-  : 'https://api.buildmyhouse.com'; // TODO: Change to production URL
+  : 'https://api.buildmyhouse.com';
 
 let socket: Socket | null = null;
 
@@ -25,11 +25,11 @@ export const initSocket = (token: string): Socket => {
   });
 
   socket.on('connect', () => {
-    console.log('✅ WebSocket connected');
+    if (__DEV__) console.log('✅ WebSocket connected');
   });
 
   socket.on('disconnect', () => {
-    console.log('❌ WebSocket disconnected');
+    if (__DEV__) console.log('❌ WebSocket disconnected');
   });
 
   socket.on('error', (error) => {

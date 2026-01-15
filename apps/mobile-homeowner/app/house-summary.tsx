@@ -120,11 +120,13 @@ export default function HouseSummaryScreen() {
   const originalAiAnalysis = projectAnalysisData?.aiAnalysis || null;
   
   // Get accepted GC's edited analysis from project request
-  const acceptedRequest = projectAnalysisData?.projectRequests?.[0];
+  // Only get requests with status 'accepted'
+  const acceptedRequest = projectAnalysisData?.projectRequests?.find((req: any) => req.status === 'accepted');
+  const pendingRequests = projectAnalysisData?.projectRequests?.filter((req: any) => req.status === 'pending') || [];
   let gcEditedAnalysis: any = null;
   let acceptedGC: any = null;
   
-  if (acceptedRequest) {
+  if (acceptedRequest && acceptedRequest.status === 'accepted') {
     // Parse the edited analysis from gcNotes
     if (acceptedRequest.gcNotes) {
       try {
@@ -184,7 +186,7 @@ export default function HouseSummaryScreen() {
 
   // Check GC acceptance status - poll every 5 seconds if we haven't detected acceptance yet
   // Keep polling until we detect acceptance OR we're already in 'accepted' state
-  const shouldPoll = gcRequestStatus !== 'accepted';
+  const shouldPoll = gcRequestStatus !== 'accepted' && !!projectId;
   const { data: gcAcceptanceData, isLoading: loadingAcceptance } = useCheckGCAcceptance(
     projectId,
     shouldPoll ? 5000 : undefined // Poll every 5 seconds if not accepted yet
@@ -195,21 +197,31 @@ export default function HouseSummaryScreen() {
   const saveProjectForLaterMutation = useSaveProjectForLater();
   const createProjectFromDesignMutation = useCreateProjectFromDesign();
 
-  // Check initial project status and update when GC accepts
+  // Check initial project status and update when GC accepts or when request is pending
   useEffect(() => {
-    if (gcAcceptanceData) {
-      if (gcAcceptanceData.hasAcceptedGC) {
-        if (gcRequestStatus !== 'accepted') {
-          setGcRequestStatus('accepted');
-          
-          // Invalidate and refetch project analysis query to get GC's edited data
-          queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
-          // Force refetch immediately
-          setTimeout(() => {
-            refetchAnalysis();
-          }, 500);
-        }
+    if (!gcAcceptanceData || !projectId) return;
+    // Only update status if there's actual acceptance
+    // Check accepted requests FIRST - this is the most reliable indicator
+    // Only show "accepted" if there's actually an accepted request (acceptedRequestsCount > 0)
+    // generalContractorId is set when GC accepts, but we also need confirmed accepted request
+    if (gcAcceptanceData.acceptedRequestsCount > 0) {
+      // GC has actually accepted - update status to accepted
+      if (gcRequestStatus !== 'accepted') {
+        setGcRequestStatus('accepted');
+        
+        // Invalidate and refetch project analysis query to get GC's edited data
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
+        // Force refetch immediately
+        setTimeout(() => {
+          refetchAnalysis();
+        }, 500);
       }
+    } else if (gcAcceptanceData.hasPendingRequest && gcRequestStatus === 'none') {
+      // Request has been sent but not yet accepted - update status to pending
+      setGcRequestStatus('pending');
+    } else if (!gcAcceptanceData.hasPendingRequest && !gcAcceptanceData.hasAcceptedGC && gcRequestStatus !== 'none') {
+      // No pending or accepted requests found - might have been rejected
+      // Don't automatically reset - let user see the rejection or wait for next poll
     }
   }, [gcAcceptanceData, gcRequestStatus, projectId, queryClient, refetchAnalysis]);
 
@@ -264,7 +276,12 @@ export default function HouseSummaryScreen() {
         contractorIds: Array.from(selectedGCs),
       });
 
-      setGcRequestStatus('pending');
+      // Don't set status here - let the polling check determine it
+      // Wait a moment for backend to save the request, then invalidate and poll
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'gc-acceptance'] });
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
+      }, 1000); // Wait 1 second for backend to process
     } catch (error) {
       // Error handled by mutation
     } finally {
@@ -298,7 +315,7 @@ export default function HouseSummaryScreen() {
       // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
       const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
       const recalculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
-      const recalculatedAmount = recalculatedBudget * 0.5;
+      const recalculatedAmount = recalculatedBudget * 1.0;
       
       if (recalculatedAmount > 0) {
         // Update state with recalculated values
@@ -366,12 +383,8 @@ export default function HouseSummaryScreen() {
     }
 
     try {
-      console.log('🔄 Activating project after payment success...');
-      
       // Activate project after successful payment - this marks it as "active" and "paid"
       await activateProjectMutation.mutateAsync(currentProjectId);
-      
-      console.log('✅ Project activated successfully');
       
       // Invalidate all project queries to refresh the lists
       queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -385,7 +398,6 @@ export default function HouseSummaryScreen() {
       
       // Close modal and navigate after a brief delay to ensure everything is processed
       setTimeout(() => {
-        console.log('🔄 Closing payment modal and navigating...');
         setShowPaymentModal(false);
         setPaymentClientSecret(null);
         // Navigate to dashboard/home to see the updated project list
@@ -420,7 +432,7 @@ export default function HouseSummaryScreen() {
           contractor: acceptedGC,
         },
         budget: acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0,
-        paymentAmount: (acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 0.5,
+        paymentAmount: (acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 1.0,
       };
 
       await saveProjectForLaterMutation.mutateAsync({
@@ -457,11 +469,11 @@ export default function HouseSummaryScreen() {
       return;
     }
 
-    // Calculate payment amount - 50% of GC's estimated budget
+    // Calculate payment amount - 100% of GC's estimated budget
     // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
     const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
     const calculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
-    const calculatedAmount = calculatedBudget * 0.5; // 50% deposit
+    const calculatedAmount = calculatedBudget * 1.0; // 100% full payment
 
     if (calculatedAmount <= 0 || calculatedBudget <= 0) {
       // Show error in modal instead of silently returning
@@ -821,7 +833,7 @@ export default function HouseSummaryScreen() {
             </View>
 
           </View>
-        ) : gcRequestStatus === 'accepted' && acceptedRequest ? (
+        ) : gcRequestStatus === 'accepted' && acceptedRequest && acceptedRequest.status === 'accepted' && gcAcceptanceData?.acceptedRequestsCount > 0 && projectAnalysisData?.generalContractorId ? (
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -1029,10 +1041,6 @@ export default function HouseSummaryScreen() {
         {isDesignSelection && designGC && gcRequestStatus === 'none' && (
           <TouchableOpacity
             onPress={async () => {
-              console.log('🔘 [house-summary] Work with This Contractor button clicked');
-              console.log('🔘 [house-summary] designId:', designId);
-              console.log('🔘 [house-summary] params:', params);
-              
               if (!designId) {
                 console.error('❌ [house-summary] No designId found');
                 Alert.alert('Error', 'Design ID is missing. Please try again.');
@@ -1041,14 +1049,11 @@ export default function HouseSummaryScreen() {
               
               try {
                 setIsSendingRequests(true);
-                console.log('📤 [house-summary] Starting project creation from design...');
                 
                 // Get address from params (passed from explore/design-library)
                 const address = params.address as string;
-                console.log('📍 [house-summary] Address from params:', address);
                 
                 if (!address) {
-                  console.log('⚠️ [house-summary] No address found, showing address form');
                   setIsSendingRequests(false);
                   setShowAddressModal(true);
                   return;
@@ -1066,17 +1071,18 @@ export default function HouseSummaryScreen() {
                   longitude: params.longitude ? parseFloat(params.longitude as string) : undefined,
                 };
                 
-                console.log('📤 [house-summary] Creating project with data:', projectData);
-                
                 // Create project from design and send request to GC
                 const project = await createProjectFromDesignMutation.mutateAsync(projectData);
                 
-                console.log('✅ [house-summary] Project created successfully:', project);
-                
-                // Set project ID and status to pending
+                // Set project ID - status will be updated by polling
                 setProjectId(project.id);
-                setGcRequestStatus('pending');
-                console.log('✅ [house-summary] Project ID set:', project.id, 'Status: pending');
+                // Don't set status here - let the polling check determine it
+                // The status will be set to 'pending' once the checkGCAcceptance hook detects a pending request
+                // Wait a moment for backend to save the request, then invalidate and poll
+                setTimeout(() => {
+                  queryClient.invalidateQueries({ queryKey: ['projects', project.id, 'gc-acceptance'] });
+                  queryClient.invalidateQueries({ queryKey: ['projects', project.id, 'analysis'] });
+                }, 1000); // Wait 1 second for backend to process
               } catch (error: any) {
                 console.error('❌ [house-summary] Error creating project from design:', error);
                 console.error('❌ [house-summary] Error details:', {
@@ -1091,7 +1097,6 @@ export default function HouseSummaryScreen() {
                 );
               } finally {
                 setIsSendingRequests(false);
-                console.log('🏁 [house-summary] Request process completed');
               }
             }}
             disabled={createProjectFromDesignMutation.isPending || isSendingRequests}
@@ -1142,13 +1147,16 @@ export default function HouseSummaryScreen() {
             <View className="flex-row items-center mb-2">
               <Clock size={20} color="#d97706" strokeWidth={2} />
               <Text className="text-yellow-900 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Waiting for GC Response
+                Request Pending Review
               </Text>
             </View>
-            <Text className="text-yellow-800 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-yellow-800 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
               {isDesignSelection 
                 ? 'Your request has been sent to the contractor. They will review and respond within 24-48 hours.'
-                : `Your request has been sent to ${selectedGCs.size} contractor(s). They will review and respond within 24-48 hours.`}
+                : `Your request has been sent to ${gcAcceptanceData?.pendingRequestsCount || selectedGCs.size || 1} contractor(s). They will review your project and respond soon.`}
+            </Text>
+            <Text className="text-yellow-700 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', fontStyle: 'italic' }}>
+              You'll be notified as soon as a contractor accepts your project.
             </Text>
           </View>
         )}
@@ -1181,7 +1189,8 @@ export default function HouseSummaryScreen() {
 
         {/* Action Buttons - Pay and Save for Later */}
         {/* Show for both design selection and project flow when GC is accepted */}
-        {gcRequestStatus === 'accepted' && (isDesignSelection || acceptedRequest) && (
+        {/* Only show if status is accepted AND we have an accepted request with status 'accepted' AND confirmed acceptance */}
+        {gcRequestStatus === 'accepted' && (isDesignSelection || (acceptedRequest && acceptedRequest.status === 'accepted' && gcAcceptanceData?.acceptedRequestsCount > 0 && projectAnalysisData?.generalContractorId)) && (
           <View className="flex-row gap-3 mb-8">
             <TouchableOpacity
               onPress={handleSaveForLater}
@@ -1429,18 +1438,13 @@ export default function HouseSummaryScreen() {
                     longitude: selectedAddress.longitude,
                   };
                   
-                  console.log('📤 [house-summary] Creating project with selected address:', projectData);
-                  
                   // Create project from design and send request to GC
                   const project = await createProjectFromDesignMutation.mutateAsync(projectData);
-                  
-                  console.log('✅ [house-summary] Project created successfully:', project);
                   
                   // Set project ID and status to pending
                   setProjectId(project.id);
                   setGcRequestStatus('pending');
                   setSelectedAddress(null);
-                  console.log('✅ [house-summary] Project ID set:', project.id, 'Status: pending');
                 } catch (error: any) {
                   console.error('❌ [house-summary] Error creating project from design:', error);
                   Alert.alert(

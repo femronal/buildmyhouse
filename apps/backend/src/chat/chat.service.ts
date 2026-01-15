@@ -102,6 +102,38 @@ export class ChatService {
   }
 
   /**
+   * Mark all messages in a conversation as read for a user
+   */
+  async markConversationAsRead(conversationId: string, userId: string) {
+    // Verify user is a participant in the conversation
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
+
+    if (!conversation) {
+      throw new Error('Conversation not found');
+    }
+
+    const isParticipant = conversation.participants.some(p => p.id === userId);
+    if (!isParticipant) {
+      throw new Error('You do not have permission to mark messages as read in this conversation');
+    }
+
+    // Mark all unread messages that are NOT sent by the current user as read
+    await this.prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId }, // Only mark messages from others as read
+        read: false,
+      },
+      data: { read: true },
+    });
+
+    return { success: true, message: 'Messages marked as read' };
+  }
+
+  /**
    * Get conversation messages
    */
   async getConversationMessages(conversationId: string) {
@@ -160,6 +192,101 @@ export class ChatService {
       include: {
         participants: true,
         messages: true,
+      },
+    });
+  }
+
+  /**
+   * Delete a conversation (and all its messages)
+   */
+  async deleteConversation(conversationId: string, userId: string) {
+    // Verify user is a participant
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: { participants: true },
+    });
+
+    if (!conversation) {
+      throw new Error('Conversation not found');
+    }
+
+    const isParticipant = conversation.participants.some(p => p.id === userId);
+    if (!isParticipant) {
+      throw new Error('You do not have permission to delete this conversation');
+    }
+
+    // Delete all messages first (due to foreign key constraints)
+    await this.prisma.message.deleteMany({
+      where: { conversationId },
+    });
+
+    // Delete the conversation
+    await this.prisma.conversation.delete({
+      where: { id: conversationId },
+    });
+
+    return { success: true, message: 'Conversation deleted successfully' };
+  }
+
+  /**
+   * Get all conversations for a user with unread message counts
+   */
+  async getUserConversations(userId: string) {
+    const conversations = await this.prisma.conversation.findMany({
+      where: {
+        participants: {
+          some: {
+            id: userId,
+          },
+        },
+      },
+      include: {
+        participants: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            pictureUrl: true,
+          },
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1, // Get only the last message for preview
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // For each conversation, count unread messages
+    const conversationsWithUnread = await Promise.all(
+      conversations.map(async (conversation) => {
+        const unreadCount = await this.prisma.message.count({
+          where: {
+            conversationId: conversation.id,
+            senderId: { not: userId }, // Messages not sent by the current user
+            read: false,
+          },
+        });
+
+        return {
+          ...conversation,
+          unreadCount,
+        };
+      }),
+    );
+
+    return conversationsWithUnread;
+  }
+
+  /**
+   * Get unread message count for a specific conversation
+   */
+  async getConversationUnreadCount(conversationId: string, userId: string) {
+    return this.prisma.message.count({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        read: false,
       },
     });
   }

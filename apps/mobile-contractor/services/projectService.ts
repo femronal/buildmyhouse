@@ -98,5 +98,30 @@ export const projectService = {
       throw error;
     }
   },
+
+  /**
+   * Update stage status
+   */
+  updateStageStatus: async (projectId: string, stageId: string, status: 'not_started' | 'in_progress' | 'completed' | 'blocked') => {
+    try {
+      const response = await api.patch(`/projects/${projectId}/stages/${stageId}`, { status });
+      return response;
+    } catch (error: any) {
+      console.error('❌ [projectService] Error updating stage:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete a project (GC can only delete their unpaid projects; enforced on backend)
+   */
+  deleteProject: async (projectId: string) => {
+    try {
+      return await api.delete(`/projects/${projectId}`);
+    } catch (error: any) {
+      console.error('❌ [projectService] Error deleting project:', error);
+      throw error;
+    }
+  },
 };
 
