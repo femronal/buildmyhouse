@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Home, DollarSign, Trash2, Bed, Bath, Maximize, Calendar, HardHat, Star, MapPin, ChevronRight, Clock, X } from "lucide-react-native";
+import { ArrowLeft, Home, DollarSign, Trash2, Bed, Bath, Maximize, Calendar, HardHat, Star, MapPin, ChevronRight, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
-import { usePendingProjects, useDeletePendingProject } from '@/hooks';
+import { usePendingProjects, useDeletePendingProject, useDeclareManualPayment } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
+import * as WebBrowser from 'expo-web-browser';
 
 export default function PendingProjectsScreen() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function PendingProjectsScreen() {
   const deleteProjectMutation = useDeletePendingProject();
   const createPaymentIntentMutation = useCreatePaymentIntent();
   const activateProjectMutation = useActivateProject();
+  const declareManualPaymentMutation = useDeclareManualPayment();
   
   const [selectedProject, setSelectedProject] = useState<any>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -87,6 +89,37 @@ export default function PendingProjectsScreen() {
       setPaymentError(error?.message || 'Failed to create payment intent');
       setIsProcessingPayment(false);
     }
+  };
+
+  const handleOpenExternalLink = async (url?: string) => {
+    if (!url) return;
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch {
+      Alert.alert('Could not open link', 'Please try again.');
+    }
+  };
+
+  const handleDeclarePaid = async (projectId: string) => {
+    Alert.alert(
+      'Confirm payment',
+      "Only tap 'I paid' after you’ve completed the deposit using the payment instructions (Stripe invoice, Wise, Paystack, or Zelle).",
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'I paid',
+          onPress: async () => {
+            try {
+              await declareManualPaymentMutation.mutateAsync(projectId);
+              Alert.alert('Submitted', 'We’ll review your payment and notify you when tracking is unlocked.');
+              refetch();
+            } catch (e: any) {
+              Alert.alert('Could not submit', e?.message || 'Please try again.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handlePaymentSuccess = async () => {
@@ -223,6 +256,12 @@ export default function PendingProjectsScreen() {
             const gc = project.acceptedRequest?.contractor || project.acceptedRequest?.contractorProfile;
             const projectId = project.id || project.projectId || `pending-${index}`;
             const uniqueKey = `pending-${projectId}-${index}`;
+            const projectType = project.projectType as string | undefined;
+            const isHomebuilding = projectType === 'homebuilding';
+            const externalPaymentLink = project.externalPaymentLink as string | undefined;
+            const paymentConfirmationStatus =
+              (project.paymentConfirmationStatus as string | undefined) || 'not_declared';
+            const declaredAt = project.paymentDeclaredAt ? new Date(project.paymentDeclaredAt) : null;
 
             return (
               <View
@@ -248,14 +287,19 @@ export default function PendingProjectsScreen() {
                         </Text>
                       </View>
                     </View>
-                    <View className="bg-yellow-100 rounded-full px-3 py-1">
-                      <Text 
-                        className="text-yellow-700 text-xs"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
-                      >
-                        Unpaid
-                      </Text>
-                    </View>
+                    {isHomebuilding && paymentConfirmationStatus === 'declared' ? (
+                      <View className="bg-yellow-100 rounded-full px-3 py-1">
+                        <Text className="text-yellow-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Under review
+                        </Text>
+                      </View>
+                    ) : (
+                      <View className="bg-yellow-100 rounded-full px-3 py-1">
+                        <Text className="text-yellow-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Unpaid
+                        </Text>
+                      </View>
+                    )}
                   </View>
 
                   {/* GC Info */}
@@ -322,7 +366,7 @@ export default function PendingProjectsScreen() {
                           className="text-white/70 text-xs mb-1"
                           style={{ fontFamily: 'Poppins_400Regular' }}
                         >
-                          GC's Estimated Budget
+                          GC’s Estimated Budget
                         </Text>
                         <Text 
                           className="text-white text-xl"
@@ -336,52 +380,140 @@ export default function PendingProjectsScreen() {
                           className="text-white/70 text-xs mb-1"
                           style={{ fontFamily: 'Poppins_400Regular' }}
                         >
-                          Payment Required
+                          {isHomebuilding ? 'Payment instructions' : 'Payment Required'}
                         </Text>
                         <Text 
                           className="text-white text-xl"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                         >
-                          ${paymentAmount.toLocaleString()}
+                          {isHomebuilding ? 'External transfer' : `$${paymentAmount.toLocaleString()}`}
                         </Text>
                       </View>
                     </View>
                   </View>
 
+                  {/* Homebuilding manual payment instructions */}
+                  {isHomebuilding && (
+                    <View className="bg-white rounded-2xl p-4 mb-3 border border-gray-200">
+                      <View className="flex-row items-center mb-2">
+                        {paymentConfirmationStatus === 'confirmed' ? (
+                          <CheckCircle2 size={18} color="#059669" strokeWidth={2.5} />
+                        ) : paymentConfirmationStatus === 'declared' ? (
+                          <Clock size={18} color="#F59E0B" strokeWidth={2.5} />
+                        ) : (
+                          <CreditCard size={18} color="#111827" strokeWidth={2.5} />
+                        )}
+                        <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {paymentConfirmationStatus === 'confirmed'
+                            ? 'Payment confirmed'
+                            : paymentConfirmationStatus === 'declared'
+                              ? 'Payment under review'
+                              : paymentConfirmationStatus === 'rejected'
+                                ? 'Payment rejected'
+                                : 'Awaiting payment'}
+                        </Text>
+                      </View>
+                      <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {paymentConfirmationStatus === 'declared'
+                          ? `Declared on ${declaredAt ? declaredAt.toLocaleDateString() : '—'}. Admin review in progress (up to 72 hours).`
+                          : paymentConfirmationStatus === 'rejected'
+                            ? 'Your payment was rejected. Please re-check the transfer and declare again after paying.'
+                            : externalPaymentLink
+                              ? 'Use the payment instructions (Stripe invoice, Wise, Paystack, or Zelle). Then tap “I paid”.'
+                              : 'Waiting for BuildMyHouse/GC to email payment instructions.'}
+                      </Text>
+                    </View>
+                  )}
+
                   {/* Action Buttons */}
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleDelete(project);
-                      }}
-                      activeOpacity={0.7}
-                      className="flex-1 bg-gray-200 rounded-full py-3 px-4 flex-row items-center justify-center"
-                    >
-                      <Trash2 size={18} color="#000000" strokeWidth={2} />
-                      <Text 
-                        className="text-black ml-2"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  <View className="gap-3">
+                    <View className="flex-row gap-3">
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleDelete(project);
+                        }}
+                        activeOpacity={0.7}
+                        className="flex-1 bg-gray-200 rounded-full py-3 px-4 flex-row items-center justify-center"
                       >
-                        Delete
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handlePay(project);
-                      }}
-                      activeOpacity={0.7}
-                      className="flex-1 bg-black rounded-full py-3 px-4 flex-row items-center justify-center"
-                    >
-                      <DollarSign size={18} color="#FFFFFF" strokeWidth={2} />
-                      <Text 
-                        className="text-white ml-2"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        <Trash2 size={18} color="#000000" strokeWidth={2} />
+                        <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Delete
+                        </Text>
+                      </TouchableOpacity>
+
+                      {isHomebuilding ? (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handleOpenExternalLink(externalPaymentLink);
+                          }}
+                          activeOpacity={0.7}
+                          disabled={!externalPaymentLink}
+                          className={`flex-1 rounded-full py-3 px-4 flex-row items-center justify-center ${
+                            externalPaymentLink ? 'bg-black' : 'bg-gray-300'
+                          }`}
+                        >
+                          <ExternalLink size={18} color="#FFFFFF" strokeWidth={2} />
+                          <Text className="text-white ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            Payment link
+                          </Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            handlePay(project);
+                          }}
+                          activeOpacity={0.7}
+                          className="flex-1 bg-black rounded-full py-3 px-4 flex-row items-center justify-center"
+                        >
+                          <DollarSign size={18} color="#FFFFFF" strokeWidth={2} />
+                          <Text className="text-white ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            Pay ${paymentAmount.toLocaleString()}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    {isHomebuilding && (paymentConfirmationStatus === 'not_declared' || paymentConfirmationStatus === 'rejected') && (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          const id = getProjectId(project);
+                          if (!id) {
+                            Alert.alert('Error', 'Unable to identify project. Please try again.');
+                            return;
+                          }
+                          handleDeclarePaid(id);
+                        }}
+                        disabled={!externalPaymentLink || declareManualPaymentMutation.isPending}
+                        className={`rounded-full py-3 px-4 flex-row items-center justify-center ${
+                          !externalPaymentLink || declareManualPaymentMutation.isPending ? 'bg-gray-200' : 'bg-white border border-gray-300'
+                        }`}
                       >
-                        Pay ${paymentAmount.toLocaleString()}
-                      </Text>
-                    </TouchableOpacity>
+                        <Text
+                          className={`text-sm ${!externalPaymentLink || declareManualPaymentMutation.isPending ? 'text-gray-500' : 'text-gray-900'}`}
+                          style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        >
+                          I paid
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {isHomebuilding && paymentConfirmationStatus === 'declared' && (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          router.push('/billing-payments');
+                        }}
+                        className="bg-white border border-gray-300 rounded-full py-3 px-4 flex-row items-center justify-center"
+                      >
+                        <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          View payment status
+                        </Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                 </View>
               </View>
@@ -463,7 +595,7 @@ export default function PendingProjectsScreen() {
                 Delete Project?
               </Text>
               <Text className="text-gray-600 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete "{projectToDelete?.name || 'this project'}"? This action cannot be undone and will permanently remove the project from your account.
+                Are you sure you want to delete “{projectToDelete?.name || 'this project'}”? This action cannot be undone and will permanently remove the project from your account.
               </Text>
             </View>
 

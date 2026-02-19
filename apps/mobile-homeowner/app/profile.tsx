@@ -1,25 +1,35 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
 import { useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { useActiveProjects, usePendingProjects } from '@/hooks';
 import { clearAuthToken } from '@/lib/auth';
+import * as ImagePicker from 'expo-image-picker';
+import { getBackendAssetUrl } from '@/lib/image';
 
-const menuItems = [
-  { icon: User, label: "Personal Information", route: "/profile" },
-  { icon: Bell, label: "Notification Settings", route: "/profile" },
-  { icon: CreditCard, label: "Billing & Payments", route: "/profile" },
-  { icon: Crown, label: "Upgrade to Premium", route: "/profile", highlight: true },
-  { icon: Shield, label: "Privacy & Security", route: "/profile" },
-  { icon: FileText, label: "Terms & Conditions", route: "/profile" },
-  { icon: HelpCircle, label: "Help & Support", route: "/profile" },
-  { icon: Settings, label: "App Settings", route: "/profile" },
+type MenuItem = {
+  icon: any;
+  label: string;
+  route: string | null;
+  highlight?: boolean;
+};
+
+const menuItems: MenuItem[] = [
+  { icon: User, label: "Personal Information", route: "/personal-information" },
+  { icon: Bell, label: "Notification Settings", route: "/notification-settings" },
+  { icon: CreditCard, label: "Billing & Payments", route: "/billing-payments" },
+  { icon: Shield, label: "Privacy & Security", route: "/privacy-security" },
+  { icon: FileText, label: "Terms & Conditions", route: "/terms-conditions" },
+  { icon: HelpCircle, label: "Help & Support", route: "/help-support" },
+  { icon: Settings, label: "App Settings", route: "/app-settings" },
 ];
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { data: currentUser, isLoading } = useCurrentUser();
+  const uploadProfilePicture = useUploadProfilePicture();
   const { data: activeProjects = [] } = useActiveProjects();
   const { data: pendingProjects = [] } = usePendingProjects();
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending'>('active');
@@ -29,10 +39,52 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
+  const handleMenuPress = (item: MenuItem) => {
+    if (item.route) {
+      router.push(item.route as any);
+      return;
+    }
+    Alert.alert('Coming soon', 'This section will be available in a future update.');
+  };
+
   const userName = currentUser?.fullName || 'User';
   const userEmail = currentUser?.email || '';
   const userPicture = currentUser?.pictureUrl;
   const userRole = currentUser?.role;
+
+  const handlePickProfilePicture = async () => {
+    try {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission required', 'Please allow photo library access to upload a profile picture.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+
+      const mimeType = (asset as any).mimeType || 'image/jpeg';
+      const fileName = (asset as any).fileName || `profile-${Date.now()}.jpg`;
+
+      await uploadProfilePicture.mutateAsync({
+        uri: asset.uri,
+        name: fileName,
+        type: mimeType,
+      });
+
+      Alert.alert('Updated', 'Your profile picture has been updated.');
+    } catch (e: any) {
+      Alert.alert('Upload failed', e?.message || 'Please try again.');
+    }
+  };
   
   // Filter completed projects (status === 'completed')
   const completedProjects = activeProjects.filter((p: any) => p.status === 'completed');
@@ -57,7 +109,7 @@ export default function ProfileScreen() {
         {/* General Contractor Dashboard Button */}
         {userRole === 'general_contractor' && (
           <TouchableOpacity
-            onPress={() => router.push('/contractor/gc-dashboard')}
+            onPress={() => router.push('/contractor/gc-dashboard' as any)}
             className="bg-blue-600 rounded-2xl p-6 mb-6 flex-row items-center"
           >
             <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
@@ -78,21 +130,30 @@ export default function ProfileScreen() {
         {/* Vendor features removed for MVP */}
         {/* Profile Card */}
         <View className="bg-black rounded-3xl p-6 mb-6 flex-row items-center">
-          {isLoading ? (
-            <View className="w-20 h-20 rounded-full bg-gray-800 items-center justify-center">
+          <TouchableOpacity
+            onPress={handlePickProfilePicture}
+            disabled={isLoading || uploadProfilePicture.isPending}
+            activeOpacity={0.8}
+            className="w-20 h-20 rounded-full overflow-hidden items-center justify-center bg-gray-800"
+          >
+            {isLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
-            </View>
-          ) : userPicture ? (
-            <Image
-              source={{ uri: userPicture }}
-              className="w-20 h-20 rounded-full"
-              resizeMode="cover"
-            />
-          ) : (
-            <View className="w-20 h-20 rounded-full bg-gray-800 items-center justify-center">
+            ) : userPicture ? (
+              <Image
+                source={{ uri: getBackendAssetUrl(userPicture) }}
+                className="w-20 h-20 rounded-full"
+                resizeMode="cover"
+              />
+            ) : (
               <User size={32} color="#FFFFFF" strokeWidth={2} />
-            </View>
-          )}
+            )}
+
+            {uploadProfilePicture.isPending && (
+              <View className="absolute inset-0 bg-black/50 items-center justify-center">
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              </View>
+            )}
+          </TouchableOpacity>
           <View className="ml-4 flex-1">
             <Text 
               className="text-white text-xl"
@@ -111,7 +172,7 @@ export default function ProfileScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Premium Member
+                Home Owner
               </Text>
             </View>
           </View>
@@ -267,6 +328,7 @@ export default function ProfileScreen() {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
+              onPress={() => handleMenuPress(item)}
               className={`flex-row items-center py-4 border-b border-gray-100 ${item.highlight ? 'bg-gray-50 -mx-4 px-4 rounded-2xl border-0 mb-2' : ''}`}
             >
               <View className={`w-10 h-10 rounded-full items-center justify-center ${item.highlight ? 'bg-black' : 'bg-gray-100'}`}>

@@ -10,7 +10,10 @@ import { OpenAIModule } from './openai/openai.module';
 import { PlansModule } from './plans/plans.module';
 import { ContractorsModule } from './contractors/contractors.module';
 import { DesignsModule } from './designs/designs.module';
+import { HousesModule } from './houses/houses.module';
+import { LandsModule } from './lands/lands.module';
 import { UploadModule } from './upload/upload.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -27,7 +30,10 @@ import { UploadModule } from './upload/upload.module';
     PlansModule,
     ContractorsModule,
     DesignsModule,
+    HousesModule,
+    LandsModule,
     UploadModule,
+    UsersModule,
   ],
   controllers: [],
   providers: [],

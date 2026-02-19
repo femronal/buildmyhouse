@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { Platform } from 'react-native';
+import { uploadFile } from '@/utils/fileUpload';
 
 export interface DesignImage {
   url: string;
@@ -25,96 +25,43 @@ export interface CreateDesignData {
 
 export const designService = {
   /**
-   * Create a new design with images
+   * Create a new design with images.
+   * Uploads images first, then sends JSON to backend (which expects proper types).
    */
   createDesign: async (designData: CreateDesignData, imageUris: Array<{ uri: string; label?: string }>) => {
-    const formData = new FormData();
-    
-    // Add design data fields
-    formData.append('name', designData.name);
-    if (designData.description) {
-      formData.append('description', designData.description);
-    }
-    formData.append('bedrooms', designData.bedrooms.toString());
-    formData.append('bathrooms', designData.bathrooms.toString());
-    formData.append('squareFootage', designData.squareFootage.toString());
-    formData.append('estimatedCost', designData.estimatedCost.toString());
-    if (designData.floors) {
-      formData.append('floors', designData.floors.toString());
-    }
-    if (designData.estimatedDuration) {
-      formData.append('estimatedDuration', designData.estimatedDuration);
-    }
-    if (designData.rooms) {
-      formData.append('rooms', designData.rooms);
-    }
-    if (designData.materials) {
-      formData.append('materials', designData.materials);
-    }
-    if (designData.features) {
-      formData.append('features', designData.features);
-    }
-    if (designData.constructionPhases) {
-      formData.append('constructionPhases', designData.constructionPhases);
+    // 1. Upload each image to /upload/image and collect URLs
+    const imageResults: Array<{ url: string; label?: string; order: number }> = [];
+    for (let i = 0; i < imageUris.length; i++) {
+      const img = imageUris[i];
+      const uploadedUrl = await uploadFile(img.uri, 'image');
+      // Backend returns full URL; store path for portability (backend serves from /uploads)
+      const urlPath = uploadedUrl.startsWith('http') ? new URL(uploadedUrl).pathname : uploadedUrl;
+      imageResults.push({
+        url: urlPath,
+        label: img.label || `Image ${i + 1}`,
+        order: i,
+      });
     }
 
-    // For React Native, append images with uri, type, and name
-    // Handle web and native platforms differently
-    for (let index = 0; index < imageUris.length; index++) {
-      const img = imageUris[index];
-      
-      // Extract filename from URI (handle both file:// and http:// URIs)
-      let filename = img.uri.split('/').pop() || `image-${Date.now()}.jpg`;
-      
-      // Remove query parameters if any
-      filename = filename.split('?')[0];
-      
-      // Determine MIME type from extension or default to jpeg
-      const match = /\.(\w+)$/.exec(filename);
-      let type = 'image/jpeg'; // default
-      if (match) {
-        const ext = match[1].toLowerCase();
-        if (ext === 'png') type = 'image/png';
-        else if (ext === 'jpg' || ext === 'jpeg') type = 'image/jpeg';
-        else if (ext === 'webp') type = 'image/webp';
-      }
-      
-      // For web platform, we need to fetch and convert to Blob/File
-      if (Platform.OS === 'web') {
-        try {
-          const response = await fetch(img.uri);
-          const blob = await response.blob();
-          const file = new File([blob], filename || `image-${Date.now()}-${index}.jpg`, { type });
-          
-          formData.append('images', file);
-        } catch (error) {
-          console.error(`❌ [designService] Failed to process image ${index + 1}:`, error);
-          // Fallback to native format
-          formData.append('images', {
-            uri: img.uri,
-            type,
-            name: filename || `image-${Date.now()}-${index}.jpg`,
-          } as any);
-        }
-      } else {
-        // Native platform - use React Native FormData format
-        const imageData = {
-          uri: img.uri,
-          type,
-          name: filename || `image-${Date.now()}-${index}.jpg`,
-        };
-        
-        formData.append('images', imageData as any);
-      }
-      
-      // Add label if provided
-      if (img.label) {
-        formData.append('imageLabels', img.label);
-      }
-    }
+    // 2. Build JSON payload with correct types (numbers, not strings)
+    const payload = {
+      name: designData.name.trim(),
+      description: designData.description?.trim() || undefined,
+      bedrooms: Number(designData.bedrooms),
+      bathrooms: Number(designData.bathrooms),
+      squareFootage: Number(designData.squareFootage),
+      estimatedCost: Number(designData.estimatedCost),
+      floors: designData.floors ? Number(designData.floors) : undefined,
+      estimatedDuration: designData.estimatedDuration?.trim() || undefined,
+      rooms: designData.rooms?.trim() || undefined,
+      materials: designData.materials?.trim() || undefined,
+      features: designData.features?.trim() || undefined,
+      constructionPhases: designData.constructionPhases?.trim() || undefined,
+      images: imageResults,
+    };
 
     try {
-      const response = await api.post('/designs', formData);
+      const response = await api.post('/designs', payload);
       return response;
     } catch (error: any) {
       console.error('❌ [designService] Error creating design:', error);

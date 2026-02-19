@@ -55,6 +55,10 @@ export class WebhooksController {
           await this.handlePaymentIntentCanceled(event);
           break;
 
+        case 'setup_intent.succeeded':
+          await this.handleSetupIntentSucceeded(event);
+          break;
+
         case 'payout.paid':
           await this.handlePayoutPaid(event);
           break;
@@ -94,6 +98,18 @@ export class WebhooksController {
     const paymentIntent = event.data.object;
     this.logger.log(`Payment intent canceled: ${paymentIntent.id}`);
     // Handle cancellation if needed
+  }
+
+  private async handleSetupIntentSucceeded(event: any) {
+    const setupIntent = event.data.object;
+    this.logger.log(`Setup intent succeeded: ${setupIntent.id}`);
+
+    await this.paymentsService.handleSetupIntentSucceeded({
+      setupIntentId: setupIntent.id,
+      userId: setupIntent.metadata?.userId,
+      customerId: setupIntent.customer,
+      paymentMethodId: setupIntent.payment_method,
+    });
   }
 
   private async handlePayoutPaid(event: any) {

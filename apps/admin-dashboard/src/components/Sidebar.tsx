@@ -4,20 +4,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
+  HardHat,
   Users, 
   Building2, 
   CheckCircle2, 
   Scale,
+  LandPlot,
+  Home,
   LogOut
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/users', label: 'Users', icon: Users },
+  { href: '/homeowners', label: 'Homeowners', icon: Users },
+  { href: '/contractors', label: 'Contractors', icon: HardHat },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },
   { href: '/disputes', label: 'Disputes', icon: Scale },
+  { href: '/land', label: 'Land', icon: LandPlot },
+  { href: '/houses', label: 'Houses', icon: Home },
 ];
 
 export default function Sidebar() {

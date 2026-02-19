@@ -257,9 +257,12 @@ export class ChatService {
       orderBy: { updatedAt: 'desc' },
     });
 
+    // Guard: ignore any "self-chat" conversations (1 participant) if they exist.
+    const normalized = conversations.filter((c: any) => (c?.participants?.length || 0) >= 2);
+
     // For each conversation, count unread messages
     const conversationsWithUnread = await Promise.all(
-      conversations.map(async (conversation) => {
+      normalized.map(async (conversation) => {
         const unreadCount = await this.prisma.message.count({
           where: {
             conversationId: conversation.id,

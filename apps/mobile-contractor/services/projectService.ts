@@ -61,8 +61,9 @@ export const projectService = {
     try {
       const allProjects = await projectService.getMyProjects();
       // Filter projects where status is 'active' and user is the generalContractor
-      return allProjects.filter((project) => 
-        project.status === 'active' && project.generalContractor?.id
+      return allProjects.filter(
+        (project) =>
+          (project.status === 'active' || project.status === 'paused') && project.generalContractor?.id,
       );
     } catch (error: any) {
       console.error('❌ [projectService] Error fetching active projects:', error);
@@ -77,8 +78,9 @@ export const projectService = {
     try {
       const allProjects = await projectService.getMyProjects();
       // Filter projects where status is NOT 'active' but user is the generalContractor
-      return allProjects.filter((project) => 
-        project.status !== 'active' && project.generalContractor?.id
+      return allProjects.filter(
+        (project) =>
+          project.status !== 'active' && project.status !== 'paused' && project.generalContractor?.id,
       );
     } catch (error: any) {
       console.error('❌ [projectService] Error fetching unpaid projects:', error);

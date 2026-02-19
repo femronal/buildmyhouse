@@ -15,6 +15,10 @@ import {
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { UpdateProjectReviewDto } from './dto/update-project-review.dto';
+import { SetExternalPaymentLinkDto } from './dto/set-external-payment-link.dto';
+import { ConfirmManualPaymentDto } from './dto/confirm-manual-payment.dto';
+import { SetProjectRiskLevelDto } from './dto/set-project-risk-level.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 
@@ -90,6 +94,9 @@ export class ProjectsController {
     
     // Verify user has permission
     const project = await this.projectsService.getProject(projectId);
+    if (userRole !== 'admin' && (project as any).status === 'paused') {
+      throw new ForbiddenException('Project is paused for admin inspection');
+    }
     
     // Admins can always update
     if (userRole === 'admin') {
@@ -282,6 +289,10 @@ export class ProjectsController {
       return project;
     }
 
+    if ((project as any).status === 'paused') {
+      throw new ForbiddenException('Project is paused for admin inspection');
+    }
+
     if (project.homeownerId === userId || project.generalContractorId === userId) {
       return project;
     }
@@ -295,6 +306,85 @@ export class ProjectsController {
     }
 
     throw new ForbiddenException('You do not have permission to view this project');
+  }
+
+  // ==================== Homebuilding manual payment flow ====================
+
+  @Patch(':id/review')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  updateReviewStatus(@Param('id') id: string, @Body() dto: UpdateProjectReviewDto) {
+    return this.projectsService.updateProjectReviewStatus({
+      projectId: id,
+      reviewStatus: dto.reviewStatus,
+    });
+  }
+
+  @Patch(':id/risk-level')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  setRiskLevel(@Param('id') id: string, @Body() dto: SetProjectRiskLevelDto) {
+    return this.projectsService.setProjectRiskLevel({
+      projectId: id,
+      riskLevel: dto.riskLevel,
+    });
+  }
+
+  /**
+   * Admin override: activate a pending_payment project (bypass payment modal).
+   */
+  @Patch(':id/activate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  activateProject(@Param('id') id: string) {
+    return this.projectsService.activateProjectAsAdmin({ projectId: id });
+  }
+
+  /**
+   * Admin override: deactivate (pause/lock) a project for investigation.
+   * When paused, homeowner/GC should not be able to open the project.
+   */
+  @Patch(':id/deactivate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  deactivateProject(@Param('id') id: string) {
+    return this.projectsService.deactivateProjectAsAdmin({ projectId: id });
+  }
+
+  @Patch(':id/external-payment-link')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  setExternalPaymentLink(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() dto: SetExternalPaymentLinkDto,
+  ) {
+    return this.projectsService.setExternalPaymentLink({
+      projectId: id,
+      actorUserId: req.user.sub,
+      actorRole: req.user.role,
+      externalPaymentLink: dto.externalPaymentLink,
+    });
+  }
+
+  @Post(':id/payment/declare')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner')
+  declareManualPayment(@Param('id') id: string, @Request() req: any) {
+    return this.projectsService.declareManualPayment({
+      projectId: id,
+      homeownerId: req.user.sub,
+    });
+  }
+
+  @Patch(':id/payment/confirm')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  confirmManualPayment(
+    @Param('id') id: string,
+    @Body() _dto: ConfirmManualPaymentDto,
+  ) {
+    return this.projectsService.confirmManualPayment({ projectId: id });
   }
 
   @Patch(':id')

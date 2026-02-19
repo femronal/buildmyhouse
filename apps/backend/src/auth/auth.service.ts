@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthService, JWTPayload } from './jwt-auth.service';
+import { UpdateMeDto } from './dto/update-me.dto';
 
 @Injectable()
 export class AuthService {
@@ -118,6 +119,69 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async updateCurrentUser(userId: string, updateMeDto: UpdateMeDto) {
+    const data: any = {};
+    if (typeof updateMeDto.fullName === 'string') {
+      data.fullName = updateMeDto.fullName.trim();
+    }
+    if (typeof updateMeDto.email === 'string') {
+      const email = updateMeDto.email.trim().toLowerCase();
+      const existing = await this.prisma.user.findUnique({
+        where: { email },
+      });
+      if (existing && existing.id !== userId) {
+        throw new ConflictException('Email already in use');
+      }
+      data.email = email;
+    }
+    if (typeof updateMeDto.phone === 'string') {
+      data.phone = updateMeDto.phone.trim();
+    }
+
+    // If nothing to update, return current state
+    if (Object.keys(data).length === 0) {
+      return this.getCurrentUser(userId);
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        pictureUrl: true,
+        role: true,
+        verified: true,
+        phone: true,
+        createdAt: true,
+      },
+    });
+
+    return updated;
+  }
+
+  async updateProfilePicture(userId: string, pictureUrl: string) {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        pictureUrl,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        pictureUrl: true,
+        role: true,
+        verified: true,
+        phone: true,
+        createdAt: true,
+      },
+    });
+
+    return updated;
   }
 
   async validateOAuthUser(profile: any, provider: 'google' | 'apple') {

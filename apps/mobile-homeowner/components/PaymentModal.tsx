@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from 'react-native';
-import { X, CreditCard, Lock, CheckCircle, AlertCircle, DollarSign } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
+import { X, Lock, DollarSign, ExternalLink } from 'lucide-react-native';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
 
 interface PaymentModalProps {
   visible: boolean;
@@ -14,125 +17,29 @@ interface PaymentModalProps {
   externalError?: string; // Error message from parent component
 }
 
-// Get Stripe publishable key from environment
-// Set EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY in your .env file
-// You can find it in your Stripe Dashboard: https://dashboard.stripe.com/test/apikeys
-// It should start with 'pk_test_' for test mode
-const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-
 export default function PaymentModal({
   visible,
   onClose,
   amount,
   projectBudget,
   projectName = 'Project',
-  onPaymentSuccess,
-  onPaymentError,
-  clientSecret,
-  externalError,
+  // These callbacks/fields are kept for compatibility with the existing call sites.
+  onPaymentSuccess: _onPaymentSuccess,
+  onPaymentError: _onPaymentError,
+  clientSecret: _clientSecret,
+  externalError: _externalError,
 }: PaymentModalProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error' | 'loading'>('loading');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-
-  useEffect(() => {
-    if (!visible) {
-      // Reset state when modal closes
-      setPaymentStatus('idle');
-      setErrorMessage('');
-      setIsProcessing(false);
-    } else {
-      // When modal opens, set to loading if no clientSecret yet
-      if (!clientSecret) {
-        setPaymentStatus('loading');
-        setErrorMessage('');
-      } else {
-        // Client secret is available, ready for payment
-        setPaymentStatus('idle');
-        setErrorMessage('');
-      }
-    }
-  }, [visible, clientSecret]);
-
-  useEffect(() => {
-    // When clientSecret becomes available, clear any previous errors
-    if (clientSecret && paymentStatus === 'error') {
-      setPaymentStatus('idle');
-      setErrorMessage('');
-    }
-    // If clientSecret is available and status is loading, switch to idle
-    if (clientSecret && paymentStatus === 'loading') {
-      setPaymentStatus('idle');
-    }
-  }, [clientSecret, paymentStatus]);
-
-  // Handle external errors from parent (e.g., payment intent creation failures)
-  useEffect(() => {
-    if (externalError) {
-      setPaymentStatus('error');
-      setErrorMessage(externalError);
-      setIsProcessing(false);
-    }
-  }, [externalError]);
-
-  const handlePayment = async () => {
-    if (!clientSecret) {
-      setErrorMessage('Payment intent is being prepared. Please wait a moment...');
-      setPaymentStatus('error');
-      onPaymentError('Payment intent not ready');
-      return;
-    }
-
-    if (!STRIPE_PUBLISHABLE_KEY || STRIPE_PUBLISHABLE_KEY.includes('...')) {
-      setErrorMessage('Stripe publishable key not configured. Please add your Stripe publishable key to the PaymentModal component.');
-      setPaymentStatus('error');
-      return;
-    }
-
-    setIsProcessing(true);
-    setPaymentStatus('processing');
-    setErrorMessage('');
-
-    try {
-      // For test mode: Simulate payment confirmation
-      // Note: Browser security prevents direct card input without Stripe Elements
-      // In production, integrate Stripe Elements for secure card collection
-      // For now, we'll simulate the payment in test mode
-      
-      // Simulate payment processing delay (2 seconds)
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // In test mode, we simulate a successful payment
-      // The actual payment intent was already created on the backend
-      // In production, you would use Stripe Elements here to collect card info securely
-      
-      // Update state to success
-      setPaymentStatus('success');
-      setIsProcessing(false);
-      
-      // Call success callback after a brief delay to show success state
-      setTimeout(() => {
-        onPaymentSuccess();
-      }, 1500);
-    } catch (error: any) {
-      setPaymentStatus('error');
-      setErrorMessage(error.message || 'Payment failed. Please try again.');
-      setIsProcessing(false);
-      onPaymentError(error.message || 'Payment failed');
-    }
-  };
+  const router = useRouter();
+  const { data: currentUser } = useCurrentUser();
+  const firstName = (currentUser?.fullName || currentUser?.email || 'there').split(' ')[0];
+  const minDeposit = Math.max(amount * 0.5, 0);
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
       transparent={true}
-      onRequestClose={() => {
-        // Only allow close if not processing payment
-        if (!isProcessing && paymentStatus !== 'processing') {
-          onClose();
-        }
-      }}
+      onRequestClose={onClose}
     >
       <View className="flex-1 bg-black/50 justify-end">
         <View className="bg-white rounded-t-3xl p-6 max-h-[90%]">
@@ -146,7 +53,7 @@ export default function PaymentModal({
                 className="text-3xl text-black mb-2"
                 style={{ fontFamily: 'Poppins_800ExtraBold' }}
               >
-                Activate Project & Make Payment
+                Project deposit
               </Text>
               <Text
                 className="text-gray-600 text-sm"
@@ -157,7 +64,6 @@ export default function PaymentModal({
             </View>
             <TouchableOpacity
               onPress={onClose}
-              disabled={isProcessing}
               className="w-10 h-10 items-center justify-center"
             >
               <X size={24} color="#000000" strokeWidth={2} />
@@ -165,229 +71,142 @@ export default function PaymentModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Payment Amount Card */}
-            <View className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 mb-6 border border-blue-200">
+            {/* Amount card */}
+            <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
               <View className="flex-row items-center mb-4">
-                <DollarSign size={24} color="#2563eb" strokeWidth={2} />
+                <DollarSign size={24} color="#111827" strokeWidth={2} />
                 <Text
-                  className="text-blue-900 text-lg ml-2"
+                  className="text-gray-900 text-lg ml-2"
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
                 >
-                  Payment Amount
+                  Deposit required to start
                 </Text>
               </View>
               <Text
-                className="text-4xl text-blue-900 mb-2"
+                className="text-4xl text-black mb-2"
                 style={{ fontFamily: 'JetBrainsMono_500Medium' }}
               >
-                ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${minDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}+
               </Text>
               <Text
-                className="text-blue-700 text-sm"
+                className="text-gray-700 text-sm"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                100% of GC's estimated budget: ${projectBudget.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                Minimum deposit is 50% of the project budget. 100% is recommended for faster execution.
               </Text>
+
+              <View className="mt-4 bg-white rounded-xl p-4 border border-gray-200">
+                <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Recommended amounts
+                </Text>
+                <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  50% minimum: ${minDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+                <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  100% recommended: ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </Text>
+              </View>
             </View>
 
-            {/* Payment Instructions */}
-            <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+            {/* How it works */}
+            <View className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
               <View className="flex-row items-start mb-4">
-                <Lock size={20} color="#6b7280" strokeWidth={2} className="mt-1" />
+                <Lock size={20} color="#111827" strokeWidth={2} className="mt-1" />
                 <Text
                   className="text-gray-900 text-base ml-2 flex-1"
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
                 >
-                  Secure Payment Processing
+                  How payment works
                 </Text>
               </View>
-              <Text
-                className="text-gray-700 text-sm leading-6 mb-4"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-              >
-                Your payment is securely processed by Stripe and will be held by BuildMyHouse. Funds will be released to your General Contractor after your approval at each stage of the building process.
-              </Text>
-
-              <View className="bg-white rounded-xl p-4 border border-gray-200">
-                <Text
-                  className="text-gray-900 text-sm mb-2"
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  Payment Process:
-                </Text>
-                <View className="space-y-2">
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-600 text-sm mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      • Payment is processed securely through Stripe
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-600 text-sm mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      • Funds are held by BuildMyHouse until stage approval
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-600 text-sm mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      • You'll receive email confirmation once payment is completed
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-gray-600 text-sm mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      • Funds are released to GC after your approval at each stage
-                    </Text>
-                  </View>
+              {[
+                'Admin contacts the GC by email to confirm readiness and project details.',
+                `After the GC confirms, admin emails you (${firstName}) with payment instructions.`,
+                'You deposit at least 50% (100% recommended) to BuildMyHouse to start.',
+                'BuildMyHouse holds the funds and releases them only after you approve each stage.',
+              ].map((step) => (
+                <View key={step} className="flex-row items-start mb-2">
+                  <View className="w-2 h-2 bg-black rounded-full mt-2 mr-2" />
+                  <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {step}
+                  </Text>
                 </View>
-              </View>
+              ))}
             </View>
 
-            {/* Status Messages */}
-            {paymentStatus === 'loading' && (
-              <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
-                <View className="flex-row items-start">
-                  <ActivityIndicator size="small" color="#2563eb" />
-                  <View className="ml-2 flex-1">
-                    <Text
-                      className="text-blue-900 text-sm mb-1"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Preparing Payment...
-                    </Text>
-                    <Text
-                      className="text-blue-700 text-sm"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      Creating secure payment intent. This may take a few seconds...
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
+            {/* Payment options */}
+            <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+              <Text className="text-gray-900 text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Ways to deposit to BuildMyHouse
+              </Text>
 
-            {paymentStatus === 'error' && (
-              <View className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-                <View className="flex-row items-start">
-                  <AlertCircle size={20} color="#dc2626" strokeWidth={2} className="mt-0.5" />
-                  <View className="ml-2 flex-1">
-                    <Text
-                      className="text-red-900 text-sm mb-1"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      {errorMessage?.includes('Authentication') || errorMessage?.includes('401') || errorMessage?.includes('Unauthorized')
-                        ? 'Authentication Required'
-                        : 'Payment Error'}
-                    </Text>
-                    <Text
-                      className="text-red-700 text-sm"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      {errorMessage || 'Failed to prepare payment. Please try again.'}
-                    </Text>
-                    {(errorMessage?.includes('Authentication') || errorMessage?.includes('401') || errorMessage?.includes('Unauthorized')) && (
-                      <Text
-                        className="text-red-600 text-xs mt-2"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                      >
-                        Please close this dialog, log out, and log in again to continue.
+              {[
+                {
+                  key: 'stripe' as PaymentMethodKey,
+                  title: 'Stripe Card Invoice',
+                  desc: 'Best for smaller projects like renovations and interior designing. Pay by card using an invoice link.',
+                },
+                {
+                  key: 'wise' as PaymentMethodKey,
+                  title: 'Wise Transfer',
+                  desc: 'Best for bigger projects like building a new home or buying a home/plot. Great for large international transfers (diaspora).',
+                },
+                {
+                  key: 'paystack' as PaymentMethodKey,
+                  title: 'Paystack',
+                  desc: 'Ideal for Nigerians and Ghanaians. Works like Stripe and supports multiple local payment methods.',
+                },
+                {
+                  key: 'zelle' as PaymentMethodKey,
+                  title: 'Zelle Transfer',
+                  desc: 'Fast and easy for USA-based customers who prefer bank-to-bank transfers.',
+                },
+              ].map((m) => (
+                <View key={m.title} className="bg-white rounded-xl p-4 border border-gray-200 mb-3">
+                  <View className="flex-row items-start">
+                    <PaymentMethodLogo method={m.key} size={40} />
+                    <View className="flex-1 ml-3">
+                      <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {m.title}
                       </Text>
-                    )}
+                      <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {m.desc}
+                      </Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-            )}
+              ))}
 
-            {paymentStatus === 'success' && (
-              <View className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                <View className="flex-row items-start">
-                  <CheckCircle size={20} color="#059669" strokeWidth={2} className="mt-0.5" />
-                  <View className="ml-2 flex-1">
-                    <Text
-                      className="text-green-900 text-sm mb-1"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Payment Successful!
-                    </Text>
-                    <Text
-                      className="text-green-700 text-sm"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      Your payment has been processed. Redirecting...
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            )}
+              <Text className="text-gray-600 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Payment instructions are sent by email after the GC confirms readiness.
+              </Text>
+            </View>
 
             {/* Action Buttons */}
-            <View className="mb-4">
+            <View className="mb-3">
               <TouchableOpacity
-                onPress={handlePayment}
-                disabled={isProcessing || paymentStatus === 'processing' || paymentStatus === 'success' || paymentStatus === 'loading' || !clientSecret}
-                className={`w-full rounded-xl py-4 px-6 ${
-                  isProcessing || paymentStatus === 'processing' || paymentStatus === 'success' || paymentStatus === 'loading' || !clientSecret
-                    ? 'bg-gray-300'
-                    : 'bg-black'
-                }`}
+                onPress={() => {
+                  onClose();
+                  router.push('/billing-payments' as any);
+                }}
+                className="w-full rounded-xl py-4 px-6 bg-black"
               >
-                {isProcessing || paymentStatus === 'processing' ? (
-                  <View className="flex-row items-center justify-center">
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text
-                      className="text-white text-base ml-2"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Processing Payment...
-                    </Text>
-                  </View>
-                ) : paymentStatus === 'success' ? (
-                  <View className="flex-row items-center justify-center">
-                    <CheckCircle size={20} color="#FFFFFF" strokeWidth={2} />
-                    <Text
-                      className="text-white text-base ml-2"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Payment Successful!
-                    </Text>
-                  </View>
-                ) : paymentStatus === 'loading' || !clientSecret ? (
-                  <View className="flex-row items-center justify-center">
-                    <ActivityIndicator size="small" color="#FFFFFF" />
-                    <Text
-                      className="text-white text-base ml-2"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Preparing Payment...
-                    </Text>
-                  </View>
-                ) : (
-                  <View className="flex-row items-center justify-center">
-                    <CreditCard size={20} color="#FFFFFF" strokeWidth={2} />
-                    <Text
-                      className="text-white text-base ml-2"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Pay ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </Text>
-                  </View>
-                )}
+                <View className="flex-row items-center justify-center">
+                  <ExternalLink size={20} color="#FFFFFF" strokeWidth={2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    View payment options
+                  </Text>
+                </View>
               </TouchableOpacity>
             </View>
             
             {/* Close Button */}
             <TouchableOpacity
               onPress={onClose}
-              disabled={isProcessing || paymentStatus === 'processing'}
-              className={`w-full rounded-xl py-3 px-6 border-2 ${
-                isProcessing || paymentStatus === 'processing'
-                  ? 'border-gray-200 bg-gray-100'
-                  : 'border-gray-300 bg-white'
-              }`}
+              className="w-full rounded-xl py-3 px-6 border-2 border-gray-300 bg-white"
             >
               <Text
-                className={`text-center text-base ${
-                  isProcessing || paymentStatus === 'processing'
-                    ? 'text-gray-400'
-                    : 'text-gray-700'
-                }`}
+                className="text-center text-base text-gray-700"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
                 Close
@@ -395,14 +214,14 @@ export default function PaymentModal({
             </TouchableOpacity>
 
             {/* Security Note */}
-            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
               <View className="flex-row items-start">
                 <Lock size={16} color="#2563eb" strokeWidth={2} className="mt-0.5" />
                 <Text
                   className="text-blue-900 text-xs ml-2 flex-1"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  Your payment information is encrypted and secure. We never store your card details.
+                  For safety and peace of mind, BuildMyHouse holds funds and releases them only after your stage-by-stage approval.
                 </Text>
               </View>
             </View>

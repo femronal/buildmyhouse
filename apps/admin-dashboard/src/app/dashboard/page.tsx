@@ -1,132 +1,179 @@
 'use client';
 
-import { useDashboard } from '@/hooks/useDashboard';
-import { Users, Building2, DollarSign, Package, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
+import {
+  AlertTriangle,
+  Banknote,
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  FileWarning,
+  ShieldCheck,
+  TrendingUp,
+  Users,
+} from 'lucide-react';
+
+const stats = [
+  {
+    title: 'Total Users',
+    value: '1,284',
+    subtitle: '82% verified',
+    icon: Users,
+    accent: 'border-l-blue-500',
+  },
+  {
+    title: 'Active Builds',
+    value: '46',
+    subtitle: '12 at risk',
+    icon: Building2,
+    accent: 'border-l-emerald-500',
+  },
+  {
+    title: 'Payments This Month',
+    value: '$412,900',
+    subtitle: '98% successful',
+    icon: Banknote,
+    accent: 'border-l-purple-500',
+  },
+  {
+    title: 'Open Disputes',
+    value: '5',
+    subtitle: '2 urgent',
+    icon: FileWarning,
+    accent: 'border-l-amber-500',
+  },
+];
+
+const alerts = [
+  {
+    title: 'Project “Lekki Villa” flagged for stalled progress',
+    detail: 'No updates for 12 days • GC: Mike’s Construction',
+    icon: AlertTriangle,
+    tone: 'bg-amber-50 text-amber-700 border-amber-200',
+  },
+  {
+    title: '3 payment attempts failed in the last 24h',
+    detail: 'Check Stripe webhook status and retry queue',
+    icon: Banknote,
+    tone: 'bg-red-50 text-red-700 border-red-200',
+  },
+  {
+    title: '2 GCs pending verification',
+    detail: 'Licenses uploaded • awaiting admin review',
+    icon: ShieldCheck,
+    tone: 'bg-blue-50 text-blue-700 border-blue-200',
+  },
+];
+
+const activity = [
+  { label: 'GC verified', detail: 'Chukwuemeka O. • 32 mins ago', icon: CheckCircle2 },
+  { label: 'Project activated', detail: 'Modern Family Home • 2 hrs ago', icon: TrendingUp },
+  { label: 'Dispute opened', detail: 'Payment mismatch • 4 hrs ago', icon: FileWarning },
+  { label: 'Project paused', detail: 'Banana Island Build • 6 hrs ago', icon: ClipboardList },
+];
+
+const quickActions = [
+  { label: 'Review GC verifications', icon: ShieldCheck },
+  { label: 'Resolve urgent disputes', icon: FileWarning },
+  { label: 'Audit stalled projects', icon: ClipboardList },
+];
 
 export default function DashboardPage() {
-  const { data, isLoading, error } = useDashboard();
-
-  if (isLoading) {
-    return (
-      <div className="p-8">
-        <div className="text-center">Loading dashboard...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="text-red-500">Error loading dashboard</div>
-      </div>
-    );
-  }
-
-  const stats = [
-    {
-      title: 'Total Users',
-      value: data?.users?.total || 0,
-      subtitle: `${data?.users?.verified || 0} verified`,
-      color: 'blue',
-      icon: Users,
-    },
-    {
-      title: 'Active Projects',
-      value: data?.projects?.total || 0,
-      subtitle: `${data?.projects?.active || 0} in progress`,
-      color: 'green',
-      icon: Building2,
-    },
-    {
-      title: 'Total Payments',
-      value: `$${data?.payments?.total?.toLocaleString() || 0}`,
-      subtitle: `${data?.payments?.completed || 0} completed`,
-      color: 'purple',
-      icon: DollarSign,
-    },
-    {
-      title: 'Marketplace Items',
-      value: data?.materials?.total || 0,
-      subtitle: 'Materials & Contractors',
-      color: 'orange',
-      icon: Package,
-    },
-  ];
-
-  const colorClasses = {
-    blue: 'border-l-blue-500 bg-blue-50',
-    green: 'border-l-green-500 bg-green-50',
-    purple: 'border-l-purple-500 bg-purple-50',
-    orange: 'border-l-orange-500 bg-orange-50',
-  };
-
   return (
-    <div className="p-8">
-      <h1 className="text-3xl font-bold mb-8 font-poppins">Dashboard Overview</h1>
+    <div className="p-8 space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold font-poppins">Dashboard Overview</h1>
+          <p className="text-gray-500 mt-1">Operational snapshot for homeowners and GCs</p>
+        </div>
+        <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+          Export weekly report
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => {
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div
-              key={index}
-              className={`bg-white rounded-lg shadow p-6 border-l-4 ${colorClasses[stat.color as keyof typeof colorClasses]}`}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-gray-600 text-sm font-medium">{stat.title}</h3>
-                <Icon className={`w-5 h-5 text-${stat.color}-500`} />
+            <div key={stat.title} className={`bg-white rounded-xl shadow p-6 border-l-4 ${stat.accent}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-500 text-sm">{stat.title}</p>
+                  <p className="text-2xl font-bold mt-2 font-poppins">{stat.value}</p>
+                  <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
+                </div>
+                <div className="w-11 h-11 rounded-full bg-gray-100 flex items-center justify-center">
+                  <Icon className="w-5 h-5 text-gray-700" />
+                </div>
               </div>
-              <p className="text-3xl font-bold mb-1 font-poppins">{stat.value}</p>
-              <p className="text-gray-500 text-sm">{stat.subtitle}</p>
             </div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 font-poppins">Recent Activity</h2>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-white rounded-xl shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold font-poppins">Critical Alerts</h2>
+            <span className="text-xs text-gray-400">Last 24 hours</span>
+          </div>
           <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-              <TrendingUp className="w-5 h-5 text-green-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">New project created</p>
-                <p className="text-xs text-gray-500">2 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-              <CheckCircle2 className="w-5 h-5 text-blue-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">User verified</p>
-                <p className="text-xs text-gray-500">5 hours ago</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3 p-3 bg-gray-50 rounded">
-              <DollarSign className="w-5 h-5 text-purple-500" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Payment processed</p>
-                <p className="text-xs text-gray-500">1 day ago</p>
-              </div>
-            </div>
+            {alerts.map((alert) => {
+              const Icon = alert.icon;
+              return (
+                <div
+                  key={alert.title}
+                  className={`border rounded-lg px-4 py-3 flex items-start gap-3 ${alert.tone}`}
+                >
+                  <Icon className="w-5 h-5 mt-0.5" />
+                  <div>
+                    <p className="font-medium">{alert.title}</p>
+                    <p className="text-sm opacity-80">{alert.detail}</p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 font-poppins">Quick Actions</h2>
+        <div className="bg-white rounded-xl shadow p-6">
+          <h2 className="text-xl font-semibold font-poppins mb-4">Quick Actions</h2>
           <div className="space-y-2">
-            <button className="w-full text-left px-4 py-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4" />
-              Verify Pending Users
-            </button>
-            <button className="w-full text-left px-4 py-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              Review Disputes
-            </button>
-            <button className="w-full text-left px-4 py-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
-              Monitor Active Projects
-            </button>
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <button
+                  key={action.label}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-left"
+                >
+                  <Icon className="w-4 h-4 text-gray-700" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </button>
+              );
+            })}
           </div>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold font-poppins">Recent Activity</h2>
+          <span className="text-xs text-gray-400">Updated every 15 mins</span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {activity.map((item) => {
+            const Icon = item.icon;
+            return (
+              <div key={item.label} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-9 h-9 rounded-full bg-white border flex items-center justify-center">
+                  <Icon className="w-4 h-4 text-gray-700" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-gray-500">{item.detail}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

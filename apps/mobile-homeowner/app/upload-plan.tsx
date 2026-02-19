@@ -4,10 +4,12 @@ import { ArrowLeft, FileText, Upload, Home, X, CheckCircle, AlertCircle } from "
 import { useState, useRef, useEffect } from "react";
 import * as DocumentPicker from 'expo-document-picker';
 import { useUploadPlan } from '@/hooks/usePlan';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export default function UploadPlanScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   
   const [projectName, setProjectName] = useState("");
   const [budget, setBudget] = useState("");
@@ -195,6 +197,58 @@ export default function UploadPlanScreen() {
         >
           {uploadProgress}%
         </Text>
+      </View>
+    );
+  }
+
+  // Show sign-in prompt for unauthenticated users
+  if (!userLoading && !currentUser) {
+    return (
+      <View className="flex-1 bg-white">
+        <View className="pt-16 px-6 pb-4">
+          <View className="flex-row items-center mb-4">
+            <TouchableOpacity 
+              onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+            >
+              <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/home')} 
+              className="w-10 h-10 bg-black rounded-full items-center justify-center"
+            >
+              <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+          <Text 
+            className="text-3xl text-black mb-2"
+            style={{ fontFamily: 'Poppins_800ExtraBold' }}
+          >
+            Upload Your Plan
+          </Text>
+          <Text 
+            className="text-sm text-gray-500"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
+            Upload your complete architectural plan as a single PDF
+          </Text>
+        </View>
+        <View className="flex-1 px-6 justify-center items-center py-20">
+          <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Sign in to upload your plan
+          </Text>
+          <Text className="text-gray-400 text-center text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Create an account or log in to upload your architectural plan and get AI-powered analysis.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/login')}
+            className="bg-black rounded-full py-3 px-6"
+          >
+            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Sign up / Log in
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }

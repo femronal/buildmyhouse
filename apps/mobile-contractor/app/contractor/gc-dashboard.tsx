@@ -1,18 +1,23 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2 } from "lucide-react-native";
+import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2, Lock } from "lucide-react-native";
 import { useState, useMemo } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
 import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
 import { useUserConversations } from "../../hooks/useChat";
 import { useAppAlert } from "../../components/AppAlertProvider";
+import { useGCProfile } from "@/hooks/useGCProfile";
+import { getBackendAssetUrl } from "@/lib/image";
 
 export default function GCDashboardScreen() {
   const router = useRouter();
   const { showAlert } = useAppAlert();
+  const { data: profileData } = useGCProfile();
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
   const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
+  const [showPausedModal, setShowPausedModal] = useState(false);
+  const [selectedPausedProject, setSelectedPausedProject] = useState<any | null>(null);
   const deleteProjectMutation = useDeleteProject();
   
   // Fetch real pending requests
@@ -36,6 +41,11 @@ export default function GCDashboardScreen() {
   const handleCloseModal = () => {
     setShowUnpaidModal(false);
     setSelectedUnpaidProject(null);
+  };
+
+  const handlePausedProjectPress = (project: any) => {
+    setSelectedPausedProject(project);
+    setShowPausedModal(true);
   };
 
   const handleDeleteSelectedUnpaidProject = async () => {
@@ -99,13 +109,24 @@ export default function GCDashboardScreen() {
       <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Image
-            source={{ uri: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80" }}
+            source={{
+              uri: profileData?.pictureUrl
+                ? getBackendAssetUrl(profileData.pictureUrl)
+                : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+            }}
             className="w-12 h-12 rounded-full"
             resizeMode="cover"
           />
           <View className="ml-3">
             <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>Chukwuemeka O.</Text>
+            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {profileData?.fullName
+                ? (() => {
+                    const [first, last] = profileData.fullName.split(' ');
+                    return last ? `${first} ${last[0]}.` : first || '—';
+                  })()
+                : '—'}
+            </Text>
           </View>
         </View>
         <View className="flex-row">
@@ -219,7 +240,13 @@ export default function GCDashboardScreen() {
             activeProjects.map((project) => (
               <TouchableOpacity
                 key={project.id}
-                onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
+                onPress={() => {
+                  if (project.status === 'paused') {
+                    handlePausedProjectPress(project);
+                    return;
+                  }
+                  router.push(`/contractor/gc-project-detail?id=${project.id}`);
+                }}
                 className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
               >
                   <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
@@ -231,8 +258,14 @@ export default function GCDashboardScreen() {
                           {project.homeowner?.fullName || 'Unknown Client'}
                         </Text>
                       </View>
-                      <View className="bg-green-600/20 rounded-full px-3 py-1">
-                        <Text className="text-green-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Active</Text>
+                      <View className={`${project.status === 'paused' ? 'bg-orange-600/20' : 'bg-green-600/20'} rounded-full px-3 py-1 flex-row items-center`}>
+                        {project.status === 'paused' && <Lock size={12} color="#F59E0B" strokeWidth={2.5} />}
+                        <Text
+                          className={`${project.status === 'paused' ? 'text-orange-300' : 'text-green-400'} text-xs ${project.status === 'paused' ? 'ml-1' : ''}`}
+                          style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        >
+                          {project.status === 'paused' ? 'Paused' : 'Active'}
+                        </Text>
                       </View>
                     </View>
                     
@@ -428,6 +461,73 @@ export default function GCDashboardScreen() {
         </View>
       </Modal>
 
+      {/* Paused Project Modal */}
+      <Modal
+        visible={showPausedModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowPausedModal(false)}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
+            <View className="flex-row items-center justify-between mb-2">
+              <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Project paused
+              </Text>
+              <TouchableOpacity
+                onPress={() => setShowPausedModal(false)}
+                className="w-10 h-10 bg-black/30 rounded-full items-center justify-center"
+              >
+                <X size={18} color="#FFFFFF" strokeWidth={2.5} />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-gray-300 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Admin has temporarily paused{selectedPausedProject?.name ? ` “${selectedPausedProject.name}”` : ' this project'} while an issue is reviewed.
+            </Text>
+
+            <View className="bg-orange-900/30 border border-orange-700/50 rounded-2xl p-4 mb-4">
+              <Text className="text-orange-200 text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Common real‑life reasons projects get paused
+              </Text>
+              {[
+                'A complaint from the homeowner or contractor that needs investigation',
+                'A payment dispute or suspected fraudulent transaction',
+                'Missing/invalid documents (permits, invoices, proof of delivery)',
+                'Quality or safety concerns reported on-site',
+                'Major change-order disagreement (scope or cost)',
+                'Suspicious activity on the account or unusual behavior',
+              ].map((reason) => (
+                <View key={reason} className="flex-row items-start mb-2">
+                  <View className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2" />
+                  <Text className="text-orange-100 text-xs flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {reason}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <View className="bg-[#0A1628] border border-blue-900 rounded-2xl p-4">
+              <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                What you should do now
+              </Text>
+              <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Please wait while admin resolves the issue. You’ll be able to continue once the project is activated again.
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setShowPausedModal(false)}
+              className="bg-blue-600 rounded-2xl py-4 items-center mt-5"
+            >
+              <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Okay, I’ll wait for admin
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {/* Bottom Navigation - Bigger, Clearer */}
       <View className="flex-row bg-[#0A1628] border-t border-blue-900 px-4 py-4">
         <TouchableOpacity 
@@ -476,7 +576,7 @@ export default function GCDashboardScreen() {
           <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Plans</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          onPress={() => {/* Navigate to earnings */}}
+          onPress={() => router.push('/contractor/gc-earnings')}
           className="flex-1 items-center active:opacity-70"
         >
           <View className="p-3 rounded-2xl bg-[#1E3A5F] mb-1">

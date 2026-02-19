@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Home, Bed, Bath, Maximize, Star, Filter, Search, ChevronDown } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useDesigns } from '@/hooks';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
@@ -20,6 +21,7 @@ export default function DesignLibraryScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const params = useLocalSearchParams();
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
   
   const [searchQuery, setSearchQuery] = useState("");
@@ -245,14 +247,35 @@ export default function DesignLibraryScreen() {
           </View>
         ) : filteredDesigns.length === 0 ? (
           <View className="items-center justify-center py-20">
-            <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              {searchQuery || activeFilter !== 'All' ? 'No designs match your filters' : 'No designs available yet'}
-            </Text>
-            <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              {searchQuery || activeFilter !== 'All' 
-                ? 'Try adjusting your search or filters'
-                : 'General Contractors can upload design plans that will appear here'}
-            </Text>
+            {!currentUser && !userLoading && !searchQuery && activeFilter === 'All' ? (
+              <>
+                <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Sign in to browse designs
+                </Text>
+                <Text className="text-gray-400 text-center text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Create an account or log in to browse designs uploaded by General Contractors.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/login')}
+                  className="bg-black rounded-full py-3 px-6"
+                >
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Sign up / Log in
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {searchQuery || activeFilter !== 'All' ? 'No designs match your filters' : 'No designs available yet'}
+                </Text>
+                <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {searchQuery || activeFilter !== 'All' 
+                    ? 'Try adjusting your search or filters'
+                    : 'General Contractors can upload design plans that will appear here'}
+                </Text>
+              </>
+            )}
           </View>
         ) : (
         <View className="flex-row flex-wrap justify-between pb-8">

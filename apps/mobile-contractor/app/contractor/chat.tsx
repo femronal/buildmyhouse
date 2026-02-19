@@ -22,6 +22,7 @@ import type { ProjectRequest } from "@/services/requestService";
 import { AlertCircle, CheckCircle, XCircle, MessageCircle, ChevronRight, MapPin, DollarSign, Calendar, FileText } from "lucide-react-native";
 import { useProject, useActiveProjects, useUnpaidProjects } from "@/hooks/useProjects";
 import { useUserConversations } from "@/hooks/useChat";
+import { getBackendAssetUrl } from "@/lib/image";
 
 // Mock data removed - using real data from API
 
@@ -46,6 +47,7 @@ export default function ContractorChatScreen() {
     queryKey: ['conversation', projectId, userId, currentUser?.id],
     queryFn: async () => {
       if (!userId || !currentUser?.id) return null;
+      if (userId === currentUser.id) return null; // Guard: never create a self-chat
       return chatService.getOrCreateConversation(
         [userId, currentUser.id],
         projectId,
@@ -667,8 +669,15 @@ export default function ContractorChatScreen() {
 
   // Get contractor image from request
   const getContractorImage = (request: ProjectRequest) => {
-    return request.contractor?.contractorProfile?.imageUrl || request.contractor?.pictureUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80';
+    return (
+      getBackendAssetUrl(request.contractor?.contractorProfile?.imageUrl || request.contractor?.pictureUrl) ||
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
+    );
   };
+
+  const visibleAcceptedContractors = useMemo(() => {
+    return (acceptedContractors || []).filter((c: any) => c?.id && c.id !== currentUser?.id);
+  }, [acceptedContractors, currentUser?.id]);
 
   // Default: Show conversations list with real project requests
   return (
@@ -822,9 +831,9 @@ export default function ContractorChatScreen() {
         {isGC && (
           <View className="px-6 mb-4">
             <Text className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Active Conversations ({acceptedContractors.length})
+              Active Conversations ({visibleAcceptedContractors.length})
             </Text>
-            {acceptedContractors.length === 0 ? (
+            {visibleAcceptedContractors.length === 0 ? (
               <View className="bg-[#1E3A5F] rounded-xl p-6 items-center border border-blue-900">
                 <MessageCircle size={48} color="#6B7280" strokeWidth={1.5} />
                 <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -837,7 +846,7 @@ export default function ContractorChatScreen() {
                 </Text>
               </View>
             ) : (
-              acceptedContractors.map((contractor: any, index: number) => (
+              visibleAcceptedContractors.map((contractor: any, index: number) => (
           <TouchableOpacity
                   key={contractor.requestId || `accepted-gc-${contractor.id}-${contractor.projectId}-${index}`}
                   onPress={() => {
@@ -846,7 +855,7 @@ export default function ContractorChatScreen() {
             className="bg-[#1E3A5F] rounded-xl p-4 mb-3 flex-row items-center border border-blue-900"
           >
                   <Image 
-                    source={{ uri: contractor.imageUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' }} 
+                    source={{ uri: getBackendAssetUrl(contractor.imageUrl) || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' }} 
                     className="w-14 h-14 rounded-full" 
                     resizeMode="cover" 
                   />

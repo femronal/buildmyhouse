@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
+import { StripeService } from '../payments/services/stripe.service';
+import { PaymentsService } from '../payments/services/payments.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member.dto';
@@ -10,9 +12,204 @@ import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto'
 
 @Injectable()
 export class ProjectsService {
-  private prisma = new PrismaClient();
+  // Use `any` for model access to reduce coupling to Prisma schema changes.
+  private prisma = new PrismaClient() as any;
+  private readonly logger = new Logger(ProjectsService.name);
 
-  constructor(private readonly wsService: WebSocketService) {}
+  constructor(
+    private readonly wsService: WebSocketService,
+    private readonly stripeService: StripeService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
+
+  private async createStagesFromPhasesWithClient(prisma: any, projectId: string, phases: any[]): Promise<void> {
+    if (!phases || !Array.isArray(phases) || phases.length === 0) {
+      return;
+    }
+
+    // Check if stages already exist
+    const existingStages = await prisma.stage.findMany({
+      where: { projectId },
+    });
+
+    if (existingStages.length > 0) {
+      // Stages already exist, don't recreate
+      return;
+    }
+
+    // Create stages from phases
+    const stagesToCreate = phases.map((phase: any, index: number) => {
+      // Handle different phase formats
+      const phaseName = phase.name || phase.phase_name || phase.phaseName || `Phase ${index + 1}`;
+      const estimatedDuration = phase.estimatedDuration || phase.time_period || phase.timePeriod || '2 weeks';
+      const estimatedCost = phase.estimatedCost || phase.estimated_cost || 0;
+
+      return {
+        projectId,
+        name: phaseName,
+        status: 'not_started',
+        order: index + 1,
+        estimatedCost: typeof estimatedCost === 'number' ? estimatedCost : parseFloat(estimatedCost) || 0,
+        estimatedDuration: typeof estimatedDuration === 'string' ? estimatedDuration : String(estimatedDuration),
+      };
+    });
+
+    await prisma.stage.createMany({
+      data: stagesToCreate,
+    });
+  }
+
+  private async handleAutomaticStageChargeAndPayout(params: {
+    stageId: string;
+    projectId: string;
+  }) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: params.stageId },
+      include: { project: true },
+    });
+    if (!stage || stage.projectId !== params.projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+
+    const project: any = stage.project;
+    const projectType = project?.projectType as string | null;
+    if (projectType !== 'renovation' && projectType !== 'interior_design') {
+      return; // Only auto-charge for renovation/interior flows.
+    }
+
+    const amount = Number(stage.estimatedCost || 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Stage estimatedCost must be greater than 0 to start the stage');
+    }
+
+    // Idempotency: if we already have a payment for this stage, do not charge again.
+    const existing = await this.prisma.payment.findFirst({
+      where: {
+        stageId: stage.id,
+        method: 'stripe',
+        status: { in: ['pending', 'processing', 'completed'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (existing) return;
+
+    if (!project?.homeownerId) {
+      throw new BadRequestException('Project homeowner not found');
+    }
+    if (!project?.generalContractorId) {
+      throw new BadRequestException('Project does not have a general contractor assigned');
+    }
+
+    const homeowner = await this.prisma.user.findUnique({
+      where: { id: project.homeownerId },
+      select: { id: true, email: true, stripeCustomerId: true },
+    });
+    if (!homeowner) {
+      throw new BadRequestException('Homeowner not found');
+    }
+
+    // Ensure we have a Stripe customer for off-session charging.
+    let stripeCustomerId = homeowner.stripeCustomerId as string | null;
+    if (!stripeCustomerId) {
+      const customer = await this.stripeService.getOrCreateCustomer(homeowner.email, homeowner.id);
+      stripeCustomerId = customer.id;
+      await this.prisma.user.update({
+        where: { id: homeowner.id },
+        data: { stripeCustomerId },
+      });
+    }
+
+    // Find default card (isBackup=false). Fallback to most recent card if no default is set.
+    const paymentMethod = await this.prisma.paymentMethod.findFirst({
+      where: {
+        userId: homeowner.id,
+        stripePaymentMethodId: { not: null },
+      },
+      orderBy: [{ isBackup: 'asc' }, { createdAt: 'desc' }],
+    });
+    if (!paymentMethod?.stripePaymentMethodId) {
+      throw new BadRequestException('No saved payment method found. Please add a card before starting this stage.');
+    }
+
+    // We route funds to the GC’s Connect account using a destination charge.
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { userId: project.generalContractorId },
+      select: { connectAccountId: true },
+    });
+    if (!contractor?.connectAccountId) {
+      throw new BadRequestException('GC has not completed Stripe Connect onboarding. Cannot start stage.');
+    }
+
+    // Create a Payment record up-front so we can reference it in Stripe metadata.
+    const payment = await this.prisma.payment.create({
+      data: {
+        projectId: project.id,
+        stageId: stage.id,
+        amount,
+        status: 'processing',
+        method: 'stripe',
+        transactionId: null,
+      },
+    });
+
+    const transferGroup = `project_${project.id}_stage_${stage.id}`;
+
+    try {
+      const intent = await this.stripeService.createOffSessionDestinationCharge({
+        amount,
+        currency: 'usd',
+        customerId: stripeCustomerId,
+        paymentMethodId: paymentMethod.stripePaymentMethodId,
+        destinationAccountId: contractor.connectAccountId,
+        transferGroup,
+        description: `Stage payment: ${stage.name}`,
+        metadata: {
+          type: 'stage_commencement',
+          paymentId: payment.id,
+          projectId: project.id,
+          stageId: stage.id,
+          homeownerId: homeowner.id,
+          gcUserId: project.generalContractorId,
+        },
+        idempotencyKey: `stage_commencement_${stage.id}`,
+      });
+
+      await this.prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          transactionId: intent.id,
+          status: intent.status === 'succeeded' ? 'completed' : 'processing',
+        },
+      });
+    } catch (e: any) {
+      // Record the failure for audit/debugging.
+      try {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: 'failed',
+          },
+        });
+      } catch {
+        // Ignore DB update failure here; we still rethrow original error.
+      }
+
+      const stripeMessage =
+        e?.raw?.message ||
+        e?.message ||
+        'Payment failed';
+
+      // Common case for off-session charges: SCA required.
+      if (e?.code === 'authentication_required' || e?.raw?.code === 'authentication_required') {
+        throw new BadRequestException(
+          'Card authentication required. Please update your payment method before starting this stage.',
+        );
+      }
+
+      this.logger.error(`Stage commencement charge failed: ${stripeMessage}`, e?.stack);
+      throw new BadRequestException(`Unable to charge for stage commencement: ${stripeMessage}`);
+    }
+  }
 
   /**
    * Update project status and emit real-time updateimage.png
@@ -76,6 +273,329 @@ export class ProjectsService {
     });
 
     return project;
+  }
+
+  // ==================== Homebuilding manual payment flow ====================
+
+  async updateProjectReviewStatus(params: {
+    projectId: string;
+    reviewStatus: 'pending_admin_review' | 'changes_requested' | 'approved';
+  }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: {
+        reviewStatus: params.reviewStatus,
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: {
+        event: 'review_status_change',
+        reviewStatus: (updated as any).reviewStatus,
+        updatedAt: (updated as any).updatedAt,
+      },
+    });
+
+    return updated;
+  }
+
+  async setProjectRiskLevel(params: { projectId: string; riskLevel: 'low' | 'medium' | 'high' }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: { id: true },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: { riskLevel: params.riskLevel },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: {
+        event: 'risk_level_change',
+        riskLevel: (updated as any).riskLevel,
+        updatedAt: (updated as any).updatedAt,
+      },
+    });
+
+    return updated;
+  }
+
+  async activateProjectAsAdmin(params: { projectId: string }) {
+    const updated = await this.prisma.$transaction(async (tx: any) => {
+      const project = await tx.project.findUnique({
+        where: { id: params.projectId },
+        include: { stages: true },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      // Idempotent: if already active, do nothing.
+      if ((project as any).status === 'active') {
+        return project;
+      }
+
+      // Unlock tracking by creating stages from aiAnalysis phases if needed.
+      if (!project.stages || project.stages.length === 0) {
+        const aiAnalysis = (project as any).aiAnalysis as any;
+        if (aiAnalysis && aiAnalysis.phases && Array.isArray(aiAnalysis.phases)) {
+          await this.createStagesFromPhasesWithClient(tx, params.projectId, aiAnalysis.phases);
+        }
+      }
+
+      const now = new Date();
+      return tx.project.update({
+        where: { id: params.projectId },
+        data: {
+          status: 'active',
+          startDate: (project as any).startDate ?? now,
+        },
+        include: {
+          homeowner: {
+            select: { id: true, email: true, fullName: true, phone: true },
+          },
+          generalContractor: {
+            select: { id: true, email: true, fullName: true, phone: true },
+          },
+          stages: {
+            orderBy: { order: 'asc' },
+          },
+        },
+      });
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: { ...(updated as any), event: 'project_activated_by_admin' },
+    });
+
+    return updated;
+  }
+
+  async deactivateProjectAsAdmin(params: { projectId: string }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      include: { stages: true },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    // Idempotent: if already paused, do nothing.
+    if ((project as any).status === 'paused') {
+      return project;
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: { status: 'paused' },
+      include: {
+        homeowner: {
+          select: { id: true, email: true, fullName: true, phone: true },
+        },
+        generalContractor: {
+          select: { id: true, email: true, fullName: true, phone: true },
+        },
+        stages: {
+          orderBy: { order: 'asc' },
+        },
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: { ...(updated as any), event: 'project_deactivated_by_admin' },
+    });
+
+    return updated;
+  }
+
+  async setExternalPaymentLink(params: {
+    projectId: string;
+    actorUserId: string;
+    actorRole: string;
+    externalPaymentLink: string;
+  }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: {
+        id: true,
+        projectType: true,
+        generalContractorId: true,
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    // Admin can always set; GC can only set for their assigned project.
+    if (params.actorRole !== 'admin' && project.generalContractorId !== params.actorUserId) {
+      throw new ForbiddenException('You do not have permission to set the payment link for this project');
+    }
+
+    // If projectType is present, restrict this to homebuilding.
+    if (project.projectType && project.projectType !== 'homebuilding') {
+      throw new BadRequestException('External payment link is only supported for homebuilding projects');
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: {
+        externalPaymentLink: params.externalPaymentLink,
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: {
+        event: 'external_payment_link_set',
+        externalPaymentLink: (updated as any).externalPaymentLink,
+        updatedAt: (updated as any).updatedAt,
+      },
+    });
+
+    return updated;
+  }
+
+  async declareManualPayment(params: { projectId: string; homeownerId: string }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: {
+        id: true,
+        homeownerId: true,
+        status: true,
+        projectType: true,
+        externalPaymentLink: true,
+        paymentConfirmationStatus: true,
+        paymentDeclaredAt: true,
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    if (project.homeownerId !== params.homeownerId) {
+      throw new ForbiddenException('You do not have permission to declare payment for this project');
+    }
+
+    // If projectType is present, restrict this to homebuilding.
+    if (project.projectType && project.projectType !== 'homebuilding') {
+      throw new BadRequestException('Manual payment declaration is only supported for homebuilding projects');
+    }
+
+    if (!project.externalPaymentLink) {
+      throw new BadRequestException('Payment link is not available yet for this project');
+    }
+    if (project.status === 'active') {
+      throw new BadRequestException('Project is already active');
+    }
+
+    // Idempotency: if already declared/confirmed, do not change timestamps.
+    if (project.paymentConfirmationStatus === 'declared' || project.paymentConfirmationStatus === 'confirmed') {
+      return this.prisma.project.findUnique({ where: { id: params.projectId } });
+    }
+
+    const now = new Date();
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: {
+        paymentDeclaredAt: project.paymentDeclaredAt ?? now,
+        paymentConfirmationStatus: 'declared',
+        // Reuse existing status for "awaiting admin confirmation" filtering.
+        status: project.status === 'draft' ? 'pending_payment' : project.status,
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: {
+        event: 'manual_payment_declared',
+        paymentConfirmationStatus: (updated as any).paymentConfirmationStatus,
+        paymentDeclaredAt: (updated as any).paymentDeclaredAt,
+        status: (updated as any).status,
+      },
+    });
+
+    return updated;
+  }
+
+  async confirmManualPayment(params: { projectId: string }) {
+    const updated = await this.prisma.$transaction(async (tx: any) => {
+      const project = await tx.project.findUnique({
+        where: { id: params.projectId },
+        include: { stages: true },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+
+      // If projectType is present, restrict this to homebuilding.
+      if ((project as any).projectType && (project as any).projectType !== 'homebuilding') {
+        throw new BadRequestException('Manual payment confirmation is only supported for homebuilding projects');
+      }
+
+      if ((project as any).paymentConfirmationStatus === 'confirmed') {
+        return project;
+      }
+      if ((project as any).paymentConfirmationStatus !== 'declared') {
+        throw new BadRequestException('Payment has not been declared by the homeowner yet');
+      }
+
+      const now = new Date();
+      const isActivating = (project as any).status !== 'active';
+
+      const next = await tx.project.update({
+        where: { id: params.projectId },
+        data: {
+          paymentConfirmedAt: now,
+          paymentConfirmationStatus: 'confirmed',
+          status: 'active',
+        },
+      });
+
+      // On first activation, create stages from phases if they don't exist (unlock tracking).
+      if (isActivating && (!project.stages || project.stages.length === 0)) {
+        const aiAnalysis = (project as any).aiAnalysis as any;
+        if (aiAnalysis && aiAnalysis.phases && Array.isArray(aiAnalysis.phases)) {
+          await this.createStagesFromPhasesWithClient(tx, params.projectId, aiAnalysis.phases);
+        }
+      }
+
+      return next;
+    });
+
+    // Record one activation payment when admin confirms (idempotent)
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: { budget: true },
+    });
+    if (project?.budget != null) {
+      await this.paymentsService.createManualActivationPayment(params.projectId, project.budget);
+    }
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: {
+        event: 'manual_payment_confirmed',
+        paymentConfirmationStatus: (updated as any).paymentConfirmationStatus,
+        paymentConfirmedAt: (updated as any).paymentConfirmedAt,
+        status: (updated as any).status,
+      },
+    });
+
+    return updated;
   }
 
   /**
@@ -150,6 +670,12 @@ export class ProjectsService {
     // Validate completion requirements if marking as completed
     if (status === 'completed') {
       await this.validateStageCompletion(stageId);
+    }
+
+    // Automatic stage funding (renovation/interior) on stage commencement.
+    // Run before updating the stage so a failed charge doesn't start the stage.
+    if (status === 'in_progress' && stage.status !== 'in_progress') {
+      await this.handleAutomaticStageChargeAndPayout({ stageId, projectId });
     }
 
     // Update stage status
@@ -357,7 +883,7 @@ export class ProjectsService {
       ],
     };
 
-    // Add status filter if provided
+    // Add status filter if provided.
     if (status) {
       whereClause.status = status;
     }
@@ -600,41 +1126,7 @@ export class ProjectsService {
    * Create stages from project phases (from aiAnalysis or design)
    */
   private async createStagesFromPhases(projectId: string, phases: any[]): Promise<void> {
-    if (!phases || !Array.isArray(phases) || phases.length === 0) {
-      return;
-    }
-
-    // Check if stages already exist
-    const existingStages = await this.prisma.stage.findMany({
-      where: { projectId },
-    });
-
-    if (existingStages.length > 0) {
-      // Stages already exist, don't recreate
-      return;
-    }
-
-    // Create stages from phases
-    const stagesToCreate = phases.map((phase: any, index: number) => {
-      // Handle different phase formats
-      const phaseName = phase.name || phase.phase_name || phase.phaseName || `Phase ${index + 1}`;
-      const phaseDescription = phase.description || '';
-      const estimatedDuration = phase.estimatedDuration || phase.time_period || phase.timePeriod || '2 weeks';
-      const estimatedCost = phase.estimatedCost || phase.estimated_cost || 0;
-
-      return {
-        projectId,
-        name: phaseName,
-        status: 'not_started',
-        order: index + 1,
-        estimatedCost: typeof estimatedCost === 'number' ? estimatedCost : parseFloat(estimatedCost) || 0,
-        estimatedDuration: typeof estimatedDuration === 'string' ? estimatedDuration : String(estimatedDuration),
-      };
-    });
-
-    await this.prisma.stage.createMany({
-      data: stagesToCreate,
-    });
+    return this.createStagesFromPhasesWithClient(this.prisma, projectId, phases);
   }
 
   /**

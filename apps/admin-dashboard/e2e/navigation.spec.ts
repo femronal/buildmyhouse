@@ -14,10 +14,10 @@ test.describe('Navigation', () => {
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
   });
 
-  test('should navigate to users page', async ({ page }) => {
-    await page.getByRole('link', { name: /Users/i }).click();
-    await expect(page).toHaveURL(/\/users/);
-    await expect(page.getByText(/User Management/i)).toBeVisible();
+  test('should navigate to homeowners page', async ({ page }) => {
+    await page.getByRole('link', { name: /Homeowners/i }).click();
+    await expect(page).toHaveURL(/\/homeowners/);
+    await expect(page.getByText(/Homeowners/i)).toBeVisible();
   });
 
   test('should navigate to projects page', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Navigation', () => {
   test('should navigate to verification page', async ({ page }) => {
     await page.getByRole('link', { name: /Verification/i }).click();
     await expect(page).toHaveURL(/\/verification/);
-    await expect(page.getByText(/Verification Workflow/i)).toBeVisible();
+    await expect(page.getByText(/Verification Center/i)).toBeVisible();
   });
 
   test('should navigate to disputes page', async ({ page }) => {
@@ -43,10 +43,10 @@ test.describe('Navigation', () => {
     const dashboardLink = page.getByRole('link', { name: /Dashboard/i });
     await expect(dashboardLink).toHaveClass(/bg-blue-600/);
 
-    // Navigate to users
-    await page.getByRole('link', { name: /Users/i }).click();
-    const usersLink = page.getByRole('link', { name: /Users/i });
-    await expect(usersLink).toHaveClass(/bg-blue-600/);
+    // Navigate to homeowners
+    await page.getByRole('link', { name: /Homeowners/i }).click();
+    const homeownersLink = page.getByRole('link', { name: /Homeowners/i });
+    await expect(homeownersLink).toHaveClass(/bg-blue-600/);
     await expect(dashboardLink).not.toHaveClass(/bg-blue-600/);
   });
 

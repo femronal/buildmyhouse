@@ -27,7 +27,8 @@ export async function uploadFile(uri: string, type: 'image' | 'document' | 'medi
       else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
       else if (ext === 'webp') mimeType = 'image/webp';
       else if (ext === 'pdf') mimeType = 'application/pdf';
-      else if (ext === 'doc' || ext === 'docx') mimeType = 'application/msword';
+      else if (ext === 'doc') mimeType = 'application/msword';
+      else if (ext === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
       else if (ext === 'mp4') mimeType = 'video/mp4';
       else if (ext === 'mov') mimeType = 'video/quicktime';
       else if (ext === 'mp3') mimeType = 'audio/mpeg';

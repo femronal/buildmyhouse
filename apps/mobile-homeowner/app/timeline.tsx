@@ -1,7 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle } from "lucide-react-native";
+import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle, ExternalLink, CreditCard } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
+import * as WebBrowser from 'expo-web-browser';
 
 export default function TimelineScreen() {
   const router = useRouter();
@@ -12,6 +13,33 @@ export default function TimelineScreen() {
 
   // Get stages from project data
   const stages = project?.stages || [];
+
+  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
+  const projectType = (project as any)?.projectType as string | undefined;
+  const paymentConfirmationStatus =
+    ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
+  const externalPaymentLink = (project as any)?.externalPaymentLink as string | undefined;
+  const paymentDeclaredAt = (project as any)?.paymentDeclaredAt as string | undefined;
+  const declaredAt = paymentDeclaredAt ? new Date(paymentDeclaredAt) : null;
+  const isHomebuilding = projectType === 'homebuilding';
+  const isTrackingLocked = isHomebuilding && paymentConfirmationStatus !== 'confirmed';
+
+  const reviewHoursRemaining = (() => {
+    if (!declaredAt) return null;
+    const reviewEndsAt = declaredAt.getTime() + 72 * 60 * 60 * 1000;
+    const msRemaining = reviewEndsAt - Date.now();
+    if (msRemaining <= 0) return 0;
+    return Math.ceil(msRemaining / (60 * 60 * 1000));
+  })();
+
+  const handleOpenExternalLink = async () => {
+    if (!externalPaymentLink) return;
+    try {
+      await WebBrowser.openBrowserAsync(externalPaymentLink);
+    } catch {
+      // no-op; we show fallback UI below
+    }
+  };
 
   // Map database status to display status
   const getDisplayStatus = (status: string) => {
@@ -111,6 +139,99 @@ export default function TimelineScreen() {
         >
           <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>Go Back</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // Tracking lock screen (homebuilding manual payment flow)
+  if (isTrackingLocked) {
+    const title =
+      paymentConfirmationStatus === 'declared'
+        ? 'Payment under review'
+        : paymentConfirmationStatus === 'rejected'
+          ? 'Payment rejected'
+          : 'Payment required';
+
+    const description =
+      paymentConfirmationStatus === 'declared'
+        ? `We’re reviewing your payment. This can take up to 72 hours.${
+            typeof reviewHoursRemaining === 'number'
+              ? reviewHoursRemaining > 0
+                ? ` About ${reviewHoursRemaining}h remaining.`
+                : ` If it has been more than 72 hours, please contact support.`
+              : ''
+          }`
+        : paymentConfirmationStatus === 'rejected'
+          ? 'Your payment was rejected. Please re-check the transfer and declare again after paying.'
+          : externalPaymentLink
+            ? 'Use the payment instructions (Stripe invoice, Wise, Paystack, or Zelle). Then tap “I paid” in Billing & Payments.'
+            : 'Waiting for BuildMyHouse/GC to email payment instructions.';
+
+    return (
+      <View className="flex-1 bg-white">
+        <View className="pt-16 px-6 pb-4">
+          <View className="flex-row items-center mb-4">
+            <TouchableOpacity
+              onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+            >
+              <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/home')}
+              className="w-10 h-10 bg-black rounded-full items-center justify-center"
+            >
+              <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+
+          <Text className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
+            Build Timeline
+          </Text>
+          <Text className="text-sm text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Tracking is locked until payment is confirmed
+          </Text>
+        </View>
+
+        <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+          <View className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
+            <View className="flex-row items-center mb-3">
+              {paymentConfirmationStatus === 'declared' ? (
+                <Clock size={22} color="#F59E0B" strokeWidth={2.5} />
+              ) : (
+                <CreditCard size={22} color="#111827" strokeWidth={2.5} />
+              )}
+              <Text className="text-black text-xl ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                {title}
+              </Text>
+            </View>
+
+            <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {description}
+            </Text>
+
+            {!!externalPaymentLink && (
+              <TouchableOpacity
+                onPress={handleOpenExternalLink}
+                className="mt-4 flex-row items-center justify-center bg-black rounded-xl py-3"
+              >
+                <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Open payment link
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              onPress={() => router.push('/billing-payments')}
+              className="mt-3 flex-row items-center justify-center bg-white border border-gray-300 rounded-xl py-3"
+            >
+              <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Go to Billing & Payments
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </View>
     );
   }

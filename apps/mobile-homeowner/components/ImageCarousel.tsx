@@ -35,11 +35,10 @@ export default function ImageCarousel({ images, height = 140 }: ImageCarouselPro
         scrollEventThrottle={16}
       >
         {images.map((image, index) => (
-          <View key={index} style={{ width: '100%' }} className="relative">
+          <View key={index} style={{ width: screenWidth, height }} className="relative">
             <Image
               source={{ uri: image.url }}
-              style={{ height }}
-              className="w-full"
+              style={{ width: screenWidth, height }}
               resizeMode="cover"
             />
             <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-3 py-1">

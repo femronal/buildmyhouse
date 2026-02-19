@@ -1,9 +1,21 @@
+import { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { HardHat, ChevronRight, Shield } from "lucide-react-native";
+import { getAuthToken } from "@/lib/auth";
 
 export default function ContractorLandingScreen() {
   const router = useRouter();
+
+  useEffect(() => {
+    const check = async () => {
+      const token = await getAuthToken();
+      if (token) {
+        router.replace('/contractor/gc-dashboard');
+      }
+    };
+    check();
+  }, [router]);
 
   return (
     <View className="flex-1 bg-[#0A1628]">

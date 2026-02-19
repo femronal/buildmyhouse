@@ -37,5 +37,15 @@ export function useRejectRequest() {
   });
 }
 
+export function useGCEarnings() {
+  return useQuery({
+    queryKey: ['gc-earnings'],
+    queryFn: gcService.getEarnings,
+    staleTime: 30_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+}
+
 
 

@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download, Lock, CreditCard, Clock } from "lucide-react-native";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
@@ -127,6 +127,46 @@ export default function StageDetailScreen() {
         <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
           Loading stage details...
         </Text>
+      </View>
+    );
+  }
+
+  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
+  const projectType = (project as any)?.projectType as string | undefined;
+  const paymentConfirmationStatus =
+    ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
+  const isTrackingLocked = projectType === 'homebuilding' && paymentConfirmationStatus !== 'confirmed';
+
+  if (isTrackingLocked) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center px-6">
+        <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
+          <Lock size={28} color="#000000" strokeWidth={2} />
+        </View>
+        <Text className="text-black text-xl text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+          Tracking locked
+        </Text>
+        <Text className="text-gray-600 text-sm text-center mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+          {paymentConfirmationStatus === 'declared'
+            ? 'Your payment is under review (up to 72 hours). Tracking unlocks once confirmed.'
+            : 'Complete your payment first to unlock stage tracking.'}
+        </Text>
+
+        <TouchableOpacity
+          onPress={() => router.push('/billing-payments')}
+          className="bg-black rounded-full py-4 px-8 mt-6"
+        >
+          <View className="flex-row items-center justify-center">
+            {paymentConfirmationStatus === 'declared' ? (
+              <Clock size={18} color="#FFFFFF" strokeWidth={2} />
+            ) : (
+              <CreditCard size={18} color="#FFFFFF" strokeWidth={2} />
+            )}
+            <Text className="text-white ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Billing & Payments
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
     );
   }

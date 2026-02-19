@@ -16,10 +16,29 @@ export const useUsers = (page: number = 1, limit: number = 20, filters?: { searc
   });
 };
 
+export type UserDetail = {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string | null;
+  pictureUrl?: string | null;
+  role: string;
+  verified: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  projects: number;
+  lastActive: string;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  status: string;
+};
+
 export const useUser = (id: string) => {
   return useQuery({
     queryKey: ['user', id],
-    queryFn: () => api.get(`/users/${id}`),
+    queryFn: () => api.get<UserDetail>(`/users/${id}`),
     enabled: !!id,
   });
 };

@@ -57,6 +57,7 @@ export default function RootLayout() {
           <AppAlertProvider>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="login" options={{ headerShown: false }} />
               <Stack.Screen name="contractor" options={{ headerShown: false }} />
               <Stack.Screen name="chat" options={{ headerShown: false }} />
             </Stack>

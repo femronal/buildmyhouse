@@ -1,9 +1,25 @@
-import { Controller, Post, Body, Get, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  Patch,
+  UseGuards,
+  Request,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { UpdateMeDto } from './dto/update-me.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 
 @Controller('auth')
 export class AuthController {
@@ -117,5 +133,57 @@ export class AuthController {
       throw new Error('User ID not found in token');
     }
     return this.authService.getCurrentUser(userId);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateCurrentUser(@Request() req: any, @Body() updateMeDto: UpdateMeDto) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new Error('User ID not found in token');
+    }
+    return this.authService.updateCurrentUser(userId, updateMeDto);
+  }
+
+  @Post('me/picture')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: (req, file, callback) => {
+          const uploadPath = join(process.cwd(), 'uploads', 'profiles');
+          if (!existsSync(uploadPath)) {
+            mkdirSync(uploadPath, { recursive: true });
+          }
+          callback(null, uploadPath);
+        },
+        filename: (req: any, file, callback) => {
+          const userId = req?.user?.sub || 'user';
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const ext = extname(file.originalname);
+          callback(null, `profile-${userId}-${uniqueSuffix}${ext}`);
+        },
+      }),
+      fileFilter: (req, file, callback) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|gif)$/)) {
+          return callback(new BadRequestException('Only image files are allowed'), false);
+        }
+        callback(null, true);
+      },
+      limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB max
+      },
+    }),
+  )
+  async uploadProfilePicture(@Request() req: any, @UploadedFile() file: Express.Multer.File) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new Error('User ID not found in token');
+    }
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const pictureUrl = `/uploads/profiles/${file.filename}`;
+    return this.authService.updateProfilePicture(userId, pictureUrl);
   }
 }

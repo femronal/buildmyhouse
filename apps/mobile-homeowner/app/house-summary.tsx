@@ -889,7 +889,7 @@ export default function HouseSummaryScreen() {
 
               <View className="mt-3 pt-3 border-t border-green-200">
                 <Text className="text-green-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  GC's Estimated Budget: ${(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+                  GC’s Estimated Budget: ${(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
                 </Text>
                 {acceptedRequest.estimatedDuration && (
                   <Text className="text-green-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -1156,7 +1156,7 @@ export default function HouseSummaryScreen() {
                 : `Your request has been sent to ${gcAcceptanceData?.pendingRequestsCount || selectedGCs.size || 1} contractor(s). They will review your project and respond soon.`}
             </Text>
             <Text className="text-yellow-700 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', fontStyle: 'italic' }}>
-              You'll be notified as soon as a contractor accepts your project.
+              You’ll be notified as soon as a contractor accepts your project.
             </Text>
           </View>
         )}

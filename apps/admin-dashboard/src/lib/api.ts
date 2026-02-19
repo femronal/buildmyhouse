@@ -40,6 +40,15 @@ const getHeaders = (): HeadersInit => {
   return headers;
 };
 
+const getHeadersForFormData = (): HeadersInit => {
+  const headers: HeadersInit = {};
+  const token = getToken();
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+};
+
 export const api = {
   get: async <T>(endpoint: string): Promise<T> => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -108,6 +117,30 @@ export const api = {
     return response.json();
   },
   
+  uploadFile: async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${API_BASE_URL}/upload/image`, {
+      method: 'POST',
+      headers: getHeadersForFormData(),
+      body: formData,
+    });
+    if (response.status === 401) {
+      removeToken();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      throw new Error('Unauthorized');
+    }
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(error.message || `Upload failed: ${response.statusText}`);
+    }
+    const result = await response.json();
+    const url = result.url?.startsWith('/') ? result.url : `/${result.url}`;
+    return { url };
+  },
+
   delete: async <T>(endpoint: string): Promise<T> => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'DELETE',
