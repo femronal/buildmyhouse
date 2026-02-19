@@ -122,6 +122,19 @@ export function usePendingProjects() {
 }
 
 /**
+ * Get paused projects (paused by admin)
+ */
+export function usePausedProjects() {
+  return useQuery({
+    queryKey: ['projects', 'paused'],
+    queryFn: () => projectService.getPausedProjects(),
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 30000,
+  });
+}
+
+/**
  * Get active projects
  */
 export function useActiveProjects() {

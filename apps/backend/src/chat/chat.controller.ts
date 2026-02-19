@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -24,6 +25,9 @@ export class ChatController {
     const currentUserId = req.user.sub;
     // Ensure current user is included in the conversation
     const userIds = [...new Set([currentUserId, ...body.userIds])];
+    if (userIds.length < 2) {
+      throw new BadRequestException('Conversation must include at least 2 participants');
+    }
     return this.chatService.getOrCreateConversation(userIds, body.projectId);
   }
 

@@ -52,7 +52,7 @@ export default function ChooseProjectTypeScreen() {
           className="text-sm text-gray-500 leading-5"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          Select how you'd like to proceed with your project
+          Select how you’d like to proceed with your project
         </Text>
       </View>
 

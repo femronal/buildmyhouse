@@ -3,79 +3,8 @@ import { useRouter } from "expo-router";
 import { User, Bell, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, Home, LandPlot } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useDesigns } from '@/hooks';
-
-// Mock data for houses for sale and lands for sale (to be replaced with real data later)
-const homesForSale = [
-  {
-    id: 1,
-    name: "Luxury Modern Villa",
-    location: "Victoria Island, Lagos",
-    price: 285000,
-    bedrooms: 4,
-    bathrooms: 3,
-    squareFootage: 2800,
-    squareMeters: 260,
-    propertyType: "Detached House",
-    yearBuilt: 2020,
-    condition: "Move-in Ready",
-    parking: 2,
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80",
-  },
-  {
-    id: 2,
-    name: "Contemporary Family Home",
-    location: "Lekki Phase 1, Lagos",
-    price: 195000,
-    bedrooms: 3,
-    bathrooms: 2,
-    squareFootage: 2200,
-    squareMeters: 204,
-    propertyType: "Semi-Detached",
-    yearBuilt: 2019,
-    condition: "Newly Renovated",
-    parking: 2,
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=600&q=80",
-  },
-  {
-    id: 3,
-    name: "Elegant Townhouse",
-    location: "Ikoyi, Lagos",
-    price: 425000,
-    bedrooms: 5,
-    bathrooms: 4,
-    squareFootage: 3500,
-    squareMeters: 325,
-    propertyType: "Townhouse",
-    yearBuilt: 2021,
-    condition: "Move-in Ready",
-    parking: 3,
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&q=80",
-  },
-];
-
-const landedProperties = [
-  {
-    id: 1,
-    name: "Royal Gardens Estate",
-    location: "Ibeju-Lekki, Lagos",
-    pricePerPlot: 15000000,
-    totalPlots: 200,
-    soldPlots: 145,
-    plotSize: "600 sqm",
-    image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80",
-  },
-  {
-    id: 2,
-    name: "Sunrise Gardens",
-    location: "Epe, Lagos",
-    pricePerPlot: 8000000,
-    totalPlots: 350,
-    soldPlots: 210,
-    plotSize: "500 sqm",
-    image: "https://images.unsplash.com/photo-1628624747186-a941c476b7ef?w=600&q=80",
-  },
-];
+import { useDesigns, useHousesForSale, useLandsForSale } from '@/hooks';
+import { getBackendAssetUrl } from '@/lib/image';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -94,8 +23,10 @@ const getImageUrl = (imageUrl: string) => {
 export default function ExploreScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const { data: currentUser } = useCurrentUser();
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
+  const { data: housesForSale = [], isLoading: housesLoading } = useHousesForSale();
+  const { data: landsForSale = [] } = useLandsForSale();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
@@ -167,23 +98,23 @@ export default function ExploreScreen() {
   }, [designs, searchQuery]);
 
   const filteredHouses = useMemo(() => {
-    if (!searchQuery.trim()) return homesForSale;
+    if (!searchQuery.trim()) return housesForSale;
     const query = searchQuery.toLowerCase();
-    return homesForSale.filter((house: any) => 
+    return housesForSale.filter((house: any) => 
       house.name?.toLowerCase().includes(query) ||
       house.location?.toLowerCase().includes(query) ||
       house.propertyType?.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [housesForSale, searchQuery]);
 
   const filteredLands = useMemo(() => {
-    if (!searchQuery.trim()) return landedProperties;
+    if (!searchQuery.trim()) return landsForSale;
     const query = searchQuery.toLowerCase();
-    return landedProperties.filter((land: any) => 
+    return landsForSale.filter((land: any) => 
       land.name?.toLowerCase().includes(query) ||
       land.location?.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [landsForSale, searchQuery]);
 
   return (
     <View className="flex-1 bg-white">
@@ -195,7 +126,7 @@ export default function ExploreScreen() {
         >
           {userPicture ? (
             <Image 
-              source={{ uri: userPicture }} 
+              source={{ uri: getBackendAssetUrl(userPicture) }} 
               className="w-full h-full"
               resizeMode="cover"
             />
@@ -323,12 +254,33 @@ export default function ExploreScreen() {
               </View>
             ) : filteredDesigns.length === 0 ? (
               <View className="items-center justify-center py-20">
-                <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {searchQuery ? 'No designs found' : 'No designs available yet'}
-                </Text>
-                <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {searchQuery ? 'Try a different search term' : 'General Contractors can upload design plans that will appear here'}
-                </Text>
+                {!currentUser && !userLoading && !searchQuery ? (
+                  <>
+                    <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      Sign in to browse designs
+                    </Text>
+                    <Text className="text-gray-400 text-center text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Create an account or log in to browse designs uploaded by General Contractors.
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => router.push('/login')}
+                      className="bg-black rounded-full py-3 px-6"
+                    >
+                      <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        Sign up / Log in
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {searchQuery ? 'No designs found' : 'No designs available yet'}
+                    </Text>
+                    <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {searchQuery ? 'Try a different search term' : 'General Contractors can upload design plans that will appear here'}
+                    </Text>
+                  </>
+                )}
               </View>
             ) : (
               <View className="flex-row flex-wrap justify-between pb-8">
@@ -489,13 +441,13 @@ export default function ExploreScreen() {
                 {filteredHouses.map((house: any) => (
                   <TouchableOpacity
                     key={house.id}
-                    onPress={() => router.push(`/house-summary?houseId=${house.id}&houseName=${house.name}`)}
+                    onPress={() => router.push(`/house-detail?houseId=${house.id}`)}
                     className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
                     style={{ width: cardWidth }}
                   >
                     <View className="relative">
                       <Image
-                        source={{ uri: house.image }}
+                        source={{ uri: house.images?.[0]?.url ? getImageUrl(house.images[0].url) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80' }}
                         className="h-40"
                         style={{ width: cardWidth }}
                         resizeMode="cover"
@@ -528,7 +480,7 @@ export default function ExploreScreen() {
                         </Text>
                         <Maximize size={14} color="#737373" strokeWidth={2} />
                         <Text className="text-gray-600 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {house.squareMeters}m²
+                          {(house.squareMeters ?? house.squareFootage)}m²
                         </Text>
                       </View>
                       <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -559,13 +511,13 @@ export default function ExploreScreen() {
                 {filteredLands.map((land: any) => (
                   <TouchableOpacity
                     key={land.id}
-                    onPress={() => router.push(`/house-summary?landId=${land.id}&landName=${land.name}`)}
+                    onPress={() => router.push(`/land-detail?landId=${land.id}`)}
                     className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
                     style={{ width: cardWidth }}
                   >
                     <View className="relative">
                       <Image
-                        source={{ uri: land.image }}
+                        source={{ uri: land.images?.[0]?.url ? getImageUrl(land.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
                         className="h-40"
                         style={{ width: cardWidth }}
                         resizeMode="cover"
@@ -587,14 +539,11 @@ export default function ExploreScreen() {
                       <View className="flex-row items-center mb-3">
                         <LandPlot size={14} color="#737373" strokeWidth={2} />
                         <Text className="text-gray-600 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {land.plotSize}
-                        </Text>
-                        <Text className="text-gray-500 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          ({land.totalPlots - land.soldPlots} plots left)
+                          {land.sizeSqm} sqm
                         </Text>
                       </View>
                       <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        ₦{(land.pricePerPlot / 1000000).toFixed(1)}M per plot
+                        ₦{land.price.toLocaleString()}
                       </Text>
                     </View>
                   </TouchableOpacity>

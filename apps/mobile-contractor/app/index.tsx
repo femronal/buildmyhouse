@@ -1,49 +1,26 @@
-import { View, Text, TouchableOpacity } from "react-native";
+import { useEffect } from "react";
 import { useRouter } from "expo-router";
-import { HardHat } from "lucide-react-native";
+import { View, ActivityIndicator } from "react-native";
+import { getAuthToken } from "@/lib/auth";
 
 export default function ContractorStartScreen() {
   const router = useRouter();
 
-  return (
-    <View className="flex-1 bg-[#0A1628] justify-center items-center px-8">
-      <HardHat size={64} color="#3B82F6" strokeWidth={2} />
-      <Text 
-        className="text-4xl text-white mt-6 mb-4 text-center"
-        style={{ fontFamily: 'Poppins_800ExtraBold' }}
-      >
-        BuildMyHouse
-      </Text>
-      <Text 
-        className="text-lg text-blue-400 mb-12 text-center"
-        style={{ fontFamily: 'Poppins_600SemiBold' }}
-      >
-        General Contractor Portal
-      </Text>
-      
-      <TouchableOpacity
-        onPress={() => router.push('/contractor')}
-        className="bg-[#1E3A5F] border-2 border-blue-600 rounded-full py-5 px-8 w-full max-w-sm mb-4"
-      >
-        <Text 
-          className="text-blue-400 text-lg text-center"
-          style={{ fontFamily: 'Poppins_700Bold' }}
-        >
-          Get Started (New Account)
-        </Text>
-      </TouchableOpacity>
+  useEffect(() => {
+    const redirect = async () => {
+      const token = await getAuthToken();
+      if (token) {
+        router.replace('/contractor/gc-dashboard');
+      } else {
+        router.replace('/login');
+      }
+    };
+    redirect();
+  }, [router]);
 
-      <TouchableOpacity
-        onPress={() => router.push('/login')}
-        className="bg-blue-600 rounded-full py-5 px-8 w-full max-w-sm"
-      >
-        <Text 
-          className="text-white text-lg text-center"
-          style={{ fontFamily: 'Poppins_700Bold' }}
-        >
-          Sign In (Existing Account)
-        </Text>
-      </TouchableOpacity>
+  return (
+    <View className="flex-1 bg-[#0A1628] justify-center items-center">
+      <ActivityIndicator size="large" color="#3B82F6" />
     </View>
   );
 }

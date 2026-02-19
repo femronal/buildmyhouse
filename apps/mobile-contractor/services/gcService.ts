@@ -58,7 +58,31 @@ export const gcService = {
   rejectRequest: async (requestId: string) => {
     return api.post(`/contractors/requests/${requestId}/reject`, {});
   },
+
+  getEarnings: async (): Promise<GCEarningsProject[]> => {
+    const response = await api.get('/contractors/earnings');
+    return Array.isArray(response) ? response : [];
+  },
 };
+
+export interface GCEarningsProject {
+  id: string;
+  name: string;
+  status: string;
+  budget: number;
+  earned: number;
+  pending: number;
+  progress: number;
+  currentStage?: string;
+  dueDate?: string;
+  startDate?: string;
+  clientName: string;
+  materialsTotal: number;
+  teamTotal: number;
+  recordedCosts: number;
+  stageBreakdown: Array<{ name: string; estimatedCost: number; status: string }>;
+  payments: Array<{ id: string; amount: number; method: string; stageId: string | null; createdAt: string }>;
+}
 
 
 

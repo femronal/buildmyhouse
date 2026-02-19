@@ -86,18 +86,9 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    // Determine file type for appropriate URL path
-    let urlPath = 'files';
-    if (file.mimetype.startsWith('video/')) {
-      urlPath = 'media';
-    } else if (file.mimetype.startsWith('image/')) {
-      urlPath = 'images';
-    } else if (file.mimetype.includes('pdf') || file.mimetype.includes('document')) {
-      urlPath = 'documents';
-    }
-
+    // Files are stored in uploads/files; URL must match
     return {
-      url: `/uploads/${urlPath}/${file.filename}`,
+      url: `/uploads/files/${file.filename}`,
       filename: file.filename,
       size: file.size,
       mimetype: file.mimetype,

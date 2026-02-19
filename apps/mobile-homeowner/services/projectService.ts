@@ -123,6 +123,13 @@ export const projectService = {
   },
 
   /**
+   * Homebuilding manual payment flow: homeowner declares they have paid externally
+   */
+  declareManualPayment: async (projectId: string) => {
+    return api.post(`/projects/${projectId}/payment/declare`, {});
+  },
+
+  /**
    * Get pending projects (projects waiting for payment)
    */
   getPendingProjects: async () => {
@@ -133,6 +140,20 @@ export const projectService = {
       return projects;
     } catch (error: any) {
       console.error('❌ [projectService] Error fetching pending projects:', error);
+      return [];
+    }
+  },
+
+  /**
+   * Get paused projects (projects paused by admin for inspection)
+   */
+  getPausedProjects: async () => {
+    try {
+      const response = await api.get('/projects?status=paused');
+      const projects = Array.isArray(response) ? response : (response.data || []);
+      return projects;
+    } catch (error: any) {
+      console.error('❌ [projectService] Error fetching paused projects:', error);
       return [];
     }
   },

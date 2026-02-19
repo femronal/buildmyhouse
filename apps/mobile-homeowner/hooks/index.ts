@@ -1,9 +1,5 @@
 // Project hooks
-export { useProjects } from './useProjects';
 export { useProject } from './useProject';
-export { useCreateProject } from './useCreateProject';
-export { useUpdateProject } from './useUpdateProject';
-export { useDeleteProject } from './useDeleteProject';
 export { 
   useRecommendedGCs, 
   useSendGCRequests, 
@@ -11,15 +7,31 @@ export {
   useActivateProject,
   useSaveProjectForLater,
   usePendingProjects,
+  usePausedProjects,
   useActiveProjects,
   useDeletePendingProject,
   useCreateProjectFromDesign,
 } from './useProjects';
 
+// Design hooks
+export { useDesigns, useDesign } from './useDesigns';
+
+// Houses for sale
+export { useHousesForSale, useHouseForSale } from './useHousesForSale';
+export { useScheduleHouseViewing } from './useHouseViewing';
+export { useLandsForSale, useLandForSale } from './useLandsForSale';
+export { useScheduleLandViewing } from './useLandViewing';
+export { useHomePurchases, useLandPurchases } from './usePropertyPurchases';
+
 // User hooks
 export { useCurrentUser } from './useCurrentUser';
+export { useUpdateCurrentUser } from './useUpdateCurrentUser';
+export { useUploadProfilePicture } from './useUploadProfilePicture';
 
-// Marketplace/Vendor hooks removed for MVP (no shop/material marketplace yet)
+// Marketplace hooks
+// NOTE: Marketplace hooks were referenced here but the module (`./useMarketplace`) does not exist.
+// Keeping this index file free of missing exports prevents Metro from crashing on app load.
+
 // GC (General Contractor) hooks
 export {
   usePendingRequests,
@@ -34,9 +46,16 @@ export {
 } from './usePlan';
 
 // Payment hooks
-export { useCreatePaymentIntent } from './usePayment';
+export {
+  useCreatePaymentIntent,
+  useCreateSetupIntent,
+  useCreateSetupCheckoutSession,
+  usePaymentMethods,
+  useSetDefaultPaymentMethod,
+  useUserPayments,
+  useUserPaymentsStructured,
+} from './usePayment';
 
-// Design hooks
-export { useDesigns, useDesign } from './useDesigns';
+export { useDeclareManualPayment } from './useManualPayment';
 
 

@@ -1,6 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
+type PaginatedResponse<T = any> = {
+  data?: T[];
+  pagination?: { total?: number };
+};
+
+type PaymentsResponse<T = any> = {
+  data?: T[];
+};
+
 export const useDashboard = () => {
   return useQuery({
     queryKey: ['dashboard'],
@@ -8,10 +17,14 @@ export const useDashboard = () => {
       // Fetch dashboard stats - using actual backend endpoints
       const [users, projects, payments, materials] = await Promise.all([
         // TODO: Create these endpoints in backend
-        api.get('/users?limit=1').catch(() => ({ pagination: { total: 0 } })),
-        api.get('/projects?limit=1').catch(() => ({ pagination: { total: 0 } })),
-        api.get('/payments/my').catch(() => ({ data: [] })),
-        api.get('/marketplace/materials?limit=1').catch(() => ({ pagination: { total: 0 } })),
+        api.get<PaginatedResponse>('/users?limit=1').catch(() => ({ pagination: { total: 0 } } as PaginatedResponse)),
+        api
+          .get<PaginatedResponse>('/projects?limit=1')
+          .catch(() => ({ pagination: { total: 0 }, data: [] } as PaginatedResponse)),
+        api.get<PaymentsResponse>('/payments/my').catch(() => ({ data: [] } as PaymentsResponse)),
+        api
+          .get<PaginatedResponse>('/marketplace/materials?limit=1')
+          .catch(() => ({ pagination: { total: 0 } } as PaginatedResponse)),
       ]);
 
       return {

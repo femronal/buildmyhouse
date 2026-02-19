@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Calendar, DollarSign, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper } from "lucide-react-native";
+import { MessageCircle, Calendar, DollarSign, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import { useProjectAnalysis } from "@/hooks/usePlan";
 import { chatService } from "@/services/chatService";
@@ -8,6 +8,7 @@ import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from "react";
+import * as WebBrowser from 'expo-web-browser';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -68,6 +69,78 @@ export default function DashboardScreen() {
     );
   }
 
+  const projectErrorMessage = (projectError as any)?.message || '';
+  const isPausedError =
+    typeof projectErrorMessage === 'string' &&
+    projectErrorMessage.toLowerCase().includes('paused');
+
+  if ((projectError || !project) && isPausedError) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center px-6">
+        <Modal visible={true} transparent={true} animationType="fade">
+          <View className="flex-1 bg-black/50 items-center justify-center px-6">
+            <View className="bg-white rounded-3xl p-6 w-full max-w-md">
+              <View className="flex-row items-center justify-between mb-2">
+                <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Project paused
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/(tabs)/home')}
+                  className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
+                >
+                  <X size={18} color="#000000" strokeWidth={2.5} />
+                </TouchableOpacity>
+              </View>
+
+              <Text className="text-gray-700 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Admin has temporarily paused this project to protect both parties while an issue is reviewed.
+              </Text>
+
+              <View className="bg-orange-50 border border-orange-200 rounded-2xl p-4 mb-4">
+                <Text className="text-orange-900 text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Common real‑life reasons projects get paused
+                </Text>
+                {[
+                  'A complaint from the homeowner or contractor that needs investigation',
+                  'A payment dispute or suspected fraudulent transaction',
+                  'Missing/invalid documents (permits, invoices, proof of delivery)',
+                  'Quality or safety concerns reported on-site',
+                  'Major change-order disagreement (scope or cost)',
+                  'Suspicious activity on the account or unusual behavior',
+                ].map((reason) => (
+                  <View key={reason} className="flex-row items-start mb-2">
+                    <View className="w-2 h-2 bg-orange-500 rounded-full mt-2 mr-2" />
+                    <Text className="text-orange-800 text-xs flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {reason}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  What you should do now
+                </Text>
+                <Text className="text-gray-600 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Please wait while admin resolves the issue. You’ll be able to continue once the project is activated again.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/home')}
+                className="bg-black rounded-2xl py-4 items-center mt-5"
+              >
+                <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Okay, I’ll wait for admin
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
   if (projectError || !project) {
     return (
       <View className="flex-1 bg-white items-center justify-center px-6">
@@ -109,6 +182,25 @@ export default function DashboardScreen() {
   
   // Use calculated budget if available, otherwise fallback to project.budget
   const totalBudget = calculatedBudget > 0 ? calculatedBudget : (project.budget || 0);
+
+  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
+  const projectType = (project as any)?.projectType as string | undefined;
+  const paymentConfirmationStatus =
+    ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
+  const externalPaymentLink = (project as any)?.externalPaymentLink as string | undefined;
+  const paymentDeclaredAt = (project as any)?.paymentDeclaredAt as string | undefined;
+  const declaredAt = paymentDeclaredAt ? new Date(paymentDeclaredAt) : null;
+  const isHomebuilding = projectType === 'homebuilding';
+  const isTrackingUnlocked = !isHomebuilding || paymentConfirmationStatus === 'confirmed';
+
+  const openExternalPaymentLink = async () => {
+    if (!externalPaymentLink) return;
+    try {
+      await WebBrowser.openBrowserAsync(externalPaymentLink);
+    } catch {
+      Alert.alert('Could not open link', 'Please try again.');
+    }
+  };
 
   const getStageStatusIcon = (status: string) => {
     switch (status) {
@@ -230,18 +322,85 @@ export default function DashboardScreen() {
           </View>
 
           <TouchableOpacity 
-            onPress={() => router.push(`/timeline?projectId=${projectId}`)}
-            className="bg-white rounded-full py-4 px-6 flex-row items-center justify-center"
+            onPress={() => {
+              if (isTrackingUnlocked) {
+                router.push(`/timeline?projectId=${projectId}`);
+                return;
+              }
+
+              Alert.alert(
+                'Tracking locked',
+                paymentConfirmationStatus === 'declared'
+                  ? 'Your payment is under review (up to 72 hours). Tracking will unlock once confirmed.'
+                  : 'Complete your payment first to unlock tracking.',
+                [
+                  { text: 'OK', style: 'cancel' },
+                  { text: 'Billing & Payments', onPress: () => router.push('/billing-payments') },
+                ],
+              );
+            }}
+            className={`rounded-full py-4 px-6 flex-row items-center justify-center ${
+              isTrackingUnlocked ? 'bg-white' : 'bg-white/70'
+            }`}
           >
             <Text 
               className="text-black text-base mr-2"
               style={{ fontFamily: 'Poppins_700Bold' }}
             >
-              View Full Timeline
+              {isTrackingUnlocked ? 'View Full Timeline' : 'Tracking Locked'}
             </Text>
-            <ChevronRight size={20} color="#000000" strokeWidth={2} />
+            {isTrackingUnlocked ? (
+              <ChevronRight size={20} color="#000000" strokeWidth={2} />
+            ) : (
+              <Lock size={18} color="#000000" strokeWidth={2} />
+            )}
           </TouchableOpacity>
         </View>
+
+        {/* Homebuilding payment / tracking unlock card */}
+        {isHomebuilding && !isTrackingUnlocked && (
+          <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+            <View className="flex-row items-center mb-3">
+              {paymentConfirmationStatus === 'declared' ? (
+                <Clock size={22} color="#F59E0B" strokeWidth={2.5} />
+              ) : (
+                <CreditCard size={22} color="#111827" strokeWidth={2.5} />
+              )}
+              <Text className="text-xl text-black ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                {paymentConfirmationStatus === 'declared' ? 'Payment under review' : 'Payment required'}
+              </Text>
+            </View>
+
+            <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {paymentConfirmationStatus === 'declared'
+                ? `Declared on ${declaredAt ? declaredAt.toLocaleDateString() : '—'}. Admin review in progress (up to 72 hours).`
+                : externalPaymentLink
+                  ? 'Use the payment instructions (Stripe invoice, Wise, Paystack, or Zelle). Then tap “I paid” in Billing & Payments.'
+                  : 'Waiting for BuildMyHouse/GC to email payment instructions.'}
+            </Text>
+
+            {!!externalPaymentLink && (
+              <TouchableOpacity
+                onPress={openExternalPaymentLink}
+                className="mt-4 bg-black rounded-xl py-3 flex-row items-center justify-center"
+              >
+                <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Open payment link
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity
+              onPress={() => router.push('/billing-payments')}
+              className="mt-3 bg-white border border-gray-300 rounded-xl py-3 flex-row items-center justify-center"
+            >
+              <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Go to Billing & Payments
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Project Overview - GC Summary */}
         {aiAnalysis && (

@@ -60,13 +60,13 @@ export default function LoginScreen() {
           className="text-5xl text-white mb-3"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
         >
-          Welcome Back
+          Welcome
         </Text>
         <Text 
           className="text-xl text-gray-400 leading-7"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          Sign in to your contractor account
+          Sign in or sign up to access your contractor account
         </Text>
       </View>
 

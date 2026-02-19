@@ -1,10 +1,19 @@
-import { Injectable, Inject, forwardRef, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
+import { StripeService } from '../payments/services/stripe.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ContractorsService {
-  private prisma = new PrismaClient();
+  // Use `any` for model access to reduce coupling to Prisma schema changes.
+  private prisma = new PrismaClient() as any;
 
   private moneyToCents(value: unknown): number {
     const n =
@@ -80,7 +89,146 @@ export class ContractorsService {
   constructor(
     @Inject(forwardRef(() => WebSocketService))
     private readonly wsService: WebSocketService,
+    private readonly stripeService: StripeService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private async getContractorProfileOrThrow(userId: string) {
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { userId },
+      select: {
+        id: true,
+        userId: true,
+        type: true,
+        connectAccountId: true,
+      },
+    });
+    if (!contractor) {
+      throw new NotFoundException('Contractor profile not found');
+    }
+    if (contractor.type !== 'general_contractor') {
+      throw new BadRequestException('Only general contractors can onboard Stripe Connect');
+    }
+    return contractor;
+  }
+
+  /**
+   * Stripe Connect: create (or fetch existing) Connect account for a GC.
+   * Persists `connectAccountId` on the Contractor profile.
+   */
+  async createOrGetConnectAccountForGC(userId: string) {
+    const [user, contractor] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true },
+      }),
+      this.getContractorProfileOrThrow(userId),
+    ]);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (contractor.connectAccountId) {
+      return {
+        connectAccountId: contractor.connectAccountId,
+        created: false,
+      };
+    }
+
+    const account = await this.stripeService.createConnectedAccount(
+      user.email,
+      contractor.id,
+    );
+
+    await this.prisma.contractor.update({
+      where: { userId },
+      data: { connectAccountId: account.id },
+    });
+
+    return {
+      connectAccountId: account.id,
+      created: true,
+    };
+  }
+
+  /**
+   * Stripe Connect: create an onboarding link for the GC.
+   * If the GC doesn't yet have a Connect account, one is created first.
+   */
+  async createConnectAccountLinkForGC(userId: string, params: { returnUrl?: string; refreshUrl?: string }) {
+    const { connectAccountId } = await this.createOrGetConnectAccountForGC(userId);
+
+    const defaultReturnUrl =
+      this.configService.get<string>('STRIPE_CONNECT_RETURN_URL') ||
+      this.configService.get<string>('CONNECT_ONBOARDING_RETURN_URL') ||
+      '';
+    const defaultRefreshUrl =
+      this.configService.get<string>('STRIPE_CONNECT_REFRESH_URL') ||
+      this.configService.get<string>('CONNECT_ONBOARDING_REFRESH_URL') ||
+      '';
+
+    const returnUrl = params.returnUrl || defaultReturnUrl;
+    const refreshUrl = params.refreshUrl || defaultRefreshUrl || returnUrl;
+
+    if (!returnUrl) {
+      throw new BadRequestException('returnUrl is required (or set CONNECT_ONBOARDING_RETURN_URL)');
+    }
+    if (!refreshUrl) {
+      throw new BadRequestException('refreshUrl is required (or set CONNECT_ONBOARDING_REFRESH_URL)');
+    }
+
+    const link = await this.stripeService.createAccountLink(
+      connectAccountId,
+      returnUrl,
+      refreshUrl,
+    );
+
+    return {
+      url: link.url,
+      expiresAt: link.expires_at,
+      connectAccountId,
+    };
+  }
+
+  /**
+   * Stripe Connect: get current onboarding status for the GC's Connect account.
+   */
+  async getConnectStatusForGC(userId: string) {
+    const contractor = await this.getContractorProfileOrThrow(userId);
+
+    if (!contractor.connectAccountId) {
+      return {
+        connected: false,
+        onboardingStatus: 'not_started' as const,
+        connectAccountId: null,
+      };
+    }
+
+    const account = await this.stripeService.getAccount(contractor.connectAccountId);
+
+    const onboardingStatus =
+      account.details_submitted && account.charges_enabled && account.payouts_enabled
+        ? ('complete' as const)
+        : ('pending' as const);
+
+    return {
+      connected: true,
+      onboardingStatus,
+      connectAccountId: account.id,
+      detailsSubmitted: account.details_submitted,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      requirements: account.requirements
+        ? {
+            currentlyDue: account.requirements.currently_due,
+            eventuallyDue: account.requirements.eventually_due,
+            pastDue: account.requirements.past_due,
+            disabledReason: account.requirements.disabled_reason,
+          }
+        : null,
+    };
+  }
 
   /**
    * Recommend GCs based on project details
@@ -226,8 +374,18 @@ export class ContractorsService {
       }
     }
 
+    // Guard: never allow sending a request to yourself.
+    // Also de-dupe contractorIds to avoid duplicate requests.
+    const normalizedContractorIds = [...new Set(contractorIds)].filter(
+      (id) => !senderId || id !== senderId,
+    );
+
+    if (normalizedContractorIds.length === 0) {
+      return [];
+    }
+
     const requests = await Promise.all(
-      contractorIds.map((contractorId) =>
+      normalizedContractorIds.map((contractorId) =>
         this.prisma.projectRequest.create({
           data: {
             projectId,
@@ -614,6 +772,8 @@ export class ContractorsService {
       where: {
         projectId: { in: projectIds },
         status: 'accepted',
+        // Guard: never treat the GC as their own accepted "contractor".
+        contractorId: { not: gcId },
       },
       include: {
         project: {
@@ -966,6 +1126,484 @@ export class ContractorsService {
       currentStage: request.stage?.name || request.project.stages?.[0]?.name || 'Not Started',
       stages: request.project.stages || [],
     }));
+  }
+
+  /**
+   * Get full GC profile for the profile page (user + contractor + stats)
+   */
+  async getGCProfile(userId: string) {
+    const [user, contractor, earnings, certifications] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          pictureUrl: true,
+          verified: true,
+        },
+      }),
+      this.prisma.contractor.findUnique({
+        where: { userId },
+      }),
+      this.getGCEarnings(userId),
+      this.getCertificationsForUser(userId),
+    ]);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const activeProjects = earnings.filter((p: any) => p.status === 'active');
+    const completedProjects = earnings.filter((p: any) => p.status === 'completed');
+    const totalEarnings = earnings.reduce((sum: number, p: any) => sum + (p.earned || 0), 0);
+
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone,
+      pictureUrl: user.pictureUrl,
+      verified: user.verified || contractor?.verified || false,
+      location: contractor?.location || null,
+      specialty: contractor?.specialty || 'General Contractor',
+      experienceYears: contractor?.experienceYears ?? null,
+      experience: contractor?.experienceYears
+        ? `${contractor.experienceYears} years`
+        : null,
+      rating: contractor?.rating ?? 0,
+      totalProjects: contractor?.projects ?? earnings.length,
+      activeProjects: activeProjects.length,
+      completedProjects: completedProjects.length,
+      totalEarnings,
+      certifications: (certifications || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        fileUrl: c.fileUrl,
+        expiryYear: c.expiryYear,
+        createdAt: c.createdAt,
+      })),
+    };
+  }
+
+  async getCertificationsForUser(userId: string): Promise<any[]> {
+    try {
+      const contractor = await this.prisma.contractor.findUnique({
+        where: { userId },
+      });
+      if (!contractor) return [];
+      const model = this.prisma.contractorCertification;
+      if (!model?.findMany) return [];
+      const certs = await model.findMany({
+        where: { contractorId: contractor.id },
+        orderBy: { createdAt: 'desc' },
+      });
+      return certs || [];
+    } catch {
+      return [];
+    }
+  }
+
+  async updateGCProfile(userId: string, data: { experienceYears?: number }) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const updateData: any = {};
+    if (typeof data.experienceYears === 'number' && data.experienceYears >= 0) {
+      updateData.experienceYears = data.experienceYears;
+    }
+    if (Object.keys(updateData).length === 0) {
+      return this.getGCProfile(userId);
+    }
+    await this.prisma.contractor.update({
+      where: { id: contractor.id },
+      data: updateData,
+    });
+    return this.getGCProfile(userId);
+  }
+
+  async listCertifications(userId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const certs = await this.prisma.contractorCertification.findMany({
+      where: { contractorId: contractor.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    return certs.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      fileUrl: c.fileUrl,
+      expiryYear: c.expiryYear,
+      createdAt: c.createdAt,
+    }));
+  }
+
+  async createCertification(
+    userId: string,
+    data: { name: string; fileUrl: string; expiryYear?: string },
+  ) {
+    const model = this.prisma.contractorCertification;
+    if (!model?.create) {
+      throw new BadRequestException(
+        'Certifications are not available. Run: npx prisma generate && npx prisma migrate deploy',
+      );
+    }
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    if (!data?.name?.trim()) {
+      throw new BadRequestException('Certification name is required');
+    }
+    if (!data?.fileUrl?.trim()) {
+      throw new BadRequestException('File URL is required');
+    }
+    const created = await model.create({
+      data: {
+        contractorId: contractor.id,
+        name: data.name.trim(),
+        fileUrl: data.fileUrl.trim(),
+        expiryYear: data.expiryYear?.trim() || null,
+      },
+    });
+    return {
+      id: created.id,
+      name: created.name,
+      fileUrl: created.fileUrl,
+      expiryYear: created.expiryYear,
+      createdAt: created.createdAt,
+    };
+  }
+
+  async deleteCertification(userId: string, certificationId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const cert = await this.prisma.contractorCertification.findFirst({
+      where: { id: certificationId, contractorId: contractor.id },
+    });
+    if (!cert) {
+      throw new NotFoundException('Certification not found');
+    }
+    await this.prisma.contractorCertification.delete({
+      where: { id: certificationId },
+    });
+  }
+
+  async adminListGCs() {
+    const contractors = await this.prisma.contractor.findMany({
+      where: { type: 'general_contractor' },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            pictureUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return contractors.map((c: any) => ({
+      id: c.id,
+      userId: c.userId,
+      name: c.name,
+      specialty: c.specialty,
+      location: c.location,
+      experienceYears: c.experienceYears,
+      rating: c.rating,
+      projects: c.projects,
+      verified: c.verified,
+      imageUrl: c.imageUrl,
+      user: c.user,
+      pictureUrl: c.user?.pictureUrl ?? c.imageUrl,
+    }));
+  }
+
+  /** Admin: list GCs who have opened an account (Contractor record) but are not yet verified */
+  async adminListUnverifiedGCs() {
+    const contractors = await this.prisma.contractor.findMany({
+      where: {
+        type: 'general_contractor',
+        verified: false,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            pictureUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const documentsByContractor = await this.getCertificationNamesByContractor(
+      contractors.map((c: any) => c.id),
+    );
+    return contractors.map((c: any) => ({
+      id: c.id,
+      userId: c.userId,
+      name: c.name,
+      specialty: c.specialty,
+      location: c.location,
+      email: c.user?.email,
+      user: c.user,
+      createdAt: c.createdAt,
+      documents: documentsByContractor[c.id] ?? [],
+    }));
+  }
+
+  private async getCertificationNamesByContractor(contractorIds: string[]): Promise<Record<string, string[]>> {
+    if (contractorIds.length === 0) return {};
+    try {
+      const model = this.prisma.contractorCertification;
+      if (!model?.findMany) return {};
+      const certs = await model.findMany({
+        where: { contractorId: { in: contractorIds } },
+        select: { contractorId: true, name: true },
+      });
+      const result: Record<string, string[]> = {};
+      for (const c of certs) {
+        if (!result[c.contractorId]) result[c.contractorId] = [];
+        result[c.contractorId].push(c.name);
+      }
+      return result;
+    } catch {
+      return {};
+    }
+  }
+
+  /** Admin: approve (verify) a GC */
+  async adminVerifyGC(userId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    await this.prisma.contractor.update({
+      where: { id: contractor.id },
+      data: { verified: true },
+    });
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { verified: true },
+    });
+    return { success: true };
+  }
+
+  /**
+   * Get contractor by userId (for GC). Throws if not found.
+   */
+  private async getContractorByUserIdOrThrow(userId: string) {
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { userId },
+    });
+    if (!contractor) {
+      throw new NotFoundException('Contractor profile not found. Please complete onboarding.');
+    }
+    return contractor;
+  }
+
+  async listBankAccounts(userId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const accounts = await this.prisma.bankAccount.findMany({
+      where: { contractorId: contractor.id },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+    });
+    return accounts.map((a) => ({
+      id: a.id,
+      bankName: a.bankName,
+      accountOwnerName: a.accountOwnerName,
+      isDefault: a.isDefault,
+      maskedAccountNumber: `****${a.accountNumber.slice(-4)}`,
+    }));
+  }
+
+  /** Admin-only: returns full account numbers for fund transfers */
+  async adminListBankAccounts(userId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const accounts = await this.prisma.bankAccount.findMany({
+      where: { contractorId: contractor.id },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+    });
+    return accounts.map((a) => ({
+      id: a.id,
+      bankName: a.bankName,
+      accountNumber: a.accountNumber,
+      accountOwnerName: a.accountOwnerName,
+      isDefault: a.isDefault,
+    }));
+  }
+
+  async getBankAccount(userId: string, accountId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const account = await this.prisma.bankAccount.findFirst({
+      where: { id: accountId, contractorId: contractor.id },
+    });
+    if (!account) {
+      throw new NotFoundException('Bank account not found');
+    }
+    return {
+      id: account.id,
+      bankName: account.bankName,
+      accountNumber: account.accountNumber,
+      accountOwnerName: account.accountOwnerName,
+      isDefault: account.isDefault,
+      maskedAccountNumber: `****${account.accountNumber.slice(-4)}`,
+    };
+  }
+
+  async updateBankAccount(userId: string, accountId: string, data: { bankName?: string; accountNumber?: string; accountOwnerName?: string }) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const account = await this.prisma.bankAccount.findFirst({
+      where: { id: accountId, contractorId: contractor.id },
+    });
+    if (!account) {
+      throw new NotFoundException('Bank account not found');
+    }
+    const updateData: any = {};
+    if (typeof data.bankName === 'string' && data.bankName.trim()) updateData.bankName = data.bankName.trim();
+    if (typeof data.accountNumber === 'string' && data.accountNumber.trim()) updateData.accountNumber = data.accountNumber.trim();
+    if (typeof data.accountOwnerName === 'string' && data.accountOwnerName.trim()) updateData.accountOwnerName = data.accountOwnerName.trim();
+    if (Object.keys(updateData).length === 0) {
+      return this.getBankAccount(userId, accountId);
+    }
+    const updated = await this.prisma.bankAccount.update({
+      where: { id: accountId },
+      data: updateData,
+    });
+    return {
+      id: updated.id,
+      bankName: updated.bankName,
+      accountOwnerName: updated.accountOwnerName,
+      isDefault: updated.isDefault,
+      maskedAccountNumber: `****${updated.accountNumber.slice(-4)}`,
+    };
+  }
+
+  async createBankAccount(userId: string, data: { bankName: string; accountNumber: string; accountOwnerName: string; isDefault?: boolean }) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const count = await this.prisma.bankAccount.count({
+      where: { contractorId: contractor.id },
+    });
+    if (count >= 2) {
+      throw new BadRequestException('You can add up to 2 bank accounts. Remove one first to add another.');
+    }
+    const isDefault = data.isDefault ?? count === 0;
+    if (isDefault) {
+      await this.prisma.bankAccount.updateMany({
+        where: { contractorId: contractor.id },
+        data: { isDefault: false },
+      });
+    }
+    const created = await this.prisma.bankAccount.create({
+      data: {
+        contractorId: contractor.id,
+        bankName: data.bankName.trim(),
+        accountNumber: data.accountNumber.trim(),
+        accountOwnerName: data.accountOwnerName.trim(),
+        isDefault,
+      },
+    });
+    return {
+      id: created.id,
+      bankName: created.bankName,
+      accountOwnerName: created.accountOwnerName,
+      isDefault: created.isDefault,
+      maskedAccountNumber: `****${created.accountNumber.slice(-4)}`,
+    };
+  }
+
+  async deleteBankAccount(userId: string, accountId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    const account = await this.prisma.bankAccount.findFirst({
+      where: { id: accountId, contractorId: contractor.id },
+    });
+    if (!account) {
+      throw new NotFoundException('Bank account not found');
+    }
+    await this.prisma.bankAccount.delete({
+      where: { id: accountId },
+    });
+    if (account.isDefault) {
+      const remaining = await this.prisma.bankAccount.findFirst({
+        where: { contractorId: contractor.id },
+      });
+      if (remaining) {
+        await this.prisma.bankAccount.update({
+          where: { id: remaining.id },
+          data: { isDefault: true },
+        });
+      }
+    }
+    return { deleted: true };
+  }
+
+  /**
+   * Get earnings summary for GC: projects with budget, earned, materials, team costs, payments
+   */
+  async getGCEarnings(userId: string) {
+    const projects = await this.prisma.project.findMany({
+      where: { generalContractorId: userId },
+      include: {
+        homeowner: { select: { fullName: true } },
+        stages: {
+          orderBy: { order: 'asc' },
+          include: {
+            materials: true,
+            teamMembers: true,
+          },
+        },
+        payments: {
+          where: { status: 'completed' },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+
+    return projects.map((p: any) => {
+      const materialsTotal = (p.stages || []).reduce(
+        (sum: number, s: any) => sum + (s.materials || []).reduce((mSum: number, m: any) => mSum + (m.totalPrice || 0), 0),
+        0,
+      );
+      const teamTotal = (p.stages || []).reduce(
+        (sum: number, s: any) =>
+          sum +
+          (s.teamMembers || []).reduce((tSum: number, t: any) => {
+            const days =
+              t.startDate && t.endDate
+                ? Math.max(1, Math.ceil((new Date(t.endDate).getTime() - new Date(t.startDate).getTime()) / (1000 * 60 * 60 * 24)))
+                : 1;
+            return tSum + (t.dailyRate || 0) * days;
+          }, 0),
+        0,
+      );
+      const completedStages = (p.stages || []).filter((s: any) => s.status === 'completed');
+      const stageBreakdown = completedStages.map((s: any) => ({
+        name: s.name,
+        estimatedCost: s.estimatedCost || 0,
+        status: s.status,
+      }));
+
+      return {
+        id: p.id,
+        name: p.name,
+        status: p.status,
+        budget: p.budget || 0,
+        earned: p.spent || 0,
+        pending: Math.max(0, (p.budget || 0) - (p.spent || 0)),
+        progress: p.progress || 0,
+        currentStage: p.currentStage,
+        dueDate: p.dueDate,
+        startDate: p.startDate,
+        clientName: p.homeowner?.fullName || 'Unknown',
+        materialsTotal,
+        teamTotal,
+        recordedCosts: materialsTotal + teamTotal,
+        stageBreakdown,
+        payments: (p.payments || []).map((pay: any) => ({
+          id: pay.id,
+          amount: pay.amount,
+          method: pay.method,
+          stageId: pay.stageId,
+          createdAt: pay.createdAt,
+        })),
+      };
+    });
   }
 }
 

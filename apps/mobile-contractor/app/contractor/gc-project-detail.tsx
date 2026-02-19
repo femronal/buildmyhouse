@@ -191,6 +191,74 @@ export default function GCProjectDetailScreen() {
     );
   }
 
+  const projectErrorMessage = (projectError as any)?.message || '';
+  const isPausedError =
+    typeof projectErrorMessage === 'string' &&
+    projectErrorMessage.toLowerCase().includes('paused');
+
+  if ((projectError || !project) && isPausedError) {
+    return (
+      <View className="flex-1 bg-[#0A1628] items-center justify-center px-6">
+        <Modal visible={true} transparent={true} animationType="fade">
+          <View className="flex-1 bg-black/50 items-center justify-center px-6">
+            <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
+              <View className="items-center mb-4">
+                <View className="w-16 h-16 bg-orange-600/20 rounded-full items-center justify-center mb-3">
+                  <Lock size={32} color="#F59E0B" strokeWidth={2} />
+                </View>
+                <Text className="text-white text-xl text-center mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Project paused
+                </Text>
+                <Text className="text-gray-300 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Admin has temporarily paused this project while an issue is reviewed.
+                </Text>
+              </View>
+
+              <View className="bg-orange-900/30 border border-orange-700/50 rounded-2xl p-4 mb-4">
+                <Text className="text-orange-200 text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Common real‑life reasons projects get paused
+                </Text>
+                {[
+                  'A complaint from the homeowner or contractor that needs investigation',
+                  'A payment dispute or suspected fraudulent transaction',
+                  'Missing/invalid documents (permits, invoices, proof of delivery)',
+                  'Quality or safety concerns reported on-site',
+                  'Major change-order disagreement (scope or cost)',
+                  'Suspicious activity on the account or unusual behavior',
+                ].map((reason) => (
+                  <View key={reason} className="flex-row items-start mb-2">
+                    <View className="w-2 h-2 bg-orange-400 rounded-full mt-2 mr-2" />
+                    <Text className="text-orange-100 text-xs flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {reason}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+
+              <View className="bg-[#0A1628] border border-blue-900 rounded-2xl p-4 mb-4">
+                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  What you should do now
+                </Text>
+                <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Please wait while admin resolves the issue. You’ll be able to continue once the project is activated again.
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')}
+                className="bg-blue-600 rounded-2xl py-4 items-center"
+              >
+                <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Okay, I’ll wait for admin
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
   if (projectError || !project) {
     return (
       <View className="flex-1 bg-[#0A1628] items-center justify-center px-6">
