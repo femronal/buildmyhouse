@@ -19,11 +19,13 @@ export type NotificationSettings = {
     milestones: boolean;
     scheduleChanges: boolean;
     approvalsNeeded: boolean;
+    disputeUpdates: boolean;
   };
   payments: {
     paymentRequired: boolean;
     paymentSuccess: boolean;
     paymentFailed: boolean;
+    manualPaymentConfirmed: boolean;
     refunds: boolean;
     receipts: boolean;
   };
@@ -41,9 +43,14 @@ export type NotificationSettings = {
     productUpdates: boolean;
     tips: boolean;
   };
+  propertyViewing: {
+    houseViewingOutcome: boolean;
+    landViewingOutcome: boolean;
+    rentalViewingOutcome: boolean;
+  };
 };
 
-const STORAGE_KEY = 'notificationSettings:v1';
+const STORAGE_KEY = 'notificationSettings:v2';
 
 export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   allEnabled: true,
@@ -64,11 +71,13 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     milestones: true,
     scheduleChanges: true,
     approvalsNeeded: true,
+    disputeUpdates: true,
   },
   payments: {
     paymentRequired: true,
     paymentSuccess: true,
     paymentFailed: true,
+    manualPaymentConfirmed: true,
     refunds: true,
     receipts: true,
   },
@@ -85,6 +94,11 @@ export const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     promos: false,
     productUpdates: true,
     tips: true,
+  },
+  propertyViewing: {
+    houseViewingOutcome: true,
+    landViewingOutcome: true,
+    rentalViewingOutcome: true,
   },
 };
 

@@ -105,7 +105,7 @@ export function ContractorViewModal({ userId, onClose }: Props) {
                   <InfoRow label="Total projects" value={String(profile.totalProjects)} />
                   <InfoRow label="Active projects" value={String(profile.activeProjects)} />
                   <InfoRow label="Completed projects" value={String(profile.completedProjects)} />
-                  <InfoRow label="Total earnings" value={profile.totalEarnings ? `$${profile.totalEarnings.toLocaleString()}` : '—'} />
+                  <InfoRow label="Total earnings" value={profile.totalEarnings ? `₦${profile.totalEarnings.toLocaleString()}` : '—'} />
                 </div>
               </div>
 

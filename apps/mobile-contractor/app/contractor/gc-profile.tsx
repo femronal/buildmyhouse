@@ -6,8 +6,14 @@ import { clearAuthToken } from "@/lib/auth";
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { useGCProfile, useUpdateGCProfile, useCreateCertification } from "@/hooks/useGCProfile";
+import {
+  useGCProfile,
+  useUpdateGCProfile,
+  useCreateCertification,
+  useUpsertVerificationDocument,
+} from "@/hooks/useGCProfile";
 import { useUpdateCurrentUser } from "@/hooks/useUpdateCurrentUser";
+import { useChangePassword } from "@/hooks/useChangePassword";
 import { useUploadProfilePicture } from "@/hooks/useUploadProfilePicture";
 import { useBankAccounts, useBankAccount, useCreateBankAccount, useUpdateBankAccount, useDeleteBankAccount } from "@/hooks/useBankAccounts";
 import { getBackendAssetUrl } from "@/lib/image";
@@ -19,6 +25,7 @@ export default function GCProfileScreen() {
   const queryClient = useQueryClient();
   const { data: profileData, isLoading, error } = useGCProfile();
   const updateUser = useUpdateCurrentUser();
+  const changePassword = useChangePassword();
   const uploadProfilePicture = useUploadProfilePicture();
 
   const [activeSection, setActiveSection] = useState<'overview' | 'billing' | 'settings' | 'professional'>('overview');
@@ -27,7 +34,7 @@ export default function GCProfileScreen() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [paymentNotifications, setPaymentNotifications] = useState(true);
   const [projectNotifications, setProjectNotifications] = useState(true);
-  const [editModal, setEditModal] = useState<'email' | 'phone' | 'experience' | null>(null);
+  const [editModal, setEditModal] = useState<'company' | 'email' | 'phone' | 'experience' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [certModalVisible, setCertModalVisible] = useState(false);
   const [certForm, setCertForm] = useState({ name: '', expiryYear: '' });
@@ -35,6 +42,13 @@ export default function GCProfileScreen() {
   const [bankModalVisible, setBankModalVisible] = useState(false);
   const [editingBankId, setEditingBankId] = useState<string | null>(null);
   const [deleteConfirmBankId, setDeleteConfirmBankId] = useState<string | null>(null);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
   const [bankForm, setBankForm] = useState({ bankName: '', accountNumber: '', accountOwnerName: '' });
 
   const { data: bankAccounts = [] } = useBankAccounts();
@@ -44,8 +58,12 @@ export default function GCProfileScreen() {
   const deleteBankAccount = useDeleteBankAccount();
   const updateGCProfile = useUpdateGCProfile();
   const createCertification = useCreateCertification();
+  const upsertVerificationDocument = useUpsertVerificationDocument();
 
-  const certifications = profileData?.certifications ?? [];
+  const certifications = (profileData?.certifications ?? []).filter(
+    (cert) => profileData?.verified || !cert.documentType,
+  );
+  const requiredVerificationDocs = profileData?.verificationRequiredDocuments ?? [];
 
   const handlePickProfilePicture = async () => {
     try {
@@ -72,9 +90,10 @@ export default function GCProfileScreen() {
     }
   };
 
-  const openEditModal = (field: 'email' | 'phone' | 'experience') => {
+  const openEditModal = (field: 'company' | 'email' | 'phone' | 'experience') => {
     setEditModal(field);
-    if (field === 'email') setEditValue(profileData?.email ?? '');
+    if (field === 'company') setEditValue(profileData?.fullName ?? '');
+    else if (field === 'email') setEditValue(profileData?.email ?? '');
     else if (field === 'phone') setEditValue(profileData?.phone ?? '');
     else setEditValue(String(profileData?.experienceYears ?? ''));
   };
@@ -82,7 +101,9 @@ export default function GCProfileScreen() {
   const saveEdit = async () => {
     if (!editModal) return;
     try {
-      if (editModal === 'email') {
+      if (editModal === 'company') {
+        await updateUser.mutateAsync({ fullName: editValue.trim() });
+      } else if (editModal === 'email') {
         await updateUser.mutateAsync({ email: editValue.trim() });
       } else if (editModal === 'phone') {
         await updateUser.mutateAsync({ phone: editValue.trim() || undefined });
@@ -124,7 +145,9 @@ export default function GCProfileScreen() {
       return;
     }
     try {
-      const fileUrl = await uploadFile(pendingCertFile.uri, 'document');
+      const fileUrl = await uploadFile(pendingCertFile.uri, 'document', {
+        fileName: pendingCertFile.name,
+      });
       const urlPath = fileUrl.startsWith('http') ? new URL(fileUrl).pathname : fileUrl;
       await createCertification.mutateAsync({
         name: certForm.name.trim(),
@@ -135,6 +158,31 @@ export default function GCProfileScreen() {
       setPendingCertFile(null);
       setCertForm({ name: '', expiryYear: '' });
       Alert.alert('Added', 'Your certification has been added.');
+    } catch (e: any) {
+      Alert.alert('Upload failed', e?.message || 'Please try again.');
+    }
+  };
+
+  const handleUploadVerificationDocument = async (documentType: string, documentTitle: string) => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const file = result.assets[0];
+      if (!file?.uri) return;
+
+      const fileUrl = await uploadFile(file.uri, 'document', {
+        fileName: file.name,
+        mimeType: file.mimeType,
+      });
+      const urlPath = fileUrl.startsWith('http') ? new URL(fileUrl).pathname : fileUrl;
+      await upsertVerificationDocument.mutateAsync({
+        documentType,
+        fileUrl: urlPath.startsWith('/') ? urlPath : `/${urlPath}`,
+      });
+      Alert.alert('Uploaded', `${documentTitle} uploaded successfully.`);
     } catch (e: any) {
       Alert.alert('Upload failed', e?.message || 'Please try again.');
     }
@@ -233,16 +281,37 @@ export default function GCProfileScreen() {
   };
 
   const handleLogout = () => {
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      // Alert.alert doesn't work on web - use window.confirm instead
-      if (window.confirm('Are you sure you want to logout?')) {
-        performLogout();
-      }
-    } else {
-      Alert.alert('Logout', 'Are you sure you want to logout?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: performLogout },
-      ]);
+    setLogoutModalVisible(true);
+  };
+
+  const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/;
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      Alert.alert('Missing fields', 'Please fill in all password fields.');
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      Alert.alert('Password mismatch', 'New password and confirm password do not match.');
+      return;
+    }
+    if (!strongPasswordRegex.test(passwordForm.newPassword)) {
+      Alert.alert(
+        'Weak password',
+        'Use at least 8 characters including uppercase, lowercase, number, and special character.',
+      );
+      return;
+    }
+    try {
+      await changePassword.mutateAsync({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordModalVisible(false);
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      Alert.alert('Success', 'Password changed successfully.');
+    } catch (e: any) {
+      Alert.alert('Could not change password', e?.message || 'Please try again.');
     }
   };
 
@@ -340,7 +409,7 @@ export default function GCProfileScreen() {
               <View className="w-px bg-blue-900" />
               <View className="flex-1 items-center">
                 <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  ${(profileData.totalEarnings / 1000).toFixed(0)}K
+                  ₦{(profileData.totalEarnings / 1000).toFixed(0)}K
                 </Text>
                 <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earnings</Text>
               </View>
@@ -419,13 +488,16 @@ export default function GCProfileScreen() {
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Account Status</Text>
               <View className="flex-row items-center justify-between py-3">
                 <View className="flex-row items-center">
-                  <Shield size={18} color="#10B981" strokeWidth={2} />
+                  <Shield size={18} color={profileData.verified ? "#10B981" : "#EF4444"} strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Verification Status</Text>
                 </View>
                 <View className="flex-row items-center">
-                  <CheckCircle size={18} color="#10B981" strokeWidth={2} />
-                  <Text className="text-green-400 text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {profileData.verified ? 'Verified' : 'Not verified'}
+                  <CheckCircle size={18} color={profileData.verified ? "#10B981" : "#EF4444"} strokeWidth={2} />
+                  <Text
+                    className={`${profileData.verified ? 'text-green-400' : 'text-red-400'} text-sm ml-2`}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {profileData.verified ? 'Verified' : 'Not Verified'}
                   </Text>
                 </View>
               </View>
@@ -503,7 +575,61 @@ export default function GCProfileScreen() {
         {activeSection === 'professional' && (
           <View className="px-6 mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Verification Documents
+                </Text>
+                <View className={`rounded-full px-3 py-1 ${profileData.hasUploadedAllVerificationDocuments ? 'bg-green-600/20' : 'bg-amber-600/20'}`}>
+                  <Text
+                    className={`text-xs ${profileData.hasUploadedAllVerificationDocuments ? 'text-green-400' : 'text-amber-300'}`}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {profileData.verificationUploadedCount || 0}/{profileData.verificationRequiredCount || requiredVerificationDocs.length}
+                  </Text>
+                </View>
+              </View>
+              <Text className="text-gray-400 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Upload all required legal/business files so admin can verify your account.
+              </Text>
+              {requiredVerificationDocs.map((doc) => (
+                <View key={doc.type} className="bg-[#0A1628] rounded-xl p-3 mb-3 border border-blue-900">
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 pr-3">
+                      <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {doc.title}
+                      </Text>
+                      <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {doc.description}
+                      </Text>
+                    </View>
+                    <View className={`rounded-full px-2 py-1 ${doc.uploaded ? 'bg-green-600/20' : 'bg-gray-700'}`}>
+                      <Text
+                        className={`text-[10px] ${doc.uploaded ? 'text-green-400' : 'text-gray-300'}`}
+                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                      >
+                        {doc.uploaded ? 'Uploaded' : 'Missing'}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() => handleUploadVerificationDocument(doc.type, doc.title)}
+                    disabled={upsertVerificationDocument.isPending}
+                    className="mt-3 bg-blue-600/20 border border-blue-600 rounded-xl py-2 items-center"
+                  >
+                    <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {doc.uploaded ? 'Replace File' : 'Upload File'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+            <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Certifications & Licenses</Text>
+              {!profileData.verified && (
+                <Text className="text-amber-300 text-xs mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Verification document uploads are reviewed by admin and will appear here after your account is verified.
+                </Text>
+              )}
               {certifications.map((cert) => (
                 <View key={cert.id} className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900">
                   <View className="flex-row items-center mb-1">
@@ -528,13 +654,23 @@ export default function GCProfileScreen() {
               <View className="space-y-3">
                 <View className="flex-row items-center py-3 border-b border-blue-900">
                   <Building2 size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Company Name</Text>
-                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Chukwuemeka Construction Ltd</Text>
+                  <Text className="text-gray-400 text-sm ml-3 flex-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>Company Name</Text>
+                  <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {profileData.fullName || '—'}
+                  </Text>
+                  <TouchableOpacity className="p-1 flex-shrink-0" onPress={() => openEditModal('company')}>
+                    <Edit2 size={14} color="#3B82F6" strokeWidth={2} />
+                  </TouchableOpacity>
                 </View>
                 <View className="flex-row items-center py-3 border-b border-blue-900">
                   <FileText size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Business License</Text>
-                  <Text className="text-green-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>Verified</Text>
+                  <Text
+                    className={`${profileData.verified ? 'text-green-400' : 'text-red-400'} text-sm`}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {profileData.verified ? 'Verified' : 'Not Verified'}
+                  </Text>
                 </View>
                 <View className="flex-row items-center py-3">
                   <Calendar size={18} color="#6B7280" strokeWidth={2} />
@@ -595,35 +731,46 @@ export default function GCProfileScreen() {
             </View>
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Privacy & Security</Text>
-              <TouchableOpacity className="flex-row items-center justify-between py-3 border-b border-blue-900">
+              <TouchableOpacity
+                onPress={() => setPasswordModalVisible(true)}
+                className="flex-row items-center justify-between py-3 border-b border-blue-900"
+              >
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Change Password</Text>
                 <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
               </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center justify-between py-3 border-b border-blue-900">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Two-Factor Authentication</Text>
-                <Switch value={false} onValueChange={() => {}} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
-              </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center justify-between py-3">
+              <TouchableOpacity
+                onPress={() => router.push('/contractor/privacy-settings')}
+                className="flex-row items-center justify-between py-3"
+              >
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Privacy Settings</Text>
                 <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
               </TouchableOpacity>
             </View>
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
-              <TouchableOpacity className="flex-row items-center justify-between py-3 border-b border-blue-900">
+              <TouchableOpacity
+                onPress={() => router.push('/contractor/terms-conditions')}
+                className="flex-row items-center justify-between py-3 border-b border-blue-900"
+              >
                 <View className="flex-row items-center">
                   <FileText size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Terms & Conditions</Text>
                 </View>
                 <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
               </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center justify-between py-3 border-b border-blue-900">
+              <TouchableOpacity
+                onPress={() => router.push('/contractor/help-support')}
+                className="flex-row items-center justify-between py-3 border-b border-blue-900"
+              >
                 <View className="flex-row items-center">
                   <HelpCircle size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Help & Support</Text>
                 </View>
                 <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
               </TouchableOpacity>
-              <TouchableOpacity className="flex-row items-center justify-between py-3">
+              <TouchableOpacity
+                onPress={() => router.push('/contractor/about')}
+                className="flex-row items-center justify-between py-3"
+              >
                 <View className="flex-row items-center">
                   <Shield size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>About</Text>
@@ -646,14 +793,22 @@ export default function GCProfileScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center p-6">
           <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900">
             <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Edit {editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : 'Years of Experience'}
+              Edit {editModal === 'company' ? 'Company Name' : editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : 'Years of Experience'}
             </Text>
             <TextInput
               value={editValue}
               onChangeText={setEditValue}
-              placeholder={editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : 'e.g. 10'}
+              placeholder={editModal === 'company' ? 'Company name' : editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : 'e.g. 10'}
               placeholderTextColor="#6B7280"
-              keyboardType={editModal === 'experience' ? 'number-pad' : editModal === 'email' ? 'email-address' : 'phone-pad'}
+              keyboardType={
+                editModal === 'experience'
+                  ? 'number-pad'
+                  : editModal === 'email'
+                    ? 'email-address'
+                    : editModal === 'phone'
+                      ? 'phone-pad'
+                      : 'default'
+              }
               autoCapitalize="none"
               className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-4"
               style={{ fontFamily: 'Poppins_400Regular' }}
@@ -691,7 +846,7 @@ export default function GCProfileScreen() {
             <TextInput
               value={certForm.name}
               onChangeText={(t) => setCertForm((p) => ({ ...p, name: t }))}
-              placeholder="e.g. Nigerian Institute of Building (NIOB)"
+              placeholder="e.g. Professional License Certificate"
               placeholderTextColor="#6B7280"
               className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-3"
               style={{ fontFamily: 'Poppins_400Regular' }}
@@ -809,6 +964,111 @@ export default function GCProfileScreen() {
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
                   <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>Remove</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={logoutModalVisible} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center p-6">
+          <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-red-900/50">
+            <View className="flex-row items-center mb-2">
+              <View className="w-10 h-10 rounded-full bg-red-600/20 items-center justify-center mr-3">
+                <LogOut size={18} color="#EF4444" strokeWidth={2.2} />
+              </View>
+              <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Logout
+              </Text>
+            </View>
+            <Text className="text-gray-300 text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Are you sure you want to logout?
+            </Text>
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => setLogoutModalVisible(false)}
+                className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
+              >
+                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={async () => {
+                  setLogoutModalVisible(false);
+                  await performLogout();
+                }}
+                className="flex-1 py-3 rounded-xl bg-red-600 items-center"
+              >
+                <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Logout
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={passwordModalVisible} transparent animationType="fade">
+        <View className="flex-1 bg-black/50 justify-center items-center p-6">
+          <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900">
+            <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Change Password
+            </Text>
+            <Text className="text-gray-400 text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Use at least 8 characters with uppercase, lowercase, number, and special character.
+            </Text>
+            <TextInput
+              value={passwordForm.currentPassword}
+              onChangeText={(t) => setPasswordForm((p) => ({ ...p, currentPassword: t }))}
+              placeholder="Current password"
+              placeholderTextColor="#6B7280"
+              secureTextEntry
+              className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-3"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            />
+            <TextInput
+              value={passwordForm.newPassword}
+              onChangeText={(t) => setPasswordForm((p) => ({ ...p, newPassword: t }))}
+              placeholder="New password"
+              placeholderTextColor="#6B7280"
+              secureTextEntry
+              className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-3"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            />
+            <TextInput
+              value={passwordForm.confirmPassword}
+              onChangeText={(t) => setPasswordForm((p) => ({ ...p, confirmPassword: t }))}
+              placeholder="Confirm new password"
+              placeholderTextColor="#6B7280"
+              secureTextEntry
+              className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-4"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            />
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                onPress={() => {
+                  setPasswordModalVisible(false);
+                  setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                }}
+                className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
+              >
+                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleChangePassword}
+                disabled={changePassword.isPending}
+                className="flex-1 py-3 rounded-xl bg-blue-600 items-center"
+              >
+                {changePassword.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Update
+                  </Text>
                 )}
               </TouchableOpacity>
             </View>

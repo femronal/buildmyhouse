@@ -14,6 +14,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -143,6 +144,19 @@ export class AuthController {
       throw new Error('User ID not found in token');
     }
     return this.authService.updateCurrentUser(userId, updateMeDto);
+  }
+
+  @Patch('me/password')
+  @UseGuards(JwtAuthGuard)
+  changePassword(@Request() req: any, @Body() dto: ChangePasswordDto) {
+    const userId = req.user?.sub;
+    if (!userId) {
+      throw new Error('User ID not found in token');
+    }
+    return this.authService.changePassword(userId, {
+      currentPassword: dto.currentPassword,
+      newPassword: dto.newPassword,
+    });
   }
 
   @Post('me/picture')

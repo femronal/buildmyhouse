@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, FileText, MapPin, DollarSign, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X } from "lucide-react-native";
+import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
@@ -155,7 +155,7 @@ export default function GCRequestDetailScreen() {
     if (totalPhaseCents !== budgetCents) {
       showAlert(
         'Validation Error',
-        `The total of all phase costs must equal the estimated project budget.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nBudget: $${(budgetCents / 100).toLocaleString()}`
+        `The total of all phase costs must equal the estimated project budget.\n\nPhase total: ₦${(totalPhaseCents / 100).toLocaleString()}\nBudget: ₦${(budgetCents / 100).toLocaleString()}`
       );
       return;
     }
@@ -439,7 +439,7 @@ export default function GCRequestDetailScreen() {
                 Estimated Budget *
               </Text>
               <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-                <DollarSign size={20} color="#6B7280" strokeWidth={2} />
+                <Text className="text-gray-500 text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>₦</Text>
                 <TextInput
                   className="flex-1 ml-3 text-white text-base"
                   style={{ fontFamily: 'Poppins_400Regular' }}

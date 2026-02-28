@@ -19,6 +19,8 @@ import { UpdateProjectReviewDto } from './dto/update-project-review.dto';
 import { SetExternalPaymentLinkDto } from './dto/set-external-payment-link.dto';
 import { ConfirmManualPaymentDto } from './dto/confirm-manual-payment.dto';
 import { SetProjectRiskLevelDto } from './dto/set-project-risk-level.dto';
+import { CreateStageDisputeDto } from './dto/create-stage-dispute.dto';
+import { UpdateDisputeStatusDto } from './dto/update-dispute-status.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 
@@ -274,6 +276,52 @@ export class ProjectsController {
   @Roles('general_contractor', 'admin')
   async deleteDocument(@Param('documentId') documentId: string) {
     return this.projectsService.deleteStageDocument(documentId);
+  }
+
+  @Post(':projectId/stages/:stageId/disputes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner')
+  createStageDispute(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() dto: CreateStageDisputeDto,
+  ) {
+    return this.projectsService.createStageDispute({
+      projectId,
+      stageId,
+      homeownerId: req.user.sub,
+      reasons: dto.reasons,
+      otherReason: dto.otherReason,
+    });
+  }
+
+  @Get('disputes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  getAdminDisputes(@Query('status') status?: 'open' | 'in_review' | 'resolved') {
+    return this.projectsService.getAdminDisputes(status);
+  }
+
+  @Patch('disputes/:disputeId/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  updateDisputeStatus(
+    @Param('disputeId') disputeId: string,
+    @Body() dto: UpdateDisputeStatusDto,
+  ) {
+    return this.projectsService.updateDisputeStatus({
+      disputeId,
+      status: dto.status,
+      resolutionNotes: dto.resolutionNotes,
+    });
+  }
+
+  @Get('me/invoice-files')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner')
+  getMyInvoiceFiles(@Request() req: any) {
+    return this.projectsService.getHomeownerInvoiceAndReceiptFiles(req.user.sub);
   }
 
   @Get(':id')

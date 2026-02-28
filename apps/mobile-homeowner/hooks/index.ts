@@ -9,6 +9,7 @@ export {
   usePendingProjects,
   usePausedProjects,
   useActiveProjects,
+  useMyInvoiceFiles,
   useDeletePendingProject,
   useCreateProjectFromDesign,
 } from './useProjects';
@@ -20,7 +21,9 @@ export { useDesigns, useDesign } from './useDesigns';
 export { useHousesForSale, useHouseForSale } from './useHousesForSale';
 export { useScheduleHouseViewing } from './useHouseViewing';
 export { useLandsForSale, useLandForSale } from './useLandsForSale';
+export { useRentalsForLease, useRentalListing } from './useRentalsForLease';
 export { useScheduleLandViewing } from './useLandViewing';
+export { useRequestRentalInspection } from './useRentalInspection';
 export { useHomePurchases, useLandPurchases } from './usePropertyPurchases';
 
 // User hooks
@@ -57,5 +60,12 @@ export {
 } from './usePayment';
 
 export { useDeclareManualPayment } from './useManualPayment';
+
+export {
+  useNotifications,
+  useUnreadCount,
+  useMarkNotificationRead,
+  useMarkAllNotificationsRead,
+} from './useNotifications';
 
 

@@ -18,15 +18,13 @@ test.describe('Dashboard', () => {
   test('should display dashboard overview', async ({ page }) => {
     await expect(page.getByText(/Dashboard Overview/i)).toBeVisible();
     await expect(page.getByText(/Total Users/i)).toBeVisible();
-    await expect(page.getByText(/Active Projects/i)).toBeVisible();
-    await expect(page.getByText(/Total Payments/i)).toBeVisible();
-    await expect(page.getByText(/Marketplace Items/i)).toBeVisible();
+    await expect(page.getByText(/Active Builds/i)).toBeVisible();
+    await expect(page.getByText(/Payments This Month/i)).toBeVisible();
+    await expect(page.getByText(/Open Disputes/i)).toBeVisible();
   });
 
   test('should display stats cards', async ({ page }) => {
-    // Check that stat cards are visible
-    const stats = ['Total Users', 'Active Projects', 'Total Payments', 'Marketplace Items'];
-    
+    const stats = ['Total Users', 'Active Builds', 'Payments This Month', 'Open Disputes'];
     for (const stat of stats) {
       await expect(page.getByText(stat)).toBeVisible();
     }
@@ -38,9 +36,9 @@ test.describe('Dashboard', () => {
 
   test('should display quick actions', async ({ page }) => {
     await expect(page.getByText(/Quick Actions/i)).toBeVisible();
-    await expect(page.getByText(/Verify Pending Users/i)).toBeVisible();
-    await expect(page.getByText(/Review Disputes/i)).toBeVisible();
-    await expect(page.getByText(/Monitor Active Projects/i)).toBeVisible();
+    await expect(page.getByText(/Review GC verifications/i)).toBeVisible();
+    await expect(page.getByText(/Resolve urgent disputes/i)).toBeVisible();
+    await expect(page.getByText(/Audit stalled projects/i)).toBeVisible();
   });
 });
 

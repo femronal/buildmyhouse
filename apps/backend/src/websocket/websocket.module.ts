@@ -4,9 +4,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { WebSocketGateway } from './websocket.gateway';
 import { WebSocketService } from './websocket.service';
 import { JwtAuthService } from '../auth/jwt-auth.service';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
+    NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

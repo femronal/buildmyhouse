@@ -4,7 +4,6 @@ import {
   ArrowLeft, 
   MapPin, 
   Calendar, 
-  DollarSign, 
   Camera, 
   CheckCircle, 
   Clock, 
@@ -362,11 +361,11 @@ export default function GCProjectDetailScreen() {
         <View className="flex-row mb-6">
           <View className="flex-1 bg-[#1E3A5F] rounded-xl p-4 mr-2 border border-blue-900">
             <View className="flex-row items-center mb-1">
-              <DollarSign size={16} color="#10B981" strokeWidth={2} />
+              <Text className="text-green-500 text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
               <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
             </View>
             <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-              ${(project.budget || 0).toLocaleString()}
+              ₦{(project.budget || 0).toLocaleString()}
             </Text>
           </View>
           <View className="flex-1 bg-[#1E3A5F] rounded-xl p-4 mx-2 border border-blue-900">
@@ -488,7 +487,7 @@ export default function GCProjectDetailScreen() {
                     <View className="flex-1 ml-3">
                       <Text className={`text-base ${isClickable ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>{stage.name}</Text>
                       <Text className={`text-sm ${isClickable ? 'text-gray-400' : 'text-gray-500'}`} style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                        ${(stage.estimatedCost || 0).toLocaleString()}
+                        ₦{(stage.estimatedCost || 0).toLocaleString()}
                       </Text>
                     </View>
                     {getStatusBadge(stage.status)}

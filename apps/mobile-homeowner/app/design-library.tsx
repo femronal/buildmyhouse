@@ -17,6 +17,31 @@ const getImageUrl = (imageUrl: string) => {
   return `${API_BASE_URL}${imageUrl}`;
 };
 
+const formatPlanTypeLabel = (planType?: string | null) => {
+  if (planType === 'renovation') return 'Renovation';
+  if (planType === 'interior_design') return 'Interior Design';
+  return 'Home Construction';
+};
+
+const getPlanTypeTagClasses = (planType?: string | null) => {
+  if (planType === 'renovation') {
+    return {
+      container: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
+    };
+  }
+  if (planType === 'interior_design') {
+    return {
+      container: 'bg-purple-50 border-purple-200',
+      text: 'text-purple-700',
+    };
+  }
+  return {
+    container: 'bg-blue-50 border-blue-200',
+    text: 'text-blue-700',
+  };
+};
+
 export default function DesignLibraryScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
@@ -112,7 +137,7 @@ export default function DesignLibraryScreen() {
         case '4+ Beds':
           filtered = filtered.filter((d: any) => d.bedrooms >= 4);
           break;
-        case 'Under $300k':
+        case 'Under ₦300k':
           filtered = filtered.filter((d: any) => d.estimatedCost < 300000);
           break;
         case 'Luxury':
@@ -205,7 +230,7 @@ export default function DesignLibraryScreen() {
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
-          {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under $300k', 'Luxury'].map((tag) => (
+          {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
@@ -350,6 +375,11 @@ export default function DesignLibraryScreen() {
                 >
                   {design.name}
                 </Text>
+                <View className={`self-start border rounded-full px-2 py-1 mb-2 ${getPlanTypeTagClasses(design.planType).container}`}>
+                  <Text className={getPlanTypeTagClasses(design.planType).text} style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
+                    {formatPlanTypeLabel(design.planType)}
+                  </Text>
+                </View>
                 
                 <View className="flex-row items-center mb-2">
                   <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
@@ -396,7 +426,7 @@ export default function DesignLibraryScreen() {
                   className="text-xl text-black"
                   style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                 >
-                      ${design.estimatedCost?.toLocaleString() || '0'}
+                      ₦{design.estimatedCost?.toLocaleString() || '0'}
                     </Text>
                   </View>
                 </TouchableOpacity>

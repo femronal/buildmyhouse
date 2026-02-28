@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Calendar, DollarSign, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
+import { MessageCircle, Calendar, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import { useProjectAnalysis } from "@/hooks/usePlan";
 import { chatService } from "@/services/chatService";
@@ -183,15 +183,24 @@ export default function DashboardScreen() {
   // Use calculated budget if available, otherwise fallback to project.budget
   const totalBudget = calculatedBudget > 0 ? calculatedBudget : (project.budget || 0);
 
-  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
-  const projectType = (project as any)?.projectType as string | undefined;
+  // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
+  const projectType =
+    ((project as any)?.projectType as string | undefined) ||
+    ((aiAnalysis as any)?.projectType as string | undefined);
   const paymentConfirmationStatus =
     ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
   const externalPaymentLink = (project as any)?.externalPaymentLink as string | undefined;
   const paymentDeclaredAt = (project as any)?.paymentDeclaredAt as string | undefined;
   const declaredAt = paymentDeclaredAt ? new Date(paymentDeclaredAt) : null;
   const isHomebuilding = projectType === 'homebuilding';
-  const isTrackingUnlocked = !isHomebuilding || paymentConfirmationStatus === 'confirmed';
+  const hasCompletedPayment = Array.isArray((project as any)?.payments)
+    ? (project as any).payments.some((p: any) => p?.status === 'completed')
+    : false;
+  const isPaymentSettled =
+    paymentConfirmationStatus === 'confirmed' ||
+    (project as any)?.status === 'active' ||
+    hasCompletedPayment;
+  const isTrackingUnlocked = !isHomebuilding || isPaymentSettled;
 
   const openExternalPaymentLink = async () => {
     if (!externalPaymentLink) return;
@@ -457,7 +466,7 @@ export default function DashboardScreen() {
         {/* Financial Summary */}
         <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
           <View className="flex-row items-center mb-4">
-            <DollarSign size={24} color="#000000" strokeWidth={2} />
+            <Text className="text-black text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
             <Text 
               className="text-xl text-black ml-2"
               style={{ fontFamily: 'Poppins_700Bold' }}
@@ -477,7 +486,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${totalBudget.toLocaleString()}
+              ₦{totalBudget.toLocaleString()}
             </Text>
           </View>
           
@@ -492,7 +501,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${spent.toLocaleString()}
+              ₦{spent.toLocaleString()}
             </Text>
           </View>
           
@@ -507,7 +516,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              ${(totalBudget - spent).toLocaleString()}
+              ₦{(totalBudget - spent).toLocaleString()}
             </Text>
           </View>
 
@@ -590,7 +599,7 @@ export default function DashboardScreen() {
                           className="text-black text-sm"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                         >
-                          ${estimatedCost.toLocaleString()}
+                          ₦{estimatedCost.toLocaleString()}
           </Text>
                       )}
                     </View>

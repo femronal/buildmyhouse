@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Plus, Camera, X, Phone, Mail, DollarSign, Calendar, Upload, Download, Trash2, Check } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Plus, Camera, X, Phone, Mail, Calendar, Upload, Download, Trash2, Check } from "lucide-react-native";
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
@@ -44,6 +44,7 @@ export default function GCStageDetailScreen() {
   const [teamMemberToDelete, setTeamMemberToDelete] = useState<{ id: string; name: string } | null>(null);
   const [showDeleteFileModal, setShowDeleteFileModal] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string; isMedia: boolean } | null>(null);
+  const [showFileTooLargeModal, setShowFileTooLargeModal] = useState(false);
   
   // Mark as complete modal
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -99,13 +100,14 @@ export default function GCStageDetailScreen() {
     fileUri: '' as string | null,
     fileFile: null as File | null,
     fileName: '' as string,
+    fileMimeType: '' as string,
   });
 
   // Rename modal state
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameType, setRenameType] = useState<'photo' | 'invoice' | 'receipt' | 'file' | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [pendingFileData, setPendingFileData] = useState<{ uri: string; fileName: string; file?: File } | null>(null);
+  const [pendingFileData, setPendingFileData] = useState<{ uri: string; fileName: string; file?: File; mimeType?: string } | null>(null);
 
   const isComplete = status === 'complete' || status === 'completed';
   const isInProgress = status === 'in-progress' || status === 'in_progress';
@@ -164,6 +166,15 @@ export default function GCStageDetailScreen() {
     Linking.openURL(url).catch(() => Alert.alert('Error', 'Unable to download file'));
   };
 
+  const isFileTooLargeError = (error: any) => {
+    const message = String(error?.message || '').toLowerCase();
+    return (
+      message.includes('file too large') ||
+      message.includes('payload too large') ||
+      message.includes('413')
+    );
+  };
+
   const handleRequestPayment = () => {
     setPaymentRequested(true);
     setTimeout(() => {
@@ -201,7 +212,7 @@ export default function GCStageDetailScreen() {
 
             // Only "Files" should be renameable. Team/Material uploads are named by the form fields.
             if (type === 'file') {
-              setPendingFileData({ uri, fileName, file });
+              setPendingFileData({ uri, fileName, file, mimeType: file.type });
               setRenameType(type);
               setRenameValue(fileName);
               setShowRenameModal(true);
@@ -252,7 +263,7 @@ export default function GCStageDetailScreen() {
 
         // Only "Files" should be renameable. Team/Material uploads are named by the form fields.
         if (type === 'file') {
-          setPendingFileData({ uri, fileName });
+          setPendingFileData({ uri, fileName, mimeType: asset.mimeType || undefined });
           setRenameType(type);
           setRenameValue(fileName);
           setShowRenameModal(true);
@@ -298,7 +309,10 @@ export default function GCStageDetailScreen() {
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(data.photoFile);
             });
-            photoUrl = await uploadFile(fileUri, 'image');
+            photoUrl = await uploadFile(fileUri, 'image', {
+              fileName: data.photoName || data.photoFile?.name,
+              mimeType: data.photoFile?.type,
+            });
           } else {
             photoUrl = await uploadFile(data.photoUri, 'image');
           }
@@ -311,7 +325,10 @@ export default function GCStageDetailScreen() {
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(data.invoiceFile);
             });
-            invoiceUrl = await uploadFile(fileUri, 'document');
+            invoiceUrl = await uploadFile(fileUri, 'document', {
+              fileName: data.invoiceName || data.invoiceFile?.name,
+              mimeType: data.invoiceFile?.type,
+            });
           } else {
             invoiceUrl = await uploadFile(data.invoiceUri, 'document');
           }
@@ -375,7 +392,10 @@ export default function GCStageDetailScreen() {
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(data.photoFile);
             });
-            photoUrl = await uploadFile(fileUri, 'image');
+            photoUrl = await uploadFile(fileUri, 'image', {
+              fileName: data.photoName || data.photoFile?.name,
+              mimeType: data.photoFile?.type,
+            });
           } else {
             photoUrl = await uploadFile(data.photoUri, 'image');
           }
@@ -388,7 +408,10 @@ export default function GCStageDetailScreen() {
               reader.onload = () => resolve(reader.result as string);
               reader.readAsDataURL(data.receiptFile);
             });
-            receiptUrl = await uploadFile(fileUri, 'document');
+            receiptUrl = await uploadFile(fileUri, 'document', {
+              fileName: data.receiptName || data.receiptFile?.name,
+              mimeType: data.receiptFile?.type,
+            });
           } else {
             receiptUrl = await uploadFile(data.receiptUri, 'document');
           }
@@ -458,9 +481,15 @@ export default function GCStageDetailScreen() {
                 reader.onload = () => resolve(reader.result as string);
                 reader.readAsDataURL(data.fileFile);
               });
-              fileUrl = await uploadFile(fileUri, uploadType);
+              fileUrl = await uploadFile(fileUri, uploadType, {
+                fileName: data.fileName || data.fileFile?.name,
+                mimeType: data.fileMimeType || data.fileFile?.type,
+              });
             } else {
-              fileUrl = await uploadFile(data.fileUri, uploadType);
+              fileUrl = await uploadFile(data.fileUri, uploadType, {
+                fileName: data.fileName,
+                mimeType: data.fileMimeType || data.fileFile?.type,
+              });
             }
           } else {
             const uploadType = data.type === 'video' ? 'media' : 'image';
@@ -470,9 +499,15 @@ export default function GCStageDetailScreen() {
                 reader.onload = () => resolve(reader.result as string);
                 reader.readAsDataURL(data.fileFile);
               });
-              fileUrl = await uploadFile(fileUri, uploadType);
+              fileUrl = await uploadFile(fileUri, uploadType, {
+                fileName: data.fileName || data.fileFile?.name,
+                mimeType: data.fileMimeType || data.fileFile?.type,
+              });
             } else {
-              fileUrl = await uploadFile(data.fileUri, uploadType);
+              fileUrl = await uploadFile(data.fileUri, uploadType, {
+                fileName: data.fileName,
+                mimeType: data.fileMimeType || data.fileFile?.type,
+              });
             }
           }
         } else {
@@ -510,10 +545,15 @@ export default function GCStageDetailScreen() {
         fileUri: null,
         fileFile: null,
         fileName: '',
+        fileMimeType: '',
       });
       Alert.alert('Success', 'File uploaded successfully');
     },
     onError: (error: any) => {
+      if (isFileTooLargeError(error)) {
+        setShowFileTooLargeModal(true);
+        return;
+      }
       Alert.alert('Error', error?.message || 'Failed to upload file');
     },
   });
@@ -809,7 +849,7 @@ export default function GCStageDetailScreen() {
                         className="text-white text-sm"
                         style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                       >
-                        ${(material.totalPrice || 0).toLocaleString()}
+                        ₦{(material.totalPrice || 0).toLocaleString()}
                       </Text>
                     </View>
                   </View>
@@ -904,7 +944,7 @@ export default function GCStageDetailScreen() {
                           className="text-gray-400 text-sm"
                           style={{ fontFamily: 'Poppins_400Regular' }}
                         >
-                          ${member.dailyRate.toLocaleString()}/{member.rateType || 'day'}
+                          ₦{member.dailyRate.toLocaleString()}/{member.rateType || 'day'}
                         </Text>
                       )}
                     </View>
@@ -1128,7 +1168,7 @@ export default function GCStageDetailScreen() {
                       className="text-2xl text-white"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      ${(stage?.estimatedCost || 0).toLocaleString()}
+                      ₦{(stage?.estimatedCost || 0).toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -1710,7 +1750,7 @@ export default function GCStageDetailScreen() {
                       </Text>
                     )}
                     <TouchableOpacity
-                      onPress={() => setFileForm(prev => ({ ...prev, fileUri: null, fileFile: null, fileName: '' }))}
+                      onPress={() => setFileForm(prev => ({ ...prev, fileUri: null, fileFile: null, fileName: '', fileMimeType: '' }))}
                       className="mt-2"
                     >
                       <Text className="text-red-400 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -1849,7 +1889,8 @@ export default function GCStageDetailScreen() {
                         ...prev, 
                         fileUri: pendingFileData.uri, 
                         fileFile: pendingFileData.file || null,
-                        fileName: finalName 
+                        fileName: finalName,
+                        fileMimeType: pendingFileData.mimeType || '' 
                       }));
                     }
                   }
@@ -2110,33 +2151,6 @@ export default function GCStageDetailScreen() {
                     return;
                   }
                   
-                  // Check documentation requirements before submitting
-                  const processPhotos = media.filter((m: any) => m.type === 'photo');
-                  const processVideos = media.filter((m: any) => m.type === 'video');
-                  const teamMembersWithDocs = teamMembers.filter((tm: any) => tm.photoUrl && tm.invoiceUrl);
-                  const materialsWithDocs = materials.filter((m: any) => m.receiptUrl && m.photoUrl);
-                  
-                  const missingRequirements: string[] = [];
-                  
-                  if (processPhotos.length === 0) {
-                    missingRequirements.push('At least one process photo is required');
-                  }
-                  if (processVideos.length === 0) {
-                    missingRequirements.push('At least one process video is required');
-                  }
-                  if (teamMembers.length > 0 && teamMembersWithDocs.length === 0) {
-                    missingRequirements.push('At least one team member must have a photo and invoice/receipt');
-                  }
-                  if (materials.length > 0 && materialsWithDocs.length === 0) {
-                    missingRequirements.push('At least one material must have a receipt and photo');
-                  }
-                  
-                  if (missingRequirements.length > 0) {
-                    setMissingRequirements(missingRequirements);
-                    setShowDocsRequiredModal(true);
-                    return;
-                  }
-                  
                   try {
                     await updateStageStatusMutation.mutateAsync({
                       projectId: projectId as string,
@@ -2175,6 +2189,36 @@ export default function GCStageDetailScreen() {
                 )}
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* File Too Large Modal */}
+      <Modal
+        visible={showFileTooLargeModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowFileTooLargeModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-md border border-red-500/40">
+            <Text className="text-2xl text-white mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              File Too Large
+            </Text>
+            <Text className="text-gray-300 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+              The file you selected is too large to upload. Please choose a smaller file and try again.
+            </Text>
+            <Text className="text-gray-400 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Tip: compress videos or export documents with a smaller size.
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowFileTooLargeModal(false)}
+              className="mt-6 bg-blue-600 rounded-xl py-3"
+            >
+              <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Okay
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -2225,7 +2269,7 @@ export default function GCStageDetailScreen() {
                     </View>
                   )}
                   
-                  {missingRequirements.some(req => req.includes('team member')) && (
+                  {missingRequirements.some(req => req.toLowerCase().includes('team')) && (
                     <View className="flex-row items-start">
                       <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
                       <Text className="text-gray-300 flex-1 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -2234,7 +2278,7 @@ export default function GCStageDetailScreen() {
                     </View>
                   )}
                   
-                  {missingRequirements.some(req => req.includes('material')) && (
+                  {missingRequirements.some(req => req.toLowerCase().includes('material')) && (
                     <View className="flex-row items-start">
                       <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
                       <Text className="text-gray-300 flex-1 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>

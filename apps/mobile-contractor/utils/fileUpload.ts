@@ -5,23 +5,54 @@ const API_BASE_URL = __DEV__
   ? 'http://localhost:3001/api' 
   : 'https://api.buildmyhouse.com/api';
 
+type UploadFileOptions = {
+  fileName?: string;
+  mimeType?: string;
+};
+
+function inferExtensionFromMime(mimeType?: string): string {
+  if (!mimeType) return '';
+  const normalized = mimeType.toLowerCase();
+  if (normalized.includes('pdf')) return 'pdf';
+  if (normalized.includes('msword')) return 'doc';
+  if (normalized.includes('wordprocessingml.document')) return 'docx';
+  if (normalized.includes('png')) return 'png';
+  if (normalized.includes('jpeg') || normalized.includes('jpg')) return 'jpg';
+  if (normalized.includes('webp')) return 'webp';
+  if (normalized.includes('gif')) return 'gif';
+  if (normalized.includes('mp4')) return 'mp4';
+  if (normalized.includes('quicktime')) return 'mov';
+  if (normalized.includes('mpeg')) return 'mp3';
+  return '';
+}
+
 /**
  * Upload a single file to the backend
  * Returns the uploaded file URL
  */
-export async function uploadFile(uri: string, type: 'image' | 'document' | 'media' = 'image'): Promise<string> {
+export async function uploadFile(
+  uri: string,
+  type: 'image' | 'document' | 'media' = 'image',
+  options: UploadFileOptions = {},
+): Promise<string> {
   try {
     const formData = new FormData();
     
-    // Extract filename from URI
-    let filename = uri.split('/').pop() || `file-${Date.now()}.jpg`;
+    const isDataUrl = typeof uri === 'string' && uri.startsWith('data:');
+
+    // Extract filename from URI (avoid using data URL content as filename)
+    let filename =
+      options.fileName ||
+      (isDataUrl ? `file-${Date.now()}` : uri.split('/').pop()) ||
+      `file-${Date.now()}.jpg`;
     filename = filename.split('?')[0]; // Remove query parameters
+    filename = filename.replace(/[^a-zA-Z0-9._ -]/g, '_');
     
     // Determine MIME type from extension
     const match = /\.(\w+)$/.exec(filename);
-    let mimeType = 'image/jpeg'; // default
+    let mimeType = options.mimeType || 'image/jpeg'; // default
     
-    if (match) {
+    if (!options.mimeType && match) {
       const ext = match[1].toLowerCase();
       if (ext === 'png') mimeType = 'image/png';
       else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
@@ -32,6 +63,13 @@ export async function uploadFile(uri: string, type: 'image' | 'document' | 'medi
       else if (ext === 'mp4') mimeType = 'video/mp4';
       else if (ext === 'mov') mimeType = 'video/quicktime';
       else if (ext === 'mp3') mimeType = 'audio/mpeg';
+    }
+
+    if (!/\.[A-Za-z0-9]+$/.test(filename)) {
+      const inferredExt = inferExtensionFromMime(mimeType);
+      if (inferredExt) {
+        filename = `${filename}.${inferredExt}`;
+      }
     }
     
     // For web platform, fetch and convert to Blob/File
@@ -83,6 +121,14 @@ export async function uploadFile(uri: string, type: 'image' | 'document' | 'medi
         errorData = { message: text || 'Upload failed' };
       }
       console.error('❌ [fileUpload] Upload error:', errorData);
+      const apiMessage = String(errorData?.message || '').toLowerCase();
+      if (
+        response.status === 413 ||
+        apiMessage.includes('file too large') ||
+        apiMessage.includes('payload too large')
+      ) {
+        throw new Error('File too large. Please choose a smaller file and try again.');
+      }
       throw new Error(errorData.message || `Failed to upload file: HTTP ${response.status}`);
     }
     

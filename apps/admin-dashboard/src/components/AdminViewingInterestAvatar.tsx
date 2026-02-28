@@ -100,7 +100,7 @@ export default function AdminViewingInterestAvatar() {
                       )}
                       <div className="text-xs text-gray-600">
                         <p className="font-medium text-gray-800">{interest.houseForSale.location}</p>
-                        <p>${interest.houseForSale.price.toLocaleString()}</p>
+                        <p>₦{interest.houseForSale.price.toLocaleString()}</p>
                       </div>
                     </div>
                   </div>

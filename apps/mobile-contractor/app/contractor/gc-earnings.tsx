@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { DollarSign, TrendingUp, ChevronLeft, ChevronRight, Package, Users, Receipt, CheckCircle } from "lucide-react-native";
+import { TrendingUp, ChevronLeft, ChevronRight, Package, Users, Receipt, CheckCircle } from "lucide-react-native";
 import { useState } from "react";
 import { useGCEarnings } from "@/hooks/useGC";
 
@@ -45,7 +45,7 @@ export default function GCEarningsScreen() {
         </View>
       ) : earnings.length === 0 ? (
         <View className="flex-1 items-center justify-center px-8">
-          <DollarSign size={64} color="#6B7280" strokeWidth={1.5} />
+          <Text className="text-gray-500 text-6xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
           <Text className="text-white text-xl mt-4 text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
             No Earnings Yet
           </Text>
@@ -61,7 +61,7 @@ export default function GCEarningsScreen() {
               <View className="flex-row justify-between items-start mb-4">
                 <View>
                   <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earned</Text>
-                  <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalEarned.toLocaleString()}</Text>
+                  <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalEarned.toLocaleString()}</Text>
                 </View>
                 <View className="bg-green-600/20 rounded-full px-3 py-1 flex-row items-center">
                   <TrendingUp size={14} color="#10B981" strokeWidth={2} />
@@ -74,14 +74,14 @@ export default function GCEarningsScreen() {
                 <View className="h-full bg-blue-600 rounded-full" style={{ width: `${totalBudget > 0 ? Math.min(100, (totalEarned / totalBudget) * 100) : 0}%` }} />
               </View>
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                ${totalEarned.toLocaleString()} of ${totalBudget.toLocaleString()} total project value
+                ₦{totalEarned.toLocaleString()} of ₦{totalBudget.toLocaleString()} total project value
               </Text>
             </View>
 
             <View className="flex-row justify-between gap-3">
               <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 border border-blue-900">
                 <Text className="text-gray-400 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
-                <Text className="text-amber-400 text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalPending.toLocaleString()}</Text>
+                <Text className="text-amber-400 text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalPending.toLocaleString()}</Text>
               </View>
               <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 border border-blue-900">
                 <Text className="text-gray-400 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Projects</Text>
@@ -96,12 +96,12 @@ export default function GCEarningsScreen() {
                   <View className="flex-row items-center">
                     <Package size={16} color="#6B7280" strokeWidth={2} />
                     <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Materials</Text>
-                    <Text className="text-white text-sm ml-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalMaterials.toLocaleString()}</Text>
+                    <Text className="text-white text-sm ml-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalMaterials.toLocaleString()}</Text>
                   </View>
                   <View className="flex-row items-center">
                     <Users size={16} color="#6B7280" strokeWidth={2} />
                     <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Team</Text>
-                    <Text className="text-white text-sm ml-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalTeam.toLocaleString()}</Text>
+                    <Text className="text-white text-sm ml-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalTeam.toLocaleString()}</Text>
                   </View>
                 </View>
               </View>
@@ -142,15 +142,15 @@ export default function GCEarningsScreen() {
                     <View className="flex-row justify-between items-center mb-2">
                       <View>
                         <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.earned.toLocaleString()}</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.earned.toLocaleString()}</Text>
                       </View>
                       <View>
                         <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.budget.toLocaleString()}</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.budget.toLocaleString()}</Text>
                       </View>
                       <View>
                         <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
-                        <Text className="text-amber-400" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.pending.toLocaleString()}</Text>
+                        <Text className="text-amber-400" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.pending.toLocaleString()}</Text>
                       </View>
                     </View>
 
@@ -184,7 +184,7 @@ export default function GCEarningsScreen() {
                                   {pay.stageId ? 'Stage payment' : 'Project activation'} • {pay.method === 'manual' ? 'Manual' : 'Stripe'}
                                 </Text>
                               </View>
-                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${pay.amount.toLocaleString()}</Text>
+                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{pay.amount.toLocaleString()}</Text>
                             </View>
                           ))}
                         </View>
@@ -199,7 +199,7 @@ export default function GCEarningsScreen() {
                                 <CheckCircle size={14} color="#10B981" strokeWidth={2} />
                                 <Text className="text-gray-300 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>{s.name}</Text>
                               </View>
-                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${s.estimatedCost.toLocaleString()}</Text>
+                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{s.estimatedCost.toLocaleString()}</Text>
                             </View>
                           ))}
                         </View>
@@ -214,7 +214,7 @@ export default function GCEarningsScreen() {
                                 <Package size={14} color="#6B7280" strokeWidth={2} />
                                 <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Materials</Text>
                               </View>
-                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.materialsTotal.toLocaleString()}</Text>
+                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.materialsTotal.toLocaleString()}</Text>
                             </View>
                           )}
                           {project.teamTotal > 0 && (
@@ -223,7 +223,7 @@ export default function GCEarningsScreen() {
                                 <Users size={14} color="#6B7280" strokeWidth={2} />
                                 <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Team</Text>
                               </View>
-                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${project.teamTotal.toLocaleString()}</Text>
+                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.teamTotal.toLocaleString()}</Text>
                             </View>
                           )}
                         </View>

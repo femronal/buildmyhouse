@@ -432,7 +432,7 @@ export default function StageDetailScreen() {
                       className="text-2xl text-black"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      $28,500
+                      ₦28,500
                     </Text>
                   </View>
                 </View>

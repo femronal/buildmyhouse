@@ -22,6 +22,8 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InvestmentProvider } from '../contexts/InvestmentContext';
 import { AppAlertProvider } from "../components/AppAlertProvider";
+import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
+import NotificationListener from '@/components/NotificationListener';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -30,6 +32,8 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
+  usePushTokenRegistration('contractor');
+
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Poppins_400Regular,
@@ -53,6 +57,7 @@ export default function RootLayout() {
   return (
     <InvestmentProvider>
       <QueryClientProvider client={queryClient}>
+        <NotificationListener />
         <ThemeProvider value={DefaultTheme}>
           <AppAlertProvider>
             <Stack screenOptions={{ headerShown: false }}>

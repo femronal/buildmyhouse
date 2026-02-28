@@ -763,7 +763,7 @@ async function main() {
     await prisma.payment.create({
       data: {
         projectId: project1.id,
-        amount: 250000, // 100% of $250,000 budget - required for activation
+        amount: 250000, // 100% of ₦250,000 budget - required for activation
         status: 'completed',
         method: 'stripe',
         transactionId: 'txn_activation_123456',

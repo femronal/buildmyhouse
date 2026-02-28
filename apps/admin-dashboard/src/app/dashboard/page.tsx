@@ -1,83 +1,125 @@
 'use client';
 
+import Link from 'next/link';
 import {
   AlertTriangle,
   Banknote,
   Building2,
-  CheckCircle2,
   ClipboardList,
   FileWarning,
+  Loader2,
   ShieldCheck,
-  TrendingUp,
   Users,
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import NotificationBell from '@/components/NotificationBell';
+import { useAdminDashboard, type CriticalAlert } from '@/hooks/useAdminDashboard';
 
-const stats = [
-  {
-    title: 'Total Users',
-    value: '1,284',
-    subtitle: '82% verified',
-    icon: Users,
-    accent: 'border-l-blue-500',
-  },
-  {
-    title: 'Active Builds',
-    value: '46',
-    subtitle: '12 at risk',
-    icon: Building2,
-    accent: 'border-l-emerald-500',
-  },
-  {
-    title: 'Payments This Month',
-    value: '$412,900',
-    subtitle: '98% successful',
-    icon: Banknote,
-    accent: 'border-l-purple-500',
-  },
-  {
-    title: 'Open Disputes',
-    value: '5',
-    subtitle: '2 urgent',
-    icon: FileWarning,
-    accent: 'border-l-amber-500',
-  },
-];
+function getAlertIcon(type: CriticalAlert['type']) {
+  switch (type) {
+    case 'stalled_project':
+      return AlertTriangle;
+    case 'failed_payments':
+      return Banknote;
+    case 'gcs_pending_verification':
+      return ShieldCheck;
+    default:
+      return AlertTriangle;
+  }
+}
 
-const alerts = [
-  {
-    title: 'Project “Lekki Villa” flagged for stalled progress',
-    detail: 'No updates for 12 days • GC: Mike’s Construction',
-    icon: AlertTriangle,
-    tone: 'bg-amber-50 text-amber-700 border-amber-200',
-  },
-  {
-    title: '3 payment attempts failed in the last 24h',
-    detail: 'Check Stripe webhook status and retry queue',
-    icon: Banknote,
-    tone: 'bg-red-50 text-red-700 border-red-200',
-  },
-  {
-    title: '2 GCs pending verification',
-    detail: 'Licenses uploaded • awaiting admin review',
-    icon: ShieldCheck,
-    tone: 'bg-blue-50 text-blue-700 border-blue-200',
-  },
-];
+function getAlertTone(tone: CriticalAlert['tone']) {
+  switch (tone) {
+    case 'amber':
+      return 'bg-amber-50 text-amber-700 border-amber-200';
+    case 'red':
+      return 'bg-red-50 text-red-700 border-red-200';
+    case 'blue':
+      return 'bg-blue-50 text-blue-700 border-blue-200';
+    default:
+      return 'bg-gray-50 text-gray-700 border-gray-200';
+  }
+}
 
-const activity = [
-  { label: 'GC verified', detail: 'Chukwuemeka O. • 32 mins ago', icon: CheckCircle2 },
-  { label: 'Project activated', detail: 'Modern Family Home • 2 hrs ago', icon: TrendingUp },
-  { label: 'Dispute opened', detail: 'Payment mismatch • 4 hrs ago', icon: FileWarning },
-  { label: 'Project paused', detail: 'Banana Island Build • 6 hrs ago', icon: ClipboardList },
-];
+function getActivityIcon(type: string) {
+  if (type.includes('dispute')) return FileWarning;
+  if (type.includes('payment') || type.includes('manual')) return Banknote;
+  if (type.includes('verification') || type.includes('gc')) return ShieldCheck;
+  if (type.includes('stage') || type.includes('project')) return Building2;
+  return ClipboardList;
+}
 
 const quickActions = [
-  { label: 'Review GC verifications', icon: ShieldCheck },
-  { label: 'Resolve urgent disputes', icon: FileWarning },
-  { label: 'Audit stalled projects', icon: ClipboardList },
+  { label: 'Review GC verifications', icon: ShieldCheck, href: '/verification' },
+  { label: 'Resolve urgent disputes', icon: FileWarning, href: '/disputes' },
+  { label: 'Audit stalled projects', icon: ClipboardList, href: '/projects' },
 ];
 
 export default function DashboardPage() {
+  const { data, isLoading, error } = useAdminDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="p-8 flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-10 h-10 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
+          Failed to load dashboard. Please try again.
+        </div>
+      </div>
+    );
+  }
+
+  const stats = data?.stats ?? {
+    totalUsers: 0,
+    verifiedPercent: 0,
+    activeBuilds: 0,
+    atRiskCount: 0,
+    paymentsThisMonth: 0,
+    paymentsSuccessPercent: 100,
+    openDisputes: 0,
+    urgentDisputes: 0,
+  };
+  const criticalAlerts = data?.criticalAlerts ?? [];
+  const recentActivity = data?.recentActivity ?? [];
+
+  const statCards = [
+    {
+      title: 'Total Users',
+      value: stats.totalUsers.toLocaleString(),
+      subtitle: `${stats.verifiedPercent}% verified`,
+      icon: Users,
+      accent: 'border-l-blue-500',
+    },
+    {
+      title: 'Active Builds',
+      value: stats.activeBuilds.toString(),
+      subtitle: stats.atRiskCount > 0 ? `${stats.atRiskCount} at risk` : 'All on track',
+      icon: Building2,
+      accent: 'border-l-emerald-500',
+    },
+    {
+      title: 'Payments This Month',
+      value: `₦${stats.paymentsThisMonth.toLocaleString()}`,
+      subtitle: `${stats.paymentsSuccessPercent}% successful`,
+      icon: Banknote,
+      accent: 'border-l-purple-500',
+    },
+    {
+      title: 'Open Disputes',
+      value: stats.openDisputes.toString(),
+      subtitle: stats.urgentDisputes > 0 ? `${stats.urgentDisputes} urgent` : 'None urgent',
+      icon: FileWarning,
+      accent: 'border-l-amber-500',
+    },
+  ];
+
   return (
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between">
@@ -85,13 +127,16 @@ export default function DashboardPage() {
           <h1 className="text-3xl font-bold font-poppins">Dashboard Overview</h1>
           <p className="text-gray-500 mt-1">Operational snapshot for homeowners and GCs</p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
-          Export weekly report
-        </button>
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <NotificationBell />
+          <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+            Export weekly report
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {stats.map((stat) => {
+        {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
             <div key={stat.title} className={`bg-white rounded-xl shadow p-6 border-l-4 ${stat.accent}`}>
@@ -117,21 +162,35 @@ export default function DashboardPage() {
             <span className="text-xs text-gray-400">Last 24 hours</span>
           </div>
           <div className="space-y-3">
-            {alerts.map((alert) => {
-              const Icon = alert.icon;
-              return (
-                <div
-                  key={alert.title}
-                  className={`border rounded-lg px-4 py-3 flex items-start gap-3 ${alert.tone}`}
-                >
-                  <Icon className="w-5 h-5 mt-0.5" />
-                  <div>
-                    <p className="font-medium">{alert.title}</p>
-                    <p className="text-sm opacity-80">{alert.detail}</p>
+            {criticalAlerts.length === 0 ? (
+              <div className="py-8 text-center text-gray-500 text-sm">
+                No critical alerts at the moment
+              </div>
+            ) : (
+              criticalAlerts.map((alert) => {
+                const Icon = getAlertIcon(alert.type);
+                const tone = getAlertTone(alert.tone);
+                const content = (
+                  <div
+                    key={alert.title}
+                    className={`border rounded-lg px-4 py-3 flex items-start gap-3 ${tone}`}
+                  >
+                    <Icon className="w-5 h-5 mt-0.5 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium">{alert.title}</p>
+                      <p className="text-sm opacity-80">{alert.detail}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+                return alert.link ? (
+                  <Link key={alert.title} href={alert.link}>
+                    {content}
+                  </Link>
+                ) : (
+                  <div key={alert.title}>{content}</div>
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -141,13 +200,14 @@ export default function DashboardPage() {
             {quickActions.map((action) => {
               const Icon = action.icon;
               return (
-                <button
+                <Link
                   key={action.label}
-                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-left"
+                  href={action.href}
+                  className="w-full flex items-center gap-2 px-4 py-3 rounded-lg bg-gray-50 hover:bg-gray-100 text-left transition-colors"
                 >
                   <Icon className="w-4 h-4 text-gray-700" />
                   <span className="text-sm font-medium">{action.label}</span>
-                </button>
+                </Link>
               );
             })}
           </div>
@@ -157,28 +217,40 @@ export default function DashboardPage() {
       <div className="bg-white rounded-xl shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold font-poppins">Recent Activity</h2>
-          <span className="text-xs text-gray-400">Updated every 15 mins</span>
+          <span className="text-xs text-gray-400">Updated every minute</span>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {activity.map((item) => {
-            const Icon = item.icon;
-            return (
-              <div key={item.label} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="w-9 h-9 rounded-full bg-white border flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-gray-700" />
+          {recentActivity.length === 0 ? (
+            <div className="col-span-2 py-8 text-center text-gray-500 text-sm">
+              No recent activity
+            </div>
+          ) : (
+            recentActivity.map((item) => {
+              const Icon = getActivityIcon(item.type);
+              const timeAgo = formatDistanceToNow(new Date(item.createdAt), { addSuffix: true });
+              const content = (
+                <div key={`${item.type}-${item.createdAt}`} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                  <div className="w-9 h-9 rounded-full bg-white border flex items-center justify-center shrink-0">
+                    <Icon className="w-4 h-4 text-gray-700" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium">{item.label}</p>
+                    <p className="text-xs text-gray-500 line-clamp-2">{item.detail}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{timeAgo}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-gray-500">{item.detail}</p>
-                </div>
-              </div>
-            );
-          })}
+              );
+              return item.link ? (
+                <Link key={`${item.type}-${item.createdAt}`} href={item.link}>
+                  {content}
+                </Link>
+              ) : (
+                <div key={`${item.type}-${item.createdAt}`}>{content}</div>
+              );
+            })
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-
-

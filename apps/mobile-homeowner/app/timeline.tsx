@@ -14,15 +14,24 @@ export default function TimelineScreen() {
   // Get stages from project data
   const stages = project?.stages || [];
 
-  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
-  const projectType = (project as any)?.projectType as string | undefined;
+  // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
+  const projectType =
+    ((project as any)?.projectType as string | undefined) ||
+    (((project as any)?.aiAnalysis as any)?.projectType as string | undefined);
   const paymentConfirmationStatus =
     ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
   const externalPaymentLink = (project as any)?.externalPaymentLink as string | undefined;
   const paymentDeclaredAt = (project as any)?.paymentDeclaredAt as string | undefined;
   const declaredAt = paymentDeclaredAt ? new Date(paymentDeclaredAt) : null;
   const isHomebuilding = projectType === 'homebuilding';
-  const isTrackingLocked = isHomebuilding && paymentConfirmationStatus !== 'confirmed';
+  const hasCompletedPayment = Array.isArray((project as any)?.payments)
+    ? (project as any).payments.some((p: any) => p?.status === 'completed')
+    : false;
+  const isPaymentSettled =
+    paymentConfirmationStatus === 'confirmed' ||
+    (project as any)?.status === 'active' ||
+    hasCompletedPayment;
+  const isTrackingLocked = isHomebuilding && !isPaymentSettled;
 
   const reviewHoursRemaining = (() => {
     if (!declaredAt) return null;

@@ -62,7 +62,7 @@ stripe listen --forward-to localhost:3001/api/payments/webhooks/stripe
     "amount": 1000.00,
     "projectId": "project-id",
     "stageId": "stage-id", // optional
-    "currency": "usd",
+    "currency": "ngn",
     "description": "Payment for stage completion" // optional
   }
   ```
@@ -78,7 +78,7 @@ stripe listen --forward-to localhost:3001/api/payments/webhooks/stripe
   {
     "contractorId": "contractor-id",
     "amount": 500.00,
-    "currency": "usd",
+    "currency": "ngn",
     "description": "Payment for completed work",
     "projectId": "project-id" // optional
   }
@@ -102,7 +102,7 @@ const response = await fetch('/api/payments/intent', {
   body: JSON.stringify({
     amount: 1000,
     projectId: 'project-id',
-    currency: 'usd',
+    currency: 'ngn',
   }),
 });
 
@@ -171,7 +171,7 @@ Currently uses direct payouts. For production, consider:
    // Transfer funds (instead of payout)
    await stripeService.createTransfer({
      amount: 500,
-     currency: 'usd',
+     currency: 'ngn',
      destination: account.id, // Connected account
    });
    ```

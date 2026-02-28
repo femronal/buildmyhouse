@@ -5,12 +5,26 @@ export type UnverifiedGC = {
   id: string;
   userId: string;
   name: string;
+  verified?: boolean;
   specialty: string;
   location?: string | null;
   email?: string;
   user?: { id: string; fullName: string; email: string; phone?: string | null };
   createdAt: string;
   documents: string[];
+  hasUploadedAllVerificationDocuments: boolean;
+  uploadedRequiredDocumentCount: number;
+  requiredDocumentCount: number;
+  missingRequiredDocuments: string[];
+  verificationDocuments: Array<{
+    type: string;
+    title: string;
+    description: string;
+    uploaded: boolean;
+    fileUrl?: string | null;
+    expiryYear?: string | null;
+    uploadedAt?: string | null;
+  }>;
 };
 
 export function useUnverifiedGCs() {

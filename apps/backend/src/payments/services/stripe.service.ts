@@ -136,7 +136,7 @@ export class StripeService {
    * Used for automatic stage funding on stage commencement.
    */
   async createOffSessionDestinationCharge(params: {
-    amount: number; // dollars
+    amount: number; // naira
     currency: string;
     customerId: string;
     paymentMethodId: string;

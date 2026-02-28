@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { DesignsService } from './designs.service';
 import { CreateDesignDto } from './dto/create-design.dto';
+import { RejectDesignDto } from './dto/reject-design.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 
@@ -37,6 +38,54 @@ export class DesignsController {
   getMyDesigns(@Request() req: any) {
     const userId = req.user?.sub;
     return this.designsService.getMyDesigns(userId);
+  }
+
+  /**
+   * Admin: list plans pending verification before going live.
+   */
+  @Get('admin/pending')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  getPendingDesigns(@Request() req: any) {
+    const role = req.user?.role;
+    return this.designsService.getPendingDesignsForAdmin({ actorRole: role });
+  }
+
+  /**
+   * Admin: approve a design and make it live for homeowners.
+   */
+  @Patch('admin/:id/go-live')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  approveDesignGoLive(@Param('id') id: string, @Request() req: any) {
+    const adminUserId = req.user?.sub;
+    const role = req.user?.role;
+    return this.designsService.approveDesignGoLive({
+      designId: id,
+      adminUserId,
+      actorRole: role,
+    });
+  }
+
+  /**
+   * Admin: reject a design plan with reason.
+   */
+  @Patch('admin/:id/reject')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  rejectDesign(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() body: RejectDesignDto,
+  ) {
+    const adminUserId = req.user?.sub;
+    const role = req.user?.role;
+    return this.designsService.rejectDesignPlan({
+      designId: id,
+      adminUserId,
+      actorRole: role,
+      reason: body.reason,
+    });
   }
 
   @Get(':id')

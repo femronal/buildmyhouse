@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 import { CreateConnectAccountLinkDto } from './dto/create-connect-account-link.dto';
 import { CreateBankAccountDto } from './dto/create-bank-account.dto';
+import { UpsertVerificationDocumentDto } from './dto/upsert-verification-document.dto';
 
 @Controller('contractors')
 export class ContractorsController {
@@ -41,6 +42,25 @@ export class ContractorsController {
   async listCertifications(@Request() req: any) {
     const userId = req.user.sub;
     return this.contractorsService.listCertifications(userId);
+  }
+
+  @Get('verification-documents')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor')
+  async getVerificationDocuments(@Request() req: any) {
+    const userId = req.user.sub;
+    return this.contractorsService.getGCVerificationStatus(userId);
+  }
+
+  @Post('verification-documents')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor')
+  async upsertVerificationDocument(
+    @Request() req: any,
+    @Body() body: UpsertVerificationDocumentDto,
+  ) {
+    const userId = req.user.sub;
+    return this.contractorsService.upsertGCVerificationDocument(userId, body);
   }
 
   @Post('certifications')

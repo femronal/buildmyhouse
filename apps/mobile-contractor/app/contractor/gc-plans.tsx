@@ -1,16 +1,50 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, DollarSign, Edit, Trash2, Plus, Info, Calendar, Edit3 } from "lucide-react-native";
+import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, Edit, Trash2, Plus, Info, Calendar, Edit3, Upload } from "lucide-react-native";
 import { useState, useRef } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import { designService } from '@/services/designService';
 import { useMyDesigns, useDeleteDesign, useUpdateDesign } from '@/hooks/useDesigns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppAlert } from "../../components/AppAlertProvider";
+import { useGCProfile } from '@/hooks/useGCProfile';
 
 interface ImageWithLabel {
   uri: string;
   label: string;
+}
+
+type PlanType = 'homebuilding' | 'renovation' | 'interior_design';
+
+const PLAN_TYPE_OPTIONS: Array<{ value: PlanType; label: string }> = [
+  { value: 'homebuilding', label: 'Home Construction' },
+  { value: 'renovation', label: 'Renovation' },
+  { value: 'interior_design', label: 'Interior Design' },
+];
+
+function formatPlanTypeLabel(planType?: string | null): string {
+  if (planType === 'renovation') return 'Renovation';
+  if (planType === 'interior_design') return 'Interior Design';
+  return 'Home Construction';
+}
+
+function getPlanTypeTagClasses(planType?: string | null): { container: string; text: string } {
+  if (planType === 'renovation') {
+    return {
+      container: 'bg-amber-500/20 border-amber-400',
+      text: 'text-amber-300',
+    };
+  }
+  if (planType === 'interior_design') {
+    return {
+      container: 'bg-purple-500/20 border-purple-400',
+      text: 'text-purple-300',
+    };
+  }
+  return {
+    container: 'bg-blue-600/20 border-blue-500',
+    text: 'text-blue-300',
+  };
 }
 
 function moneyToCents(value: unknown): number {
@@ -47,6 +81,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [planType, setPlanType] = useState<PlanType>('homebuilding');
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [squareFootage, setSquareFootage] = useState("");
@@ -222,7 +257,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
     if (!Number.isFinite(estCostCents) || totalPhaseCents !== estCostCents) {
       showAlert(
         'Validation Error',
-        `The total of all phase costs must equal the estimated cost.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: $${(estCostCents / 100).toLocaleString()}`
+        `The total of all phase costs must equal the estimated cost.\n\nPhase total: ₦${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: ₦${(estCostCents / 100).toLocaleString()}`
       );
       return;
     }
@@ -234,6 +269,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       const designData = {
         name: name.trim(),
         description: description.trim(),
+        planType,
         bedrooms: parseInt(bedrooms, 10),
         bathrooms: parseInt(bathrooms, 10),
         squareFootage: parseFloat(squareFootage),
@@ -281,6 +317,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       // Reset form
       setName("");
       setDescription("");
+      setPlanType('homebuilding');
       setBedrooms("");
       setBathrooms("");
       setSquareFootage("");
@@ -295,7 +332,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
 
       showAlert(
         'Success! 🎉',
-        'Your design plan has been uploaded successfully and is now visible to homeowners in the Explore section.',
+        'Your design plan has been uploaded successfully. It has been sent for admin verification and will go live only after approval for required standards.',
         [{ text: 'OK' }],
       );
     } catch (error: any) {
@@ -341,6 +378,32 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
           multiline
           numberOfLines={4}
         />
+      </View>
+
+      <View className="mb-4">
+        <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+          Plan Type *
+        </Text>
+        <View className="flex-row" style={{ gap: 8 }}>
+          {PLAN_TYPE_OPTIONS.map((option) => {
+            const isActive = planType === option.value;
+            return (
+              <TouchableOpacity
+                key={option.value}
+                onPress={() => setPlanType(option.value)}
+                className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+                activeOpacity={0.8}
+              >
+                <Text
+                  className={isActive ? 'text-white' : 'text-gray-300'}
+                  style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* Specifications */}
@@ -430,7 +493,9 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             Estimated Budget *
           </Text>
           <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-            <DollarSign size={20} color="#6B7280" strokeWidth={2} />
+            <Text className="text-gray-500 text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              ₦
+            </Text>
             <TextInput
               className="flex-1 ml-3 text-white text-base"
               style={{ fontFamily: 'Poppins_400Regular' }}
@@ -607,7 +672,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               <View className="flex-row items-center" style={{ gap: 8 }}>
                 <TextInput
                   className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                  style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                  style={{ fontFamily: 'Poppins_400Regular' }}
                   placeholder="Duration (e.g., 4-6 weeks)"
                   placeholderTextColor="#6B7280"
                   value={phase.estimatedDuration}
@@ -617,19 +682,27 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                     setConstructionPhases(updated);
                   }}
                 />
-                <TextInput
-                  className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                  style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
-                  placeholder="Cost"
-                  placeholderTextColor="#6B7280"
-                  value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
-                  onChangeText={(value) => {
-                    const updated = [...constructionPhases];
-                    updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
-                    setConstructionPhases(updated);
-                  }}
-                  keyboardType="numeric"
-                />
+                <View className="flex-1 relative">
+                  <Text
+                    className="absolute left-3 top-2 text-gray-400 text-sm z-10"
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    ₦
+                  </Text>
+                  <TextInput
+                    className="bg-[#1E3A5F] rounded-lg pl-7 pr-3 py-2 text-white text-sm"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                    placeholder="Cost"
+                    placeholderTextColor="#6B7280"
+                    value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
+                    onChangeText={(value) => {
+                      const updated = [...constructionPhases];
+                      updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
+                      setConstructionPhases(updated);
+                    }}
+                    keyboardType="numeric"
+                  />
+                </View>
                 <TouchableOpacity
                   onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
                   className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
@@ -775,9 +848,9 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
           {isSubmitting ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
           ) : (
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Upload Design Plan
-            </Text>
+            <View className="w-10 h-10 rounded-full bg-white/15 items-center justify-center border border-white/25">
+              <Upload size={20} color="#FFFFFF" strokeWidth={2.5} />
+            </View>
           )}
         </TouchableOpacity>
       </View>
@@ -789,6 +862,11 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   const { showAlert } = useAppAlert();
   const [name, setName] = useState(design.name || "");
   const [description, setDescription] = useState(design.description || "");
+  const [planType, setPlanType] = useState<PlanType>(
+    design.planType === 'renovation' || design.planType === 'interior_design'
+      ? design.planType
+      : 'homebuilding',
+  );
   const [bedrooms, setBedrooms] = useState(design.bedrooms?.toString() || "");
   const [bathrooms, setBathrooms] = useState(design.bathrooms?.toString() || "");
   const [squareFootage, setSquareFootage] = useState(design.squareFootage?.toString() || "");
@@ -893,7 +971,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
     if (!Number.isFinite(estCostCents) || totalPhaseCents !== estCostCents) {
       showAlert(
         'Validation Error',
-        `The total of all phase costs must equal the estimated cost.\n\nPhase total: $${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: $${(estCostCents / 100).toLocaleString()}`
+        `The total of all phase costs must equal the estimated cost.\n\nPhase total: ₦${(totalPhaseCents / 100).toLocaleString()}\nEstimated cost: ₦${(estCostCents / 100).toLocaleString()}`
       );
       return;
     }
@@ -906,6 +984,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
         updateData: {
           name: name.trim(),
           description: description.trim(),
+          planType,
           bedrooms: parseInt(bedrooms),
           bathrooms: parseInt(bathrooms),
           squareFootage: parseFloat(squareFootage),
@@ -970,6 +1049,32 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             multiline
             numberOfLines={4}
           />
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Plan Type *
+          </Text>
+          <View className="flex-row" style={{ gap: 8 }}>
+            {PLAN_TYPE_OPTIONS.map((option) => {
+              const isActive = planType === option.value;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  onPress={() => setPlanType(option.value)}
+                  className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    className={isActive ? 'text-white' : 'text-gray-300'}
+                    style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
 
         {/* Specifications */}
@@ -1059,7 +1164,9 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             Estimated Budget *
           </Text>
           <View className="bg-[#0A1628] rounded-xl px-4 py-3 flex-row items-center border border-blue-900">
-            <DollarSign size={20} color="#6B7280" strokeWidth={2} />
+            <Text className="text-gray-500 text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              ₦
+            </Text>
             <TextInput
               className="flex-1 ml-3 text-white text-base"
               style={{ fontFamily: 'Poppins_400Regular' }}
@@ -1236,7 +1343,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                 <View className="flex-row items-center" style={{ gap: 8 }}>
                   <TextInput
                     className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                    style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                    style={{ fontFamily: 'Poppins_400Regular' }}
                     placeholder="Duration (e.g., 4-6 weeks)"
                     placeholderTextColor="#6B7280"
                     value={phase.estimatedDuration}
@@ -1246,19 +1353,27 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                       setConstructionPhases(updated);
                     }}
                   />
-                  <TextInput
-                    className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                    style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
-                    placeholder="Cost"
-                    placeholderTextColor="#6B7280"
-                    value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
-                    onChangeText={(value) => {
-                      const updated = [...constructionPhases];
-                      updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
-                      setConstructionPhases(updated);
-                    }}
-                    keyboardType="numeric"
-                  />
+                  <View className="flex-1 relative">
+                    <Text
+                      className="absolute left-3 top-2 text-gray-400 text-sm z-10"
+                      style={{ fontFamily: 'Poppins_600SemiBold' }}
+                    >
+                      ₦
+                    </Text>
+                    <TextInput
+                      className="bg-[#1E3A5F] rounded-lg pl-7 pr-3 py-2 text-white text-sm"
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                      placeholder="Cost"
+                      placeholderTextColor="#6B7280"
+                      value={phase.estimatedCost > 0 ? phase.estimatedCost.toString() : ''}
+                      onChangeText={(value) => {
+                        const updated = [...constructionPhases];
+                        updated[index] = { ...updated[index], estimatedCost: parseFloat(value) || 0 };
+                        setConstructionPhases(updated);
+                      }}
+                      keyboardType="numeric"
+                    />
+                  </View>
                   <TouchableOpacity
                     onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
                     className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
@@ -1321,7 +1436,10 @@ export default function GCPlansScreen() {
   const [designToDelete, setDesignToDelete] = useState<any | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const { data: designs = [], isLoading } = useMyDesigns();
+  const { data: profileData } = useGCProfile();
   const deleteDesignMutation = useDeleteDesign();
+
+  const isVerifiedGC = !!profileData?.verified;
 
   const handleDelete = (design: any) => {
     setDesignToDelete(design);
@@ -1400,10 +1518,17 @@ export default function GCPlansScreen() {
       <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
         {/* Upload Button */}
         <TouchableOpacity
-          onPress={(e) => {
+          onPress={() => {
+            if (!isVerifiedGC) {
+              showAlert(
+                'Verification required',
+                'Your GC account is currently unverified. Upload all required verification documents in Profile > Professional, then wait for admin approval before uploading plans.',
+              );
+              return;
+            }
             setShowUploadForm(true);
           }}
-          className="bg-blue-600 rounded-2xl p-6 mb-6 flex-row items-center justify-center"
+          className={`rounded-2xl p-6 mb-6 flex-row items-center justify-center ${isVerifiedGC ? 'bg-blue-600' : 'bg-gray-600'}`}
           activeOpacity={0.7}
         >
           <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
@@ -1411,6 +1536,13 @@ export default function GCPlansScreen() {
             Upload New Design Plan
           </Text>
         </TouchableOpacity>
+        {!isVerifiedGC && (
+          <View className="bg-amber-900/30 border border-amber-700 rounded-xl p-4 mb-6">
+            <Text className="text-amber-200 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Plan upload is locked for unverified GCs. Complete all verification uploads in your profile and wait for admin approval.
+            </Text>
+          </View>
+        )}
 
         {/* Info Message */}
         <View className="bg-blue-900/30 border border-blue-700 rounded-xl p-4 mb-6 flex-row">
@@ -1481,6 +1613,11 @@ export default function GCPlansScreen() {
                   <Text className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                     {design.name}
                   </Text>
+                  <View className={`self-start border rounded-full px-3 py-1 mb-2 ${getPlanTypeTagClasses(design.planType).container}`}>
+                    <Text className={`${getPlanTypeTagClasses(design.planType).text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {formatPlanTypeLabel(design.planType)}
+                    </Text>
+                  </View>
                   
                   {design.description && (
                     <Text className="text-gray-400 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -1504,8 +1641,35 @@ export default function GCPlansScreen() {
                   </View>
 
                   <Text className="text-blue-400 text-lg mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ${design.estimatedCost.toLocaleString()}
+                    ₦{design.estimatedCost.toLocaleString()}
                   </Text>
+
+                  {design.adminApprovalStatus === 'pending' && (
+                    <View className="mb-4 self-start rounded-full border border-amber-500 bg-amber-500/20 px-3 py-1">
+                      <Text className="text-amber-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        Pending admin verification
+                      </Text>
+                    </View>
+                  )}
+                  {design.adminApprovalStatus === 'approved' && (
+                    <View className="mb-4 self-start rounded-full border border-green-500 bg-green-500/20 px-3 py-1">
+                      <Text className="text-green-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        Live
+                      </Text>
+                    </View>
+                  )}
+                  {design.adminApprovalStatus === 'rejected' && (
+                    <View className="mb-4 self-start rounded-full border border-red-500 bg-red-500/20 px-3 py-1">
+                      <Text className="text-red-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        Rejected - needs update
+                      </Text>
+                    </View>
+                  )}
+                  {design.adminApprovalStatus === 'rejected' && design.adminReviewReason && (
+                    <Text className="text-red-300 text-xs mb-4" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      Reason: {design.adminReviewReason}
+                    </Text>
+                  )}
 
                   {/* Action Buttons */}
                   <View className="flex-row gap-3">

@@ -233,7 +233,7 @@ export default function HousesPage() {
                         {house.location} • {house.bedrooms} bed, {house.bathrooms} bath
                       </p>
                       <p className="text-sm text-gray-600 mt-1">
-                        ${house.price.toLocaleString()}
+                        ₦{house.price.toLocaleString()}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
                         Listed {new Date(house.createdAt).toLocaleDateString()}
@@ -296,7 +296,7 @@ export default function HousesPage() {
                 </div>
                 <div>
                   <p className="text-gray-500">Price</p>
-                  <p className="font-medium">${selected.price.toLocaleString()}</p>
+                  <p className="font-medium">₦{selected.price.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Bedrooms</p>

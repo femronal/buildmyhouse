@@ -1,21 +1,37 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { CreateLandForSaleDto } from './dto/create-land-for-sale.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { WebSocketService } from '../websocket/websocket.service';
 
 @Injectable()
 export class LandsService {
-  private prisma = new PrismaClient() as any;
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly wsService: WebSocketService,
+  ) {}
 
   private getLandModel() {
-    return this.prisma.landForSale;
+    const model = this.prisma.landForSale;
+    if (!model) {
+      throw new InternalServerErrorException(
+        'Land model is unavailable. Check Prisma schema/migrations and regenerate client.',
+      );
+    }
+    return model;
   }
 
   private getLandViewingModel() {
-    return this.prisma.landViewingInterest;
+    const model = this.prisma.landViewingInterest;
+    if (!model) {
+      throw new InternalServerErrorException(
+        'Land viewing model is unavailable. Check Prisma schema/migrations and regenerate client.',
+      );
+    }
+    return model;
   }
 
   async getAll() {
     const landModel = this.getLandModel();
-    if (!landModel) return [];
     return landModel.findMany({
       where: { isActive: true },
       include: { images: { orderBy: { order: 'asc' } } },
@@ -25,7 +41,6 @@ export class LandsService {
 
   async getById(id: string) {
     const landModel = this.getLandModel();
-    if (!landModel) throw new NotFoundException('Land not found');
     const land = await landModel.findUnique({
       where: { id },
       include: { images: { orderBy: { order: 'asc' } } },
@@ -36,16 +51,14 @@ export class LandsService {
 
   async getAdminList() {
     const landModel = this.getLandModel();
-    if (!landModel) return [];
     return landModel.findMany({
       include: { images: { orderBy: { order: 'asc' } } },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async create(dto: any) {
+  async create(dto: CreateLandForSaleDto) {
     const landModel = this.getLandModel();
-    if (!landModel) throw new NotFoundException('Land module not ready');
     return landModel.create({
       data: {
         name: dto.name,
@@ -64,7 +77,7 @@ export class LandsService {
         contactName: dto.contactName,
         contactPhone: dto.contactPhone,
         images: {
-          create: (dto.images || []).map((img: any, i: number) => ({
+          create: (dto.images || []).map((img, i: number) => ({
             url: img.url,
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
@@ -77,7 +90,6 @@ export class LandsService {
 
   async delete(id: string) {
     const landModel = this.getLandModel();
-    if (!landModel) return { message: 'Land deleted successfully' };
     await landModel.delete({ where: { id } });
     return { message: 'Land deleted successfully' };
   }
@@ -85,9 +97,6 @@ export class LandsService {
   async scheduleViewing(landId: string, homeownerId: string) {
     const landModel = this.getLandModel();
     const viewingModel = this.getLandViewingModel();
-    if (!landModel || !viewingModel) {
-      return { message: 'Viewing request received' };
-    }
 
     const land = await landModel.findUnique({
       where: { id: landId },
@@ -99,14 +108,27 @@ export class LandsService {
       where: { id: homeownerId },
       select: { id: true, role: true },
     });
-    if (!homeowner || homeowner.role !== 'homeowner') {
+    if (!homeowner) {
       throw new NotFoundException('Homeowner account not found');
+    }
+    if (homeowner.role !== 'homeowner') {
+      throw new ForbiddenException('Only homeowners can schedule land viewing');
     }
 
     const interest = await viewingModel.create({
       data: {
         landForSaleId: landId,
         homeownerId,
+      },
+    });
+
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'land_viewing_request',
+      title: 'New land viewing request',
+      message: 'A homeowner requested to view land for sale.',
+      data: {
+        landForSaleId: landId,
+        interestId: interest.id,
       },
     });
 
@@ -118,9 +140,6 @@ export class LandsService {
 
   async getAdminViewingInterests() {
     const viewingModel = this.getLandViewingModel();
-    if (!viewingModel) {
-      return { unreadCount: 0, items: [] };
-    }
 
     const items = await viewingModel.findMany({
       include: {
@@ -161,9 +180,6 @@ export class LandsService {
 
   async markViewingInterestsRead() {
     const viewingModel = this.getLandViewingModel();
-    if (!viewingModel) {
-      return { message: 'Land viewing interests marked as read' };
-    }
     await viewingModel.updateMany({
       where: { isRead: false },
       data: { isRead: true, readAt: new Date() },
@@ -173,9 +189,6 @@ export class LandsService {
 
   async updateViewingOutcome(interestId: string, outcomeStatus: 'abandoned' | 'purchased') {
     const viewingModel = this.getLandViewingModel();
-    if (!viewingModel) {
-      return { message: 'Land viewing outcome updated' };
-    }
 
     const existing = await viewingModel.findUnique({
       where: { id: interestId },
@@ -201,6 +214,20 @@ export class LandsService {
       },
     });
 
+    await this.wsService.sendNotification(updated.homeownerId, {
+      type: 'land_viewing_outcome',
+      title: 'Land viewing update',
+      message:
+        outcomeStatus === 'purchased'
+          ? 'Congratulations! You have been marked as the successful purchaser of this land.'
+          : 'Your land viewing has been marked as not proceeding.',
+      data: {
+        interestId: updated.id,
+        landForSaleId: updated.landForSaleId,
+        outcomeStatus: updated.outcomeStatus,
+      },
+    });
+
     return {
       message: 'Land viewing outcome updated',
       item: updated,
@@ -209,9 +236,6 @@ export class LandsService {
 
   async getHomeownerPurchases(homeownerId: string) {
     const viewingModel = this.getLandViewingModel();
-    if (!viewingModel) {
-      return [];
-    }
     return viewingModel.findMany({
       where: {
         homeownerId,

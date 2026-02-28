@@ -192,7 +192,7 @@ export default function HouseDetailScreen() {
           <View className="flex-row justify-between items-center">
             <Text className="text-white/70 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Price</Text>
             <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-              ${house.price.toLocaleString()}
+              ₦{house.price.toLocaleString()}
             </Text>
           </View>
         </View>

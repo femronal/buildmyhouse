@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { StripeService } from './stripe.service';
+import { WebSocketService } from '../../websocket/websocket.service';
 import { CreatePaymentIntentDto } from '../dto/create-payment-intent.dto';
 import { CreatePayoutDto } from '../dto/create-payout.dto';
 
@@ -9,7 +10,10 @@ export class PaymentsService {
   // Use `any` for model access to reduce coupling to Prisma schema changes.
   private prisma = new PrismaClient() as any;
 
-  constructor(private readonly stripeService: StripeService) {}
+  constructor(
+    private readonly stripeService: StripeService,
+    private readonly wsService: WebSocketService,
+  ) {}
 
   async createSetupCheckoutSession(
     userId: string,
@@ -201,7 +205,7 @@ export class PaymentsService {
 
     const paymentIntent = await this.stripeService.createPaymentIntent({
       amount: dto.amount,
-      currency: dto.currency || 'usd',
+      currency: dto.currency || 'ngn',
       description: dto.description,
       metadata: {
         userId,
@@ -227,7 +231,7 @@ export class PaymentsService {
         id: paymentIntent.id,
         clientSecret: paymentIntent.client_secret,
         amount: dto.amount,
-        currency: dto.currency || 'usd',
+        currency: dto.currency || 'ngn',
       },
       payment,
     };
@@ -396,7 +400,7 @@ export class PaymentsService {
   async createPayout(dto: CreatePayoutDto) {
     const payout = await this.stripeService.createPayout({
       amount: dto.amount,
-      currency: dto.currency || 'usd',
+      currency: dto.currency || 'ngn',
       description: dto.description,
       metadata: {
         contractorId: dto.contractorId,
@@ -429,6 +433,32 @@ export class PaymentsService {
         where: { id: payment.projectId },
         data: { spent: { increment: payment.amount } },
       });
+
+      const project = await this.prisma.project.findUnique({
+        where: { id: payment.projectId },
+        select: {
+          id: true,
+          name: true,
+          homeownerId: true,
+          generalContractorId: true,
+        },
+      });
+
+      if (project) {
+        await this.wsService.sendNotificationToUsers(
+          [project.homeownerId, project.generalContractorId].filter(Boolean),
+          {
+            type: 'payment_success',
+            title: 'Payment succeeded',
+            message: `Payment recorded for project "${project.name}".`,
+            data: {
+              paymentId: payment.id,
+              projectId: project.id,
+              amount: payment.amount,
+            },
+          },
+        );
+      }
     }
   }
 
@@ -445,6 +475,28 @@ export class PaymentsService {
       where: { id: payment.id },
       data: { status: 'failed' },
     });
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: payment.projectId },
+      select: {
+        id: true,
+        name: true,
+        homeownerId: true,
+      },
+    });
+
+    if (project?.homeownerId) {
+      await this.wsService.sendNotification(project.homeownerId, {
+        type: 'payment_failed',
+        title: 'Payment failed',
+        message: `A payment failed for project "${project.name}".`,
+        data: {
+          paymentId: payment.id,
+          projectId: project.id,
+          amount: payment.amount,
+        },
+      });
+    }
   }
 
   /**

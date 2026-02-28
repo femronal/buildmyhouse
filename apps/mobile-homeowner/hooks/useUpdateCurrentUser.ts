@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 
 type UpdateCurrentUserInput = {
   fullName?: string;
+  email?: string;
   phone?: string;
 };
 

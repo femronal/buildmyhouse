@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsArray, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsArray, Min, IsIn } from 'class-validator';
 
 export class DesignImageDto {
   @IsString()
@@ -35,6 +35,11 @@ export class CreateDesignDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['homebuilding', 'renovation', 'interior_design'])
+  planType?: 'homebuilding' | 'renovation' | 'interior_design';
 
   @IsNumber()
   @Min(1)

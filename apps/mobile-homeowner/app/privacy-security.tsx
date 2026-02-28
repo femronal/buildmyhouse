@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Lock, Mail } from "lucide-react-native";
+import type { ReactNode } from "react";
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <View className="mb-6">
       <Text className="text-lg text-black mb-3" style={{ fontFamily: "Poppins_700Bold" }}>
@@ -84,7 +85,14 @@ export default function PrivacySecurityScreen() {
         </Section>
 
         <TouchableOpacity
-          onPress={() => Linking.openURL(`mailto:${supportEmail}`)}
+          onPress={async () => {
+            try {
+              await Linking.openURL(`mailto:${supportEmail}`);
+            } catch (error) {
+              console.error("Failed to open mail client", error);
+              Alert.alert("Unable to open mail app", "Please email us at support@buildmyhouse.com.");
+            }
+          }}
           className="bg-black rounded-2xl p-4 flex-row items-center justify-center"
         >
           <Mail size={18} color="#FFFFFF" strokeWidth={2} />

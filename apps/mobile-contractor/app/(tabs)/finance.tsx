@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Filter, CreditCard, Receipt, FileText, TrendingUp, ChevronRight, DollarSign, Building, ChevronDown } from "lucide-react-native";
+import { User, Filter, CreditCard, Receipt, FileText, TrendingUp, ChevronRight, Building, ChevronDown } from "lucide-react-native";
 import { useState, useRef } from "react";
 import { useInvestments } from '@/contexts/InvestmentContext';
 
@@ -16,8 +16,8 @@ const invoices = [
 ];
 
 const loanOptions = [
-  { id: 1, name: "Home Construction Loan", provider: "First Bank", rate: "12.5%", maxAmount: "$500,000", term: "Up to 25 years" },
-  { id: 2, name: "Building Finance", provider: "GTBank", rate: "11.9%", maxAmount: "$750,000", term: "Up to 20 years" },
+  { id: 1, name: "Home Construction Loan", provider: "First Bank", rate: "12.5%", maxAmount: "₦500,000", term: "Up to 25 years" },
+  { id: 2, name: "Building Finance", provider: "GTBank", rate: "11.9%", maxAmount: "₦750,000", term: "Up to 20 years" },
 ];
 
 export default function FinanceScreen() {
@@ -83,10 +83,10 @@ export default function FinanceScreen() {
           <View className="pb-8">
             <View className="bg-black rounded-3xl p-6 mb-6">
               <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-4xl mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>$321,500</Text>
+              <Text className="text-white text-4xl mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦321,500</Text>
               <View className="flex-row justify-between">
                 <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>2</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>$670,000</Text></View>
+                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦670,000</Text></View>
               </View>
             </View>
             <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Project Budgets</Text>
@@ -94,9 +94,9 @@ export default function FinanceScreen() {
               <View key={i} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
                 <Text className="text-lg text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
                 <View className="flex-row justify-between mb-3">
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${p.budget.toLocaleString()}</Text></View>
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${p.spent.toLocaleString()}</Text></View>
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(p.budget - p.spent).toLocaleString()}</Text></View>
+                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{p.budget.toLocaleString()}</Text></View>
+                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{p.spent.toLocaleString()}</Text></View>
+                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(p.budget - p.spent).toLocaleString()}</Text></View>
                 </View>
                 <View className="h-3 bg-gray-200 rounded-full overflow-hidden"><View className="h-full bg-black rounded-full" style={{ width: `${p.percent}%` }} /></View>
                 <Text className="text-gray-500 text-xs mt-2 text-right" style={{ fontFamily: 'Poppins_400Regular' }}>{p.percent}% spent</Text>
@@ -109,12 +109,12 @@ export default function FinanceScreen() {
           <View className="pb-8">
             {recentPayments.map((payment) => (
               <TouchableOpacity key={payment.id} className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row items-center border border-gray-200">
-                <View className="w-12 h-12 bg-black rounded-full items-center justify-center"><DollarSign size={24} color="#FFFFFF" strokeWidth={2} /></View>
+                <View className="w-12 h-12 bg-black rounded-full items-center justify-center"><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text></View>
                 <View className="flex-1 ml-4">
                   <Text className="text-black text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>{payment.project}</Text>
                   <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>{payment.stage} • {payment.date}</Text>
                 </View>
-                <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${payment.amount.toLocaleString()}</Text>
+                <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{payment.amount.toLocaleString()}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -130,7 +130,7 @@ export default function FinanceScreen() {
                   <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>{invoice.project} • {invoice.date}</Text>
                 </View>
                 <View className="items-end">
-                  <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${invoice.amount.toLocaleString()}</Text>
+                  <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{invoice.amount.toLocaleString()}</Text>
                   <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>PDF</Text>
                 </View>
               </TouchableOpacity>
@@ -161,9 +161,9 @@ export default function FinanceScreen() {
           <View className="pb-8">
             <View className="bg-black rounded-3xl p-6 mb-6">
               <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-3xl mb-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalInvested.toLocaleString()}</Text>
+              <Text className="text-white text-3xl mb-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalInvested.toLocaleString()}</Text>
               <View className="flex-row justify-between">
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalCurrentValue.toLocaleString()}</Text></View>
+                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalCurrentValue.toLocaleString()}</Text></View>
                 <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Returns</Text><Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>+{totalReturns}%</Text></View>
               </View>
             </View>
@@ -175,8 +175,8 @@ export default function FinanceScreen() {
                   <View className="bg-black rounded-full px-3 py-1"><Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{inv.status}</Text></View>
                 </View>
                 <View className="flex-row justify-between mb-3">
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Invested</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${inv.invested.toLocaleString()}</Text></View>
-                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${inv.currentValue.toLocaleString()}</Text></View>
+                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Invested</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{inv.invested.toLocaleString()}</Text></View>
+                  <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{inv.currentValue.toLocaleString()}</Text></View>
                   <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>ROI</Text><Text className="text-black" style={{ fontFamily: 'Poppins_700Bold' }}>+{inv.roi}</Text></View>
                 </View>
                 <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Maturity: {inv.maturity} • {inv.units} units</Text>

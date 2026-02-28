@@ -59,12 +59,52 @@ model User {
   reviews               Review[] @relation("UserReviews")
   paymentMethods        PaymentMethod[]
   createdDesigns        Design[] @relation("DesignCreatedBy")
+  reviewedDesigns       Design[] @relation("DesignReviewedByAdmin")
   contractorProjectRequests ProjectRequest[] @relation("ProjectRequestContractor")
   sentProjectRequests   ProjectRequest[] @relation("ProjectRequestSender")
   houseViewingInterests HouseViewingInterest[] @relation("HomeownerViewingInterests")
   landViewingInterests  LandViewingInterest[] @relation("HomeownerLandViewingInterests")
+  rentalViewingInterests RentalViewingInterest[] @relation("HomeownerRentalViewingInterests")
+  homeownerDisputes     ProjectStageDispute[] @relation("HomeownerDisputes")
+  gcDisputes            ProjectStageDispute[] @relation("GeneralContractorDisputes")
+  pushTokens            PushToken[]
+  notifications         Notification[]
   
   @@map("users")
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String
+  app       String
+  deviceId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastUsedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, app])
+  @@map("push_tokens")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  message   String
+  data      Json?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
 }
 
 model Project {
@@ -82,7 +122,7 @@ model Project {
   generalContractorId String?
   status              String        @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
   riskLevel           ProjectRiskLevel @default(low)
-  projectType          ProjectType?
+  projectType          ProjectType? @default(homebuilding)
   reviewStatus         ProjectReviewStatus?
   externalPaymentLink  String?
   paymentDeclaredAt    DateTime?
@@ -108,6 +148,7 @@ model Project {
   payments            Payment[]
   projectRequests      ProjectRequest[]
   orders              Order[] @relation("ProjectOrders")
+  disputes            ProjectStageDispute[]
   
   @@map("projects")
 }
@@ -134,8 +175,34 @@ model Stage {
   materials       StageMaterial[]
   media           StageMedia[]
   documents       StageDocument[]
+  disputes        ProjectStageDispute[]
   
   @@map("stages")
+}
+
+model ProjectStageDispute {
+  id                 String    @id @default(uuid())
+  projectId          String
+  stageId            String
+  homeownerId        String
+  generalContractorId String?
+  status             String    @default("open") // 'open' | 'in_review' | 'resolved'
+  reasons            String[]  @default([])
+  otherReason        String?
+  resolutionNotes    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  resolvedAt         DateTime?
+  inReviewAt         DateTime?
+
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage              Stage     @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  homeowner          User      @relation("HomeownerDisputes", fields: [homeownerId], references: [id], onDelete: Cascade)
+  generalContractor  User?     @relation("GeneralContractorDisputes", fields: [generalContractorId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([projectId, stageId, createdAt])
+  @@map("project_stage_disputes")
 }
 
 model Payment {
@@ -242,6 +309,7 @@ model ContractorCertification {
   id            String   @id @default(uuid())
   contractorId  String
   name          String   // Display name (user-renamed)
+  documentType  String?  // Optional required-verification document key
   fileUrl       String   // Path to uploaded PDF/DOCX
   expiryYear    String?  // Optional expiry year, e.g. "2026"
   createdAt     DateTime @default(now())
@@ -348,6 +416,7 @@ model Design {
   id                 String   @id @default(uuid())
   name               String
   description        String?
+  planType           ProjectType @default(homebuilding)
   createdById        String
   bedrooms           Int
   bathrooms          Int
@@ -357,6 +426,10 @@ model Design {
   rating             Float    @default(0)
   reviews            Int      @default(0)
   isActive           Boolean  @default(true)
+  adminApprovalStatus String  @default("pending") // 'pending' | 'approved' | 'rejected'
+  adminReviewReason  String?
+  adminReviewedAt    DateTime?
+  adminReviewedById  String?
   floors             Int?
   estimatedDuration  String?
   rooms              String[] @default([])
@@ -367,6 +440,7 @@ model Design {
   updatedAt          DateTime @updatedAt
 
   createdBy User          @relation("DesignCreatedBy", fields: [createdById], references: [id])
+  adminReviewedBy User?   @relation("DesignReviewedByAdmin", fields: [adminReviewedById], references: [id])
   images    DesignImage[]
 
   @@map("designs")
@@ -503,6 +577,73 @@ model LandViewingInterest {
   @@index([landForSaleId, createdAt])
   @@index([isRead, createdAt])
   @@map("land_viewing_interests")
+}
+
+model RentalListing {
+  id               String   @id @default(uuid())
+  title            String
+  description      String?
+  propertyType     String
+  location         String
+  annualRent       Float
+  serviceCharge    Float
+  cautionDeposit   Float
+  legalFeePercent  Float
+  agencyFeePercent Float    @default(2)
+  bedrooms         Int
+  bathrooms        Int
+  sizeSqm          Float
+  furnishing       String?
+  paymentPattern   String?
+  power            String?
+  water            String?
+  internet         String?
+  parking          String?
+  security         String?
+  rules            String?
+  inspectionWindow String?
+  proximity        String[] @default([])
+  verificationDocs String[] @default([])
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  images RentalListingImage[]
+  viewingInterests RentalViewingInterest[]
+
+  @@map("rental_listings")
+}
+
+model RentalListingImage {
+  id              String   @id @default(uuid())
+  rentalListingId String
+  url             String
+  label           String?
+  order           Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  rentalListing RentalListing @relation(fields: [rentalListingId], references: [id], onDelete: Cascade)
+
+  @@map("rental_listing_images")
+}
+
+model RentalViewingInterest {
+  id              String   @id @default(uuid())
+  rentalListingId String
+  homeownerId     String
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  outcomeStatus   String   @default("abandoned")
+  purchaseAmount  Float?
+  purchaseMarkedAt DateTime?
+  createdAt       DateTime @default(now())
+
+  rentalListing RentalListing @relation(fields: [rentalListingId], references: [id], onDelete: Cascade)
+  homeowner     User          @relation("HomeownerRentalViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
+
+  @@index([rentalListingId, createdAt])
+  @@index([isRead, createdAt])
+  @@map("rental_viewing_interests")
 }
 
 model ProjectRequest {

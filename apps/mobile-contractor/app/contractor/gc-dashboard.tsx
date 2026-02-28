@@ -1,18 +1,24 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, DollarSign, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2, Lock } from "lucide-react-native";
+import { Bell, Settings, Briefcase, Clock, CheckCircle, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign } from "lucide-react-native";
 import { useState, useMemo } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
 import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
+import { useUnreadCount } from "@/hooks/useNotifications";
 import { useUserConversations } from "../../hooks/useChat";
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from "@/hooks/useGCProfile";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 
 export default function GCDashboardScreen() {
   const router = useRouter();
   const { showAlert } = useAppAlert();
   const { data: profileData } = useGCProfile();
+  const { data: currentUser } = useCurrentUser();
+  const isAuthenticated = !!currentUser?.id;
+  const { data: unreadData } = useUnreadCount(isAuthenticated);
+  const notificationUnreadCount = unreadData?.unreadCount ?? 0;
   const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
   const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
@@ -28,7 +34,7 @@ export default function GCDashboardScreen() {
   const { data: unpaidProjects = [], isLoading: loadingUnpaid } = useUnpaidProjects();
   
   // Fetch conversations with unread counts
-  const { data: conversations = [] } = useUserConversations();
+  const { data: conversations = [] } = useUserConversations(isAuthenticated);
   const totalUnreadCount = useMemo(() => {
     return conversations.reduce((sum: number, conv: any) => sum + (conv.unreadCount || 0), 0);
   }, [conversations]);
@@ -148,6 +154,13 @@ export default function GCDashboardScreen() {
             className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
           >
             <Bell size={20} color="#3B82F6" strokeWidth={2} />
+            {notificationUnreadCount > 0 && (
+              <View className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full items-center justify-center border-2 border-[#0A1628]">
+                <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {notificationUnreadCount > 9 ? '9+' : notificationUnreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/contractor/gc-profile')}
@@ -182,7 +195,7 @@ export default function GCDashboardScreen() {
             <View className="flex-row justify-between items-start mb-4">
               <View>
                 <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earnings</Text>
-                <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalEarnings.toLocaleString()}</Text>
+                <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalEarnings.toLocaleString()}</Text>
               </View>
               <View className="bg-green-600/20 rounded-full px-3 py-1 flex-row items-center">
                 <TrendingUp size={14} color="#10B981" strokeWidth={2} />
@@ -193,7 +206,7 @@ export default function GCDashboardScreen() {
               <View className="h-full bg-blue-600 rounded-full" style={{ width: `${(totalEarnings / totalBudget) * 100}%` }} />
             </View>
             <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              ${totalEarnings.toLocaleString()} of ${totalBudget.toLocaleString()} total project value
+              ₦{totalEarnings.toLocaleString()} of ₦{totalBudget.toLocaleString()} total project value
             </Text>
           </View>
         </View>
@@ -258,13 +271,31 @@ export default function GCDashboardScreen() {
                           {project.homeowner?.fullName || 'Unknown Client'}
                         </Text>
                       </View>
-                      <View className={`${project.status === 'paused' ? 'bg-orange-600/20' : 'bg-green-600/20'} rounded-full px-3 py-1 flex-row items-center`}>
+                      <View
+                        className={`${
+                          project.status === 'paused'
+                            ? 'bg-orange-600/20'
+                            : project.status === 'completed' || Number(project.progress || 0) >= 100
+                              ? 'bg-emerald-600/20'
+                              : 'bg-green-600/20'
+                        } rounded-full px-3 py-1 flex-row items-center`}
+                      >
                         {project.status === 'paused' && <Lock size={12} color="#F59E0B" strokeWidth={2.5} />}
                         <Text
-                          className={`${project.status === 'paused' ? 'text-orange-300' : 'text-green-400'} text-xs ${project.status === 'paused' ? 'ml-1' : ''}`}
+                          className={`${
+                            project.status === 'paused'
+                              ? 'text-orange-300'
+                              : project.status === 'completed' || Number(project.progress || 0) >= 100
+                                ? 'text-emerald-300'
+                                : 'text-green-400'
+                          } text-xs ${project.status === 'paused' ? 'ml-1' : ''}`}
                           style={{ fontFamily: 'Poppins_600SemiBold' }}
                         >
-                          {project.status === 'paused' ? 'Paused' : 'Active'}
+                          {project.status === 'paused'
+                            ? 'Paused'
+                            : project.status === 'completed' || Number(project.progress || 0) >= 100
+                              ? 'Completed'
+                              : 'Active'}
                         </Text>
                       </View>
                     </View>
@@ -290,11 +321,11 @@ export default function GCDashboardScreen() {
                     <View className="flex-row justify-between items-center">
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.spent || 0).toLocaleString()}</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.spent || 0).toLocaleString()}</Text>
                       </View>
                       <View>
                         <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.budget || 0).toLocaleString()}</Text>
                     </View>
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
@@ -351,7 +382,7 @@ export default function GCDashboardScreen() {
                 <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${(project.budget || 0).toLocaleString()}</Text>
+                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.budget || 0).toLocaleString()}</Text>
                     </View>
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Status</Text>
@@ -394,7 +425,7 @@ export default function GCDashboardScreen() {
             <View className="bg-orange-900/30 border border-orange-700/50 rounded-xl p-4 mb-6">
               <View className="flex-row items-start">
                 <View className="mr-2 mt-0.5">
-                  <DollarSign size={18} color="#F59E0B" strokeWidth={2} />
+                  <Text className="text-orange-400 text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                 </View>
                 <View className="flex-1">
                   <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -421,7 +452,7 @@ export default function GCDashboardScreen() {
                     Budget
                   </Text>
                   <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ${(selectedUnpaidProject.budget || 0).toLocaleString()}
+                    ₦{(selectedUnpaidProject.budget || 0).toLocaleString()}
                   </Text>
                 </View>
               </View>

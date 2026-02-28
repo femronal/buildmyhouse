@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Keyboard, Platform, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, DollarSign, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
+import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
@@ -20,6 +20,31 @@ import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivate
 import { useProjectAnalysis } from '@/hooks/usePlan';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
+
+function formatPlanTypeLabel(planType?: string | null): string {
+  if (planType === 'renovation') return 'Renovation';
+  if (planType === 'interior_design') return 'Interior Design';
+  return 'Home Construction';
+}
+
+function getPlanTypeTagClasses(planType?: string | null): { container: string; text: string } {
+  if (planType === 'renovation') {
+    return {
+      container: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
+    };
+  }
+  if (planType === 'interior_design') {
+    return {
+      container: 'bg-purple-50 border-purple-200',
+      text: 'text-purple-700',
+    };
+  }
+  return {
+    container: 'bg-blue-50 border-blue-200',
+    text: 'text-blue-700',
+  };
+}
 
 export default function HouseSummaryScreen() {
   const router = useRouter();
@@ -158,6 +183,8 @@ export default function HouseSummaryScreen() {
   // Use GC's edited analysis if available, otherwise use original AI analysis
   // For design selection, use real design data
   const aiAnalysis = isDesignSelection ? designAnalysis : (gcEditedAnalysis || originalAiAnalysis);
+  const summaryPlanType = isDesignSelection ? designData?.planType : projectAnalysisData?.projectType;
+  const summaryPlanTypeTag = getPlanTypeTagClasses(summaryPlanType);
 
   // For design selection, show only the GC who uploaded the design
   // For project flow, fetch recommended GCs
@@ -343,7 +370,7 @@ export default function HouseSummaryScreen() {
       const paymentResult = await createPaymentIntentMutation.mutateAsync({
         amount: amountToUse,
         projectId: currentProjectId,
-        currency: 'usd',
+        currency: 'ngn',
         description: `Project activation payment - ${projectAnalysisData?.name || 'Project'}`,
       });
 
@@ -543,6 +570,11 @@ export default function HouseSummaryScreen() {
             ? `Detailed specifications for ${params.designName || designData?.name || 'selected design'}`
             : `AI-analyzed specifications for ${params.projectName || 'your project'}`}
         </Text>
+        <View className={`self-start mt-3 border rounded-full px-3 py-1 ${summaryPlanTypeTag.container}`}>
+          <Text className={`${summaryPlanTypeTag.text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            {formatPlanTypeLabel(summaryPlanType)}
+          </Text>
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-6">
@@ -698,7 +730,7 @@ export default function HouseSummaryScreen() {
                       </Text>
                     </View>
                     <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${phase.estimatedCost.toLocaleString()}
+                      ₦{phase.estimatedCost.toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -889,7 +921,7 @@ export default function HouseSummaryScreen() {
 
               <View className="mt-3 pt-3 border-t border-green-200">
                 <Text className="text-green-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  GC’s Estimated Budget: ${(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+                  GC’s Estimated Budget: ₦{(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
                 </Text>
                 {acceptedRequest.estimatedDuration && (
                   <Text className="text-green-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>

@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { MessageCircle, Calendar, DollarSign, TrendingUp, ChevronRight, FileText, File, Video, Image as ImageIcon, Music, ArrowLeft, Home } from "lucide-react-native";
+import { MessageCircle, Calendar, TrendingUp, ChevronRight, FileText, File, Video, Image as ImageIcon, Music, ArrowLeft, Home } from "lucide-react-native";
 
 const recentFiles = [
   { id: 1, name: "Foundation_Progress.pdf", type: "pdf", stage: "Foundation", time: "2 hours ago" },
@@ -119,7 +119,7 @@ export default function DashboardScreen() {
         {/* Financial Summary */}
         <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
           <View className="flex-row items-center mb-4">
-            <DollarSign size={24} color="#000000" strokeWidth={2} />
+            <Text className="text-black text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
             <Text 
               className="text-xl text-black ml-2"
               style={{ fontFamily: 'Poppins_700Bold' }}
@@ -139,7 +139,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              $285,000
+              ₦285,000
             </Text>
           </View>
           
@@ -154,7 +154,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              $71,250
+              ₦71,250
             </Text>
           </View>
           
@@ -169,7 +169,7 @@ export default function DashboardScreen() {
               className="text-black"
               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
             >
-              $213,750
+              ₦213,750
             </Text>
           </View>
 

@@ -12,14 +12,20 @@ import { ContractorsModule } from './contractors/contractors.module';
 import { DesignsModule } from './designs/designs.module';
 import { HousesModule } from './houses/houses.module';
 import { LandsModule } from './lands/lands.module';
+import { RentalsModule } from './rentals/rentals.module';
 import { UploadModule } from './upload/upload.module';
 import { UsersModule } from './users/users.module';
+import { PushTokensModule } from './push-tokens/push-tokens.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { AdminModule } from './admin/admin.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    EmailModule,
     AuthModule,
     WebSocketModule,
     ProjectsModule,
@@ -32,8 +38,12 @@ import { UsersModule } from './users/users.module';
     DesignsModule,
     HousesModule,
     LandsModule,
+    RentalsModule,
     UploadModule,
     UsersModule,
+    PushTokensModule,
+    NotificationsModule,
+    AdminModule,
   ],
   controllers: [],
   providers: [],
