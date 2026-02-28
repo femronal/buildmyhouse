@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
@@ -182,6 +187,40 @@ export class AuthService {
     });
 
     return updated;
+  }
+
+  async changePassword(
+    userId: string,
+    params: { currentPassword: string; newPassword: string },
+  ) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, password: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    if (!user.password) {
+      throw new BadRequestException('Password change is not available for this account');
+    }
+
+    const currentValid = await bcrypt.compare(params.currentPassword, user.password);
+    if (!currentValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    const sameAsCurrent = await bcrypt.compare(params.newPassword, user.password);
+    if (sameAsCurrent) {
+      throw new BadRequestException('New password must be different from your current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(params.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return { message: 'Password changed successfully' };
   }
 
   async validateOAuthUser(profile: any, provider: 'google' | 'apple') {

@@ -22,8 +22,8 @@ const currentProjects = [
     progress: 25,
     currentStage: "Foundation",
     status: "in-progress",
-    budget: "$285,000",
-    spent: "$71,250",
+    budget: "₦285,000",
+    spent: "₦71,250",
   },
 ];
 
@@ -413,7 +413,7 @@ export default function HomeScreen() {
                     </View>
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Min.</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${investment.minInvestment.toLocaleString()}</Text>
+                      <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{investment.minInvestment.toLocaleString()}</Text>
                     </View>
                   </View>
 
@@ -563,7 +563,7 @@ export default function HomeScreen() {
                   <View className="flex-row justify-between">
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Min. Investment</Text>
-                      <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${selectedInvestment?.minInvestment.toLocaleString()}</Text>
+                      <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{selectedInvestment?.minInvestment.toLocaleString()}</Text>
                     </View>
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Available Units</Text>
@@ -606,7 +606,7 @@ export default function HomeScreen() {
                   <View className="flex-row justify-between">
                     <Text className="text-white/70" style={{ fontFamily: 'Poppins_400Regular' }}>Total Investment</Text>
                     <Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${((selectedInvestment?.minInvestment || 0) * parseInt(investUnits || "1")).toLocaleString()}
+                      ₦{((selectedInvestment?.minInvestment || 0) * parseInt(investUnits || "1")).toLocaleString()}
                     </Text>
                   </View>
                 </View>

@@ -13,7 +13,7 @@ export class CreatePaymentIntentDto {
   stageId?: string;
 
   @IsString()
-  currency: string = 'usd';
+  currency: string = 'ngn';
 
   @IsOptional()
   @IsString()

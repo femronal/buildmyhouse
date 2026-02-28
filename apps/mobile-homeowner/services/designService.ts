@@ -10,6 +10,7 @@ export interface Design {
   id: string;
   name: string;
   description?: string;
+  planType?: 'homebuilding' | 'renovation' | 'interior_design';
   bedrooms: number;
   bathrooms: number;
   squareFootage: number;

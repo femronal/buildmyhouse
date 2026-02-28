@@ -22,6 +22,8 @@ import {
 } from '@expo-google-fonts/jetbrains-mono';
 import { InvestmentProvider } from '@/contexts/InvestmentContext';
 import { StripeProvider } from '@/lib/stripe';
+import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
+import NotificationListener from '@/components/NotificationListener';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -30,6 +32,8 @@ const queryClient = new QueryClient();
 const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 export default function RootLayout() {
+  usePushTokenRegistration('homeowner');
+
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Poppins_400Regular,
@@ -87,6 +91,7 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <NotificationListener />
       {STRIPE_PUBLISHABLE_KEY ? (
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="buildmyhouse">
           {app}

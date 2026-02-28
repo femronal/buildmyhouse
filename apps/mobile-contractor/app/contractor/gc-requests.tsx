@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, ChevronRight, FileText, MapPin, Calendar, DollarSign } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, FileText, MapPin, Calendar } from "lucide-react-native";
 import { usePendingRequests } from "../../hooks/useGC";
 
 function formatDate(dateString?: string) {
@@ -90,9 +90,9 @@ export default function GCRequestsScreen() {
                         </Text>
                       </View>
                       <View className="flex-row items-center mt-2">
-                        <DollarSign size={14} color="#9CA3AF" strokeWidth={2} />
+                        <Text className="text-gray-400 text-sm" style={{ fontFamily: "Poppins_700Bold" }}>₦</Text>
                         <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: "Poppins_400Regular" }}>
-                          Budget: {typeof req.estimatedBudget === "number" ? `$${req.estimatedBudget.toLocaleString()}` : "—"}
+                          Budget: {typeof req.estimatedBudget === "number" ? `₦${req.estimatedBudget.toLocaleString()}` : "—"}
                         </Text>
                       </View>
                       {req.project?.planPdfUrl ? (

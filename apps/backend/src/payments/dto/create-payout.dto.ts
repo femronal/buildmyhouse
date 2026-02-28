@@ -9,7 +9,7 @@ export class CreatePayoutDto {
   amount: number;
 
   @IsString()
-  currency: string = 'usd';
+  currency: string = 'ngn';
 
   @IsOptional()
   @IsString()

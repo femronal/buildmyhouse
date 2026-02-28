@@ -1,11 +1,14 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, FileText, Image as ImageIcon, Play, Home, Check, CheckCheck } from "lucide-react-native";
+import { ArrowLeft, Send, Paperclip, FileText, Home, Check, CheckCheck, User } from "lucide-react-native";
 import { useState, useRef, useEffect } from "react";
 import { chatService, Message } from "@/services/chatService";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useProject } from "@/hooks/useProject";
+import * as ImagePicker from 'expo-image-picker';
+import { api } from '@/lib/api';
+import { getBackendAssetUrl } from '@/lib/image';
 
 // Format time helper
 const formatTime = (dateString: string) => {
@@ -39,9 +42,7 @@ export default function ChatScreen() {
   
   // Fetch project to get GC info
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
-  const gcId = project?.generalContractorId;
-  const gcName = (project as any)?.generalContractor?.fullName || 'General Contractor';
-  const gcPicture = (project as any)?.generalContractor?.pictureUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80';
+  const gcId = project?.generalContractorId || (project as any)?.generalContractor?.id;
   const currentStage = (project as any)?.stages?.find((s: any) => s.status === 'in_progress') || 
                        (project as any)?.stages?.find((s: any) => s.status === 'completed');
   const stageName = currentStage?.name || 'General';
@@ -57,7 +58,17 @@ export default function ChatScreen() {
       );
     },
     enabled: !!gcId && !!currentUser?.id && !!projectId,
+    refetchInterval: 5000,
+    refetchOnWindowFocus: true,
   });
+  const conversationParticipant = conversation?.participants?.find((p) => p.id === gcId);
+  const gcName =
+    conversationParticipant?.fullName ||
+    (project as any)?.generalContractor?.fullName ||
+    'General Contractor';
+  const gcPicture = getBackendAssetUrl(
+    conversationParticipant?.pictureUrl || (project as any)?.generalContractor?.pictureUrl,
+  );
 
   // Track if we've marked this conversation as read
   const [hasMarkedAsRead, setHasMarkedAsRead] = useState(false);
@@ -120,6 +131,53 @@ export default function ChatScreen() {
     sendMessageMutation.mutate(newMessage.trim());
   };
 
+  const uploadImageAttachment = async (uri: string, fileName: string, mimeType: string) => {
+    const formData = new FormData();
+    if (Platform.OS === 'web') {
+      const res = await fetch(uri);
+      const blob = await res.blob();
+      formData.append('file', blob, fileName);
+    } else {
+      formData.append('file', {
+        uri,
+        name: fileName,
+        type: mimeType,
+      } as any);
+    }
+    const uploadRes = await api.post('/upload/image', formData);
+    return chatService.sendMessage(conversation!.id, uploadRes.url, 'image');
+  };
+
+  const handlePickPhoto = async () => {
+    if (!conversation?.id) return;
+    try {
+      if (Platform.OS !== 'web') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (perm.status !== 'granted') {
+          Alert.alert('Permission required', 'Please allow photo library access to send images.');
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+      if (result.canceled || !result.assets?.length) return;
+
+      const asset = result.assets[0];
+      const fileName = asset.fileName || `chat-image-${Date.now()}.jpg`;
+      const mimeType = asset.mimeType || 'image/jpeg';
+      await uploadImageAttachment(asset.uri, fileName, mimeType);
+
+      refetchMessages();
+      queryClient.invalidateQueries({ queryKey: ['messages', conversation.id] });
+    } catch (error: any) {
+      Alert.alert('Upload failed', error?.message || 'Could not send image.');
+    }
+  };
+
   const renderMessage = (msg: Message) => {
     const isUser = msg.senderId === currentUser?.id;
     
@@ -142,7 +200,7 @@ export default function ChatScreen() {
         {msg.type === "image" && (
           <View className="max-w-[80%]">
             <Image
-              source={{ uri: msg.content }}
+              source={{ uri: getBackendAssetUrl(msg.content) }}
               className="w-64 h-48 rounded-2xl"
               resizeMode="cover"
             />
@@ -243,11 +301,17 @@ export default function ChatScreen() {
           >
             <Home size={18} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
-          <Image
-            source={{ uri: gcPicture }}
-            className="w-10 h-10 rounded-full"
-            resizeMode="cover"
-          />
+          {gcPicture ? (
+            <Image
+              source={{ uri: gcPicture }}
+              className="w-10 h-10 rounded-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <View className="w-10 h-10 rounded-full bg-gray-200 items-center justify-center">
+              <User size={18} color="#4B5563" strokeWidth={2} />
+            </View>
+          )}
           <View className="ml-2 flex-1">
             <Text 
               className="text-base text-black"
@@ -263,14 +327,7 @@ export default function ChatScreen() {
             </Text>
           </View>
         </View>
-        <View className="flex-row">
-          <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2">
-            <Phone size={20} color="#000000" strokeWidth={2} />
-          </TouchableOpacity>
-          <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
-            <Video size={20} color="#000000" strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
+        <View />
       </View>
 
       {/* Messages */}
@@ -307,7 +364,10 @@ export default function ChatScreen() {
       {/* Input Area */}
       <View className="px-6 py-4 border-t border-gray-100 bg-white">
         <View className="flex-row items-center">
-          <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2">
+          <TouchableOpacity
+            onPress={handlePickPhoto}
+            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2"
+          >
             <Paperclip size={20} color="#000000" strokeWidth={2} />
           </TouchableOpacity>
           <View className="flex-1 bg-gray-100 rounded-full px-5 py-3 flex-row items-center">
@@ -322,9 +382,6 @@ export default function ChatScreen() {
               maxLength={1000}
             />
           </View>
-          <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center ml-2">
-            <Mic size={20} color="#000000" strokeWidth={2} />
-          </TouchableOpacity>
           <TouchableOpacity 
             onPress={handleSend}
             disabled={sendMessageMutation.isPending || !newMessage.trim()}

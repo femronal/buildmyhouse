@@ -1,9 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { WebSocketService } from '../websocket/websocket.service';
 
 @Injectable()
 export class HousesService {
   private prisma = new PrismaClient() as any;
+
+  constructor(private readonly wsService: WebSocketService) {}
 
   private getViewingInterestModel() {
     return this.prisma.houseViewingInterest;
@@ -115,6 +118,16 @@ export class HousesService {
       },
     });
 
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'house_viewing_request',
+      title: 'New house viewing request',
+      message: 'A homeowner requested to view a house for sale.',
+      data: {
+        houseForSaleId: houseId,
+        interestId: interest.id,
+      },
+    });
+
     return {
       message: 'Viewing request sent to admin',
       interestId: interest.id,
@@ -215,6 +228,20 @@ export class HousesService {
         outcomeStatus,
         purchaseAmount: outcomeStatus === 'purchased' ? existing.houseForSale?.price ?? null : null,
         purchaseMarkedAt: outcomeStatus === 'purchased' ? new Date() : null,
+      },
+    });
+
+    await this.wsService.sendNotification(updated.homeownerId, {
+      type: 'house_viewing_outcome',
+      title: 'House viewing update',
+      message:
+        outcomeStatus === 'purchased'
+          ? 'Congratulations! You have been marked as the successful purchaser of this house.'
+          : 'Your house viewing has been marked as not proceeding.',
+      data: {
+        interestId: updated.id,
+        houseForSaleId: updated.houseForSaleId,
+        outcomeStatus: updated.outcomeStatus,
       },
     });
 

@@ -21,12 +21,13 @@ export function useConversationUnreadCount(conversationId: string | null | undef
 /**
  * Get all conversations with unread counts
  */
-export function useUserConversations() {
+export function useUserConversations(enabled = true) {
   return useQuery({
     queryKey: ['user-conversations'],
     queryFn: async () => {
       return chatService.getUserConversations();
     },
+    enabled,
     refetchInterval: 5000, // Poll every 5 seconds
     refetchOnWindowFocus: true,
     refetchOnMount: true,

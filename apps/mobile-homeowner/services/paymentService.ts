@@ -86,7 +86,7 @@ export const paymentService = {
       const response = await api.post('/payments/intent', {
         amount: data.amount,
         projectId: data.projectId,
-        currency: data.currency || 'usd',
+        currency: data.currency || 'ngn',
         description: data.description || `Project activation payment for ${data.projectId}`,
       });
       return response;

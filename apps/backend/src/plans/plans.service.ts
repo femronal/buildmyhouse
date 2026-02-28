@@ -63,12 +63,16 @@ export class PlansService {
           longitude: uploadPlanDto.longitude,
           homeownerId,
           budget: aiAnalysis.estimatedBudget || uploadPlanDto.budget,
+          projectType: 'homebuilding',
           status: 'draft',
           progress: 0,
           spent: 0,
           planPdfUrl,
           planFileName,
-          aiAnalysis: aiAnalysis as any, // JSON field
+          aiAnalysis: {
+            ...(aiAnalysis as any),
+            projectType: (aiAnalysis as any)?.projectType || 'homebuilding',
+          } as any, // JSON field
           aiProcessedAt: new Date(),
         },
         include: {

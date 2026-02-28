@@ -10,6 +10,7 @@ export interface DesignImage {
 export interface CreateDesignData {
   name: string;
   description?: string;
+  planType?: 'homebuilding' | 'renovation' | 'interior_design';
   bedrooms: number;
   bathrooms: number;
   squareFootage: number;
@@ -47,6 +48,7 @@ export const designService = {
     const payload = {
       name: designData.name.trim(),
       description: designData.description?.trim() || undefined,
+      planType: designData.planType || 'homebuilding',
       bedrooms: Number(designData.bedrooms),
       bathrooms: Number(designData.bathrooms),
       squareFootage: Number(designData.squareFootage),
@@ -104,6 +106,7 @@ export const designService = {
   updateDesign: async (designId: string, updateData: {
     name?: string;
     description?: string;
+    planType?: 'homebuilding' | 'renovation' | 'interior_design';
     bedrooms?: number;
     bathrooms?: number;
     squareFootage?: number;

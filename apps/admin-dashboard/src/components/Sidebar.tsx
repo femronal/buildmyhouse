@@ -7,6 +7,7 @@ import {
   HardHat,
   Users, 
   Building2, 
+  Building,
   CheckCircle2, 
   Scale,
   LandPlot,
@@ -24,6 +25,7 @@ const menuItems = [
   { href: '/disputes', label: 'Disputes', icon: Scale },
   { href: '/land', label: 'Land', icon: LandPlot },
   { href: '/houses', label: 'Houses', icon: Home },
+  { href: '/rentals', label: 'Rentals', icon: Building },
 ];
 
 export default function Sidebar() {

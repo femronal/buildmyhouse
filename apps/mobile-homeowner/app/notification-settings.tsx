@@ -233,6 +233,13 @@ export default function NotificationSettingsScreen() {
           disabled={disabledAll}
           onValueChange={(v) => setAndPersist({ ...settings, projects: { ...settings.projects, approvalsNeeded: v } })}
         />
+        <ToggleRow
+          title="Dispute updates"
+          description="When admin resolves or updates your stage dispute."
+          value={settings.projects.disputeUpdates}
+          disabled={disabledAll}
+          onValueChange={(v) => setAndPersist({ ...settings, projects: { ...settings.projects, disputeUpdates: v } })}
+        />
 
         <SectionTitle title="Payments & billing" />
         <ToggleRow
@@ -253,6 +260,15 @@ export default function NotificationSettingsScreen() {
           value={settings.payments.paymentFailed}
           disabled={disabledAll}
           onValueChange={(v) => setAndPersist({ ...settings, payments: { ...settings.payments, paymentFailed: v } })}
+        />
+        <ToggleRow
+          title="Manual payment confirmed"
+          description="When admin confirms your bank transfer or external payment."
+          value={settings.payments.manualPaymentConfirmed}
+          disabled={disabledAll}
+          onValueChange={(v) =>
+            setAndPersist({ ...settings, payments: { ...settings.payments, manualPaymentConfirmed: v } })
+          }
         />
         <ToggleRow
           title="Refunds"
@@ -303,6 +319,44 @@ export default function NotificationSettingsScreen() {
           value={settings.messages.gcUpdates}
           disabled={disabledAll}
           onValueChange={(v) => setAndPersist({ ...settings, messages: { ...settings.messages, gcUpdates: v } })}
+        />
+
+        <SectionTitle title="Property viewing" subtitle="When admin updates your house, land, or rental viewing outcome." />
+        <ToggleRow
+          title="House viewing outcome"
+          description="When admin marks you as purchaser or not proceeding for a house."
+          value={settings.propertyViewing.houseViewingOutcome}
+          disabled={disabledAll}
+          onValueChange={(v) =>
+            setAndPersist({
+              ...settings,
+              propertyViewing: { ...settings.propertyViewing, houseViewingOutcome: v },
+            })
+          }
+        />
+        <ToggleRow
+          title="Land viewing outcome"
+          description="When admin marks you as purchaser or not proceeding for land."
+          value={settings.propertyViewing.landViewingOutcome}
+          disabled={disabledAll}
+          onValueChange={(v) =>
+            setAndPersist({
+              ...settings,
+              propertyViewing: { ...settings.propertyViewing, landViewingOutcome: v },
+            })
+          }
+        />
+        <ToggleRow
+          title="Rental viewing outcome"
+          description="When admin marks your rental inspection as purchased or not proceeding."
+          value={settings.propertyViewing.rentalViewingOutcome}
+          disabled={disabledAll}
+          onValueChange={(v) =>
+            setAndPersist({
+              ...settings,
+              propertyViewing: { ...settings.propertyViewing, rentalViewingOutcome: v },
+            })
+          }
         />
 
         <SectionTitle title="Product & marketing" subtitle="Optional updates about the product." />

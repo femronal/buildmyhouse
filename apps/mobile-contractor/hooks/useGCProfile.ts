@@ -5,6 +5,7 @@ export interface ContractorCertification {
   id: string;
   name: string;
   fileUrl: string;
+  documentType?: string | null;
   expiryYear?: string | null;
   createdAt: string;
 }
@@ -26,6 +27,20 @@ export interface GCProfile {
   completedProjects: number;
   totalEarnings: number;
   certifications?: ContractorCertification[];
+  verificationRequiredDocuments?: Array<{
+    type: string;
+    title: string;
+    description: string;
+    uploaded: boolean;
+    fileUrl?: string | null;
+    expiryYear?: string | null;
+    uploadedAt?: string | null;
+  }>;
+  verificationUploadedDocuments?: ContractorCertification[];
+  verificationUploadedCount?: number;
+  verificationRequiredCount?: number;
+  verificationMissingDocuments?: string[];
+  hasUploadedAllVerificationDocuments?: boolean;
 }
 
 export function useGCProfile() {
@@ -62,6 +77,17 @@ export function useDeleteCertification() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.delete(`/contractors/certifications/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
+    },
+  });
+}
+
+export function useUpsertVerificationDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { documentType: string; fileUrl: string; expiryYear?: string }) =>
+      api.post('/contractors/verification-documents', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
     },

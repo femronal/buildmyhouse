@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Home, DollarSign, Trash2, Bed, Bath, Maximize, Calendar, HardHat, Star, MapPin, ChevronRight, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
+import { ArrowLeft, Home, Trash2, Bed, Bath, Maximize, Calendar, HardHat, Star, MapPin, ChevronRight, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
 import { usePendingProjects, useDeletePendingProject, useDeclareManualPayment } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
@@ -52,10 +52,10 @@ export default function PendingProjectsScreen() {
       return;
     }
 
-    // Stripe maximum amount is $999,999.99 (in dollars, not cents)
+    // Stripe maximum amount is ₦999,999.99
     const STRIPE_MAX_AMOUNT = 999999.99;
     if (amount > STRIPE_MAX_AMOUNT) {
-      setPaymentError(`Payment amount ($${amount.toLocaleString()}) exceeds the maximum allowed amount of $${STRIPE_MAX_AMOUNT.toLocaleString()}. Please contact support.`);
+      setPaymentError(`Payment amount (₦${amount.toLocaleString()}) exceeds the maximum allowed amount of ₦${STRIPE_MAX_AMOUNT.toLocaleString()}. Please contact support.`);
       setShowPaymentModal(true);
       setIsProcessingPayment(false);
       return;
@@ -74,7 +74,7 @@ export default function PendingProjectsScreen() {
       const paymentResult = await createPaymentIntentMutation.mutateAsync({
         amount,
         projectId: project.projectId || project.id,
-        currency: 'usd',
+        currency: 'ngn',
         description: `Project activation payment - ${project.name || 'Project'}`,
       });
 
@@ -256,7 +256,11 @@ export default function PendingProjectsScreen() {
             const gc = project.acceptedRequest?.contractor || project.acceptedRequest?.contractorProfile;
             const projectId = project.id || project.projectId || `pending-${index}`;
             const uniqueKey = `pending-${projectId}-${index}`;
-            const projectType = project.projectType as string | undefined;
+            const projectType =
+              (project.projectType as string | undefined) ||
+              (project.aiAnalysis?.projectType as string | undefined) ||
+              (project.gcEditedAnalysis?.projectType as string | undefined) ||
+              (project.acceptedRequest?.gcEditedAnalysis?.projectType as string | undefined);
             const isHomebuilding = projectType === 'homebuilding';
             const externalPaymentLink = project.externalPaymentLink as string | undefined;
             const paymentConfirmationStatus =
@@ -372,7 +376,7 @@ export default function PendingProjectsScreen() {
                           className="text-white text-xl"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                         >
-                          ${budget.toLocaleString()}
+                          ₦{budget.toLocaleString()}
                         </Text>
                       </View>
                       <View>
@@ -386,7 +390,7 @@ export default function PendingProjectsScreen() {
                           className="text-white text-xl"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                         >
-                          {isHomebuilding ? 'External transfer' : `$${paymentAmount.toLocaleString()}`}
+                          {isHomebuilding ? 'External transfer' : `₦${paymentAmount.toLocaleString()}`}
                         </Text>
                       </View>
                     </View>
@@ -468,9 +472,9 @@ export default function PendingProjectsScreen() {
                           activeOpacity={0.7}
                           className="flex-1 bg-black rounded-full py-3 px-4 flex-row items-center justify-center"
                         >
-                          <DollarSign size={18} color="#FFFFFF" strokeWidth={2} />
+                          <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                           <Text className="text-white ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                            Pay ${paymentAmount.toLocaleString()}
+                            Pay ₦{paymentAmount.toLocaleString()}
                           </Text>
                         </TouchableOpacity>
                       )}
@@ -629,7 +633,7 @@ export default function PendingProjectsScreen() {
                       Budget
                     </Text>
                     <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${(projectToDelete.budget || 0).toLocaleString()}
+                      ₦{(projectToDelete.budget || 0).toLocaleString()}
                     </Text>
                   </View>
                 )}

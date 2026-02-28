@@ -52,6 +52,11 @@ export default function ProfileScreen() {
   const userPicture = currentUser?.pictureUrl;
   const userRole = currentUser?.role;
 
+  const isCompletedProject = (project: any) => {
+    const progressValue = Number(project?.progress ?? 0);
+    return project?.status === 'completed' || progressValue >= 100;
+  };
+
   const handlePickProfilePicture = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -86,9 +91,9 @@ export default function ProfileScreen() {
     }
   };
   
-  // Filter completed projects (status === 'completed')
-  const completedProjects = activeProjects.filter((p: any) => p.status === 'completed');
-  const trulyActiveProjects = activeProjects.filter((p: any) => p.status === 'active');
+  // Completed = explicit completed status OR 100% progress.
+  const completedProjects = activeProjects.filter((p: any) => isCompletedProject(p));
+  const trulyActiveProjects = activeProjects.filter((p: any) => !isCompletedProject(p));
 
   return (
     <View className="flex-1 bg-white">
@@ -278,9 +283,16 @@ export default function ProfileScreen() {
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >
-                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {project.name}
-                    </Text>
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.name}
+                      </Text>
+                      <View className="bg-blue-100 rounded-full px-2 py-1">
+                        <Text className="text-blue-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Active
+                        </Text>
+                      </View>
+                    </View>
                     <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {project.address}
                     </Text>
@@ -310,9 +322,16 @@ export default function ProfileScreen() {
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >
-                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {project.name}
-                    </Text>
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.name}
+                      </Text>
+                      <View className="bg-emerald-100 rounded-full px-2 py-1">
+                        <Text className="text-emerald-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Completed
+                        </Text>
+                      </View>
+                    </View>
                     <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {project.address}
                     </Text>

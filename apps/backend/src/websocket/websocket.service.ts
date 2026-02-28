@@ -1,5 +1,6 @@
 import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { WebSocketGateway } from './websocket.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 /**
  * Service to emit WebSocket events from other modules
@@ -10,6 +11,7 @@ export class WebSocketService {
   constructor(
     @Inject(forwardRef(() => WebSocketGateway))
     private readonly gateway: WebSocketGateway,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   /**
@@ -57,12 +59,35 @@ export class WebSocketService {
   /**
    * Send notification to specific user
    */
-  sendNotification(userId: string, notification: {
+  async sendNotification(userId: string, notification: {
     type: string;
     title: string;
     message: string;
     data?: any;
   }) {
+    await this.notificationsService.createForUser(userId, notification);
     this.gateway.emitUserNotification(userId, notification);
+  }
+
+  async sendNotificationToUsers(userIds: string[], notification: {
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }) {
+    const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)));
+    await this.notificationsService.createForUsers(uniqueUserIds, notification);
+    uniqueUserIds.forEach((userId) => this.gateway.emitUserNotification(userId, notification));
+  }
+
+  async sendNotificationToRole(role: string, notification: {
+    type: string;
+    title: string;
+    message: string;
+    data?: any;
+  }) {
+    const userIds = await this.notificationsService.getUserIdsByRole(role);
+    await this.sendNotificationToUsers(userIds, notification);
+    return { count: userIds.length };
   }
 }

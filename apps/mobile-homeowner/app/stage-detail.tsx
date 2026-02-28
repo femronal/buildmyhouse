@@ -1,10 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download, Lock, CreditCard, Clock } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download, Lock, CreditCard, Clock, AlertTriangle, Check } from "lucide-react-native";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
 import { projectService } from '@/services/projectService';
+import { getBackendAssetUrl } from '@/lib/image';
 
 const getFileIcon = (type: string) => {
   switch (type) {
@@ -29,6 +30,9 @@ export default function StageDetailScreen() {
   const [activeTab, setActiveTab] = useState<'materials' | 'team' | 'files'>('materials');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentApproved, setPaymentApproved] = useState(false);
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [selectedDisputeReasonIds, setSelectedDisputeReasonIds] = useState<string[]>([]);
+  const [otherDisputeReason, setOtherDisputeReason] = useState('');
   
   const queryClient = useQueryClient();
   
@@ -53,6 +57,17 @@ export default function StageDetailScreen() {
     },
   });
 
+  const submitDisputeMutation = useMutation({
+    mutationFn: async (payload: { reasons: string[]; otherReason?: string }) => {
+      const resolvedProjectId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
+      const resolvedStageId = typeof actualStageId === 'string' ? actualStageId : actualStageId?.[0] || '';
+      if (!resolvedProjectId || !resolvedStageId) {
+        throw new Error('Missing project or stage information');
+      }
+      return projectService.createStageDispute(resolvedProjectId, resolvedStageId, payload);
+    },
+  });
+
   // Fetch project to get stage data
   const { data: project, isLoading: loadingProject } = useProject(projectId as string || '');
 
@@ -69,7 +84,9 @@ export default function StageDetailScreen() {
 
   const openReceipt = (url?: string) => {
     if (!url) return;
-    Linking.openURL(url).catch(() => {});
+    const resolvedUrl = getBackendAssetUrl(url);
+    if (!resolvedUrl) return;
+    Linking.openURL(resolvedUrl).catch(() => {});
   };
 
   const callSupplier = (phone?: string) => {
@@ -84,12 +101,16 @@ export default function StageDetailScreen() {
 
   const openInvoice = (url?: string) => {
     if (!url) return;
-    Linking.openURL(url).catch(() => {});
+    const resolvedUrl = getBackendAssetUrl(url);
+    if (!resolvedUrl) return;
+    Linking.openURL(resolvedUrl).catch(() => {});
   };
 
   const downloadFile = (url?: string, fileName?: string) => {
     if (!url) return;
-    Linking.openURL(url).catch(() => {});
+    const resolvedUrl = getBackendAssetUrl(url);
+    if (!resolvedUrl) return;
+    Linking.openURL(resolvedUrl).catch(() => {});
   };
   const allFiles = [
     ...media.map((m: any) => ({ 
@@ -108,14 +129,113 @@ export default function StageDetailScreen() {
     })),
   ];
 
+  const disputeReasonOptions = [
+    ...(materials.length > 0
+      ? [{
+          id: 'materials-mismatch',
+          label: 'Material uploads look incorrect (wrong item, quantity, quality, or price).',
+        }]
+      : []),
+    ...(teamMembers.length > 0
+      ? [{
+          id: 'team-mismatch',
+          label: 'Assigned team members uploaded for this stage do not match work on site.',
+        }]
+      : []),
+    ...(allFiles.length > 0
+      ? [
+          {
+            id: 'file-proof-mismatch',
+            label: 'Uploaded receipts/invoices/files do not match this stage progress.',
+          },
+          {
+            id: 'media-mismatch',
+            label: 'Photos/videos uploaded do not reflect the actual site condition.',
+          },
+        ]
+      : []),
+    {
+      id: 'delay-or-scope',
+      label: 'Work delivered does not match the agreed scope for this stage.',
+    },
+    {
+      id: 'safety-or-quality',
+      label: 'There is a quality or safety concern with this stage.',
+    },
+    {
+      id: 'other',
+      label: 'Other',
+    },
+  ];
+
+  const handleReportDispute = () => {
+    setShowDisputeModal(true);
+  };
+
+  const toggleDisputeReason = (reasonId: string) => {
+    setSelectedDisputeReasonIds((prev) => {
+      if (prev.includes(reasonId)) {
+        const next = prev.filter((id) => id !== reasonId);
+        if (reasonId === 'other') {
+          setOtherDisputeReason('');
+        }
+        return next;
+      }
+      return [...prev, reasonId];
+    });
+  };
+
+  const handleCancelDispute = () => {
+    setShowDisputeModal(false);
+    setSelectedDisputeReasonIds([]);
+    setOtherDisputeReason('');
+  };
+
+  const handleSubmitDispute = async () => {
+    const requiresOtherText =
+      selectedDisputeReasonIds.includes('other') && otherDisputeReason.trim().length === 0;
+
+    if (selectedDisputeReasonIds.length === 0 || requiresOtherText) {
+      Alert.alert(
+        'Incomplete report',
+        requiresOtherText
+          ? 'Please describe your unique issue under "Other".'
+          : 'Select at least one reason before submitting.',
+      );
+      return;
+    }
+
+    const selectedReasons = disputeReasonOptions
+      .filter((reason) => selectedDisputeReasonIds.includes(reason.id))
+      .map((reason) => reason.label);
+
+    try {
+      await submitDisputeMutation.mutateAsync({
+        reasons: selectedReasons,
+        otherReason: selectedDisputeReasonIds.includes('other') ? otherDisputeReason.trim() : undefined,
+      });
+      Alert.alert(
+        'Dispute submitted',
+        'Your dispute has been recorded. BuildMyHouse admin will review this stage and follow up shortly.',
+      );
+      handleCancelDispute();
+    } catch (error: any) {
+      Alert.alert('Could not submit dispute', error?.message || 'Please try again.');
+    }
+  };
+
   const handleApprovePayment = async () => {
     try {
       await approvePaymentMutation.mutateAsync();
       setTimeout(() => {
         setShowPaymentModal(false);
-        router.canGoBack() ? router.back() : router.push('/(tabs)/home');
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.push('/(tabs)/home');
+        }
       }, 1500);
-    } catch (error) {
+    } catch {
       // Error is handled in mutation onError
     }
   };
@@ -131,11 +251,20 @@ export default function StageDetailScreen() {
     );
   }
 
-  // Homebuilding manual payment gating (tracking locked until payment is confirmed)
-  const projectType = (project as any)?.projectType as string | undefined;
+  // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
+  const projectType =
+    ((project as any)?.projectType as string | undefined) ||
+    (((project as any)?.aiAnalysis as any)?.projectType as string | undefined);
   const paymentConfirmationStatus =
     ((project as any)?.paymentConfirmationStatus as string | undefined) || 'not_declared';
-  const isTrackingLocked = projectType === 'homebuilding' && paymentConfirmationStatus !== 'confirmed';
+  const hasCompletedPayment = Array.isArray((project as any)?.payments)
+    ? (project as any).payments.some((p: any) => p?.status === 'completed')
+    : false;
+  const isPaymentSettled =
+    paymentConfirmationStatus === 'confirmed' ||
+    (project as any)?.status === 'active' ||
+    hasCompletedPayment;
+  const isTrackingLocked = projectType === 'homebuilding' && !isPaymentSettled;
 
   if (isTrackingLocked) {
     return (
@@ -174,18 +303,27 @@ export default function StageDetailScreen() {
   return (
     <View className="flex-1 bg-white">
       <View className="pt-16 px-6 pb-4">
-        <View className="flex-row items-center mb-4">
-          <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+        <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center">
+            <TouchableOpacity 
+              onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
+              className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+            >
+              <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/home')} 
+              className="w-10 h-10 bg-black rounded-full items-center justify-center"
+            >
+              <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            onPress={handleReportDispute}
+            className="w-9 h-9 rounded-full border border-red-200 bg-red-50 items-center justify-center"
+            accessibilityLabel="Report dispute"
           >
-            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-black rounded-full items-center justify-center"
-          >
-            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            <AlertTriangle size={16} color="#DC2626" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
         
@@ -313,7 +451,7 @@ export default function StageDetailScreen() {
                         className="text-black text-sm"
                         style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                       >
-                        ${(material.totalPrice || 0).toLocaleString()}
+                        ₦{(material.totalPrice || 0).toLocaleString()}
                       </Text>
                     </View>
                   </View>
@@ -394,7 +532,7 @@ export default function StageDetailScreen() {
                           className="text-gray-500 text-xs mt-1"
                           style={{ fontFamily: 'Poppins_400Regular' }}
                         >
-                          ${member.dailyRate.toLocaleString()}/{member.rateType || 'day'}
+                          ₦{member.dailyRate.toLocaleString()}/{member.rateType || 'day'}
                         </Text>
                       )}
                     </View>
@@ -542,6 +680,102 @@ export default function StageDetailScreen() {
 
       {/* Payment Modal */}
       <Modal
+        visible={showDisputeModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={handleCancelDispute}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+          <View className="bg-white rounded-3xl p-6 w-full max-w-md max-h-[80vh]">
+            <Text
+              className="text-2xl text-black mb-2"
+              style={{ fontFamily: 'Poppins_700Bold' }}
+            >
+              Report Stage Dispute
+            </Text>
+            <Text
+              className="text-gray-600 text-sm mb-4"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            >
+              Select one or more reasons for disputing this stage.
+            </Text>
+
+            <ScrollView className="max-h-[44vh]" showsVerticalScrollIndicator={false}>
+              {disputeReasonOptions.map((reason) => {
+                const isSelected = selectedDisputeReasonIds.includes(reason.id);
+                return (
+                  <View key={reason.id} className="mb-3">
+                    <TouchableOpacity
+                      onPress={() => toggleDisputeReason(reason.id)}
+                      className={`rounded-2xl border p-3 flex-row items-start ${
+                        isSelected ? 'bg-black border-black' : 'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <View
+                        className={`w-5 h-5 rounded border mt-0.5 mr-3 items-center justify-center ${
+                          isSelected ? 'border-white bg-white' : 'border-gray-400 bg-white'
+                        }`}
+                      >
+                        {isSelected ? <Check size={13} color="#000000" strokeWidth={3} /> : null}
+                      </View>
+                      <Text
+                        className={`flex-1 text-sm ${isSelected ? 'text-white' : 'text-gray-800'}`}
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                      >
+                        {reason.label}
+                      </Text>
+                    </TouchableOpacity>
+
+                    {reason.id === 'other' && isSelected ? (
+                      <View className="mt-2">
+                        <TextInput
+                          value={otherDisputeReason}
+                          onChangeText={setOtherDisputeReason}
+                          placeholder="Describe your unique issue"
+                          placeholderTextColor="#9CA3AF"
+                          multiline
+                          numberOfLines={3}
+                          className="border border-gray-300 rounded-xl px-3 py-2 text-black"
+                          style={{ fontFamily: 'Poppins_400Regular', textAlignVertical: 'top' }}
+                        />
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </ScrollView>
+
+            <View className="flex-row gap-2 mt-4">
+              <TouchableOpacity
+                onPress={handleCancelDispute}
+                className="flex-1 py-3 rounded-xl border border-gray-300"
+              >
+                <Text
+                  className="text-center text-gray-700"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleSubmitDispute}
+                disabled={submitDisputeMutation.isPending}
+                className="flex-1 py-3 rounded-xl bg-black disabled:opacity-60"
+              >
+                <Text
+                  className="text-center text-white"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  {submitDisputeMutation.isPending ? 'Submitting...' : 'Submit Dispute'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Payment Modal */}
+      <Modal
         visible={showPaymentModal}
         animationType="fade"
         transparent={true}
@@ -585,7 +819,7 @@ export default function StageDetailScreen() {
                       className="text-2xl text-black"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      ${(stage?.estimatedCost || 0).toLocaleString()}
+                      ₦{(stage?.estimatedCost || 0).toLocaleString()}
                     </Text>
                   </View>
                 </View>

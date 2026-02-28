@@ -76,6 +76,28 @@ export class UploadController {
           callback(null, `file-${uniqueSuffix}${ext}`);
         },
       }),
+      fileFilter: (req, file, callback) => {
+        const allowedMimes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'image/jpeg',
+          'image/jpg',
+          'image/png',
+          'image/webp',
+          'image/gif',
+          'video/mp4',
+          'video/quicktime',
+          'video/webm',
+        ];
+        if (!allowedMimes.includes(file.mimetype)) {
+          return callback(
+            new BadRequestException('Only PDF, DOC, DOCX, image, and video files are allowed'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
       limits: {
         fileSize: 50 * 1024 * 1024, // 50MB max
       },

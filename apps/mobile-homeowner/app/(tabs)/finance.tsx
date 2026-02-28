@@ -1,13 +1,13 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Animated } from "react-native";
-import { useRouter } from "expo-router";
-import { User, Filter, CreditCard, Receipt, FileText, Home, DollarSign, ChevronDown, Landmark, ChevronRight } from "lucide-react-native";
-import { useState, useRef } from "react";
+import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Linking, Alert } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { User, Filter, CreditCard, Receipt, FileText, Home, ChevronDown, Landmark, ChevronRight, Building2 } from "lucide-react-native";
+import { useState, useRef, useEffect } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useActiveProjects, usePendingProjects, useUserPaymentsStructured } from '@/hooks';
-import { useHomePurchases, useLandPurchases } from '@/hooks/usePropertyPurchases';
+import { useActiveProjects, useMyInvoiceFiles, usePendingProjects, useUserPaymentsStructured } from '@/hooks';
+import { useHomePurchases, useLandPurchases, useRentalPurchases } from '@/hooks/usePropertyPurchases';
 import { getBackendAssetUrl } from '@/lib/image';
 
-type TabKey = 'overview' | 'payments' | 'invoices' | 'landPurchases' | 'homePurchases';
+type TabKey = 'overview' | 'payments' | 'invoices' | 'landPurchases' | 'homePurchases' | 'rentals';
 
 function formatDate(dateStr: string) {
   try {
@@ -18,17 +18,31 @@ function formatDate(dateStr: string) {
   }
 }
 
+const VALID_TABS: TabKey[] = ['overview', 'payments', 'invoices', 'landPurchases', 'homePurchases', 'rentals'];
+
 export default function FinanceScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ tab?: string }>();
+  const tabParam = params.tab as TabKey | undefined;
+  const initialTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview';
+
   const { data: currentUser } = useCurrentUser();
   const { data: activeProjects = [] } = useActiveProjects();
   const { data: pendingProjects = [] } = usePendingProjects();
   const { data: structuredPayments = [] } = useUserPaymentsStructured();
+  const { data: invoiceFiles = [] } = useMyInvoiceFiles();
   const { data: homePurchases = [] } = useHomePurchases();
   const { data: landPurchases = [] } = useLandPurchases();
+  const { data: rentalPurchases = [] } = useRentalPurchases();
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [showFilters, setShowFilters] = useState(false);
+
+  useEffect(() => {
+    if (tabParam && VALID_TABS.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const filterAnim = useRef(new Animated.Value(0)).current;
 
@@ -57,7 +71,53 @@ export default function FinanceScreen() {
   const filterHeight = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 70] });
   const filterOpacity = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
-  const tabLabel = activeTab === 'landPurchases' ? 'Land Purchases' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+  const tabLabel =
+    activeTab === 'landPurchases'
+      ? 'Land Purchases'
+      : activeTab === 'homePurchases'
+        ? 'Home Purchases'
+        : activeTab === 'rentals'
+          ? 'Rentals'
+          : activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+  const receiptFiles = invoiceFiles.filter((file: any) => file.type === 'receipt');
+  const invoiceOnlyFiles = invoiceFiles.filter((file: any) => file.type === 'invoice');
+
+  const openInvoiceOrReceipt = async (url: string) => {
+    const finalUrl = getBackendAssetUrl(url);
+    if (!finalUrl) return;
+
+    try {
+      await Linking.openURL(finalUrl);
+    } catch {
+      Alert.alert('Unable to open file', 'Please try again in a moment.');
+    }
+  };
+
+  const renderInvoiceFileCard = (file: any) => (
+    <View key={file.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+      <View className="flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            {file.name}
+          </Text>
+          <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {file.projectName} • {file.stageName}
+          </Text>
+          <Text className="text-gray-500 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Uploaded {formatDate(file.createdAt)}
+          </Text>
+        </View>
+        <TouchableOpacity
+          onPress={() => openInvoiceOrReceipt(file.url)}
+          className="bg-black rounded-full px-4 py-2"
+        >
+          <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Download
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <View className="flex-1 bg-white">
@@ -86,6 +146,7 @@ export default function FinanceScreen() {
             { key: 'overview' as TabKey, label: 'Overview', icon: Home },
             { key: 'payments' as TabKey, label: 'Payments', icon: CreditCard },
             { key: 'invoices' as TabKey, label: 'Invoices', icon: Receipt },
+            { key: 'rentals' as TabKey, label: 'Rentals', icon: Building2 },
             { key: 'landPurchases' as TabKey, label: 'Land Purchases', icon: Landmark },
             { key: 'homePurchases' as TabKey, label: 'Home Purchases', icon: Home },
           ].map((tab) => (
@@ -110,10 +171,10 @@ export default function FinanceScreen() {
           <View className="pb-8">
             <View className="bg-black rounded-3xl p-6 mb-6">
               <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-4xl mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalInvested.toLocaleString()}</Text>
+              <Text className="text-white text-4xl mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalInvested.toLocaleString()}</Text>
               <View className="flex-row justify-between">
                 <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeCount}</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${totalBudget.toLocaleString()}</Text></View>
+                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalBudget.toLocaleString()}</Text></View>
               </View>
             </View>
             <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>Project Budgets</Text>
@@ -131,9 +192,9 @@ export default function FinanceScreen() {
                   <View key={p.id} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
                     <Text className="text-lg text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
                     <View className="flex-row justify-between mb-3">
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${budget.toLocaleString()}</Text></View>
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${spent.toLocaleString()}</Text></View>
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${remaining.toLocaleString()}</Text></View>
+                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{budget.toLocaleString()}</Text></View>
+                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{spent.toLocaleString()}</Text></View>
+                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{remaining.toLocaleString()}</Text></View>
                     </View>
                     <View className="h-3 bg-gray-200 rounded-full overflow-hidden"><View className="h-full bg-black rounded-full" style={{ width: `${Math.min(percent, 100)}%` }} /></View>
                     <Text className="text-gray-500 text-xs mt-2 text-right" style={{ fontFamily: 'Poppins_400Regular' }}>{percent}% spent</Text>
@@ -148,7 +209,7 @@ export default function FinanceScreen() {
           <View className="pb-8">
             {paymentsWithData.length === 0 ? (
               <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <DollarSign size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
+                <Text className="text-gray-400 text-4xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No payments yet. Materials and team costs recorded by your GC will appear here.</Text>
               </View>
             ) : (
@@ -167,7 +228,7 @@ export default function FinanceScreen() {
                       activeOpacity={0.7}
                     >
                       <View className="w-12 h-12 bg-black rounded-full items-center justify-center">
-                        <DollarSign size={24} color="#FFFFFF" strokeWidth={2} />
+                        <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                       </View>
                       <View className="flex-1 ml-4">
                         <Text className="text-black text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>{group.projectName}</Text>
@@ -176,7 +237,7 @@ export default function FinanceScreen() {
                         </Text>
                       </View>
                       <View className="items-end">
-                        <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${total.toLocaleString()}</Text>
+                        <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{total.toLocaleString()}</Text>
                         <ChevronRight size={20} color="#6B7280" strokeWidth={2} style={{ transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }} />
                       </View>
                     </TouchableOpacity>
@@ -192,7 +253,7 @@ export default function FinanceScreen() {
                               <Text className="flex-1 text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                                 {sp.type === 'material' ? 'Material' : 'Team'} • {sp.stageName} • {sp.description}
                               </Text>
-                              <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>${sp.amount.toLocaleString()}</Text>
+                              <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{sp.amount.toLocaleString()}</Text>
                             </View>
                           ))
                         )}
@@ -207,10 +268,44 @@ export default function FinanceScreen() {
 
         {activeTab === 'invoices' && (
           <View className="pb-8">
-            <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-              <FileText size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
-              <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>Invoices coming soon. Your invoices will appear here once available.</Text>
-            </View>
+            {invoiceFiles.length === 0 ? (
+              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+                <FileText size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
+                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  No invoices or receipts uploaded yet. Files added by your GC will appear here.
+                </Text>
+              </View>
+            ) : (
+              <View>
+                <View className="flex-row items-center mb-3">
+                  <Receipt size={16} color="#111827" strokeWidth={2} />
+                  <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Receipts ({receiptFiles.length})
+                  </Text>
+                </View>
+                {receiptFiles.length === 0 ? (
+                  <Text className="text-gray-500 text-sm mb-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No receipts uploaded yet.
+                  </Text>
+                ) : (
+                  receiptFiles.map(renderInvoiceFileCard)
+                )}
+
+                <View className="flex-row items-center mb-3 mt-2">
+                  <FileText size={16} color="#111827" strokeWidth={2} />
+                  <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Invoices ({invoiceOnlyFiles.length})
+                  </Text>
+                </View>
+                {invoiceOnlyFiles.length === 0 ? (
+                  <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No invoices uploaded yet.
+                  </Text>
+                ) : (
+                  invoiceOnlyFiles.map(renderInvoiceFileCard)
+                )}
+              </View>
+            )}
           </View>
         )}
 
@@ -266,7 +361,7 @@ export default function FinanceScreen() {
                   </Text>
                   <View className="flex-row justify-between items-center">
                     <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${(purchase.purchaseAmount ?? purchase.houseForSale?.price ?? 0).toLocaleString()}
+                      ₦{(purchase.purchaseAmount ?? purchase.houseForSale?.price ?? 0).toLocaleString()}
                     </Text>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
@@ -274,6 +369,66 @@ export default function FinanceScreen() {
                   </View>
                 </View>
               ))
+            )}
+          </View>
+        )}
+
+        {activeTab === 'rentals' && (
+          <View className="pb-8">
+            {rentalPurchases.length === 0 ? (
+              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+                <Building2 size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
+                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  No rental spend records yet.
+                </Text>
+              </View>
+            ) : (
+              rentalPurchases.map((purchase: any) => {
+                const listing = purchase.rentalListing;
+                const annualRent = purchase.purchaseAmount ?? listing?.annualRent ?? 0;
+                const serviceCharge = listing?.serviceCharge ?? 0;
+                const cautionDeposit = listing?.cautionDeposit ?? 0;
+                const legalFeePercent = listing?.legalFeePercent ?? 0;
+                const agencyFeePercent = listing?.agencyFeePercent ?? 2;
+                const legalFee = Math.round((annualRent * legalFeePercent) / 100);
+                const agencyFee = Math.round((annualRent * agencyFeePercent) / 100);
+                const totalSpent = annualRent + serviceCharge + cautionDeposit + legalFee + agencyFee;
+                return (
+                  <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {listing?.title || 'Rental'}
+                    </Text>
+                    <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {listing?.location}
+                    </Text>
+                    <View className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
+                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Annual rent: ₦{annualRent.toLocaleString()}
+                      </Text>
+                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Service charge: ₦{serviceCharge.toLocaleString()}
+                      </Text>
+                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Caution deposit: ₦{cautionDeposit.toLocaleString()}
+                      </Text>
+                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Legal fee ({legalFeePercent}%): ₦{legalFee.toLocaleString()}
+                      </Text>
+                      <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        BuildMyHouse agency fee ({agencyFeePercent}%): ₦{agencyFee.toLocaleString()}
+                      </Text>
+                    </View>
+                    <View className="flex-row justify-between items-center">
+                      <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                        ₦{totalSpent.toLocaleString()}
+                      </Text>
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })
             )}
           </View>
         )}

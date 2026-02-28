@@ -1,16 +1,19 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Bell, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock } from "lucide-react-native";
+import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi } from "lucide-react-native";
 import { useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, usePendingProjects, usePausedProjects, useHousesForSale, useLandsForSale } from '@/hooks';
+import { useRentalsForLease } from '@/hooks/useRentalsForLease';
 import { useScheduleHouseViewing } from '@/hooks/useHouseViewing';
 import { useScheduleLandViewing } from '@/hooks/useLandViewing';
+import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
 import ImageCarousel from '@/components/ImageCarousel';
+import NotificationBell from '@/components/NotificationBell';
 import { getBackendAssetUrl } from '@/lib/image';
 
 export default function HomeScreen() {
@@ -19,6 +22,7 @@ export default function HomeScreen() {
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: housesForSale = [], isLoading: loadingHouses } = useHousesForSale();
   const { data: landsForSale = [], isLoading: loadingLands } = useLandsForSale();
+  const { data: rentalsForLease = [], isLoading: loadingRentals } = useRentalsForLease();
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: pendingProjects = [], isLoading: loadingPending } = usePendingProjects();
   const { data: pausedProjects = [], isLoading: loadingPaused } = usePausedProjects();
@@ -26,11 +30,15 @@ export default function HomeScreen() {
   const activateProjectMutation = useActivateProject();
   const scheduleViewingMutation = useScheduleHouseViewing();
   const scheduleLandViewingMutation = useScheduleLandViewing();
+  const requestRentalInspectionMutation = useRequestRentalInspection();
   const queryClient = useQueryClient();
   
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedHome, setSelectedHome] = useState<any | null>(null);
   const [buySuccess, setBuySuccess] = useState(false);
+  const [showRentModal, setShowRentModal] = useState(false);
+  const [selectedRent, setSelectedRent] = useState<any | null>(null);
+  const [rentRequestSuccess, setRentRequestSuccess] = useState(false);
   const [showLandModal, setShowLandModal] = useState(false);
   const [selectedLand, setSelectedLand] = useState<any | null>(null);
   const [landSuccess, setLandSuccess] = useState(false);
@@ -51,14 +59,14 @@ export default function HomeScreen() {
   // IMPORTANT: Use actual project.status to determine if paid, not just which array it came from
   const activeProjectsWithStatus = activeProjects.map((p: any) => ({ 
     ...p, 
-    // Only mark as paid if status is actually 'active'
-    isPaid: p.status === 'active',
+    // Completed projects should remain openable like active projects.
+    isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
     uniqueKey: `active-${p.id || p.projectId || Math.random()}`
   }));
   const pendingProjectsWithStatus = pendingProjects.map((p: any) => ({ 
     ...p, 
-    // Only mark as unpaid if status is actually 'pending_payment'
-    isPaid: p.status === 'active', // Check actual status, not array source
+    // A project can be effectively complete even if status lagged.
+    isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
     uniqueKey: `pending-${p.id || p.projectId || Math.random()}`
   }));
 
@@ -86,10 +94,10 @@ export default function HomeScreen() {
     projectIds.add(projectId);
     return true;
   }).map((project: any) => {
-    // Ensure isPaid is based on actual status, not array source
+    // Ensure isPaid is based on status/progress, not array source
     return {
       ...project,
-      isPaid: project.status === 'active'
+      isPaid: project.status === 'active' || project.status === 'completed' || Number(project.progress || 0) >= 100,
     };
   });
 
@@ -107,10 +115,10 @@ export default function HomeScreen() {
       const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
       let amount = budget * 1.0;
       
-      // Stripe maximum amount is $999,999.99 (in dollars, not cents)
+      // Stripe maximum amount is ₦999,999.99
       const STRIPE_MAX_AMOUNT = 999999.99;
       if (amount > STRIPE_MAX_AMOUNT) {
-        setPaymentError(`Payment amount ($${amount.toLocaleString()}) exceeds the maximum allowed amount of $${STRIPE_MAX_AMOUNT.toLocaleString()}. Please contact support.`);
+        setPaymentError(`Payment amount (₦${amount.toLocaleString()}) exceeds the maximum allowed amount of ₦${STRIPE_MAX_AMOUNT.toLocaleString()}. Please contact support.`);
         setShowPaymentModal(true);
         setIsProcessingPayment(false);
         return;
@@ -132,7 +140,7 @@ export default function HomeScreen() {
         const paymentResult = await createPaymentIntentMutation.mutateAsync({
           amount,
           projectId: project.id || project.projectId,
-          currency: 'usd',
+          currency: 'ngn',
           description: `Project activation payment - ${project.name || 'Project'}`,
         });
 
@@ -177,6 +185,28 @@ export default function HomeScreen() {
   const getHouseImageUrl = (house: any) => {
     const firstImg = house?.images?.[0]?.url;
     return firstImg ? getBackendAssetUrl(firstImg) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80';
+  };
+
+  const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
+
+  const openRentModal = (listing: any) => {
+    setSelectedRent(listing);
+    setRentRequestSuccess(false);
+    setShowRentModal(true);
+  };
+
+  const requestRentInspection = async () => {
+    if (!selectedRent?.id) return;
+    try {
+      await requestRentalInspectionMutation.mutateAsync(selectedRent.id);
+      setRentRequestSuccess(true);
+      setTimeout(() => {
+        setShowRentModal(false);
+        setRentRequestSuccess(false);
+      }, 2000);
+    } catch (error: any) {
+      Alert.alert('Request failed', error?.message || 'Could not request inspection. Please try again.');
+    }
   };
 
   const handleBuyHome = (home: any) => {
@@ -251,13 +281,7 @@ export default function HomeScreen() {
           BuildMyHouse
         </Text>
         
-        <TouchableOpacity 
-          onPress={() => router.push('/notifications')}
-          className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center"
-        >
-          <Bell size={24} color="#000000" strokeWidth={2.5} />
-          <View className="absolute top-2 right-2 w-3 h-3 bg-black rounded-full" />
-        </TouchableOpacity>
+        <NotificationBell />
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
@@ -345,9 +369,22 @@ export default function HomeScreen() {
               const uniqueKey = project.uniqueKey || `${project.isPaid ? 'active' : 'pending'}-${projectId}`;
               const isPaid = project.isPaid;
               const isPaused = project.status === 'paused';
-              const statusLabel = isPaused ? 'Paused' : isPaid ? 'Active' : 'Unpaid';
-              const statusBg = isPaused ? 'bg-orange-100' : isPaid ? 'bg-green-100' : 'bg-yellow-100';
-              const statusText = isPaused ? 'text-orange-700' : isPaid ? 'text-green-700' : 'text-yellow-700';
+              const isCompleted = project.status === 'completed' || Number(project.progress || 0) >= 100;
+              const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : 'Unpaid';
+              const statusBg = isPaused
+                ? 'bg-orange-100'
+                : isCompleted
+                  ? 'bg-emerald-100'
+                  : isPaid
+                    ? 'bg-blue-100'
+                    : 'bg-yellow-100';
+              const statusText = isPaused
+                ? 'text-orange-700'
+                : isCompleted
+                  ? 'text-emerald-700'
+                  : isPaid
+                    ? 'text-blue-700'
+                    : 'text-yellow-700';
               const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
               const paymentAmount = budget * 1.0;
               
@@ -443,7 +480,7 @@ export default function HomeScreen() {
                               className="text-black"
                               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                             >
-                              ${budget.toLocaleString()}
+                              ₦{budget.toLocaleString()}
                             </Text>
                           </View>
                           <View>
@@ -457,7 +494,7 @@ export default function HomeScreen() {
                               className="text-black"
                               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                             >
-                              ${(project.spent || 0).toLocaleString()}
+                              ₦{(project.spent || 0).toLocaleString()}
                             </Text>
                           </View>
                         </View>
@@ -492,7 +529,7 @@ export default function HomeScreen() {
                               className="text-yellow-900 text-lg"
                               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                             >
-                              ${paymentAmount.toLocaleString()}
+                              ₦{paymentAmount.toLocaleString()}
                             </Text>
                           </View>
                         </View>
@@ -569,6 +606,96 @@ export default function HomeScreen() {
           </View>
         </Modal>
 
+        {/* Homes for Rent Section (Mock Data Preview) */}
+        <View className="mb-8">
+          <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center">
+              <Home size={24} color="#000000" strokeWidth={2.5} />
+              <Text
+                className="text-2xl text-black ml-2"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Homes for Rent
+              </Text>
+            </View>
+            <View className="bg-black rounded-full px-3 py-1">
+              <Text
+                className="text-white text-xs"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Owner-listed
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            className="text-gray-500 mb-4"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
+            Dodge costly agents here. Talk to the direct owners of this home.
+          </Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {(loadingRentals ? [] : rentalsForLease).map((listing: any) => (
+              <TouchableOpacity
+                key={listing.id}
+                onPress={() => openRentModal(listing)}
+                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
+                style={{ width: Math.min(300, screenWidth * 0.8) }}
+              >
+                <Image
+                  source={{
+                    uri: listing.images?.[0]?.url
+                      ? getBackendAssetUrl(listing.images[0].url)
+                      : 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
+                  }}
+                  className="w-full h-36"
+                  resizeMode="cover"
+                />
+                <View className="p-3">
+                  <Text
+                    className="text-base text-black mb-1"
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                    numberOfLines={1}
+                  >
+                    {listing.title}
+                  </Text>
+                  <View className="flex-row items-center mb-2">
+                    <MapPin size={12} color="#737373" strokeWidth={2} />
+                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {listing.location}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mb-2">
+                    <Bed size={12} color="#737373" strokeWidth={2} />
+                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {listing.bedrooms}
+                    </Text>
+                    <Bath size={12} color="#737373" strokeWidth={2} />
+                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {listing.bathrooms}
+                    </Text>
+                    <Maximize size={12} color="#737373" strokeWidth={2} />
+                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {listing.sizeSqm}m²
+                    </Text>
+                  </View>
+                  <View className="flex-row justify-between items-center">
+                    <Text className="text-black text-base" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                      {formatNaira(listing.annualRent)}/yr
+                    </Text>
+                    <View className="bg-emerald-100 rounded-full px-2 py-0.5">
+                      <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {listing.propertyType}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Buy a Home Section */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
@@ -578,7 +705,7 @@ export default function HomeScreen() {
                 className="text-2xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Buy
+                Home for Sale
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1">
@@ -646,7 +773,7 @@ export default function HomeScreen() {
 
                   <View className="flex-row justify-between items-center">
                     <Text className="text-black text-base" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${home.price.toLocaleString()}
+                      ₦{home.price.toLocaleString()}
                     </Text>
                     <View className="bg-green-100 rounded-full px-2 py-0.5">
                       <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -895,7 +1022,7 @@ export default function HomeScreen() {
                   <View className="flex-row justify-between items-center">
                     <Text className="text-white/70 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Price</Text>
                     <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ${selectedHome?.price.toLocaleString()}
+                      ₦{selectedHome?.price.toLocaleString()}
                     </Text>
                   </View>
                 </View>
@@ -949,6 +1076,144 @@ export default function HomeScreen() {
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
                   The seller will contact you soon to confirm details
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Rent Listing Modal (Mock Data Preview) */}
+      <Modal
+        visible={showRentModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowRentModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-white rounded-t-3xl p-5 max-h-[90%]">
+            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
+            {!rentRequestSuccess ? (
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View className="flex-row justify-between items-start mb-3">
+                  <Text className="text-xl text-black flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {selectedRent?.title}
+                  </Text>
+                  <TouchableOpacity onPress={() => setShowRentModal(false)}>
+                    <X size={24} color="#000000" strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
+
+                <ImageCarousel
+                  images={
+                    selectedRent?.images?.length
+                      ? selectedRent.images.map((img: any, index: number) => ({
+                          url: getBackendAssetUrl(img.url) || img.url,
+                          label: img.label || (index === 0 ? 'Exterior' : 'Interior'),
+                        }))
+                      : [
+                          {
+                            url: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
+                            label: 'Exterior',
+                          },
+                        ]
+                  }
+                  height={192}
+                />
+
+                <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
+                  <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Listed by original homeowner only. No extra middleman apart from BuildMyHouse.
+                  </Text>
+                  <Text className="text-blue-800 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    BuildMyHouse agency fee is fixed at 2% of annual rent.
+                  </Text>
+                </View>
+
+                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
+                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Key Rent Breakdown
+                  </Text>
+                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Annual rent: {formatNaira(selectedRent?.annualRent || 0)}
+                  </Text>
+                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Service charge: {formatNaira(selectedRent?.serviceCharge || 0)}
+                  </Text>
+                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Caution deposit: {formatNaira(selectedRent?.cautionDeposit || 0)}
+                  </Text>
+                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Legal fee: {selectedRent?.legalFeePercent || 0}%
+                  </Text>
+                  <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    BuildMyHouse agency fee: {selectedRent?.agencyFeePercent || 2}%
+                  </Text>
+                </View>
+
+                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
+                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Confirm these features before going renting a new home.
+                  </Text>
+                  {[
+                    { label: `Power: ${selectedRent?.power}`, icon: Zap },
+                    { label: `Water: ${selectedRent?.water}`, icon: Droplets },
+                    { label: `Security: ${selectedRent?.security}`, icon: Shield },
+                    { label: `Internet: ${selectedRent?.internet}`, icon: Wifi },
+                    { label: `Parking: ${selectedRent?.parking}`, icon: Car },
+                    { label: `Rules: ${selectedRent?.rules}`, icon: Lock },
+                    { label: `Inspection window: ${selectedRent?.inspectionWindow}`, icon: Clock },
+                  ].map((item) => (
+                    <View key={item.label} className="flex-row items-start mb-2">
+                      <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
+                        <item.icon size={13} color="#374151" strokeWidth={2.2} />
+                      </View>
+                      <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+
+                <View className="mb-4">
+                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    BuildMyHouse Verification Checks
+                  </Text>
+                  <View className="flex-row flex-wrap">
+                    {(selectedRent?.verificationDocs || []).map((doc: string) => (
+                      <View key={doc} className="bg-black rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
+                        <FileCheck size={12} color="#FFFFFF" strokeWidth={2} />
+                        <Text className="text-white text-xs ml-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                          {doc}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  onPress={requestRentInspection}
+                  disabled={requestRentalInspectionMutation.isPending}
+                  className="bg-black rounded-full py-4 px-8 mb-2"
+                >
+                  <Text className="text-white text-base text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {requestRentalInspectionMutation.isPending ? 'Submitting...' : 'Request Inspection'}
+                  </Text>
+                </TouchableOpacity>
+                <Text className="text-gray-500 text-xs text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  BuildMyHouse will coordinate inspection directly with the homeowner.
+                </Text>
+              </ScrollView>
+            ) : (
+              <View className="items-center py-8">
+                <View className="w-16 h-16 bg-black rounded-full items-center justify-center mb-4">
+                  <Check size={32} color="#FFFFFF" strokeWidth={2.5} />
+                </View>
+                <Text className="text-xl text-black mb-2 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Inspection Requested!
+                </Text>
+                <Text className="text-gray-500 text-center text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  You will receive homeowner inspection details soon.
                 </Text>
               </View>
             )}

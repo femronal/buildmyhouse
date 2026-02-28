@@ -51,6 +51,7 @@ export default function PersonalInformationScreen() {
   const updateMe = useUpdateCurrentUser();
 
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -60,6 +61,7 @@ export default function PersonalInformationScreen() {
   useEffect(() => {
     if (!currentUser) return;
     setFullName(currentUser.fullName || "");
+    setEmail(currentUser.email || "");
     setPhone(currentUser.phone || "");
   }, [currentUser]);
 
@@ -78,12 +80,13 @@ export default function PersonalInformationScreen() {
     return firstWithAddress?.address || "";
   }, [completedProjects, pendingProjects, trulyActiveProjects]);
 
-  const email = currentUser?.email || "";
   const verified = !!currentUser?.verified;
 
   const canSave =
     !!currentUser &&
-    (fullName.trim() !== (currentUser.fullName || "").trim() || (phone || "").trim() !== (currentUser.phone || "").trim());
+    (fullName.trim() !== (currentUser.fullName || "").trim() ||
+      (email || "").trim().toLowerCase() !== (currentUser.email || "").trim().toLowerCase() ||
+      (phone || "").trim() !== (currentUser.phone || "").trim());
 
   useEffect(() => {
     // Prefill address fields from the most recent project address, if available.
@@ -99,6 +102,7 @@ export default function PersonalInformationScreen() {
     try {
       await updateMe.mutateAsync({
         fullName: fullName.trim(),
+        email: email.trim() ? email.trim().toLowerCase() : undefined,
         phone: phone.trim() ? phone.trim() : undefined,
       });
       Alert.alert("Saved", "Your profile information has been updated.");
@@ -164,10 +168,11 @@ export default function PersonalInformationScreen() {
             <Field
               label="Email"
               value={email}
-              editable={false}
+              onChangeText={setEmail}
               placeholder="email@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
+              helperText="Change this to your real email to receive notification emails."
             />
 
             <Field

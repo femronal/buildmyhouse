@@ -157,7 +157,7 @@ export class ProjectsService {
     try {
       const intent = await this.stripeService.createOffSessionDestinationCharge({
         amount,
-        currency: 'usd',
+        currency: 'ngn',
         customerId: stripeCustomerId,
         paymentMethodId: paymentMethod.stripePaymentMethodId,
         destinationAccountId: contractor.connectAccountId,
@@ -275,7 +275,7 @@ export class ProjectsService {
     return project;
   }
 
-  // ==================== Homebuilding manual payment flow ====================
+  // ==================== Manual payment flow ====================
 
   async updateProjectReviewStatus(params: {
     projectId: string;
@@ -382,6 +382,23 @@ export class ProjectsService {
       data: { ...(updated as any), event: 'project_activated_by_admin' },
     });
 
+    const homeownerId = (updated as any).homeownerId;
+    const generalContractorId = (updated as any).generalContractorId;
+    const projectName = (updated as any).name;
+
+    await this.wsService.sendNotificationToUsers(
+      [homeownerId, generalContractorId].filter(Boolean),
+      {
+        type: 'project_activated_by_admin',
+        title: 'Project activated',
+        message: `Admin has activated your project "${projectName}". You can now proceed with construction.`,
+        data: {
+          projectId: params.projectId,
+          status: 'active',
+        },
+      },
+    );
+
     return updated;
   }
 
@@ -420,6 +437,23 @@ export class ProjectsService {
       data: { ...(updated as any), event: 'project_deactivated_by_admin' },
     });
 
+    const homeownerId = (updated as any).homeownerId;
+    const generalContractorId = (updated as any).generalContractorId;
+    const projectName = (updated as any).name;
+
+    await this.wsService.sendNotificationToUsers(
+      [homeownerId, generalContractorId].filter(Boolean),
+      {
+        type: 'project_deactivated_by_admin',
+        title: 'Project paused',
+        message: `Admin has temporarily paused your project "${projectName}". Please wait while the matter is reviewed.`,
+        data: {
+          projectId: params.projectId,
+          status: 'paused',
+        },
+      },
+    );
+
     return updated;
   }
 
@@ -444,11 +478,6 @@ export class ProjectsService {
     // Admin can always set; GC can only set for their assigned project.
     if (params.actorRole !== 'admin' && project.generalContractorId !== params.actorUserId) {
       throw new ForbiddenException('You do not have permission to set the payment link for this project');
-    }
-
-    // If projectType is present, restrict this to homebuilding.
-    if (project.projectType && project.projectType !== 'homebuilding') {
-      throw new BadRequestException('External payment link is only supported for homebuilding projects');
     }
 
     const updated = await this.prisma.project.update({
@@ -490,11 +519,6 @@ export class ProjectsService {
       throw new ForbiddenException('You do not have permission to declare payment for this project');
     }
 
-    // If projectType is present, restrict this to homebuilding.
-    if (project.projectType && project.projectType !== 'homebuilding') {
-      throw new BadRequestException('Manual payment declaration is only supported for homebuilding projects');
-    }
-
     if (!project.externalPaymentLink) {
       throw new BadRequestException('Payment link is not available yet for this project');
     }
@@ -528,6 +552,16 @@ export class ProjectsService {
       },
     });
 
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'manual_payment_declared',
+      title: 'Manual payment declared',
+      message: `A homeowner declared payment for project ${params.projectId}.`,
+      data: {
+        projectId: params.projectId,
+        homeownerId: params.homeownerId,
+      },
+    });
+
     return updated;
   }
 
@@ -539,11 +573,6 @@ export class ProjectsService {
       });
       if (!project) {
         throw new NotFoundException('Project not found');
-      }
-
-      // If projectType is present, restrict this to homebuilding.
-      if ((project as any).projectType && (project as any).projectType !== 'homebuilding') {
-        throw new BadRequestException('Manual payment confirmation is only supported for homebuilding projects');
       }
 
       if ((project as any).paymentConfirmationStatus === 'confirmed') {
@@ -595,6 +624,209 @@ export class ProjectsService {
       },
     });
 
+    const projectWithUsers = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: {
+        id: true,
+        name: true,
+        homeownerId: true,
+        generalContractorId: true,
+      },
+    });
+
+    if (projectWithUsers) {
+      await this.wsService.sendNotificationToUsers(
+        [projectWithUsers.homeownerId, projectWithUsers.generalContractorId].filter(Boolean),
+        {
+          type: 'manual_payment_confirmed',
+          title: 'Payment confirmed',
+          message: `Admin confirmed payment for project "${projectWithUsers.name}".`,
+          data: { projectId: projectWithUsers.id },
+        },
+      );
+    }
+
+    return updated;
+  }
+
+  async createStageDispute(params: {
+    projectId: string;
+    stageId: string;
+    homeownerId: string;
+    reasons: string[];
+    otherReason?: string;
+  }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: {
+        id: true,
+        homeownerId: true,
+        generalContractorId: true,
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    if (project.homeownerId !== params.homeownerId) {
+      throw new ForbiddenException('You do not have permission to report disputes for this project');
+    }
+
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: params.stageId },
+      select: { id: true, projectId: true },
+    });
+    if (!stage || stage.projectId !== params.projectId) {
+      throw new NotFoundException('Stage not found for this project');
+    }
+
+    const normalizedReasons = (params.reasons || [])
+      .map((reason) => String(reason || '').trim())
+      .filter(Boolean);
+    if (normalizedReasons.length === 0) {
+      throw new BadRequestException('At least one dispute reason is required');
+    }
+
+    const dispute = await this.prisma.projectStageDispute.create({
+      data: {
+        projectId: params.projectId,
+        stageId: params.stageId,
+        homeownerId: params.homeownerId,
+        generalContractorId: project.generalContractorId || null,
+        reasons: Array.from(new Set(normalizedReasons)),
+        otherReason: params.otherReason?.trim() || null,
+      },
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        stage: {
+          select: { id: true, name: true },
+        },
+        homeowner: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+        generalContractor: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+      },
+    });
+
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'new_dispute',
+      title: 'New stage dispute',
+      message: `A new dispute was submitted for project "${dispute.project.name}" stage "${dispute.stage.name}".`,
+      data: {
+        disputeId: dispute.id,
+        projectId: dispute.projectId,
+        stageId: dispute.stageId,
+      },
+    });
+
+    if (dispute.generalContractor?.id) {
+      await this.wsService.sendNotification(dispute.generalContractor.id, {
+        type: 'new_dispute',
+        title: 'Dispute raised on your project',
+        message: `A homeowner raised a dispute on "${dispute.stage.name}" for project "${dispute.project.name}".`,
+        data: {
+          disputeId: dispute.id,
+          projectId: dispute.projectId,
+          stageId: dispute.stageId,
+        },
+      });
+    }
+
+    return dispute;
+  }
+
+  async getAdminDisputes(status?: 'open' | 'in_review' | 'resolved') {
+    const whereClause: any = {};
+    if (status) {
+      whereClause.status = status;
+    }
+
+    return this.prisma.projectStageDispute.findMany({
+      where: whereClause,
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        stage: {
+          select: { id: true, name: true },
+        },
+        homeowner: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+        generalContractor: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async updateDisputeStatus(params: {
+    disputeId: string;
+    status: 'open' | 'in_review' | 'resolved';
+    resolutionNotes?: string;
+  }) {
+    const dispute = await this.prisma.projectStageDispute.findUnique({
+      where: { id: params.disputeId },
+      select: { id: true },
+    });
+    if (!dispute) {
+      throw new NotFoundException('Dispute not found');
+    }
+
+    const updated = await this.prisma.projectStageDispute.update({
+      where: { id: params.disputeId },
+      data: {
+        status: params.status,
+        resolutionNotes: params.resolutionNotes?.trim() || null,
+        inReviewAt: params.status === 'in_review' ? new Date() : null,
+        resolvedAt: params.status === 'resolved' ? new Date() : null,
+      },
+      include: {
+        project: {
+          select: { id: true, name: true },
+        },
+        stage: {
+          select: { id: true, name: true },
+        },
+        homeowner: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+        generalContractor: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+      },
+    });
+
+    await this.wsService.sendNotification(updated.homeowner.id, {
+      type: 'dispute_status_update',
+      title: 'Dispute status updated',
+      message: `Your dispute for "${updated.stage.name}" is now ${updated.status.replace('_', ' ')}.`,
+      data: {
+        disputeId: updated.id,
+        projectId: updated.projectId,
+        stageId: updated.stageId,
+        status: updated.status,
+      },
+    });
+
+    if (updated.generalContractor?.id) {
+      await this.wsService.sendNotification(updated.generalContractor.id, {
+        type: 'dispute_status_update',
+        title: 'Dispute status updated',
+        message: `Dispute for "${updated.stage.name}" is now ${updated.status.replace('_', ' ')}.`,
+        data: {
+          disputeId: updated.id,
+          projectId: updated.projectId,
+          stageId: updated.stageId,
+          status: updated.status,
+        },
+      });
+    }
+
     return updated;
   }
 
@@ -618,20 +850,35 @@ export class ProjectsService {
 
     const errors: string[] = [];
 
-    // Check for at least one team member with photo and invoice
-    const teamMembersWithDocs = stage.teamMembers.filter(
-      (tm) => tm.photoUrl && tm.invoiceUrl,
-    );
-    if (teamMembersWithDocs.length === 0 && stage.teamMembers.length > 0) {
-      errors.push('At least one team member must have a photo and invoice/receipt');
+    // Team documentation check (stage-level, not same-row strict):
+    // allow completeness across multiple team members.
+    if (stage.teamMembers.length > 0) {
+      // Accept team evidence saved either directly on team rows or uploaded in the stage Files tab.
+      // This avoids false negatives when GCs upload supporting docs as general stage files.
+      const hasTeamPhoto =
+        stage.teamMembers.some((tm) => !!tm.photoUrl?.trim()) ||
+        stage.media.some((m) => m.type === 'photo' && !!m.url?.trim());
+      const hasTeamInvoice =
+        stage.teamMembers.some((tm) => !!tm.invoiceUrl?.trim()) ||
+        stage.documents.some((d) => !!d.url?.trim());
+      if (!hasTeamPhoto || !hasTeamInvoice) {
+        errors.push('Team documentation is incomplete: add at least one team photo and one team invoice/receipt');
+      }
     }
 
-    // Check for at least one material with receipt and photo
-    const materialsWithDocs = stage.materials.filter(
-      (m) => m.receiptUrl && m.photoUrl,
-    );
-    if (materialsWithDocs.length === 0 && stage.materials.length > 0) {
-      errors.push('At least one material must have a receipt and photo');
+    // Material documentation check (stage-level, not same-row strict):
+    // allow completeness across multiple material entries.
+    if (stage.materials.length > 0) {
+      // Accept material evidence saved either directly on material rows or in stage documents.
+      const hasMaterialPhoto =
+        stage.materials.some((m) => !!m.photoUrl?.trim()) ||
+        stage.media.some((m) => m.type === 'photo' && !!m.url?.trim());
+      const hasMaterialReceipt =
+        stage.materials.some((m) => !!m.receiptUrl?.trim()) ||
+        stage.documents.some((d) => !!d.url?.trim());
+      if (!hasMaterialPhoto || !hasMaterialReceipt) {
+        errors.push('Material documentation is incomplete: add at least one material photo and one receipt');
+      }
     }
 
     // Check for at least one process photo
@@ -743,6 +990,38 @@ export class ProjectsService {
           name: updatedStage.name,
           status: updatedStage.status,
         },
+      },
+    });
+
+    const stageEventTitle =
+      status === 'completed'
+        ? `Stage completed: ${updatedStage.name}`
+        : status === 'in_progress'
+          ? `Stage started: ${updatedStage.name}`
+          : `Stage updated: ${updatedStage.name}`;
+
+    await this.wsService.sendNotificationToUsers(
+      [stage.project.homeownerId, stage.project.generalContractorId].filter(Boolean),
+      {
+        type: 'stage_update',
+        title: stageEventTitle,
+        message: `Project "${stage.project.name}" stage "${updatedStage.name}" is now ${status.replace('_', ' ')}.`,
+        data: {
+          projectId,
+          stageId,
+          status,
+        },
+      },
+    );
+
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'stage_update',
+      title: stageEventTitle,
+      message: `Project "${stage.project.name}" stage "${updatedStage.name}" is now ${status.replace('_', ' ')}.`,
+      data: {
+        projectId,
+        stageId,
+        status,
       },
     });
 
@@ -959,6 +1238,7 @@ export class ProjectsService {
         latitude: latitude || null,
         longitude: longitude || null,
         budget: design.estimatedCost,
+        projectType: design.planType || 'homebuilding',
         homeownerId,
         status: 'draft',
         progress: 0,
@@ -968,6 +1248,7 @@ export class ProjectsService {
           bathrooms: design.bathrooms,
           squareFootage: design.squareFootage,
           floors: design.floors || Math.ceil(design.bedrooms / 4) || 2,
+          projectType: design.planType || 'homebuilding',
           estimatedBudget: design.estimatedCost,
           estimatedDuration: design.estimatedDuration || '12-18 months',
           phases: design.constructionPhases || [],
@@ -1356,18 +1637,34 @@ export class ProjectsService {
   async addStageTeamMember(stageId: string, dto: CreateStageTeamMemberDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
+      include: { project: { select: { id: true, name: true, homeownerId: true } } },
     });
 
     if (!stage) {
       throw new NotFoundException('Stage not found');
     }
 
-    return this.prisma.stageTeamMember.create({
+    const created = await this.prisma.stageTeamMember.create({
       data: {
         stageId,
         ...dto,
       },
     });
+
+    if (stage.project?.homeownerId) {
+      await this.wsService.sendNotification(stage.project.homeownerId, {
+        type: 'stage_team_member_added',
+        title: 'Team member added',
+        message: `Your GC added a team member to "${stage.name}" for project "${stage.project.name}".`,
+        data: {
+          projectId: stage.projectId,
+          stageId,
+          teamMemberId: created.id,
+        },
+      });
+    }
+
+    return created;
   }
 
   /**
@@ -1405,6 +1702,7 @@ export class ProjectsService {
   async addStageMaterial(stageId: string, dto: CreateStageMaterialDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
+      include: { project: { select: { id: true, name: true, homeownerId: true } } },
     });
 
     if (!stage) {
@@ -1413,13 +1711,28 @@ export class ProjectsService {
 
     const totalPrice = dto.quantity * dto.unitPrice;
 
-    return this.prisma.stageMaterial.create({
+    const created = await this.prisma.stageMaterial.create({
       data: {
         stageId,
         ...dto,
         totalPrice,
       },
     });
+
+    if (stage.project?.homeownerId) {
+      await this.wsService.sendNotification(stage.project.homeownerId, {
+        type: 'stage_material_added',
+        title: 'Material added',
+        message: `Your GC added "${dto.name}" to "${stage.name}" for project "${stage.project.name}".`,
+        data: {
+          projectId: stage.projectId,
+          stageId,
+          materialId: created.id,
+        },
+      });
+    }
+
+    return created;
   }
 
   /**
@@ -1471,19 +1784,36 @@ export class ProjectsService {
   async addStageMedia(stageId: string, dto: CreateStageMediaDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
+      include: { project: { select: { id: true, name: true, homeownerId: true } } },
     });
 
     if (!stage) {
       throw new NotFoundException('Stage not found');
     }
 
-    return this.prisma.stageMedia.create({
+    const created = await this.prisma.stageMedia.create({
       data: {
         stageId,
         ...dto,
         order: dto.order ?? 0,
       },
     });
+
+    if (stage.project?.homeownerId) {
+      const mediaType = dto.type === 'video' ? 'video' : 'photo';
+      await this.wsService.sendNotification(stage.project.homeownerId, {
+        type: 'stage_media_added',
+        title: 'Files added',
+        message: `Your GC added a ${mediaType} to "${stage.name}" for project "${stage.project.name}".`,
+        data: {
+          projectId: stage.projectId,
+          stageId,
+          mediaId: created.id,
+        },
+      });
+    }
+
+    return created;
   }
 
   /**
@@ -1518,21 +1848,155 @@ export class ProjectsService {
   /**
    * Add document to a stage
    */
+  async getHomeownerInvoiceAndReceiptFiles(homeownerId: string) {
+    const projects = await this.prisma.project.findMany({
+      where: { homeownerId },
+      select: {
+        id: true,
+        name: true,
+        stages: {
+          select: {
+            id: true,
+            name: true,
+            documents: {
+              where: {
+                OR: [
+                  { type: { in: ['invoice', 'receipt', 'INVOICE', 'RECEIPT'] } },
+                  { category: { in: ['invoice', 'receipt', 'INVOICE', 'RECEIPT'] } },
+                ],
+              },
+              select: {
+                id: true,
+                name: true,
+                type: true,
+                category: true,
+                url: true,
+                createdAt: true,
+              },
+            },
+            materials: {
+              where: { receiptUrl: { not: null } },
+              select: {
+                id: true,
+                name: true,
+                receiptUrl: true,
+                createdAt: true,
+              },
+            },
+            teamMembers: {
+              where: { invoiceUrl: { not: null } },
+              select: {
+                id: true,
+                name: true,
+                role: true,
+                invoiceUrl: true,
+                createdAt: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const files: Array<{
+      id: string;
+      projectId: string;
+      projectName: string;
+      stageId: string;
+      stageName: string;
+      type: 'invoice' | 'receipt';
+      source: 'stage_document' | 'material_receipt' | 'team_invoice';
+      name: string;
+      url: string;
+      createdAt: Date;
+    }> = [];
+
+    for (const project of projects) {
+      for (const stage of project.stages ?? []) {
+        for (const doc of stage.documents ?? []) {
+          files.push({
+            id: `doc-${doc.id}`,
+            projectId: project.id,
+            projectName: project.name,
+            stageId: stage.id,
+            stageName: stage.name,
+            type: doc.type?.toLowerCase() === 'receipt' ? 'receipt' : 'invoice',
+            source: 'stage_document',
+            name: doc.name || `${stage.name} ${doc.type || 'document'}`,
+            url: doc.url,
+            createdAt: doc.createdAt,
+          });
+        }
+        for (const material of stage.materials ?? []) {
+          if (!material.receiptUrl) continue;
+          files.push({
+            id: `mat-${material.id}`,
+            projectId: project.id,
+            projectName: project.name,
+            stageId: stage.id,
+            stageName: stage.name,
+            type: 'receipt',
+            source: 'material_receipt',
+            name: `${material.name} Receipt`,
+            url: material.receiptUrl,
+            createdAt: material.createdAt,
+          });
+        }
+        for (const tm of stage.teamMembers ?? []) {
+          if (!tm.invoiceUrl) continue;
+          files.push({
+            id: `team-${tm.id}`,
+            projectId: project.id,
+            projectName: project.name,
+            stageId: stage.id,
+            stageName: stage.name,
+            type: 'invoice',
+            source: 'team_invoice',
+            name: `${tm.name} Invoice${tm.role ? ` (${tm.role})` : ''}`,
+            url: tm.invoiceUrl,
+            createdAt: tm.createdAt,
+          });
+        }
+      }
+    }
+
+    return files.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  /**
+   * Add document to a stage
+   */
   async addStageDocument(stageId: string, dto: CreateStageDocumentDto) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
+      include: { project: { select: { id: true, name: true, homeownerId: true } } },
     });
 
     if (!stage) {
       throw new NotFoundException('Stage not found');
     }
 
-    return this.prisma.stageDocument.create({
+    const created = await this.prisma.stageDocument.create({
       data: {
         stageId,
         ...dto,
       },
     });
+
+    if (stage.project?.homeownerId) {
+      await this.wsService.sendNotification(stage.project.homeownerId, {
+        type: 'stage_document_added',
+        title: 'Document added',
+        message: `Your GC added a document to "${stage.name}" for project "${stage.project.name}".`,
+        data: {
+          projectId: stage.projectId,
+          stageId,
+          documentId: created.id,
+        },
+      });
+    }
+
+    return created;
   }
 
   /**

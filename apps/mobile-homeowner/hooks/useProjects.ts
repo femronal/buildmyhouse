@@ -151,6 +151,19 @@ export function useActiveProjects() {
 }
 
 /**
+ * Get homeowner invoice/receipt files uploaded by GC
+ */
+export function useMyInvoiceFiles() {
+  return useQuery({
+    queryKey: ['projects', 'my-invoice-files'],
+    queryFn: () => projectService.getMyInvoiceFiles(),
+    staleTime: 30_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+  });
+}
+
+/**
  * Delete pending project
  */
 export function useDeletePendingProject() {

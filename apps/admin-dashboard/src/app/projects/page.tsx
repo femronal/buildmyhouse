@@ -103,6 +103,8 @@ export default function ProjectsPage() {
   const [paymentLinkProjectId, setPaymentLinkProjectId] = useState<string | null>(null);
   const [paymentLinkValue, setPaymentLinkValue] = useState('');
   const [timelineProjectId, setTimelineProjectId] = useState<string | null>(null);
+  const [deactivateProjectTarget, setDeactivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string>('');
 
   const queryClient = useQueryClient();
@@ -175,8 +177,11 @@ export default function ProjectsPage() {
     mutationFn: async (projectId: string) => {
       return api.patch(`/projects/${projectId}/deactivate`, {});
     },
-    onSuccess: async () => {
+    onSuccess: async (_data, projectId) => {
       await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      const project = projects.find((p) => p.id === projectId);
+      setPausedProjectName(project?.name || 'This project');
+      setDeactivateProjectTarget(null);
     },
   });
 
@@ -323,8 +328,7 @@ export default function ProjectsPage() {
         {filteredProjects.map((project) => {
           const progressWidth = `${project.progress}%`;
           const outstanding = Math.max(project.budget - project.spent, 0);
-          const isHomebuilding = project.projectType === 'homebuilding';
-          const showConfirm = isHomebuilding && project.paymentConfirmationStatus === 'declared';
+          const showConfirm = project.paymentConfirmationStatus === 'declared';
           const canActivate = project.status === 'pending_payment' || project.status === 'paused';
           const canDeactivate = project.status === 'active';
           const gcMailto = project.gcEmail ? `mailto:${project.gcEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}` : null;
@@ -380,15 +384,15 @@ export default function ProjectsPage() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Budget</p>
-                  <p className="font-semibold">${project.budget.toLocaleString()}</p>
+                  <p className="font-semibold">₦{project.budget.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Spent</p>
-                  <p className="font-semibold">${project.spent.toLocaleString()}</p>
+                  <p className="font-semibold">₦{project.spent.toLocaleString()}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Outstanding</p>
-                  <p className="font-semibold">${outstanding.toLocaleString()}</p>
+                  <p className="font-semibold">₦{outstanding.toLocaleString()}</p>
                 </div>
               </div>
 
@@ -421,63 +425,61 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              {isHomebuilding && (
-                <div className="border rounded-lg p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">Manual payment (homebuilding)</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        Payment status:{' '}
-                        <span className="font-medium text-gray-700">
-                          {project.paymentConfirmationStatus || 'not_declared'}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
+              <div className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">Manual payment</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Payment status:{' '}
+                      <span className="font-medium text-gray-700">
+                        {project.paymentConfirmationStatus || 'not_declared'}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      className="px-3 py-2 text-sm border rounded-lg"
+                      onClick={() => {
+                        setActionError('');
+                        setPaymentLinkProjectId(project.id);
+                        setPaymentLinkValue(project.externalPaymentLink || '');
+                      }}
+                    >
+                      {project.externalPaymentLink ? 'Update payment link' : 'Request manual payment'}
+                    </button>
+                    {showConfirm && (
                       <button
-                        className="px-3 py-2 text-sm border rounded-lg"
-                        onClick={() => {
+                        disabled={confirmManualPaymentMutation.isPending}
+                        className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg disabled:opacity-50"
+                        onClick={async () => {
                           setActionError('');
-                          setPaymentLinkProjectId(project.id);
-                          setPaymentLinkValue(project.externalPaymentLink || '');
+                          try {
+                            await confirmManualPaymentMutation.mutateAsync(project.id);
+                          } catch (e: any) {
+                            setActionError(e?.message || 'Failed to confirm payment');
+                          }
                         }}
                       >
-                        {project.externalPaymentLink ? 'Update payment link' : 'Request manual payment'}
+                        Confirm payment
                       </button>
-                      {showConfirm && (
-                        <button
-                          disabled={confirmManualPaymentMutation.isPending}
-                          className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg disabled:opacity-50"
-                          onClick={async () => {
-                            setActionError('');
-                            try {
-                              await confirmManualPaymentMutation.mutateAsync(project.id);
-                            } catch (e: any) {
-                              setActionError(e?.message || 'Failed to confirm payment');
-                            }
-                          }}
-                        >
-                          Confirm payment
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
-
-                  {project.externalPaymentLink ? (
-                    <a
-                      href={project.externalPaymentLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      View payment instructions
-                    </a>
-                  ) : (
-                    <p className="text-xs text-gray-500">No external payment link set yet.</p>
-                  )}
                 </div>
-              )}
+
+                {project.externalPaymentLink ? (
+                  <a
+                    href={project.externalPaymentLink}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View payment instructions
+                  </a>
+                ) : (
+                  <p className="text-xs text-gray-500">No external payment link set yet.</p>
+                )}
+              </div>
 
               {project.risk === 'high' && (
                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
@@ -503,7 +505,7 @@ export default function ProjectsPage() {
                       setActionError('');
                       try {
                         if (canDeactivate) {
-                          await deactivateProjectMutation.mutateAsync(project.id);
+                          setDeactivateProjectTarget({ id: project.id, name: project.name });
                         } else {
                           await activateProjectMutation.mutateAsync(project.id);
                         }
@@ -551,6 +553,73 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {deactivateProjectTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Deactivate Project?</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Deactivating <span className="font-medium text-gray-900">{deactivateProjectTarget.name}</span> will
+                  pause the project for both the homeowner and the GC. They will be notified that work is temporarily
+                  paused.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
+              Only proceed if this pause is required for review, dispute resolution, or payment issues.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg"
+                onClick={() => setDeactivateProjectTarget(null)}
+                disabled={deactivateProjectMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-amber-600 text-white disabled:opacity-50"
+                disabled={deactivateProjectMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    await deactivateProjectMutation.mutateAsync(deactivateProjectTarget.id);
+                  } catch (e: any) {
+                    setActionError(e?.message || 'Failed to deactivate project');
+                  }
+                }}
+              >
+                {deactivateProjectMutation.isPending ? 'Pausing…' : 'Proceed and Pause'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pausedProjectName && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-emerald-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Project Paused</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  <span className="font-medium text-gray-900">{pausedProjectName}</span> has been paused successfully.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <button className="px-4 py-2 rounded-lg bg-gray-900 text-white" onClick={() => setPausedProjectName(null)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {paymentLinkProjectId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">

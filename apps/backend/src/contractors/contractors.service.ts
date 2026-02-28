@@ -4,11 +4,17 @@ import {
   forwardRef,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
 import { StripeService } from '../payments/services/stripe.service';
 import { ConfigService } from '@nestjs/config';
+import {
+  GC_VERIFICATION_REQUIRED_DOCUMENTS,
+  GCVerificationDocumentType,
+} from './constants/gc-verification-documents';
+import { UpsertVerificationDocumentDto } from './dto/upsert-verification-document.dto';
 
 @Injectable()
 export class ContractorsService {
@@ -292,6 +298,7 @@ export class ContractorsService {
       contractors = await this.prisma.contractor.findMany({
         where: {
           type: 'general_contractor',
+          verified: true,
         },
         include: {
           user: {
@@ -384,8 +391,35 @@ export class ContractorsService {
       return [];
     }
 
+    const sender =
+      senderId &&
+      (await this.prisma.user.findUnique({
+        where: { id: senderId },
+        select: { id: true, role: true },
+      }));
+
+    let contractorIdsForRequest = normalizedContractorIds;
+    if (sender?.role === 'homeowner') {
+      const eligible = await this.prisma.contractor.findMany({
+        where: {
+          userId: { in: normalizedContractorIds },
+          type: 'general_contractor',
+          verified: true,
+        },
+        select: { userId: true },
+      });
+      const eligibleIds = new Set(eligible.map((item: any) => item.userId));
+      const invalidIds = normalizedContractorIds.filter((id) => !eligibleIds.has(id));
+      if (invalidIds.length > 0) {
+        throw new BadRequestException(
+          'Only verified general contractors can receive homeowner project requests',
+        );
+      }
+      contractorIdsForRequest = normalizedContractorIds.filter((id) => eligibleIds.has(id));
+    }
+
     const requests = await Promise.all(
-      normalizedContractorIds.map((contractorId) =>
+      contractorIdsForRequest.map((contractorId) =>
         this.prisma.projectRequest.create({
           data: {
             projectId,
@@ -1155,6 +1189,8 @@ export class ContractorsService {
       throw new NotFoundException('User not found');
     }
 
+    const verification = await this.getVerificationDocumentStatus(contractor?.id);
+
     const activeProjects = earnings.filter((p: any) => p.status === 'active');
     const completedProjects = earnings.filter((p: any) => p.status === 'completed');
     const totalEarnings = earnings.reduce((sum: number, p: any) => sum + (p.earned || 0), 0);
@@ -1181,9 +1217,16 @@ export class ContractorsService {
         id: c.id,
         name: c.name,
         fileUrl: c.fileUrl,
+        documentType: c.documentType ?? null,
         expiryYear: c.expiryYear,
         createdAt: c.createdAt,
       })),
+      verificationRequiredDocuments: verification.requiredDocuments,
+      verificationUploadedDocuments: verification.uploadedDocuments,
+      verificationUploadedCount: verification.uploadedRequiredCount,
+      verificationRequiredCount: verification.totalRequiredCount,
+      verificationMissingDocuments: verification.missingRequiredDocuments,
+      hasUploadedAllVerificationDocuments: verification.hasUploadedAllRequiredDocuments,
     };
   }
 
@@ -1231,9 +1274,67 @@ export class ContractorsService {
       id: c.id,
       name: c.name,
       fileUrl: c.fileUrl,
+      documentType: c.documentType ?? null,
       expiryYear: c.expiryYear,
       createdAt: c.createdAt,
     }));
+  }
+
+  async getGCVerificationStatus(userId: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    if (contractor.type !== 'general_contractor') {
+      throw new ForbiddenException('Only general contractors can manage verification documents');
+    }
+    return this.getVerificationDocumentStatus(contractor.id);
+  }
+
+  async upsertGCVerificationDocument(userId: string, data: UpsertVerificationDocumentDto) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    if (contractor.type !== 'general_contractor') {
+      throw new ForbiddenException('Only general contractors can manage verification documents');
+    }
+
+    const definition = GC_VERIFICATION_REQUIRED_DOCUMENTS.find(
+      (doc) => doc.type === data.documentType,
+    );
+    if (!definition) {
+      throw new BadRequestException('Invalid verification document type');
+    }
+
+    const fileUrl = data.fileUrl?.trim();
+    if (!fileUrl) {
+      throw new BadRequestException('fileUrl is required');
+    }
+
+    const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    await this.prisma.contractorCertification.deleteMany({
+      where: {
+        contractorId: contractor.id,
+        documentType: data.documentType,
+      },
+    });
+
+    const created = await this.prisma.contractorCertification.create({
+      data: {
+        contractorId: contractor.id,
+        name: definition.title,
+        documentType: data.documentType,
+        fileUrl: normalizedUrl,
+        expiryYear: data.expiryYear?.trim() || null,
+      },
+    });
+
+    const status = await this.getVerificationDocumentStatus(contractor.id);
+    return {
+      uploadedDocument: {
+        id: created.id,
+        name: created.name,
+        documentType: created.documentType,
+        fileUrl: created.fileUrl,
+        expiryYear: created.expiryYear,
+      },
+      ...status,
+    };
   }
 
   async createCertification(
@@ -1320,7 +1421,7 @@ export class ContractorsService {
     const contractors = await this.prisma.contractor.findMany({
       where: {
         type: 'general_contractor',
-        verified: false,
+        user: { is: { role: 'general_contractor' } },
       },
       include: {
         user: {
@@ -1335,7 +1436,7 @@ export class ContractorsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-    const documentsByContractor = await this.getCertificationNamesByContractor(
+    const documentsByContractor = await this.getVerificationDocumentsByContractor(
       contractors.map((c: any) => c.id),
     );
     return contractors.map((c: any) => ({
@@ -1346,24 +1447,43 @@ export class ContractorsService {
       location: c.location,
       email: c.user?.email,
       user: c.user,
+      verified: c.verified || c.user?.verified || false,
       createdAt: c.createdAt,
-      documents: documentsByContractor[c.id] ?? [],
+      documents: documentsByContractor[c.id]?.uploadedDocuments.map((doc) => doc.name) ?? [],
+      verificationDocuments: documentsByContractor[c.id]?.requiredDocuments ?? [],
+      missingRequiredDocuments: documentsByContractor[c.id]?.missingRequiredDocuments ?? [],
+      uploadedRequiredDocumentCount: documentsByContractor[c.id]?.uploadedRequiredCount ?? 0,
+      requiredDocumentCount: documentsByContractor[c.id]?.totalRequiredCount ?? 0,
+      hasUploadedAllVerificationDocuments:
+        documentsByContractor[c.id]?.hasUploadedAllRequiredDocuments ?? false,
     }));
   }
 
-  private async getCertificationNamesByContractor(contractorIds: string[]): Promise<Record<string, string[]>> {
+  private async getVerificationDocumentsByContractor(contractorIds: string[]) {
     if (contractorIds.length === 0) return {};
     try {
       const model = this.prisma.contractorCertification;
       if (!model?.findMany) return {};
       const certs = await model.findMany({
         where: { contractorId: { in: contractorIds } },
-        select: { contractorId: true, name: true },
+        select: {
+          id: true,
+          contractorId: true,
+          name: true,
+          fileUrl: true,
+          expiryYear: true,
+          documentType: true,
+          createdAt: true,
+        },
       });
-      const result: Record<string, string[]> = {};
+      const grouped: Record<string, any[]> = {};
       for (const c of certs) {
-        if (!result[c.contractorId]) result[c.contractorId] = [];
-        result[c.contractorId].push(c.name);
+        if (!grouped[c.contractorId]) grouped[c.contractorId] = [];
+        grouped[c.contractorId].push(c);
+      }
+      const result: Record<string, any> = {};
+      for (const contractorId of contractorIds) {
+        result[contractorId] = this.buildVerificationStatus(grouped[contractorId] ?? []);
       }
       return result;
     } catch {
@@ -1374,6 +1494,17 @@ export class ContractorsService {
   /** Admin: approve (verify) a GC */
   async adminVerifyGC(userId: string) {
     const contractor = await this.getContractorByUserIdOrThrow(userId);
+    if (contractor.type !== 'general_contractor') {
+      throw new BadRequestException('Only general contractors can be approved in this flow');
+    }
+
+    const verification = await this.getVerificationDocumentStatus(contractor.id);
+    if (!verification.hasUploadedAllRequiredDocuments) {
+      throw new BadRequestException(
+        `This GC has not uploaded all required verification documents. Missing: ${verification.missingRequiredDocuments.join(', ')}`,
+      );
+    }
+
     await this.prisma.contractor.update({
       where: { id: contractor.id },
       data: { verified: true },
@@ -1396,6 +1527,64 @@ export class ContractorsService {
       throw new NotFoundException('Contractor profile not found. Please complete onboarding.');
     }
     return contractor;
+  }
+
+  private buildVerificationStatus(records: any[]) {
+    const byType = new Map<GCVerificationDocumentType, any>();
+    for (const record of records) {
+      if (record.documentType) {
+        byType.set(record.documentType as GCVerificationDocumentType, record);
+      }
+    }
+
+    const requiredDocuments = GC_VERIFICATION_REQUIRED_DOCUMENTS.map((required) => {
+      const uploaded = byType.get(required.type);
+      return {
+        type: required.type,
+        title: required.title,
+        description: required.description,
+        uploaded: !!uploaded,
+        fileUrl: uploaded?.fileUrl ?? null,
+        expiryYear: uploaded?.expiryYear ?? null,
+        uploadedAt: uploaded?.createdAt ?? null,
+      };
+    });
+
+    const uploadedRequiredCount = requiredDocuments.filter((doc) => doc.uploaded).length;
+    const missingRequiredDocuments = requiredDocuments
+      .filter((doc) => !doc.uploaded)
+      .map((doc) => doc.title);
+
+    return {
+      requiredDocuments,
+      uploadedRequiredCount,
+      totalRequiredCount: requiredDocuments.length,
+      missingRequiredDocuments,
+      hasUploadedAllRequiredDocuments: missingRequiredDocuments.length === 0,
+      uploadedDocuments: records.map((record) => ({
+        id: record.id,
+        name: record.name,
+        documentType: record.documentType ?? null,
+        fileUrl: record.fileUrl,
+        expiryYear: record.expiryYear ?? null,
+        createdAt: record.createdAt,
+      })),
+    };
+  }
+
+  private async getVerificationDocumentStatus(contractorId?: string | null) {
+    if (!contractorId) {
+      return this.buildVerificationStatus([]);
+    }
+    const model = this.prisma.contractorCertification;
+    if (!model?.findMany) {
+      return this.buildVerificationStatus([]);
+    }
+    const records = await model.findMany({
+      where: { contractorId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return this.buildVerificationStatus(records ?? []);
   }
 
   async listBankAccounts(userId: string) {

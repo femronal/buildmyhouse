@@ -18,6 +18,19 @@ export interface RecommendedGC {
   };
 }
 
+export interface HomeownerInvoiceFile {
+  id: string;
+  projectId: string;
+  projectName: string;
+  stageId: string;
+  stageName: string;
+  type: 'invoice' | 'receipt';
+  source: 'stage_document' | 'material_receipt' | 'team_invoice';
+  name: string;
+  url: string;
+  createdAt: string;
+}
+
 export const projectService = {
   /**
    * Get a single project by ID
@@ -127,6 +140,19 @@ export const projectService = {
    */
   declareManualPayment: async (projectId: string) => {
     return api.post(`/projects/${projectId}/payment/declare`, {});
+  },
+
+  createStageDispute: async (
+    projectId: string,
+    stageId: string,
+    payload: { reasons: string[]; otherReason?: string },
+  ) => {
+    return api.post(`/projects/${projectId}/stages/${stageId}/disputes`, payload);
+  },
+
+  getMyInvoiceFiles: async (): Promise<HomeownerInvoiceFile[]> => {
+    const response = await api.get('/projects/me/invoice-files');
+    return Array.isArray(response) ? response : [];
   },
 
   /**

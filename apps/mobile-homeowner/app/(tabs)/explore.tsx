@@ -1,10 +1,11 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Dimensions, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Bell, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, Home, LandPlot } from "lucide-react-native";
+import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, Home, LandPlot } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDesigns, useHousesForSale, useLandsForSale } from '@/hooks';
 import { getBackendAssetUrl } from '@/lib/image';
+import NotificationBell from '@/components/NotificationBell';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -142,13 +143,7 @@ export default function ExploreScreen() {
           Explore
         </Text>
         
-        <TouchableOpacity 
-          onPress={() => router.push('/notifications')}
-          className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center"
-        >
-          <Bell size={24} color="#000000" strokeWidth={2.5} />
-          <View className="absolute top-2 right-2 w-3 h-3 bg-black rounded-full" />
-        </TouchableOpacity>
+        <NotificationBell />
       </View>
 
       {/* Search & Filter */}
@@ -208,7 +203,7 @@ export default function ExploreScreen() {
       {activeTab === 'designs' && (
         <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
-            {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under $300k', 'Luxury'].map((tag) => (
+            {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
@@ -413,7 +408,7 @@ export default function ExploreScreen() {
                       className="text-black text-base"
                       style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                     >
-                      ${design.estimatedCost.toLocaleString()}
+                      ₦{design.estimatedCost.toLocaleString()}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -484,7 +479,7 @@ export default function ExploreScreen() {
                         </Text>
                       </View>
                       <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        ${house.price.toLocaleString()}
+                        ₦{house.price.toLocaleString()}
                       </Text>
                     </View>
                   </TouchableOpacity>

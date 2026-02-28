@@ -3,7 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert } fr
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ExternalLink, CheckCircle2, Clock, RefreshCcw, Lock, Mail, AlertCircle, DollarSign } from 'lucide-react-native';
+import { ArrowLeft, ExternalLink, CheckCircle2, Clock, RefreshCcw, Lock, Mail, AlertCircle } from 'lucide-react-native';
 
 import {
   useActiveProjects,
@@ -24,10 +24,6 @@ function formatProjectType(type?: string) {
     default:
       return 'Project';
   }
-}
-
-function isHomebuilding(type?: string) {
-  return type === 'homebuilding';
 }
 
 export default function BillingPaymentsScreen() {
@@ -208,90 +204,13 @@ export default function BillingPaymentsScreen() {
                 const type = project.projectType;
                 const title = project.name || 'Project';
 
-                if (isHomebuilding(type)) {
-                  const link = project.externalPaymentLink as string | undefined;
-                  const confirmationStatus = (project.paymentConfirmationStatus as string | undefined) || 'not_declared';
+                const link = project.externalPaymentLink as string | undefined;
+                const confirmationStatus = (project.paymentConfirmationStatus as string | undefined) || 'not_declared';
+                const declaredAt = project.paymentDeclaredAt ? new Date(project.paymentDeclaredAt).toLocaleDateString() : null;
+                const confirmedAt = project.paymentConfirmedAt ? new Date(project.paymentConfirmedAt).toLocaleDateString() : null;
+                const showDeclare = confirmationStatus === 'not_declared' || confirmationStatus === 'rejected';
+                const declareDisabled = declareManualPaymentMutation.isPending;
 
-                  const declaredAt = project.paymentDeclaredAt ? new Date(project.paymentDeclaredAt).toLocaleDateString() : null;
-                  const confirmedAt = project.paymentConfirmedAt ? new Date(project.paymentConfirmedAt).toLocaleDateString() : null;
-
-                  const showDeclare = confirmationStatus === 'not_declared' || confirmationStatus === 'rejected';
-                  const declareDisabled = declareManualPaymentMutation.isPending;
-
-                  return (
-                    <View key={projectId} className="bg-white rounded-3xl p-5 border border-gray-200">
-                      <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        {title}
-                      </Text>
-                      <Text className="text-gray-500 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {formatProjectType(type)}
-                      </Text>
-
-                      <View className="mt-4 bg-gray-50 rounded-2xl p-4 border border-gray-200">
-                        <View className="flex-row items-center">
-                          {confirmationStatus === 'confirmed' ? (
-                            <CheckCircle2 size={18} color="#059669" strokeWidth={2.5} />
-                          ) : confirmationStatus === 'declared' ? (
-                            <Clock size={18} color="#F59E0B" strokeWidth={2.5} />
-                          ) : confirmationStatus === 'rejected' ? (
-                            <AlertCircle size={18} color="#DC2626" strokeWidth={2.5} />
-                          ) : (
-                            <DollarSign size={18} color="#111827" strokeWidth={2.5} />
-                          )}
-                          <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                            {confirmationStatus === 'confirmed'
-                              ? 'Deposit confirmed'
-                              : confirmationStatus === 'declared'
-                                ? 'Deposit under review'
-                                : confirmationStatus === 'rejected'
-                                  ? 'Deposit rejected'
-                                  : 'Deposit required'}
-                          </Text>
-                        </View>
-
-                        <Text className="text-gray-600 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {confirmationStatus === 'confirmed'
-                            ? `Confirmed on ${confirmedAt || '—'}. Tracking is unlocked.`
-                            : confirmationStatus === 'declared'
-                              ? `Declared on ${declaredAt || '—'}. Admin review in progress (up to 72 hours).`
-                              : confirmationStatus === 'rejected'
-                                ? 'Your deposit was rejected. Please re-check the details and declare again after depositing.'
-                                : link
-                                  ? 'Use the payment instructions sent to your email (Stripe invoice, Wise, Paystack, or Zelle). Then tap “I deposited”.'
-                                  : 'Waiting for admin to email payment instructions.'}
-                        </Text>
-
-                        {!!link && (
-                          <TouchableOpacity
-                            onPress={() => handleOpenExternalLink(link)}
-                            className="mt-4 flex-row items-center justify-center bg-black rounded-xl py-3"
-                          >
-                            <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
-                            <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                              Open payment instructions
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-
-                        {showDeclare && (
-                          <TouchableOpacity
-                            onPress={() => handleDeclarePaid(projectId)}
-                            disabled={!link || declareDisabled}
-                            className={`mt-3 flex-row items-center justify-center rounded-xl py-3 ${
-                              !link || declareDisabled ? 'bg-gray-200' : 'bg-white border border-gray-300'
-                            }`}
-                          >
-                            <Text className={`text-sm ${!link || declareDisabled ? 'text-gray-500' : 'text-gray-900'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                              I deposited
-                            </Text>
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-                  );
-                }
-
-                // Renovation / interior design: simple deposit guidance
                 return (
                   <View key={projectId} className="bg-white rounded-3xl p-5 border border-gray-200">
                     <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -303,15 +222,63 @@ export default function BillingPaymentsScreen() {
 
                     <View className="mt-4 bg-gray-50 rounded-2xl p-4 border border-gray-200">
                       <View className="flex-row items-center">
-                        <DollarSign size={18} color="#111827" strokeWidth={2.5} />
+                        {confirmationStatus === 'confirmed' ? (
+                          <CheckCircle2 size={18} color="#059669" strokeWidth={2.5} />
+                        ) : confirmationStatus === 'declared' ? (
+                          <Clock size={18} color="#F59E0B" strokeWidth={2.5} />
+                        ) : confirmationStatus === 'rejected' ? (
+                          <AlertCircle size={18} color="#DC2626" strokeWidth={2.5} />
+                        ) : (
+                          <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
+                        )}
                         <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          Deposit instructions
+                          {confirmationStatus === 'confirmed'
+                            ? 'Deposit confirmed'
+                            : confirmationStatus === 'declared'
+                              ? 'Deposit under review'
+                              : confirmationStatus === 'rejected'
+                                ? 'Deposit rejected'
+                                : 'Deposit required'}
                         </Text>
                       </View>
 
                       <Text className="text-gray-600 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        Admin will email you the deposit instructions after the GC confirms readiness. For smaller projects, a Stripe Card Invoice may be used.
+                        {confirmationStatus === 'confirmed'
+                          ? `Confirmed on ${confirmedAt || '—'}.`
+                          : confirmationStatus === 'declared'
+                            ? `Declared on ${declaredAt || '—'}. Admin review in progress (up to 72 hours).`
+                            : confirmationStatus === 'rejected'
+                              ? 'Your deposit was rejected. Please re-check the details and declare again after depositing.'
+                              : link
+                                ? 'Use the payment instructions sent to your email (Stripe invoice, Wise, Paystack, or Zelle). Then tap “I deposited”.'
+                                : 'Waiting for admin to email payment instructions.'}
                       </Text>
+
+                      {!!link && (
+                        <TouchableOpacity
+                          onPress={() => handleOpenExternalLink(link)}
+                          className="mt-4 flex-row items-center justify-center bg-black rounded-xl py-3"
+                        >
+                          <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
+                          <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            Open payment instructions
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {showDeclare && (
+                        <TouchableOpacity
+                          onPress={() => handleDeclarePaid(projectId)}
+                          disabled={!link || declareDisabled}
+                          className={`mt-3 flex-row items-center justify-center rounded-xl py-3 ${
+                            !link || declareDisabled ? 'bg-gray-200' : 'bg-white border border-gray-300'
+                          }`}
+                        >
+                          <Text className={`text-sm ${!link || declareDisabled ? 'text-gray-500' : 'text-gray-900'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            I deposited
+                          </Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 );

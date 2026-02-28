@@ -16,6 +16,10 @@ export default function ContractorLayout() {
       <Stack.Screen name="gc-stage-management" />
       <Stack.Screen name="stage-detail" />
       <Stack.Screen name="chat" />
+      <Stack.Screen name="privacy-settings" />
+      <Stack.Screen name="terms-conditions" />
+      <Stack.Screen name="help-support" />
+      <Stack.Screen name="about" />
     </Stack>
   );
 }

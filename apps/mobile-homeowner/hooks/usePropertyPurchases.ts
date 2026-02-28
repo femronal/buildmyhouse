@@ -14,3 +14,10 @@ export function useLandPurchases() {
     queryFn: () => api.get<any[]>('/lands/me/purchases'),
   });
 }
+
+export function useRentalPurchases() {
+  return useQuery({
+    queryKey: ['rental-purchases'],
+    queryFn: () => api.get<any[]>('/rentals/me/purchases'),
+  });
+}

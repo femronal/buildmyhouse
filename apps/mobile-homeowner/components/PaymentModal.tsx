@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { X, Lock, DollarSign, ExternalLink } from 'lucide-react-native';
+import { X, Lock, ExternalLink } from 'lucide-react-native';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
 
@@ -74,7 +74,7 @@ export default function PaymentModal({
             {/* Amount card */}
             <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
               <View className="flex-row items-center mb-4">
-                <DollarSign size={24} color="#111827" strokeWidth={2} />
+                <Text className="text-gray-900 text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                 <Text
                   className="text-gray-900 text-lg ml-2"
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -86,7 +86,7 @@ export default function PaymentModal({
                 className="text-4xl text-black mb-2"
                 style={{ fontFamily: 'JetBrainsMono_500Medium' }}
               >
-                ${minDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}+
+                ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}+
               </Text>
               <Text
                 className="text-gray-700 text-sm"
@@ -100,10 +100,10 @@ export default function PaymentModal({
                   Recommended amounts
                 </Text>
                 <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  50% minimum: ${minDeposit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  50% minimum: ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
                 <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  100% recommended: ${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  100% recommended: ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
             </View>
