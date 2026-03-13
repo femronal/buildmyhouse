@@ -195,7 +195,15 @@ export class LandsService {
       include: {
         landForSale: {
           select: {
+            name: true,
+            location: true,
             price: true,
+            sizeSqm: true,
+            images: {
+              orderBy: { order: 'asc' },
+              take: 1,
+              select: { url: true },
+            },
           },
         },
       },
@@ -205,12 +213,25 @@ export class LandsService {
       throw new NotFoundException('Viewing request not found');
     }
 
+    const land = existing.landForSale;
+    const snapshot =
+      outcomeStatus === 'purchased' && land
+        ? {
+            snapshotName: land.name,
+            snapshotLocation: land.location,
+            snapshotPrice: land.price,
+            snapshotSizeSqm: land.sizeSqm,
+            snapshotImageUrl: land.images?.[0]?.url ?? null,
+          }
+        : {};
+
     const updated = await viewingModel.update({
       where: { id: interestId },
       data: {
         outcomeStatus,
-        purchaseAmount: outcomeStatus === 'purchased' ? existing.landForSale?.price ?? null : null,
+        purchaseAmount: outcomeStatus === 'purchased' ? land?.price ?? null : null,
         purchaseMarkedAt: outcomeStatus === 'purchased' ? new Date() : null,
+        ...snapshot,
       },
     });
 

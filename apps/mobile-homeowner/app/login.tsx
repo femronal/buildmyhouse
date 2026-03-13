@@ -1,8 +1,9 @@
-import { View, Text, TouchableOpacity, Image, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight } from "lucide-react-native";
+import Logo from "@/components/Logo";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -37,9 +38,20 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View
+      className="flex-1 bg-white"
+      style={{
+        overflow: "hidden",
+        ...(Platform.OS === "web"
+          ? { height: "100vh", maxHeight: "100vh" }
+          : {}),
+      }}
+    >
       {/* Header */}
       <View className="pt-20 px-8 pb-12">
+        <View className="items-center mb-8">
+          <Logo size="xxl" />
+        </View>
         <Text 
           className="text-5xl text-black mb-3"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -50,7 +62,7 @@ export default function LoginScreen() {
           className="text-xl text-gray-600 leading-7"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          Sign in to continue your home building journey
+          Sign in or create an account to continue your home building journey
         </Text>
       </View>
 
@@ -98,7 +110,7 @@ export default function LoginScreen() {
           <View className="flex-1 h-px bg-gray-300" />
         </View>
 
-        {/* Email/Password Option */}
+        {/* Email Option */}
         <TouchableOpacity
           onPress={() => router.push('/email-login')}
           className="bg-black rounded-2xl py-5 px-6 flex-row items-center justify-center"
@@ -108,7 +120,7 @@ export default function LoginScreen() {
             className="text-white text-xl ml-3"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
-            Sign in with Email
+            Continue with Email
           </Text>
           <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} className="ml-2" />
         </TouchableOpacity>

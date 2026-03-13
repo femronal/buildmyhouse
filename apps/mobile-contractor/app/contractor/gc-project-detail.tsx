@@ -24,6 +24,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { getBackendAssetUrl } from "@/lib/image";
 
 // Helper to get project image
 const getProjectImage = (project: any) => {
@@ -102,10 +103,11 @@ export default function GCProjectDetailScreen() {
       return;
     }
 
+    const pdfUrl = getBackendAssetUrl(project.planPdfUrl);
     try {
-      const supported = await Linking.canOpenURL(project.planPdfUrl);
+      const supported = await Linking.canOpenURL(pdfUrl);
       if (supported) {
-        await Linking.openURL(project.planPdfUrl);
+        await Linking.openURL(pdfUrl);
       } else {
         Alert.alert('Error', 'Cannot open PDF URL');
       }

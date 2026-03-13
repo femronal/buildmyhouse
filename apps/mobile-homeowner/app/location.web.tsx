@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { MapPin, ArrowRight, ArrowLeft, Search } from "lucide-react-native";
 import { useState } from "react";
 import { geocodeAddress, AddressDetails } from '@/services/addressService';
+import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 
 // Simple web version without maps (maps don't work on web)
 export default function LocationScreenWeb() {
@@ -11,9 +12,22 @@ export default function LocationScreenWeb() {
   const [address, setAddress] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
+  const mapsApiKey = GOOGLE_MAPS_CONFIG.apiKey?.trim() ?? "";
+  const hasMapsApiKey =
+    mapsApiKey.length > 0 &&
+    mapsApiKey !== "YOUR_API_KEY_HERE" &&
+    mapsApiKey !== "your_google_maps_api_key_here" &&
+    !mapsApiKey.toLowerCase().includes("demo");
 
   const handleGeocode = async () => {
     if (!address.trim()) return;
+    if (!hasMapsApiKey) {
+      Alert.alert(
+        "Google Maps key missing",
+        "Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in apps/mobile-homeowner/.env, then restart Expo."
+      );
+      return;
+    }
     
     setIsGeocoding(true);
     try {
@@ -26,7 +40,6 @@ export default function LocationScreenWeb() {
         Alert.alert('Error', 'Could not find this address. Please try a different one.');
       }
     } catch (error: any) {
-      console.error('Geocoding error:', error);
       Alert.alert(
         'Geocoding Error',
         error.message || 'Could not geocode this address. Please check your internet connection and try again.'
@@ -78,6 +91,13 @@ export default function LocationScreenWeb() {
             📱 For the full map experience, use the iOS or Android app
           </Text>
         </View>
+        {!hasMapsApiKey && (
+          <View className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
+            <Text className="text-red-800 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Google Maps is not configured for web. Add `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` to `apps/mobile-homeowner/.env` and restart Expo.
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Address Input */}
@@ -99,9 +119,9 @@ export default function LocationScreenWeb() {
       {/* Geocode Button */}
       <TouchableOpacity
         onPress={handleGeocode}
-        disabled={!address.trim() || isGeocoding}
+        disabled={!address.trim() || isGeocoding || !hasMapsApiKey}
         className={`rounded-full py-4 px-8 mb-6 ${
-          address.trim() && !isGeocoding ? 'bg-blue-600' : 'bg-gray-200'
+          address.trim() && !isGeocoding && hasMapsApiKey ? 'bg-blue-600' : 'bg-gray-200'
         }`}
       >
         <View className="flex-row items-center justify-center">

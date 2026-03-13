@@ -4,7 +4,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -41,9 +41,8 @@ async function createAdmin() {
 
     console.log('✅ Admin user created successfully!');
     console.log(`Email: ${email}`);
-    console.log(`Password: ${password}`);
     console.log(`User ID: ${admin.id}`);
-    console.log('\nYou can now login to the admin dashboard with these credentials.');
+    console.log('\nLog in to the admin dashboard with the email and password you provided.');
   } catch (error: any) {
     console.error('Error creating admin user:', error.message);
   } finally {

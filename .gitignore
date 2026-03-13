@@ -47,8 +47,8 @@ Thumbs.db
 dist/
 web-build/
 
-# Prisma
-prisma/migrations/
+# Prisma (ignore root-level only; apps/backend migrations are tracked)
+/prisma/migrations/
 
 # TypeScript
 *.tsbuildinfo

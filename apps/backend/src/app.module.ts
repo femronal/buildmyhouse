@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { WebSocketModule } from './websocket/websocket.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ChatModule } from './chat/chat.module';
@@ -25,6 +27,13 @@ import { EmailModule } from './email/email.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([
+      {
+        name: 'short',
+        ttl: 60000,  // 1 minute
+        limit: 100,  // 100 requests per minute for general API
+      },
+    ]),
     EmailModule,
     AuthModule,
     WebSocketModule,
@@ -46,7 +55,12 @@ import { EmailModule } from './email/email.module';
     AdminModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}
 

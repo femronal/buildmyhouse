@@ -10,12 +10,12 @@
  *    - Places API
  *    - Geocoding API
  * 4. Create credentials (API Key)
- * 5. Add your key below and to app.json
+ * 5. Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in .env
  */
 
 export const GOOGLE_MAPS_CONFIG = {
   // Use environment variable in production, placeholder for local dev
-  apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyDJJ1acllPA41MzxJenjIpY-C7H1BnOQ5k',
+  apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
   
   // Default map region (Lagos, Nigeria)
   defaultRegion: {

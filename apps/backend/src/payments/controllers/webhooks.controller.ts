@@ -8,11 +8,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { StripeService } from '../services/stripe.service';
 import { PaymentsService } from '../services/payments.service';
 
 @Controller('payments/webhooks')
+@SkipThrottle() // Webhooks from Stripe must not be rate-limited
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 
@@ -31,9 +33,13 @@ export class WebhooksController {
       this.logger.error('Missing stripe-signature header');
       return { received: false, error: 'Missing signature' };
     }
+    if (!req.rawBody) {
+      this.logger.error('Missing raw body - ensure Nest app is configured with raw-body support for webhook route');
+      return { received: false, error: 'Server configuration error' };
+    }
 
     try {
-      // Verify webhook signature
+      // Verify webhook signature (requires raw, unparsed body)
       const event = this.stripeService.verifyWebhookSignature(
         req.rawBody,
         signature,

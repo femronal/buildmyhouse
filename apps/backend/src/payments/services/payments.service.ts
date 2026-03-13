@@ -179,7 +179,7 @@ export class PaymentsService {
     // Validate project exists (and belongs to user when possible)
     const project = await this.prisma.project.findUnique({
       where: { id: dto.projectId },
-      select: { id: true, homeownerId: true },
+      select: { id: true, homeownerId: true, name: true },
     });
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -214,11 +214,12 @@ export class PaymentsService {
       },
     });
 
-    // Store pending payment
+    // Store pending payment (homeownerId preserved when project deleted)
     const payment = await this.prisma.payment.create({
       data: {
         projectId: dto.projectId,
         stageId: dto.stageId || null,
+        homeownerId: project.homeownerId ?? undefined,
         amount: dto.amount,
         status: 'pending',
         method: 'stripe',
@@ -267,13 +268,13 @@ export class PaymentsService {
 
   /**
    * Get homeowner's payments structured as: one activation payment per project + sub-payments from GC-recorded materials and team members.
+   * Includes orphaned payments (from deleted projects) using snapshotProjectName.
    */
   async getUserPaymentsStructured(userId: string) {
     const projects = await this.prisma.project.findMany({
       where: { homeownerId: userId },
       select: { id: true, name: true },
     });
-    if (projects.length === 0) return [];
 
     const result: Array<{
       projectId: string;
@@ -364,6 +365,30 @@ export class PaymentsService {
       });
     }
 
+    // Include orphaned activation payments (from deleted projects)
+    const orphanedPayments = await this.prisma.payment.findMany({
+      where: {
+        projectId: null,
+        homeownerId: userId,
+        stageId: null,
+        status: 'completed',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    for (const p of orphanedPayments) {
+      result.push({
+        projectId: `orphan-${p.id}`,
+        projectName: p.snapshotProjectName ?? 'Past project',
+        activationPayment: {
+          id: p.id,
+          amount: p.amount,
+          method: p.method,
+          createdAt: p.createdAt.toISOString(),
+        },
+        subPayments: [],
+      });
+    }
+
     return result;
   }
 
@@ -385,14 +410,22 @@ export class PaymentsService {
     });
     if (existing) return existing;
 
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { name: true, homeownerId: true },
+    });
+
     return this.prisma.payment.create({
       data: {
         projectId,
         stageId: null,
+        homeownerId: project?.homeownerId ?? undefined,
         amount,
         status: 'completed',
         method: 'manual',
         transactionId: null,
+        snapshotProjectName: project?.name ?? null,
+        snapshotStageName: null,
       },
     });
   }
@@ -423,16 +456,42 @@ export class PaymentsService {
     if (!payment) return;
 
     if (payment.status !== 'completed') {
+      let snapshotProjectName: string | null = null;
+      let snapshotStageName: string | null = null;
+      let homeownerId: string | undefined = undefined;
+      if (payment.projectId) {
+        const project = await this.prisma.project.findUnique({
+          where: { id: payment.projectId },
+          select: { name: true, homeownerId: true },
+        });
+        snapshotProjectName = project?.name ?? null;
+        homeownerId = project?.homeownerId ?? undefined;
+      }
+      if (payment.stageId) {
+        const stage = await this.prisma.stage.findUnique({
+          where: { id: payment.stageId },
+          select: { name: true },
+        });
+        snapshotStageName = stage?.name ?? null;
+      }
+
       await this.prisma.payment.update({
         where: { id: payment.id },
-        data: { status: 'completed' },
+        data: {
+          status: 'completed',
+          snapshotProjectName,
+          snapshotStageName,
+          ...(homeownerId ? { homeownerId } : {}),
+        },
       });
 
       // Update project spent
-      await this.prisma.project.update({
-        where: { id: payment.projectId },
-        data: { spent: { increment: payment.amount } },
-      });
+      if (payment.projectId) {
+        await this.prisma.project.update({
+          where: { id: payment.projectId },
+          data: { spent: { increment: payment.amount } },
+        });
+      }
 
       const project = await this.prisma.project.findUnique({
         where: { id: payment.projectId },

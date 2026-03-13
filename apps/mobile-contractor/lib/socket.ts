@@ -1,8 +1,10 @@
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = __DEV__ 
-  ? 'http://localhost:3001' 
-  : 'https://api.buildmyhouse.com';
+const SOCKET_URL = (() => {
+  const api = process.env.EXPO_PUBLIC_API_URL;
+  if (api) return api.replace(/\/api\/?$/, '') || api;
+  return __DEV__ ? 'http://localhost:3001' : 'https://api.buildmyhouse.com';
+})();
 
 let socket: Socket | null = null;
 

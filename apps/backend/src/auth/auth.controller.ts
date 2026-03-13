@@ -9,7 +9,9 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -27,22 +29,26 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
   }
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
   @Get('google')
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 per minute (OAuth redirect)
   @UseGuards(AuthGuard('google'))
   async googleAuth() {
     // Initiates Google OAuth flow
   }
 
   @Get('google/callback')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(AuthGuard('google'))
   async googleAuthCallback(@Request() req: any) {
     const result = await this.authService.validateOAuthUser(req.user, 'google');
@@ -52,13 +58,14 @@ export class AuthController {
   }
 
   @Post('google/mobile')
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
   async googleAuthMobile(@Body() body: { code: string; redirectUri: string }) {
     // Handle mobile OAuth flow
     // Exchange authorization code for user info
     const { code, redirectUri } = body;
     
     if (!code || !redirectUri) {
-      throw new Error('Missing code or redirectUri');
+      throw new BadRequestException('Missing code or redirect URI');
     }
 
     try {
@@ -80,13 +87,13 @@ export class AuthController {
       if (!tokenResponse.ok) {
         const errorText = await tokenResponse.text();
         console.error('Token exchange error:', errorText);
-        throw new Error(`Failed to exchange code for token: ${errorText}`);
+        throw new UnauthorizedException('Google sign-in failed. Please try again.');
       }
 
       const tokens = await tokenResponse.json();
       
       if (!tokens.access_token) {
-        throw new Error('No access token received from Google');
+        throw new UnauthorizedException('Google sign-in failed. Please try again.');
       }
       
       // Get user info from Google
@@ -99,13 +106,13 @@ export class AuthController {
       if (!userInfoResponse.ok) {
         const errorText = await userInfoResponse.text();
         console.error('User info error:', errorText);
-        throw new Error(`Failed to get user info: ${errorText}`);
+        throw new UnauthorizedException('Google sign-in failed. Please try again.');
       }
 
       const userInfo = await userInfoResponse.json();
 
       if (!userInfo.email) {
-        throw new Error('No email received from Google');
+        throw new UnauthorizedException('Google sign-in failed. Email is required.');
       }
 
       // Create user profile object similar to what passport-google-oauth20 returns
@@ -122,7 +129,11 @@ export class AuthController {
       return result;
     } catch (error: any) {
       console.error('Mobile OAuth error:', error);
-      throw new Error(`Mobile OAuth error: ${error.message || 'Unknown error'}`);
+      // Re-throw NestJS HTTP exceptions as-is so clients get proper status codes
+      if (error instanceof BadRequestException || error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Google sign-in failed. Please try again.');
     }
   }
 

@@ -191,6 +191,7 @@ export class AdminService {
     if (data.projectId) return '/projects';
     if (data.interestId || data.rentalListingId) return '/rentals';
     if (notification.type === 'manual_payment_declared') return '/projects';
+    if (notification.type === 'new_user_signup') return '/users';
     return undefined;
   }
 }

@@ -4,10 +4,26 @@ import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { Request, Response } from 'express';
+import * as express from 'express';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bodyParser: false, // We add custom body parser to support Stripe webhook raw body
+  });
+
+  // Raw body for Stripe webhook signature verification (must be before JSON parser)
+  const webhookPath = '/api/payments/webhooks/stripe';
+  app.use(
+    express.json({
+      verify: (req: any, _res, buf: Buffer, encoding: BufferEncoding) => {
+        if (req.originalUrl === webhookPath && buf?.length) {
+          req.rawBody = buf.toString(encoding || 'utf8');
+        }
+      },
+    }),
+  );
+  app.use(express.urlencoded({ extended: true }));
+
   // Serve static files from uploads directory
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',

@@ -1537,17 +1537,8 @@ export class ProjectsService {
       }
     }
 
-    // Delete related records first to avoid foreign key constraint errors
-    // Payments have ON DELETE RESTRICT, so we need to delete them first
-    // Always try to delete, even if not included in query
-    try {
-      await this.prisma.payment.deleteMany({
-        where: { projectId },
-      });
-    } catch (error) {
-      console.error(`[ProjectsService] Error deleting payments for project ${projectId}:`, error);
-      // Continue - payments might not exist
-    }
+    // Preserve financial records: Payments and Orders use onDelete: SetNull,
+    // so we do NOT delete them - the DB will set projectId to null when project is deleted.
 
     // Delete stages (these have ON DELETE CASCADE, but being explicit for safety)
     try {
@@ -1569,17 +1560,7 @@ export class ProjectsService {
       // Continue - project requests might not exist
     }
 
-    // Delete orders related to this project
-    try {
-      await this.prisma.order.deleteMany({
-        where: { projectId },
-      });
-    } catch (error) {
-      console.error(`[ProjectsService] Error deleting orders for project ${projectId}:`, error);
-      // Continue - orders might not exist
-    }
-
-    // Now delete the project
+    // Now delete the project (Payments and Orders will have projectId set to null via onDelete: SetNull)
     await this.prisma.project.delete({
       where: { id: projectId },
     });

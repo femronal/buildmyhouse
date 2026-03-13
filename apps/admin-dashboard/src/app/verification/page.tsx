@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Search, ShieldCheck } from 'lucide-react';
 import { useUnverifiedGCs, useVerifyGC } from '@/hooks/useUnverifiedGCs';
 import {
   useGoLiveDesignPlan,
@@ -43,6 +43,27 @@ export default function VerificationPage() {
   const [selectedDesignForGoLive, setSelectedDesignForGoLive] = useState<PendingDesignDoc | null>(null);
   const [selectedDesignForReject, setSelectedDesignForReject] = useState<PendingDesignDoc | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [gcSearch, setGcSearch] = useState('');
+  const [gcVerificationFilter, setGcVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
+
+  const filteredGCs = useMemo(() => {
+    let list = gcs;
+    if (gcSearch.trim()) {
+      const q = gcSearch.toLowerCase().trim();
+      list = list.filter(
+        (item) =>
+          (item.name ?? '').toLowerCase().includes(q) ||
+          (item.email ?? '').toLowerCase().includes(q) ||
+          (item.user?.fullName ?? '').toLowerCase().includes(q)
+      );
+    }
+    if (gcVerificationFilter === 'verified') {
+      list = list.filter((item) => item.verified);
+    } else if (gcVerificationFilter === 'pending') {
+      list = list.filter((item) => !item.verified);
+    }
+    return list;
+  }, [gcs, gcSearch, gcVerificationFilter]);
 
   const counts = useMemo(() => {
     return {
@@ -151,6 +172,33 @@ export default function VerificationPage() {
 
       {activeTab === 'gcs' && (
         <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search by GC name or email..."
+                value={gcSearch}
+                onChange={(e) => setGcSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {(['all', 'pending', 'verified'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setGcVerificationFilter(filter)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                    gcVerificationFilter === filter
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {filter === 'all' ? 'All' : filter === 'verified' ? 'Verified' : 'Pending'}
+                </button>
+              ))}
+            </div>
+          </div>
           {isLoading && (
             <div className="text-center py-12 text-gray-500">Loading GC accounts…</div>
           )}
@@ -159,8 +207,13 @@ export default function VerificationPage() {
               No GC accounts found.
             </div>
           )}
+          {!isLoading && gcs.length > 0 && filteredGCs.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              No GCs match your search. Try a different name, email, or filter.
+            </div>
+          )}
           {!isLoading &&
-            gcs.map((item) => (
+            filteredGCs.map((item) => (
               <div key={item.id} className="flex items-start justify-between border rounded-lg p-4">
                 <div>
                   <div className="flex items-center gap-2 text-sm text-gray-500">

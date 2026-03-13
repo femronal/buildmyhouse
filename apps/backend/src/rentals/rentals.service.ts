@@ -174,7 +174,18 @@ export class RentalsService {
       include: {
         rentalListing: {
           select: {
+            title: true,
+            location: true,
             annualRent: true,
+            serviceCharge: true,
+            cautionDeposit: true,
+            legalFeePercent: true,
+            agencyFeePercent: true,
+            images: {
+              orderBy: { order: 'asc' },
+              take: 1,
+              select: { url: true },
+            },
           },
         },
       },
@@ -184,12 +195,28 @@ export class RentalsService {
       throw new NotFoundException('Rental inspection request not found');
     }
 
+    const listing = existing.rentalListing;
+    const snapshot =
+      outcomeStatus === 'purchased' && listing
+        ? {
+            snapshotTitle: listing.title,
+            snapshotLocation: listing.location,
+            snapshotAnnualRent: listing.annualRent,
+            snapshotServiceCharge: listing.serviceCharge,
+            snapshotCautionDeposit: listing.cautionDeposit,
+            snapshotLegalFeePercent: listing.legalFeePercent,
+            snapshotAgencyFeePercent: listing.agencyFeePercent,
+            snapshotImageUrl: listing.images?.[0]?.url ?? null,
+          }
+        : {};
+
     const updated = await this.prisma.rentalViewingInterest.update({
       where: { id: interestId },
       data: {
         outcomeStatus,
-        purchaseAmount: outcomeStatus === 'purchased' ? existing.rentalListing?.annualRent ?? null : null,
+        purchaseAmount: outcomeStatus === 'purchased' ? listing?.annualRent ?? null : null,
         purchaseMarkedAt: outcomeStatus === 'purchased' ? new Date() : null,
+        ...snapshot,
       },
     });
 
@@ -233,9 +260,7 @@ export class RentalsService {
             images: {
               orderBy: { order: 'asc' },
               take: 1,
-              select: {
-                url: true,
-              },
+              select: { url: true },
             },
           },
         },

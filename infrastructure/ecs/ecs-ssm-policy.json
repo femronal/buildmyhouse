@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["ssm:GetParameters"],
+      "Resource": [
+        "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/*"
+      ]
+    }
+  ]
+}

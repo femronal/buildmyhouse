@@ -322,14 +322,14 @@ export default function FinanceScreen() {
               landPurchases.map((purchase: any) => (
                 <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                   <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {purchase.landForSale?.name || 'Land'}
+                    {purchase.snapshotName ?? purchase.landForSale?.name ?? 'Land'}
                   </Text>
                   <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {purchase.landForSale?.location}
+                    {purchase.snapshotLocation ?? purchase.landForSale?.location ?? ''}
                   </Text>
                   <View className="flex-row justify-between items-center">
                     <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ₦{(purchase.purchaseAmount ?? purchase.landForSale?.price ?? 0).toLocaleString()}
+                      ₦{(purchase.purchaseAmount ?? purchase.snapshotPrice ?? purchase.landForSale?.price ?? 0).toLocaleString()}
                     </Text>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
@@ -354,14 +354,14 @@ export default function FinanceScreen() {
               homePurchases.map((purchase: any) => (
                 <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                   <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {purchase.houseForSale?.name || 'House'}
+                    {purchase.snapshotName ?? purchase.houseForSale?.name ?? 'House'}
                   </Text>
                   <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {purchase.houseForSale?.location}
+                    {purchase.snapshotLocation ?? purchase.houseForSale?.location ?? ''}
                   </Text>
                   <View className="flex-row justify-between items-center">
                     <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ₦{(purchase.purchaseAmount ?? purchase.houseForSale?.price ?? 0).toLocaleString()}
+                      ₦{(purchase.purchaseAmount ?? purchase.snapshotPrice ?? purchase.houseForSale?.price ?? 0).toLocaleString()}
                     </Text>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
@@ -385,21 +385,21 @@ export default function FinanceScreen() {
             ) : (
               rentalPurchases.map((purchase: any) => {
                 const listing = purchase.rentalListing;
-                const annualRent = purchase.purchaseAmount ?? listing?.annualRent ?? 0;
-                const serviceCharge = listing?.serviceCharge ?? 0;
-                const cautionDeposit = listing?.cautionDeposit ?? 0;
-                const legalFeePercent = listing?.legalFeePercent ?? 0;
-                const agencyFeePercent = listing?.agencyFeePercent ?? 2;
+                const annualRent = purchase.purchaseAmount ?? purchase.snapshotAnnualRent ?? listing?.annualRent ?? 0;
+                const serviceCharge = purchase.snapshotServiceCharge ?? listing?.serviceCharge ?? 0;
+                const cautionDeposit = purchase.snapshotCautionDeposit ?? listing?.cautionDeposit ?? 0;
+                const legalFeePercent = purchase.snapshotLegalFeePercent ?? listing?.legalFeePercent ?? 0;
+                const agencyFeePercent = purchase.snapshotAgencyFeePercent ?? listing?.agencyFeePercent ?? 2;
                 const legalFee = Math.round((annualRent * legalFeePercent) / 100);
                 const agencyFee = Math.round((annualRent * agencyFeePercent) / 100);
                 const totalSpent = annualRent + serviceCharge + cautionDeposit + legalFee + agencyFee;
                 return (
                   <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                     <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {listing?.title || 'Rental'}
+                      {purchase.snapshotTitle ?? listing?.title ?? 'Rental'}
                     </Text>
                     <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {listing?.location}
+                      {purchase.snapshotLocation ?? listing?.location ?? ''}
                     </Text>
                     <View className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
                       <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>

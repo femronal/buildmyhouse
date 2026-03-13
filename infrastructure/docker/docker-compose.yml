@@ -50,7 +50,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
       PORT: 3001
-      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8081
+      ALLOWED_ORIGINS: http://localhost:3000,http://localhost:3002,http://localhost:3003,http://localhost:8081
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
     ports:
@@ -62,6 +62,7 @@ services:
         condition: service_healthy
     volumes:
       - ../../apps/backend/prisma:/app/apps/backend/prisma
+      - backend_uploads:/app/apps/backend/uploads
     networks:
       - buildmyhouse-network
     healthcheck:
@@ -71,10 +72,53 @@ services:
       retries: 3
       start_period: 40s
 
+  admin:
+    build:
+      context: ../..
+      dockerfile: apps/admin-dashboard/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3001/api
+    container_name: buildmyhouse-admin
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - buildmyhouse-network
+
+  homeowner:
+    build:
+      context: ../..
+      dockerfile: apps/mobile-homeowner/Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: http://localhost:3001/api
+    container_name: buildmyhouse-homeowner
+    restart: unless-stopped
+    ports:
+      - "3002:80"
+    networks:
+      - buildmyhouse-network
+
+  contractor:
+    build:
+      context: ../..
+      dockerfile: apps/mobile-contractor/Dockerfile
+      args:
+        EXPO_PUBLIC_API_URL: http://localhost:3001/api
+    container_name: buildmyhouse-contractor
+    restart: unless-stopped
+    ports:
+      - "3003:80"
+    networks:
+      - buildmyhouse-network
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  backend_uploads:
     driver: local
 
 networks:

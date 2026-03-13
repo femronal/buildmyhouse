@@ -7,11 +7,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthService, JWTPayload } from './jwt-auth.service';
 import { UpdateMeDto } from './dto/update-me.dto';
+import { WebSocketService } from '../websocket/websocket.service';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly jwtAuthService: JwtAuthService,
+    private readonly wsService: WebSocketService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -49,6 +51,21 @@ export class AuthService {
         verified: role === 'admin', // Auto-verify admins
       },
     });
+
+    // Create Contractor profile for GCs so they appear in admin Contractors and Verification pages
+    if (role === 'general_contractor') {
+      await this.prisma.contractor.create({
+        data: {
+          userId: user.id,
+          name: fullName || 'General Contractor',
+          specialty: 'General Construction',
+          type: 'general_contractor',
+          hiringFee: 0,
+        },
+      });
+    }
+
+    await this.notifyAdminNewSignup(user.fullName ?? 'Unknown', user.email, user.role);
 
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
@@ -256,6 +273,7 @@ export class AuthService {
           verified: true, // OAuth providers verify emails
         },
       });
+      await this.notifyAdminNewSignup(fullName, email, 'homeowner');
     } else {
       // Update existing user's name and picture if they're not set or if OAuth provides newer info
       if (!user.pictureUrl && pictureUrl) {
@@ -285,6 +303,15 @@ export class AuthService {
     };
   }
 
+  private async notifyAdminNewSignup(fullName: string, email: string, role: string) {
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'new_user_signup',
+      title: 'New user signup',
+      message: `${fullName} (${email}) signed up as ${role}`,
+      data: { email, fullName, role },
+    });
+  }
+
   private async generateToken(userId: string, email: string, role: string): Promise<string> {
     const payload: JWTPayload = {
       sub: userId,
@@ -292,7 +319,10 @@ export class AuthService {
       role,
     };
 
-    const secret = this.configService.get<string>('JWT_SECRET') || 'default-secret';
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret || !secret.trim()) {
+      throw new Error('JWT_SECRET is required. Set it in your .env file.');
+    }
     return this.jwtService.signAsync(payload, {
       secret,
       expiresIn: '7d',

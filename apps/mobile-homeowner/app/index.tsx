@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Home, Upload, Bell, ArrowLeft } from "lucide-react-native";
 import { useEffect } from "react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import Logo from "@/components/Logo";
 
 export default function StartScreen() {
   const router = useRouter();
@@ -54,12 +55,7 @@ export default function StartScreen() {
         </TouchableOpacity>
         </View>
         
-        <Text 
-          className="text-2xl text-black"
-          style={{ fontFamily: 'Poppins_700Bold' }}
-        >
-          BuildMyHouse
-        </Text>
+        <Logo size="sm" />
         
         <TouchableOpacity 
           onPress={() => router.push('/notifications')}
@@ -72,24 +68,7 @@ export default function StartScreen() {
 
       <View className="flex-1 justify-center items-center px-8">
         {/* Logo */}
-        <Text 
-          className="text-6xl text-black mb-4 text-center"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
-          Build
-        </Text>
-        <Text 
-          className="text-6xl text-black mb-4 text-center"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
-          My
-        </Text>
-        <Text 
-          className="text-6xl text-black mb-8 text-center"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
-          House
-        </Text>
+        <Logo size="lg" style={{ marginBottom: 24 }} />
         
         {/* Tagline */}
         <Text 

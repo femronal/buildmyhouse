@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "test-tempo",
-    "slug": "test-tempo",
+    "name": "BuildMyHouse",
+    "slug": "buildmyhouse-homeowner",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,7 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.buildmyhouse.app",
       "config": {
-        "googleMapsApiKey": "AIzaSyDJJ1acllPA41MzxJenjIpY-C7H1BnOQ5k"
+        "googleMapsApiKey": ""
       }
     },
     "android": {
@@ -23,7 +23,7 @@
       "package": "com.buildmyhouse.app",
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyDJJ1acllPA41MzxJenjIpY-C7H1BnOQ5k"
+          "apiKey": ""
         }
       }
     },

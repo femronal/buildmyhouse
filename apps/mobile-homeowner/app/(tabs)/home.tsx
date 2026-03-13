@@ -14,6 +14,7 @@ import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
 import ImageCarousel from '@/components/ImageCarousel';
 import NotificationBell from '@/components/NotificationBell';
+import Logo from '@/components/Logo';
 import { getBackendAssetUrl } from '@/lib/image';
 
 export default function HomeScreen() {
@@ -258,30 +259,33 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
+      <View className="pt-10 px-3 pb-2 flex-row items-center gap-2">
         <TouchableOpacity 
           onPress={() => router.push('/profile')}
-          className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+          className="w-10 h-10 bg-black rounded-full items-center justify-center overflow-hidden flex-shrink-0 z-10"
         >
           {userPicture ? (
-            <Image 
-              source={{ uri: getBackendAssetUrl(userPicture) }} 
-              className="w-full h-full"
-              resizeMode="cover"
-            />
+            <View pointerEvents="none" className="w-full h-full">
+              <Image 
+                source={{ uri: getBackendAssetUrl(userPicture) }} 
+                className="w-full h-full"
+                resizeMode="cover"
+              />
+            </View>
           ) : (
-            <User size={24} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={22} color="#FFFFFF" strokeWidth={2.5} />
           )}
         </TouchableOpacity>
         
-        <Text 
-          className="text-2xl text-black"
-          style={{ fontFamily: 'Poppins_600SemiBold' }}
-        >
-          BuildMyHouse
-        </Text>
+        <View className="flex-1 items-center justify-center min-w-0">
+          <Logo size="lg" />
+        </View>
         
-        <NotificationBell />
+        <View className="flex-shrink-0">
+          <NotificationBell />
+        </View>
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
