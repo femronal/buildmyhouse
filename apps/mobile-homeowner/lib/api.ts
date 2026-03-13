@@ -1,8 +1,8 @@
 import { getAuthToken } from './auth';
 
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3001/api' 
-  : 'https://api.buildmyhouse.com/api';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (__DEV__ ? 'http://localhost:3001/api' : 'https://api.buildmyhouse.com/api');
 
 async function getHeaders() {
   const token = await getAuthToken();

@@ -212,7 +212,14 @@ export class HousesService {
       include: {
         houseForSale: {
           select: {
+            name: true,
+            location: true,
             price: true,
+            images: {
+              orderBy: { order: 'asc' },
+              take: 1,
+              select: { url: true },
+            },
           },
         },
       },
@@ -222,12 +229,24 @@ export class HousesService {
       throw new NotFoundException('Viewing request not found');
     }
 
+    const house = existing.houseForSale;
+    const snapshot =
+      outcomeStatus === 'purchased' && house
+        ? {
+            snapshotName: house.name,
+            snapshotLocation: house.location,
+            snapshotPrice: house.price,
+            snapshotImageUrl: house.images?.[0]?.url ?? null,
+          }
+        : {};
+
     const updated = await viewingInterestModel.update({
       where: { id: interestId },
       data: {
         outcomeStatus,
-        purchaseAmount: outcomeStatus === 'purchased' ? existing.houseForSale?.price ?? null : null,
+        purchaseAmount: outcomeStatus === 'purchased' ? house?.price ?? null : null,
         purchaseMarkedAt: outcomeStatus === 'purchased' ? new Date() : null,
+        ...snapshot,
       },
     });
 

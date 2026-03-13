@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   transpilePackages: ['@buildmyhouse/shared-types', '@buildmyhouse/shared-ui'],
   webpack: (config, { dev }) => {

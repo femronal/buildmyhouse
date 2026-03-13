@@ -1,0 +1,41 @@
+{
+  "family": "buildmyhouse-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::399095821429:role/ecsTaskExecutionRole-buildmyhouse",
+  "taskRoleArn": "arn:aws:iam::399095821429:role/ecsTaskExecutionRole-buildmyhouse",
+  "containerDefinitions": [
+    {
+      "name": "backend",
+      "image": "399095821429.dkr.ecr.eu-north-1.amazonaws.com/buildmyhouse-backend:latest",
+      "essential": true,
+      "portMappings": [{ "containerPort": 3001 }],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3001" },
+        { "name": "ALLOWED_ORIGINS", "value": "https://admin.buildmyhouse.app,https://buildmyhouse.app,https://gc.buildmyhouse.app" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/database-url" },
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/jwt-secret" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/buildmyhouse-backend",
+          "awslogs-region": "eu-north-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "node -e \"require('http').get('http://localhost:3001/api/health',r=>{r.resume();process.exit(r.statusCode>=200&&r.statusCode<400?0:1)}).on('error',()=>process.exit(1))\""],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 120
+      }
+    }
+  ]
+}

@@ -80,6 +80,13 @@ function computeNextMilestone(project: ApiProject) {
   return next?.name || '—';
 }
 
+function computeDisplayStatus(project: ApiProject): string {
+  if (project.status === 'completed' || Number(project.progress || 0) >= 100) {
+    return 'completed';
+  }
+  return project.status;
+}
+
 function computeRisk(project: ApiProject): ProjectView['risk'] {
   if (project.riskLevel === 'low' || project.riskLevel === 'medium' || project.riskLevel === 'high') {
     return project.riskLevel;
@@ -128,7 +135,7 @@ export default function ProjectsPage() {
       homeownerEmail: p.homeowner?.email ?? null,
       gc: p.generalContractor?.fullName || '—',
       gcEmail: p.generalContractor?.email ?? null,
-      status: p.status,
+      status: computeDisplayStatus(p),
       risk: computeRisk(p),
       progress: p.progress ?? 0,
       budget: p.budget ?? 0,

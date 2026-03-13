@@ -16,9 +16,9 @@ export default function NotificationBell() {
   return (
     <TouchableOpacity
       onPress={() => router.push("/notifications")}
-      className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center"
+      className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
     >
-      <Bell size={24} color="#000000" strokeWidth={2.5} />
+      <Bell size={22} color="#000000" strokeWidth={2.5} />
       {showBadge && (
         <View className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
       )}

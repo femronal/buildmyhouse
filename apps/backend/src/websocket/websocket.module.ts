@@ -11,10 +11,16 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'default-secret',
-        signOptions: { expiresIn: '7d' },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        if (!secret || !secret.trim()) {
+          throw new Error('JWT_SECRET is required. Set it in your .env file.');
+        }
+        return {
+          secret,
+          signOptions: { expiresIn: '7d' },
+        };
+      },
       inject: [ConfigService],
     }),
   ],

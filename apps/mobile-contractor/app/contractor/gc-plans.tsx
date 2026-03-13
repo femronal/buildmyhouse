@@ -669,9 +669,9 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                 }}
                 multiline
               />
-              <View className="flex-row items-center" style={{ gap: 8 }}>
+              <View className="flex-row items-center gap-3 min-w-0">
                 <TextInput
-                  className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                  className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm min-w-0"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                   placeholder="Duration (e.g., 4-6 weeks)"
                   placeholderTextColor="#6B7280"
@@ -682,7 +682,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                     setConstructionPhases(updated);
                   }}
                 />
-                <View className="flex-1 relative">
+                <View className="flex-1 relative min-w-0">
                   <Text
                     className="absolute left-3 top-2 text-gray-400 text-sm z-10"
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -705,7 +705,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                 </View>
                 <TouchableOpacity
                   onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
-                  className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                  className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center flex-shrink-0"
                   style={{ minWidth: 40 }}
                 >
                   <X size={18} color="#F87171" strokeWidth={2} />
@@ -1340,9 +1340,9 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                   }}
                   multiline
                 />
-                <View className="flex-row items-center" style={{ gap: 8 }}>
+                <View className="flex-row items-center gap-3 min-w-0">
                   <TextInput
-                    className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
+                    className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm min-w-0"
                     style={{ fontFamily: 'Poppins_400Regular' }}
                     placeholder="Duration (e.g., 4-6 weeks)"
                     placeholderTextColor="#6B7280"
@@ -1353,7 +1353,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                       setConstructionPhases(updated);
                     }}
                   />
-                  <View className="flex-1 relative">
+                  <View className="flex-1 relative min-w-0">
                     <Text
                       className="absolute left-3 top-2 text-gray-400 text-sm z-10"
                       style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -1376,7 +1376,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                   </View>
                   <TouchableOpacity
                     onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
-                    className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                    className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center flex-shrink-0"
                     style={{ minWidth: 40 }}
                   >
                     <X size={18} color="#F87171" strokeWidth={2} />

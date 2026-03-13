@@ -3,17 +3,20 @@ const { withNativeWind } = require("nativewind/metro");
 
 const config = getDefaultConfig(__dirname);
 
-// Block react-native-maps on web (it's native-only)
+// SVG support via react-native-svg-transformer
+const { transformer, resolver } = config;
+config.transformer = {
+  ...transformer,
+  babelTransformerPath: require.resolve("react-native-svg-transformer"),
+};
 config.resolver = {
-  ...config.resolver,
+  ...resolver,
+  assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
+  sourceExts: [...resolver.sourceExts, "svg"],
   resolveRequest: (context, moduleName, platform) => {
-    if (platform === 'web' && moduleName === 'react-native-maps') {
-      // Return a mock/empty module for web
-      return {
-        type: 'empty',
-      };
+    if (platform === "web" && moduleName === "react-native-maps") {
+      return { type: "empty" };
     }
-    // Use default resolver for everything else
     return context.resolveRequest(context, moduleName, platform);
   },
 };

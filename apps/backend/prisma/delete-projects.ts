@@ -28,30 +28,14 @@ async function deleteNonActiveProjects() {
 
     const deleteProjectIds = deleteProjects.map((p) => p.id);
 
-    // Delete in order to respect foreign key constraints
-    console.log('Deleting payments for deleted projects...');
-    const deletedPayments = await prisma.payment.deleteMany({
-      where: { projectId: { in: deleteProjectIds } },
-    });
-    console.log(`✅ Deleted ${deletedPayments.count} payments`);
+    // Financial records preserved: Payments and Orders use onDelete: SetNull,
+    // so we do NOT delete them; projectId will be set to null when projects are deleted.
 
     console.log('Deleting stages for deleted projects...');
     const deletedStages = await prisma.stage.deleteMany({
       where: { projectId: { in: deleteProjectIds } },
     });
     console.log(`✅ Deleted ${deletedStages.count} stages`);
-
-    console.log('Deleting order items for deleted projects...');
-    const deletedOrderItems = await prisma.orderItem.deleteMany({
-      where: { order: { projectId: { in: deleteProjectIds } } },
-    });
-    console.log(`✅ Deleted ${deletedOrderItems.count} order items`);
-
-    console.log('Deleting orders for deleted projects...');
-    const deletedOrders = await prisma.order.deleteMany({
-      where: { projectId: { in: deleteProjectIds } },
-    });
-    console.log(`✅ Deleted ${deletedOrders.count} orders`);
 
     console.log('Deleting project requests for deleted projects...');
     const deletedRequests = await prisma.projectRequest.deleteMany({

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { OpenAIService } from '../openai/openai.service';
 import { UploadPlanDto } from './dto/upload-plan.dto';
@@ -34,7 +34,7 @@ export class PlansService {
       } else {
         // If no buffer (diskStorage), read from disk
         if (!existsSync(filePath)) {
-          throw new Error(`File not found at path: ${filePath}`);
+          throw new NotFoundException('Uploaded file could not be processed. Please try uploading again.');
         }
         pdfBuffer = readFileSync(filePath);
       }
@@ -99,7 +99,14 @@ export class PlansService {
         file: file?.filename,
         homeownerId,
       });
-      throw error;
+      // Re-throw NestJS HTTP exceptions as-is
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      // Sanitize: never expose internal error details (paths, stack traces) to clients
+      throw new BadRequestException(
+        'Failed to process the uploaded plan. Please ensure the file is valid and try again.',
+      );
     }
   }
 

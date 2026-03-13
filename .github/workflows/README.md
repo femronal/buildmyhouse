@@ -71,12 +71,19 @@ Configure these secrets in GitHub repository settings:
 - `STAGING_STRIPE_SECRET_KEY`: Stripe secret key for staging
 - `STAGING_STRIPE_WEBHOOK_SECRET`: Stripe webhook secret for staging
 
-### Production Deployment
-- `PRODUCTION_API_URL`: Backend API URL for production
-- `PRODUCTION_DATABASE_URL`: Database connection string (if needed)
+### Production Deployment (AWS ECS)
+- `AWS_ACCESS_KEY_ID`: IAM user access key for ECR push and ECS update
+- `AWS_SECRET_ACCESS_KEY`: IAM user secret key
+- `PRODUCTION_API_URL`: Backend API URL (e.g. `https://api.buildmyhouse.app/api`) – used for admin dashboard build
+- `PRODUCTION_DATABASE_URL`: Database connection string (used by ECS task, not by CI)
 - `PRODUCTION_JWT_SECRET`: JWT secret for production
 - `PRODUCTION_STRIPE_SECRET_KEY`: Stripe secret key for production
 - `PRODUCTION_STRIPE_WEBHOOK_SECRET`: Stripe webhook secret for production
+
+**AWS resources used by deploy-production.yml:**
+- ECR repos: `buildmyhouse-backend`, `buildmyhouse-admin` (create in eu-north-1 if missing)
+- ECS cluster: `buildmyhouse-prod`
+- ECS services: `backend-service`, `admin-service` (adjust `ECS_SERVICE` in workflow if your names differ)
 
 ## Environment Protection Rules
 

@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle
 import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
+import { getBackendAssetUrl } from "@/lib/image";
 
 function moneyToCents(value: unknown): number {
   const n =
@@ -291,10 +292,11 @@ export default function GCRequestDetailScreen() {
 
   const handleDownloadPDF = async () => {
     if (request?.project?.planPdfUrl) {
+      const pdfUrl = getBackendAssetUrl(request.project.planPdfUrl);
       try {
-        const supported = await Linking.canOpenURL(request.project.planPdfUrl);
+        const supported = await Linking.canOpenURL(pdfUrl);
         if (supported) {
-          await Linking.openURL(request.project.planPdfUrl);
+          await Linking.openURL(pdfUrl);
         } else {
           showAlert('Error', 'Cannot open PDF URL');
         }
@@ -394,8 +396,8 @@ export default function GCRequestDetailScreen() {
           {/* Plan PDF Section */}
           {req.project.planPdfUrl && (
             <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center">
+              <View className="flex-row items-center justify-between mb-3 gap-2">
+                <View className="flex-row items-center flex-1">
                   <FileText size={24} color="#3B82F6" strokeWidth={2} />
                   <Text className="text-white text-lg ml-3" style={{ fontFamily: 'Poppins_700Bold' }}>
                     Architectural Plan
@@ -403,10 +405,10 @@ export default function GCRequestDetailScreen() {
                 </View>
                 <TouchableOpacity
                   onPress={handleDownloadPDF}
-                  className="bg-blue-600 rounded-full px-4 py-2 flex-row items-center"
+                  className="bg-blue-600 rounded-full px-3 py-1.5 flex-row items-center flex-shrink-0"
                 >
-                  <Download size={16} color="#FFFFFF" strokeWidth={2} />
-                  <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Download size={14} color="#FFFFFF" strokeWidth={2} />
+                  <Text className="text-white text-xs ml-1.5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Download PDF
                   </Text>
                 </TouchableOpacity>
@@ -608,10 +610,10 @@ export default function GCRequestDetailScreen() {
                       }}
                       multiline
                     />
-                    <View className="flex-row items-center" style={{ gap: 8 }}>
+                    <View className="flex-row items-center gap-3 min-w-0">
                       <TextInput
-                        className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                        style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                        className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm min-w-0"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
                         placeholder="Duration"
                         placeholderTextColor="#6B7280"
                         value={phase.estimatedDuration || ''}
@@ -622,8 +624,8 @@ export default function GCRequestDetailScreen() {
                         }}
                       />
                       <TextInput
-                        className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm"
-                        style={{ fontFamily: 'Poppins_400Regular', marginRight: 8 }}
+                        className="flex-1 bg-[#1E3A5F] rounded-lg px-3 py-2 text-white text-sm min-w-0"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
                         placeholder="Cost"
                         placeholderTextColor="#6B7280"
                         value={phase.estimatedCost?.toString() || ''}
@@ -640,7 +642,7 @@ export default function GCRequestDetailScreen() {
                           phases.splice(index, 1);
                           updateAnalysisField('phases', phases);
                         }}
-                        className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center"
+                        className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center flex-shrink-0"
                         style={{ minWidth: 40 }}
                       >
                         <X size={18} color="#F87171" strokeWidth={2} />

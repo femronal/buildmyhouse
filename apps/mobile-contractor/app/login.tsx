@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
@@ -44,7 +44,15 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 bg-[#0A1628]">
+    <View
+      className="flex-1 bg-[#0A1628]"
+      style={{
+        overflow: "hidden",
+        ...(Platform.OS === "web"
+          ? { height: "100vh", maxHeight: "100vh" }
+          : {}),
+      }}
+    >
       {/* Header */}
       <View className="pt-20 px-8 pb-12">
         <View className="flex-row items-center mb-4">

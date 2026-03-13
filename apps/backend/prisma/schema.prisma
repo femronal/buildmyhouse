@@ -207,18 +207,22 @@ model ProjectStageDispute {
 
 model Payment {
   id            String   @id @default(uuid())
-  projectId     String
+  projectId     String?
   stageId       String?
+  homeownerId   String?   // Set at creation; preserved when project deleted for orphan queries
   amount        Float
   status        String   @default("pending") // 'pending' | 'processing' | 'completed' | 'failed' | 'refunded'
   method        String
   transactionId String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  // Snapshot when paid (preserved when project deleted)
+  snapshotProjectName String?
+  snapshotStageName   String?
 
   // Relations
-  project       Project  @relation(fields: [projectId], references: [id])
-  stage         Stage?   @relation(fields: [stageId], references: [id])
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  stage         Stage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
   
   @@map("payments")
 }
@@ -355,7 +359,7 @@ model Order {
 
   // Relations
   user        User        @relation("UserOrders", fields: [userId], references: [id])
-  project     Project?    @relation("ProjectOrders", fields: [projectId], references: [id])
+  project     Project?    @relation("ProjectOrders", fields: [projectId], references: [id], onDelete: SetNull)
   items       OrderItem[]
   
   @@map("orders")
@@ -503,7 +507,7 @@ model HouseForSaleImage {
 
 model HouseViewingInterest {
   id             String   @id @default(uuid())
-  houseForSaleId String
+  houseForSaleId String?
   homeownerId    String
   isRead         Boolean  @default(false)
   readAt         DateTime?
@@ -511,8 +515,13 @@ model HouseViewingInterest {
   purchaseAmount Float?
   purchaseMarkedAt DateTime?
   createdAt      DateTime @default(now())
+  // Snapshot when purchased (preserved when listing deleted)
+  snapshotName   String?
+  snapshotLocation String?
+  snapshotPrice  Float?
+  snapshotImageUrl String?
 
-  houseForSale HouseForSale @relation(fields: [houseForSaleId], references: [id], onDelete: Cascade)
+  houseForSale HouseForSale? @relation(fields: [houseForSaleId], references: [id], onDelete: SetNull)
   homeowner User @relation("HomeownerViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([houseForSaleId, createdAt])
@@ -562,7 +571,7 @@ model LandForSaleImage {
 
 model LandViewingInterest {
   id             String   @id @default(uuid())
-  landForSaleId  String
+  landForSaleId  String?
   homeownerId    String
   isRead         Boolean  @default(false)
   readAt         DateTime?
@@ -570,8 +579,14 @@ model LandViewingInterest {
   purchaseAmount Float?
   purchaseMarkedAt DateTime?
   createdAt      DateTime @default(now())
+  // Snapshot when purchased (preserved when listing deleted)
+  snapshotName   String?
+  snapshotLocation String?
+  snapshotPrice  Float?
+  snapshotSizeSqm Float?
+  snapshotImageUrl String?
 
-  landForSale LandForSale @relation(fields: [landForSaleId], references: [id], onDelete: Cascade)
+  landForSale LandForSale? @relation(fields: [landForSaleId], references: [id], onDelete: SetNull)
   homeowner   User @relation("HomeownerLandViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([landForSaleId, createdAt])
@@ -629,7 +644,7 @@ model RentalListingImage {
 
 model RentalViewingInterest {
   id              String   @id @default(uuid())
-  rentalListingId String
+  rentalListingId String?
   homeownerId     String
   isRead          Boolean  @default(false)
   readAt          DateTime?
@@ -637,8 +652,17 @@ model RentalViewingInterest {
   purchaseAmount  Float?
   purchaseMarkedAt DateTime?
   createdAt       DateTime @default(now())
+  // Snapshot when purchased (preserved when listing deleted)
+  snapshotTitle   String?
+  snapshotLocation String?
+  snapshotAnnualRent Float?
+  snapshotServiceCharge Float?
+  snapshotCautionDeposit Float?
+  snapshotLegalFeePercent Float?
+  snapshotAgencyFeePercent Float?
+  snapshotImageUrl String?
 
-  rentalListing RentalListing @relation(fields: [rentalListingId], references: [id], onDelete: Cascade)
+  rentalListing RentalListing? @relation(fields: [rentalListingId], references: [id], onDelete: SetNull)
   homeowner     User          @relation("HomeownerRentalViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([rentalListingId, createdAt])
