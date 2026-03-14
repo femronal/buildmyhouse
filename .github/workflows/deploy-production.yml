@@ -163,8 +163,9 @@ jobs:
           echo "✅ Deployed to S3"
 
       - name: Deploy skipped (no S3 bucket)
-        if: secrets.AWS_S3_BUCKET_HOMEOWNER == ''
-        run: echo "⚠️ Skipped: Set AWS_S3_BUCKET_HOMEOWNER secret to deploy to S3"
+        if: ${{ secrets.AWS_S3_BUCKET_HOMEOWNER == '' }}
+        run: |
+          echo "Skipped: Set AWS_S3_BUCKET_HOMEOWNER secret to deploy to S3"
 
       - name: Health check
         continue-on-error: true
@@ -222,8 +223,9 @@ jobs:
           echo "✅ Deployed to S3"
 
       - name: Deploy skipped (no S3 bucket)
-        if: secrets.AWS_S3_BUCKET_CONTRACTOR == ''
-        run: echo "⚠️ Skipped: Set AWS_S3_BUCKET_CONTRACTOR secret to deploy to S3"
+        if: ${{ secrets.AWS_S3_BUCKET_CONTRACTOR == '' }}
+        run: |
+          echo "Skipped: Set AWS_S3_BUCKET_CONTRACTOR secret to deploy to S3"
 
       - name: Health check
         continue-on-error: true
