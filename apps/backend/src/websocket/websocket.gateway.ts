@@ -11,9 +11,18 @@ import { Server, Socket } from 'socket.io';
 import { Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtAuthService, JWTPayload } from '../auth/jwt-auth.service';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const websocketAllowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const websocketLocalOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
 @WSGateway({
   cors: {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
+    origin: isProduction
+      ? websocketAllowedOrigins
+      : [...new Set([...websocketAllowedOrigins, ...websocketLocalOrigins])],
     credentials: true,
   },
   namespace: '/',

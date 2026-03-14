@@ -29,23 +29,32 @@ async function bootstrap() {
     prefix: '/uploads/',
   });
   
-  // Enable CORS - allow all localhost ports in development
+  const isProduction = process.env.NODE_ENV === 'production';
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  // Enable CORS with explicit production allowlist
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      
-      // In development, allow all localhost origins
-      if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+
+      // In development, allow all localhost origins for local web app testing
+      if (
+        !isProduction &&
+        (origin.startsWith('http://localhost:') ||
+          origin.startsWith('http://127.0.0.1:'))
+      ) {
         return callback(null, true);
       }
-      
-      // In production, check against allowed origins
-      const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+
+      // In all environments, allow explicit configured origins
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
-      
+
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
@@ -73,7 +82,7 @@ async function bootstrap() {
   });
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend API running on: http://localhost:${port}/api`);
   console.log(`🔌 WebSocket server ready for real-time connections`);
   console.log(`💚 Health check available at: http://localhost:${port}/api/health`);

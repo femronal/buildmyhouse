@@ -35,6 +35,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=3000
+# Must bind to 0.0.0.0 so ALB/health checks can reach the container (not 127.0.0.1)
 ENV HOSTNAME="0.0.0.0"
 
 # Copy standalone output (monorepo layout: server.js + node_modules in apps/admin-dashboard/)
@@ -42,8 +43,10 @@ COPY --from=builder /app/apps/admin-dashboard/.next/standalone ./
 COPY --from=builder /app/apps/admin-dashboard/.next/static ./apps/admin-dashboard/.next/static
 RUN mkdir -p ./apps/admin-dashboard/public
 
-# Use entrypoint so we always run from the correct dir, even if task def overrides command (e.g. node /app/server.js)
+# Start script: explicitly set host to 0.0.0.0 so ALB health checks reach /health
 RUN echo '#!/bin/sh' > /start.sh && \
+    echo 'export HOSTNAME=0.0.0.0' >> /start.sh && \
+    echo 'export PORT=3000' >> /start.sh && \
     echo 'cd /app/apps/admin-dashboard && exec node server.js' >> /start.sh && \
     chmod +x /start.sh
 

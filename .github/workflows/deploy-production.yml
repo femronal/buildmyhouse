@@ -277,7 +277,12 @@ jobs:
         id: api-url
         run: |
           API_URL="${{ secrets.PRODUCTION_API_URL }}"
-          echo "api_url=${API_URL:-https://api.buildmyhouse.app/api}" >> $GITHUB_OUTPUT
+          API_URL="${API_URL:-https://api.buildmyhouse.app}"
+          API_URL="${API_URL%/}"
+          if [[ "$API_URL" != */api ]]; then
+            API_URL="$API_URL/api"
+          fi
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         run: |
