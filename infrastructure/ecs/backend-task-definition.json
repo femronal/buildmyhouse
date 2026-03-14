@@ -11,6 +11,7 @@
       "name": "backend",
       "image": "399095821429.dkr.ecr.eu-north-1.amazonaws.com/buildmyhouse-backend:latest",
       "essential": true,
+      "command": ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"],
       "portMappings": [{ "containerPort": 3001 }],
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
