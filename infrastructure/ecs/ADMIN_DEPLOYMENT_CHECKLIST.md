@@ -116,8 +116,7 @@ aws ecs describe-services --cluster buildmyhouse-prod --services admin-service \
 
 ## Step 8: Access
 
-- **http://admin.buildmyhouse.app** (HTTP works)
-- **https://admin.buildmyhouse.app** (HTTPS may show 504 until certificate/listener is fixed)
+- **https://admin.buildmyhouse.app**
 
 ---
 

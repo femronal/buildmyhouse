@@ -152,8 +152,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Set API URL for build
+        id: homeowner-api-url
+        run: |
+          API_URL="${{ secrets.PRODUCTION_API_URL }}"
+          API_URL="${API_URL:-https://api.buildmyhouse.app}"
+          API_URL="${API_URL%/}"
+          if [[ "$API_URL" != */api ]]; then
+            API_URL="$API_URL/api"
+          fi
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+
       - name: Build homeowner web app
-        run: pnpm --filter mobile-homeowner build
+        run: EXPO_PUBLIC_API_URL=${{ steps.homeowner-api-url.outputs.api_url }} pnpm --filter mobile-homeowner build
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_HOMEOWNER != ''
@@ -214,8 +225,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Set API URL for build
+        id: contractor-api-url
+        run: |
+          API_URL="${{ secrets.PRODUCTION_API_URL }}"
+          API_URL="${API_URL:-https://api.buildmyhouse.app}"
+          API_URL="${API_URL%/}"
+          if [[ "$API_URL" != */api ]]; then
+            API_URL="$API_URL/api"
+          fi
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+
       - name: Build GC web app
-        run: pnpm --filter mobile-contractor build
+        run: EXPO_PUBLIC_API_URL=${{ steps.contractor-api-url.outputs.api_url }} pnpm --filter mobile-contractor build
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_CONTRACTOR != ''

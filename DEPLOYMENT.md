@@ -36,9 +36,9 @@ If webhooks fail signature verification, ensure no other middleware modifies the
 
 | App | Env Var | Example |
 |-----|---------|---------|
-| Admin Dashboard | `NEXT_PUBLIC_API_URL` | `https://api.buildmyhouse.com/api` |
-| Homeowner (Expo) | `EXPO_PUBLIC_API_URL` | `https://api.buildmyhouse.com/api` |
-| Contractor (Expo) | `EXPO_PUBLIC_API_URL` | `https://api.buildmyhouse.com/api` |
+| Admin Dashboard | `NEXT_PUBLIC_API_URL` | `https://api.buildmyhouse.app/api` |
+| Homeowner (Expo) | `EXPO_PUBLIC_API_URL` | `https://api.buildmyhouse.app/api` |
+| Contractor (Expo) | `EXPO_PUBLIC_API_URL` | `https://api.buildmyhouse.app/api` |
 
 Set these as build args in Docker, or as environment variables in your CI/build pipeline **before** running the build. Rebuilding is required after changing them.
 
@@ -47,7 +47,7 @@ Set these as build args in Docker, or as environment variables in your CI/build 
 `ALLOWED_ORIGINS` must include **exact production origins** (protocol + domain, no trailing slash).
 
 ```
-ALLOWED_ORIGINS="https://app.buildmyhouse.com,https://gc.buildmyhouse.com,https://admin.buildmyhouse.com"
+ALLOWED_ORIGINS="https://buildmyhouse.app,https://gc.buildmyhouse.app,https://admin.buildmyhouse.app"
 ```
 
 - Use `https://` (not `http://`) for production
@@ -87,7 +87,7 @@ Before deploying, ensure your backend `.env` includes:
 
 1. **ALLOWED_ORIGINS** – Add your production web URLs (required for CORS):
    ```
-   ALLOWED_ORIGINS="https://app.buildmyhouse.com,https://gc.buildmyhouse.com,https://admin.buildmyhouse.com"
+   ALLOWED_ORIGINS="https://buildmyhouse.app,https://gc.buildmyhouse.app,https://admin.buildmyhouse.app"
    ```
 
 2. **JWT_SECRET** – Strong random secret (no fallback in production)
@@ -117,8 +117,8 @@ When deploying to production, pass the production API URL when building:
 
 ```bash
 docker-compose build \
-  --build-arg NEXT_PUBLIC_API_URL=https://api.buildmyhouse.com/api \
-  --build-arg EXPO_PUBLIC_API_URL=https://api.buildmyhouse.com/api
+  --build-arg NEXT_PUBLIC_API_URL=https://api.buildmyhouse.app/api \
+  --build-arg EXPO_PUBLIC_API_URL=https://api.buildmyhouse.app/api
 ```
 
 Or set these in a `.env` file and reference them in `docker-compose.override.yml` for production.
@@ -162,7 +162,7 @@ Reference task definition: `infrastructure/ecs/admin-task-definition.json`. Regi
 aws ecs register-task-definition --cli-input-json file://infrastructure/ecs/admin-task-definition.json --region eu-north-1
 ```
 
-**Access URL:** Use **http://**admin.buildmyhouse.app (not https). HTTPS shows 504; HTTP works. Ensure DNS CNAME points to `buildmyhouse-alb-2062754361.eu-north-1.elb.amazonaws.com`.
+**Access URL:** Use **https://admin.buildmyhouse.app**. Ensure DNS CNAME points to `buildmyhouse-alb-2062754361.eu-north-1.elb.amazonaws.com`.
 
 **Direct test (bypasses DNS):** `curl -L -H "Host: admin.buildmyhouse.app" http://buildmyhouse-alb-2062754361.eu-north-1.elb.amazonaws.com/` (use `-L` to follow redirects)
 
@@ -213,15 +213,15 @@ aws ec2 describe-security-groups --group-ids sg-05969d49d932773d7 --region $REGI
 
 ## GitHub Actions
 
-The `.github/workflows/deploy-production.yml` workflow includes placeholder deploy steps. Update each job’s *"Deploy to production"* step with your actual commands (e.g., Vercel CLI, Netlify CLI, AWS deploy).
+The `.github/workflows/deploy-production.yml` workflow deploys backend/admin to ECS and homeowner/GC to S3+CloudFront when corresponding AWS secrets are set.
 
 ## Pre-Deployment Checklist
 
 - [ ] **Phase 0:** Backend runs as 1 ECS task (WebSocket in-memory)
 - [ ] **Phase 0:** Uploads use EFS mount or S3 (Fargate disk is ephemeral)
-- [ ] Set `ALLOWED_ORIGINS` with exact production origins (e.g. `https://app.buildmyhouse.com`)
+- [ ] Set `ALLOWED_ORIGINS` with exact production origins (e.g. `https://buildmyhouse.app`)
 - [ ] Set `NEXT_PUBLIC_API_URL` and `EXPO_PUBLIC_API_URL` at build time for each app
 - [ ] Configure production OAuth redirect URIs in Google Console
 - [ ] Run database migrations before first deploy
 - [ ] Verify Stripe webhook URL points to production API (`/api/payments/webhooks/stripe`)
-- [ ] Add `PRODUCTION_API_URL` secret in GitHub (e.g. `https://api.buildmyhouse.com`)
+- [ ] Add `PRODUCTION_API_URL` secret in GitHub (e.g. `https://api.buildmyhouse.app`)
