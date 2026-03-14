@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(private configService: ConfigService) {
+  constructor(configService: ConfigService) {
     const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
     const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
     const callbackURL =
@@ -14,25 +14,18 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
     // Keep API startup healthy in environments where Google OAuth is not configured yet.
     // Routes using AuthGuard('google') will still require valid credentials to work.
+    super({
+      clientID: clientID || 'disabled-google-client-id',
+      clientSecret: clientSecret || 'disabled-google-client-secret',
+      callbackURL,
+      scope: ['email', 'profile'],
+    });
+
     if (!clientID || !clientSecret) {
       console.warn(
         '[Auth] GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET not set. Google OAuth strategy is disabled.',
       );
-      super({
-        clientID: 'disabled-google-client-id',
-        clientSecret: 'disabled-google-client-secret',
-        callbackURL,
-        scope: ['email', 'profile'],
-      });
-      return;
     }
-
-    super({
-      clientID,
-      clientSecret,
-      callbackURL,
-      scope: ['email', 'profile'],
-    });
   }
 
   async validate(
