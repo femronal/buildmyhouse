@@ -12,8 +12,8 @@ COPY packages/*/package.json ./packages/*/
 # Install pnpm
 RUN npm install -g pnpm
 
-# Install dependencies (--no-frozen-lockfile avoids lockfile sync issues in monorepo)
-RUN pnpm install --no-frozen-lockfile
+# Install deps for backend workspace and its dependency graph
+RUN pnpm --filter @buildmyhouse/backend... install --no-frozen-lockfile
 
 # Copy source code
 COPY . .
@@ -41,8 +41,8 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/backend/package.json ./apps/backend/
 COPY packages/*/package.json ./packages/*/
 
-# Install production dependencies only (--no-frozen-lockfile avoids lockfile sync issues)
-RUN pnpm install --prod --no-frozen-lockfile
+# Install production deps for backend workspace only (ensures express is present at runtime)
+RUN pnpm --filter @buildmyhouse/backend... install --prod --no-frozen-lockfile
 
 # Copy built application and Prisma files
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
