@@ -49,6 +49,45 @@ const getHeadersForFormData = (): HeadersInit => {
   return headers;
 };
 
+const getErrorMessage = async (response: Response, fallback: string): Promise<string> => {
+  try {
+    const error = await response.json();
+    if (typeof error?.message === 'string' && error.message.trim()) {
+      return error.message;
+    }
+  } catch {
+    // Ignore JSON parsing errors and try text body below.
+  }
+
+  try {
+    const text = await response.text();
+    if (text?.trim()) {
+      return text.trim();
+    }
+  } catch {
+    // Ignore text parsing errors and use fallback.
+  }
+
+  return fallback;
+};
+
+const isLoginEndpoint = (endpoint: string): boolean =>
+  endpoint === '/auth/login' || endpoint.startsWith('/auth/login?');
+
+const handleUnauthorized = async (response: Response, endpoint?: string): Promise<never> => {
+  const message = await getErrorMessage(response, 'Unauthorized');
+  removeToken();
+
+  // Do not force a redirect when login itself fails; let the page show the server error.
+  if (!endpoint || !isLoginEndpoint(endpoint)) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }
+
+  throw new Error(message);
+};
+
 export const api = {
   get: async <T>(endpoint: string): Promise<T> => {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -56,16 +95,12 @@ export const api = {
     });
     
     if (response.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+      return handleUnauthorized(response, endpoint);
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `API Error: ${response.statusText}`);
+      const message = await getErrorMessage(response, `API Error: ${response.statusText}`);
+      throw new Error(message);
     }
     
     return response.json();
@@ -79,16 +114,12 @@ export const api = {
     });
     
     if (response.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+      return handleUnauthorized(response, endpoint);
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `API Error: ${response.statusText}`);
+      const message = await getErrorMessage(response, `API Error: ${response.statusText}`);
+      throw new Error(message);
     }
     
     return response.json();
@@ -102,16 +133,12 @@ export const api = {
     });
     
     if (response.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+      return handleUnauthorized(response, endpoint);
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `API Error: ${response.statusText}`);
+      const message = await getErrorMessage(response, `API Error: ${response.statusText}`);
+      throw new Error(message);
     }
     
     return response.json();
@@ -126,15 +153,11 @@ export const api = {
       body: formData,
     });
     if (response.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+      return handleUnauthorized(response);
     }
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `Upload failed: ${response.statusText}`);
+      const message = await getErrorMessage(response, `Upload failed: ${response.statusText}`);
+      throw new Error(message);
     }
     const result = await response.json();
     const url = result.url?.startsWith('/') ? result.url : `/${result.url}`;
@@ -148,16 +171,12 @@ export const api = {
     });
     
     if (response.status === 401) {
-      removeToken();
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-      throw new Error('Unauthorized');
+      return handleUnauthorized(response, endpoint);
     }
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || `API Error: ${response.statusText}`);
+      const message = await getErrorMessage(response, `API Error: ${response.statusText}`);
+      throw new Error(message);
     }
     
     return response.json();
