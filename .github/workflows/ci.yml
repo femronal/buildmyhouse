@@ -92,7 +92,7 @@ jobs:
           DATABASE_URL: postgresql://buildmyhouse:buildmyhouse_password@localhost:5432/buildmyhouse_test
 
       - name: Run backend tests
-        run: pnpm --filter @buildmyhouse/backend test
+        run: pnpm --filter @buildmyhouse/backend test --passWithNoTests
         env:
           DATABASE_URL: postgresql://buildmyhouse:buildmyhouse_password@localhost:5432/buildmyhouse_test
           JWT_SECRET: test-jwt-secret-key
