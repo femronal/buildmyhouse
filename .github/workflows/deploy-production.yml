@@ -124,12 +124,14 @@ jobs:
       url: https://buildmyhouse.app
     env:
       AWS_REGION: eu-north-1
+      AWS_S3_BUCKET_HOMEOWNER: ${{ secrets.AWS_S3_BUCKET_HOMEOWNER }}
+      AWS_CLOUDFRONT_HOMEOWNER_ID: ${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        if: secrets.AWS_S3_BUCKET_HOMEOWNER != ''
+        if: env.AWS_S3_BUCKET_HOMEOWNER != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -154,16 +156,16 @@ jobs:
         run: pnpm --filter mobile-homeowner build
 
       - name: Deploy to S3
-        if: secrets.AWS_S3_BUCKET_HOMEOWNER != ''
+        if: env.AWS_S3_BUCKET_HOMEOWNER != ''
         run: |
-          aws s3 sync apps/mobile-homeowner/dist s3://${{ secrets.AWS_S3_BUCKET_HOMEOWNER }} --delete --region ${{ env.AWS_REGION }}
-          if [ -n "${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }}" ]; then
-            aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }} --paths "/*" --region ${{ env.AWS_REGION }}
+          aws s3 sync apps/mobile-homeowner/dist "s3://$AWS_S3_BUCKET_HOMEOWNER" --delete --region "$AWS_REGION"
+          if [ -n "$AWS_CLOUDFRONT_HOMEOWNER_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id "$AWS_CLOUDFRONT_HOMEOWNER_ID" --paths "/*" --region "$AWS_REGION"
           fi
           echo "✅ Deployed to S3"
 
       - name: Deploy skipped (no S3 bucket)
-        if: ${{ secrets.AWS_S3_BUCKET_HOMEOWNER == '' }}
+        if: env.AWS_S3_BUCKET_HOMEOWNER == ''
         run: |
           echo "Skipped: Set AWS_S3_BUCKET_HOMEOWNER secret to deploy to S3"
 
@@ -184,12 +186,14 @@ jobs:
       url: https://gc.buildmyhouse.app
     env:
       AWS_REGION: eu-north-1
+      AWS_S3_BUCKET_CONTRACTOR: ${{ secrets.AWS_S3_BUCKET_CONTRACTOR }}
+      AWS_CLOUDFRONT_CONTRACTOR_ID: ${{ secrets.AWS_CLOUDFRONT_CONTRACTOR_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Configure AWS credentials
-        if: secrets.AWS_S3_BUCKET_CONTRACTOR != ''
+        if: env.AWS_S3_BUCKET_CONTRACTOR != ''
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -214,16 +218,16 @@ jobs:
         run: pnpm --filter mobile-contractor build
 
       - name: Deploy to S3
-        if: secrets.AWS_S3_BUCKET_CONTRACTOR != ''
+        if: env.AWS_S3_BUCKET_CONTRACTOR != ''
         run: |
-          aws s3 sync apps/mobile-contractor/dist s3://${{ secrets.AWS_S3_BUCKET_CONTRACTOR }} --delete --region ${{ env.AWS_REGION }}
-          if [ -n "${{ secrets.AWS_CLOUDFRONT_CONTRACTOR_ID }}" ]; then
-            aws cloudfront create-invalidation --distribution-id ${{ secrets.AWS_CLOUDFRONT_CONTRACTOR_ID }} --paths "/*" --region ${{ env.AWS_REGION }}
+          aws s3 sync apps/mobile-contractor/dist "s3://$AWS_S3_BUCKET_CONTRACTOR" --delete --region "$AWS_REGION"
+          if [ -n "$AWS_CLOUDFRONT_CONTRACTOR_ID" ]; then
+            aws cloudfront create-invalidation --distribution-id "$AWS_CLOUDFRONT_CONTRACTOR_ID" --paths "/*" --region "$AWS_REGION"
           fi
           echo "✅ Deployed to S3"
 
       - name: Deploy skipped (no S3 bucket)
-        if: ${{ secrets.AWS_S3_BUCKET_CONTRACTOR == '' }}
+        if: env.AWS_S3_BUCKET_CONTRACTOR == ''
         run: |
           echo "Skipped: Set AWS_S3_BUCKET_CONTRACTOR secret to deploy to S3"
 
