@@ -44,6 +44,7 @@ export default function GCProfileScreen() {
   const [deleteConfirmBankId, setDeleteConfirmBankId] = useState<string | null>(null);
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -214,6 +215,10 @@ export default function GCProfileScreen() {
     }
   }, [editingBankData, editingBankId]);
 
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileData?.pictureUrl]);
+
   const handleSaveBankAccount = async () => {
     const { bankName, accountNumber, accountOwnerName } = bankForm;
     if (!bankName.trim() || !accountNumber.trim() || !accountOwnerName.trim()) {
@@ -337,7 +342,10 @@ export default function GCProfileScreen() {
     );
   }
 
-  const profileImageUrl = profileData.pictureUrl ? getBackendAssetUrl(profileData.pictureUrl) : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80';
+  const profileImageUrl =
+    !profileImageFailed && profileData.pictureUrl
+      ? getBackendAssetUrl(profileData.pictureUrl)
+      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80';
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -362,6 +370,7 @@ export default function GCProfileScreen() {
                   source={{ uri: profileImageUrl }}
                   className="w-20 h-20 rounded-full border-2 border-blue-600"
                   resizeMode="cover"
+                  onError={() => setProfileImageFailed(true)}
                 />
                 <View className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full items-center justify-center border-2 border-[#1E3A5F]">
                   <Edit2 size={12} color="#FFFFFF" strokeWidth={2} />

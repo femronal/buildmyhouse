@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
 import { Bell, Settings, Briefcase, Clock, CheckCircle, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign } from "lucide-react-native";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
 import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -15,7 +15,7 @@ export default function GCDashboardScreen() {
   const router = useRouter();
   const { showAlert } = useAppAlert();
   const { data: profileData } = useGCProfile();
-  const { data: currentUser } = useCurrentUser();
+  const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
   const isAuthenticated = !!currentUser?.id;
   const { data: unreadData } = useUnreadCount(isAuthenticated);
   const notificationUnreadCount = unreadData?.unreadCount ?? 0;
@@ -24,7 +24,18 @@ export default function GCDashboardScreen() {
   const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any | null>(null);
+  const [showAuthPromptModal, setShowAuthPromptModal] = useState(false);
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const deleteProjectMutation = useDeleteProject();
+  const defaultAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80";
+  const profileImageUrl =
+    !profileImageFailed && profileData?.pictureUrl
+      ? getBackendAssetUrl(profileData.pictureUrl)
+      : defaultAvatarUrl;
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [profileData?.pictureUrl]);
   
   // Fetch real pending requests
   const { data: pendingRequests = [], isLoading: loadingPendingRequests } = usePendingRequests();
@@ -115,13 +126,10 @@ export default function GCDashboardScreen() {
       <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Image
-            source={{
-              uri: profileData?.pictureUrl
-                ? getBackendAssetUrl(profileData.pictureUrl)
-                : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
-            }}
+            source={{ uri: profileImageUrl }}
             className="w-12 h-12 rounded-full"
             resizeMode="cover"
+            onError={() => setProfileImageFailed(true)}
           />
           <View className="ml-3">
             <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
@@ -163,7 +171,13 @@ export default function GCDashboardScreen() {
             )}
           </TouchableOpacity>
           <TouchableOpacity 
-            onPress={() => router.push('/contractor/gc-profile')}
+            onPress={() => {
+              if (!isAuthenticated) {
+                setShowAuthPromptModal(true);
+                return;
+              }
+              router.push('/contractor/gc-profile');
+            }}
             className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center"
           >
             <User size={20} color="#3B82F6" strokeWidth={2} />
@@ -172,6 +186,27 @@ export default function GCDashboardScreen() {
       </View>
 
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {!loadingCurrentUser && !isAuthenticated && (
+          <View className="px-6 mb-6">
+            <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-700">
+              <Text className="text-white text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Start handling projects
+              </Text>
+              <Text className="text-gray-300 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Sign up or sign in to receive project requests, upload stage updates, and get paid.
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/login')}
+                className="bg-blue-600 rounded-xl py-3 px-4"
+              >
+                <Text className="text-white text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Sign up / Sign in
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Stats Cards */}
         <View className="px-6 mb-6">
           <View className="flex-row">
@@ -553,6 +588,43 @@ export default function GCDashboardScreen() {
             >
               <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Okay, I’ll wait for admin
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showAuthPromptModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowAuthPromptModal(false)}
+      >
+        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-blue-700">
+            <Text className="text-white text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Account required
+            </Text>
+            <Text className="text-gray-300 text-sm mb-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Sign up or sign in to open your profile and start handling projects.
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowAuthPromptModal(false);
+                router.push('/login');
+              }}
+              className="bg-blue-600 rounded-xl py-3 px-4 mb-3"
+            >
+              <Text className="text-white text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Sign up / Sign in
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowAuthPromptModal(false)}
+              className="border border-blue-800 rounded-xl py-3 px-4"
+            >
+              <Text className="text-gray-300 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Cancel
               </Text>
             </TouchableOpacity>
           </View>
