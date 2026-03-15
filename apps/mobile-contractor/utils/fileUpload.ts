@@ -1,9 +1,10 @@
 import { Platform } from 'react-native';
 import { api } from '@/lib/api';
 
-const API_BASE_URL = __DEV__ 
-  ? 'http://localhost:3001/api' 
-  : 'https://api.buildmyhouse.com/api';
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_URL ||
+  (__DEV__ ? 'http://localhost:3001/api' : 'https://api.buildmyhouse.app/api');
+const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 
 type UploadFileOptions = {
   fileName?: string;
@@ -101,16 +102,29 @@ export async function uploadFile(
       ...(token && { Authorization: `Bearer ${token}` }),
     };
     
-    // Make upload request to a generic upload endpoint
-    const uploadUrl = type === 'image' 
-      ? '/upload/image' // Generic image upload endpoint
-      : '/upload/file'; // Generic file upload endpoint
-    
-    const response = await fetch(`${API_BASE_URL}${uploadUrl}`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
+    // Make upload request to a generic upload endpoint.
+    // Some older deployments still expose /upload/document for non-image uploads,
+    // so we try modern endpoint first, then fallback.
+    const uploadPathCandidates =
+      type === 'image' ? ['/upload/image'] : ['/upload/file', '/upload/document'];
+    let response: Response | null = null;
+    let lastError: any = null;
+    for (const uploadPath of uploadPathCandidates) {
+      try {
+        response = await fetch(`${API_BASE_URL}${uploadPath}`, {
+          method: 'POST',
+          headers,
+          body: formData,
+        });
+        if (response.status !== 404) break;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    if (!response) {
+      throw lastError || new Error('Upload failed before reaching server');
+    }
     
     if (!response.ok) {
       let errorData;
@@ -136,12 +150,9 @@ export async function uploadFile(
     let fileUrl = result.url || result.path || `/uploads/${type}s/${result.filename}`;
     
     // If the URL doesn't start with http, it's a relative path
-    // For local development, prepend the backend URL
+    // Prepend backend origin for portability.
     if (!fileUrl.startsWith('http')) {
-      const backendUrl = __DEV__ 
-        ? 'http://localhost:3001' 
-        : 'https://api.buildmyhouse.com';
-      fileUrl = `${backendUrl}${fileUrl}`;
+      fileUrl = `${BACKEND_ORIGIN}${fileUrl}`;
     }
     return fileUrl;
   } catch (error: any) {

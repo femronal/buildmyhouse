@@ -1,6 +1,7 @@
-const ASSET_BASE_URL = __DEV__
-  ? 'http://localhost:3001'
-  : 'https://api.buildmyhouse.com';
+const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+const ASSET_BASE_URL = apiUrl
+  ? apiUrl.replace(/\/api\/?$/, '')
+  : (__DEV__ ? 'http://localhost:3001' : 'https://api.buildmyhouse.app');
 
 /**
  * Converts a backend-relative upload path (e.g. `/uploads/...`) into an absolute URL

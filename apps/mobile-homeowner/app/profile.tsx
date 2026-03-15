@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { useActiveProjects, usePendingProjects } from '@/hooks';
@@ -33,6 +33,7 @@ export default function ProfileScreen() {
   const { data: activeProjects = [] } = useActiveProjects();
   const { data: pendingProjects = [] } = usePendingProjects();
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending'>('active');
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
 
   const handleLogout = async () => {
     await clearAuthToken();
@@ -51,6 +52,10 @@ export default function ProfileScreen() {
   const userEmail = currentUser?.email || '';
   const userPicture = currentUser?.pictureUrl;
   const userRole = currentUser?.role;
+
+  useEffect(() => {
+    setProfileImageFailed(false);
+  }, [userPicture]);
 
   const isCompletedProject = (project: any) => {
     const progressValue = Number(project?.progress ?? 0);
@@ -143,11 +148,12 @@ export default function ProfileScreen() {
           >
             {isLoading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : userPicture ? (
+            ) : userPicture && !profileImageFailed ? (
               <Image
                 source={{ uri: getBackendAssetUrl(userPicture) }}
                 className="w-20 h-20 rounded-full"
                 resizeMode="cover"
+                onError={() => setProfileImageFailed(true)}
               />
             ) : (
               <User size={32} color="#FFFFFF" strokeWidth={2} />

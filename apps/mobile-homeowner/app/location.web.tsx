@@ -19,19 +19,44 @@ export default function LocationScreenWeb() {
     mapsApiKey !== "your_google_maps_api_key_here" &&
     !mapsApiKey.toLowerCase().includes("demo");
 
+  const geocodeWithOpenStreetMap = async (query: string): Promise<AddressDetails | null> => {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`,
+      { headers: { Accept: 'application/json' } },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Address lookup failed: ${response.status} ${response.statusText}`);
+    }
+
+    const results = await response.json();
+    const first = Array.isArray(results) ? results[0] : null;
+    if (!first) return null;
+
+    const addr = first.address || {};
+    const streetParts = [addr.house_number, addr.road].filter(Boolean);
+    const city = addr.city || addr.town || addr.village || addr.county || '';
+
+    return {
+      formattedAddress: first.display_name || query,
+      street: streetParts.join(' '),
+      city,
+      state: addr.state || '',
+      zipCode: addr.postcode || '',
+      country: addr.country || '',
+      latitude: Number(first.lat),
+      longitude: Number(first.lon),
+    };
+  };
+
   const handleGeocode = async () => {
     if (!address.trim()) return;
-    if (!hasMapsApiKey) {
-      Alert.alert(
-        "Google Maps key missing",
-        "Set EXPO_PUBLIC_GOOGLE_MAPS_API_KEY in apps/mobile-homeowner/.env, then restart Expo."
-      );
-      return;
-    }
     
     setIsGeocoding(true);
     try {
-      const addressDetails = await geocodeAddress(address);
+      const addressDetails = hasMapsApiKey
+        ? await geocodeAddress(address)
+        : await geocodeWithOpenStreetMap(address);
       
       if (addressDetails) {
         setSelectedAddress(addressDetails);
@@ -92,9 +117,9 @@ export default function LocationScreenWeb() {
           </Text>
         </View>
         {!hasMapsApiKey && (
-          <View className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
-            <Text className="text-red-800 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Google Maps is not configured for web. Add `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY` to `apps/mobile-homeowner/.env` and restart Expo.
+          <View className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
+            <Text className="text-blue-800 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Google key not set. Web is using backup address lookup automatically.
             </Text>
           </View>
         )}
@@ -119,9 +144,9 @@ export default function LocationScreenWeb() {
       {/* Geocode Button */}
       <TouchableOpacity
         onPress={handleGeocode}
-        disabled={!address.trim() || isGeocoding || !hasMapsApiKey}
+        disabled={!address.trim() || isGeocoding}
         className={`rounded-full py-4 px-8 mb-6 ${
-          address.trim() && !isGeocoding && hasMapsApiKey ? 'bg-blue-600' : 'bg-gray-200'
+          address.trim() && !isGeocoding ? 'bg-blue-600' : 'bg-gray-200'
         }`}
       >
         <View className="flex-row items-center justify-center">

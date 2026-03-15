@@ -10,11 +10,11 @@ const getImageUrl = (imageUrl: string) => {
   if (imageUrl.startsWith('http')) {
     return imageUrl;
   }
-  // If relative path, prepend backend URL
-  const API_BASE_URL = __DEV__ 
-    ? 'http://localhost:3001' 
-    : 'https://api.buildmyhouse.com';
-  return `${API_BASE_URL}${imageUrl}`;
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  const backendOrigin = apiUrl
+    ? apiUrl.replace(/\/api\/?$/, '')
+    : (__DEV__ ? 'http://localhost:3001' : 'https://api.buildmyhouse.app');
+  return `${backendOrigin}${imageUrl}`;
 };
 
 const formatPlanTypeLabel = (planType?: string | null) => {

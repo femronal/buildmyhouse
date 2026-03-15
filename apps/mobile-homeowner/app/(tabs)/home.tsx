@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, usePendingProjects, usePausedProjects, useHousesForSale, useLandsForSale } from '@/hooks';
@@ -52,9 +52,14 @@ export default function HomeScreen() {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any>(null);
+  const [headerImageFailed, setHeaderImageFailed] = useState(false);
   
   const userName = currentUser?.fullName || 'User';
   const userPicture = currentUser?.pictureUrl;
+
+  useEffect(() => {
+    setHeaderImageFailed(false);
+  }, [userPicture]);
   
   // Combine active and pending projects for display, ensuring no duplicates
   // IMPORTANT: Use actual project.status to determine if paid, not just which array it came from
@@ -266,12 +271,13 @@ export default function HomeScreen() {
           activeOpacity={0.7}
           className="w-10 h-10 bg-black rounded-full items-center justify-center overflow-hidden flex-shrink-0 z-10"
         >
-          {userPicture ? (
+          {userPicture && !headerImageFailed ? (
             <View pointerEvents="none" className="w-full h-full">
               <Image 
                 source={{ uri: getBackendAssetUrl(userPicture) }} 
                 className="w-full h-full"
                 resizeMode="cover"
+                onError={() => setHeaderImageFailed(true)}
               />
             </View>
           ) : (

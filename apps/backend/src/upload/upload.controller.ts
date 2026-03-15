@@ -33,7 +33,14 @@ export class UploadController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|gif)$/)) {
+        const ext = extname(file.originalname || '').toLowerCase();
+        const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif']);
+        const mime = (file.mimetype || '').toLowerCase();
+        const isImageMime =
+          mime.startsWith('image/') ||
+          mime === 'application/octet-stream' ||
+          mime === 'binary/octet-stream';
+        if (!isImageMime || !allowedImageExts.has(ext)) {
           return callback(
             new BadRequestException('Only image files are allowed'),
             false,
@@ -59,7 +66,7 @@ export class UploadController {
     };
   }
 
-  @Post('file')
+  @Post(['file', 'document'])
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
@@ -77,7 +84,7 @@ export class UploadController {
         },
       }),
       fileFilter: (req, file, callback) => {
-        const allowedMimes = [
+        const allowedMimes = new Set([
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -86,13 +93,36 @@ export class UploadController {
           'image/png',
           'image/webp',
           'image/gif',
+          'image/heic',
+          'image/heif',
           'video/mp4',
           'video/quicktime',
           'video/webm',
-        ];
-        if (!allowedMimes.includes(file.mimetype)) {
+          'application/octet-stream',
+          'binary/octet-stream',
+        ]);
+        const allowedExts = new Set([
+          '.pdf',
+          '.doc',
+          '.docx',
+          '.jpg',
+          '.jpeg',
+          '.png',
+          '.webp',
+          '.gif',
+          '.heic',
+          '.heif',
+          '.mp4',
+          '.mov',
+          '.webm',
+        ]);
+        const ext = extname(file.originalname || '').toLowerCase();
+        const mime = (file.mimetype || '').toLowerCase();
+        if (!allowedMimes.has(mime) || !allowedExts.has(ext)) {
           return callback(
-            new BadRequestException('Only PDF, DOC, DOCX, image, and video files are allowed'),
+            new BadRequestException(
+              'Only PDF, DOC, DOCX, image, and video files are allowed',
+            ),
             false,
           );
         }

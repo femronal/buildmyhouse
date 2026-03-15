@@ -24,16 +24,15 @@ async function bootstrap() {
   );
   app.use(express.urlencoded({ extended: true }));
 
-  // Serve static files from uploads directory
-  app.useStaticAssets(join(process.cwd(), 'uploads'), {
-    prefix: '/uploads/',
-  });
-  
   const isProduction = process.env.NODE_ENV === 'production';
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  const trustedDomainPatterns = [
+    /^https:\/\/([a-z0-9-]+\.)?buildmyhouse\.app$/i,
+    /^https:\/\/([a-z0-9-]+\.)?buildmyhouse\.com$/i,
+  ];
 
   // Enable CORS with explicit production allowlist
   app.enableCors({
@@ -55,9 +54,20 @@ async function bootstrap() {
         return callback(null, true);
       }
 
+      // Production safety net for first-party web apps (covers cases where env allowlist is stale)
+      if (trustedDomainPatterns.some((pattern) => pattern.test(origin))) {
+        return callback(null, true);
+      }
+
       callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
+  });
+
+  // Serve static files from uploads directory.
+  // Keep this AFTER CORS setup so browser requests for /uploads/* include CORS headers.
+  app.useStaticAssets(join(process.cwd(), 'uploads'), {
+    prefix: '/uploads/',
   });
 
   // Global validation pipe

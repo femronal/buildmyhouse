@@ -23,7 +23,7 @@ COPY apps/mobile-homeowner/ ./apps/mobile-homeowner/
 WORKDIR /app
 
 # API URL for build (override for local Docker; default for production)
-ARG EXPO_PUBLIC_API_URL=https://api.buildmyhouse.com/api
+ARG EXPO_PUBLIC_API_URL=https://api.buildmyhouse.app/api
 ENV EXPO_PUBLIC_API_URL=$EXPO_PUBLIC_API_URL
 
 # Build for web (static export)
