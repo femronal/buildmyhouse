@@ -63,24 +63,24 @@ export default function HomeScreen() {
   
   // Combine active and pending projects for display, ensuring no duplicates
   // IMPORTANT: Use actual project.status to determine if paid, not just which array it came from
-  const activeProjectsWithStatus = activeProjects.map((p: any) => ({ 
+  const activeProjectsWithStatus = activeProjects.map((p: any, idx: number) => ({ 
     ...p, 
     // Completed projects should remain openable like active projects.
     isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
-    uniqueKey: `active-${p.id || p.projectId || Math.random()}`
+    uniqueKey: `active-${p.id || p.projectId || `idx-${idx}`}`
   }));
-  const pendingProjectsWithStatus = pendingProjects.map((p: any) => ({ 
+  const pendingProjectsWithStatus = pendingProjects.map((p: any, idx: number) => ({ 
     ...p, 
     // A project can be effectively complete even if status lagged.
     isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
-    uniqueKey: `pending-${p.id || p.projectId || Math.random()}`
+    uniqueKey: `pending-${p.id || p.projectId || `idx-${idx}`}`
   }));
 
-  const pausedProjectsWithStatus = pausedProjects.map((p: any) => ({
+  const pausedProjectsWithStatus = pausedProjects.map((p: any, idx: number) => ({
     ...p,
     // Paused projects should never be treated as "paid/openable"
     isPaid: false,
-    uniqueKey: `paused-${p.id || p.projectId || Math.random()}`,
+    uniqueKey: `paused-${p.id || p.projectId || `idx-${idx}`}`,
   }));
   
   // Filter out duplicates by project ID (in case a project appears in both arrays)

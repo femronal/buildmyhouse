@@ -7,6 +7,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
+import { Text, TextInput } from "react-native";
 import "react-native-reanimated";
 import "../global.css";
 import {
@@ -35,7 +36,6 @@ export default function RootLayout() {
   usePushTokenRegistration('contractor');
 
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     Poppins_400Regular,
     Poppins_500Medium,
     Poppins_600SemiBold,
@@ -46,6 +46,11 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
+      Text.defaultProps = Text.defaultProps || {};
+      Text.defaultProps.style = [{ fontFamily: 'Poppins_400Regular' }, Text.defaultProps.style];
+
+      TextInput.defaultProps = TextInput.defaultProps || {};
+      TextInput.defaultProps.style = [{ fontFamily: 'Poppins_400Regular' }, TextInput.defaultProps.style];
       SplashScreen.hideAsync();
     }
   }, [loaded]);

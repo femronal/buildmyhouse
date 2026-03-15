@@ -48,48 +48,48 @@ export default function LoginScreen() {
       }}
     >
       {/* Header */}
-      <View className="pt-20 px-8 pb-12">
-        <View className="items-center mb-8">
+      <View className="pt-14 px-6 pb-6">
+        <View className="items-center mb-4">
           <Logo size="xxl" />
         </View>
         <Text 
-          className="text-5xl text-black mb-3"
+          className="text-4xl text-black mb-2"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
         >
           Welcome Back
         </Text>
         <Text 
-          className="text-xl text-gray-600 leading-7"
+          className="text-base text-gray-600 leading-6"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           Sign in or create an account to continue your home building journey
         </Text>
       </View>
 
-      <View className="flex-1 justify-center px-8">
+      <View className="flex-1 justify-center px-6">
         {/* Google Sign In Button */}
         <TouchableOpacity
           onPress={handleGoogleSignIn}
           disabled={loading}
-          className="bg-white border-2 border-gray-300 rounded-2xl py-5 px-6 mb-4 flex-row items-center justify-center shadow-lg"
+          className="bg-white border border-gray-300 rounded-xl py-3.5 px-4 mb-3 flex-row items-center justify-center shadow-sm"
           style={{
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 5,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 4,
+            elevation: 2,
           }}
         >
           {loading ? (
-            <ActivityIndicator size="large" color="#4285F4" />
+            <ActivityIndicator size="small" color="#4285F4" />
           ) : (
             <>
               <Image
                 source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }}
-                style={{ width: 24, height: 24, marginRight: 12 }}
+                style={{ width: 20, height: 20, marginRight: 10 }}
               />
               <Text 
-                className="text-black text-xl flex-1 text-center"
+                className="text-black text-base flex-1 text-center"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
                 Continue with Google
@@ -99,10 +99,10 @@ export default function LoginScreen() {
         </TouchableOpacity>
 
         {/* Divider */}
-        <View className="flex-row items-center my-8">
+        <View className="flex-row items-center my-4">
           <View className="flex-1 h-px bg-gray-300" />
           <Text 
-            className="mx-4 text-gray-500 text-base"
+            className="mx-3 text-gray-500 text-xs"
             style={{ fontFamily: 'Poppins_500Medium' }}
           >
             OR
@@ -113,23 +113,23 @@ export default function LoginScreen() {
         {/* Email Option */}
         <TouchableOpacity
           onPress={() => router.push('/email-login')}
-          className="bg-black rounded-2xl py-5 px-6 flex-row items-center justify-center"
+          className="bg-black rounded-xl py-3.5 px-4 flex-row items-center justify-center"
         >
-          <LogIn size={24} color="#FFFFFF" strokeWidth={2.5} />
+          <LogIn size={18} color="#FFFFFF" strokeWidth={2.3} />
           <Text 
-            className="text-white text-xl ml-3"
+            className="text-white text-base ml-2"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
             Continue with Email
           </Text>
-          <ArrowRight size={20} color="#FFFFFF" strokeWidth={2.5} className="ml-2" />
+          <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.4} className="ml-1.5" />
         </TouchableOpacity>
       </View>
 
       {/* Footer */}
-      <View className="pb-12 px-8">
+      <View className="pb-6 px-6">
         <Text 
-          className="text-gray-500 text-center text-base leading-6"
+          className="text-gray-500 text-center text-xs leading-5"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           By continuing, you agree to our Terms of Service and Privacy Policy

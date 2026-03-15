@@ -675,7 +675,7 @@ export default function HouseSummaryScreen() {
                 Estimated Cost
               </Text>
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ${(isDesignSelection 
+                ₦{(isDesignSelection 
                   ? (aiAnalysis?.estimatedBudget || designData?.estimatedCost || 0)
                   : (acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0)
                 ).toLocaleString()}

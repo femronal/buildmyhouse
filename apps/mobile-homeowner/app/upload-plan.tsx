@@ -30,7 +30,7 @@ export default function UploadPlanScreen() {
         Animated.timing(rotateAnim, {
           toValue: 1,
           duration: 2000,
-          useNativeDriver: true,
+          useNativeDriver: false,
         })
       ).start();
     }
@@ -327,7 +327,7 @@ export default function UploadPlanScreen() {
             className="text-sm text-gray-700 mb-2"
             style={{ fontFamily: 'Poppins_500Medium' }}
           >
-            Estimated Budget ($) *
+            Estimated Budget (₦) *
           </Text>
           <View className="bg-gray-50 rounded-2xl p-5 border border-gray-200">
             <TextInput
