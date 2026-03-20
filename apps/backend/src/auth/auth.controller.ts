@@ -59,29 +59,38 @@ export class AuthController {
 
   @Post('google/mobile')
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
-  async googleAuthMobile(@Body() body: { code: string; redirectUri: string }) {
+  async googleAuthMobile(
+    @Body()
+    body: { code: string; redirectUri: string; codeVerifier?: string },
+  ) {
     // Handle mobile OAuth flow
     // Exchange authorization code for user info
-    const { code, redirectUri } = body;
-    
+    const { code, redirectUri, codeVerifier } = body;
+
     if (!code || !redirectUri) {
       throw new BadRequestException('Missing code or redirect URI');
     }
 
     try {
+      const params = new URLSearchParams({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID || '',
+        client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code',
+      });
+      // Required when the client used PKCE in the authorization request (Expo default).
+      if (codeVerifier) {
+        params.append('code_verifier', codeVerifier);
+      }
+
       // Exchange code for access token
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: new URLSearchParams({
-          code,
-          client_id: process.env.GOOGLE_CLIENT_ID || '',
-          client_secret: process.env.GOOGLE_CLIENT_SECRET || '',
-          redirect_uri: redirectUri,
-          grant_type: 'authorization_code',
-        }),
+        body: params,
       });
 
       if (!tokenResponse.ok) {
