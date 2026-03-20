@@ -17,6 +17,12 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       const result = await signInWithGoogle();
+
+      // Web OAuth intentionally redirects current tab and returns null.
+      if (Platform.OS === 'web' && !result) {
+        return;
+      }
+
       if (result?.token && result?.user) {
         // ROLE VALIDATION: Only allow GCs (and admin)
         const userRole = result.user.role;
