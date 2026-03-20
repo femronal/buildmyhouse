@@ -111,18 +111,12 @@ export default function LocationScreenWeb() {
         <Text className="text-sm text-gray-500 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
           Enter your project address below
         </Text>
-        <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mt-4">
-          <Text className="text-yellow-800 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-            📱 For the full map experience, use the iOS or Android app
-          </Text>
-        </View>
-        {!hasMapsApiKey && (
-          <View className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
-            <Text className="text-blue-800 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Google key not set. Web is using backup address lookup automatically.
-            </Text>
-          </View>
-        )}
+        <Text
+          className="text-sm text-gray-700 leading-6 mt-4"
+          style={{ fontFamily: 'Poppins_500Medium' }}
+        >
+          Write the correct address where you want to building construction, renovation or interior design will be taking place.
+        </Text>
       </View>
 
       {/* Address Input */}

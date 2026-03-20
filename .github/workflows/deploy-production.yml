@@ -172,7 +172,7 @@ jobs:
           fi
 
       - name: Build homeowner web app
-        run: EXPO_PUBLIC_API_URL=${{ steps.homeowner-api-url.outputs.api_url }} EXPO_PUBLIC_GOOGLE_OAUTH_REDIRECT_URI=https://buildmyhouse.app/ pnpm --filter mobile-homeowner build
+        run: EXPO_PUBLIC_API_URL=${{ steps.homeowner-api-url.outputs.api_url }} pnpm --filter mobile-homeowner build
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_HOMEOWNER != ''
@@ -253,7 +253,7 @@ jobs:
           fi
 
       - name: Build GC web app
-        run: EXPO_PUBLIC_API_URL=${{ steps.contractor-api-url.outputs.api_url }} EXPO_PUBLIC_GOOGLE_OAUTH_REDIRECT_URI=https://gc.buildmyhouse.app/ pnpm --filter mobile-contractor build
+        run: EXPO_PUBLIC_API_URL=${{ steps.contractor-api-url.outputs.api_url }} pnpm --filter mobile-contractor build
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_CONTRACTOR != ''

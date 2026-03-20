@@ -26,6 +26,7 @@ module.exports = {
         },
       },
       fontFamily: {
+        'sans': ['Poppins_400Regular'],
         'poppins': ['Poppins_700Bold'],
         'poppins-medium': ['Poppins_500Medium'],
         'poppins-regular': ['Poppins_400Regular'],

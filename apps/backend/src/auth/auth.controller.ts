@@ -61,11 +61,11 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
   async googleAuthMobile(
     @Body()
-    body: { code: string; redirectUri: string; codeVerifier?: string },
+    body: { code: string; redirectUri: string; codeVerifier?: string; appRole?: 'homeowner' | 'general_contractor' },
   ) {
     // Handle mobile OAuth flow
     // Exchange authorization code for user info
-    const { code, redirectUri, codeVerifier } = body;
+    const { code, redirectUri, codeVerifier, appRole } = body;
 
     if (!code || !redirectUri) {
       throw new BadRequestException('Missing code or redirect URI');
@@ -134,7 +134,7 @@ export class AuthController {
       };
 
       // Validate and create/login user
-      const result = await this.authService.validateOAuthUser(profile, 'google');
+      const result = await this.authService.validateOAuthUser(profile, 'google', appRole);
       return result;
     } catch (error: any) {
       console.error('Mobile OAuth error:', error);

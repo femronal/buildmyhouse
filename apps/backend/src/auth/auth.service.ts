@@ -240,18 +240,23 @@ export class AuthService {
     return { message: 'Password changed successfully' };
   }
 
-  async validateOAuthUser(profile: any, provider: 'google' | 'apple') {
+  async validateOAuthUser(
+    profile: any,
+    provider: 'google' | 'apple',
+    preferredRole?: 'homeowner' | 'general_contractor',
+  ) {
     const email = profile.email;
     if (!email) {
       throw new UnauthorizedException('Email is required for OAuth authentication');
     }
 
-    const fullName = profile.name || 
-      (profile.firstName && profile.lastName 
-        ? `${profile.firstName} ${profile.lastName}` 
+    const fullName = profile.name ||
+      (profile.firstName && profile.lastName
+        ? `${profile.firstName} ${profile.lastName}`
         : profile.firstName || profile.lastName || 'User');
-    
+
     const pictureUrl = profile.picture || profile.photo || null;
+    const roleToCreate = preferredRole === 'general_contractor' ? 'general_contractor' : 'homeowner';
 
     // Check if user exists
     let user = await this.prisma.user.findUnique({
@@ -262,28 +267,72 @@ export class AuthService {
       // Create new user from OAuth
       // Generate a random password hash for OAuth users (they won't use it)
       const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
-      
+
       user = await this.prisma.user.create({
         data: {
           email,
           password: randomPassword, // OAuth users have random password (not used)
           fullName,
           pictureUrl,
-          role: 'homeowner', // Default role, can be changed later
+          role: roleToCreate,
           verified: true, // OAuth providers verify emails
         },
       });
-      await this.notifyAdminNewSignup(fullName, email, 'homeowner');
+
+      // Ensure GC profile exists when user signs up through the contractor app.
+      if (roleToCreate === 'general_contractor') {
+        await this.prisma.contractor.create({
+          data: {
+            userId: user.id,
+            name: fullName || 'General Contractor',
+            specialty: 'General Construction',
+            type: 'general_contractor',
+            hiringFee: 0,
+          },
+        });
+      }
+
+      await this.notifyAdminNewSignup(fullName, email, roleToCreate);
     } else {
-      // Update existing user's name and picture if they're not set or if OAuth provides newer info
-      if (!user.pictureUrl && pictureUrl) {
+      // Keep profile in sync with trusted OAuth identity values.
+      const currentName = (user.fullName || '').trim();
+      const oauthName = (fullName || '').trim();
+      const shouldUpdateName =
+        !!oauthName &&
+        (currentName === '' || currentName.toLowerCase() === 'user' || currentName !== oauthName);
+      const shouldUpdatePicture = !!pictureUrl && user.pictureUrl !== pictureUrl;
+
+      if (shouldUpdateName || shouldUpdatePicture) {
         user = await this.prisma.user.update({
           where: { id: user.id },
           data: {
-            pictureUrl,
-            fullName: user.fullName || fullName, // Only update if not set
+            ...(shouldUpdatePicture ? { pictureUrl } : {}),
+            ...(shouldUpdateName ? { fullName: oauthName } : {}),
           },
         });
+      }
+
+      // Backfill contractor profile if role is GC but profile row is missing.
+      if (user.role === 'general_contractor') {
+        const existingContractor = await this.prisma.contractor.findUnique({
+          where: { userId: user.id },
+        });
+        if (!existingContractor) {
+          await this.prisma.contractor.create({
+            data: {
+              userId: user.id,
+              name: user.fullName || fullName || 'General Contractor',
+              specialty: 'General Construction',
+              type: 'general_contractor',
+              hiringFee: 0,
+            },
+          });
+        } else if (oauthName && existingContractor.name !== oauthName) {
+          await this.prisma.contractor.update({
+            where: { userId: user.id },
+            data: { name: oauthName },
+          });
+        }
       }
     }
 
