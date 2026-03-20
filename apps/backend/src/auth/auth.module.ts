@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './rbac.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { WebSocketModule } from '../websocket/websocket.module';
+import { S3UploadService } from '../upload/s3-upload.service';
 
 @Module({
   imports: [
@@ -30,7 +31,14 @@ import { WebSocketModule } from '../websocket/websocket.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthService, JwtAuthGuard, RolesGuard, GoogleStrategy],
+  providers: [
+    AuthService,
+    JwtAuthService,
+    JwtAuthGuard,
+    RolesGuard,
+    GoogleStrategy,
+    S3UploadService,
+  ],
   exports: [AuthService, JwtAuthService, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

@@ -7,31 +7,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { mkdirSync, existsSync } from 'fs';
+import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { S3UploadService } from './s3-upload.service';
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
+  constructor(private readonly s3UploadService: S3UploadService) {}
+
   @Post('image')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, file, callback) => {
-          const uploadPath = join(process.cwd(), 'uploads', 'images');
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-          callback(null, uploadPath);
-        },
-        filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `image-${uniqueSuffix}${ext}`);
-        },
-      }),
       fileFilter: (req, file, callback) => {
         const ext = extname(file.originalname || '').toLowerCase();
         const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif']);
@@ -58,9 +45,17 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
+    const uploaded = await this.s3UploadService.uploadBuffer({
+      buffer: file.buffer,
+      folder: 'images',
+      contentType: file.mimetype,
+      originalName: file.originalname,
+    });
+
     return {
-      url: `/uploads/images/${file.filename}`,
-      filename: file.filename,
+      url: uploaded.url,
+      key: uploaded.key,
+      filename: uploaded.filename,
       size: file.size,
       mimetype: file.mimetype,
     };
@@ -69,20 +64,6 @@ export class UploadController {
   @Post(['file', 'document'])
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, file, callback) => {
-          const uploadPath = join(process.cwd(), 'uploads', 'files');
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-          callback(null, uploadPath);
-        },
-        filename: (req, file, callback) => {
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `file-${uniqueSuffix}${ext}`);
-        },
-      }),
       fileFilter: (req, file, callback) => {
         const allowedMimes = new Set([
           'application/pdf',
@@ -138,10 +119,17 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    // Files are stored in uploads/files; URL must match
+    const uploaded = await this.s3UploadService.uploadBuffer({
+      buffer: file.buffer,
+      folder: 'files',
+      contentType: file.mimetype,
+      originalName: file.originalname,
+    });
+
     return {
-      url: `/uploads/files/${file.filename}`,
-      filename: file.filename,
+      url: uploaded.url,
+      key: uploaded.key,
+      filename: uploaded.filename,
       size: file.size,
       mimetype: file.mimetype,
     };

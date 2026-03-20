@@ -62,6 +62,13 @@ aws ssm put-parameter \
   --value "your-google-client-secret" \
   --type SecureString \
   --region eu-north-1
+
+# S3 bucket name for persistent uploads (images, documents, profile pictures)
+aws ssm put-parameter \
+  --name /buildmyhouse/production/s3-bucket \
+  --value "buildmyhouse-prod-uploads" \
+  --type SecureString \
+  --region eu-north-1
 ```
 
 **Note:** Your database must be reachable from the ECS tasks (same VPC or peered, security group allows port 5432 from the task security group).
@@ -78,6 +85,35 @@ aws iam put-role-policy \
   --policy-name ECS-SSM-Parameters \
   --policy-document file://infrastructure/ecs/ecs-ssm-policy.json
 ```
+
+## Step 3c: Grant ECS task role S3 upload permissions
+
+The backend now stores uploads in S3 (required for persistent files on ECS). Attach this inline policy to the task role:
+
+```bash
+cat > /tmp/ecs-s3-uploads-policy.json <<'EOF'
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload"
+      ],
+      "Resource": "arn:aws:s3:::buildmyhouse-prod-uploads/uploads/*"
+    }
+  ]
+}
+EOF
+
+aws iam put-role-policy \
+  --role-name ecsTaskExecutionRole-buildmyhouse \
+  --policy-name ECS-S3-Uploads \
+  --policy-document file:///tmp/ecs-s3-uploads-policy.json
+```
+
+If you use KMS encryption on the bucket, add `kms:Encrypt` for the same role/key.
 
 ---
 
@@ -158,7 +194,7 @@ aws ec2 authorize-security-group-ingress \
     - **Container to load balance:** backend:3001
     - **Target group:** tg-backend
     - **Health check grace period:** 120 seconds
-11. **Environment variables:** Already configured in the task definition (DATABASE_URL, JWT_SECRET from SSM; NODE_ENV, PORT, ALLOWED_ORIGINS as env).
+11. **Environment variables:** Already configured in the task definition (DATABASE_URL, JWT_SECRET, GOOGLE credentials, `AWS_S3_BUCKET` from SSM; NODE_ENV, PORT, ALLOWED_ORIGINS, AWS_REGION as env).
 12. Click **Create**
 
 **Option B: Via CLI**

@@ -27,6 +27,7 @@
     "prisma:backfill-gc-contractors": "ts-node prisma/backfill-gc-contractors.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1014.0",
     "@clerk/clerk-sdk-node": "^5.1.6",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.0.0",

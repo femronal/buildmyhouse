@@ -20,13 +20,15 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { extname } from 'path';
+import { S3UploadService } from '../upload/s3-upload.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly s3UploadService: S3UploadService,
+  ) {}
 
   @Post('register')
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 per minute
@@ -183,23 +185,10 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: (req, file, callback) => {
-          const uploadPath = join(process.cwd(), 'uploads', 'profiles');
-          if (!existsSync(uploadPath)) {
-            mkdirSync(uploadPath, { recursive: true });
-          }
-          callback(null, uploadPath);
-        },
-        filename: (req: any, file, callback) => {
-          const userId = req?.user?.sub || 'user';
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          callback(null, `profile-${userId}-${uniqueSuffix}${ext}`);
-        },
-      }),
       fileFilter: (req, file, callback) => {
-        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|gif)$/)) {
+        const ext = extname(file.originalname || '').toLowerCase();
+        const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif']);
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|webp|gif|heic|heif)$/) || !allowedImageExts.has(ext)) {
           return callback(new BadRequestException('Only image files are allowed'), false);
         }
         callback(null, true);
@@ -217,7 +206,15 @@ export class AuthController {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    const pictureUrl = `/uploads/profiles/${file.filename}`;
+
+    const uploaded = await this.s3UploadService.uploadBuffer({
+      buffer: file.buffer,
+      folder: 'profiles',
+      contentType: file.mimetype,
+      originalName: file.originalname,
+    });
+    const pictureUrl = uploaded.url;
+
     return this.authService.updateProfilePicture(userId, pictureUrl);
   }
 }
