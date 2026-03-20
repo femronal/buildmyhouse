@@ -16,11 +16,14 @@
       "environment": [
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "3001" },
+        { "name": "GOOGLE_CALLBACK_URL", "value": "https://api.buildmyhouse.app/api/auth/google/callback" },
         { "name": "ALLOWED_ORIGINS", "value": "https://admin.buildmyhouse.app,https://buildmyhouse.app,https://gc.buildmyhouse.app,http://localhost:3000,http://localhost:8081,http://localhost:1990,http://localhost:3988" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/database-url" },
-        { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/jwt-secret" }
+        { "name": "JWT_SECRET", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/jwt-secret" },
+        { "name": "GOOGLE_CLIENT_ID", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/google-client-id" },
+        { "name": "GOOGLE_CLIENT_SECRET", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/google-client-secret" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

@@ -48,6 +48,20 @@ aws ssm put-parameter \
   --value "your-secure-jwt-secret" \
   --type SecureString \
   --region eu-north-1
+
+# Google OAuth web client (must match EXPO_PUBLIC_GOOGLE_CLIENT_ID used by homeowner/GC web apps)
+aws ssm put-parameter \
+  --name /buildmyhouse/production/google-client-id \
+  --value "your-google-web-client-id.apps.googleusercontent.com" \
+  --type SecureString \
+  --region eu-north-1
+
+# Google OAuth client secret from the same Google web OAuth app
+aws ssm put-parameter \
+  --name /buildmyhouse/production/google-client-secret \
+  --value "your-google-client-secret" \
+  --type SecureString \
+  --region eu-north-1
 ```
 
 **Note:** Your database must be reachable from the ECS tasks (same VPC or peered, security group allows port 5432 from the task security group).
