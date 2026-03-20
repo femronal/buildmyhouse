@@ -92,7 +92,7 @@ jobs:
           DATABASE_URL: postgresql://buildmyhouse:buildmyhouse_password@localhost:5432/buildmyhouse_test
 
       - name: Run backend tests
-        run: pnpm --filter @buildmyhouse/backend test --passWithNoTests
+        run: pnpm --filter @buildmyhouse/backend test -- --passWithNoTests
         env:
           DATABASE_URL: postgresql://buildmyhouse:buildmyhouse_password@localhost:5432/buildmyhouse_test
           JWT_SECRET: test-jwt-secret-key
@@ -162,11 +162,11 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run mobile-homeowner tests
-        run: pnpm --filter mobile-homeowner test --passWithNoTests
+        run: pnpm --filter mobile-homeowner test -- --passWithNoTests
         continue-on-error: true
 
       - name: Run mobile-contractor tests
-        run: pnpm --filter mobile-contractor test --passWithNoTests
+        run: pnpm --filter mobile-contractor test -- --passWithNoTests
         continue-on-error: true
 
   build:
