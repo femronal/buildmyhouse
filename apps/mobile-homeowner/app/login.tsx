@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image, ActivityIndicator, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
+import { signInWithGoogle, startGoogleWebSignIn, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight } from "lucide-react-native";
 import Logo from "@/components/Logo";
 
@@ -10,6 +10,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    if (Platform.OS === 'web') {
+      startGoogleWebSignIn();
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await signInWithGoogle();
