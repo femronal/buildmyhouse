@@ -7,6 +7,7 @@ import { useAppAlert } from "../components/AppAlertProvider";
 
 // Allowed roles for contractor app (MVP: GC + admin only)
 const ALLOWED_ROLES = ['general_contractor', 'admin'];
+const SHOW_GOOGLE_LOGIN = false;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -85,37 +86,40 @@ export default function LoginScreen() {
       </View>
 
       <View className="flex-1 justify-center px-8">
-        {/* Google Sign In Button */}
-        <TouchableOpacity
-          onPress={handleGoogleSignIn}
-          disabled={loading}
-          className="bg-[#1E3A5F] border-2 border-blue-900 rounded-2xl py-5 px-6 mb-4 flex-row items-center justify-center"
-        >
-          {loading ? (
-            <ActivityIndicator size="large" color="#3B82F6" />
-          ) : (
-            <>
-              <Text 
-                className="text-white text-xl flex-1 text-center"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Continue with Google
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {SHOW_GOOGLE_LOGIN && (
+          <TouchableOpacity
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+            className="bg-[#1E3A5F] border-2 border-blue-900 rounded-2xl py-5 px-6 mb-4 flex-row items-center justify-center"
+          >
+            {loading ? (
+              <ActivityIndicator size="large" color="#3B82F6" />
+            ) : (
+              <>
+                <Text
+                  className="text-white text-xl flex-1 text-center"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Continue with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Divider */}
-        <View className="flex-row items-center my-8">
-          <View className="flex-1 h-px bg-gray-700" />
-          <Text 
-            className="mx-4 text-gray-500 text-base"
-            style={{ fontFamily: 'Poppins_500Medium' }}
-          >
-            OR
-          </Text>
-          <View className="flex-1 h-px bg-gray-700" />
-        </View>
+        {SHOW_GOOGLE_LOGIN && (
+          <View className="flex-row items-center my-8">
+            <View className="flex-1 h-px bg-gray-700" />
+            <Text
+              className="mx-4 text-gray-500 text-base"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+            >
+              OR
+            </Text>
+            <View className="flex-1 h-px bg-gray-700" />
+          </View>
+        )}
 
         {/* Email/Password Option */}
         <TouchableOpacity

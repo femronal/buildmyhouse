@@ -5,6 +5,8 @@ import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight } from "lucide-react-native";
 import Logo from "@/components/Logo";
 
+const SHOW_GOOGLE_LOGIN = false;
+
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -73,48 +75,51 @@ export default function LoginScreen() {
       </View>
 
       <View className="flex-1 justify-center px-6">
-        {/* Google Sign In Button */}
-        <TouchableOpacity
-          onPress={handleGoogleSignIn}
-          disabled={loading}
-          className="bg-white border border-gray-300 rounded-xl py-3.5 px-4 mb-3 flex-row items-center justify-center shadow-sm"
-          style={{
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 4,
-            elevation: 2,
-          }}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#4285F4" />
-          ) : (
-            <>
-              <Image
-                source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }}
-                style={{ width: 20, height: 20, marginRight: 10 }}
-              />
-              <Text 
-                className="text-black text-base flex-1 text-center"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Continue with Google
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+        {SHOW_GOOGLE_LOGIN && (
+          <TouchableOpacity
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+            className="bg-white border border-gray-300 rounded-xl py-3.5 px-4 mb-3 flex-row items-center justify-center shadow-sm"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#4285F4" />
+            ) : (
+              <>
+                <Image
+                  source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }}
+                  style={{ width: 20, height: 20, marginRight: 10 }}
+                />
+                <Text
+                  className="text-black text-base flex-1 text-center"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Continue with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
 
         {/* Divider */}
-        <View className="flex-row items-center my-4">
-          <View className="flex-1 h-px bg-gray-300" />
-          <Text 
-            className="mx-3 text-gray-500 text-xs"
-            style={{ fontFamily: 'Poppins_500Medium' }}
-          >
-            OR
-          </Text>
-          <View className="flex-1 h-px bg-gray-300" />
-        </View>
+        {SHOW_GOOGLE_LOGIN && (
+          <View className="flex-row items-center my-4">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text
+              className="mx-3 text-gray-500 text-xs"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+            >
+              OR
+            </Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
+        )}
 
         {/* Email Option */}
         <TouchableOpacity
