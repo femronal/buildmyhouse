@@ -54,7 +54,7 @@ export function useGCProfile() {
 export function useUpdateGCProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { experienceYears?: number }) =>
+    mutationFn: (data: { experienceYears?: number; location?: string }) =>
       api.patch('/contractors/profile', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gc-profile'] });

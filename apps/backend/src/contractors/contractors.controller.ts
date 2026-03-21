@@ -31,7 +31,10 @@ export class ContractorsController {
   @Patch('profile')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor')
-  async updateGCProfile(@Request() req: any, @Body() body: { experienceYears?: number }) {
+  async updateGCProfile(
+    @Request() req: any,
+    @Body() body: { experienceYears?: number; location?: string },
+  ) {
     const userId = req.user.sub;
     return this.contractorsService.updateGCProfile(userId, body);
   }

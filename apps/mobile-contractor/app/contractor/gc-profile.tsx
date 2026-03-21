@@ -34,7 +34,7 @@ export default function GCProfileScreen() {
   const [pushNotifications, setPushNotifications] = useState(true);
   const [paymentNotifications, setPaymentNotifications] = useState(true);
   const [projectNotifications, setProjectNotifications] = useState(true);
-  const [editModal, setEditModal] = useState<'company' | 'email' | 'phone' | 'experience' | null>(null);
+  const [editModal, setEditModal] = useState<'company' | 'email' | 'phone' | 'location' | 'experience' | null>(null);
   const [editValue, setEditValue] = useState('');
   const [certModalVisible, setCertModalVisible] = useState(false);
   const [certForm, setCertForm] = useState({ name: '', expiryYear: '' });
@@ -91,11 +91,12 @@ export default function GCProfileScreen() {
     }
   };
 
-  const openEditModal = (field: 'company' | 'email' | 'phone' | 'experience') => {
+  const openEditModal = (field: 'company' | 'email' | 'phone' | 'location' | 'experience') => {
     setEditModal(field);
     if (field === 'company') setEditValue(profileData?.fullName ?? '');
     else if (field === 'email') setEditValue(profileData?.email ?? '');
     else if (field === 'phone') setEditValue(profileData?.phone ?? '');
+    else if (field === 'location') setEditValue(profileData?.location ?? '');
     else setEditValue(String(profileData?.experienceYears ?? ''));
   };
 
@@ -108,6 +109,8 @@ export default function GCProfileScreen() {
         await updateUser.mutateAsync({ email: editValue.trim() });
       } else if (editModal === 'phone') {
         await updateUser.mutateAsync({ phone: editValue.trim() || undefined });
+      } else if (editModal === 'location') {
+        await updateGCProfile.mutateAsync({ location: editValue.trim() });
       } else if (editModal === 'experience') {
         const years = parseInt(editValue.trim(), 10);
         if (isNaN(years) || years < 0 || years > 100) {
@@ -486,9 +489,12 @@ export default function GCProfileScreen() {
                 <View className="flex-row items-center py-3">
                   <MapPin size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
-                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {profileData.location || '—'}
                   </Text>
+                  <TouchableOpacity className="p-1 flex-shrink-0" onPress={() => openEditModal('location')}>
+                    <Edit2 size={14} color="#3B82F6" strokeWidth={2} />
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -802,12 +808,12 @@ export default function GCProfileScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center p-6">
           <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900">
             <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Edit {editModal === 'company' ? 'Company Name' : editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : 'Years of Experience'}
+              Edit {editModal === 'company' ? 'Company Name' : editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : editModal === 'location' ? 'Address' : 'Years of Experience'}
             </Text>
             <TextInput
               value={editValue}
               onChangeText={setEditValue}
-              placeholder={editModal === 'company' ? 'Company name' : editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : 'e.g. 10'}
+              placeholder={editModal === 'company' ? 'Company name' : editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : editModal === 'location' ? 'Enter your address' : 'e.g. 10'}
               placeholderTextColor="#6B7280"
               keyboardType={
                 editModal === 'experience'
@@ -818,7 +824,7 @@ export default function GCProfileScreen() {
                       ? 'phone-pad'
                       : 'default'
               }
-              autoCapitalize="none"
+              autoCapitalize={editModal === 'location' ? 'sentences' : 'none'}
               className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-4"
               style={{ fontFamily: 'Poppins_400Regular' }}
             />

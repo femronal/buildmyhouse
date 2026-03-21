@@ -1248,11 +1248,15 @@ export class ContractorsService {
     }
   }
 
-  async updateGCProfile(userId: string, data: { experienceYears?: number }) {
+  async updateGCProfile(userId: string, data: { experienceYears?: number; location?: string }) {
     const contractor = await this.getContractorByUserIdOrThrow(userId);
     const updateData: any = {};
     if (typeof data.experienceYears === 'number' && data.experienceYears >= 0) {
       updateData.experienceYears = data.experienceYears;
+    }
+    if (typeof data.location === 'string') {
+      const location = data.location.trim();
+      updateData.location = location || null;
     }
     if (Object.keys(updateData).length === 0) {
       return this.getGCProfile(userId);
