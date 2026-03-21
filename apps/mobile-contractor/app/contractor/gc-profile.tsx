@@ -488,8 +488,13 @@ export default function GCProfileScreen() {
                 </View>
                 <View className="flex-row items-center py-3">
                   <MapPin size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
-                  <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  <Text className="text-gray-400 text-sm ml-3 w-20" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
+                  <Text
+                    className="text-white text-xs leading-4 ml-3 mr-2 flex-1 text-right"
+                    style={{ fontFamily: 'Poppins_500Medium' }}
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
                     {profileData.location || '—'}
                   </Text>
                   <TouchableOpacity className="p-1 flex-shrink-0" onPress={() => openEditModal('location')}>
