@@ -85,7 +85,7 @@ export default function EmailLoginScreen() {
         </View>
       </View>
 
-      <View className="flex-1 justify-center px-8">
+      <View className="flex-1 px-8 pt-2 pb-6">
         <View className="flex-row bg-gray-100 rounded-2xl p-1 mb-8">
           <TouchableOpacity
             onPress={() => { setMode('signin'); clearError(); }}
@@ -111,12 +111,6 @@ export default function EmailLoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <Text 
-          className="text-4xl text-black mb-2"
-          style={{ fontFamily: 'Poppins_700Bold' }}
-        >
-          {mode === 'signup' ? 'Create your account' : 'Welcome Back'}
-        </Text>
         <Text 
           className="text-gray-500 text-lg mb-8"
           style={{ fontFamily: 'Poppins_400Regular' }}
