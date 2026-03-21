@@ -131,7 +131,13 @@ export class RentalsService {
   }
 
   async getAdminViewingInterests() {
+    const validInterestWhere = {
+      rentalListing: { isNot: null },
+      homeowner: { isNot: null },
+    } as const;
+
     const items = await this.prisma.rentalViewingInterest.findMany({
+      where: validInterestWhere,
       include: {
         rentalListing: {
           select: {
@@ -161,7 +167,10 @@ export class RentalsService {
     });
 
     const unreadCount = await this.prisma.rentalViewingInterest.count({
-      where: { isRead: false },
+      where: {
+        ...validInterestWhere,
+        isRead: false,
+      },
     });
 
     return { unreadCount, items };

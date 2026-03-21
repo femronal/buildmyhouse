@@ -177,7 +177,7 @@ export default function RentalsPage() {
   const pendingDeleteRental = rentals.find((r) => r.id === pendingDeleteId) ?? null;
 
   const getRentalInterests = (rentalId: string) =>
-    interests.filter((interest) => interest.rentalListing.id === rentalId);
+    interests.filter((interest) => interest?.rentalListing?.id === rentalId);
 
   const getRentalUnreadCount = (rentalId: string) =>
     getRentalInterests(rentalId).filter((interest) => !interest.isRead).length;
@@ -463,7 +463,7 @@ export default function RentalsPage() {
                 </div>
               ) : (
                 selectedRentalInterests.map((interest) => {
-                  const avatarUrl = getBackendAssetUrl(interest.homeowner.pictureUrl);
+                  const avatarUrl = getBackendAssetUrl(interest.homeowner?.pictureUrl);
                   return (
                     <div key={interest.id} className="p-4 flex gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
@@ -475,13 +475,13 @@ export default function RentalsPage() {
                       </div>
                       <div className="min-w-0 flex-1 space-y-1">
                         <p className="font-semibold text-sm text-gray-900">
-                          {interest.homeowner.fullName}
+                          {interest.homeowner?.fullName || 'Unknown homeowner'}
                         </p>
                         <p className="text-xs text-gray-600 flex items-center gap-1">
                           <Mail className="w-3.5 h-3.5" />
-                          <span className="truncate">{interest.homeowner.email}</span>
+                          <span className="truncate">{interest.homeowner?.email || 'N/A'}</span>
                         </p>
-                        {interest.homeowner.phone && (
+                        {interest.homeowner?.phone && (
                           <p className="text-xs text-gray-600 flex items-center gap-1">
                             <Phone className="w-3.5 h-3.5" />
                             <span>{interest.homeowner.phone}</span>

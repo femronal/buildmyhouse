@@ -9,3 +9,8 @@ body,
 #root {
   font-family: "Poppins", sans-serif;
 }
+
+/* Force web text rendering to Poppins even in legacy inline style usage. */
+body * {
+  font-family: "Poppins", sans-serif !important;
+}
