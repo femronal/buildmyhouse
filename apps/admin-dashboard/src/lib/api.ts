@@ -160,7 +160,17 @@ export const api = {
       throw new Error(message);
     }
     const result = await response.json();
-    const url = result.url?.startsWith('/') ? result.url : `/${result.url}`;
+    const rawUrl = String(result.url || '').trim();
+    if (!rawUrl) {
+      throw new Error('Upload succeeded but no URL was returned');
+    }
+    const url = /^\/+https?:\/\//i.test(rawUrl)
+      ? rawUrl.replace(/^\/+/, '')
+      : /^https?:\/\//i.test(rawUrl)
+        ? rawUrl
+        : rawUrl.startsWith('/')
+          ? rawUrl
+          : `/${rawUrl}`;
     return { url };
   },
 

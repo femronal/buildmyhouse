@@ -12,6 +12,13 @@ export class HousesService {
     return this.prisma.houseViewingInterest;
   }
 
+  private normalizeAssetUrl(url?: string | null): string {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (/^\/+https?:\/\//i.test(raw)) return raw.replace(/^\/+/, '');
+    return raw;
+  }
+
   async getAll() {
     return this.prisma.houseForSale.findMany({
       where: { isActive: true },
@@ -57,7 +64,7 @@ export class HousesService {
         contactPhone: dto.contactPhone,
         images: {
           create: (dto.images || []).map((img: any, i: number) => ({
-            url: img.url,
+            url: this.normalizeAssetUrl(img.url),
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
           })),

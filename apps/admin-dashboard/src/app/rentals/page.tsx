@@ -98,7 +98,7 @@ export default function RentalsPage() {
       for (let i = 0; i < images.length; i++) {
         const { url } = await api.uploadFile(images[i].file);
         uploadedImages.push({
-          url: url.startsWith('/') ? url : `/${url}`,
+          url,
           label: images[i].label || `Image ${i + 1}`,
           order: i,
         });

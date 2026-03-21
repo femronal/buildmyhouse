@@ -9,6 +9,7 @@ const ASSET_BASE_URL = apiUrl
  */
 export function getBackendAssetUrl(url?: string | null) {
   if (!url) return url as any;
+  if (/^\/+https?:\/\//i.test(url)) return url.replace(/^\/+/, '');
   if (url.startsWith('http') || url.startsWith('blob:') || url.startsWith('data:')) return url;
   return `${ASSET_BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
 }

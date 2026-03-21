@@ -30,6 +30,13 @@ export class LandsService {
     return model;
   }
 
+  private normalizeAssetUrl(url?: string | null): string {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (/^\/+https?:\/\//i.test(raw)) return raw.replace(/^\/+/, '');
+    return raw;
+  }
+
   async getAll() {
     const landModel = this.getLandModel();
     return landModel.findMany({
@@ -78,7 +85,7 @@ export class LandsService {
         contactPhone: dto.contactPhone,
         images: {
           create: (dto.images || []).map((img, i: number) => ({
-            url: img.url,
+            url: this.normalizeAssetUrl(img.url),
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
           })),

@@ -10,6 +10,13 @@ export class RentalsService {
     private readonly wsService: WebSocketService,
   ) {}
 
+  private normalizeAssetUrl(url?: string | null): string {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (/^\/+https?:\/\//i.test(raw)) return raw.replace(/^\/+/, '');
+    return raw;
+  }
+
   async getAll() {
     return this.prisma.rentalListing.findMany({
       where: { isActive: true },
@@ -65,7 +72,7 @@ export class RentalsService {
         verificationDocs: dto.verificationDocs || [],
         images: {
           create: (dto.images || []).map((img, i) => ({
-            url: img.url,
+            url: this.normalizeAssetUrl(img.url),
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
           })),
