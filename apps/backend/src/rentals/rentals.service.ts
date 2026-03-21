@@ -131,10 +131,11 @@ export class RentalsService {
   }
 
   async getAdminViewingInterests() {
+    // Keep rows tied to an active listing id; this avoids set-null orphan rows
+    // without over-filtering valid interests.
     const validInterestWhere = {
-      rentalListing: { isNot: null },
-      homeowner: { isNot: null },
-    } as const;
+      rentalListingId: { not: null as string | null },
+    };
 
     const items = await this.prisma.rentalViewingInterest.findMany({
       where: validInterestWhere,
@@ -166,6 +167,10 @@ export class RentalsService {
       take: 50,
     });
 
+    const normalizedItems = items.filter(
+      (item) => item?.rentalListing?.id && item?.homeowner?.id,
+    );
+
     const unreadCount = await this.prisma.rentalViewingInterest.count({
       where: {
         ...validInterestWhere,
@@ -173,7 +178,7 @@ export class RentalsService {
       },
     });
 
-    return { unreadCount, items };
+    return { unreadCount, items: normalizedItems };
   }
 
   async markViewingInterestsRead() {

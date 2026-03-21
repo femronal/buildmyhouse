@@ -24,7 +24,8 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:delete-projects": "ts-node prisma/delete-projects.ts",
     "prisma:delete-test-reviews": "ts-node prisma/delete-test-reviews.ts",
-    "prisma:backfill-gc-contractors": "ts-node prisma/backfill-gc-contractors.ts"
+    "prisma:backfill-gc-contractors": "ts-node prisma/backfill-gc-contractors.ts",
+    "prisma:cleanup-orphaned-rental-viewing-interests": "ts-node prisma/cleanup-orphaned-rental-viewing-interests.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1014.0",
