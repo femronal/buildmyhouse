@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class UsersService {
   private prisma = new PrismaClient();
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   async findAll(params: {
     page?: number;
@@ -176,7 +178,7 @@ export class UsersService {
   async setVerification(id: string, verified: boolean) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      select: { id: true, role: true },
+      select: { id: true, role: true, fullName: true, verified: true },
     });
 
     if (!user) {
@@ -193,6 +195,22 @@ export class UsersService {
       await this.prisma.contractor.updateMany({
         where: { userId: id },
         data: { verified },
+      });
+    }
+
+    // Notify only when verification is newly granted.
+    if (!user.verified && verified) {
+      const isGC = user.role === 'general_contractor';
+      await this.notificationsService.createForUser(id, {
+        type: 'account_verified',
+        title: 'Account Verified',
+        message: isGC
+          ? 'Your account has been verified. You can now upload plans and receive project requests.'
+          : 'Your account has been verified.',
+        data: {
+          role: user.role,
+          verified: true,
+        },
       });
     }
 

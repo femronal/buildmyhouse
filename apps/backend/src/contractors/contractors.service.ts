@@ -1513,6 +1513,13 @@ export class ContractorsService {
     if (contractor.type !== 'general_contractor') {
       throw new BadRequestException('Only general contractors can be approved in this flow');
     }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, verified: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     const verification = await this.getVerificationDocumentStatus(contractor.id);
     const isForce = !!options?.force;
@@ -1530,6 +1537,21 @@ export class ContractorsService {
       where: { id: userId },
       data: { verified },
     });
+
+    // Notify only when verification is newly granted.
+    if (!user.verified && verified) {
+      await this.wsService.sendNotification(userId, {
+        type: 'account_verified',
+        title: 'Account Verified',
+        message:
+          'Your account has been verified. You can now upload plans and receive project requests.',
+        data: {
+          role: 'general_contractor',
+          verified: true,
+        },
+      });
+    }
+
     return {
       success: true,
       verified,
