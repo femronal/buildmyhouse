@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { WebSocketModule } from './websocket/websocket.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ChatModule } from './chat/chat.module';
@@ -34,6 +35,7 @@ import { EmailModule } from './email/email.module';
         limit: 100,  // 100 requests per minute for general API
       },
     ]),
+    ScheduleModule.forRoot(),
     EmailModule,
     AuthModule,
     WebSocketModule,

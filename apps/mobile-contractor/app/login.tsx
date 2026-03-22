@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight, HardHat } from "lucide-react-native";
 import { useAppAlert } from "../components/AppAlertProvider";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Allowed roles for contractor app (MVP: GC + admin only)
 const ALLOWED_ROLES = ['general_contractor', 'admin'];
@@ -11,6 +12,7 @@ const SHOW_GOOGLE_LOGIN = false;
 
 export default function LoginScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { showAlert } = useAppAlert();
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +39,8 @@ export default function LoginScreen() {
         }
         
         await storeAuthToken(result.token);
+        queryClient.setQueryData(['current-user'], result.user);
+        await queryClient.invalidateQueries({ queryKey: ['current-user'] });
         
         router.replace('/contractor/gc-dashboard');
       } else {

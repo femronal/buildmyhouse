@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/rbac.guard';
 import { Roles } from '../auth/rbac.guard';
+import { SetUserVerificationDto } from './dto/set-user-verification.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -30,5 +31,10 @@ export class UsersController {
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
+  }
+
+  @Patch(':id/verification')
+  setVerification(@Param('id') id: string, @Body() body: SetUserVerificationDto) {
+    return this.usersService.setVerification(id, body.verified);
   }
 }

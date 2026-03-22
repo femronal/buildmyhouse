@@ -47,9 +47,28 @@ export const useVerifyUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (userId: string) => api.patch(`/users/${userId}`, { verified: true }),
+    mutationFn: (userId: string) => api.patch(`/users/${userId}/verification`, { verified: true }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['homeowners'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-contractors'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
+    },
+  });
+};
+
+export const useSetUserVerified = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, verified }: { userId: string; verified: boolean }) =>
+      api.patch(`/users/${userId}/verification`, { verified }),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['user', variables.userId] });
+      queryClient.invalidateQueries({ queryKey: ['homeowners'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-contractors'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
     },
   });
 };

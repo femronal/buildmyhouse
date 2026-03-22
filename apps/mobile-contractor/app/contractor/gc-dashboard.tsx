@@ -27,11 +27,10 @@ export default function GCDashboardScreen() {
   const [showAuthPromptModal, setShowAuthPromptModal] = useState(false);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
   const deleteProjectMutation = useDeleteProject();
-  const defaultAvatarUrl = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80";
   const profileImageUrl =
     !profileImageFailed && profileData?.pictureUrl
       ? getBackendAssetUrl(profileData.pictureUrl)
-      : defaultAvatarUrl;
+      : null;
 
   useEffect(() => {
     setProfileImageFailed(false);
@@ -125,12 +124,25 @@ export default function GCDashboardScreen() {
       {/* Header */}
       <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
         <View className="flex-row items-center">
-          <Image
-            source={{ uri: profileImageUrl }}
-            className="w-12 h-12 rounded-full"
-            resizeMode="cover"
-            onError={() => setProfileImageFailed(true)}
-          />
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-profile?openLogoUpload=1')}
+            activeOpacity={0.85}
+          >
+            {profileImageUrl ? (
+              <Image
+                source={{ uri: profileImageUrl }}
+                className="w-12 h-12 rounded-full"
+                resizeMode="cover"
+                onError={() => setProfileImageFailed(true)}
+              />
+            ) : (
+              <View className="w-12 h-12 rounded-full bg-[#1E3A5F] border border-blue-900 items-center justify-center">
+                <Text className="text-[9px] text-gray-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Logo
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <View className="ml-3">
             <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
             <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>

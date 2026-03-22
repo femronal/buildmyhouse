@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform } from "react-native";
-import { useRouter, useNavigation } from "expo-router";
+import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2 } from "lucide-react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { clearAuthToken } from "@/lib/auth";
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -22,6 +22,8 @@ import { uploadFile } from "@/utils/fileUpload";
 export default function GCProfileScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const params = useLocalSearchParams<{ openLogoUpload?: string }>();
+  const hasTriggeredLogoUpload = useRef(false);
   const queryClient = useQueryClient();
   const { data: profileData, isLoading, error } = useGCProfile();
   const updateUser = useUpdateCurrentUser();
@@ -222,6 +224,13 @@ export default function GCProfileScreen() {
     setProfileImageFailed(false);
   }, [profileData?.pictureUrl]);
 
+  useEffect(() => {
+    if (params.openLogoUpload !== '1') return;
+    if (hasTriggeredLogoUpload.current) return;
+    hasTriggeredLogoUpload.current = true;
+    void handlePickProfilePicture();
+  }, [params.openLogoUpload]);
+
   const handleSaveBankAccount = async () => {
     const { bankName, accountNumber, accountOwnerName } = bankForm;
     if (!bankName.trim() || !accountNumber.trim() || !accountOwnerName.trim()) {
@@ -348,7 +357,7 @@ export default function GCProfileScreen() {
   const profileImageUrl =
     !profileImageFailed && profileData.pictureUrl
       ? getBackendAssetUrl(profileData.pictureUrl)
-      : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80';
+      : null;
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -369,12 +378,23 @@ export default function GCProfileScreen() {
           <View className="bg-[#1E3A5F] rounded-3xl p-6 border border-blue-900">
             <View className="flex-row items-center mb-4">
               <TouchableOpacity className="relative" onPress={handlePickProfilePicture}>
-                <Image
-                  source={{ uri: profileImageUrl }}
-                  className="w-20 h-20 rounded-full border-2 border-blue-600"
-                  resizeMode="cover"
-                  onError={() => setProfileImageFailed(true)}
-                />
+                {profileImageUrl ? (
+                  <Image
+                    source={{ uri: profileImageUrl }}
+                    className="w-20 h-20 rounded-full border-2 border-blue-600"
+                    resizeMode="cover"
+                    onError={() => setProfileImageFailed(true)}
+                  />
+                ) : (
+                  <View className="w-20 h-20 rounded-full border-2 border-blue-600 bg-[#0A1628] items-center justify-center">
+                    <Text
+                      className="text-[10px] text-gray-400 text-center"
+                      style={{ fontFamily: 'Poppins_600SemiBold' }}
+                    >
+                      Upload{"\n"}Logo
+                    </Text>
+                  </View>
+                )}
                 <View className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full items-center justify-center border-2 border-[#1E3A5F]">
                   <Edit2 size={12} color="#FFFFFF" strokeWidth={2} />
                 </View>

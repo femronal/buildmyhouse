@@ -37,10 +37,12 @@ export function useUnverifiedGCs() {
 export function useVerifyGC() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (userId: string) => api.post(`/contractors/admin/${userId}/verify`, {}),
+    mutationFn: ({ userId, verified }: { userId: string; verified: boolean }) =>
+      api.patch(`/users/${userId}/verification`, { verified }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-unverified-gcs'] });
       queryClient.invalidateQueries({ queryKey: ['admin-contractors'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
     },
   });
 }

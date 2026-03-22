@@ -3,6 +3,7 @@
 import { ShieldCheck, ShieldX, X } from 'lucide-react';
 import { useUser } from '@/hooks/useUsers';
 import { getBackendAssetUrl } from '@/lib/image';
+import { useSetUserVerified } from '@/hooks/useUsers';
 
 type Props = {
   userId: string | null;
@@ -11,6 +12,7 @@ type Props = {
 
 export function HomeownerViewModal({ userId, onClose }: Props) {
   const { data: user, isLoading, error } = useUser(userId ?? '');
+  const setUserVerified = useSetUserVerified();
 
   if (!userId) return null;
 
@@ -76,6 +78,27 @@ export function HomeownerViewModal({ userId, onClose }: Props) {
                         </>
                       )}
                     </span>
+                    <button
+                      type="button"
+                      disabled={setUserVerified.isPending}
+                      onClick={() =>
+                        setUserVerified.mutate({
+                          userId: user.id,
+                          verified: !user.verified,
+                        })
+                      }
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border ${
+                        user.verified
+                          ? 'border-amber-300 text-amber-700 bg-amber-50'
+                          : 'border-green-300 text-green-700 bg-green-50'
+                      } disabled:opacity-50`}
+                    >
+                      {setUserVerified.isPending
+                        ? 'Updating...'
+                        : user.verified
+                          ? 'Set Not Verified'
+                          : 'Set Verified'}
+                    </button>
                   </div>
                   <p className="text-sm text-gray-500 mt-1">{user.email}</p>
                 </div>

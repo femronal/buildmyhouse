@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { exchangeGoogleAuthCode, storeAuthToken } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
 
 const ALLOWED_ROLES = ["general_contractor", "admin"];
 
 export default function GoogleCallbackScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState("Signing you in...");
 
   useEffect(() => {
@@ -37,6 +39,8 @@ export default function GoogleCallbackScreen() {
         }
 
         await storeAuthToken(result.token);
+        queryClient.setQueryData(["current-user"], result.user);
+        await queryClient.invalidateQueries({ queryKey: ["current-user"] });
         router.replace("/contractor/gc-dashboard");
       } catch (error: any) {
         setMessage(error?.message || "Login failed. Please try again.");
@@ -44,7 +48,7 @@ export default function GoogleCallbackScreen() {
     };
 
     completeGoogleLogin();
-  }, [router]);
+  }, [router, queryClient]);
 
   return (
     <View className="flex-1 bg-[#0A1628] items-center justify-center px-8">

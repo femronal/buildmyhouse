@@ -173,6 +173,32 @@ export class UsersService {
     };
   }
 
+  async setVerification(id: string, verified: boolean) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { verified },
+    });
+
+    // Keep contractor-profile verification status aligned for GC accounts.
+    if (user.role === 'general_contractor') {
+      await this.prisma.contractor.updateMany({
+        where: { userId: id },
+        data: { verified },
+      });
+    }
+
+    return this.findOne(id);
+  }
+
   private formatRelativeTime(date: Date): string {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();

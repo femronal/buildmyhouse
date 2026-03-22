@@ -4,12 +4,14 @@ import { useState } from "react";
 import { storeAuthToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react-native";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Allowed roles for contractor app (MVP: GC + admin only)
 const ALLOWED_ROLES = ['general_contractor', 'admin'];
 
 export default function EmailLoginScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -66,6 +68,8 @@ export default function EmailLoginScreen() {
       }
 
       await storeAuthToken(data.token);
+      queryClient.setQueryData(['current-user'], data.user);
+      await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       router.replace('/contractor/gc-dashboard');
     } catch (error: any) {
       const message = error?.data?.message ?? error?.message ?? 'Something went wrong. Please try again.';

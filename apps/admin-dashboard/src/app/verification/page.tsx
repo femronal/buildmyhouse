@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Search, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Download, Search, ShieldCheck } from 'lucide-react';
 import { useUnverifiedGCs, useVerifyGC } from '@/hooks/useUnverifiedGCs';
 import {
   useGoLiveDesignPlan,
@@ -72,19 +72,32 @@ export default function VerificationPage() {
     };
   }, [gcs.length, pendingProjectDocs.length]);
 
-  const handleApproveGC = async (userId: string) => {
+  const handleToggleGCVerification = async (item: (typeof gcs)[number]) => {
+    const nextVerified = !item.verified;
+    if (
+      nextVerified &&
+      !item.hasUploadedAllVerificationDocuments
+    ) {
+      const shouldProceed = window.confirm(
+        `This GC has not uploaded all required verification documents.\n\nMissing: ${item.missingRequiredDocuments.join(', ') || 'Some required documents'}\n\nDo you still want to verify this GC now?`,
+      );
+      if (!shouldProceed) return;
+    }
+
     try {
-      await verifyGC.mutateAsync(userId);
+      await verifyGC.mutateAsync({ userId: item.userId, verified: nextVerified });
       setFeedbackModal({
         open: true,
-        title: 'GC Approved',
-        message: 'This GC has been verified successfully.',
+        title: nextVerified ? 'GC Approved' : 'GC Disapproved',
+        message: nextVerified
+          ? 'This GC has been verified successfully.'
+          : 'This GC has been marked as not verified.',
       });
     } catch (e: any) {
       setFeedbackModal({
         open: true,
-        title: 'Verification Required',
-        message: e?.message || 'Failed to approve GC',
+        title: 'Update Failed',
+        message: e?.message || 'Failed to update GC verification status',
       });
     }
   };
@@ -240,9 +253,24 @@ export default function VerificationPage() {
                       {item.verificationDocuments.map((doc) => (
                         <div
                           key={doc.type}
-                          className={`text-xs rounded px-2 py-1 border ${doc.uploaded ? 'bg-green-50 border-green-200 text-green-700' : 'bg-white border-gray-200 text-gray-600'}`}
+                          className={`text-xs rounded px-2 py-1 border flex items-center justify-between gap-2 ${
+                            doc.uploaded
+                              ? 'bg-green-50 border-green-200 text-green-700'
+                              : 'bg-white border-gray-200 text-gray-600'
+                          }`}
                         >
-                          {doc.title}
+                          <span className="truncate">{doc.title}</span>
+                          {doc.uploaded && doc.fileUrl ? (
+                            <a
+                              href={getAssetUrl(doc.fileUrl)}
+                              download
+                              title={`Download ${doc.title}`}
+                              className="inline-flex items-center gap-1 rounded-md bg-white/80 border border-green-200 px-2 py-0.5 text-[11px] font-medium text-green-700 hover:bg-white"
+                            >
+                              <Download className="w-3 h-3" />
+                              Download
+                            </a>
+                          ) : null}
                         </div>
                       ))}
                     </div>
@@ -250,13 +278,17 @@ export default function VerificationPage() {
                 </div>
                 <div className="flex flex-col gap-2">
                   {item.verified ? (
-                    <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg flex items-center gap-2 text-sm font-medium">
+                    <button
+                      onClick={() => handleToggleGCVerification(item)}
+                      disabled={verifyGC.isPending}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
+                    >
                       <CheckCircle2 className="w-4 h-4" />
-                      Verified
-                    </div>
+                      Disapprove GC
+                    </button>
                   ) : (
                     <button
-                      onClick={() => handleApproveGC(item.userId)}
+                      onClick={() => handleToggleGCVerification(item)}
                       disabled={verifyGC.isPending}
                       className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center gap-2 disabled:opacity-50"
                     >
