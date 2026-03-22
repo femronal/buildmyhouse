@@ -115,7 +115,7 @@ export default function LocationScreenWeb() {
           className="text-sm text-gray-700 leading-6 mt-4"
           style={{ fontFamily: 'Poppins_500Medium' }}
         >
-          Write the correct address where you want your project - building construction, renovation or interior design - will be taking place.
+          Write the correct address where your project - building construction, renovation or interior design - will be taking place.
         </Text>
       </View>
 

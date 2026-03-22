@@ -1538,7 +1538,7 @@ export class ContractorsService {
       data: { verified },
     });
 
-    // Notify only when verification is newly granted.
+    // Notify only on verification state transitions.
     if (!user.verified && verified) {
       await this.wsService.sendNotification(userId, {
         type: 'account_verified',
@@ -1548,6 +1548,17 @@ export class ContractorsService {
         data: {
           role: 'general_contractor',
           verified: true,
+        },
+      });
+    } else if (user.verified && !verified) {
+      await this.wsService.sendNotification(userId, {
+        type: 'account_unverified',
+        title: 'Account Unverified',
+        message:
+          'Your account has been unverified. You will be contacted by the admin on how to get verified again.',
+        data: {
+          role: 'general_contractor',
+          verified: false,
         },
       });
     }

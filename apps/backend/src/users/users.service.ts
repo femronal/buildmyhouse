@@ -198,7 +198,7 @@ export class UsersService {
       });
     }
 
-    // Notify only when verification is newly granted.
+    // Notify only on verification state transitions.
     if (!user.verified && verified) {
       const isGC = user.role === 'general_contractor';
       await this.notificationsService.createForUser(id, {
@@ -210,6 +210,17 @@ export class UsersService {
         data: {
           role: user.role,
           verified: true,
+        },
+      });
+    } else if (user.verified && !verified) {
+      await this.notificationsService.createForUser(id, {
+        type: 'account_unverified',
+        title: 'Account Unverified',
+        message:
+          'Your account has been unverified. You will be contacted by the admin on how to get verified again.',
+        data: {
+          role: user.role,
+          verified: false,
         },
       });
     }

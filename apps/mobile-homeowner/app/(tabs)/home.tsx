@@ -1133,10 +1133,7 @@ export default function HomeScreen() {
 
                 <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
                   <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Listed by original homeowner only. No extra middleman apart from BuildMyHouse.
-                  </Text>
-                  <Text className="text-blue-800 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    BuildMyHouse agency fee is fixed at 2% of annual rent.
+                    BuildMyHouse agency fee is fixed at 5% of annual rent.
                   </Text>
                 </View>
 
