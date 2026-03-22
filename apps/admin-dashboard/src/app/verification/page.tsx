@@ -85,7 +85,11 @@ export default function VerificationPage() {
     }
 
     try {
-      await verifyGC.mutateAsync({ userId: item.userId, verified: nextVerified });
+      await verifyGC.mutateAsync({
+        userId: item.userId,
+        verified: nextVerified,
+        force: nextVerified && !item.hasUploadedAllVerificationDocuments,
+      });
       setFeedbackModal({
         open: true,
         title: nextVerified ? 'GC Approved' : 'GC Disapproved',

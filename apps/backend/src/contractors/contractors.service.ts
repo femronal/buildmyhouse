@@ -1503,14 +1503,20 @@ export class ContractorsService {
   }
 
   /** Admin: approve (verify) a GC */
-  async adminVerifyGC(userId: string) {
+  async adminVerifyGC(userId: string, options?: { force?: boolean }) {
+    return this.adminSetGCVerification(userId, true, options);
+  }
+
+  /** Admin: set GC verification state with optional force override */
+  async adminSetGCVerification(userId: string, verified: boolean, options?: { force?: boolean }) {
     const contractor = await this.getContractorByUserIdOrThrow(userId);
     if (contractor.type !== 'general_contractor') {
       throw new BadRequestException('Only general contractors can be approved in this flow');
     }
 
     const verification = await this.getVerificationDocumentStatus(contractor.id);
-    if (!verification.hasUploadedAllRequiredDocuments) {
+    const isForce = !!options?.force;
+    if (verified && !verification.hasUploadedAllRequiredDocuments && !isForce) {
       throw new BadRequestException(
         `This GC has not uploaded all required verification documents. Missing: ${verification.missingRequiredDocuments.join(', ')}`,
       );
@@ -1518,13 +1524,19 @@ export class ContractorsService {
 
     await this.prisma.contractor.update({
       where: { id: contractor.id },
-      data: { verified: true },
+      data: { verified },
     });
     await this.prisma.user.update({
       where: { id: userId },
-      data: { verified: true },
+      data: { verified },
     });
-    return { success: true };
+    return {
+      success: true,
+      verified,
+      forced: verified ? isForce : false,
+      hasUploadedAllVerificationDocuments: verification.hasUploadedAllRequiredDocuments,
+      missingRequiredDocuments: verification.missingRequiredDocuments,
+    };
   }
 
   /**

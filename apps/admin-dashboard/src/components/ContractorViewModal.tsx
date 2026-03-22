@@ -84,6 +84,7 @@ export function ContractorViewModal({ userId, onClose }: Props) {
                         setUserVerified.mutate({
                           userId: profile.id,
                           verified: !profile.verified,
+                          role: 'general_contractor',
                         })
                       }
                       className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border ${

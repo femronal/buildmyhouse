@@ -37,26 +37,43 @@ export function useUnverifiedGCs() {
 export function useVerifyGC() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId, verified }: { userId: string; verified: boolean }) => {
+    mutationFn: async ({
+      userId,
+      verified,
+      force,
+    }: {
+      userId: string;
+      verified: boolean;
+      force?: boolean;
+    }) => {
       try {
-        return await api.patch(`/users/${userId}/verification`, { verified });
+        return await api.patch(`/contractors/admin/${userId}/verification`, {
+          verified,
+          force: !!force,
+        });
       } catch (error: any) {
         const message = String(error?.message || '');
         const endpointMissing =
           message.includes('Cannot PATCH') || message.includes('404');
 
-        if (endpointMissing) {
+        if (endpointMissing && verified) {
           try {
-            // Older backend compatibility: some builds expose PATCH /users/:id.
-            return await api.patch(`/users/${userId}`, { verified });
+            // Legacy backend compatibility.
+            return await api.post(`/contractors/admin/${userId}/verify`, {
+              force: !!force,
+            });
           } catch {
             // Continue to next fallback below.
           }
         }
 
-        if (endpointMissing && verified) {
-          // Legacy GC-only fallback.
-          return api.post(`/contractors/admin/${userId}/verify`, {});
+        if (endpointMissing && !verified) {
+          try {
+            // Newer generic users endpoint fallback.
+            return await api.patch(`/users/${userId}/verification`, { verified });
+          } catch {
+            // Continue to next fallback below.
+          }
         }
 
         if (endpointMissing && !verified) {

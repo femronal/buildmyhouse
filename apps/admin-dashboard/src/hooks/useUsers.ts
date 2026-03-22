@@ -61,7 +61,15 @@ export const useSetUserVerified = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userId, verified }: { userId: string; verified: boolean }) => {
+    mutationFn: async ({
+      userId,
+      verified,
+      role,
+    }: {
+      userId: string;
+      verified: boolean;
+      role?: string;
+    }) => {
       try {
         return await api.patch(`/users/${userId}/verification`, { verified });
       } catch (error: any) {
@@ -78,14 +86,20 @@ export const useSetUserVerified = () => {
           }
         }
 
-        if (endpointMissing && verified) {
+        if (endpointMissing && verified && role === 'general_contractor') {
           // GC-only fallback supported by older backend.
-          return api.post(`/contractors/admin/${userId}/verify`, {});
+          return api.post(`/contractors/admin/${userId}/verify`, { force: true });
         }
 
         if (endpointMissing && !verified) {
           throw new Error(
             'Unverify requires the latest backend version. Deploy backend updates and try again.',
+          );
+        }
+
+        if (endpointMissing && verified) {
+          throw new Error(
+            'Verify requires the latest backend version. Deploy backend updates and try again.',
           );
         }
 

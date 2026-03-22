@@ -15,6 +15,7 @@ import { RolesGuard, Roles } from '../auth/rbac.guard';
 import { CreateConnectAccountLinkDto } from './dto/create-connect-account-link.dto';
 import { CreateBankAccountDto } from './dto/create-bank-account.dto';
 import { UpsertVerificationDocumentDto } from './dto/upsert-verification-document.dto';
+import { SetGCVerificationDto } from './dto/set-gc-verification.dto';
 
 @Controller('contractors')
 export class ContractorsController {
@@ -335,8 +336,23 @@ export class ContractorsController {
   @Post('admin/:userId/verify')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  async adminVerifyGC(@Param('userId') userId: string) {
-    return this.contractorsService.adminVerifyGC(userId);
+  async adminVerifyGC(
+    @Param('userId') userId: string,
+    @Body() body?: { force?: boolean },
+  ) {
+    return this.contractorsService.adminVerifyGC(userId, { force: !!body?.force });
+  }
+
+  @Patch('admin/:userId/verification')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async adminSetGCVerification(
+    @Param('userId') userId: string,
+    @Body() body: SetGCVerificationDto,
+  ) {
+    return this.contractorsService.adminSetGCVerification(userId, body.verified, {
+      force: !!body.force,
+    });
   }
 
   @Get('admin/:userId/profile')

@@ -85,6 +85,7 @@ export function HomeownerViewModal({ userId, onClose }: Props) {
                         setUserVerified.mutate({
                           userId: user.id,
                           verified: !user.verified,
+                          role: user.role,
                         })
                       }
                       className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full border ${
