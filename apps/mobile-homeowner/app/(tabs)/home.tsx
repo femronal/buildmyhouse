@@ -118,7 +118,7 @@ export default function HomeScreen() {
       router.push(`/dashboard?projectId=${project.id || project.projectId}`);
     } else {
       // Unpaid project - show payment modal
-      const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
+      const budget = getProjectBudget(project);
       let amount = budget * 1.0;
       
       // Stripe maximum amount is ₦999,999.99
@@ -191,6 +191,17 @@ export default function HomeScreen() {
   const getHouseImageUrl = (house: any) => {
     const firstImg = house?.images?.[0]?.url;
     return firstImg ? getBackendAssetUrl(firstImg) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80';
+  };
+
+  const getProjectBudget = (project: any) => {
+    const aiBudget =
+      project?.gcEditedAnalysis?.budget ||
+      project?.gcEditedAnalysis?.estimatedBudget ||
+      project?.aiAnalysis?.budget ||
+      project?.aiAnalysis?.estimatedBudget;
+    const acceptedBudget = project?.acceptedRequest?.estimatedBudget;
+    const baseBudget = project?.budget;
+    return Number(baseBudget || acceptedBudget || aiBudget || 0);
   };
 
   const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
@@ -395,7 +406,7 @@ export default function HomeScreen() {
                   : isPaid
                     ? 'text-blue-700'
                     : 'text-yellow-700';
-              const budget = project.budget || project.acceptedRequest?.estimatedBudget || project.gcEditedAnalysis?.budget || 0;
+              const budget = getProjectBudget(project);
               const paymentAmount = budget * 1.0;
               
               return (
@@ -1356,6 +1367,7 @@ export default function HomeScreen() {
         }}
         amount={paymentAmount}
         projectBudget={projectBudget}
+        projectId={selectedProjectForPayment?.id || selectedProjectForPayment?.projectId}
         projectName={selectedProjectForPayment?.name || 'Project'}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}

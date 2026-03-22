@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class UploadPlanDto {
@@ -42,6 +42,13 @@ export class UploadPlanDto {
   @IsNumber()
   @Min(0)
   budget: number;
+
+  @IsString()
+  @IsIn(['homebuilding', 'renovation', 'interior_design'])
+  projectType: 'homebuilding' | 'renovation' | 'interior_design';
+
+  @IsString()
+  planImageUrl: string;
 }
 
 

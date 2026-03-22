@@ -460,6 +460,17 @@ export default function DashboardScreen() {
                 {aiAnalysis.description}
               </Text>
             )}
+
+            {!!(aiAnalysis.summary || aiAnalysis.notes) && (
+              <View className="bg-black rounded-2xl p-4 mt-4">
+                <Text className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  GC Project Summary
+                </Text>
+                <Text className="text-gray-200 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {aiAnalysis.summary || aiAnalysis.notes}
+                </Text>
+              </View>
+            )}
           </View>
         )}
 

@@ -28,7 +28,10 @@ import { getBackendAssetUrl } from "@/lib/image";
 
 // Helper to get project image
 const getProjectImage = (project: any) => {
-  // Use a default construction image for now
+  const coverFromAnalysis = project?.aiAnalysis?.projectImageUrl;
+  if (coverFromAnalysis) {
+    return getBackendAssetUrl(coverFromAnalysis) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80";
+  }
   return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80";
 };
 

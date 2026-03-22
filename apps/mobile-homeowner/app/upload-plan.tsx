@@ -1,10 +1,12 @@
-import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, ActivityIndicator, Image, Platform } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, FileText, Upload, Home, X, CheckCircle, AlertCircle } from "lucide-react-native";
 import { useState, useRef, useEffect } from "react";
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { useUploadPlan } from '@/hooks/usePlan';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { api } from '@/lib/api';
 
 export default function UploadPlanScreen() {
   const router = useRouter();
@@ -13,6 +15,8 @@ export default function UploadPlanScreen() {
   
   const [projectName, setProjectName] = useState("");
   const [budget, setBudget] = useState("");
+  const [selectedProjectType, setSelectedProjectType] = useState<'homebuilding' | 'renovation' | 'interior_design' | null>(null);
+  const [selectedPlanPhoto, setSelectedPlanPhoto] = useState<any>(null);
   const [selectedPdf, setSelectedPdf] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -62,6 +66,60 @@ export default function UploadPlanScreen() {
     setSelectedPdf(null);
   };
 
+  const handlePickPlanPhoto = async () => {
+    try {
+      if (Platform.OS !== 'web') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permission required', 'Please allow photo library access to upload a plan photo.');
+          return;
+        }
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.85,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+      setSelectedPlanPhoto(result.assets[0]);
+    } catch (error) {
+      console.error('Error picking plan photo:', error);
+      Alert.alert('Error', 'Failed to select plan photo');
+    }
+  };
+
+  const handleRemovePlanPhoto = () => {
+    setSelectedPlanPhoto(null);
+  };
+
+  const uploadPlanCoverImage = async (asset: any): Promise<string> => {
+    const formData = new FormData();
+    const fileName = asset?.fileName || `project-cover-${Date.now()}.jpg`;
+    const mimeType = asset?.mimeType || 'image/jpeg';
+
+    if (Platform.OS === 'web') {
+      const res = await fetch(asset.uri);
+      const blob = await res.blob();
+      formData.append('file', blob, fileName);
+    } else {
+      formData.append('file', {
+        uri: asset.uri,
+        name: fileName,
+        type: mimeType,
+      } as any);
+    }
+
+    const uploadRes = await api.post('/upload/image', formData);
+    const imageUrl = String(uploadRes?.url || '').trim();
+    if (!imageUrl) {
+      throw new Error('Plan cover upload succeeded but no URL was returned');
+    }
+    return imageUrl;
+  };
+
   const handleUpload = async () => {
     if (!projectName.trim()) {
       Alert.alert('Project Name Required', 'Please enter a project name');
@@ -70,6 +128,16 @@ export default function UploadPlanScreen() {
 
     if (!budget || parseFloat(budget) <= 0) {
       Alert.alert('Budget Required', 'Please enter a valid budget');
+      return;
+    }
+
+    if (!selectedProjectType) {
+      Alert.alert('Project Type Required', 'Please select a project type');
+      return;
+    }
+
+    if (!selectedPlanPhoto?.uri) {
+      Alert.alert('Plan Photo Required', 'Please select one beautiful project photo');
       return;
     }
 
@@ -86,7 +154,7 @@ export default function UploadPlanScreen() {
     setIsProcessing(true);
     setUploadProgress(0);
 
-    let progressInterval: NodeJS.Timeout | null = null;
+    let progressInterval: ReturnType<typeof setInterval> | null = null;
 
     try {
       // Simulate upload progress
@@ -101,6 +169,7 @@ export default function UploadPlanScreen() {
       }, 200);
 
       // Prepare upload data
+      const planImageUrl = await uploadPlanCoverImage(selectedPlanPhoto);
       const uploadData = {
         name: projectName,
         address: address,
@@ -112,6 +181,8 @@ export default function UploadPlanScreen() {
         latitude: latitude || undefined,
         longitude: longitude || undefined,
         budget: parseFloat(budget),
+        projectType: selectedProjectType,
+        planImageUrl,
       };
 
       // Call real API
@@ -147,6 +218,8 @@ export default function UploadPlanScreen() {
           latitude: latitude?.toString(),
           longitude: longitude?.toString(),
           pdfName: selectedPdf.name,
+          projectType: selectedProjectType,
+          planImageUrl: uploadData.planImageUrl,
         },
       });
     } catch (error: any) {
@@ -323,6 +396,69 @@ export default function UploadPlanScreen() {
 
         {/* Budget Input */}
         <View className="mb-4">
+          <Text
+            className="text-sm text-gray-700 mb-2"
+            style={{ fontFamily: 'Poppins_500Medium' }}
+          >
+            Project Type *
+          </Text>
+          <View className="flex-row" style={{ gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => setSelectedProjectType('homebuilding')}
+              className={`flex-1 rounded-2xl py-3 px-3 border ${
+                selectedProjectType === 'homebuilding'
+                  ? 'bg-black border-black'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <Text
+                className={`text-center text-xs ${
+                  selectedProjectType === 'homebuilding' ? 'text-white' : 'text-gray-700'
+                }`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Building
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSelectedProjectType('renovation')}
+              className={`flex-1 rounded-2xl py-3 px-3 border ${
+                selectedProjectType === 'renovation'
+                  ? 'bg-black border-black'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <Text
+                className={`text-center text-xs ${
+                  selectedProjectType === 'renovation' ? 'text-white' : 'text-gray-700'
+                }`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Renovation
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSelectedProjectType('interior_design')}
+              className={`flex-1 rounded-2xl py-3 px-3 border ${
+                selectedProjectType === 'interior_design'
+                  ? 'bg-black border-black'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+            >
+              <Text
+                className={`text-center text-[11px] ${
+                  selectedProjectType === 'interior_design' ? 'text-white' : 'text-gray-700'
+                }`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Interior Design
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Budget Input */}
+        <View className="mb-4">
           <Text 
             className="text-sm text-gray-700 mb-2"
             style={{ fontFamily: 'Poppins_500Medium' }}
@@ -358,6 +494,57 @@ export default function UploadPlanScreen() {
             </View>
           </View>
         )}
+
+        {/* PDF Upload Zone */}
+        <View className="mb-6">
+          <Text
+            className="text-sm text-gray-700 mb-2"
+            style={{ fontFamily: 'Poppins_500Medium' }}
+          >
+            Project Cover Photo *
+          </Text>
+
+          {!selectedPlanPhoto ? (
+            <TouchableOpacity
+              onPress={handlePickPlanPhoto}
+              className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-6"
+            >
+              <View className="items-center">
+                <View className="bg-black rounded-full p-3 mb-3">
+                  <Upload size={24} color="#FFFFFF" strokeWidth={2} />
+                </View>
+                <Text
+                  className="text-black text-sm mb-1"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Select one beautiful photo
+                </Text>
+                <Text
+                  className="text-gray-500 text-xs text-center"
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                >
+                  This photo will be used as the project background after GC acceptance
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <View className="bg-green-50 border border-green-200 rounded-2xl p-3">
+              <Image
+                source={{ uri: selectedPlanPhoto.uri }}
+                className="w-full h-40 rounded-xl mb-3"
+                resizeMode="cover"
+              />
+              <View className="flex-row items-center justify-between">
+                <Text className="text-green-900 text-xs flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  {selectedPlanPhoto.fileName || 'Project cover selected'}
+                </Text>
+                <TouchableOpacity onPress={handleRemovePlanPhoto}>
+                  <X size={22} color="#dc2626" strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
 
         {/* PDF Upload Zone */}
         <View className="mb-6">
@@ -428,14 +615,14 @@ export default function UploadPlanScreen() {
         {/* Process Button */}
         <TouchableOpacity
           onPress={handleUpload}
-          disabled={!projectName || !budget || !selectedPdf}
+          disabled={!projectName || !budget || !selectedPdf || !selectedProjectType || !selectedPlanPhoto}
           className={`rounded-full py-5 px-8 ${
-            (projectName && budget && selectedPdf) ? 'bg-black' : 'bg-gray-200'
+            (projectName && budget && selectedPdf && selectedProjectType && selectedPlanPhoto) ? 'bg-black' : 'bg-gray-200'
           }`}
         >
           <Text 
             className={`text-lg text-center ${
-              (projectName && budget && selectedPdf) ? 'text-white' : 'text-gray-400'
+              (projectName && budget && selectedPdf && selectedProjectType && selectedPlanPhoto) ? 'text-white' : 'text-gray-400'
             }`}
             style={{ fontFamily: 'Poppins_700Bold' }}
           >

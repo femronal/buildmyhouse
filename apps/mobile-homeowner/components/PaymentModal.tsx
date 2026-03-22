@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import { X, Lock, ExternalLink } from 'lucide-react-native';
+import { X, Lock, ExternalLink, FileText } from 'lucide-react-native';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
 
@@ -10,6 +10,7 @@ interface PaymentModalProps {
   onClose: () => void;
   amount: number;
   projectBudget: number;
+  projectId?: string;
   projectName?: string;
   onPaymentSuccess: () => void;
   onPaymentError: (error: string) => void;
@@ -22,6 +23,7 @@ export default function PaymentModal({
   onClose,
   amount,
   projectBudget,
+  projectId,
   projectName = 'Project',
   // These callbacks/fields are kept for compatibility with the existing call sites.
   onPaymentSuccess: _onPaymentSuccess,
@@ -32,7 +34,9 @@ export default function PaymentModal({
   const router = useRouter();
   const { data: currentUser } = useCurrentUser();
   const firstName = (currentUser?.fullName || currentUser?.email || 'there').split(' ')[0];
-  const minDeposit = Math.max(amount * 0.5, 0);
+  // Use the most reliable budget value available.
+  const effectiveBudget = Math.max(Number(projectBudget || 0), Number(amount || 0), 0);
+  const minDeposit = Math.max(effectiveBudget * 0.5, 0);
 
   return (
     <Modal
@@ -103,9 +107,38 @@ export default function PaymentModal({
                   50% minimum: ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
                 <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  100% recommended: ₦{amount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  100% recommended: ₦{effectiveBudget.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </Text>
               </View>
+            </View>
+
+            {/* Project summary / timeline quick access */}
+            <View className="bg-black rounded-2xl p-5 mb-6">
+              <View className="flex-row items-center mb-2">
+                <FileText size={18} color="#FFFFFF" strokeWidth={2.2} />
+                <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Project summary & timeline
+                </Text>
+              </View>
+              <Text className="text-white/80 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                View project details and timeline reminders. Tracking remains locked until admin confirms payment.
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (!projectId) return;
+                  onClose();
+                  router.push(`/timeline?projectId=${projectId}` as any);
+                }}
+                disabled={!projectId}
+                className={`rounded-xl py-3 px-4 border ${projectId ? 'bg-white border-white' : 'bg-white/20 border-white/20'}`}
+              >
+                <Text
+                  className={`text-center text-sm ${projectId ? 'text-black' : 'text-white/60'}`}
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  View Project Timeline
+                </Text>
+              </TouchableOpacity>
             </View>
 
             {/* How it works */}

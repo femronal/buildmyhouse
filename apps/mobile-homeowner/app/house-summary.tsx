@@ -1281,6 +1281,7 @@ export default function HouseSummaryScreen() {
         }}
         amount={paymentAmount}
         projectBudget={projectBudget}
+        projectId={projectId}
         projectName={projectAnalysisData?.name || 'Project'}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}

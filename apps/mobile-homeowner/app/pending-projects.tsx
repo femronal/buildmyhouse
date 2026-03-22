@@ -44,7 +44,14 @@ export default function PendingProjectsScreen() {
   };
 
   const handlePay = async (project: any) => {
-    const budget = project.budget || project.gcEditedAnalysis?.budget || project.gcEditedAnalysis?.estimatedBudget || project.acceptedRequest?.estimatedBudget || 0;
+    const budget =
+      project.budget ||
+      project.acceptedRequest?.estimatedBudget ||
+      project.gcEditedAnalysis?.budget ||
+      project.gcEditedAnalysis?.estimatedBudget ||
+      project.aiAnalysis?.budget ||
+      project.aiAnalysis?.estimatedBudget ||
+      0;
     let amount = budget * 1.0;
     
     if (amount <= 0) {
@@ -574,6 +581,7 @@ export default function PendingProjectsScreen() {
         }}
         amount={paymentAmount}
         projectBudget={projectBudget}
+        projectId={selectedProject?.projectId || selectedProject?.id}
         projectName={selectedProject?.name || 'Project'}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}

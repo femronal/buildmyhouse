@@ -111,10 +111,9 @@ export default function GCDashboardScreen() {
 
   // Get project image - use plan PDF or default
   const getProjectImage = (project: any) => {
-    if (project.planPdfUrl) {
-      // If there's a plan PDF, we could use a thumbnail
-      // For now, use a default image based on project name
-      return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
+    const coverFromAnalysis = project?.aiAnalysis?.projectImageUrl;
+    if (coverFromAnalysis) {
+      return getBackendAssetUrl(coverFromAnalysis) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
     }
     return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
   };

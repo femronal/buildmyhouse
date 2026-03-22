@@ -11,6 +11,8 @@ export interface UploadPlanData {
   latitude?: number;
   longitude?: number;
   budget: number;
+  projectType: 'homebuilding' | 'renovation' | 'interior_design';
+  planImageUrl: string;
 }
 
 export const planService = {
@@ -39,7 +41,7 @@ export const planService = {
         fileToUpload = pdfFile;
       } else if (pdfFile instanceof Blob) {
         // Convert Blob to File
-        fileToUpload = new File([pdfFile], pdfFile.name || 'plan.pdf', { 
+        fileToUpload = new File([pdfFile], (pdfFile as any).name || 'plan.pdf', { 
           type: 'application/pdf' 
         });
       } else {
@@ -73,6 +75,8 @@ export const planService = {
       formData.append('longitude', planData.longitude.toString());
     }
     formData.append('budget', planData.budget.toString());
+    formData.append('projectType', planData.projectType);
+    formData.append('planImageUrl', planData.planImageUrl);
 
     // For FormData, don't set Content-Type header - browser will set it automatically with boundary
     const response = await api.post('/plans/upload', formData);
