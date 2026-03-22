@@ -106,6 +106,7 @@ export default function VerificationPage() {
   const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
   const getAssetUrl = (path?: string | null) => {
     if (!path) return '';
+    if (/^\/+https?:\/\//i.test(path)) return path.replace(/^\/+/, '');
     if (path.startsWith('http')) return path;
     return `${BACKEND_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
   };

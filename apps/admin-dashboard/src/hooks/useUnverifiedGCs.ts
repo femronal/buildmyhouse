@@ -37,8 +37,37 @@ export function useUnverifiedGCs() {
 export function useVerifyGC() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ userId, verified }: { userId: string; verified: boolean }) =>
-      api.patch(`/users/${userId}/verification`, { verified }),
+    mutationFn: async ({ userId, verified }: { userId: string; verified: boolean }) => {
+      try {
+        return await api.patch(`/users/${userId}/verification`, { verified });
+      } catch (error: any) {
+        const message = String(error?.message || '');
+        const endpointMissing =
+          message.includes('Cannot PATCH') || message.includes('404');
+
+        if (endpointMissing) {
+          try {
+            // Older backend compatibility: some builds expose PATCH /users/:id.
+            return await api.patch(`/users/${userId}`, { verified });
+          } catch {
+            // Continue to next fallback below.
+          }
+        }
+
+        if (endpointMissing && verified) {
+          // Legacy GC-only fallback.
+          return api.post(`/contractors/admin/${userId}/verify`, {});
+        }
+
+        if (endpointMissing && !verified) {
+          throw new Error(
+            'Disapprove requires the latest backend version. Deploy backend updates and try again.',
+          );
+        }
+
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-unverified-gcs'] });
       queryClient.invalidateQueries({ queryKey: ['admin-contractors'] });

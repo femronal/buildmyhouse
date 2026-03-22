@@ -68,6 +68,13 @@ export default function GCProfileScreen() {
   );
   const requiredVerificationDocs = profileData?.verificationRequiredDocuments ?? [];
 
+  const normalizeUploadedAssetUrl = (rawUrl: string): string => {
+    const url = String(rawUrl || '').trim();
+    if (!url) return '';
+    if (/^\/+https?:\/\//i.test(url)) return url.replace(/^\/+/, '');
+    return url;
+  };
+
   const handlePickProfilePicture = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -154,10 +161,9 @@ export default function GCProfileScreen() {
       const fileUrl = await uploadFile(pendingCertFile.uri, 'document', {
         fileName: pendingCertFile.name,
       });
-      const urlPath = fileUrl.startsWith('http') ? new URL(fileUrl).pathname : fileUrl;
       await createCertification.mutateAsync({
         name: certForm.name.trim(),
-        fileUrl: urlPath.startsWith('/') ? urlPath : `/${urlPath}`,
+        fileUrl: normalizeUploadedAssetUrl(fileUrl),
         expiryYear: certForm.expiryYear.trim() || undefined,
       });
       setCertModalVisible(false);
@@ -183,10 +189,9 @@ export default function GCProfileScreen() {
         fileName: file.name,
         mimeType: file.mimeType,
       });
-      const urlPath = fileUrl.startsWith('http') ? new URL(fileUrl).pathname : fileUrl;
       await upsertVerificationDocument.mutateAsync({
         documentType,
-        fileUrl: urlPath.startsWith('/') ? urlPath : `/${urlPath}`,
+        fileUrl: normalizeUploadedAssetUrl(fileUrl),
       });
       Alert.alert('Uploaded', `${documentTitle} uploaded successfully.`);
     } catch (e: any) {

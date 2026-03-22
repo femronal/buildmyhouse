@@ -21,6 +21,13 @@ export class ContractorsService {
   // Use `any` for model access to reduce coupling to Prisma schema changes.
   private prisma = new PrismaClient() as any;
 
+  private normalizeAssetUrl(url?: string | null): string {
+    const raw = String(url || '').trim();
+    if (!raw) return '';
+    if (/^\/+https?:\/\//i.test(raw)) return raw.replace(/^\/+/, '');
+    return raw;
+  }
+
   private moneyToCents(value: unknown): number {
     const n =
       typeof value === 'number'
@@ -1310,7 +1317,7 @@ export class ContractorsService {
       throw new BadRequestException('fileUrl is required');
     }
 
-    const normalizedUrl = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    const normalizedUrl = this.normalizeAssetUrl(fileUrl);
     await this.prisma.contractorCertification.deleteMany({
       where: {
         contractorId: contractor.id,
@@ -1362,7 +1369,7 @@ export class ContractorsService {
       data: {
         contractorId: contractor.id,
         name: data.name.trim(),
-        fileUrl: data.fileUrl.trim(),
+        fileUrl: this.normalizeAssetUrl(data.fileUrl),
         expiryYear: data.expiryYear?.trim() || null,
       },
     });

@@ -5,6 +5,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { Request, Response } from 'express';
 import * as express from 'express';
+import { existsSync } from 'fs';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -68,6 +69,34 @@ async function bootstrap() {
   // Keep this AFTER CORS setup so browser requests for /uploads/* include CORS headers.
   app.useStaticAssets(join(process.cwd(), 'uploads'), {
     prefix: '/uploads/',
+  });
+
+  // Legacy asset URL compatibility:
+  // Older records may store "/uploads/..." paths while files live in S3 in production.
+  // If local file is missing and S3 is configured, redirect to canonical S3 object URL.
+  app.getHttpAdapter().get('/uploads/*', (req: Request, res: Response) => {
+    const relPath = String(req.path || '').replace(/^\/+/, '');
+    const localPath = join(process.cwd(), relPath);
+    if (existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
+
+    const bucket = (process.env.AWS_S3_BUCKET || '').trim();
+    const region = (process.env.AWS_REGION || '').trim();
+    const publicBase = (process.env.AWS_S3_PUBLIC_BASE_URL || '').trim().replace(/\/+$/, '');
+
+    if (bucket && region) {
+      const target = publicBase
+        ? `${publicBase}/${relPath}`
+        : `https://${bucket}.s3.${region}.amazonaws.com/${relPath}`;
+      return res.redirect(302, target);
+    }
+
+    return res.status(404).json({
+      message: `Cannot GET ${req.path}`,
+      error: 'Not Found',
+      statusCode: 404,
+    });
   });
 
   // Global validation pipe
