@@ -6,6 +6,16 @@ import { join } from 'path';
 import { Request, Response } from 'express';
 import * as express from 'express';
 import { existsSync } from 'fs';
+import { webcrypto } from 'crypto';
+
+// Nest schedule module expects a global Web Crypto API in some runtime paths.
+// Ensure it exists on Node 18 so scheduler bootstrap does not crash in ECS.
+if (!globalThis.crypto) {
+  Object.defineProperty(globalThis, 'crypto', {
+    value: webcrypto,
+    configurable: true,
+  });
+}
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
