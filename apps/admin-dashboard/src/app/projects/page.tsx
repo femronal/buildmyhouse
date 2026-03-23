@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Building2, ExternalLink, Filter, Search, ShieldAlert } from 'lucide-react';
+import { AlertTriangle, Building2, ExternalLink, Filter, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type StageView = {
@@ -110,7 +110,9 @@ export default function ProjectsPage() {
   const [paymentLinkProjectId, setPaymentLinkProjectId] = useState<string | null>(null);
   const [paymentLinkValue, setPaymentLinkValue] = useState('');
   const [timelineProjectId, setTimelineProjectId] = useState<string | null>(null);
+  const [activateProjectTarget, setActivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [deactivateProjectTarget, setDeactivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string>('');
 
@@ -177,6 +179,7 @@ export default function ProjectsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      setActivateProjectTarget(null);
     },
   });
 
@@ -198,6 +201,16 @@ export default function ProjectsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+    },
+  });
+
+  const deleteProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => {
+      return api.delete(`/projects/${projectId}`);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      setDeleteProjectTarget(null);
     },
   });
 
@@ -338,6 +351,7 @@ export default function ProjectsPage() {
           const showConfirm = project.paymentConfirmationStatus === 'declared';
           const canActivate = project.status === 'pending_payment' || project.status === 'paused';
           const canDeactivate = project.status === 'active';
+          const canDeleteStaleProject = project.status === 'draft' && project.gc === '—';
           const gcMailto = project.gcEmail ? `mailto:${project.gcEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}` : null;
           const homeownerMailto = project.homeownerEmail
             ? `mailto:${project.homeownerEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}`
@@ -359,6 +373,11 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {canDeleteStaleProject && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
+                      unmatched
+                    </span>
+                  )}
                   <span
                     className={`px-2 py-1 text-xs rounded-full ${
                       statusStyles[project.status] || 'bg-gray-100 text-gray-700'
@@ -514,7 +533,7 @@ export default function ProjectsPage() {
                         if (canDeactivate) {
                           setDeactivateProjectTarget({ id: project.id, name: project.name });
                         } else {
-                          await activateProjectMutation.mutateAsync(project.id);
+                          setActivateProjectTarget({ id: project.id, name: project.name });
                         }
                       } catch (e: any) {
                         setActionError(e?.message || (canDeactivate ? 'Failed to deactivate project' : 'Failed to activate project'));
@@ -522,6 +541,19 @@ export default function ProjectsPage() {
                     }}
                   >
                     {canDeactivate ? 'Deactivate project' : 'Activate project'}
+                  </button>
+                )}
+                {canDeleteStaleProject && (
+                  <button
+                    className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
+                    disabled={deleteProjectMutation.isPending}
+                    onClick={() => {
+                      setActionError('');
+                      setDeleteProjectTarget({ id: project.id, name: project.name });
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete project
                   </button>
                 )}
                 {gcMailto ? (
@@ -560,6 +592,52 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
+
+      {activateProjectTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-emerald-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Activate Project?</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Activating <span className="font-medium text-gray-900">{activateProjectTarget.name}</span> will open
+                  project execution and timeline tracking for the homeowner and GC.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
+              Proceed only after payment verification and readiness checks are complete. This confirms the project is ready
+              to start.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg"
+                onClick={() => setActivateProjectTarget(null)}
+                disabled={activateProjectMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                disabled={activateProjectMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    await activateProjectMutation.mutateAsync(activateProjectTarget.id);
+                  } catch (e: any) {
+                    setActionError(e?.message || 'Failed to activate project');
+                  }
+                }}
+              >
+                {activateProjectMutation.isPending ? 'Activating…' : 'Proceed and Activate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {deactivateProjectTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
@@ -601,6 +679,51 @@ export default function ProjectsPage() {
                 }}
               >
                 {deactivateProjectMutation.isPending ? 'Pausing…' : 'Proceed and Pause'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteProjectTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Delete Stale Project?</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Deleting <span className="font-medium text-gray-900">{deleteProjectTarget.name}</span> will permanently
+                  remove this unmatched project request from the dashboard.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-800">
+              This action cannot be undone. Use this only for requests that were never accepted or matched by any GC.
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg"
+                onClick={() => setDeleteProjectTarget(null)}
+                disabled={deleteProjectMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-red-600 text-white disabled:opacity-50"
+                disabled={deleteProjectMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    await deleteProjectMutation.mutateAsync(deleteProjectTarget.id);
+                  } catch (e: any) {
+                    setActionError(e?.message || 'Failed to delete project');
+                  }
+                }}
+              >
+                {deleteProjectMutation.isPending ? 'Deleting…' : 'Proceed and Delete'}
               </button>
             </div>
           </div>

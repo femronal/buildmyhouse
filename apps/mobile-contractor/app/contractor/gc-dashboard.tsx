@@ -109,11 +109,40 @@ export default function GCDashboardScreen() {
     return `${month} ${year}`;
   };
 
-  // Get project image - use plan PDF or default
+  // Keep cover photo stable across unpaid/paid transitions.
   const getProjectImage = (project: any) => {
-    const coverFromAnalysis = project?.aiAnalysis?.projectImageUrl;
-    if (coverFromAnalysis) {
-      return getBackendAssetUrl(coverFromAnalysis) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
+    let aiAnalysis = project?.aiAnalysis;
+    if (typeof aiAnalysis === 'string') {
+      try {
+        aiAnalysis = JSON.parse(aiAnalysis);
+      } catch {
+        aiAnalysis = null;
+      }
+    }
+
+    const parsedFromAcceptedNotes = (() => {
+      const acceptedReq = (project?.projectRequests || []).find((r: any) => r?.status === 'accepted');
+      const notes = acceptedReq?.gcNotes;
+      if (!notes || typeof notes !== 'string') return null;
+      const match = notes.match(/\{[\s\S]*\}$/);
+      if (!match) return null;
+      try {
+        const parsed = JSON.parse(match[0]);
+        return parsed?.projectImageUrl || parsed?.planImageUrl || null;
+      } catch {
+        return null;
+      }
+    })();
+
+    const coverUrl =
+      aiAnalysis?.projectImageUrl ||
+      aiAnalysis?.planImageUrl ||
+      project?.projectImageUrl ||
+      project?.planImageUrl ||
+      parsedFromAcceptedNotes;
+
+    if (coverUrl) {
+      return getBackendAssetUrl(coverUrl) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
     }
     return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
   };

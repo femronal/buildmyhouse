@@ -199,6 +199,42 @@ export default function HomeScreen() {
     return firstImg ? getBackendAssetUrl(firstImg) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80';
   };
 
+  const getProjectCoverImage = (project: any) => {
+    let aiAnalysis = project?.aiAnalysis;
+    if (typeof aiAnalysis === 'string') {
+      try {
+        aiAnalysis = JSON.parse(aiAnalysis);
+      } catch {
+        aiAnalysis = null;
+      }
+    }
+
+    const acceptedReq = (project?.projectRequests || []).find((r: any) => r?.status === 'accepted');
+    const parsedFromAcceptedNotes = (() => {
+      const notes = acceptedReq?.gcNotes;
+      if (!notes || typeof notes !== 'string') return null;
+      const match = notes.match(/\{[\s\S]*\}$/);
+      if (!match) return null;
+      try {
+        const parsed = JSON.parse(match[0]);
+        return parsed?.projectImageUrl || parsed?.planImageUrl || null;
+      } catch {
+        return null;
+      }
+    })();
+
+    const coverUrl =
+      aiAnalysis?.projectImageUrl ||
+      aiAnalysis?.planImageUrl ||
+      project?.projectImageUrl ||
+      project?.planImageUrl ||
+      parsedFromAcceptedNotes;
+
+    return coverUrl
+      ? getBackendAssetUrl(coverUrl)
+      : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80';
+  };
+
   const getProjectBudget = (project: any) => {
     const aiBudget =
       project?.gcEditedAnalysis?.budget ||
@@ -423,6 +459,11 @@ export default function HomeScreen() {
                     isPaused ? 'border-orange-200' : 'border-gray-200'
                   }`}
                 >
+                  <Image
+                    source={{ uri: getProjectCoverImage(project) }}
+                    className="w-full h-36"
+                    resizeMode="cover"
+                  />
                   <View className="p-5">
                     <View className="flex-row justify-between items-start mb-3">
                       <View className="flex-1">

@@ -1170,6 +1170,19 @@ export class ProjectsService {
     return this.prisma.project.findMany({
       where: whereClause,
       include: {
+        projectRequests: {
+          where: { status: { in: ['accepted', 'pending'] } },
+          orderBy: { updatedAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            status: true,
+            contractorId: true,
+            updatedAt: true,
+            gcNotes: true,
+            estimatedBudget: true,
+          },
+        },
         homeowner: {
           select: {
             id: true,
@@ -1188,6 +1201,16 @@ export class ProjectsService {
         },
         stages: {
           orderBy: { order: 'asc' },
+        },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+          select: {
+            id: true,
+            amount: true,
+            status: true,
+            createdAt: true,
+          },
         },
       },
       orderBy: { updatedAt: 'desc' },

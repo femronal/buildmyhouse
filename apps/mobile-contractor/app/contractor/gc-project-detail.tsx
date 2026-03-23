@@ -28,7 +28,35 @@ import { getBackendAssetUrl } from "@/lib/image";
 
 // Helper to get project image
 const getProjectImage = (project: any) => {
-  const coverFromAnalysis = project?.aiAnalysis?.projectImageUrl;
+  let aiAnalysis = project?.aiAnalysis;
+  if (typeof aiAnalysis === 'string') {
+    try {
+      aiAnalysis = JSON.parse(aiAnalysis);
+    } catch {
+      aiAnalysis = null;
+    }
+  }
+
+  const acceptedReq = (project?.projectRequests || []).find((r: any) => r?.status === 'accepted');
+  const parsedFromAcceptedNotes = (() => {
+    const notes = acceptedReq?.gcNotes;
+    if (!notes || typeof notes !== 'string') return null;
+    const match = notes.match(/\{[\s\S]*\}$/);
+    if (!match) return null;
+    try {
+      const parsed = JSON.parse(match[0]);
+      return parsed?.projectImageUrl || parsed?.planImageUrl || null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const coverFromAnalysis =
+    aiAnalysis?.projectImageUrl ||
+    aiAnalysis?.planImageUrl ||
+    project?.projectImageUrl ||
+    project?.planImageUrl ||
+    parsedFromAcceptedNotes;
   if (coverFromAnalysis) {
     return getBackendAssetUrl(coverFromAnalysis) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80";
   }

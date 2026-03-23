@@ -414,15 +414,17 @@ export default function StageDetailScreen() {
             ) : (
               materials.map((material: any, index: number) => (
                 <View key={material.id || index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200 relative">
-                  <View className="flex-row">
+                  <View className="flex-row items-center">
                     {material.photoUrl ? (
-                      <Image
-                        source={{ uri: material.photoUrl }}
-                        className="w-24 h-24 bg-gray-100"
-                        resizeMode="cover"
-                      />
+                      <View className="w-24 h-24 ml-3 rounded-xl overflow-hidden bg-gray-100">
+                        <Image
+                          source={{ uri: getBackendAssetUrl(material.photoUrl) || material.photoUrl }}
+                          className="w-full h-full"
+                          resizeMode="cover"
+                        />
+                      </View>
                     ) : (
-                      <View className="w-24 h-24 bg-gray-100 items-center justify-center">
+                      <View className="w-24 h-24 ml-3 rounded-xl bg-gray-100 items-center justify-center">
                         <Package size={32} color="#A3A3A3" strokeWidth={2} />
                       </View>
                     )}
@@ -633,18 +635,18 @@ export default function StageDetailScreen() {
             </Text>
           </View>
         ) : isInProgress ? (
-          <View className="bg-green-100 rounded-2xl p-5 border border-green-600">
+          <View className="bg-green-100 rounded-2xl p-4 border border-green-600">
             <View className="flex-row items-center justify-center mb-2">
-              <CheckCircle size={24} color="#16A34A" strokeWidth={2} fill="#16A34A" />
+              <CheckCircle size={18} color="#16A34A" strokeWidth={2} fill="#16A34A" />
               <Text 
-                className="text-green-700 text-lg ml-2"
+                className="text-green-700 text-base ml-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
               >
                 Payment Approved... Work in Progress
               </Text>
             </View>
             <Text 
-              className="text-green-600 text-center text-sm"
+              className="text-green-600 text-center text-xs"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
               Your GC is now working on this stage. They will mark it complete when finished.
