@@ -120,6 +120,14 @@ export default function HomeScreen() {
       // Unpaid project - show payment modal
       const budget = getProjectBudget(project);
       let amount = budget * 1.0;
+
+      // Always set selected project and values first so the modal has context
+      // even when amount exceeds Stripe limits.
+      setSelectedProjectForPayment(project);
+      setPaymentAmount(amount);
+      setProjectBudget(budget);
+      setPaymentClientSecret(null);
+      setPaymentError(null);
       
       // Stripe maximum amount is ₦999,999.99
       const STRIPE_MAX_AMOUNT = 999999.99;
@@ -131,16 +139,14 @@ export default function HomeScreen() {
       }
       
       if (amount <= 0) {
+        setPaymentError('Budget information is missing or invalid for this project.');
+        setShowPaymentModal(true);
+        setIsProcessingPayment(false);
         return;
       }
 
-      setSelectedProjectForPayment(project);
-      setPaymentAmount(amount);
-      setProjectBudget(budget);
-      setPaymentClientSecret(null);
       setIsProcessingPayment(true);
       setShowPaymentModal(true);
-      setPaymentError(null);
 
       try {
         const paymentResult = await createPaymentIntentMutation.mutateAsync({

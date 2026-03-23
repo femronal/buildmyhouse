@@ -53,9 +53,18 @@ export default function PendingProjectsScreen() {
       project.aiAnalysis?.estimatedBudget ||
       0;
     let amount = budget * 1.0;
+
+    // Set context first so modal can render correct project + amount on all paths.
+    setSelectedProject(project);
+    setPaymentAmount(amount);
+    setProjectBudget(budget);
+    setPaymentClientSecret(null);
+    setPaymentError(null);
     
     if (amount <= 0) {
-      Alert.alert('Error', 'Budget information is missing. Cannot proceed with payment.');
+      setPaymentError('Budget information is missing. Cannot proceed with payment.');
+      setShowPaymentModal(true);
+      setIsProcessingPayment(false);
       return;
     }
 
@@ -68,13 +77,8 @@ export default function PendingProjectsScreen() {
       return;
     }
 
-    setSelectedProject(project);
-    setPaymentAmount(amount);
-    setProjectBudget(budget);
-    setPaymentClientSecret(null);
     setIsProcessingPayment(true);
     setShowPaymentModal(true);
-    setPaymentError(null);
 
     // Create payment intent
     try {
@@ -371,8 +375,8 @@ export default function PendingProjectsScreen() {
 
                   {/* Budget Info */}
                   <View className="bg-black rounded-2xl p-4 mb-3">
-                    <View className="flex-row justify-between items-center">
-                      <View>
+                    <View className="flex-row items-start gap-4">
+                      <View className="flex-1 min-w-0">
                         <Text 
                           className="text-white/70 text-xs mb-1"
                           style={{ fontFamily: 'Poppins_400Regular' }}
@@ -380,22 +384,27 @@ export default function PendingProjectsScreen() {
                           GC’s Estimated Budget
                         </Text>
                         <Text 
-                          className="text-white text-xl"
+                          className="text-white text-lg"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
                         >
                           ₦{budget.toLocaleString()}
                         </Text>
                       </View>
-                      <View>
+                      <View className="flex-1 min-w-0 items-end">
                         <Text 
-                          className="text-white/70 text-xs mb-1"
-                          style={{ fontFamily: 'Poppins_400Regular' }}
+                          className="text-white/70 text-xs mb-1 text-right"
+                          style={{ fontFamily: 'Poppins_400Regular', fontSize: 11 }}
+                          numberOfLines={2}
                         >
                           {isHomebuilding ? 'Payment instructions' : 'Payment Required'}
                         </Text>
                         <Text 
-                          className="text-white text-xl"
+                          className="text-white text-base text-right"
                           style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
                         >
                           {isHomebuilding ? 'External transfer' : `₦${paymentAmount.toLocaleString()}`}
                         </Text>

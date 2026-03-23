@@ -290,6 +290,7 @@ export class ContractorsService {
             fullName: true,
             email: true,
             phone: true,
+            pictureUrl: true,
           },
         },
       },
@@ -314,6 +315,7 @@ export class ContractorsService {
               fullName: true,
               email: true,
               phone: true,
+              pictureUrl: true,
             },
           },
         },
@@ -460,7 +462,25 @@ export class ContractorsService {
       ),
     );
 
-    // Notifications intentionally deferred for MVP.
+    // Notify recipients about the incoming project offer so they can review before accepting.
+    const projectName = requests[0]?.project?.name || 'a project';
+    await Promise.allSettled(
+      contractorIdsForRequest.map((contractorId) =>
+        this.wsService.sendNotification(contractorId, {
+          type: 'project_offer_received',
+          title: 'New Project Offer',
+          message:
+            sender?.role === 'homeowner'
+              ? `You have a new project offer for "${projectName}". Please review carefully before accepting.`
+              : `You have received a new project request for "${projectName}". Please review carefully before accepting.`,
+          data: {
+            projectId,
+            senderId: senderId || null,
+            senderRole: sender?.role || null,
+          },
+        }),
+      ),
+    );
 
     return requests;
   }

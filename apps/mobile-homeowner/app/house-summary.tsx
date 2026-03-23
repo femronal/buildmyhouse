@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Keyboard, Platform, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Keyboard, Platform, TextInput, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -20,6 +20,7 @@ import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivate
 import { useProjectAnalysis } from '@/hooks/usePlan';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
+import { getBackendAssetUrl } from '@/lib/image';
 
 function formatPlanTypeLabel(planType?: string | null): string {
   if (planType === 'renovation') return 'Renovation';
@@ -983,6 +984,8 @@ export default function HouseSummaryScreen() {
             recommendedGCs.map((gc) => {
             // Use user.id (not contractor profile id) for sending requests
             const gcUserId = gc.user?.id || gc.userId || gc.id;
+            const gcAvatarUrl = getBackendAssetUrl(gc.imageUrl || gc.user?.pictureUrl || undefined);
+            const gcInitial = (gc.name || gc.user?.fullName || 'G').trim().charAt(0).toUpperCase();
             return (
             <TouchableOpacity
               key={gc.id}
@@ -994,8 +997,27 @@ export default function HouseSummaryScreen() {
               }`}
             >
               <View className="flex-row items-start justify-between mb-3">
-                <View className="flex-1">
-                  <View className="flex-row items-center mb-1">
+                <View className="flex-1 flex-row items-center pr-2">
+                  <View className={`w-12 h-12 rounded-full mr-3 overflow-hidden items-center justify-center border ${
+                    selectedGCs.has(gcUserId) ? 'border-white/30 bg-white/10' : 'border-gray-200 bg-gray-100'
+                  }`}>
+                    {gcAvatarUrl ? (
+                      <Image
+                        source={{ uri: gcAvatarUrl }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text
+                        className={`${selectedGCs.has(gcUserId) ? 'text-white' : 'text-gray-700'} text-base`}
+                        style={{ fontFamily: 'Poppins_700Bold' }}
+                      >
+                        {gcInitial}
+                      </Text>
+                    )}
+                  </View>
+                  <View className="flex-1">
+                    <View className="flex-row items-center mb-1">
                     <Text 
                       className={`text-lg ${selectedGCs.has(gcUserId) ? 'text-white' : 'text-black'}`}
                       style={{ fontFamily: 'Poppins_700Bold' }}
@@ -1007,13 +1029,14 @@ export default function HouseSummaryScreen() {
                         <Text className="text-white text-xs">✓</Text>
                       </View>
                     )}
+                    </View>
+                    <Text 
+                      className={`text-sm mb-2 ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-600'}`}
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                    >
+                      {gc.specialty}
+                    </Text>
                   </View>
-                  <Text 
-                    className={`text-sm mb-2 ${selectedGCs.has(gcUserId) ? 'text-white/70' : 'text-gray-600'}`}
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {gc.specialty}
-                  </Text>
                 </View>
                 <View className={`rounded-full px-3 py-1 ${
                   selectedGCs.has(gcUserId) ? 'bg-white/20' : 'bg-green-100'

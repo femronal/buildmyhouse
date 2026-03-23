@@ -127,7 +127,7 @@ export default function PaymentModal({
                 onPress={() => {
                   if (!projectId) return;
                   onClose();
-                  router.push(`/timeline?projectId=${projectId}` as any);
+                  router.push(`/dashboard?projectId=${projectId}` as any);
                 }}
                 disabled={!projectId}
                 className={`rounded-xl py-3 px-4 border ${projectId ? 'bg-white border-white' : 'bg-white/20 border-white/20'}`}
@@ -136,7 +136,7 @@ export default function PaymentModal({
                   className={`text-center text-sm ${projectId ? 'text-black' : 'text-white/60'}`}
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
                 >
-                  View Project Timeline
+                  Open Project Dashboard
                 </Text>
               </TouchableOpacity>
             </View>

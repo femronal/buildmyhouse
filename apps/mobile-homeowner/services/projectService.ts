@@ -11,10 +11,12 @@ export interface RecommendedGC {
   verified: boolean;
   location: string;
   matchScore: number;
+  imageUrl?: string | null;
   user: {
     id: string;
     fullName: string;
     email: string;
+    pictureUrl?: string | null;
   };
 }
 
