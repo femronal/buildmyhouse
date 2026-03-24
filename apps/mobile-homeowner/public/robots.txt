@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Private app routes
+Disallow: /dashboard
+Disallow: /timeline
+Disallow: /stage-detail
+Disallow: /chat
+Disallow: /profile
+Disallow: /notifications
+Disallow: /pending-projects
+Disallow: /billing-payments
+Disallow: /notification-settings
+Disallow: /privacy-security
+Disallow: /personal-information
+Disallow: /app-settings
+Disallow: /house-summary
+Disallow: /upload-plan
+
+Sitemap: https://buildmyhouse.app/sitemap.xml

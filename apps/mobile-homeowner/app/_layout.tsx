@@ -3,11 +3,11 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Text, TextInput } from "react-native";
+import { Platform, Text, TextInput } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
 import "../global.css";
@@ -25,6 +25,7 @@ import { InvestmentProvider } from '@/contexts/InvestmentContext';
 import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
+import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +34,7 @@ const queryClient = new QueryClient();
 const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 export default function RootLayout() {
+  const pathname = usePathname();
   usePushTokenRegistration('homeowner');
 
   const [loaded] = useFonts({
@@ -54,6 +56,23 @@ export default function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [loaded]);
+
+  const defaultSeo = getDefaultSeoForPath(pathname);
+  useWebSeo({
+    ...defaultSeo,
+    gscVerificationToken: process.env.EXPO_PUBLIC_GSC_VERIFICATION,
+    jsonLd:
+      Platform.OS === 'web'
+        ? {
+            '@context': 'https://schema.org',
+            '@type': 'Organization',
+            name: 'BuildMyHouse',
+            url: process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app',
+            logo: `${(process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '')}/assets/images/icon.png`,
+            sameAs: ['https://buildmyhouse.app'],
+          }
+        : undefined,
+  });
 
   if (!loaded) {
     return null;
@@ -78,6 +97,18 @@ export default function RootLayout() {
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="timeline" options={{ headerShown: false }} />
           <Stack.Screen name="stage-detail" options={{ headerShown: false }} />
+          <Stack.Screen name="construction/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="construction/lagos" options={{ headerShown: false }} />
+          <Stack.Screen name="construction/abuja" options={{ headerShown: false }} />
+          <Stack.Screen name="construction/port-harcourt" options={{ headerShown: false }} />
+          <Stack.Screen name="renovation/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="interior-design/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="homes-for-rent/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="houses-for-sale/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="land-for-sale/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/build-in-nigeria-from-uk" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/build-in-nigeria-from-usa-canada" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/build-in-nigeria-from-uae" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
           <Stack.Screen name="personal-information" options={{ headerShown: false }} />
           <Stack.Screen name="notification-settings" options={{ headerShown: false }} />

@@ -127,6 +127,9 @@ jobs:
       AWS_S3_BUCKET_HOMEOWNER: ${{ secrets.AWS_S3_BUCKET_HOMEOWNER }}
       AWS_CLOUDFRONT_HOMEOWNER_ID: ${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }}
       EXPO_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.PRODUCTION_GOOGLE_CLIENT_ID }}
+      EXPO_PUBLIC_WEB_URL: https://buildmyhouse.app
+      EXPO_PUBLIC_GSC_VERIFICATION: oXMp0QHWTK-YkDQ5L8sNre1YHVZR_6Tt7VBUP8DQ5X8
+      EXPO_PUBLIC_GA_MEASUREMENT_ID: G-WWK0DNZNSM
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -172,7 +175,12 @@ jobs:
           fi
 
       - name: Build homeowner web app
-        run: EXPO_PUBLIC_API_URL=${{ steps.homeowner-api-url.outputs.api_url }} pnpm --filter mobile-homeowner build
+        run: |
+          EXPO_PUBLIC_API_URL=${{ steps.homeowner-api-url.outputs.api_url }} \
+          EXPO_PUBLIC_WEB_URL=${{ env.EXPO_PUBLIC_WEB_URL }} \
+          EXPO_PUBLIC_GSC_VERIFICATION=${{ env.EXPO_PUBLIC_GSC_VERIFICATION }} \
+          EXPO_PUBLIC_GA_MEASUREMENT_ID=${{ env.EXPO_PUBLIC_GA_MEASUREMENT_ID }} \
+          pnpm --filter mobile-homeowner build
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_HOMEOWNER != ''

@@ -6,6 +6,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDesigns, useHousesForSale, useLandsForSale } from '@/hooks';
 import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
+import { useWebSeo } from '@/lib/seo';
+import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -116,6 +118,14 @@ export default function ExploreScreen() {
       land.location?.toLowerCase().includes(query)
     );
   }, [landsForSale, searchQuery]);
+
+  useWebSeo({
+    title: 'Explore Designs, Homes & Land in Nigeria | BuildMyHouse',
+    description:
+      'Explore home designs, houses for sale, and land opportunities in Nigeria. Compare options and start your next project with BuildMyHouse.',
+    canonicalPath: '/explore',
+    robots: 'index,follow',
+  });
 
   return (
     <View className="flex-1 bg-white">
@@ -237,6 +247,16 @@ export default function ExploreScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        <InternalLinksBlock
+          title="Popular searches in Nigeria"
+          links={[
+            { label: 'Construction in Lagos', href: '/construction/lagos' },
+            { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+            { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+            { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+          ]}
+        />
+
         {/* Designs Tab */}
         {activeTab === 'designs' && (
           <>

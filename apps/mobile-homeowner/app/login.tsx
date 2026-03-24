@@ -4,12 +4,31 @@ import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { LogIn, ArrowRight } from "lucide-react-native";
 import Logo from "@/components/Logo";
+import { useWebSeo } from '@/lib/seo';
 
 const SHOW_GOOGLE_LOGIN = false;
 
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  useWebSeo({
+    title: 'BuildMyHouse Nigeria | Construction, Renovation, Interior Design',
+    description:
+      'Build, renovate, or redesign your home in Nigeria with verified professionals. BuildMyHouse supports local and diaspora homeowners.',
+    canonicalPath: '/login',
+    robots: 'index,follow',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'BuildMyHouse',
+      url: 'https://buildmyhouse.app',
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: 'https://buildmyhouse.app/explore',
+        query: 'construction in nigeria',
+      },
+    },
+  });
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -139,6 +158,24 @@ export default function LoginScreen() {
 
       {/* Footer */}
       <View className="pb-6 px-6">
+        <View className="flex-row flex-wrap justify-center mb-3">
+          {[
+            { label: 'Construction in Nigeria', href: '/construction/nigeria' },
+            { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+            { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+            { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+          ].map((link) => (
+            <TouchableOpacity
+              key={link.href}
+              onPress={() => router.push(link.href as any)}
+              className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
+            >
+              <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {link.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
         <Text 
           className="text-gray-500 text-center text-xs leading-5"
           style={{ fontFamily: 'Poppins_400Regular' }}

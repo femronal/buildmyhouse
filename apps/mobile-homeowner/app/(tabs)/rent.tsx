@@ -42,6 +42,8 @@ import { useRentalsForLease } from '@/hooks/useRentalsForLease';
 import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
 import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
+import { useWebSeo } from '@/lib/seo';
+import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 
 type RentalListing = {
   id: string;
@@ -116,6 +118,14 @@ export default function RentScreen() {
   const filterOpacity = filterAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
+  });
+
+  useWebSeo({
+    title: 'Homes for Rent in Nigeria | BuildMyHouse',
+    description:
+      'Browse owner-listed rental homes in Nigeria with transparent fees and inspection request support on BuildMyHouse.',
+    canonicalPath: '/rent',
+    robots: 'index,follow',
   });
 
   const toggleFilters = () => {
@@ -311,6 +321,16 @@ export default function RentScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
+        <InternalLinksBlock
+          title="Need more options?"
+          links={[
+            { label: 'Homes for Rent (Guide)', href: '/homes-for-rent/nigeria' },
+            { label: 'Houses for Sale', href: '/houses-for-sale/nigeria' },
+            { label: 'Land for Sale', href: '/land-for-sale/nigeria' },
+            { label: 'Construction in Nigeria', href: '/construction/nigeria' },
+          ]}
+        />
+
         {filteredListings.length === 0 ? (
           <View className="items-center justify-center py-24">
             <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
