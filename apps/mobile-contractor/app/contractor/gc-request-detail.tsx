@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { getBackendAssetUrl } from "@/lib/image";
+import { api } from "@/lib/api";
 
 function moneyToCents(value: unknown): number {
   const n =
@@ -291,21 +292,39 @@ export default function GCRequestDetailScreen() {
   };
 
   const handleDownloadPDF = async () => {
-    if (request?.project?.planPdfUrl) {
-      const pdfUrl = getBackendAssetUrl(request.project.planPdfUrl);
-      try {
-        const supported = await Linking.canOpenURL(pdfUrl);
-        if (supported) {
-          await Linking.openURL(pdfUrl);
-        } else {
-          showAlert('Error', 'Cannot open PDF URL');
-        }
-      } catch (error) {
-        console.error('Error opening PDF:', error);
-        showAlert('Error', 'Failed to open PDF. Please try again.');
-      }
-    } else {
+    const projectId = request?.project?.id;
+    if (!projectId) {
       showAlert('No Plan Available', 'The project plan PDF is not available.');
+      return;
+    }
+
+    try {
+      const result = await api.get(`/plans/${projectId}/download-url`);
+      const rawUrl = result?.url || request?.project?.planPdfUrl;
+      const pdfUrl = getBackendAssetUrl(rawUrl);
+
+      const supported = await Linking.canOpenURL(pdfUrl);
+      if (supported) {
+        await Linking.openURL(pdfUrl);
+      } else {
+        showAlert('Error', 'Cannot open PDF URL');
+      }
+    } catch (error) {
+      console.error('Error opening PDF:', error);
+      // Fallback to old URL path for backward compatibility.
+      const fallbackUrl = request?.project?.planPdfUrl
+        ? getBackendAssetUrl(request.project.planPdfUrl)
+        : null;
+      if (fallbackUrl) {
+        try {
+          const supported = await Linking.canOpenURL(fallbackUrl);
+          if (supported) {
+            await Linking.openURL(fallbackUrl);
+            return;
+          }
+        } catch {}
+      }
+      showAlert('Error', 'Failed to open PDF. Please try again.');
     }
   };
 

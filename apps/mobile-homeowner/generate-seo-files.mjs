@@ -3,12 +3,17 @@ import path from 'node:path';
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
 const outputDir = path.resolve(process.cwd(), 'public');
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(/\/+$/, '');
 
 const indexableRoutes = [
   '/',
   '/login',
   '/explore',
   '/rent',
+  '/articles',
+  '/articles/cost-to-build-house-in-nigeria-2026',
+  '/articles/renovation-checklist-for-homeowners-nigeria',
+  '/articles/diaspora-guide-build-in-nigeria-from-abroad',
   '/construction/nigeria',
   '/construction/lagos',
   '/construction/abuja',
@@ -23,11 +28,28 @@ const indexableRoutes = [
   '/diaspora/build-in-nigeria-from-uae',
 ];
 
+async function getCmsArticleRoutes() {
+  try {
+    const response = await fetch(`${API_URL}/articles`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .map((item) => String(item?.canonicalPath || '').trim())
+      .filter((path) => path.startsWith('/articles/'));
+  } catch {
+    return [];
+  }
+}
+
 const now = new Date().toISOString();
+const cmsRoutes = await getCmsArticleRoutes();
+const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes]));
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${indexableRoutes
+${finalRoutes
   .map(
     (route) => `  <url>
     <loc>${route === '/' ? WEB_URL : `${WEB_URL}${route}`}</loc>

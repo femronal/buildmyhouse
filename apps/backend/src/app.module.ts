@@ -22,6 +22,7 @@ import { PushTokensModule } from './push-tokens/push-tokens.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { EmailModule } from './email/email.module';
+import { ArticlesModule } from './articles/articles.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { EmailModule } from './email/email.module';
     PushTokensModule,
     NotificationsModule,
     AdminModule,
+    ArticlesModule,
   ],
   controllers: [],
   providers: [

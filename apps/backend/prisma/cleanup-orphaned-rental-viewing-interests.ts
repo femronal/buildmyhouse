@@ -31,7 +31,7 @@ async function cleanupOrphanedRentalViewingInterests() {
 
   const extraWhere = includeSetNull ? ' OR rvi.rental_listing_id IS NULL' : '';
 
-  const rows = await prisma.$queryRawUnsafe<OrphanedInterestRow[]>(`
+  const rows = (await prisma.$queryRawUnsafe(`
     SELECT
       rvi.id,
       rvi.rental_listing_id AS "rentalListingId",
@@ -46,7 +46,7 @@ async function cleanupOrphanedRentalViewingInterests() {
       OR (rvi.rental_listing_id IS NOT NULL AND rl.id IS NULL)
       ${extraWhere}
     ORDER BY rvi.created_at DESC
-  `);
+  `)) as OrphanedInterestRow[];
 
   console.log(`Found ${rows.length} orphaned rental viewing interest row(s).`);
 

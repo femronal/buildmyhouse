@@ -92,6 +92,15 @@ export class PlansController {
     const userId = req.user.sub;
     return this.plansService.getProjectWithAnalysis(projectId, userId);
   }
+
+  @Get(':projectId/download-url')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner', 'general_contractor', 'subcontractor', 'vendor', 'admin')
+  async getPlanDownloadUrl(@Param('projectId') projectId: string, @Request() req: any) {
+    const userId = req.user.sub;
+    const role = req.user.role;
+    return this.plansService.getPlanDownloadUrl(projectId, userId, role);
+  }
 }
 
 

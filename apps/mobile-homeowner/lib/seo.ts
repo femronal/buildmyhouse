@@ -106,6 +106,10 @@ export function buildCanonicalUrl(pathname?: string) {
 export function isIndexablePath(pathname?: string) {
   const path = normalizePathname(pathname);
 
+  if (path === '/articles' || path.startsWith('/articles/')) {
+    return true;
+  }
+
   const exactIndexable = new Set([
     '/',
     '/login',
@@ -203,6 +207,16 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       title: 'BuildMyHouse Nigeria | Construction, Renovation, Interior Design',
       description:
         'Build, renovate, or redesign your home in Nigeria with vetted general contractors and milestone tracking. Also discover homes and land opportunities.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/articles' || normalized.startsWith('/articles/')) {
+    return {
+      title: 'BuildMyHouse Articles | Construction, Renovation, Diaspora Guides',
+      description:
+        'Practical BuildMyHouse articles for homeowners in Nigeria and diaspora clients planning construction, renovation, or interior projects.',
       canonicalPath,
       robots: 'index,follow',
     };

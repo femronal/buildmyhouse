@@ -21,7 +21,8 @@ COPY . .
 # Generate Prisma Client (dummy DATABASE_URL - generate doesn't connect to DB)
 WORKDIR /app/apps/backend
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN pnpm prisma:generate
+# Skip prisma generate here to avoid qemu issues on local amd64 emulation.
+# Prisma client is generated at container startup on ECS.
 
 # Build the application (from monorepo root for correct workspace resolution)
 WORKDIR /app
@@ -50,10 +51,10 @@ COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
 
 WORKDIR /app/apps/backend
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-RUN pnpm prisma:generate
+# Skip prisma generate here; it runs at container startup.
 
 # Expose port
 EXPOSE 3001
 
-# Run migrations then start the application
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
+# Generate client in workspace context, run migrations, then start the application
+CMD ["sh", "-c", "pnpm prisma:generate && npx prisma migrate deploy && node dist/src/main.js"]

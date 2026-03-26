@@ -12,6 +12,7 @@ import {
   Scale,
   LandPlot,
   Home,
+  FileText,
   LogOut
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
@@ -26,6 +27,7 @@ const menuItems = [
   { href: '/land', label: 'Land', icon: LandPlot },
   { href: '/houses', label: 'Houses', icon: Home },
   { href: '/rentals', label: 'Rentals', icon: Building },
+  { href: '/articles', label: 'Content', icon: FileText },
 ];
 
 export default function Sidebar() {

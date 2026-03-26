@@ -25,6 +25,7 @@ import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
+import { api } from "@/lib/api";
 
 // Helper to get project image
 const getProjectImage = (project: any) => {
@@ -134,8 +135,10 @@ export default function GCProjectDetailScreen() {
       return;
     }
 
-    const pdfUrl = getBackendAssetUrl(project.planPdfUrl);
     try {
+      const result = await api.get(`/plans/${projectId}/download-url`);
+      const rawUrl = result?.url || project.planPdfUrl;
+      const pdfUrl = getBackendAssetUrl(rawUrl);
       const supported = await Linking.canOpenURL(pdfUrl);
       if (supported) {
         await Linking.openURL(pdfUrl);
@@ -144,6 +147,15 @@ export default function GCProjectDetailScreen() {
       }
     } catch (error) {
       console.error('Error opening PDF:', error);
+      // Fallback to direct URL for older projects/environments.
+      try {
+        const fallbackUrl = getBackendAssetUrl(project.planPdfUrl);
+        const supported = await Linking.canOpenURL(fallbackUrl);
+        if (supported) {
+          await Linking.openURL(fallbackUrl);
+          return;
+        }
+      } catch {}
       Alert.alert('Error', 'Failed to open PDF. Please try again.');
     }
   };

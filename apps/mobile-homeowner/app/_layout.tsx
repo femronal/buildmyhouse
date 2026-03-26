@@ -95,6 +95,8 @@ export default function RootLayout() {
           <Stack.Screen name="house-detail" options={{ headerShown: false }} />
           <Stack.Screen name="land-detail" options={{ headerShown: false }} />
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
+          <Stack.Screen name="articles/index" options={{ headerShown: false }} />
+          <Stack.Screen name="articles/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="timeline" options={{ headerShown: false }} />
           <Stack.Screen name="stage-detail" options={{ headerShown: false }} />
           <Stack.Screen name="construction/nigeria" options={{ headerShown: false }} />

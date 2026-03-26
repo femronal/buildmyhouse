@@ -107,6 +107,30 @@ model Notification {
   @@map("notifications")
 }
 
+model CmsArticle {
+  id            String   @id @default(uuid())
+  slug          String   @unique
+  title         String
+  description   String
+  excerpt       String
+  coverImageUrl String
+  coverImageAlt String
+  readingMinutes Int     @default(5)
+  tags          String[] @default([])
+  authorName    String   @default("BuildMyHouse Editorial")
+  canonicalPath String
+  blocks        Json
+  faqs          Json
+  internalLinks Json
+  isPublished   Boolean  @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([isPublished, publishedAt, updatedAt])
+  @@map("cms_articles")
+}
+
 model Project {
   id                  String        @id @default(uuid())
   name                String
