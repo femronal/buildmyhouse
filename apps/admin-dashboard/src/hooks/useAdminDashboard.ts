@@ -13,7 +13,7 @@ export type DashboardStats = {
 };
 
 export type CriticalAlert = {
-  type: 'stalled_project' | 'failed_payments' | 'gcs_pending_verification';
+  type: 'stalled_project' | 'failed_payments' | 'gcs_pending_verification' | 'missing_plan_files';
   title: string;
   detail: string;
   tone: 'amber' | 'red' | 'blue';

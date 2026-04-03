@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ContractorsService } from '../contractors/contractors.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PlanFileHealthService } from './plan-file-health.service';
+import { EmailService } from '../email/email.service';
+import { AdminEmailAudience, SendBulkEmailDto } from './dto/send-bulk-email.dto';
 
 const STALLED_DAYS = 7;
 const RECENT_ACTIVITY_LIMIT = 10;
@@ -18,7 +21,7 @@ export type DashboardStats = {
 };
 
 export type CriticalAlert = {
-  type: 'stalled_project' | 'failed_payments' | 'gcs_pending_verification';
+  type: 'stalled_project' | 'failed_payments' | 'gcs_pending_verification' | 'missing_plan_files';
   title: string;
   detail: string;
   tone: 'amber' | 'red' | 'blue';
@@ -41,6 +44,8 @@ export class AdminService {
     private readonly prisma: PrismaService,
     private readonly contractorsService: ContractorsService,
     private readonly notificationsService: NotificationsService,
+    private readonly planFileHealthService: PlanFileHealthService,
+    private readonly emailService: EmailService,
   ) {}
 
   async getDashboard(adminUserId: string) {
@@ -169,6 +174,19 @@ export class AdminService {
       });
     }
 
+    // 4. Missing project plan files (detect before GC/homeowner download failures)
+    const missingPlanFiles = await this.planFileHealthService.scanMissingPlanFiles(120);
+    if (missingPlanFiles.length > 0) {
+      alerts.push({
+        type: 'missing_plan_files',
+        title: `${missingPlanFiles.length} project plan file${missingPlanFiles.length !== 1 ? 's are' : ' is'} missing`,
+        detail: 'Some project plans cannot be downloaded. Audit projects and request re-upload where needed.',
+        tone: 'red',
+        link: '/projects',
+        data: { projectIds: missingPlanFiles.slice(0, 20).map((item) => item.projectId) },
+      });
+    }
+
     return alerts;
   }
 
@@ -193,5 +211,270 @@ export class AdminService {
     if (notification.type === 'manual_payment_declared') return '/projects';
     if (notification.type === 'new_user_signup') return '/users';
     return undefined;
+  }
+
+  async sendBulkEmail(adminUserId: string, dto: SendBulkEmailDto) {
+    const subject = String(dto.subject || '').trim();
+    if (!subject) {
+      throw new BadRequestException('Email subject is required');
+    }
+
+    const html = String(dto.html || '').trim();
+    const text = String(dto.text || '').trim();
+    if (!html && !text) {
+      throw new BadRequestException('Provide at least HTML or text email content');
+    }
+
+    const recipients = await this.resolveRecipients(dto);
+    if (recipients.length === 0) {
+      throw new BadRequestException('No recipient emails found for selected audience');
+    }
+
+    const htmlBody = html || this.wrapTextInHtml(text);
+    const textBody = text || this.stripHtml(html);
+
+    // Keep throughput below Resend free-tier API rate limits (~5 req/sec).
+    const concurrency = 4;
+    let sent = 0;
+    let failed = 0;
+    const failedRecipients: string[] = [];
+
+    for (let i = 0; i < recipients.length; i += concurrency) {
+      const chunk = recipients.slice(i, i + concurrency);
+      const batch = await Promise.all(
+        chunk.map(async (to) => {
+          const ok = await this.sendWithRetry({
+            to,
+            subject,
+            html: htmlBody,
+            text: textBody,
+          });
+          return { to, ok };
+        }),
+      );
+
+      for (const result of batch) {
+        if (result.ok) {
+          sent += 1;
+        } else {
+          failed += 1;
+          if (failedRecipients.length < 20) {
+            failedRecipients.push(result.to);
+          }
+        }
+      }
+
+      // Throttle chunk bursts to stay under provider rate limit.
+      if (i + concurrency < recipients.length) {
+        await this.sleep(1100);
+      }
+    }
+
+    // Record admin operation in in-app notifications for audit trail.
+    await this.notificationsService.createForUser(adminUserId, {
+      type: 'admin_bulk_email_sent',
+      title: 'Bulk email campaign completed',
+      message: `Audience: ${dto.audience}. Sent: ${sent}. Failed: ${failed}.`,
+      data: {
+        audience: dto.audience,
+        totalRecipients: recipients.length,
+        sent,
+        failed,
+      },
+    });
+
+    return {
+      audience: dto.audience,
+      totalRecipients: recipients.length,
+      sent,
+      failed,
+      failedRecipients,
+    };
+  }
+
+  private async sendWithRetry(options: { to: string; subject: string; html: string; text?: string }, maxAttempts = 3) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const ok = await this.emailService.send(options);
+      if (ok) return true;
+      if (attempt < maxAttempts) {
+        // Exponential backoff for transient provider throttling.
+        await this.sleep(500 * Math.pow(2, attempt - 1));
+      }
+    }
+    return false;
+  }
+
+  private sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async getBulkEmailAudienceCounts() {
+    const [allUsers, allGcs, allHomeowners] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.user.count({
+        where: {
+          role: 'general_contractor',
+        },
+      }),
+      this.prisma.user.count({
+        where: {
+          role: 'homeowner',
+        },
+      }),
+    ]);
+
+    return {
+      allUsers,
+      allGcs,
+      allHomeowners,
+    };
+  }
+
+  async notifyHomeownersForMissingPlanFiles(params?: { projectIds?: string[]; limit?: number }) {
+    const limit = Number.isFinite(Number(params?.limit))
+      ? Math.max(20, Math.min(Number(params?.limit), 1000))
+      : 300;
+    const requestedIds = Array.from(
+      new Set((params?.projectIds || []).map((x) => String(x || '').trim()).filter(Boolean)),
+    );
+
+    const missing = await this.planFileHealthService.scanMissingPlanFiles(limit);
+    const targetMissing =
+      requestedIds.length > 0 ? missing.filter((item) => requestedIds.includes(item.projectId)) : missing;
+    if (targetMissing.length === 0) {
+      return {
+        targetCount: 0,
+        notified: 0,
+        skippedNoEmail: 0,
+        skippedAlreadyNotified: 0,
+        projectIds: [],
+      };
+    }
+
+    const projects = await this.prisma.project.findMany({
+      where: { id: { in: targetMissing.map((m) => m.projectId) } },
+      select: {
+        id: true,
+        name: true,
+        homeownerId: true,
+        homeowner: {
+          select: { email: true, fullName: true },
+        },
+      },
+    });
+
+    let notified = 0;
+    let skippedNoEmail = 0;
+    let skippedAlreadyNotified = 0;
+    const notifiedProjectIds: string[] = [];
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    for (const project of projects) {
+      if (!project.homeowner?.email) {
+        skippedNoEmail += 1;
+        continue;
+      }
+
+      const recentNotifs = await this.prisma.notification.findMany({
+        where: {
+          userId: project.homeownerId,
+          type: 'missing_plan_file_action_required',
+          createdAt: { gte: oneDayAgo },
+        },
+        select: { data: true },
+        take: 20,
+      });
+      const alreadyNotified = recentNotifs.some(
+        (n: any) => String((n?.data as any)?.projectId || '') === project.id,
+      );
+      if (alreadyNotified) {
+        skippedAlreadyNotified += 1;
+        continue;
+      }
+
+      await this.notificationsService.createForUser(project.homeownerId, {
+        type: 'missing_plan_file_action_required',
+        title: 'Action required: re-upload your project plan',
+        message:
+          'We could not locate your uploaded plan file for this project. Please open your project and re-upload the plan PDF so contractors can access it.',
+        data: {
+          projectId: project.id,
+          projectName: project.name,
+        },
+      });
+      notified += 1;
+      if (notifiedProjectIds.length < 200) {
+        notifiedProjectIds.push(project.id);
+      }
+    }
+
+    return {
+      targetCount: targetMissing.length,
+      notified,
+      skippedNoEmail,
+      skippedAlreadyNotified,
+      projectIds: targetMissing.map((x) => x.projectId),
+      notifiedProjectIds,
+    };
+  }
+
+  private async resolveRecipients(dto: SendBulkEmailDto): Promise<string[]> {
+    if (dto.audience === AdminEmailAudience.SPECIFIC_USERS) {
+      const emails = (dto.recipients || []).map((email) => String(email || '').trim().toLowerCase()).filter(Boolean);
+      return Array.from(new Set(emails));
+    }
+
+    const where: any = {};
+
+    if (dto.audience === AdminEmailAudience.ALL_GCS) {
+      where.role = 'general_contractor';
+    }
+    if (dto.audience === AdminEmailAudience.ALL_HOMEOWNERS) {
+      where.role = 'homeowner';
+    }
+
+    const users = await this.prisma.user.findMany({
+      where,
+      select: { email: true },
+    });
+
+    return Array.from(
+      new Set(
+        users
+          .map((user) => String(user.email || '').trim().toLowerCase())
+          .filter(Boolean),
+      ),
+    );
+  }
+
+  private wrapTextInHtml(text: string) {
+    const escaped = this.escapeHtml(text).replace(/\n/g, '<br>');
+    return `
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif; color: #111827; line-height: 1.6;">
+    <div style="max-width: 640px; margin: 20px auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
+      ${escaped}
+    </div>
+  </body>
+</html>`.trim();
+  }
+
+  private stripHtml(html: string) {
+    return String(html || '')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private escapeHtml(text: string) {
+    return String(text || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 }

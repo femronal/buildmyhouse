@@ -16,6 +16,7 @@ export class PlansService {
   private readonly region: string;
   private readonly publicBaseUrl: string;
   private readonly s3Client: S3Client | null;
+  private readonly nodeEnv: string;
 
   constructor(
     private readonly openaiService: OpenAIService,
@@ -24,6 +25,7 @@ export class PlansService {
   ) {
     this.bucket = (this.configService.get<string>('AWS_S3_BUCKET') || '').trim();
     this.region = (this.configService.get<string>('AWS_REGION') || '').trim();
+    this.nodeEnv = (this.configService.get<string>('NODE_ENV') || '').trim().toLowerCase();
     this.publicBaseUrl = (this.configService.get<string>('AWS_S3_PUBLIC_BASE_URL') || '').trim().replace(/\/+$/, '');
     this.s3Client =
       this.bucket && this.region
@@ -61,19 +63,20 @@ export class PlansService {
         pdfBuffer = readFileSync(filePath);
       }
 
-      // 3. Upload to S3 when available so files remain durable across deployments.
-      try {
-        const uploaded = await this.s3UploadService.uploadBuffer({
-          buffer: pdfBuffer,
-          folder: 'plans',
-          contentType: 'application/pdf',
-          originalName: file.originalname,
-        });
-        if (uploaded?.url) {
-          planPdfUrl = uploaded.url;
-        }
-      } catch {
-        // Non-fatal: keep legacy local URL so existing environments still work.
+      const requireDurableStorage = this.nodeEnv === 'production';
+      if (requireDurableStorage && !this.s3Client) {
+        throw new BadRequestException('Plan upload storage is not configured. Please contact support.');
+      }
+
+      // 3. Upload to storage. In production this must be durable (S3).
+      const uploaded = await this.s3UploadService.uploadBuffer({
+        buffer: pdfBuffer,
+        folder: 'plans',
+        contentType: 'application/pdf',
+        originalName: file.originalname,
+      });
+      if (uploaded?.url) {
+        planPdfUrl = uploaded.url;
       }
 
       // 4. Extract text from PDF

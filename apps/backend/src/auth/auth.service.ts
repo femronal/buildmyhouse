@@ -13,6 +13,9 @@ import { RegisterDto } from './dto/register.dto';
 import { JwtAuthService, JWTPayload } from './jwt-auth.service';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { WebSocketService } from '../websocket/websocket.service';
+import { EmailService } from '../email/email.service';
+import { HOMEOWNER_WELCOME_EMAIL_TEMPLATE } from '../email/templates/homeowner-welcome.template';
+import { GC_WELCOME_EMAIL_TEMPLATE } from '../email/templates/gc-welcome.template';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +26,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtAuthService: JwtAuthService,
     private readonly wsService: WebSocketService,
+    private readonly emailService: EmailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -66,6 +70,8 @@ export class AuthService {
     }
 
     await this.notifyAdminNewSignup(user.fullName ?? 'Unknown', user.email, user.role);
+    await this.sendHomeownerWelcomeEmail(user.email, user.fullName, user.role);
+    await this.sendGeneralContractorWelcomeEmail(user.email, user.role);
 
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
@@ -293,6 +299,8 @@ export class AuthService {
       }
 
       await this.notifyAdminNewSignup(fullName, email, roleToCreate);
+      await this.sendHomeownerWelcomeEmail(user.email, user.fullName, roleToCreate);
+      await this.sendGeneralContractorWelcomeEmail(user.email, roleToCreate);
     } else {
       // Keep profile in sync with trusted OAuth identity values.
       const currentName = (user.fullName || '').trim();
@@ -359,6 +367,58 @@ export class AuthService {
       message: `${fullName} (${email}) signed up as ${role}`,
       data: { email, fullName, role },
     });
+  }
+
+  private async sendHomeownerWelcomeEmail(email: string, fullName: string | null, role: string) {
+    if (role !== 'homeowner' || !email) {
+      return;
+    }
+
+    const html = HOMEOWNER_WELCOME_EMAIL_TEMPLATE
+      .replace(/\{\{\s*unsubscribe\s*\}\}/gi, 'https://buildmyhouse.app')
+      .replace(/\{\{\s*update_preferences\s*\}\}/gi, 'https://buildmyhouse.app')
+      .replace(/\{\{\s*view_in_browser\s*\}\}/gi, 'https://buildmyhouse.app')
+      .replace(/\{\{\s*full_name\s*\}\}/gi, this.escapeHtml(fullName || 'there'));
+
+    try {
+      await this.emailService.send({
+        to: email,
+        subject: 'Welcome to BuildMyHouse',
+        html,
+      });
+    } catch {
+      // Never block signup due to email delivery issues.
+    }
+  }
+
+  private async sendGeneralContractorWelcomeEmail(email: string, role: string) {
+    if (role !== 'general_contractor' || !email) {
+      return;
+    }
+
+    const html = GC_WELCOME_EMAIL_TEMPLATE
+      .replace(/\{\{\s*unsubscribe\s*\}\}/gi, 'https://buildmyhouse.app')
+      .replace(/\{\{\s*update_preferences\s*\}\}/gi, 'https://buildmyhouse.app')
+      .replace(/\{\{\s*view_in_browser\s*\}\}/gi, 'https://buildmyhouse.app');
+
+    try {
+      await this.emailService.send({
+        to: email,
+        subject: 'Welcome to BuildMyHouse',
+        html,
+      });
+    } catch {
+      // Never block signup due to email delivery issues.
+    }
+  }
+
+  private escapeHtml(value: string) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   private async generateToken(userId: string, email: string, role: string): Promise<string> {

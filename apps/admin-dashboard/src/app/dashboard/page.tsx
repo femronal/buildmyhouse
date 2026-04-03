@@ -23,6 +23,8 @@ function getAlertIcon(type: CriticalAlert['type']) {
       return Banknote;
     case 'gcs_pending_verification':
       return ShieldCheck;
+    case 'missing_plan_files':
+      return FileWarning;
     default:
       return AlertTriangle;
   }

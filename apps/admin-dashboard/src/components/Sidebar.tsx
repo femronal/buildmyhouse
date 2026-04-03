@@ -8,6 +8,7 @@ import {
   Users, 
   Building2, 
   Building,
+  Mail,
   CheckCircle2, 
   Scale,
   LandPlot,
@@ -28,6 +29,7 @@ const menuItems = [
   { href: '/houses', label: 'Houses', icon: Home },
   { href: '/rentals', label: 'Rentals', icon: Building },
   { href: '/articles', label: 'Content', icon: FileText },
+  { href: '/emails', label: 'Emails', icon: Mail },
 ];
 
 export default function Sidebar() {

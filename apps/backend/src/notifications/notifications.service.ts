@@ -160,6 +160,7 @@ export class NotificationsService {
       await this.emailService.sendNotificationEmail({
         to: user.email,
         recipientName: user.fullName || 'User',
+        notificationType: dto.type,
         title: dto.title,
         message: dto.message,
         data: dto.data as Record<string, unknown> | undefined,

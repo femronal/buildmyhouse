@@ -7,12 +7,15 @@ export class StripeService {
   private stripe: Stripe;
   private readonly logger = new Logger(StripeService.name);
   private readonly apiVersion: Stripe.LatestApiVersion;
+  private readonly configured: boolean;
 
   constructor(private configService: ConfigService) {
     const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
+      this.configured = false;
       this.logger.warn('STRIPE_SECRET_KEY not found. Stripe functionality will be disabled.');
     } else {
+      this.configured = true;
       // Keep this version in sync with both:
       // - Stripe SDK initialization
       // - Ephemeral key creation (Stripe requires an explicit version header there)
@@ -21,6 +24,10 @@ export class StripeService {
         apiVersion: this.apiVersion,
       });
     }
+  }
+
+  isConfigured(): boolean {
+    return this.configured;
   }
 
   /**

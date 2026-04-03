@@ -77,6 +77,14 @@ export class ProjectsService {
       return; // Only auto-charge for renovation/interior flows.
     }
 
+    // Do not block stage commencement when Stripe is not configured in environment.
+    if (!this.stripeService.isConfigured()) {
+      this.logger.warn(
+        `Skipping automatic stage charge for project ${params.projectId}, stage ${params.stageId}: Stripe not configured`,
+      );
+      return;
+    }
+
     const amount = Number(stage.estimatedCost || 0);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('Stage estimatedCost must be greater than 0 to start the stage');

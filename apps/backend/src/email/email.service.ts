@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import { GC_WEEKLY_VERIFICATION_REMINDER_TEMPLATE } from './templates/gc-weekly-verification-reminder.template';
 
 export interface SendEmailOptions {
   to: string;
@@ -74,21 +75,29 @@ export class EmailService {
   async sendNotificationEmail(params: {
     to: string;
     recipientName?: string;
+    notificationType?: string;
     title: string;
     message: string;
     data?: Record<string, unknown>;
   }): Promise<boolean> {
-    const { to, recipientName, title, message } = params;
+    const { to, recipientName, notificationType, title, message } = params;
 
-    const html = this.buildNotificationHtml({
-      recipientName: recipientName || 'User',
-      title,
-      message,
-    });
+    const isGCWeeklyReminder = notificationType === 'gc_verification_weekly_reminder';
+    const html =
+      isGCWeeklyReminder
+        ? GC_WEEKLY_VERIFICATION_REMINDER_TEMPLATE
+        : this.buildNotificationHtml({
+            recipientName: recipientName || 'User',
+            title,
+            message,
+          });
+    const subject = isGCWeeklyReminder
+      ? 'You’re leaving money on the table.'
+      : `BuildMyHouse: ${title}`;
 
     return this.send({
       to,
-      subject: `BuildMyHouse: ${title}`,
+      subject,
       html,
       text: `${title}\n\n${message}`,
     });
