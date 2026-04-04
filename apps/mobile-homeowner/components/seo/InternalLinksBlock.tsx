@@ -1,5 +1,6 @@
 import { TouchableOpacity, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { SeoHeading } from '@/components/seo/SeoHeading';
 
 export type InternalLinkItem = {
   label: string;
@@ -19,9 +20,9 @@ export default function InternalLinksBlock({
 
   return (
     <View className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
-      <Text className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+      <SeoHeading level={2} className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
         {title}
-      </Text>
+      </SeoHeading>
       <View className="flex-row flex-wrap gap-2">
         {links.map((item) => (
           <TouchableOpacity

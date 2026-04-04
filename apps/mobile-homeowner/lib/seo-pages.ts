@@ -1,5 +1,17 @@
 import { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 
+/** Rich sections for long-form SEO pages (e.g. /construction/nigeria) */
+export type SeoContentSection = {
+  heading: string;
+  paragraphs?: string[];
+  bullets?: string[];
+  paragraphsAfterBullets?: string[];
+  secondaryBullets?: string[];
+  closingParagraph?: string;
+  /** Featured-snippet style callout */
+  variant?: 'default' | 'snippet';
+};
+
 export type SeoPageContent = {
   title: string;
   description: string;
@@ -12,6 +24,14 @@ export type SeoPageContent = {
   faqs: Array<{ question: string; answer: string }>;
   internalLinks: InternalLinkItem[];
   schema: Record<string, any>[];
+  /** Sections rendered after hero, before the “why choose” dark card */
+  preWhySections?: SeoContentSection[];
+  /** Overrides default “Why people choose BuildMyHouse” */
+  whySectionTitle?: string;
+  /** Sections after the dark card, before numbered process steps */
+  afterWhySections?: SeoContentSection[];
+  /** Sections after process steps, before FAQ */
+  postProcessSections?: SeoContentSection[];
 };
 
 const organizationSchema = {
@@ -57,41 +77,6 @@ const crossLinks: InternalLinkItem[] = [
 
 export function getSeoPageContent(pageKey: string): SeoPageContent {
   const pageMap: Record<string, Omit<SeoPageContent, 'schema'>> = {
-    constructionNigeria: {
-      title: 'House Construction in Nigeria | BuildMyHouse',
-      description:
-        'Plan and execute house construction in Nigeria with BuildMyHouse. Work with verified general contractors and track project milestones end-to-end.',
-      canonicalPath: '/construction/nigeria',
-      eyebrow: 'Construction in Nigeria',
-      heroTitle: 'House Construction in Nigeria',
-      heroDescription:
-        'Build your dream home in Nigeria with clear timelines, transparent budgets, and contractor verification designed for local and diaspora homeowners.',
-      bullets: [
-        'Verified general contractors and milestone-based project flow',
-        'Real-time stage tracking for materials, team, and documentation',
-        'Support for homeowners building from Nigeria, UK, US/Canada, and UAE',
-      ],
-      processSteps: [
-        'Share your project location, budget, and design direction',
-        'Get matched with relevant general contractors',
-        'Review proposal details and start with tracked stage execution',
-      ],
-      faqs: [
-        {
-          question: 'Can I build a home in Nigeria while living abroad?',
-          answer: 'Yes. BuildMyHouse is designed to support diaspora homeowners managing projects remotely.',
-        },
-        {
-          question: 'How do I know a contractor is credible?',
-          answer: 'BuildMyHouse uses verification and admin review workflows before contractors are marked verified.',
-        },
-      ],
-      internalLinks: [
-        ...crossLinks,
-        { label: 'Construction in Lagos', href: '/construction/lagos' },
-        { label: 'Construction in Abuja', href: '/construction/abuja' },
-      ],
-    },
     constructionLagos: {
       title: 'House Construction in Lagos | BuildMyHouse',
       description:
@@ -187,6 +172,195 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
         },
       ],
       internalLinks: crossLinks,
+    },
+    mistakesNigeriansDiasporaBuilding: {
+      title: 'Mistakes Nigerians in the Diaspora Make When Building in Nigeria | BuildMyHouse',
+      description:
+        'Avoid common diaspora building mistakes: informal payments, weak land checks, and unmanaged contractors. Learn what to fix before you fund your build.',
+      canonicalPath: '/mistakes-nigerians-in-diaspora-make-when-building',
+      eyebrow: 'Diaspora guide',
+      heroTitle: 'Mistakes Nigerians in the Diaspora Make When Building in Nigeria',
+      heroDescription:
+        'Building in Nigeria from abroad fails when money moves faster than structure. Here are the most common mistakes — and how to avoid them with verification, milestones, and tracking.',
+      preWhySections: [
+        {
+          heading: 'Why diaspora projects go off track',
+          paragraphs: [
+            'Most issues are predictable: unclear scope, one trusted “fixer”, and payments that are not tied to proof of work.',
+            'Fixing this does not require being on-site every week — it requires a system.',
+          ],
+        },
+      ],
+      bullets: [
+        'Verified general contractors instead of informal networks alone',
+        'Milestone-based funding tied to documentation',
+        'Stage visibility so you are not guessing from abroad',
+      ],
+      processSteps: [
+        'Define scope, budget, and location in writing',
+        'Verify land and title before major transfers',
+        'Run the project on BuildMyHouse for structured delivery',
+      ],
+      faqs: [
+        {
+          question: 'Is family supervision enough?',
+          answer:
+            'It can help, but it is rarely a complete system. Combine family context with technical accountability and documentation.',
+        },
+        {
+          question: 'What is the fastest way to reduce scam risk?',
+          answer:
+            'Avoid lump sums, verify identities and company details, and pay in stages tied to completed work.',
+        },
+      ],
+      internalLinks: [
+        { label: 'Building in Nigeria from Abroad (hub)', href: '/construction/nigeria' },
+        { label: 'Land verification guide', href: '/land-verification-in-nigeria-guide' },
+        { label: 'Choose a contractor in Nigeria', href: '/how-to-choose-a-general-contractor-in-nigeria' },
+        ...crossLinks,
+      ],
+    },
+    howToChooseGeneralContractorNigeria: {
+      title: 'How to Choose a General Contractor in Nigeria (Checklist) | BuildMyHouse',
+      description:
+        'Pick a Nigerian general contractor with proof, references, and clear scope. Use this checklist before you sign or send large payments.',
+      canonicalPath: '/how-to-choose-a-general-contractor-in-nigeria',
+      eyebrow: 'Contractors',
+      heroTitle: 'How to Choose a General Contractor in Nigeria',
+      heroDescription:
+        'A strong GC reduces delays, rework, and payment disputes. Use local verification signals, written scope, and stage-based delivery — especially when you are abroad.',
+      preWhySections: [
+        {
+          heading: 'What to verify before you hire',
+          bullets: [
+            'Registered business or verifiable company history',
+            'Recent projects you can reference (photos, locations, timelines)',
+            'Clear written scope, timeline, and payment schedule',
+            'Visit or third-party verification when possible',
+          ],
+        },
+      ],
+      bullets: [
+        'BuildMyHouse matches you with vetted contractors for your location',
+        'Structured stages make expectations explicit for both sides',
+        'Dispute and admin workflows when delivery drifts off plan',
+      ],
+      processSteps: [
+        'Submit your project type, location, and budget band',
+        'Compare fit and clarify scope with your GC',
+        'Execute with milestone visibility from the app',
+      ],
+      faqs: [
+        {
+          question: 'Should I pay 100% upfront?',
+          answer: 'No. Tie payments to documented milestones and delivered work.',
+        },
+        {
+          question: 'Can BuildMyHouse help if I already have a contractor?',
+          answer:
+            'You can still use structured tracking and documentation workflows depending on your project setup.',
+        },
+      ],
+      internalLinks: [
+        { label: 'Diaspora building hub', href: '/construction/nigeria' },
+        { label: 'Land verification guide', href: '/land-verification-in-nigeria-guide' },
+        { label: 'Lagos permit guide', href: '/building-permit-in-lagos-nigeria-guide' },
+        ...crossLinks,
+      ],
+    },
+    landVerificationNigeriaGuide: {
+      title: 'Land Verification in Nigeria: Practical Guide | BuildMyHouse',
+      description:
+        'Verify Nigerian land before you pay: title checks, encumbrances, survey alignment, and red flags — especially for diaspora buyers.',
+      canonicalPath: '/land-verification-in-nigeria-guide',
+      eyebrow: 'Land',
+      heroTitle: 'Land Verification in Nigeria — What to Check First',
+      heroDescription:
+        'Land disputes destroy budgets. Start with documentation, not vibes: confirm ownership chain, survey consistency, and government records where applicable before you fund construction.',
+      preWhySections: [
+        {
+          heading: 'Core verification steps',
+          bullets: [
+            'Confirm seller identity and relationship to title',
+            'Request and review survey plan vs. on-ground boundaries',
+            'Check for encumbrances, litigation, or duplicate sales',
+            'Use qualified surveyors and legal review for high-value plots',
+          ],
+        },
+      ],
+      bullets: [
+        'Reduce fraud risk with structured documentation expectations',
+        'Pair legal/survey checks with your construction workflow',
+        'Build only after title risk is tolerable for your budget',
+      ],
+      processSteps: [
+        'Pause major building payments until land checks are satisfactory',
+        'Align your build plan with verified plot details',
+        'Continue with milestone-based construction on BuildMyHouse',
+      ],
+      faqs: [
+        {
+          question: 'Can I verify land remotely?',
+          answer:
+            'You can start document review remotely, but high-value plots usually need professional survey and legal support on the ground.',
+        },
+        {
+          question: 'What if the price is “too good”?',
+          answer: 'Treat it as a red flag until documentation clears professional review.',
+        },
+      ],
+      internalLinks: [
+        { label: 'Diaspora building hub', href: '/construction/nigeria' },
+        { label: 'Common diaspora mistakes', href: '/mistakes-nigerians-in-diaspora-make-when-building' },
+        { label: 'Lagos permit guide', href: '/building-permit-in-lagos-nigeria-guide' },
+        ...crossLinks,
+      ],
+    },
+    buildingPermitLagosNigeriaGuide: {
+      title: 'Building Permit in Lagos, Nigeria: What Homeowners Should Know | BuildMyHouse',
+      description:
+        'Understand Lagos planning approvals, when permits matter, and what happens if you skip compliance — for homeowners and diaspora clients.',
+      canonicalPath: '/building-permit-in-lagos-nigeria-guide',
+      eyebrow: 'Lagos compliance',
+      heroTitle: 'Building Permit in Lagos — Planning and Compliance Basics',
+      heroDescription:
+        'Lagos enforcement can stop work or create expensive rework. Plan approvals early, align your GC with compliance steps, and avoid “build first, regularize later” unless professionals sign off.',
+      preWhySections: [
+        {
+          heading: 'Why permits matter in Lagos',
+          paragraphs: [
+            'Urban development rules exist to reduce unsafe structures and illegal development risk.',
+            'Diaspora owners often underestimate how costly non-compliance becomes once work is advanced.',
+          ],
+        },
+      ],
+      bullets: [
+        'Ask your GC for a compliance plan tied to your site location',
+        'Keep documentation in one place alongside project tracking',
+        'Reduce shutdown risk before you pour major concrete',
+      ],
+      processSteps: [
+        'Clarify location and intended building type',
+        'Align design and site constraints with approval requirements',
+        'Track execution with BuildMyHouse while compliance steps progress',
+      ],
+      faqs: [
+        {
+          question: 'Can BuildMyHouse obtain permits for me?',
+          answer:
+            'BuildMyHouse focuses on contractor matching and project tracking; your GC and qualified professionals handle statutory approvals.',
+        },
+        {
+          question: 'Is Lagos stricter than other states?',
+          answer: 'Enforcement and process intensity are often higher in Lagos; plan earlier than you think.',
+        },
+      ],
+      internalLinks: [
+        { label: 'Diaspora building hub', href: '/construction/nigeria' },
+        { label: 'Land verification guide', href: '/land-verification-in-nigeria-guide' },
+        { label: 'Choose a contractor', href: '/how-to-choose-a-general-contractor-in-nigeria' },
+        ...crossLinks,
+      ],
     },
     renovationNigeria: {
       title: 'Home Renovation in Nigeria | BuildMyHouse',
@@ -445,7 +619,7 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
 
   return {
     ...selected,
-    schema: pageSchemas(selected.heroTitle, selected.description, selected.canonicalPath, selected.faqs),
+    schema: pageSchemas(selected.title, selected.description, selected.canonicalPath, selected.faqs),
   };
 }
 

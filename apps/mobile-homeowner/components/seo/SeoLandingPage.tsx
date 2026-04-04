@@ -2,7 +2,9 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
+import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
+import type { SeoContentSection } from '@/lib/seo-pages';
 
 type FaqItem = {
   question: string;
@@ -20,7 +22,69 @@ type SeoLandingPageProps = {
   internalLinks?: InternalLinkItem[];
   ctaLabel?: string;
   ctaHref?: string;
+  preWhySections?: SeoContentSection[];
+  whySectionTitle?: string;
+  afterWhySections?: SeoContentSection[];
+  postProcessSections?: SeoContentSection[];
 };
+
+export function SeoRichSection({ section }: { section: SeoContentSection }) {
+  const isSnippet = section.variant === 'snippet';
+  const wrapClass = isSnippet
+    ? 'border border-blue-200 bg-blue-50 rounded-2xl p-4 mb-6'
+    : 'mb-6';
+
+  return (
+    <View className={wrapClass}>
+      <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+        {section.heading}
+      </SeoHeading>
+      {section.paragraphs?.map((p) => (
+        <Text
+          key={p.slice(0, 48)}
+          className="text-gray-700 text-sm leading-6 mb-2"
+          style={{ fontFamily: 'Poppins_400Regular' }}
+        >
+          {p}
+        </Text>
+      ))}
+      {section.bullets?.map((b) => (
+        <View key={b} className="flex-row items-start mb-1.5 pl-1">
+          <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            •
+          </Text>
+          <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {b}
+          </Text>
+        </View>
+      ))}
+      {section.paragraphsAfterBullets?.map((p) => (
+        <Text
+          key={p.slice(0, 48)}
+          className="text-gray-700 text-sm leading-6 mb-2 mt-1"
+          style={{ fontFamily: 'Poppins_400Regular' }}
+        >
+          {p}
+        </Text>
+      ))}
+      {section.secondaryBullets?.map((b) => (
+        <View key={b} className="flex-row items-start mb-1.5 pl-1">
+          <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            •
+          </Text>
+          <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {b}
+          </Text>
+        </View>
+      ))}
+      {section.closingParagraph ? (
+        <Text className="text-gray-700 text-sm leading-6 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+          {section.closingParagraph}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
 
 export default function SeoLandingPage({
   eyebrow,
@@ -33,6 +97,10 @@ export default function SeoLandingPage({
   internalLinks = [],
   ctaLabel = 'Start your project',
   ctaHref = '/location?mode=explore',
+  preWhySections = [],
+  whySectionTitle = 'Why people choose BuildMyHouse',
+  afterWhySections = [],
+  postProcessSections = [],
 }: SeoLandingPageProps) {
   const router = useRouter();
 
@@ -40,7 +108,7 @@ export default function SeoLandingPage({
     <View className="flex-1 bg-white">
       <View className="pt-14 px-6 pb-4">
         <TouchableOpacity
-          onPress={() => router.canGoBack() ? router.back() : router.push('/login')}
+          onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
           className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mb-4"
         >
           <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
@@ -50,19 +118,23 @@ export default function SeoLandingPage({
             {eyebrow}
           </Text>
         ) : null}
-        <Text className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+        <SeoHeading level={1} className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
           {title}
-        </Text>
+        </SeoHeading>
         <Text className="text-gray-600 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
           {description}
         </Text>
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+        {preWhySections.map((section) => (
+          <SeoRichSection key={section.heading} section={section} />
+        ))}
+
         <View className="bg-black rounded-3xl p-5 mb-6">
-          <Text className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            Why people choose BuildMyHouse
-          </Text>
+          <SeoHeading level={2} className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {whySectionTitle}
+          </SeoHeading>
           {bulletPoints.map((point) => (
             <View key={point} className="flex-row items-start mb-2">
               <CheckCircle2 size={16} color="#22c55e" strokeWidth={2.5} style={{ marginTop: 2 }} />
@@ -73,11 +145,15 @@ export default function SeoLandingPage({
           ))}
         </View>
 
+        {afterWhySections.map((section) => (
+          <SeoRichSection key={section.heading} section={section} />
+        ))}
+
         {processSteps.length > 0 && (
           <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-6">
-            <Text className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            <SeoHeading level={2} className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
               {processTitle}
-            </Text>
+            </SeoHeading>
             {processSteps.map((step, index) => (
               <View key={step} className="flex-row items-start mb-2">
                 <View className="w-6 h-6 rounded-full bg-black items-center justify-center mr-2 mt-0.5">
@@ -93,16 +169,20 @@ export default function SeoLandingPage({
           </View>
         )}
 
+        {postProcessSections.map((section) => (
+          <SeoRichSection key={section.heading} section={section} />
+        ))}
+
         {faqs.length > 0 && (
           <View className="mb-6">
-            <Text className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
               Frequently asked questions
-            </Text>
+            </SeoHeading>
             {faqs.map((faq) => (
               <View key={faq.question} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-                <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   {faq.question}
-                </Text>
+                </SeoHeading>
                 <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {faq.answer}
                 </Text>
@@ -132,4 +212,3 @@ export default function SeoLandingPage({
     </View>
   );
 }
-

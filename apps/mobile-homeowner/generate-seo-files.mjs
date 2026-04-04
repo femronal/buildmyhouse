@@ -26,6 +26,10 @@ const indexableRoutes = [
   '/diaspora/build-in-nigeria-from-uk',
   '/diaspora/build-in-nigeria-from-usa-canada',
   '/diaspora/build-in-nigeria-from-uae',
+  '/mistakes-nigerians-in-diaspora-make-when-building',
+  '/how-to-choose-a-general-contractor-in-nigeria',
+  '/land-verification-in-nigeria-guide',
+  '/building-permit-in-lagos-nigeria-guide',
 ];
 
 async function getCmsArticleRoutes() {

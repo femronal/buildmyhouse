@@ -63,7 +63,10 @@ function upsertJsonLd(schema: Record<string, any> | Array<Record<string, any>>) 
     el.id = id;
     document.head.appendChild(el);
   }
-  el.text = JSON.stringify(schema);
+  const payload = Array.isArray(schema)
+    ? { '@context': 'https://schema.org', '@graph': schema }
+    : schema;
+  el.text = JSON.stringify(payload);
 }
 
 function injectAnalytics(gaMeasurementId?: string) {
@@ -127,6 +130,10 @@ export function isIndexablePath(pathname?: string) {
     '/diaspora/build-in-nigeria-from-uk',
     '/diaspora/build-in-nigeria-from-usa-canada',
     '/diaspora/build-in-nigeria-from-uae',
+    '/mistakes-nigerians-in-diaspora-make-when-building',
+    '/how-to-choose-a-general-contractor-in-nigeria',
+    '/land-verification-in-nigeria-guide',
+    '/building-permit-in-lagos-nigeria-guide',
   ]);
 
   return exactIndexable.has(path);
