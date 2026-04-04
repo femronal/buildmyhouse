@@ -20,6 +20,8 @@ export default function Root({ children }: RootProps) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <meta name="google-site-verification" content={gscVerification} />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
