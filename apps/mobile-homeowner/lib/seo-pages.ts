@@ -362,37 +362,6 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
         ...crossLinks,
       ],
     },
-    renovationNigeria: {
-      title: 'Home Renovation in Nigeria | BuildMyHouse',
-      description:
-        'Get renovation support in Nigeria with vetted professionals, milestone tracking, and better project communication.',
-      canonicalPath: '/renovation/nigeria',
-      eyebrow: 'Renovation',
-      heroTitle: 'Home Renovation in Nigeria',
-      heroDescription:
-        'Whether you are upgrading one room or revamping an entire home, BuildMyHouse helps you manage renovation projects with confidence.',
-      bullets: [
-        'Renovation-focused project setup and contractor matching',
-        'Track materials, team, and progress in each stage',
-        'Suitable for homeowners in Nigeria and diaspora clients',
-      ],
-      processSteps: [
-        'Describe renovation goals and property location',
-        'Review contractor match and proposed scope',
-        'Track project updates until completion',
-      ],
-      faqs: [
-        {
-          question: 'Can I renovate without rebuilding everything?',
-          answer: 'Yes. You can scope specific renovation goals from light upgrades to full remodels.',
-        },
-        {
-          question: 'Can I handle renovation remotely?',
-          answer: 'Yes. BuildMyHouse supports remote project oversight and communication.',
-        },
-      ],
-      internalLinks: crossLinks,
-    },
     interiorNigeria: {
       title: 'Interior Design in Nigeria | BuildMyHouse',
       description:

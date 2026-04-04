@@ -1,27 +1,21 @@
-import SeoLandingPage from '@/components/seo/SeoLandingPage';
-import { getSeoPageContent } from '@/lib/seo-pages';
+import RenovationNigeriaHub from '@/components/seo/RenovationNigeriaHub';
+import { getRenovationNigeriaJsonLd, renovationNigeriaPageContent } from '@/lib/renovation-nigeria-hub';
 import { useWebSeo } from '@/lib/seo';
 
 export default function RenovationNigeriaSeoPage() {
-  const content = getSeoPageContent('renovationNigeria');
+  const { seo, faq } = renovationNigeriaPageContent;
   useWebSeo({
-    title: content.title,
-    description: content.description,
-    canonicalPath: content.canonicalPath,
+    title: seo.title,
+    description: seo.description,
+    canonicalPath: '/renovation/nigeria',
     robots: 'index,follow',
-    jsonLd: content.schema,
+    jsonLd: getRenovationNigeriaJsonLd(
+      [...faq.items.map((item) => ({ question: item.question, answer: item.answer }))],
+      seo.title,
+      seo.description,
+    ),
   });
 
-  return (
-    <SeoLandingPage
-      eyebrow={content.eyebrow}
-      title={content.heroTitle}
-      description={content.heroDescription}
-      bulletPoints={content.bullets}
-      processSteps={content.processSteps}
-      faqs={content.faqs}
-      internalLinks={content.internalLinks}
-    />
-  );
+  return <RenovationNigeriaHub />;
 }
 
