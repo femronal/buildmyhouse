@@ -486,37 +486,6 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
       ],
       internalLinks: crossLinks,
     },
-    diasporaUk: {
-      title: 'Build in Nigeria from the UK | BuildMyHouse',
-      description:
-        'UK-based diaspora homeowners can manage Nigerian construction, renovation, and interior projects remotely with BuildMyHouse.',
-      canonicalPath: '/diaspora/build-in-nigeria-from-uk',
-      eyebrow: 'Diaspora (UK)',
-      heroTitle: 'Build in Nigeria from the UK',
-      heroDescription:
-        'Run Nigerian projects remotely with stronger visibility, contractor workflows, and milestone tracking.',
-      bullets: [
-        'Designed for diaspora homeowners managing projects remotely',
-        'Project communication and stage updates in one place',
-        'Supports construction, renovation, and interior design',
-      ],
-      processSteps: [
-        'Define your project goals and property location',
-        'Review contractor and project details',
-        'Track milestones remotely while the project executes',
-      ],
-      faqs: [
-        {
-          question: 'Can I manage my project entirely from the UK?',
-          answer: 'Yes. BuildMyHouse is designed to support remote project visibility and collaboration.',
-        },
-        {
-          question: 'What project types are supported?',
-          answer: 'Construction, renovation, interior design, and related property workflows.',
-        },
-      ],
-      internalLinks: crossLinks,
-    },
     diasporaUsCanada: {
       title: 'Build in Nigeria from USA/Canada | BuildMyHouse',
       description:

@@ -5,7 +5,7 @@ import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoRichSection } from '@/components/seo/SeoLandingPage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
-import { renovationNigeriaPageContent } from '@/lib/renovation-nigeria-hub';
+import { diasporaUkBuildNigeriaPageContent } from '@/lib/diaspora-uk-build-nigeria-hub';
 
 function ParagraphBlock({
   paragraphs,
@@ -29,9 +29,26 @@ function ParagraphBlock({
   );
 }
 
-export default function RenovationNigeriaHub() {
+function BulletList({ items }: { items: readonly string[] }) {
+  return (
+    <>
+      {items.map((item) => (
+        <View key={item} className="flex-row items-start mb-1.5 pl-1">
+          <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            •
+          </Text>
+          <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {item}
+          </Text>
+        </View>
+      ))}
+    </>
+  );
+}
+
+export default function DiasporaUkBuildNigeriaHub() {
   const router = useRouter();
-  const c = renovationNigeriaPageContent;
+  const c = diasporaUkBuildNigeriaPageContent;
 
   const quickAnswerSection = {
     heading: c.quickAnswer.title,
@@ -89,32 +106,30 @@ export default function RenovationNigeriaHub() {
 
         <View className="mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {c.reality2026.title}
+            {c.ukSpecificReality.title}
           </SeoHeading>
-          {c.reality2026.items.map((item) => (
-            <View key={item} className="flex-row items-start mb-1.5 pl-1">
-              <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                •
-              </Text>
-              <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {item}
-              </Text>
-            </View>
-          ))}
+          <BulletList items={c.ukSpecificReality.items} />
         </View>
 
         <View className="mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {c.scope.title}
+            {c.trustTrap.title}
           </SeoHeading>
-          <ParagraphBlock paragraphs={c.scope.paragraphs} className="" />
+          <ParagraphBlock paragraphs={c.trustTrap.paragraphs} className="" />
         </View>
 
         <View className="mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {c.permits.title}
+            {c.scopeAndBudget.title}
           </SeoHeading>
-          <ParagraphBlock paragraphs={c.permits.paragraphs} className="" />
+          <ParagraphBlock paragraphs={c.scopeAndBudget.paragraphs} className="" />
+        </View>
+
+        <View className="mb-6">
+          <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {c.payments.title}
+          </SeoHeading>
+          <ParagraphBlock paragraphs={c.payments.paragraphs} className="" />
         </View>
 
         <View className="mb-6">
@@ -122,16 +137,7 @@ export default function RenovationNigeriaHub() {
             {c.familySupervision.title}
           </SeoHeading>
           <ParagraphBlock paragraphs={c.familySupervision.paragraphs} className="" />
-          {c.familySupervision.items.map((item) => (
-            <View key={item} className="flex-row items-start mb-1.5 pl-1">
-              <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                •
-              </Text>
-              <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {item}
-              </Text>
-            </View>
-          ))}
+          <BulletList items={c.familySupervision.items} />
           <Text
             className="text-gray-700 text-sm leading-6 mt-3"
             style={{ fontFamily: 'Poppins_500Medium' }}
@@ -181,18 +187,9 @@ export default function RenovationNigeriaHub() {
 
         <View className="mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {c.trustBlock.title}
+            {c.mistakes.title}
           </SeoHeading>
-          {c.trustBlock.items.map((item) => (
-            <View key={item} className="flex-row items-start mb-1.5 pl-1">
-              <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                •
-              </Text>
-              <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {item}
-              </Text>
-            </View>
-          ))}
+          <BulletList items={c.mistakes.items} />
         </View>
 
         <View className="mb-6">
@@ -228,7 +225,7 @@ export default function RenovationNigeriaHub() {
           <View className="gap-2">
             <TouchableOpacity
               onPress={() => {
-                trackWebEvent('seo_renovation_hub_cta_primary', { page: 'renovation/nigeria' });
+                trackWebEvent('seo_diaspora_uk_hub_cta_primary', { page: 'diaspora/build-in-nigeria-from-uk' });
                 router.push(c.cta.primary.href as any);
               }}
               className="bg-blue-600 rounded-full py-3.5 px-5"
@@ -239,7 +236,7 @@ export default function RenovationNigeriaHub() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                trackWebEvent('seo_renovation_hub_cta_secondary', { page: 'renovation/nigeria' });
+                trackWebEvent('seo_diaspora_uk_hub_cta_secondary', { page: 'diaspora/build-in-nigeria-from-uk' });
                 router.push(c.cta.secondary.href as any);
               }}
               className="bg-white border border-blue-600 rounded-full py-3.5 px-5"
@@ -251,7 +248,10 @@ export default function RenovationNigeriaHub() {
           </View>
         </View>
 
-        <InternalLinksBlock title={c.internalLinks.title} links={[...c.internalLinks.links]} />
+        <InternalLinksBlock
+          title={c.internalLinks.title}
+          links={c.internalLinks.links.map((l) => ({ label: l.label, href: l.href }))}
+        />
 
         <TouchableOpacity
           onPress={() => {

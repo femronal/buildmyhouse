@@ -1,28 +1,21 @@
-import SeoLandingPage from '@/components/seo/SeoLandingPage';
-import { getSeoPageContent } from '@/lib/seo-pages';
+import DiasporaUkBuildNigeriaHub from '@/components/seo/DiasporaUkBuildNigeriaHub';
+import { diasporaUkBuildNigeriaPageContent, getDiasporaUkBuildNigeriaJsonLd } from '@/lib/diaspora-uk-build-nigeria-hub';
 import { useWebSeo } from '@/lib/seo';
 
 export default function BuildInNigeriaFromUkSeoPage() {
-  const content = getSeoPageContent('diasporaUk');
+  const { seo, faq } = diasporaUkBuildNigeriaPageContent;
   useWebSeo({
-    title: content.title,
-    description: content.description,
-    canonicalPath: content.canonicalPath,
+    title: seo.title,
+    description: seo.description,
+    canonicalPath: '/diaspora/build-in-nigeria-from-uk',
     robots: 'index,follow',
-    jsonLd: content.schema,
+    jsonLd: getDiasporaUkBuildNigeriaJsonLd(
+      faq.items.map((item) => ({ question: item.question, answer: item.answer })),
+      seo.title,
+      seo.description,
+    ),
   });
 
-  return (
-    <SeoLandingPage
-      eyebrow={content.eyebrow}
-      title={content.heroTitle}
-      description={content.heroDescription}
-      bulletPoints={content.bullets}
-      processSteps={content.processSteps}
-      faqs={content.faqs}
-      internalLinks={content.internalLinks}
-      ctaLabel="Start your Nigeria project"
-    />
-  );
+  return <DiasporaUkBuildNigeriaHub />;
 }
 

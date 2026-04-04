@@ -25,14 +25,6 @@ export const renovationNigeriaPageContent = {
     title: "Renovate Your Parents' House in Nigeria From Abroad — Without Losing Control",
     description:
       "If your parents' house in Nigeria needs a facelift, repairs, or a full upgrade, BuildMyHouse helps you manage it safely from the UK, US, Canada, or anywhere abroad with structured tracking, contractor accountability, and clearer visibility into every stage.",
-    primaryCta: {
-      label: 'Start Your Renovation Project',
-      href: '/location?mode=explore',
-    },
-    secondaryCta: {
-      label: 'See How Renovation Tracking Works',
-      href: '/articles/renovation-checklist-for-homeowners-nigeria',
-    },
   },
 
   quickAnswer: {
