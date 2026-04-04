@@ -106,27 +106,37 @@ export default function SeoLandingPage({
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-14 px-6 pb-4">
+      <View className="pt-10 px-5 pb-2 md:pt-14 md:px-6 md:pb-4">
         <TouchableOpacity
           onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-          className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mb-4"
+          className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
         >
-          <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
+          <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
         </TouchableOpacity>
         {eyebrow ? (
-          <Text className="text-xs uppercase tracking-wide text-blue-700 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          <Text
+            className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
+            style={{ fontFamily: 'Poppins_600SemiBold' }}
+          >
             {eyebrow}
           </Text>
         ) : null}
-        <SeoHeading level={1} className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+        <SeoHeading
+          level={1}
+          className="text-xl leading-snug text-black mb-1.5 md:text-3xl md:leading-tight md:mb-2"
+          style={{ fontFamily: 'Poppins_700Bold' }}
+        >
           {title}
         </SeoHeading>
-        <Text className="text-gray-600 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+        <Text
+          className="text-gray-600 text-xs leading-5 md:text-sm md:leading-6"
+          style={{ fontFamily: 'Poppins_400Regular' }}
+        >
           {description}
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
         {preWhySections.map((section) => (
           <SeoRichSection key={section.heading} section={section} />
         ))}

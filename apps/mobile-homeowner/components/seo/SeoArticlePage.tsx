@@ -3,6 +3,7 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock3, Tag } from 'lucide-react-native';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import { SeoHeading } from '@/components/seo/SeoHeading';
 import YouTubeEmbed from '@/components/seo/YouTubeEmbed';
 import { Article } from '@/lib/articles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -22,21 +23,31 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48 }}>
-        <View className="px-6 pt-14 pb-4">
+        <View className="px-5 pt-10 pb-2 md:px-6 md:pt-14 md:pb-4">
           <TouchableOpacity
             onPress={() => (router.canGoBack() ? router.back() : router.push('/articles'))}
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mb-4"
+            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
           >
-            <ArrowLeft size={20} color="#000000" strokeWidth={2.5} />
+            <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
 
-          <Text className="text-xs uppercase tracking-wide text-blue-700 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          <Text
+            className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
+            style={{ fontFamily: 'Poppins_600SemiBold' }}
+          >
             BuildMyHouse Articles
           </Text>
-          <Text className="text-3xl text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+          <SeoHeading
+            level={1}
+            className="text-xl leading-snug text-black mb-1.5 md:text-3xl md:leading-tight md:mb-3"
+            style={{ fontFamily: 'Poppins_700Bold' }}
+          >
             {article.title}
-          </Text>
-          <Text className="text-gray-600 text-sm leading-6 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+          </SeoHeading>
+          <Text
+            className="text-gray-600 text-xs leading-5 mb-2 md:text-sm md:leading-6 md:mb-3"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
             {article.description}
           </Text>
 
@@ -59,7 +70,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           </View>
         </View>
 
-        <View className="px-6 mb-5">
+        <View className="px-5 mb-5 md:px-6">
           <View className="rounded-3xl overflow-hidden bg-gray-100">
             <Image
               source={{ uri: article.coverImageUrl }}
@@ -71,7 +82,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           </View>
         </View>
 
-        <View className="px-6">
+        <View className="px-5 md:px-6">
           {article.blocks.map((block, idx) => {
             const key = `${block.type}-${idx}`;
 
@@ -185,7 +196,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
         </View>
 
         {article.faqs.length > 0 ? (
-          <View className="px-6 mb-3">
+          <View className="px-5 mb-3 md:px-6">
             <Text className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
               Frequently asked questions
             </Text>
@@ -203,7 +214,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
         ) : null}
 
         {article.internalLinks.length > 0 ? (
-          <View className="px-6">
+          <View className="px-5 md:px-6">
             <InternalLinksBlock title="Related resources" links={article.internalLinks} />
           </View>
         ) : null}

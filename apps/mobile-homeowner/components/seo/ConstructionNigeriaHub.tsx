@@ -67,7 +67,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
         <SeoRichSection section={quickAnswer} />
         <SeoRichSection section={problemGuide} />
 
