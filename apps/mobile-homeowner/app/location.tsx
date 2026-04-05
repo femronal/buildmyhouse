@@ -192,6 +192,21 @@ export default function LocationScreen() {
             }}
           />
         </View>
+
+        <View className="mt-4 mb-2 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          <Text
+            className="text-black text-sm mb-1.5"
+            style={{ fontFamily: 'Poppins_600SemiBold' }}
+          >
+            Build with confidence
+          </Text>
+          <Text
+            className="text-gray-600 text-xs leading-5"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
+            Start with the right location and manage your project with more trust, structure, and visibility from abroad.
+          </Text>
+        </View>
       </View>
 
       {/* Map */}

@@ -68,7 +68,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="explore"
         options={{
-          title: "Explore",
+          title: "Projects",
           tabBarIcon: ({ color, focused }) => (
             <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
               <Compass size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
@@ -79,7 +79,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="rent"
         options={{
-          title: "Rent",
+          title: "Build",
           tabBarIcon: ({ color, focused }) => (
             <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
               <Building2 size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />

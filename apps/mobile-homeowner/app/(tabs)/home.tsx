@@ -380,7 +380,7 @@ export default function HomeScreen() {
               className="text-white/70"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Build your dream home today
+              Create and manage your construction project from anywhere in the world.
             </Text>
           </View>
           <View className="w-14 h-14 bg-white rounded-full items-center justify-center">
@@ -674,7 +674,7 @@ export default function HomeScreen() {
           </View>
         </Modal>
 
-        {/* Homes for Rent Section (Mock Data Preview) */}
+        {/* Start a Project — rental listings preview */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center">
@@ -683,7 +683,7 @@ export default function HomeScreen() {
                 className="text-2xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Homes for Rent
+                Start a Project
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1">
@@ -691,7 +691,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Owner-listed
+                Guided
               </Text>
             </View>
           </View>
@@ -700,7 +700,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Dodge costly agents here. Talk to the direct owners of this home.
+            Begin your building journey with structure and guidance.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -773,7 +773,7 @@ export default function HomeScreen() {
                 className="text-2xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Home for Sale
+                Move-In Ready Homes
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1">
@@ -790,7 +790,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Don’t want to wait? Buy a move-in ready home today
+            Skip construction. Own a completed home with verified documentation.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -864,7 +864,7 @@ export default function HomeScreen() {
                 className="text-2xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Land for Sale
+                Start With Land
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1">
@@ -872,7 +872,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                C of O
+                Verified Title
               </Text>
             </View>
           </View>
@@ -881,7 +881,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Verified estates with all legal documents
+            Find verified land you can confidently build on.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>

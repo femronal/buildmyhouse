@@ -150,7 +150,7 @@ export default function ExploreScreen() {
           className="text-2xl text-black"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
         >
-          Explore
+          Projects
         </Text>
         
         <NotificationBell />

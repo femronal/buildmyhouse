@@ -236,7 +236,7 @@ export default function RentScreen() {
         </TouchableOpacity>
 
         <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          Rent
+          Build
         </Text>
 
         <NotificationBell />

@@ -160,6 +160,15 @@ export default function LocationScreenWeb() {
         </View>
       </TouchableOpacity>
 
+      <View className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
+        <Text className="text-black text-sm mb-1.5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          Build with confidence
+        </Text>
+        <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+          Start with the right location and manage your project with more trust, structure, and visibility from abroad.
+        </Text>
+      </View>
+
       {/* Selected Address Display */}
       {selectedAddress && (
         <View className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6">
