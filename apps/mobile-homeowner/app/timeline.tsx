@@ -1,12 +1,19 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle, ExternalLink, CreditCard } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import * as WebBrowser from 'expo-web-browser';
+import { useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 export default function TimelineScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
+  const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const projectId = params.projectId as string;
 
   const { data: project, isLoading, error } = useProject(projectId || '');
@@ -178,7 +185,10 @@ export default function TimelineScreen() {
 
     return (
       <View className="flex-1 bg-white">
-        <View className="pt-16 px-6 pb-4">
+        <View
+          className="pb-4"
+          style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        >
           <View className="flex-row items-center mb-4">
             <TouchableOpacity
               onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
@@ -202,7 +212,10 @@ export default function TimelineScreen() {
           </Text>
         </View>
 
-        <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ paddingBottom: contentBottomPadding, paddingHorizontal: horizontalPadding }}
+        >
           <View className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
             <View className="flex-row items-center mb-3">
               {paymentConfirmationStatus === 'declared' ? (
@@ -247,7 +260,10 @@ export default function TimelineScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View
+        className="pb-4"
+        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -277,7 +293,10 @@ export default function TimelineScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: contentBottomPadding, paddingHorizontal: horizontalPadding }}
+      >
         <View className="pb-8">
           {stages.length === 0 ? (
             <View className="items-center py-10">

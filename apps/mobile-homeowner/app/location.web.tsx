@@ -1,14 +1,19 @@
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator, Alert, TextInput, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MapPin, ArrowRight, ArrowLeft, Search } from "lucide-react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { geocodeAddress, AddressDetails } from '@/services/addressService';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 // Simple web version without maps (maps don't work on web)
 export default function LocationScreenWeb() {
   const router = useRouter();
   const { mode } = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const [address, setAddress] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
@@ -99,10 +104,19 @@ export default function LocationScreenWeb() {
   };
 
   return (
-    <View className="flex-1 bg-white px-6 pt-16">
-      <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mb-6">
-        <ArrowLeft size={28} color="#000000" strokeWidth={2} />
-      </TouchableOpacity>
+    <View className="flex-1 bg-white">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPadding,
+          paddingTop: Math.max(16, insets.top + 8),
+          paddingBottom: 24,
+        }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mb-6">
+          <ArrowLeft size={28} color="#000000" strokeWidth={2} />
+        </TouchableOpacity>
 
       <View className="mb-8">
         <Text className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
@@ -189,24 +203,25 @@ export default function LocationScreenWeb() {
         </View>
       )}
 
-      {/* Continue Button */}
-      <TouchableOpacity
-        onPress={handleContinue}
-        disabled={!selectedAddress}
-        className={`rounded-full py-4 px-8 ${
-          selectedAddress ? 'bg-black' : 'bg-gray-200'
-        }`}
-      >
-        <View className="flex-row items-center justify-center">
-          <Text 
-            className={`text-base mr-2 ${selectedAddress ? 'text-white' : 'text-gray-400'}`}
-            style={{ fontFamily: 'Poppins_700Bold' }}
-          >
-            Continue
-          </Text>
-          <ArrowRight size={22} color={selectedAddress ? "#FFFFFF" : "#A3A3A3"} strokeWidth={2} />
-        </View>
-      </TouchableOpacity>
+        {/* Continue Button */}
+        <TouchableOpacity
+          onPress={handleContinue}
+          disabled={!selectedAddress}
+          className={`rounded-full py-4 px-8 ${
+            selectedAddress ? 'bg-black' : 'bg-gray-200'
+          }`}
+        >
+          <View className="flex-row items-center justify-center">
+            <Text 
+              className={`text-base mr-2 ${selectedAddress ? 'text-white' : 'text-gray-400'}`}
+              style={{ fontFamily: 'Poppins_700Bold' }}
+            >
+              Continue
+            </Text>
+            <ArrowRight size={22} color={selectedAddress ? "#FFFFFF" : "#A3A3A3"} strokeWidth={2} />
+          </View>
+        </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 }

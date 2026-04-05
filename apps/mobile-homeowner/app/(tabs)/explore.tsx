@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Dimensions, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, Home, LandPlot } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
@@ -8,8 +8,13 @@ import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
 import { useWebSeo } from '@/lib/seo';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
-
-const { width: screenWidth } = Dimensions.get('window');
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  getFloatingTabBarMetrics,
+  getScreenHorizontalPadding,
+  getTabContentBottomPadding,
+  getTwoColumnCardWidth,
+} from "@/lib/responsive-layout";
 
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
@@ -26,6 +31,19 @@ const getImageUrl = (imageUrl: string) => {
 export default function ExploreScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tabBarMetrics = useMemo(
+    () => getFloatingTabBarMetrics(screenWidth, insets.bottom),
+    [screenWidth, insets.bottom],
+  );
+  const horizontalPadding = useMemo(
+    () => getScreenHorizontalPadding(screenWidth),
+    [screenWidth],
+  );
+  const tabContentBottomPadding = useMemo(
+    () => getTabContentBottomPadding(tabBarMetrics),
+    [tabBarMetrics],
+  );
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
   const { data: housesForSale = [], isLoading: housesLoading } = useHousesForSale();
@@ -87,7 +105,7 @@ export default function ExploreScreen() {
     outputRange: [0, 1],
   });
 
-  const cardWidth = (screenWidth - 48 - 12) / 2;
+  const cardWidth = getTwoColumnCardWidth(screenWidth);
 
   // Filter designs, houses, and lands based on search query
   const filteredDesigns = useMemo(() => {
@@ -130,7 +148,10 @@ export default function ExploreScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
+      <View
+        className="pb-4 flex-row items-center justify-between"
+        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <TouchableOpacity 
           onPress={() => router.push('/profile')}
           className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden"
@@ -157,7 +178,7 @@ export default function ExploreScreen() {
       </View>
 
       {/* Search & Filter */}
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
           <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
             <Search size={20} color="#737373" strokeWidth={2} />
@@ -180,7 +201,7 @@ export default function ExploreScreen() {
       </View>
 
       {/* Tabs */}
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row bg-gray-100 rounded-2xl p-1">
           <TouchableOpacity
             onPress={() => setActiveTab('designs')}
@@ -212,7 +233,7 @@ export default function ExploreScreen() {
       {/* Animated Filter Tags (only for designs) */}
       {activeTab === 'designs' && (
         <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
             {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
             <TouchableOpacity 
               key={tag}
@@ -233,7 +254,7 @@ export default function ExploreScreen() {
 
       {/* Current Filter Indicator (only for designs) */}
       {activeTab === 'designs' && (
-        <View className="px-6 mb-3">
+        <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
             <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
             <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
@@ -242,8 +263,8 @@ export default function ExploreScreen() {
       )}
 
       <ScrollView 
-        className="flex-1 px-6" 
-        contentContainerStyle={{ paddingBottom: 100 }}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: tabContentBottomPadding, paddingHorizontal: horizontalPadding }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -475,7 +496,7 @@ export default function ExploreScreen() {
                       </TouchableOpacity>
                     </View>
                     <View className="p-4">
-                      <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }} numberOfLines={1}>
                         {house.name}
                       </Text>
                       <View className="flex-row items-center mb-2">

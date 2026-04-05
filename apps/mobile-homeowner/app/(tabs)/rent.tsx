@@ -44,6 +44,13 @@ import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
 import { useWebSeo } from '@/lib/seo';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  getFloatingTabBarMetrics,
+  getScreenHorizontalPadding,
+  getTabContentBottomPadding,
+  getTwoColumnCardWidth,
+} from "@/lib/responsive-layout";
 
 type RentalListing = {
   id: string;
@@ -91,6 +98,19 @@ const rentalFilterTags = [
 export default function RentScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tabBarMetrics = useMemo(
+    () => getFloatingTabBarMetrics(screenWidth, insets.bottom),
+    [screenWidth, insets.bottom],
+  );
+  const horizontalPadding = useMemo(
+    () => getScreenHorizontalPadding(screenWidth),
+    [screenWidth],
+  );
+  const tabContentBottomPadding = useMemo(
+    () => getTabContentBottomPadding(tabBarMetrics),
+    [tabBarMetrics],
+  );
   const { data: currentUser } = useCurrentUser();
   const { data: rentalsForLease = [] } = useRentalsForLease();
   const requestInspectionMutation = useRequestRentalInspection();
@@ -109,7 +129,7 @@ export default function RentScreen() {
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
-  const cardWidth = (screenWidth - 48 - 12) / 2;
+  const cardWidth = getTwoColumnCardWidth(screenWidth);
 
   const filterHeight = filterAnim.interpolate({
     inputRange: [0, 1],
@@ -223,7 +243,10 @@ export default function RentScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
+      <View
+        className="pb-4 flex-row items-center justify-between"
+        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <TouchableOpacity
           onPress={() => router.push('/profile')}
           className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden"
@@ -242,7 +265,7 @@ export default function RentScreen() {
         <NotificationBell />
       </View>
 
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
           <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
             <Search size={20} color="#737373" strokeWidth={2} />
@@ -264,7 +287,7 @@ export default function RentScreen() {
         </View>
       </View>
 
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row bg-gray-100 rounded-2xl p-1">
           <TouchableOpacity
             onPress={() => setActiveTab('all')}
@@ -294,7 +317,7 @@ export default function RentScreen() {
       </View>
 
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
           {rentalFilterTags.map((tag) => (
             <TouchableOpacity
               key={tag}
@@ -309,15 +332,15 @@ export default function RentScreen() {
         </ScrollView>
       </Animated.View>
 
-      <View className="px-6 mb-3">
+      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
           <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView
-        className="flex-1 px-6"
-        contentContainerStyle={{ paddingBottom: 110 }}
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: tabContentBottomPadding, paddingHorizontal: horizontalPadding }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
@@ -394,11 +417,11 @@ export default function RentScreen() {
                   <Text className="text-black text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                     {formatNaira(listing.annualRent)}/yr
                   </Text>
-                  <View className="flex-row justify-between items-center mt-1">
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <View className="flex-row justify-between items-center mt-1 min-w-0">
+                    <Text className="text-gray-500 text-xs flex-1 pr-2" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
                       Service: {formatNaira(listing.serviceCharge)}
                     </Text>
-                    <View className="bg-emerald-100 rounded-full px-2 py-0.5">
+                    <View className="bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">
                       <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                         {listing.propertyType}
                       </Text>

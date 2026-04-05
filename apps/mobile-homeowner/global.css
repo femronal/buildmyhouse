@@ -8,6 +8,9 @@ html,
 body,
 #root {
   font-family: "Poppins", sans-serif;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 /* Force web text rendering to Poppins even in legacy inline style usage. */

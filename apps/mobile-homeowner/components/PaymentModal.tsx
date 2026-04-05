@@ -54,7 +54,7 @@ export default function PaymentModal({
           <View className="flex-row justify-between items-start mb-6">
             <View className="flex-1">
               <Text
-                className="text-3xl text-black mb-2"
+                className="text-2xl md:text-3xl text-black mb-2"
                 style={{ fontFamily: 'Poppins_800ExtraBold' }}
               >
                 Project deposit
@@ -87,8 +87,11 @@ export default function PaymentModal({
                 </Text>
               </View>
               <Text
-                className="text-4xl text-black mb-2"
+                className="text-3xl md:text-4xl text-black mb-2"
                 style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
               >
                 ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}+
               </Text>

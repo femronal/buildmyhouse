@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Modal } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Modal, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MessageCircle, Calendar, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
@@ -7,12 +7,18 @@ import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import * as WebBrowser from 'expo-web-browser';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
+  const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const projectId = params.projectId as string;
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId || '');
@@ -239,7 +245,10 @@ export default function DashboardScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View
+        className="pb-4"
+        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -271,7 +280,11 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: contentBottomPadding }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Current Stage Card */}
         <View className="bg-black rounded-3xl p-6 mb-6">
           <View className="flex-row justify-between items-start mb-4">

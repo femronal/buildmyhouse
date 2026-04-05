@@ -1,4 +1,4 @@
-import { View, Text, Image, ScrollView, Dimensions } from "react-native";
+import { View, Text, Image, ScrollView, useWindowDimensions } from "react-native";
 import { useState, useRef } from "react";
 
 interface CarouselImage {
@@ -10,12 +10,12 @@ interface ImageCarouselProps {
   images: CarouselImage[];
   height?: number;
 }
-
-const { width: screenWidth } = Dimensions.get('window');
-
 export default function ImageCarousel({ images, height = 140 }: ImageCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
+  const { width: viewportWidth } = useWindowDimensions();
+  const [containerWidth, setContainerWidth] = useState(0);
+  const effectiveWidth = containerWidth > 0 ? containerWidth : viewportWidth;
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -25,7 +25,15 @@ export default function ImageCarousel({ images, height = 140 }: ImageCarouselPro
   };
 
   return (
-    <View className="relative">
+    <View
+      className="relative"
+      onLayout={(event) => {
+        const width = event.nativeEvent.layout.width;
+        if (width > 0 && Math.abs(width - containerWidth) > 1) {
+          setContainerWidth(width);
+        }
+      }}
+    >
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -35,10 +43,10 @@ export default function ImageCarousel({ images, height = 140 }: ImageCarouselPro
         scrollEventThrottle={16}
       >
         {images.map((image, index) => (
-          <View key={index} style={{ width: screenWidth, height }} className="relative">
+          <View key={index} style={{ width: effectiveWidth, height }} className="relative">
             <Image
               source={{ uri: image.url }}
-              style={{ width: screenWidth, height }}
+              style={{ width: effectiveWidth, height }}
               resizeMode="cover"
             />
             <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-3 py-1">

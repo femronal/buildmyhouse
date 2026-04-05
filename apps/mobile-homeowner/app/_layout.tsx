@@ -26,6 +26,7 @@ import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -79,9 +80,10 @@ export default function RootLayout() {
   }
 
   const app = (
-    <InvestmentProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack
+    <SafeAreaProvider>
+      <InvestmentProvider>
+        <ThemeProvider value={DefaultTheme}>
+          <Stack
           screenOptions={{
             headerShown: false,
           }}
@@ -125,10 +127,11 @@ export default function RootLayout() {
           <Stack.Screen name="app-settings" options={{ headerShown: false }} />
           <Stack.Screen name="notifications" options={{ headerShown: false }} />
           <Stack.Screen name="chat" options={{ headerShown: false }} />
-        </Stack>
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </InvestmentProvider>
+          </Stack>
+          <StatusBar style="auto" />
+        </ThemeProvider>
+      </InvestmentProvider>
+    </SafeAreaProvider>
   );
 
   return (

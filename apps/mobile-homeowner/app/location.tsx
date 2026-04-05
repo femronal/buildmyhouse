@@ -1,16 +1,21 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Keyboard } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Keyboard, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MapPin, ArrowRight, ArrowLeft, Navigation, Search } from "lucide-react-native";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 import { reverseGeocode, AddressDetails } from '@/services/addressService';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 // Native version (iOS/Android) with full Google Maps
 export default function LocationScreen() {
   const router = useRouter();
   const { mode } = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const mapRef = useRef<MapView>(null);
   const autocompleteRef = useRef<any>(null);
   
@@ -104,7 +109,10 @@ export default function LocationScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-6 pt-16 pb-4 bg-white z-10">
+      <View
+        className="pb-4 bg-white z-10"
+        style={{ paddingHorizontal: horizontalPadding, paddingTop: Math.max(16, insets.top + 8) }}
+      >
         <TouchableOpacity 
           onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
           className="mb-4"
@@ -295,7 +303,7 @@ export default function LocationScreen() {
       </View>
 
       {/* Continue Button */}
-      <View className="px-6 py-4 bg-white border-t border-gray-100">
+      <View className="py-4 bg-white border-t border-gray-100" style={{ paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity
           onPress={handleContinue}
           disabled={!selectedAddress || isGeocoding}

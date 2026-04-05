@@ -1,10 +1,16 @@
-import { View, Text, TouchableOpacity, ScrollView } from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Upload, Home, FileText } from "lucide-react-native";
+import { useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 export default function ChooseProjectTypeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
 
   // Get address data from location screen
   const addressData = {
@@ -34,7 +40,7 @@ export default function ChooseProjectTypeScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="px-6 pt-16 pb-4">
+      <View style={{ paddingHorizontal: horizontalPadding, paddingTop: Math.max(16, insets.top + 8), paddingBottom: 16 }}>
         <TouchableOpacity 
           onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
           className="mb-6"
@@ -56,7 +62,11 @@ export default function ChooseProjectTypeScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: 24 }}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Option 1: Choose from Designs */}
         <TouchableOpacity
           onPress={handleChooseDesign}

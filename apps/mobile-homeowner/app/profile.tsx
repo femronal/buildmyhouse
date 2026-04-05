@@ -1,13 +1,15 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { useActiveProjects, usePendingProjects } from '@/hooks';
 import { clearAuthToken } from '@/lib/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { getBackendAssetUrl } from '@/lib/image';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 type MenuItem = {
   icon: any;
@@ -28,6 +30,10 @@ const menuItems: MenuItem[] = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
+  const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const { data: currentUser, isLoading } = useCurrentUser();
   const uploadProfilePicture = useUploadProfilePicture();
   const { data: activeProjects = [] } = useActiveProjects();
@@ -103,7 +109,10 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mr-4">
           <ArrowLeft size={28} color="#000000" strokeWidth={2} />
         </TouchableOpacity>
@@ -115,7 +124,10 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: contentBottomPadding }}
+      >
         {/* General Contractor Dashboard Button */}
         {userRole === 'general_contractor' && (
           <TouchableOpacity

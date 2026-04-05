@@ -4,6 +4,8 @@ import { ArrowLeft, Home, Bed, Bath, Maximize, Star, Filter, Search, ChevronDown
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding, getTwoColumnCardWidth } from "@/lib/responsive-layout";
 
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
@@ -45,6 +47,9 @@ const getPlanTypeTagClasses = (planType?: string | null) => {
 export default function DesignLibraryScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(screenWidth), [screenWidth]);
+  const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const params = useLocalSearchParams();
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
@@ -110,7 +115,7 @@ export default function DesignLibraryScreen() {
     outputRange: [0, 1],
   });
 
-  const cardWidth = (screenWidth - 48 - 12) / 2;
+  const cardWidth = getTwoColumnCardWidth(screenWidth);
 
   // Filter designs based on search query and active filter
   const filteredDesigns = useMemo(() => {
@@ -174,7 +179,10 @@ export default function DesignLibraryScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View
+        className="pb-4"
+        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -205,7 +213,7 @@ export default function DesignLibraryScreen() {
       </View>
 
       {/* Search & Filter */}
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
           <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
             <Search size={20} color="#737373" strokeWidth={2} />
@@ -229,7 +237,7 @@ export default function DesignLibraryScreen() {
 
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-2">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
           {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
             <TouchableOpacity 
               key={tag}
@@ -249,7 +257,7 @@ export default function DesignLibraryScreen() {
 
       {/* Current Filter Indicator */}
       {activeFilter !== 'All' && (
-        <View className="px-6 mb-3">
+        <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
             <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
             <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
@@ -258,8 +266,8 @@ export default function DesignLibraryScreen() {
       )}
 
       <ScrollView 
-        className="flex-1 px-6" 
-        contentContainerStyle={{ paddingBottom: 100 }}
+        className="flex-1" 
+        contentContainerStyle={{ paddingBottom: contentBottomPadding, paddingHorizontal: horizontalPadding }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >

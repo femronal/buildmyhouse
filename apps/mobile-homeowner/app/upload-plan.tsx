@@ -1,16 +1,21 @@
-import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, ActivityIndicator, Image, Platform } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, ActivityIndicator, Image, Platform, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, FileText, Upload, Home, X, CheckCircle, AlertCircle } from "lucide-react-native";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useUploadPlan } from '@/hooks/usePlan';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 export default function UploadPlanScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   
   const [projectName, setProjectName] = useState("");
@@ -278,7 +283,10 @@ export default function UploadPlanScreen() {
   if (!userLoading && !currentUser) {
     return (
       <View className="flex-1 bg-white">
-        <View className="pt-16 px-6 pb-4">
+        <View
+          className="pb-4"
+          style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        >
           <View className="flex-row items-center mb-4">
             <TouchableOpacity 
               onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -306,7 +314,7 @@ export default function UploadPlanScreen() {
             Upload your complete architectural plan as a single PDF
           </Text>
         </View>
-        <View className="flex-1 px-6 justify-center items-center py-20">
+        <View className="flex-1 justify-center items-center py-20" style={{ paddingHorizontal: horizontalPadding }}>
           <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             Sign in to upload your plan
           </Text>
@@ -327,8 +335,14 @@ export default function UploadPlanScreen() {
   }
 
   return (
-    <ScrollView className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+    <ScrollView
+      className="flex-1 bg-white"
+      contentContainerStyle={{ paddingBottom: Math.max(24, insets.bottom + 16) }}
+    >
+      <View
+        className="pb-4"
+        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -358,7 +372,7 @@ export default function UploadPlanScreen() {
         </Text>
       </View>
 
-      <View className="px-6 pb-8">
+      <View className="pb-8" style={{ paddingHorizontal: horizontalPadding }}>
         {/* Important Notice */}
         <View className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-6">
           <View className="flex-row items-start">

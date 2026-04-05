@@ -1,11 +1,17 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Linking, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Linking, Alert, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { User, Filter, CreditCard, Receipt, FileText, Home, ChevronDown, Landmark, ChevronRight, Building2 } from "lucide-react-native";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, useMyInvoiceFiles, usePendingProjects, useUserPaymentsStructured } from '@/hooks';
 import { useHomePurchases, useLandPurchases, useRentalPurchases } from '@/hooks/usePropertyPurchases';
 import { getBackendAssetUrl } from '@/lib/image';
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  getFloatingTabBarMetrics,
+  getScreenHorizontalPadding,
+  getTabContentBottomPadding,
+} from "@/lib/responsive-layout";
 
 type TabKey = 'overview' | 'payments' | 'invoices' | 'landPurchases' | 'homePurchases' | 'rentals';
 
@@ -22,6 +28,17 @@ const VALID_TABS: TabKey[] = ['overview', 'payments', 'invoices', 'landPurchases
 
 export default function FinanceScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const tabBarMetrics = useMemo(
+    () => getFloatingTabBarMetrics(width, insets.bottom),
+    [width, insets.bottom],
+  );
+  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
+  const tabContentBottomPadding = useMemo(
+    () => getTabContentBottomPadding(tabBarMetrics),
+    [tabBarMetrics],
+  );
   const params = useLocalSearchParams<{ tab?: string }>();
   const tabParam = params.tab as TabKey | undefined;
   const initialTab = tabParam && VALID_TABS.includes(tabParam) ? tabParam : 'overview';
@@ -121,7 +138,10 @@ export default function FinanceScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
+      <View
+        className="pb-4 flex-row items-center justify-between"
+        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+      >
         <TouchableOpacity onPress={() => router.push('/profile')} className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden">
           {userPicture ? (
             <Image
@@ -141,7 +161,7 @@ export default function FinanceScreen() {
 
       {/* Animated Filter Tabs */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-6 pb-4">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-4" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
           {[
             { key: 'overview' as TabKey, label: 'Overview', icon: Home },
             { key: 'payments' as TabKey, label: 'Payments', icon: CreditCard },
@@ -159,14 +179,17 @@ export default function FinanceScreen() {
       </Animated.View>
 
       {/* Current Tab Indicator */}
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
           <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{tabLabel}</Text>
           <ChevronDown size={20} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingBottom: tabContentBottomPadding, paddingHorizontal: horizontalPadding }}
+      >
         {activeTab === 'overview' && (
           <View className="pb-8">
             <View className="bg-black rounded-3xl p-6 mb-6">
