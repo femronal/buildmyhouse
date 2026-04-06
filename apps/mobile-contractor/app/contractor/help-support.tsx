@@ -2,9 +2,12 @@ import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native"
 import { useRouter } from "expo-router";
 import { ArrowLeft, HelpCircle, Mail, MessageCircle, Phone } from "lucide-react-native";
 import type { ReactNode } from "react";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function HelpSupportScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const Item = ({
     icon,
@@ -53,7 +56,13 @@ export default function HelpSupportScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
           <View className="flex-row items-center mb-2">
             <HelpCircle size={18} color="#60A5FA" strokeWidth={2} />

@@ -18,6 +18,7 @@ import {
   useMarkAllNotificationsRead,
   type NotificationItem,
 } from "@/hooks/useNotifications";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 function getNotificationIcon(item: NotificationItem) {
   const t = item.type?.toLowerCase() ?? "";
@@ -95,6 +96,8 @@ export default function GCNotificationsScreen() {
   const { data, isLoading, error } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
@@ -150,15 +153,18 @@ export default function GCNotificationsScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center gap-2"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity
           onPress={() => (router.canGoBack() ? router.back() : router.push("/contractor/gc-dashboard"))}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2 flex-shrink-0"
         >
           <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <View className="flex-1">
-          <Text className="text-white text-xl" style={{ fontFamily: "Poppins_700Bold" }}>
+        <View className="flex-1 min-w-0">
+          <Text className="text-white text-lg" style={{ fontFamily: "Poppins_700Bold" }} numberOfLines={1}>
             Notifications
           </Text>
           {unreadCount > 0 && (
@@ -171,7 +177,7 @@ export default function GCNotificationsScreen() {
           <TouchableOpacity
             onPress={handleMarkAllRead}
             disabled={markAllRead.isPending}
-            className="bg-blue-600 rounded-full px-4 py-2"
+            className="bg-blue-600 rounded-full px-3 py-2 flex-shrink-0"
           >
             <Text className="text-white text-xs" style={{ fontFamily: "Poppins_600SemiBold" }}>
               Mark all read
@@ -181,7 +187,7 @@ export default function GCNotificationsScreen() {
       </View>
 
       {/* Filter Tabs */}
-      <View className="px-6 mb-4">
+      <View className="mb-4" style={{ paddingHorizontal: horizontalPad }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View className="flex-row">
             {notificationTypes.map((type) => (
@@ -205,8 +211,15 @@ export default function GCNotificationsScreen() {
       </View>
 
       {/* Notifications List */}
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 pb-6">
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
+        <View className="pb-6">
           {filteredNotifications.length === 0 ? (
             <View className="items-center py-20">
               <Bell size={64} color="#6B7280" strokeWidth={1.5} />

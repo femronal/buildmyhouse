@@ -2,14 +2,15 @@ import { View, Text, TouchableOpacity, Animated } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Clock, CheckCircle, XCircle, FileSearch, ArrowRight } from "lucide-react-native";
 import { useState, useEffect, useRef } from "react";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function VerificationScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
+    useResponsivePadding("stack");
   const { type } = useLocalSearchParams<{ type: 'gc' }>();
   const [status, setStatus] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  const getDashboardRoute = () => '/contractor/gc-dashboard';
 
   useEffect(() => {
     // Pulse animation for pending status
@@ -65,7 +66,14 @@ export default function VerificationScreen() {
   const content = getStatusContent();
 
   return (
-    <View className="flex-1 bg-[#0A1628] px-6 pt-16">
+    <View
+      className="flex-1 bg-[#0A1628]"
+      style={{
+        paddingHorizontal: horizontalPad,
+        paddingTop: headerPaddingTop,
+        paddingBottom: Math.max(insets.bottom, scrollBottomPadding),
+      }}
+    >
       {/* Status Card */}
       <View className="flex-1 items-center justify-center">
         <Animated.View 
@@ -145,7 +153,7 @@ export default function VerificationScreen() {
       <View className="pb-8">
         {status === 'approved' ? (
           <TouchableOpacity
-            onPress={() => router.push(getDashboardRoute())}
+            onPress={() => router.push('/contractor/gc-dashboard')}
             className="bg-blue-600 rounded-full py-4 px-8 flex-row items-center justify-center"
           >
             <Text 
@@ -158,7 +166,7 @@ export default function VerificationScreen() {
           </TouchableOpacity>
         ) : status === 'rejected' ? (
           <TouchableOpacity
-            onPress={() => router.push(`/contractor/onboarding?type=${accountType}`)}
+            onPress={() => router.push(`/contractor/onboarding?type=${type || 'gc'}` as const)}
             className="bg-blue-600 rounded-full py-4 px-8"
           >
             <Text 

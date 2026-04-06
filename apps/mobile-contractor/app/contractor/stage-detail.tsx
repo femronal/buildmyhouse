@@ -7,6 +7,7 @@ import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
 import { stageDocumentationService } from '@/services/stageDocumentationService';
 import * as ImagePicker from 'expo-image-picker';
 import { uploadFile } from '@/utils/fileUpload';
+import { useResponsivePadding } from '@/lib/responsive-layout';
 
 const getFileIcon = (type: string) => {
   switch (type) {
@@ -709,9 +710,12 @@ export default function GCStageDetailScreen() {
     setFileToDelete(null);
   };
 
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
+    useResponsivePadding('stack');
+
   return (
     <View className="flex-1 bg-[#0A1628]">
-      <View className="pt-16 px-6 pb-4">
+      <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push(`/contractor/gc-project-detail?id=${projectId}`)} 
@@ -727,9 +731,10 @@ export default function GCStageDetailScreen() {
           </TouchableOpacity>
         </View>
         
-        <Text 
-          className="text-3xl text-white mb-2"
+        <Text
+          className="text-2xl text-white mb-2"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
+          numberOfLines={3}
         >
           {name}
         </Text>
@@ -744,7 +749,7 @@ export default function GCStageDetailScreen() {
       </View>
 
       {/* Tab Navigation */}
-      <View className="flex-row px-6 mb-4">
+      <View className="flex-row mb-4" style={{ paddingHorizontal: horizontalPad }}>
         <View className="flex-1 bg-[#1E3A5F] rounded-xl p-1 flex-row border border-blue-900">
           <TouchableOpacity
             onPress={() => setActiveTab('materials')}
@@ -793,7 +798,13 @@ export default function GCStageDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding + 140,
+        }}
+      >
         {/* Materials Tab */}
         {activeTab === 'materials' && (
           <View className="pb-32">
@@ -1061,7 +1072,10 @@ export default function GCStageDetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Section */}
-      <View className="absolute bottom-0 left-0 right-0 bg-[#0A1628] px-6 py-6 border-t border-blue-900">
+      <View
+        className="absolute bottom-0 left-0 right-0 bg-[#0A1628] py-6 border-t border-blue-900"
+        style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 20) }}
+      >
         {isComplete ? (
           <View className="bg-green-600 rounded-xl p-5">
             <View className="flex-row items-center justify-center mb-2">

@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { MessageCircle, Calendar, TrendingUp, ChevronRight, FileText, File, Video, Image as ImageIcon, Music, ArrowLeft, Home } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const recentFiles = [
   { id: 1, name: "Foundation_Progress.pdf", type: "pdf", stage: "Foundation", time: "2 hours ago" },
@@ -28,10 +29,12 @@ const getFileIcon = (type: string) => {
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
@@ -46,21 +49,29 @@ export default function DashboardScreen() {
             <Home size={20} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
-        <Text 
-          className="text-3xl text-black mb-1"
+        <Text
+          className="text-2xl text-black mb-1"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
+          numberOfLines={2}
         >
           Project Dashboard
         </Text>
-        <Text 
+        <Text
           className="text-sm text-gray-500"
           style={{ fontFamily: 'Poppins_400Regular' }}
+          numberOfLines={2}
         >
           Modern Minimalist • 123 Main St
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         {/* Current Stage Card */}
         <View className="bg-black rounded-3xl p-6 mb-6">
           <View className="flex-row justify-between items-start mb-4">

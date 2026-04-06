@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { TrendingUp, ChevronLeft, ChevronRight, Package, Users, Receipt, CheckCircle } from "lucide-react-native";
 import { useState } from "react";
 import { useGCEarnings } from "@/hooks/useGC";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
@@ -16,6 +17,8 @@ export default function GCEarningsScreen() {
   const router = useRouter();
   const { data: earnings = [], isLoading } = useGCEarnings();
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const totalEarned = earnings.reduce((sum, p) => sum + p.earned, 0);
   const totalBudget = earnings.reduce((sum, p) => sum + p.budget, 0);
@@ -27,13 +30,16 @@ export default function GCEarningsScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center justify-between"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <TouchableOpacity onPress={() => router.back()} className="flex-row items-center flex-shrink-0 min-w-0">
           <ChevronLeft size={24} color="#3B82F6" strokeWidth={2.5} />
-          <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>Back</Text>
+          <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }} numberOfLines={1}>Back</Text>
         </TouchableOpacity>
-        <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>Earnings</Text>
-        <View className="w-16" />
+        <Text className="text-white text-lg flex-1 text-center px-2" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>Earnings</Text>
+        <View className="w-14 flex-shrink-0" />
       </View>
 
       {isLoading ? (
@@ -44,7 +50,7 @@ export default function GCEarningsScreen() {
           </Text>
         </View>
       ) : earnings.length === 0 ? (
-        <View className="flex-1 items-center justify-center px-8">
+        <View className="flex-1 items-center justify-center" style={{ paddingHorizontal: Math.max(horizontalPad, 20) }}>
           <Text className="text-gray-500 text-6xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
           <Text className="text-white text-xl mt-4 text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
             No Earnings Yet
@@ -54,9 +60,16 @@ export default function GCEarningsScreen() {
           </Text>
         </View>
       ) : (
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView
+          className="flex-1"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: scrollBottomPadding,
+            paddingHorizontal: horizontalPad,
+          }}
+        >
           {/* Summary Cards */}
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
               <View className="flex-row justify-between items-start mb-4">
                 <View>
@@ -109,7 +122,7 @@ export default function GCEarningsScreen() {
           </View>
 
           {/* Project List */}
-          <View className="px-6 mb-8">
+          <View className="mb-8">
             <Text className="text-white text-xl mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>By Project</Text>
             {earnings.map((project) => {
               const isExpanded = expandedProjectId === project.id;

@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, User, Settings, CreditCard, Crown, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const menuItems = [
   { icon: User, label: "Personal Information", route: "/profile" },
@@ -15,23 +16,35 @@ const menuItems = [
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
-        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mr-4">
-          <ArrowLeft size={28} color="#000000" strokeWidth={2} />
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mr-3 flex-shrink-0">
+          <ArrowLeft size={26} color="#000000" strokeWidth={2} />
         </TouchableOpacity>
-        <Text 
-          className="text-2xl text-black"
+        <Text
+          className="text-xl text-black flex-1 min-w-0"
           style={{ fontFamily: 'Poppins_700Bold' }}
+          numberOfLines={1}
         >
           Profile
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         {/* Profile Card */}
         <View className="bg-black rounded-3xl p-6 mb-6 flex-row items-center">
           <Image

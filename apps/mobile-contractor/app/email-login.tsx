@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvo
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { storeAuthToken } from "@/lib/auth";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 import { api } from "@/lib/api";
 import { ArrowLeft, Mail, Lock, User } from "lucide-react-native";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,8 @@ const ALLOWED_ROLES = ['general_contractor', 'admin'];
 export default function EmailLoginScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -91,19 +94,23 @@ export default function EmailLoginScreen() {
       }}
     >
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ArrowLeft size={28} color="#FFFFFF" strokeWidth={2} />
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <TouchableOpacity onPress={() => router.back()} className="mr-3 flex-shrink-0">
+          <ArrowLeft size={26} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text 
-          className="text-2xl text-white"
+        <Text
+          className="text-xl text-white flex-1 min-w-0"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
+          numberOfLines={1}
         >
           {mode === 'signup' ? 'Create Account' : 'Sign In'}
         </Text>
       </View>
 
-      <View className="flex-1 justify-center px-8">
+      <View className="flex-1 justify-center" style={{ paddingHorizontal: Math.max(horizontalPad, 20), paddingBottom: scrollBottomPadding }}>
         <View className="flex-row bg-[#1E3A5F] rounded-2xl p-1 mb-8">
           <TouchableOpacity
             onPress={() => { setMode('signin'); clearError(); }}

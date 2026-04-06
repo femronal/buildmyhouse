@@ -1,28 +1,38 @@
 import { Tabs } from "expo-router";
 import { Home, Wallet } from "lucide-react-native";
-import { View, Text, Platform } from "react-native";
+import { View, Text, Platform, useWindowDimensions } from "react-native";
 import { BlurView } from "expo-blur";
+import { useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getFloatingTabBarMetrics } from "@/lib/responsive-layout";
 
 export default function TabsLayout() {
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const metrics = useMemo(
+    () => getFloatingTabBarMetrics(width, insets.bottom),
+    [width, insets.bottom],
+  );
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          bottom: 20,
-          left: 20,
-          right: 20,
-          height: 70,
+          bottom: metrics.bottomInset,
+          left: metrics.sideInset,
+          right: metrics.sideInset,
+          height: metrics.height,
           backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255,255,255,0.85)',
-          borderRadius: 35,
+          borderRadius: metrics.borderRadius,
           borderTopWidth: 0,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.15,
           shadowRadius: 12,
           elevation: 8,
-          paddingHorizontal: 10,
+          paddingHorizontal: width <= 390 ? 6 : 10,
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
@@ -35,7 +45,7 @@ export default function TabsLayout() {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                borderRadius: 35,
+                borderRadius: metrics.borderRadius,
                 overflow: 'hidden',
               }}
             />
@@ -44,12 +54,13 @@ export default function TabsLayout() {
         tabBarActiveTintColor: '#000000',
         tabBarInactiveTintColor: '#A3A3A3',
         tabBarLabelStyle: {
-          fontFamily: 'Poppins_400Regular',
-          fontSize: 10,
-          marginTop: 2,
+          fontFamily: 'Poppins_600SemiBold',
+          fontSize: width <= 390 ? 12 : 14,
+          marginTop: width <= 390 ? 4 : 6,
+          fontWeight: '600',
         },
         tabBarItemStyle: {
-          paddingVertical: 8,
+          paddingVertical: width <= 390 ? 8 : 10,
         },
       }}
     >
@@ -58,8 +69,8 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-2 rounded-xl ${focused ? 'bg-black' : ''}`}>
-              <Home size={22} color={focused ? '#FFFFFF' : color} strokeWidth={2.5} />
+            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
+              <Home size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
@@ -69,8 +80,8 @@ export default function TabsLayout() {
         options={{
           title: "Finance",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-2 rounded-xl ${focused ? 'bg-black' : ''}`}>
-              <Wallet size={22} color={focused ? '#FFFFFF' : color} strokeWidth={2.5} />
+            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
+              <Wallet size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}

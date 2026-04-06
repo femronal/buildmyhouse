@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from "reac
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Upload, Camera, FileText, CheckCircle, User, Building, Phone, Mail, MapPin } from "lucide-react-native";
 import { useState } from "react";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const accountTypeLabels = {
   gc: "General Contractor",
@@ -13,6 +14,8 @@ const requiredDocs = {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
   const { type } = useLocalSearchParams<{ type: 'gc' }>();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -41,7 +44,10 @@ export default function OnboardingScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity 
           onPress={() => step > 1 ? setStep(step - 1) : router.back()}
           className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
@@ -65,7 +71,7 @@ export default function OnboardingScreen() {
       </View>
 
       {/* Progress Bar */}
-      <View className="px-6 mb-6">
+      <View className="mb-6" style={{ paddingHorizontal: horizontalPad }}>
         <View className="h-2 bg-[#1E3A5F] rounded-full overflow-hidden">
           <View 
             className="h-full bg-blue-600 rounded-full" 
@@ -74,7 +80,14 @@ export default function OnboardingScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         {/* Step 1: Personal Information */}
         {step === 1 && (
           <View className="pb-8">

@@ -1,8 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Dimensions, Modal, TextInput, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Bell, Plus, ChevronRight, MapPin, TrendingUp, X, Check, LandPlot, FileCheck } from "lucide-react-native";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useInvestments } from '@/contexts/InvestmentContext';
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const projectImages = {
   1: [
@@ -86,6 +87,8 @@ const landedProperties = [
 export default function HomeScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("tab");
   const { addInvestment } = useInvestments();
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: number]: number}>({1: 0});
   const [showInvestModal, setShowInvestModal] = useState(false);
@@ -96,6 +99,12 @@ export default function HomeScreen() {
   const [selectedLand, setSelectedLand] = useState<typeof landedProperties[0] | null>(null);
   const [plotCount, setPlotCount] = useState("1");
   const [landSuccess, setLandSuccess] = useState(false);
+  const [projectCarouselWidth, setProjectCarouselWidth] = useState(0);
+
+  const carouselSlideWidth = useMemo(() => {
+    if (projectCarouselWidth > 0) return projectCarouselWidth;
+    return Math.max(0, screenWidth - horizontalPad * 2);
+  }, [projectCarouselWidth, screenWidth, horizontalPad]);
 
   const handleImageScroll = useCallback((projectId: number, event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -140,41 +149,57 @@ export default function HomeScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
-        <TouchableOpacity 
+      <View
+        className="pb-2 flex-row items-center justify-between gap-2"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <TouchableOpacity
           onPress={() => router.push('/profile')}
-          className="w-12 h-12 bg-black rounded-full items-center justify-center"
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          activeOpacity={0.7}
+          className="w-10 h-10 bg-black rounded-full items-center justify-center flex-shrink-0"
         >
-          <User size={24} color="#FFFFFF" strokeWidth={2.5} />
+          <User size={22} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
-        
-        <Text 
-          className="text-2xl text-black"
-          style={{ fontFamily: 'Poppins_700Bold' }}
-        >
-          BuildMyHouse
-        </Text>
-        
-        <TouchableOpacity 
+
+        <View className="flex-1 min-w-0 items-center justify-center px-1">
+          <Text
+            className="text-xl text-black text-center"
+            style={{ fontFamily: 'Poppins_700Bold' }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.85}
+          >
+            BuildMyHouse
+          </Text>
+        </View>
+
+        <TouchableOpacity
           onPress={() => router.push('/notifications')}
-          className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center"
+          className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center flex-shrink-0"
         >
-          <Bell size={24} color="#000000" strokeWidth={2.5} />
+          <Bell size={22} color="#000000" strokeWidth={2.5} />
           <View className="absolute top-2 right-2 w-3 h-3 bg-black rounded-full" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         {/* Welcome Section */}
         <View className="mb-8">
-          <Text 
-            className="text-4xl text-black mb-2"
+          <Text
+            className="text-3xl text-black mb-2"
             style={{ fontFamily: 'Poppins_800ExtraBold' }}
           >
             Welcome back,
           </Text>
-          <Text 
-            className="text-4xl text-black"
+          <Text
+            className="text-3xl text-black"
             style={{ fontFamily: 'Poppins_800ExtraBold' }}
           >
             Ifeoma 👋
@@ -221,6 +246,12 @@ export default function HomeScreen() {
                 key={project.id}
                 onPress={() => router.push('/dashboard')}
                 className="bg-gray-50 rounded-3xl mb-4 overflow-hidden border border-gray-200"
+                onLayout={(e) => {
+                  const w = e.nativeEvent.layout.width;
+                  if (w > 0 && Math.abs(w - projectCarouselWidth) > 1) {
+                    setProjectCarouselWidth(w);
+                  }
+                }}
               >
                 {/* Image Carousel */}
                 <View className="relative">
@@ -232,7 +263,7 @@ export default function HomeScreen() {
                     scrollEventThrottle={16}
                   >
                     {images.map((image, index) => (
-                      <View key={index} style={{ width: screenWidth - 48 }} className="relative">
+                      <View key={index} style={{ width: carouselSlideWidth }} className="relative">
                         <Image
                           source={{ uri: image.url }}
                           className="w-full h-40"
@@ -348,18 +379,21 @@ export default function HomeScreen() {
 
         {/* Real Estate Investments */}
         <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center">
-              <TrendingUp size={24} color="#000000" strokeWidth={2.5} />
-              <Text 
-                className="text-2xl text-black ml-2"
+          <View className="flex-row items-center justify-between mb-4 gap-2">
+            <View className="flex-1 min-w-0 flex-row items-center">
+              <View className="flex-shrink-0">
+                <TrendingUp size={22} color="#000000" strokeWidth={2.5} />
+              </View>
+              <Text
+                className="text-xl text-black ml-2 flex-shrink"
                 style={{ fontFamily: 'Poppins_700Bold' }}
+                numberOfLines={2}
               >
                 Investments
               </Text>
             </View>
-            <View className="bg-black rounded-full px-3 py-1">
-              <Text 
+            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
+              <Text
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
@@ -381,15 +415,20 @@ export default function HomeScreen() {
                 key={investment.id}
                 onPress={() => handleInvest(investment)}
                 className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{ width: Math.min(280, screenWidth * 0.75) }}
+                style={{
+                  width: Math.min(
+                    280,
+                    Math.max(220, screenWidth - horizontalPad * 2 - 12),
+                  ),
+                }}
               >
                 <Image
                   source={{ uri: investment.image }}
                   className="w-full h-32"
                   resizeMode="cover"
                 />
-                <View className="p-3">
-                  <Text 
+                <View className="p-3 min-w-0">
+                  <Text
                     className="text-base text-black mb-1"
                     style={{ fontFamily: 'Poppins_700Bold' }}
                     numberOfLines={1}
@@ -428,18 +467,21 @@ export default function HomeScreen() {
 
         {/* Landed Properties Section */}
         <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center">
-              <LandPlot size={24} color="#000000" strokeWidth={2.5} />
-              <Text 
-                className="text-2xl text-black ml-2"
+          <View className="flex-row items-center justify-between mb-4 gap-2">
+            <View className="flex-1 min-w-0 flex-row items-center">
+              <View className="flex-shrink-0">
+                <LandPlot size={22} color="#000000" strokeWidth={2.5} />
+              </View>
+              <Text
+                className="text-xl text-black ml-2 flex-shrink"
                 style={{ fontFamily: 'Poppins_700Bold' }}
+                numberOfLines={2}
               >
                 Land for Sale
               </Text>
             </View>
-            <View className="bg-black rounded-full px-3 py-1">
-              <Text 
+            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
+              <Text
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
@@ -461,15 +503,20 @@ export default function HomeScreen() {
                 key={land.id}
                 onPress={() => handleLandPurchase(land)}
                 className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{ width: Math.min(280, screenWidth * 0.75) }}
+                style={{
+                  width: Math.min(
+                    280,
+                    Math.max(220, screenWidth - horizontalPad * 2 - 12),
+                  ),
+                }}
               >
                 <Image
                   source={{ uri: land.image }}
                   className="w-full h-32"
                   resizeMode="cover"
                 />
-                <View className="p-3">
-                  <Text 
+                <View className="p-3 min-w-0">
+                  <Text
                     className="text-base text-black mb-1"
                     style={{ fontFamily: 'Poppins_700Bold' }}
                     numberOfLines={1}

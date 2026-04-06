@@ -1,9 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, FileText } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function TermsConditionsScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
   const sections: Array<[string, string]> = [
     ['Service Scope', 'BuildMyHouse provides a digital platform for project management, contractor engagement, verification, and payment workflows.'],
     ['Account Responsibility', 'You are responsible for maintaining accurate account information, credentials, and lawful use of the platform.'],
@@ -19,7 +22,10 @@ export default function TermsConditionsScreen() {
 
   return (
     <View className="flex-1 bg-[#0A1628]">
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity
           onPress={() => (router.canGoBack() ? router.back() : router.push('/contractor/gc-profile'))}
           className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
@@ -31,7 +37,13 @@ export default function TermsConditionsScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
           <View className="flex-row items-center mb-2">
             <FileText size={18} color="#60A5FA" strokeWidth={2} />

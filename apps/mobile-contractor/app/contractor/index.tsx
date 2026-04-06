@@ -3,9 +3,12 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { HardHat, ChevronRight, Shield } from "lucide-react-native";
 import { getAuthToken } from "@/lib/auth";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function ContractorLandingScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
+    useResponsivePadding("stack");
 
   useEffect(() => {
     const check = async () => {
@@ -22,10 +25,13 @@ export default function ContractorLandingScreen() {
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding + 100,
+          paddingHorizontal: horizontalPad,
+        }}
       >
         {/* Header */}
-        <View className="pt-16 px-6 pb-6">
+        <View className="pb-6" style={{ paddingTop: headerPaddingTop }}>
           <View className="flex-row items-center mb-2">
             <HardHat size={32} color="#3B82F6" strokeWidth={2} />
             <Text
@@ -41,7 +47,7 @@ export default function ContractorLandingScreen() {
         </View>
 
         {/* Hero Section */}
-        <View className="px-6 mb-6">
+        <View className="mb-6">
           <Text
             className="text-white text-2xl mb-3"
             style={{ fontFamily: 'Poppins_700Bold' }}
@@ -57,7 +63,7 @@ export default function ContractorLandingScreen() {
         </View>
 
         {/* Account Type (MVP: GC only) */}
-        <View className="px-6">
+        <View>
           <Text className="text-white text-2xl mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
             Get Started
           </Text>
@@ -111,7 +117,10 @@ export default function ContractorLandingScreen() {
       </ScrollView>
 
       {/* Sticky footer: Sign in */}
-      <View className="absolute left-0 right-0 bottom-0 px-6 pb-8 pt-4 bg-[#0A1628]/95 border-t border-blue-900">
+      <View
+        className="absolute left-0 right-0 bottom-0 pt-4 bg-[#0A1628]/95 border-t border-blue-900"
+        style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 24) }}
+      >
         <TouchableOpacity
           onPress={() => router.push('/login')}
           className="bg-blue-600 rounded-full py-5 px-10 active:opacity-80"

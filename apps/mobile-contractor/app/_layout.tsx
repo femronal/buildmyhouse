@@ -25,6 +25,7 @@ import { InvestmentProvider } from '../contexts/InvestmentContext';
 import { AppAlertProvider } from "../components/AppAlertProvider";
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -60,21 +61,23 @@ export default function RootLayout() {
   }
 
   return (
-    <InvestmentProvider>
-      <QueryClientProvider client={queryClient}>
-        <NotificationListener />
-        <ThemeProvider value={DefaultTheme}>
-          <AppAlertProvider>
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="index" options={{ headerShown: false }} />
-              <Stack.Screen name="login" options={{ headerShown: false }} />
-              <Stack.Screen name="contractor" options={{ headerShown: false }} />
-              <Stack.Screen name="chat" options={{ headerShown: false }} />
-            </Stack>
-            <StatusBar style="auto" />
-          </AppAlertProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </InvestmentProvider>
+    <SafeAreaProvider>
+      <InvestmentProvider>
+        <QueryClientProvider client={queryClient}>
+          <NotificationListener />
+          <ThemeProvider value={DefaultTheme}>
+            <AppAlertProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="contractor" options={{ headerShown: false }} />
+                <Stack.Screen name="chat" options={{ headerShown: false }} />
+              </Stack>
+              <StatusBar style="auto" />
+            </AppAlertProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </InvestmentProvider>
+    </SafeAreaProvider>
   );
 }

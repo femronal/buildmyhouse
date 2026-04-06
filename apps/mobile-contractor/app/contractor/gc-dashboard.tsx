@@ -10,9 +10,12 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from "@/hooks/useGCProfile";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function GCDashboardScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stackBottomNav");
   const { showAlert } = useAppAlert();
   const { data: profileData } = useGCProfile();
   const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
@@ -150,8 +153,11 @@ export default function GCDashboardScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center justify-between"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <View className="flex-row items-center flex-1 min-w-0 mr-2">
           <TouchableOpacity
             onPress={() => router.push('/contractor/gc-profile?openLogoUpload=1')}
             activeOpacity={0.85}
@@ -171,9 +177,9 @@ export default function GCDashboardScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <View className="ml-3">
+          <View className="ml-3 flex-1 min-w-0">
             <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
               {profileData?.fullName
                 ? (() => {
                     const [first, last] = profileData.fullName.split(' ');
@@ -183,7 +189,7 @@ export default function GCDashboardScreen() {
             </Text>
           </View>
         </View>
-        <View className="flex-row">
+        <View className="flex-row flex-shrink-0">
           <TouchableOpacity 
             onPress={() => router.push('/contractor/chat')}
             className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
@@ -225,9 +231,16 @@ export default function GCDashboardScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         {!loadingCurrentUser && !isAuthenticated && (
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-700">
               <Text className="text-white text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Start handling projects
@@ -248,7 +261,7 @@ export default function GCDashboardScreen() {
         )}
 
         {/* Stats Cards */}
-        <View className="px-6 mb-6">
+        <View className="mb-6">
           <View className="flex-row">
             <View className="flex-1 bg-blue-600 rounded-2xl p-4 mr-2">
               <View className="flex-row items-center mb-2">
@@ -287,10 +300,10 @@ export default function GCDashboardScreen() {
         </View>
 
         {/* Projects Section */}
-        <View className="px-6 mb-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-white text-3xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>Projects</Text>
-            <View className="flex-row bg-[#1E3A5F] rounded-full p-1">
+        <View className="mb-6">
+          <View className="flex-row items-center justify-between mb-4 gap-2">
+            <Text className="text-white text-2xl flex-1 min-w-0" style={{ fontFamily: 'Poppins_800ExtraBold' }} numberOfLines={1}>Projects</Text>
+            <View className="flex-row bg-[#1E3A5F] rounded-full p-1 flex-shrink-0">
               <TouchableOpacity 
                 onPress={() => setActiveTab('active')}
                 className={`px-4 py-2 rounded-full ${activeTab === 'active' ? 'bg-blue-600' : ''}`}
@@ -481,7 +494,7 @@ export default function GCDashboardScreen() {
         animationType="fade"
         onRequestClose={handleCloseModal}
       >
-        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+        <View className="flex-1 bg-black/50 items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
           <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
             {/* Warning Icon */}
             <View className="items-center mb-4">
@@ -574,7 +587,7 @@ export default function GCDashboardScreen() {
         animationType="fade"
         onRequestClose={() => setShowPausedModal(false)}
       >
-        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+        <View className="flex-1 bg-black/50 items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
           <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
             <View className="flex-row items-center justify-between mb-2">
               <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -640,7 +653,7 @@ export default function GCDashboardScreen() {
         animationType="fade"
         onRequestClose={() => setShowAuthPromptModal(false)}
       >
-        <View className="flex-1 bg-black/50 items-center justify-center px-6">
+        <View className="flex-1 bg-black/50 items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
           <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-blue-700">
             <Text className="text-white text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
               Account required
@@ -672,7 +685,10 @@ export default function GCDashboardScreen() {
       </Modal>
 
       {/* Bottom Navigation - Bigger, Clearer */}
-      <View className="flex-row bg-[#0A1628] border-t border-blue-900 px-4 py-4">
+      <View
+        className="flex-row bg-[#0A1628] border-t border-blue-900 py-4"
+        style={{ paddingHorizontal: Math.max(horizontalPad - 4, 12) }}
+      >
         <TouchableOpacity 
           onPress={() => router.push('/contractor/gc-dashboard')}
           className="flex-1 items-center active:opacity-70"

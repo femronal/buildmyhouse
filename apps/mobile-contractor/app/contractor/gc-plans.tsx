@@ -8,6 +8,7 @@ import { useMyDesigns, useDeleteDesign, useUpdateDesign } from '@/hooks/useDesig
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from '@/hooks/useGCProfile';
+import { useResponsivePadding } from '@/lib/responsive-layout';
 
 interface ImageWithLabel {
   uri: string;
@@ -1439,6 +1440,8 @@ export default function GCPlansScreen() {
   const { data: designs = [], isLoading } = useMyDesigns();
   const { data: profileData } = useGCProfile();
   const deleteDesignMutation = useDeleteDesign();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const isVerifiedGC = !!profileData?.verified;
 
@@ -1476,14 +1479,17 @@ export default function GCPlansScreen() {
   if (showUploadForm) {
     return (
       <View className="flex-1 bg-[#0A1628]">
-        <View className="pt-16 px-6 pb-4 flex-row items-center">
+        <View
+          className="pb-4 flex-row items-center"
+          style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+        >
           <TouchableOpacity 
             onPress={() => setShowUploadForm(false)}
-            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
           >
             <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
-          <Text className="text-white text-xl flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+          <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
             Upload Design Plan
           </Text>
         </View>
@@ -1498,7 +1504,10 @@ export default function GCPlansScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity 
           onPress={() => {
             if (router.canGoBack()) {
@@ -1507,16 +1516,23 @@ export default function GCPlansScreen() {
               router.push('/contractor/gc-dashboard');
             }
           }}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
         >
           <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-white text-xl flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
           My Design Plans
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         {/* Upload Button */}
         <TouchableOpacity
           onPress={() => {
@@ -1710,14 +1726,17 @@ export default function GCPlansScreen() {
         onRequestClose={() => setEditingDesign(null)}
       >
         <View className="flex-1 bg-[#0A1628]">
-          <View className="pt-16 px-6 pb-4 flex-row items-center border-b border-blue-900">
+          <View
+            className="pb-4 flex-row items-center border-b border-blue-900"
+            style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+          >
             <TouchableOpacity 
               onPress={() => setEditingDesign(null)}
-              className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+              className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
             >
               <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
             </TouchableOpacity>
-            <Text className="text-white text-xl flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+            <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
               Edit Design Plan
             </Text>
           </View>

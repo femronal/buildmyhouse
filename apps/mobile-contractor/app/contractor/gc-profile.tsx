@@ -18,6 +18,7 @@ import { useUploadProfilePicture } from "@/hooks/useUploadProfilePicture";
 import { useBankAccounts, useBankAccount, useCreateBankAccount, useUpdateBankAccount, useDeleteBankAccount } from "@/hooks/useBankAccounts";
 import { getBackendAssetUrl } from "@/lib/image";
 import { uploadFile } from "@/utils/fileUpload";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function GCProfileScreen() {
   const router = useRouter();
@@ -62,6 +63,8 @@ export default function GCProfileScreen() {
   const updateGCProfile = useUpdateGCProfile();
   const createCertification = useCreateCertification();
   const upsertVerificationDocument = useUpsertVerificationDocument();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const certifications = (profileData?.certifications ?? []).filter(
     (cert) => profileData?.verified || !cert.documentType,
@@ -366,20 +369,30 @@ export default function GCProfileScreen() {
 
   return (
     <View className="flex-1 bg-[#0A1628]">
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity
           onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
         >
           <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-white text-xl flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
           Profile & Settings
         </Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 mb-6">
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
+        <View className="mb-6">
           <View className="bg-[#1E3A5F] rounded-3xl p-6 border border-blue-900">
             <View className="flex-row items-center mb-4">
               <TouchableOpacity className="relative" onPress={handlePickProfilePicture}>
@@ -454,7 +467,7 @@ export default function GCProfileScreen() {
           </View>
         </View>
 
-        <View className="px-6 mb-6">
+        <View className="mb-6">
           <View className="flex-row bg-[#1E3A5F] rounded-2xl p-1 border border-blue-900">
             {[
               { key: 'overview' as const, label: 'Overview', icon: User },
@@ -480,7 +493,7 @@ export default function GCProfileScreen() {
         </View>
 
         {activeSection === 'overview' && (
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Personal Information
@@ -551,7 +564,7 @@ export default function GCProfileScreen() {
         )}
 
         {activeSection === 'billing' && (
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-blue-900/30 rounded-2xl p-4 mb-4 border border-blue-800">
               <Text className="text-blue-200 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                 BuildMyHouse sends funds to your bank account after each stage completion. Please ensure your bank details are correct so you receive payments on time. You can add up to 2 bank accounts.
@@ -618,7 +631,7 @@ export default function GCProfileScreen() {
         )}
 
         {activeSection === 'professional' && (
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <View className="flex-row items-center justify-between mb-3">
                 <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -733,7 +746,7 @@ export default function GCProfileScreen() {
         )}
 
         {activeSection === 'settings' && (
-          <View className="px-6 mb-6">
+          <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Notifications</Text>
               <View className="space-y-3">

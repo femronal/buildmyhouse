@@ -1,9 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, ShieldCheck } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function PrivacySettingsScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -19,7 +22,13 @@ export default function PrivacySettingsScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
           <View className="flex-row items-center mb-3">
             <ShieldCheck size={18} color="#10B981" strokeWidth={2} />

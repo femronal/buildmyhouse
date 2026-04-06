@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Package, MessageCircle, Home, AlertCircle, CheckCircle, Clock } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const notifications = [
   {
@@ -61,33 +62,46 @@ const notifications = [
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between">
-        <View className="flex-row items-center">
-          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mr-4">
-            <ArrowLeft size={28} color="#000000" strokeWidth={2} />
+      <View
+        className="pb-4 flex-row items-center justify-between gap-2"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <View className="flex-row items-center flex-1 min-w-0">
+          <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} className="mr-3 flex-shrink-0">
+            <ArrowLeft size={26} color="#000000" strokeWidth={2} />
           </TouchableOpacity>
-          <Text 
-            className="text-2xl text-black"
+          <Text
+            className="text-xl text-black flex-shrink"
             style={{ fontFamily: 'Poppins_700Bold' }}
+            numberOfLines={1}
           >
             Notifications
           </Text>
         </View>
-        <TouchableOpacity>
-          <Text 
-            className="text-black"
+        <TouchableOpacity className="flex-shrink-0">
+          <Text
+            className="text-black text-sm"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
+            numberOfLines={2}
           >
             Mark all read
           </Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         {/* Unread Section */}
         <Text 
           className="text-lg text-black mb-4"

@@ -20,11 +20,14 @@ import { useProject } from "@/hooks/useProjects";
 import { useUserConversations } from "@/hooks/useChat";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 // Mock data removed - using real data from API
 
 export default function ContractorChatScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
+    useResponsivePadding("stack");
   const params = useLocalSearchParams();
   const projectId = params.projectId as string | undefined;
   const userId = params.userId as string | undefined;
@@ -184,7 +187,10 @@ export default function ContractorChatScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Chat Header */}
-        <View className="pt-16 px-6 pb-4 flex-row items-center bg-[#0A1628] border-b border-blue-900">
+        <View
+          className="pb-4 flex-row items-center bg-[#0A1628] border-b border-blue-900"
+          style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+        >
           <TouchableOpacity 
             onPress={() => {
               if (router.canGoBack()) {
@@ -198,8 +204,8 @@ export default function ContractorChatScreen() {
           >
             <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
-          <View className="flex-1 ml-3">
-            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{displayName}</Text>
+          <View className="flex-1 ml-3 min-w-0">
+            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }} numberOfLines={1}>{displayName}</Text>
             <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
               {(() => {
                 // Determine role based on project data
@@ -219,8 +225,9 @@ export default function ContractorChatScreen() {
         {/* Messages */}
         <ScrollView 
           ref={scrollViewRef}
-          className="flex-1 px-6 py-4"
+          className="flex-1 py-4"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: horizontalPad, paddingBottom: 16 }}
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {/* Project Context Card - Similar to WhatsApp */}
@@ -339,7 +346,10 @@ export default function ContractorChatScreen() {
         </ScrollView>
 
         {/* Message Input */}
-        <View className="px-6 pb-8 pt-4 bg-[#0A1628] border-t border-blue-900">
+        <View
+          className="pb-8 pt-4 bg-[#0A1628] border-t border-blue-900"
+          style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 24) }}
+        >
           <View className="flex-row items-center">
             <TouchableOpacity
               onPress={handlePickPhoto}
@@ -510,7 +520,10 @@ export default function ContractorChatScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity 
           onPress={() => {
             if (router.canGoBack()) {
@@ -524,17 +537,24 @@ export default function ContractorChatScreen() {
               }
             }
           }}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
+          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
         >
           <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-white text-xl flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>Messages</Text>
+        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>Messages</Text>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         {/* GC View: Sent Requests Section */}
         {isGC && (
-          <View className="px-6 mb-4">
+          <View className="mb-4">
             <Text className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Requests Sent ({sentRequests.length})
             </Text>
@@ -645,7 +665,7 @@ export default function ContractorChatScreen() {
 
         {/* GC View: Accepted Contractors Section */}
         {isGC && (
-          <View className="px-6 mb-4">
+          <View className="mb-4">
             <Text className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Active Conversations ({enrichedAcceptedConversations.length})
             </Text>

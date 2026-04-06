@@ -2,6 +2,7 @@ import { View, Text, TouchableOpacity, ActivityIndicator, Platform } from "react
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 import { LogIn, ArrowRight, HardHat } from "lucide-react-native";
 import { useAppAlert } from "../components/AppAlertProvider";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,8 @@ export default function LoginScreen() {
   const queryClient = useQueryClient();
   const { showAlert } = useAppAlert();
   const [loading, setLoading] = useState(false);
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -65,31 +68,49 @@ export default function LoginScreen() {
       }}
     >
       {/* Header */}
-      <View className="pt-20 px-8 pb-12">
-        <View className="flex-row items-center mb-4">
-          <HardHat size={40} color="#3B82F6" strokeWidth={2} />
-          <Text 
-            className="text-4xl text-white ml-3"
+      <View
+        className="pb-10"
+        style={{
+          paddingTop: Math.max(headerPaddingTop, 20),
+          paddingHorizontal: Math.max(horizontalPad, 20),
+        }}
+      >
+        <View className="flex-row items-center mb-4 flex-wrap">
+          <HardHat size={36} color="#3B82F6" strokeWidth={2} />
+          <Text
+            className="text-3xl text-white ml-3 flex-1 min-w-0"
             style={{ fontFamily: 'Poppins_800ExtraBold' }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
           >
             BuildMyHouse
           </Text>
         </View>
-        <Text 
-          className="text-5xl text-white mb-3"
+        <Text
+          className="text-4xl text-white mb-3"
           style={{ fontFamily: 'Poppins_600SemiBold' }}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+          minimumFontScale={0.85}
         >
           Welcome
         </Text>
-        <Text 
-          className="text-xl text-gray-400 leading-7"
+        <Text
+          className="text-lg text-gray-400 leading-7"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           Sign in or sign up to access your contractor account
         </Text>
       </View>
 
-      <View className="flex-1 justify-center px-8">
+      <View
+        className="flex-1 justify-center"
+        style={{
+          paddingHorizontal: Math.max(horizontalPad, 20),
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         {SHOW_GOOGLE_LOGIN && (
           <TouchableOpacity
             onPress={handleGoogleSignIn}

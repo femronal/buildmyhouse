@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Image, Modal } from "react-na
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home } from "lucide-react-native";
 import { useState } from "react";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const materials = [
   { 
@@ -92,6 +93,8 @@ const getFileIcon = (type: string) => {
 
 export default function StageDetailScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
+    useResponsivePadding("stack");
   const { name, status } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState<'materials' | 'team' | 'files'>('materials');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -110,7 +113,7 @@ export default function StageDetailScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -126,9 +129,10 @@ export default function StageDetailScreen() {
           </TouchableOpacity>
         </View>
         
-        <Text 
-          className="text-3xl text-black mb-2"
+        <Text
+          className="text-2xl text-black mb-2"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
+          numberOfLines={3}
         >
           {name}
         </Text>
@@ -143,7 +147,7 @@ export default function StageDetailScreen() {
       </View>
 
       {/* Tab Navigation */}
-      <View className="flex-row px-6 mb-4">
+      <View className="flex-row mb-4" style={{ paddingHorizontal: horizontalPad }}>
         <TouchableOpacity
           onPress={() => setActiveTab('materials')}
           className={`flex-1 py-3 border-b-2 ${
@@ -196,10 +200,16 @@ export default function StageDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding + 120,
+        }}
+      >
         {/* Materials Tab */}
         {activeTab === 'materials' && (
-          <View className="pb-32">
+          <View className="pb-8">
             {materials.map((material, index) => (
               <View key={index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200">
                 <View className="flex-row">
@@ -253,7 +263,7 @@ export default function StageDetailScreen() {
 
         {/* Team Tab */}
         {activeTab === 'team' && (
-          <View className="pb-32">
+          <View className="pb-8">
             {team.map((member, index) => (
               <View key={index} className="bg-white rounded-2xl mb-4 overflow-hidden border border-gray-200">
                 <View className="flex-row p-4">
@@ -313,7 +323,7 @@ export default function StageDetailScreen() {
 
         {/* Files Tab */}
         {activeTab === 'files' && (
-          <View className="pb-32">
+          <View className="pb-8">
             {files.map((file) => (
               <TouchableOpacity 
                 key={file.id}
@@ -345,7 +355,10 @@ export default function StageDetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Section */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-6 py-6 border-t border-gray-200">
+      <View
+        className="absolute bottom-0 left-0 right-0 bg-white py-6 border-t border-gray-200"
+        style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 24) }}
+      >
         {isComplete ? (
           <View className="bg-black rounded-2xl p-5">
             <View className="flex-row items-center justify-center mb-2">
@@ -394,7 +407,7 @@ export default function StageDetailScreen() {
         transparent={true}
         onRequestClose={() => setShowPaymentModal(false)}
       >
-        <View className="flex-1 bg-black/50 justify-center items-center px-6">
+        <View className="flex-1 bg-black/50 justify-center items-center" style={{ paddingHorizontal: horizontalPad }}>
           <View className="bg-white rounded-3xl p-8 w-full max-w-md">
             {!paymentApproved ? (
               <>

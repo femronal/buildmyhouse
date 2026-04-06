@@ -26,6 +26,7 @@ import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 // Helper to get project image
 const getProjectImage = (project: any) => {
@@ -117,7 +118,9 @@ export default function GCProjectDetailScreen() {
   
   // Get unread count for this conversation
   const { data: unreadCount = 0 } = useConversationUnreadCount(conversation?.id);
-  
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
+
   // Reviews/marketplace removed for MVP
   const projectReview = null;
 
@@ -242,9 +245,9 @@ export default function GCProjectDetailScreen() {
 
   if ((projectError || !project) && isPausedError) {
     return (
-      <View className="flex-1 bg-[#0A1628] items-center justify-center px-6">
+      <View className="flex-1 bg-[#0A1628] items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
         <Modal visible={true} transparent={true} animationType="fade">
-          <View className="flex-1 bg-black/50 items-center justify-center px-6">
+          <View className="flex-1 bg-black/50 items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
             <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-orange-600/50">
               <View className="items-center mb-4">
                 <View className="w-16 h-16 bg-orange-600/20 rounded-full items-center justify-center mb-3">
@@ -305,7 +308,7 @@ export default function GCProjectDetailScreen() {
 
   if (projectError || !project) {
     return (
-      <View className="flex-1 bg-[#0A1628] items-center justify-center px-6">
+      <View className="flex-1 bg-[#0A1628] items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
         <Text className="text-gray-400 text-center mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
           Failed to load project
         </Text>
@@ -330,8 +333,8 @@ export default function GCProjectDetailScreen() {
 
   return (
     <View className="flex-1 bg-[#0A1628]">
-      <View className="pt-16 px-6 pb-4">
-        <View className="flex-row items-center mb-4">
+      <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
+        <View className="flex-row items-center mb-4 flex-wrap gap-2">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')} 
             className="w-10 h-10 bg-black/50 rounded-full items-center justify-center mr-3"
@@ -381,7 +384,14 @@ export default function GCProjectDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         {/* Homeowner Info */}
         <View className="bg-[#1E3A5F] rounded-xl p-4 mb-6 border border-blue-900">
           <View className="flex-row items-center">

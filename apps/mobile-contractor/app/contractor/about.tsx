@@ -1,13 +1,19 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Wrench, Users } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function AboutScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   return (
     <View className="flex-1 bg-[#0A1628]">
-      <View className="pt-16 px-6 pb-4 flex-row items-center">
+      <View
+        className="pb-4 flex-row items-center"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <TouchableOpacity
           onPress={() => (router.canGoBack() ? router.back() : router.push('/contractor/gc-profile'))}
           className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4"
@@ -19,7 +25,13 @@ export default function AboutScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: scrollBottomPadding,
+        }}
+      >
         <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
           <Text className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
             Built for trusted construction delivery

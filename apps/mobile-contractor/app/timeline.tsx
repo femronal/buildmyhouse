@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, CheckCircle, Clock, Lock, Home } from "lucide-react-native";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const stages = [
   { id: 1, name: "Site Preparation", status: "complete", duration: "1 week" },
@@ -19,6 +20,8 @@ const stages = [
 
 export default function TimelineScreen() {
   const router = useRouter();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -78,7 +81,7 @@ export default function TimelineScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
+      <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
         <View className="flex-row items-center mb-4">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
@@ -94,9 +97,10 @@ export default function TimelineScreen() {
           </TouchableOpacity>
         </View>
         
-        <Text 
-          className="text-3xl text-black mb-2"
+        <Text
+          className="text-2xl text-black mb-2"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
+          numberOfLines={2}
         >
           Build Timeline
         </Text>
@@ -108,7 +112,13 @@ export default function TimelineScreen() {
         </Text>
       </View>
 
-      <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+        }}
+      >
         <View className="pb-8">
           {stages.map((stage, index) => {
             const isClickable = stage.status === 'complete' || stage.status === 'in-progress';

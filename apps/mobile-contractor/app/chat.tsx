@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from "reac
 import { useRouter } from "expo-router";
 import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, FileText, Image as ImageIcon, Play, Home } from "lucide-react-native";
 import { useState } from "react";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const messages = [
   {
@@ -118,6 +119,8 @@ const messages = [
 export default function ChatScreen() {
   const router = useRouter();
   const [message, setMessage] = useState("");
+  const { horizontalPad, headerPaddingTop, insets } =
+    useResponsivePadding("stack");
 
   const renderMessage = (msg: typeof messages[0]) => {
     const isUser = msg.sender === "user";
@@ -233,8 +236,11 @@ export default function ChatScreen() {
   return (
     <View className="flex-1 bg-white">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 flex-row items-center justify-between border-b border-gray-100">
-        <View className="flex-row items-center flex-1">
+      <View
+        className="pb-3 flex-row items-center justify-between border-b border-gray-100 gap-1"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
+        <View className="flex-row items-center flex-1 min-w-0">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
             className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-2"
@@ -252,22 +258,24 @@ export default function ChatScreen() {
             className="w-10 h-10 rounded-full"
             resizeMode="cover"
           />
-          <View className="ml-2 flex-1">
-            <Text 
+          <View className="ml-2 flex-1 min-w-0">
+            <Text
               className="text-base text-black"
               style={{ fontFamily: 'Poppins_700Bold' }}
+              numberOfLines={1}
             >
               Chukwuemeka Okonkwo
             </Text>
-            <Text 
+            <Text
               className="text-gray-500 text-xs"
               style={{ fontFamily: 'Poppins_400Regular' }}
+              numberOfLines={1}
             >
               GC • Online
             </Text>
           </View>
         </View>
-        <View className="flex-row">
+        <View className="flex-row flex-shrink-0">
           <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2">
             <Phone size={20} color="#000000" strokeWidth={2} />
           </TouchableOpacity>
@@ -278,7 +286,13 @@ export default function ChatScreen() {
       </View>
 
       {/* Messages */}
-      <ScrollView className="flex-1 px-6 py-4">
+      <ScrollView
+        className="flex-1 py-4"
+        contentContainerStyle={{
+          paddingHorizontal: horizontalPad,
+          paddingBottom: 24,
+        }}
+      >
         {/* Date Separator */}
         <View className="items-center mb-6">
           <View className="bg-gray-100 rounded-full px-4 py-2">
@@ -295,7 +309,10 @@ export default function ChatScreen() {
       </ScrollView>
 
       {/* Input Area */}
-      <View className="px-6 py-4 border-t border-gray-100">
+      <View
+        className="py-4 border-t border-gray-100"
+        style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 12) }}
+      >
         <View className="flex-row items-center">
           <TouchableOpacity className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2">
             <Paperclip size={20} color="#000000" strokeWidth={2} />

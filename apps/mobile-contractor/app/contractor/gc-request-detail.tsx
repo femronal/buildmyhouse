@@ -6,6 +6,7 @@ import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../ho
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
+import { useResponsivePadding } from "@/lib/responsive-layout";
 
 function moneyToCents(value: unknown): number {
   const n =
@@ -32,6 +33,8 @@ export default function GCRequestDetailScreen() {
   const { data: pendingRequests = [], refetch, isLoading } = usePendingRequests();
   const acceptRequestMutation = useAcceptRequest();
   const rejectRequestMutation = useRejectRequest();
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+    useResponsivePadding("stack");
 
   // Find the specific request
   const request = pendingRequests.find((r) => r.id === id);
@@ -343,7 +346,7 @@ export default function GCRequestDetailScreen() {
   // If not loading but request not found, it might have been accepted/rejected
   if (!request && !isLoading) {
     return (
-      <View className="flex-1 bg-[#0A1628] items-center justify-center px-6">
+      <View className="flex-1 bg-[#0A1628] items-center justify-center" style={{ paddingHorizontal: horizontalPad }}>
         <Text className="text-white text-xl mb-2 text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
           Request Not Found
         </Text>
@@ -370,7 +373,10 @@ export default function GCRequestDetailScreen() {
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
-      <View className="pt-16 px-6 pb-4 border-b border-blue-900">
+      <View
+        className="pb-4 border-b border-blue-900"
+        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+      >
         <View className="flex-row items-center justify-between mb-2">
           <TouchableOpacity 
             onPress={() => {
@@ -391,8 +397,16 @@ export default function GCRequestDetailScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="px-6 py-6">
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: scrollBottomPadding,
+          paddingHorizontal: horizontalPad,
+          paddingTop: 24,
+        }}
+      >
+        <View>
           {/* Project Header */}
           <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
             <Text className="text-white text-2xl mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
