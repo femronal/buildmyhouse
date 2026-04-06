@@ -935,14 +935,17 @@ export default function HomeScreen() {
                     className="text-base text-black mb-1"
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
                     numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
                     {land.name}
                   </Text>
-                  <View className="flex-row items-center mb-2">
-                    <MapPin size={12} color="#737373" strokeWidth={2} />
+                  <View className="flex-row items-center mb-2 min-w-0">
+                    <MapPin size={12} color="#737373" strokeWidth={2} className="flex-shrink-0" />
                     <Text 
-                      className="text-gray-500 ml-1 text-xs"
+                      className="text-gray-500 ml-1 text-xs flex-1 min-w-0"
                       style={{ fontFamily: 'Poppins_400Regular' }}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
                     >
                       {land.location}
                     </Text>

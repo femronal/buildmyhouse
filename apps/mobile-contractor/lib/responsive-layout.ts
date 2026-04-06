@@ -21,7 +21,7 @@ export function getFloatingTabBarMetrics(
   safeAreaBottomInset: number,
 ): FloatingTabBarMetrics {
   const compact = width <= 390;
-  const height = compact ? 72 : 80;
+  const height = compact ? 78 : 84;
   const sideInset = compact ? 12 : 20;
   const borderRadius = compact ? 30 : 35;
   const baseBottomInset = compact ? 10 : 12;

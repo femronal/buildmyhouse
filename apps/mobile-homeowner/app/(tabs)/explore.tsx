@@ -566,10 +566,20 @@ export default function ExploreScreen() {
                       </TouchableOpacity>
                     </View>
                     <View className="p-4">
-                      <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      <Text
+                        className="text-black text-base mb-1"
+                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                      >
                         {land.name}
                       </Text>
-                      <Text className="text-gray-500 text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text
+                        className="text-gray-500 text-xs mb-2"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        numberOfLines={2}
+                        ellipsizeMode="tail"
+                      >
                         {land.location}
                       </Text>
                       <View className="flex-row items-center mb-3">

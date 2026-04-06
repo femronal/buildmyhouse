@@ -53,14 +53,20 @@ export default function TabsLayout() {
         ),
         tabBarActiveTintColor: '#000000',
         tabBarInactiveTintColor: '#A3A3A3',
+        /** Space between icon row and label — prevents active pill overlapping text */
+        tabBarIconStyle: {
+          marginBottom: width <= 390 ? 6 : 8,
+        },
         tabBarLabelStyle: {
           fontFamily: 'Poppins_600SemiBold',
-          fontSize: width <= 390 ? 12 : 14,
-          marginTop: width <= 390 ? 4 : 6,
+          fontSize: width <= 390 ? 11 : 13,
+          marginTop: 0,
           fontWeight: '600',
+          lineHeight: width <= 390 ? 14 : 16,
         },
         tabBarItemStyle: {
-          paddingVertical: width <= 390 ? 8 : 10,
+          paddingTop: width <= 390 ? 6 : 8,
+          paddingBottom: width <= 390 ? 4 : 6,
         },
       }}
     >
@@ -69,8 +75,11 @@ export default function TabsLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
-              <Home size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
+            <View
+              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+            >
+              <Home size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
@@ -80,8 +89,11 @@ export default function TabsLayout() {
         options={{
           title: "Projects",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
-              <Compass size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
+            <View
+              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+            >
+              <Compass size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
@@ -91,8 +103,11 @@ export default function TabsLayout() {
         options={{
           title: "Build",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
-              <Building2 size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
+            <View
+              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+            >
+              <Building2 size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
@@ -102,8 +117,11 @@ export default function TabsLayout() {
         options={{
           title: "Finance",
           tabBarIcon: ({ color, focused }) => (
-            <View className={`p-3 rounded-xl ${focused ? 'bg-black' : 'bg-transparent'}`}>
-              <Wallet size={28} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
+            <View
+              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+            >
+              <Wallet size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
