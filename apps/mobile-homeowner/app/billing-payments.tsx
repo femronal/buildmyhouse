@@ -12,6 +12,7 @@ import {
 } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 function formatProjectType(type?: string) {
   switch (type) {
@@ -127,7 +128,7 @@ export default function BillingPaymentsScreen() {
         </View>
 
         {/* Payment options */}
-        <View className="bg-gray-50 rounded-3xl p-6 border border-gray-200 mb-6">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200 mb-6">
           <Text className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
             Ways to deposit to BuildMyHouse
           </Text>
@@ -157,7 +158,7 @@ export default function BillingPaymentsScreen() {
               desc: 'Fast and easy for USA-based customers who prefer bank-to-bank transfers.',
             },
           ].map((m) => (
-            <View key={m.title} className="bg-white rounded-2xl p-4 border border-gray-200 mb-3">
+            <View key={m.title} style={cardShadowStyle} className="bg-white rounded-2xl p-4 border border-gray-200 mb-3">
               <View className="flex-row items-start">
                 <PaymentMethodLogo method={m.key} size={42} />
                 <View className="flex-1 ml-3">
@@ -192,7 +193,7 @@ export default function BillingPaymentsScreen() {
               <ActivityIndicator size="small" color="#000000" />
             </View>
           ) : allProjects.length === 0 ? (
-            <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
               <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                 No projects yet.
               </Text>
@@ -212,7 +213,7 @@ export default function BillingPaymentsScreen() {
                 const declareDisabled = declareManualPaymentMutation.isPending;
 
                 return (
-                  <View key={projectId} className="bg-white rounded-3xl p-5 border border-gray-200">
+                  <View key={projectId} style={cardShadowStyle} className="bg-white rounded-3xl p-5 border border-gray-200">
                     <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
                       {title}
                     </Text>
@@ -220,7 +221,7 @@ export default function BillingPaymentsScreen() {
                       {formatProjectType(type)}
                     </Text>
 
-                    <View className="mt-4 bg-gray-50 rounded-2xl p-4 border border-gray-200">
+                    <View style={cardShadowStyle} className="mt-4 bg-gray-50 rounded-2xl p-4 border border-gray-200">
                       <View className="flex-row items-center">
                         {confirmationStatus === 'confirmed' ? (
                           <CheckCircle2 size={18} color="#059669" strokeWidth={2.5} />

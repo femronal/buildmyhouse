@@ -6,6 +6,7 @@ import { SeoRichSection } from '@/components/seo/SeoLandingPage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
 import { renovationNigeriaPageContent } from '@/lib/renovation-nigeria-hub';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 function ParagraphBlock({
   paragraphs,
@@ -161,7 +162,7 @@ export default function RenovationNigeriaHub() {
           <ParagraphBlock paragraphs={c.whyBuildMyHouse.paragraphs} className="" />
         </View>
 
-        <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-6">
+        <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-6">
           <SeoHeading level={2} className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {c.howItWorks.title}
           </SeoHeading>
@@ -207,7 +208,7 @@ export default function RenovationNigeriaHub() {
             {c.faq.title}
           </SeoHeading>
           {c.faq.items.map((faq) => (
-            <View key={faq.question} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
+            <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
               <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 {faq.question}
               </SeoHeading>

@@ -6,6 +6,7 @@ import { useHouseForSale } from "@/hooks/useHousesForSale";
 import { useScheduleHouseViewing } from "@/hooks/useHouseViewing";
 import { getBackendAssetUrl } from "@/lib/image";
 import ImageCarousel from "@/components/ImageCarousel";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function HouseDetailScreen() {
   const router = useRouter();
@@ -86,7 +87,7 @@ export default function HouseDetailScreen() {
           {house.description}
         </Text>
 
-        <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
           <View className="flex-row justify-between mb-3">
             <View className="flex-row items-center">
               <Bed size={18} color="#737373" strokeWidth={2} />
@@ -118,7 +119,7 @@ export default function HouseDetailScreen() {
         </View>
 
         {(house.propertyType || house.yearBuilt || house.condition) && (
-          <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
             <Text className="text-black mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Property Details
             </Text>
@@ -198,7 +199,7 @@ export default function HouseDetailScreen() {
         </View>
 
         {(house.contactName || house.contactPhone) && (
-          <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
             <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Contact for Viewing
             </Text>

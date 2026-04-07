@@ -9,6 +9,7 @@ import {
   saveNotificationSettings,
   type NotificationSettings,
 } from "@/lib/notificationSettings";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -33,7 +34,7 @@ function ToggleRow(props: {
   disabled?: boolean;
 }) {
   return (
-    <View className={`bg-white rounded-2xl p-4 border border-gray-200 mb-3 ${props.disabled ? "opacity-50" : ""}`}>
+    <View style={cardShadowStyle} className={`bg-white rounded-2xl p-4 border border-gray-200 mb-3 ${props.disabled ? "opacity-50" : ""}`}>
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-4">
           <Text className="text-black text-base" style={{ fontFamily: "Poppins_600SemiBold" }}>

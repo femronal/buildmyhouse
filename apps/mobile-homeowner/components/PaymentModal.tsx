@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { X, Lock, ExternalLink, FileText } from 'lucide-react-native';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 interface PaymentModalProps {
   visible: boolean;
@@ -76,7 +77,7 @@ export default function PaymentModal({
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Amount card */}
-            <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
               <View className="flex-row items-center mb-4">
                 <Text className="text-gray-900 text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                 <Text
@@ -102,7 +103,7 @@ export default function PaymentModal({
                 Minimum deposit is 50% of the project budget. 100% is recommended for faster execution.
               </Text>
 
-              <View className="mt-4 bg-white rounded-xl p-4 border border-gray-200">
+              <View style={cardShadowStyle} className="mt-4 bg-white rounded-xl p-4 border border-gray-200">
                 <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Recommended amounts
                 </Text>
@@ -145,7 +146,7 @@ export default function PaymentModal({
             </View>
 
             {/* How it works */}
-            <View className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
+            <View style={cardShadowStyle} className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
               <View className="flex-row items-start mb-4">
                 <Lock size={20} color="#111827" strokeWidth={2} className="mt-1" />
                 <Text
@@ -171,7 +172,7 @@ export default function PaymentModal({
             </View>
 
             {/* Payment options */}
-            <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
               <Text className="text-gray-900 text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Ways to deposit to BuildMyHouse
               </Text>
@@ -198,7 +199,7 @@ export default function PaymentModal({
                   desc: 'Fast and easy for USA-based customers who prefer bank-to-bank transfers.',
                 },
               ].map((m) => (
-                <View key={m.title} className="bg-white rounded-xl p-4 border border-gray-200 mb-3">
+                <View key={m.title} style={cardShadowStyle} className="bg-white rounded-xl p-4 border border-gray-200 mb-3">
                   <View className="flex-row items-start">
                     <PaymentMethodLogo method={m.key} size={40} />
                     <View className="flex-1 ml-3">

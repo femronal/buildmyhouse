@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 export type PaymentMethodKey = 'stripe' | 'wise' | 'paystack' | 'zelle';
 
@@ -27,7 +28,7 @@ export function PaymentMethodLogo(props: { method: PaymentMethodKey; size?: numb
       accessibilityRole="image"
       accessibilityLabel={`${brand.label} logo`}
       className="rounded-2xl items-center justify-center border border-gray-200"
-      style={{ width: size, height: size, backgroundColor: brand.bg }}
+      style={[cardShadowStyle, { width: size, height: size, backgroundColor: brand.bg }]}
     >
       <Text style={{ fontFamily: 'Poppins_800ExtraBold', color: brand.fg, fontSize: Math.max(14, Math.floor(size * 0.45)) }}>
         {brand.short}

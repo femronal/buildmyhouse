@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 type MenuItem = {
   icon: any;
@@ -203,7 +204,7 @@ export default function ProfileScreen() {
 
         {/* Stats */}
         <View className="flex-row mb-6">
-          <View className="flex-1 bg-gray-50 rounded-2xl p-4 mr-2 border border-gray-200">
+          <View style={cardShadowStyle} className="flex-1 bg-gray-50 rounded-2xl p-4 mr-2 border border-gray-200">
             <Text 
               className="text-3xl text-black"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -217,7 +218,7 @@ export default function ProfileScreen() {
               Active Projects
             </Text>
           </View>
-          <View className="flex-1 bg-gray-50 rounded-2xl p-4 ml-2 border border-gray-200">
+          <View style={cardShadowStyle} className="flex-1 bg-gray-50 rounded-2xl p-4 ml-2 border border-gray-200">
             <Text 
               className="text-3xl text-black"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -289,7 +290,7 @@ export default function ProfileScreen() {
           {activeTab === 'active' && (
             <View>
               {trulyActiveProjects.length === 0 ? (
-                <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
                   <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No active projects
                   </Text>
@@ -299,6 +300,7 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     key={project.id}
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
+                    style={cardShadowStyle}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >
                     <View className="flex-row items-center justify-between mb-1">
@@ -328,7 +330,7 @@ export default function ProfileScreen() {
           {activeTab === 'completed' && (
             <View>
               {completedProjects.length === 0 ? (
-                <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
                   <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No completed projects
                   </Text>
@@ -338,6 +340,7 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     key={project.id}
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
+                    style={cardShadowStyle}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >
                     <View className="flex-row items-center justify-between mb-1">

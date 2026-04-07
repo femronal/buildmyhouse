@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, HelpCircle, Mail, ChevronRight } from "lucide-react-native";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 const FAQ_ITEMS = [
   {
@@ -27,7 +28,7 @@ const FAQ_ITEMS = [
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
-    <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-3">
+    <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-3">
       <Text className="text-black text-sm mb-2" style={{ fontFamily: "Poppins_600SemiBold" }}>
         {q}
       </Text>
@@ -73,6 +74,7 @@ export default function HelpSupportScreen() {
         </Text>
         <TouchableOpacity
           onPress={() => router.push("/billing-payments" as any)}
+          style={cardShadowStyle}
           className="bg-gray-50 rounded-2xl p-4 border border-gray-200 mb-3 flex-row items-center justify-between"
         >
           <Text className="text-black" style={{ fontFamily: "Poppins_600SemiBold" }}>

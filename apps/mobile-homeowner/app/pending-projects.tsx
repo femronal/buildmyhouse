@@ -7,6 +7,7 @@ import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
 import * as WebBrowser from 'expo-web-browser';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 export default function PendingProjectsScreen() {
   const router = useRouter();
@@ -281,8 +282,10 @@ export default function PendingProjectsScreen() {
             return (
               <View
                 key={uniqueKey}
-                className="bg-gray-50 rounded-3xl mb-4 overflow-hidden border border-gray-200"
+                style={cardShadowStyle}
+                className="bg-gray-50 rounded-3xl mb-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <View className="p-5">
                   <View className="flex-row justify-between items-start mb-3">
                     <View className="flex-1">
@@ -535,6 +538,7 @@ export default function PendingProjectsScreen() {
                       </TouchableOpacity>
                     )}
                   </View>
+                </View>
                 </View>
               </View>
             );

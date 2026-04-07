@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Bell, ChevronRight, Info } from "lucide-react-native";
 import Constants from "expo-constants";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function AppSettingsScreen() {
   const router = useRouter();
@@ -19,13 +20,14 @@ export default function AppSettingsScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="bg-gray-50 rounded-3xl p-6 border border-gray-200 mb-6">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200 mb-6">
           <Text className="text-gray-600 text-sm mb-4" style={{ fontFamily: "Poppins_400Regular" }}>
             Manage how BuildMyHouse works for you.
           </Text>
 
           <TouchableOpacity
             onPress={() => router.push("/notification-settings" as any)}
+            style={cardShadowStyle}
             className="bg-white rounded-2xl p-4 border border-gray-200 flex-row items-center justify-between"
           >
             <View className="flex-row items-center">
@@ -45,7 +47,7 @@ export default function AppSettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex-row items-center">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex-row items-center">
           <Info size={18} color="#6B7280" strokeWidth={2} />
           <Text className="text-gray-600 text-sm ml-2" style={{ fontFamily: "Poppins_400Regular" }}>
             BuildMyHouse v{appVersion}

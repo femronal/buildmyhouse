@@ -6,6 +6,7 @@ import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding, getTwoColumnCardWidth } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
@@ -319,8 +320,10 @@ export default function DesignLibraryScreen() {
             <TouchableOpacity
               key={design.id}
                   onPress={() => handleUseDesign(design)}
-              className="w-[48%] mb-6 bg-white rounded-2xl overflow-hidden border border-gray-200"
+              style={cardShadowStyle}
+              className="w-[48%] mb-6 bg-white rounded-2xl border border-gray-200"
             >
+                  <View className="overflow-hidden rounded-2xl">
                   <View className="relative">
                     {images.length > 0 ? (
                       <>
@@ -436,6 +439,7 @@ export default function DesignLibraryScreen() {
                 >
                       ₦{design.estimatedCost?.toLocaleString() || '0'}
                     </Text>
+                  </View>
                   </View>
                 </TouchableOpacity>
               );

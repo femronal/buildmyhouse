@@ -19,6 +19,7 @@ import {
   useMarkAllNotificationsRead,
   type NotificationItem,
 } from "@/hooks/useNotifications";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 function getNotificationIcon(item: NotificationItem) {
   const t = item.type?.toLowerCase() ?? "";
@@ -196,6 +197,7 @@ export default function NotificationsScreen() {
                     <TouchableOpacity
                       key={item.id}
                       onPress={() => handleItemPress(item)}
+                      style={cardShadowStyle}
                       className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row border border-gray-200"
                     >
                       <View className="w-12 h-12 bg-black rounded-full items-center justify-center">
@@ -243,6 +245,7 @@ export default function NotificationsScreen() {
                     <TouchableOpacity
                       key={item.id}
                       onPress={() => handleItemPress(item)}
+                      style={cardShadowStyle}
                       className="bg-white rounded-2xl p-4 mb-3 flex-row border border-gray-200"
                     >
                       <View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center">

@@ -1,6 +1,7 @@
 import { TouchableOpacity, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 export type InternalLinkItem = {
   label: string;
@@ -19,7 +20,7 @@ export default function InternalLinksBlock({
   const router = useRouter();
 
   return (
-    <View className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
+    <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
       <SeoHeading level={2} className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
         {title}
       </SeoHeading>

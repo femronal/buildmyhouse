@@ -4,6 +4,7 @@ import { User, Bell, Plus, ChevronRight, MapPin, TrendingUp, X, Check, LandPlot,
 import { useState, useCallback, useMemo } from "react";
 import { useInvestments } from '@/contexts/InvestmentContext';
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 const projectImages = {
   1: [
@@ -245,7 +246,8 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={project.id}
                 onPress={() => router.push('/dashboard')}
-                className="bg-gray-50 rounded-3xl mb-4 overflow-hidden border border-gray-200"
+                style={cardShadowStyle}
+                className="bg-gray-50 rounded-3xl mb-4 border border-gray-200"
                 onLayout={(e) => {
                   const w = e.nativeEvent.layout.width;
                   if (w > 0 && Math.abs(w - projectCarouselWidth) > 1) {
@@ -253,6 +255,7 @@ export default function HomeScreen() {
                   }
                 }}
               >
+                <View className="overflow-hidden rounded-3xl">
                 {/* Image Carousel */}
                 <View className="relative">
                   <ScrollView
@@ -372,6 +375,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -414,14 +418,18 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={investment.id}
                 onPress={() => handleInvest(investment)}
-                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{
-                  width: Math.min(
-                    280,
-                    Math.max(220, screenWidth - horizontalPad * 2 - 12),
-                  ),
-                }}
+                style={[
+                  cardShadowStyle,
+                  {
+                    width: Math.min(
+                      280,
+                      Math.max(220, screenWidth - horizontalPad * 2 - 12),
+                    ),
+                  },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <Image
                   source={{ uri: investment.image }}
                   className="w-full h-32"
@@ -459,6 +467,7 @@ export default function HomeScreen() {
                   <View className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                     <View className="h-full bg-black rounded-full" style={{ width: `${(investment.soldUnits / investment.totalUnits) * 100}%` }} />
                   </View>
+                </View>
                 </View>
               </TouchableOpacity>
             ))}
@@ -502,14 +511,18 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={land.id}
                 onPress={() => handleLandPurchase(land)}
-                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{
-                  width: Math.min(
-                    280,
-                    Math.max(220, screenWidth - horizontalPad * 2 - 12),
-                  ),
-                }}
+                style={[
+                  cardShadowStyle,
+                  {
+                    width: Math.min(
+                      280,
+                      Math.max(220, screenWidth - horizontalPad * 2 - 12),
+                    ),
+                  },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <Image
                   source={{ uri: land.image }}
                   className="w-full h-32"
@@ -555,6 +568,7 @@ export default function HomeScreen() {
                     ))}
                   </View>
                 </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -599,7 +613,7 @@ export default function HomeScreen() {
                   {selectedInvestment?.description}
                 </Text>
 
-                <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
                   <View className="flex-row justify-between mb-3">
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Expected ROI</Text>
@@ -741,7 +755,7 @@ export default function HomeScreen() {
                   {selectedLand?.description}
                 </Text>
 
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
                   <View className="flex-row justify-between mb-2">
                     <View>
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Price/Plot</Text>

@@ -51,6 +51,7 @@ import {
   getTabContentBottomPadding,
   getTwoColumnCardWidth,
 } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 type RentalListing = {
   id: string;
@@ -369,9 +370,10 @@ export default function RentScreen() {
               <TouchableOpacity
                 key={listing.id}
                 onPress={() => openRentModal(listing)}
-                className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
-                style={{ width: cardWidth }}
+                style={[cardShadowStyle, { width: cardWidth }]}
+                className="mb-5 bg-white rounded-3xl border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <View className="relative">
                   <Image
                     source={{
@@ -427,6 +429,7 @@ export default function RentScreen() {
                       </Text>
                     </View>
                   </View>
+                </View>
                 </View>
               </TouchableOpacity>
             ))}

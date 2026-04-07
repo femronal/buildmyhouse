@@ -6,6 +6,7 @@ import ImageCarousel from "@/components/ImageCarousel";
 import { getBackendAssetUrl } from "@/lib/image";
 import { useLandForSale } from "@/hooks/useLandsForSale";
 import { useScheduleLandViewing } from "@/hooks/useLandViewing";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function LandDetailScreen() {
   const router = useRouter();
@@ -71,7 +72,7 @@ export default function LandDetailScreen() {
           </Text>
         ) : null}
 
-        <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
           <View className="flex-row justify-between mb-3">
             <View className="flex-row items-center">
               <LandPlot size={18} color="#737373" strokeWidth={2} />

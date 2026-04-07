@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Mail } from "lucide-react-native";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -29,7 +30,7 @@ export default function TermsConditionsScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="bg-gray-100 rounded-2xl p-4 mb-6 border border-gray-200">
+        <View style={cardShadowStyle} className="bg-gray-100 rounded-2xl p-4 mb-6 border border-gray-200">
           <Text className="text-gray-600 text-sm" style={{ fontFamily: "Poppins_400Regular" }}>
             By using BuildMyHouse, you agree to these terms. We keep them simple and clear.
           </Text>
@@ -42,7 +43,7 @@ export default function TermsConditionsScreen() {
         </Section>
 
         <Section title="Your responsibilities">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               • Provide accurate project and contact information{"\n"}
               • Pay deposits as agreed (min 50%, 100% recommended){"\n"}

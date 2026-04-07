@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -123,7 +124,7 @@ export default function DashboardScreen() {
                 ))}
               </View>
 
-              <View className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+              <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-4">
                 <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   What you should do now
                 </Text>
@@ -381,7 +382,7 @@ export default function DashboardScreen() {
 
         {/* Homebuilding payment / tracking unlock card */}
         {isHomebuilding && !isTrackingUnlocked && (
-          <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-3">
               {paymentConfirmationStatus === 'declared' ? (
                 <Clock size={22} color="#F59E0B" strokeWidth={2.5} />
@@ -426,7 +427,7 @@ export default function DashboardScreen() {
 
         {/* Project Overview - GC Summary */}
         {aiAnalysis && (
-          <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-4">
               <HardHat size={24} color="#000000" strokeWidth={2} />
               <Text 
@@ -488,7 +489,7 @@ export default function DashboardScreen() {
         )}
 
         {/* Financial Summary */}
-        <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+        <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
           <View className="flex-row items-center mb-4">
             <Text className="text-black text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
             <Text 
@@ -638,7 +639,7 @@ export default function DashboardScreen() {
 
         {/* Project Dates */}
         {(project.startDate || project.dueDate) && (
-          <View className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-4">
               <Calendar size={24} color="#000000" strokeWidth={2} />
               <Text 
@@ -687,7 +688,7 @@ export default function DashboardScreen() {
 
         {/* Project Completion Congratulations & Rating */}
         {isProjectComplete && (
-          <View className="bg-green-50 rounded-3xl p-6 mb-6 border border-green-200">
+          <View style={cardShadowStyle} className="bg-green-50 rounded-3xl p-6 mb-6 border border-green-200">
             <View className="items-center mb-4">
               <View className="w-16 h-16 bg-green-600 rounded-full items-center justify-center mb-3">
                 <PartyPopper size={32} color="#FFFFFF" strokeWidth={2} />
@@ -713,7 +714,7 @@ export default function DashboardScreen() {
             </View>
 
             {/* Important Notes */}
-            <View className="bg-white rounded-2xl p-4 mb-4 border border-green-200">
+            <View style={cardShadowStyle} className="bg-white rounded-2xl p-4 mb-4 border border-green-200">
               <Text 
                 className="text-black text-sm mb-2"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}

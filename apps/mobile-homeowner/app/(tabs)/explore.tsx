@@ -15,6 +15,7 @@ import {
   getTabContentBottomPadding,
   getTwoColumnCardWidth,
 } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
@@ -327,9 +328,10 @@ export default function ExploreScreen() {
                 <TouchableOpacity
                   key={design.id}
                   onPress={() => router.push(`/house-summary?designId=${design.id}&designName=${design.name}`)}
-                  className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
-                  style={{ width: cardWidth }}
+                  style={[cardShadowStyle, { width: cardWidth }]}
+                  className="mb-5 bg-white rounded-3xl border border-gray-200"
                 >
+                  <View className="overflow-hidden rounded-3xl">
                   <View className="relative">
                     {images.length > 0 ? (
                       <>
@@ -452,6 +454,7 @@ export default function ExploreScreen() {
                       ₦{design.estimatedCost.toLocaleString()}
                     </Text>
                   </View>
+                  </View>
                 </TouchableOpacity>
               );
                 })}
@@ -478,9 +481,10 @@ export default function ExploreScreen() {
                   <TouchableOpacity
                     key={house.id}
                     onPress={() => router.push(`/house-detail?houseId=${house.id}`)}
-                    className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
-                    style={{ width: cardWidth }}
+                    style={[cardShadowStyle, { width: cardWidth }]}
+                    className="mb-5 bg-white rounded-3xl border border-gray-200"
                   >
+                    <View className="overflow-hidden rounded-3xl">
                     <View className="relative">
                       <Image
                         source={{ uri: house.images?.[0]?.url ? getImageUrl(house.images[0].url) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80' }}
@@ -523,6 +527,7 @@ export default function ExploreScreen() {
                         ₦{house.price.toLocaleString()}
                       </Text>
                     </View>
+                    </View>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -548,9 +553,10 @@ export default function ExploreScreen() {
                   <TouchableOpacity
                     key={land.id}
                     onPress={() => router.push(`/land-detail?landId=${land.id}`)}
-                    className="mb-5 bg-white rounded-3xl overflow-hidden border border-gray-200"
-                    style={{ width: cardWidth }}
+                    style={[cardShadowStyle, { width: cardWidth }]}
+                    className="mb-5 bg-white rounded-3xl border border-gray-200"
                   >
+                    <View className="overflow-hidden rounded-3xl">
                     <View className="relative">
                       <Image
                         source={{ uri: land.images?.[0]?.url ? getImageUrl(land.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
@@ -591,6 +597,7 @@ export default function ExploreScreen() {
                       <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
                         ₦{land.price.toLocaleString()}
                       </Text>
+                    </View>
                     </View>
                   </TouchableOpacity>
                 ))}

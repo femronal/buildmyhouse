@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function TimelineScreen() {
   const router = useRouter();
@@ -216,7 +217,7 @@ export default function TimelineScreen() {
           className="flex-1"
           contentContainerStyle={{ paddingBottom: contentBottomPadding, paddingHorizontal: horizontalPadding }}
         >
-          <View className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
             <View className="flex-row items-center mb-3">
               {paymentConfirmationStatus === 'declared' ? (
                 <Clock size={22} color="#F59E0B" strokeWidth={2.5} />

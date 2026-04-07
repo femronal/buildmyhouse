@@ -5,6 +5,7 @@ import { ArrowLeft, Clock3 } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { articles as fallbackArticles, fetchPublishedArticles, type Article } from '@/lib/articles';
 import { useWebSeo } from '@/lib/seo';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 export default function ArticlesIndexPage() {
   const router = useRouter();
@@ -81,9 +82,11 @@ export default function ArticlesIndexPage() {
           {list.map((article) => (
             <TouchableOpacity
               key={article.slug}
-              className="border border-gray-200 rounded-3xl overflow-hidden mb-5"
+              style={cardShadowStyle}
+              className="border border-gray-200 rounded-3xl mb-5 bg-white"
               onPress={() => router.push(`/articles/${article.slug}` as any)}
             >
+              <View className="overflow-hidden rounded-3xl">
               <Image
                 source={{ uri: article.coverImageUrl }}
                 accessibilityLabel={article.coverImageAlt}
@@ -106,6 +109,7 @@ export default function ArticlesIndexPage() {
                     {article.readingMinutes} min read
                   </Text>
                 </View>
+              </View>
               </View>
             </TouchableOpacity>
           ))}

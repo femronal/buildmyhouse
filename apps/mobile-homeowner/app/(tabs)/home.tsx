@@ -22,6 +22,7 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
 } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -426,14 +427,14 @@ export default function HomeScreen() {
           </Text>
 
           {(loadingActive || loadingPending || loadingPaused) ? (
-            <View className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
               <ActivityIndicator size="small" color="#000" />
               <Text className="text-gray-500 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Loading projects...
               </Text>
             </View>
           ) : allProjects.length === 0 ? (
-            <View className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
               {!currentUser && !userLoading ? (
                 <>
                   <Text className="text-gray-500 text-center mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -483,10 +484,12 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={uniqueKey}
                   onPress={() => handleProjectPress(project)}
-                  className={`bg-gray-50 rounded-3xl mb-4 overflow-hidden border ${
+                  style={cardShadowStyle}
+                  className={`bg-gray-50 rounded-3xl mb-4 border ${
                     isPaused ? 'border-orange-200' : 'border-gray-200'
                   }`}
                 >
+                  <View className="overflow-hidden rounded-3xl">
                   <Image
                     source={{ uri: getProjectCoverImage(project) }}
                     className="w-full h-36"
@@ -634,6 +637,7 @@ export default function HomeScreen() {
                       </>
                     )}
                   </View>
+                  </View>
                 </TouchableOpacity>
               );
             })
@@ -739,9 +743,13 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={listing.id}
                 onPress={() => openRentModal(listing)}
-                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{ width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) }}
+                style={[
+                  cardShadowStyle,
+                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <Image
                   source={{
                     uri: listing.images?.[0]?.url
@@ -790,6 +798,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -830,9 +839,13 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={home.id}
                 onPress={() => handleBuyHome(home)}
-                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{ width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) }}
+                style={[
+                  cardShadowStyle,
+                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <Image
                   source={{ uri: getHouseImageUrl(home) }}
                   className="w-full h-32"
@@ -882,6 +895,7 @@ export default function HomeScreen() {
                     </View>
                   </View>
                 </View>
+                </View>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -922,9 +936,13 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={land.id}
                 onPress={() => handleLandPurchase(land)}
-                className="bg-white rounded-3xl mr-4 overflow-hidden border border-gray-200"
-                style={{ width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) }}
+                style={[
+                  cardShadowStyle,
+                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
               >
+                <View className="overflow-hidden rounded-3xl">
                 <Image
                   source={{ uri: land.images?.[0]?.url ? getBackendAssetUrl(land.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
                   className="w-full h-32"
@@ -969,6 +987,7 @@ export default function HomeScreen() {
                       </View>
                     ))}
                   </View>
+                </View>
                 </View>
               </TouchableOpacity>
             ))}

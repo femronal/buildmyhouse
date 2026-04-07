@@ -12,6 +12,7 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
 } from "@/lib/responsive-layout";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 type TabKey = 'overview' | 'payments' | 'invoices' | 'landPurchases' | 'homePurchases' | 'rentals';
 
@@ -111,7 +112,7 @@ export default function FinanceScreen() {
   };
 
   const renderInvoiceFileCard = (file: any) => (
-    <View key={file.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+    <View key={file.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-3">
           <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -202,7 +203,7 @@ export default function FinanceScreen() {
             </View>
             <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>Project Budgets</Text>
             {allProjects.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No projects yet. Start a project to see your budget breakdown here.</Text>
               </View>
             ) : (
@@ -212,7 +213,7 @@ export default function FinanceScreen() {
                 const remaining = budget - spent;
                 const percent = budget > 0 ? Math.round((spent / budget) * 100) : 0;
                 return (
-                  <View key={p.id} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
+                  <View key={p.id} style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
                     <Text className="text-lg text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
                     <View className="flex-row justify-between mb-3">
                       <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{budget.toLocaleString()}</Text></View>
@@ -231,7 +232,7 @@ export default function FinanceScreen() {
         {activeTab === 'payments' && (
           <View className="pb-8">
             {paymentsWithData.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <Text className="text-gray-400 text-4xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No payments yet. Materials and team costs recorded by your GC will appear here.</Text>
               </View>
@@ -244,7 +245,8 @@ export default function FinanceScreen() {
                 const subCount = subPayments.length;
                 const hasActivation = !!activation;
                 return (
-                  <View key={group.projectId} className="bg-gray-50 rounded-2xl mb-3 border border-gray-200 overflow-hidden">
+                  <View key={group.projectId} style={cardShadowStyle} className="bg-gray-50 rounded-2xl mb-3 border border-gray-200">
+                    <View className="overflow-hidden rounded-2xl">
                     <TouchableOpacity
                       onPress={() => setExpandedProjectId(isExpanded ? null : group.projectId)}
                       className="p-4 flex-row items-center"
@@ -282,6 +284,7 @@ export default function FinanceScreen() {
                         )}
                       </View>
                     )}
+                    </View>
                   </View>
                 );
               })
@@ -292,7 +295,7 @@ export default function FinanceScreen() {
         {activeTab === 'invoices' && (
           <View className="pb-8">
             {invoiceFiles.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <FileText size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No invoices or receipts uploaded yet. Files added by your GC will appear here.
@@ -335,7 +338,7 @@ export default function FinanceScreen() {
         {activeTab === 'landPurchases' && (
           <View className="pb-8">
             {landPurchases.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <Landmark size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No land purchase records yet.
@@ -343,7 +346,7 @@ export default function FinanceScreen() {
               </View>
             ) : (
               landPurchases.map((purchase: any) => (
-                <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+                <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                   <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {purchase.snapshotName ?? purchase.landForSale?.name ?? 'Land'}
                   </Text>
@@ -367,7 +370,7 @@ export default function FinanceScreen() {
         {activeTab === 'homePurchases' && (
           <View className="pb-8">
             {homePurchases.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <Home size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No home purchase records yet.
@@ -375,7 +378,7 @@ export default function FinanceScreen() {
               </View>
             ) : (
               homePurchases.map((purchase: any) => (
-                <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+                <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                   <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {purchase.snapshotName ?? purchase.houseForSale?.name ?? 'House'}
                   </Text>
@@ -399,7 +402,7 @@ export default function FinanceScreen() {
         {activeTab === 'rentals' && (
           <View className="pb-8">
             {rentalPurchases.length === 0 ? (
-              <View className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
                 <Building2 size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No rental spend records yet.
@@ -417,14 +420,14 @@ export default function FinanceScreen() {
                 const agencyFee = Math.round((annualRent * agencyFeePercent) / 100);
                 const totalSpent = annualRent + serviceCharge + cautionDeposit + legalFee + agencyFee;
                 return (
-                  <View key={purchase.id} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+                  <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
                     <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       {purchase.snapshotTitle ?? listing?.title ?? 'Rental'}
                     </Text>
                     <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {purchase.snapshotLocation ?? listing?.location ?? ''}
                     </Text>
-                    <View className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
+                    <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
                       <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Annual rent: ₦{annualRent.toLocaleString()}
                       </Text>

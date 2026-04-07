@@ -7,6 +7,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import YouTubeEmbed from '@/components/seo/YouTubeEmbed';
 import { Article } from '@/lib/articles';
 import { trackWebEvent } from '@/lib/analytics';
+import { cardShadowStyle } from '@/lib/card-styles';
 
 type SeoArticlePageProps = {
   article: Article;
@@ -125,7 +126,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
 
             if (block.type === 'quote') {
               return (
-                <View key={key} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-4">
+                <View key={key} style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-4">
                   <Text className="text-gray-800 text-[15px] leading-6 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                     "{block.text}"
                   </Text>
@@ -201,7 +202,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
               Frequently asked questions
             </Text>
             {article.faqs.map((faq) => (
-              <View key={faq.question} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
+              <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
                 <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   {faq.question}
                 </Text>

@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, Linking, Alert } from "react-
 import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Lock, Mail } from "lucide-react-native";
 import type { ReactNode } from "react";
+import { cardShadowStyle } from "@/lib/card-styles";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -38,7 +39,7 @@ export default function PrivacySecurityScreen() {
         </View>
 
         <Section title="What we collect">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               • Name, email, phone (to manage your account and communicate with you){"\n"}
               • Project details and address (to connect you with GCs and track progress){"\n"}
@@ -48,7 +49,7 @@ export default function PrivacySecurityScreen() {
         </Section>
 
         <Section title="How we use it">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               • To match you with verified General Contractors{"\n"}
               • To hold deposits and release funds as you approve each stage{"\n"}
@@ -58,7 +59,7 @@ export default function PrivacySecurityScreen() {
         </Section>
 
         <Section title="Who we share with">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               • Your GC (project details, contact info needed for the build){"\n"}
               • Payment processors (Stripe, Wise, Paystack, Zelle) for deposits{"\n"}
@@ -68,7 +69,7 @@ export default function PrivacySecurityScreen() {
         </Section>
 
         <Section title="Your data is protected">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex-row items-start">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex-row items-start">
             <Lock size={18} color="#059669" strokeWidth={2} />
             <Text className="text-gray-700 text-sm leading-6 ml-2 flex-1" style={{ fontFamily: "Poppins_400Regular" }}>
               We use industry-standard encryption and secure storage. Deposits are held in escrow and released only after your stage-by-stage approval.
@@ -77,7 +78,7 @@ export default function PrivacySecurityScreen() {
         </Section>
 
         <Section title="Your rights">
-          <View className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
+          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               You can request access to your data, corrections, or deletion. Contact us at the email below.
             </Text>
