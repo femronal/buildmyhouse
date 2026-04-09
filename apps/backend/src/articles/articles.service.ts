@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { isTipTapDoc, normalizeStoredArticleContent } from './article-content';
 import { UpsertArticleDto } from './dto/upsert-article.dto';
 
 @Injectable()
@@ -36,16 +37,14 @@ export class ArticlesService {
       throw new BadRequestException('Canonical path must start with /articles/');
     }
 
-    const rawBlocks = Array.isArray(dto.blocks) ? dto.blocks : [];
-    const blocks = rawBlocks.map((block, index) => {
-      if (!block || Array.isArray(block) || typeof block !== 'object') {
-        throw new BadRequestException(`Block at index ${index} must be an object`);
-      }
-      if (typeof (block as any).type !== 'string' || !(block as any).type.trim()) {
-        throw new BadRequestException(`Block at index ${index} is missing a valid "type"`);
-      }
-      return block;
-    });
+    const content = dto.content;
+    if (!isTipTapDoc(content)) {
+      throw new BadRequestException('content must be a TipTap document with type "doc"');
+    }
+    const inner = (content as { content?: unknown }).content;
+    if (!Array.isArray(inner)) {
+      throw new BadRequestException('content.content must be an array');
+    }
 
     return {
       slug,
@@ -58,15 +57,22 @@ export class ArticlesService {
       tags: Array.isArray(dto.tags) ? dto.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [],
       authorName: String(dto.authorName || '').trim() || 'BuildMyHouse Editorial',
       canonicalPath,
-      blocks,
+      content: dto.content as object,
       faqs: Array.isArray(dto.faqs) ? dto.faqs : [],
       internalLinks: Array.isArray(dto.internalLinks) ? dto.internalLinks : [],
       isPublished: Boolean(dto.isPublished),
     };
   }
 
+  private withNormalizedContent<T extends { content: unknown }>(row: T) {
+    return {
+      ...row,
+      content: normalizeStoredArticleContent(row.content),
+    };
+  }
+
   async listPublished() {
-    return this.prisma.cmsArticle.findMany({
+    const rows = await this.prisma.cmsArticle.findMany({
       where: { isPublished: true },
       orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
       select: {
@@ -81,7 +87,7 @@ export class ArticlesService {
         tags: true,
         authorName: true,
         canonicalPath: true,
-        blocks: true,
+        content: true,
         faqs: true,
         internalLinks: true,
         isPublished: true,
@@ -90,6 +96,7 @@ export class ArticlesService {
         updatedAt: true,
       },
     });
+    return rows.map((r) => this.withNormalizedContent(r));
   }
 
   async getPublishedBySlug(slug: string) {
@@ -104,13 +111,14 @@ export class ArticlesService {
       throw new NotFoundException('Article not found');
     }
 
-    return article;
+    return this.withNormalizedContent(article);
   }
 
   async listAdmin() {
-    return this.prisma.cmsArticle.findMany({
+    const rows = await this.prisma.cmsArticle.findMany({
       orderBy: [{ updatedAt: 'desc' }],
     });
+    return rows.map((r) => this.withNormalizedContent(r));
   }
 
   async getAdminById(id: string) {
@@ -118,7 +126,7 @@ export class ArticlesService {
     if (!article) {
       throw new NotFoundException('Article not found');
     }
-    return article;
+    return this.withNormalizedContent(article);
   }
 
   async createAdmin(dto: UpsertArticleDto) {

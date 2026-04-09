@@ -127,6 +127,13 @@ aws ecs register-task-definition \
   --region eu-north-1
 ```
 
+### Prisma migrations on AWS
+
+- Migrations live under `apps/backend/prisma/migrations/` and ship inside the Docker image.
+- On each task start, the container runs **`pnpm prisma:generate && npx prisma migrate deploy`** (see `backend-task-definition.json` `command` — must match `apps/backend/Dockerfile` `CMD`).
+- **Production deploy:** pushing to `main` runs `.github/workflows/deploy-production.yml`, which registers this task definition and rolls `backend-service` to the new revision so the start command stays correct.
+- To run `prisma migrate deploy` from your laptop, `DATABASE_URL` must reach RDS (VPN/bastion/security group). RDS is often private; migrations normally apply when new ECS tasks start after deploy.
+
 ---
 
 ## Step 5: Create Target Group (if not exists)

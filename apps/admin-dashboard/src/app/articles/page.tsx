@@ -2,8 +2,19 @@
 
 import { useMemo, useState } from 'react';
 import { FilePenLine, Globe, Plus, Trash2, UploadCloud, X } from 'lucide-react';
+import ArticleEditor from '@/components/editor/ArticleEditor';
 import { api } from '@/lib/api';
 import { useCmsArticles, type UpsertCmsArticlePayload, type CmsArticle } from '@/hooks/useCmsArticles';
+
+const emptyTipTapDoc = (): Record<string, unknown> => ({
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [],
+    },
+  ],
+});
 
 type FormState = {
   slug: string;
@@ -16,7 +27,7 @@ type FormState = {
   tagsCsv: string;
   authorName: string;
   canonicalPath: string;
-  blocksJson: string;
+  contentDoc: Record<string, unknown>;
   faqsJson: string;
   internalLinksJson: string;
   isPublished: boolean;
@@ -34,11 +45,7 @@ function emptyForm(): FormState {
     tagsCsv: '',
     authorName: 'BuildMyHouse Editorial',
     canonicalPath: '',
-    blocksJson: JSON.stringify(
-      [{ type: 'paragraph', text: 'Add your opening paragraph here.' }],
-      null,
-      2,
-    ),
+    contentDoc: emptyTipTapDoc(),
     faqsJson: JSON.stringify(
       [{ question: 'Sample question?', answer: 'Sample answer.' }],
       null,
@@ -54,6 +61,12 @@ function emptyForm(): FormState {
 }
 
 function toFormState(article: CmsArticle): FormState {
+  const c = article.content;
+  const contentDoc =
+    c && typeof c === 'object' && !Array.isArray(c) && (c as { type?: string }).type === 'doc'
+      ? (c as Record<string, unknown>)
+      : emptyTipTapDoc();
+
   return {
     slug: article.slug,
     title: article.title,
@@ -65,7 +78,7 @@ function toFormState(article: CmsArticle): FormState {
     tagsCsv: (article.tags || []).join(', '),
     authorName: article.authorName || 'BuildMyHouse Editorial',
     canonicalPath: article.canonicalPath || `/articles/${article.slug}`,
-    blocksJson: JSON.stringify(article.blocks || [], null, 2),
+    contentDoc,
     faqsJson: JSON.stringify(article.faqs || [], null, 2),
     internalLinksJson: JSON.stringify(article.internalLinks || [], null, 2),
     isPublished: Boolean(article.isPublished),
@@ -158,22 +171,23 @@ export default function ArticlesAdminPage() {
       throw new Error('Reading minutes must be at least 1');
     }
 
-    const blocks = parseJsonField('blocks', form.blocksJson);
+    const content = form.contentDoc;
+    if (
+      !content ||
+      typeof content !== 'object' ||
+      Array.isArray(content) ||
+      (content as { type?: string }).type !== 'doc'
+    ) {
+      throw new Error('Article body must be a valid editor document');
+    }
+    const inner = (content as { content?: unknown }).content;
+    if (!Array.isArray(inner) || inner.length === 0) {
+      throw new Error('Add at least one block of content in the editor');
+    }
+
     const faqs = parseJsonField('faqs', form.faqsJson);
     const internalLinks = parseJsonField('internal links', form.internalLinksJson);
 
-    if (!Array.isArray(blocks) || blocks.length === 0) {
-      throw new Error('Blocks JSON must be a non-empty array');
-    }
-    for (let i = 0; i < blocks.length; i += 1) {
-      const block = blocks[i];
-      if (!block || typeof block !== 'object' || Array.isArray(block)) {
-        throw new Error(`Block ${i + 1} must be a JSON object`);
-      }
-      if (typeof block.type !== 'string' || !block.type.trim()) {
-        throw new Error(`Block ${i + 1} must include a "type" field`);
-      }
-    }
     if (!Array.isArray(faqs)) {
       throw new Error('FAQs JSON must be an array');
     }
@@ -197,7 +211,7 @@ export default function ArticlesAdminPage() {
         .filter(Boolean),
       authorName: form.authorName.trim() || 'BuildMyHouse Editorial',
       canonicalPath,
-      blocks,
+      content,
       faqs,
       internalLinks,
       isPublished: form.isPublished,
@@ -468,21 +482,26 @@ export default function ArticlesAdminPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Blocks JSON *</label>
-                  <textarea
-                    rows={14}
-                    value={form.blocksJson}
-                    onChange={(e) => setForm((prev) => ({ ...prev, blocksJson: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                    required
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Article body *</label>
+                <div className="rounded-xl border border-gray-200 bg-[#fafafa] px-4 py-3">
+                  <ArticleEditor
+                    value={form.contentDoc}
+                    onChange={(doc) => setForm((prev) => ({ ...prev, contentDoc: doc }))}
+                    placeholder="Start writing…"
+                    onUploadImage={async (file) => {
+                      const result = await api.uploadFile(file);
+                      return result.url;
+                    }}
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">FAQs JSON *</label>
                   <textarea
-                    rows={14}
+                    rows={12}
                     value={form.faqsJson}
                     onChange={(e) => setForm((prev) => ({ ...prev, faqsJson: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
@@ -492,7 +511,7 @@ export default function ArticlesAdminPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Internal links JSON *</label>
                   <textarea
-                    rows={14}
+                    rows={12}
                     value={form.internalLinksJson}
                     onChange={(e) => setForm((prev) => ({ ...prev, internalLinksJson: e.target.value }))}
                     className="w-full px-3 py-2 border rounded-lg text-xs font-mono"

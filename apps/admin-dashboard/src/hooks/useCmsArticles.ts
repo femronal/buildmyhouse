@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 
-export type CmsArticleBlock = Record<string, any>;
 export type CmsArticleFaq = { question: string; answer: string };
 export type CmsArticleInternalLink = { label: string; href: string };
 
@@ -17,7 +16,8 @@ export interface CmsArticle {
   tags: string[];
   authorName: string;
   canonicalPath: string;
-  blocks: CmsArticleBlock[];
+  /** TipTap / ProseMirror JSON document */
+  content: Record<string, unknown>;
   faqs: CmsArticleFaq[];
   internalLinks: CmsArticleInternalLink[];
   isPublished: boolean;

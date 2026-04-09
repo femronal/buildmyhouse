@@ -119,7 +119,7 @@ model CmsArticle {
   tags          String[] @default([])
   authorName    String   @default("BuildMyHouse Editorial")
   canonicalPath String
-  blocks        Json
+  content       Json
   faqs          Json
   internalLinks Json
   isPublished   Boolean  @default(false)

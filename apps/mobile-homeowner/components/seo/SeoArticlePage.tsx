@@ -2,16 +2,48 @@ import { useMemo } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock3, Tag } from 'lucide-react-native';
+import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import InlineCTA from '@/components/articles/InlineCTA';
+import TestimonialBlock from '@/components/articles/TestimonialBlock';
+import TrustStrip from '@/components/articles/TrustStrip';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
-import YouTubeEmbed from '@/components/seo/YouTubeEmbed';
+import {
+  normalizeStoredArticleContent,
+  splitTipTapDocIntoThirds,
+  type TipTapDoc,
+} from '@/lib/article-content-normalize';
+import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { Article } from '@/lib/articles';
-import { trackWebEvent } from '@/lib/analytics';
 import { cardShadowStyle } from '@/lib/card-styles';
 
 type SeoArticlePageProps = {
   article: Article;
 };
+
+const INLINE_CTAS = [
+  {
+    title: 'Start your building project remotely',
+    description:
+      'Share your location and goals, then work with verified contractors while you track milestones from anywhere in the world.',
+    buttonText: 'Start your project',
+    href: '/location?mode=explore',
+  },
+  {
+    title: 'Get a verified contractor in Nigeria',
+    description:
+      'Reduce execution risk with vetted general contractors and clearer accountability than informal referrals.',
+    buttonText: 'Explore contractors',
+    href: '/location?mode=explore',
+  },
+  {
+    title: 'See real construction costs',
+    description:
+      'Move from guesswork to a structured plan—so your family can budget phases and protect each transfer.',
+    buttonText: 'Get started',
+    href: '/location?mode=explore',
+  },
+];
 
 export default function SeoArticlePage({ article }: SeoArticlePageProps) {
   const router = useRouter();
@@ -21,12 +53,22 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
     return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
   }, [article.publishedAt]);
 
+  const { html1, html2, html3 } = useMemo(() => {
+    const doc = normalizeStoredArticleContent(article.content) as TipTapDoc;
+    const [a, b, c] = splitTipTapDocIntoThirds(doc);
+    return {
+      html1: articleContentToHtml(a),
+      html2: articleContentToHtml(b),
+      html3: articleContentToHtml(c),
+    };
+  }, [article.content]);
+
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 48 }}>
-        <View className="px-5 pt-10 pb-2 md:px-6 md:pt-14 md:pb-4">
+        <View className="px-5 pt-10 pb-2 md:px-6 md:pt-14 md:pb-4 max-w-[680px] w-full self-center">
           <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/articles'))}
+            onPress={() => (router.canGoBack() ? router.back() : router.push('/articles' as any))}
             className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
           >
             <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
@@ -71,7 +113,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           </View>
         </View>
 
-        <View className="px-5 mb-5 md:px-6">
+        <View className="px-5 mb-5 md:px-6 max-w-[720px] w-full self-center">
           <View className="rounded-3xl overflow-hidden bg-gray-100">
             <Image
               source={{ uri: article.coverImageUrl }}
@@ -83,121 +125,35 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           </View>
         </View>
 
-        <View className="px-5 md:px-6">
-          {article.blocks.map((block, idx) => {
-            const key = `${block.type}-${idx}`;
+        <View className="px-5 md:px-6 w-full max-w-[720px] self-center">
+          <TrustStrip />
 
-            if (block.type === 'heading') {
-              return (
-                <Text key={key} className="text-black text-xl mt-2 mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {block.text}
-                </Text>
-              );
-            }
+          {html1 ? (
+            <>
+              <ArticleHtmlBody htmlFragment={html1} />
+              <InlineCTA {...INLINE_CTAS[0]} slug={article.slug} />
+            </>
+          ) : null}
 
-            if (block.type === 'paragraph') {
-              return (
-                <Text
-                  key={key}
-                  className="text-gray-700 text-[15px] leading-7 mb-4"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  {block.text}
-                </Text>
-              );
-            }
+          {html2 ? (
+            <>
+              <ArticleHtmlBody htmlFragment={html2} />
+              <InlineCTA {...INLINE_CTAS[1]} slug={article.slug} />
+            </>
+          ) : null}
 
-            if (block.type === 'bullets') {
-              return (
-                <View key={key} className="mb-4">
-                  {block.items.map((item) => (
-                    <View key={item} className="flex-row items-start mb-2">
-                      <Text className="text-blue-600 mr-2 mt-0.5" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        -
-                      </Text>
-                      <Text className="text-gray-700 text-[15px] leading-6 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {item}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              );
-            }
+          {html3 ? (
+            <>
+              <ArticleHtmlBody htmlFragment={html3} />
+              <InlineCTA {...INLINE_CTAS[2]} slug={article.slug} />
+            </>
+          ) : null}
 
-            if (block.type === 'quote') {
-              return (
-                <View key={key} style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-4 mb-4">
-                  <Text className="text-gray-800 text-[15px] leading-6 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    "{block.text}"
-                  </Text>
-                  {block.author ? (
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      - {block.author}
-                    </Text>
-                  ) : null}
-                </View>
-              );
-            }
-
-            if (block.type === 'image') {
-              return (
-                <View key={key} className="mb-5">
-                  <View className="rounded-2xl overflow-hidden bg-gray-100">
-                    <Image
-                      source={{ uri: block.src }}
-                      accessibilityLabel={block.alt}
-                      className="w-full"
-                      style={{ height: 220 }}
-                      resizeMode="cover"
-                    />
-                  </View>
-                  {block.caption ? (
-                    <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {block.caption}
-                    </Text>
-                  ) : null}
-                </View>
-              );
-            }
-
-            if (block.type === 'youtube') {
-              return <YouTubeEmbed key={key} videoId={block.videoId} title={block.title} caption={block.caption} />;
-            }
-
-            if (block.type === 'cta') {
-              return (
-                <View key={key} className="bg-black rounded-2xl p-5 mb-5">
-                  <TouchableOpacity
-                    className="bg-blue-600 rounded-full py-3 px-4"
-                    onPress={() => {
-                      trackWebEvent('seo_article_cta_click', {
-                        article_slug: article.slug,
-                        article_title: article.title,
-                        cta_label: block.label,
-                        cta_href: block.href,
-                      });
-                      router.push(block.href as any);
-                    }}
-                  >
-                    <Text className="text-white text-center text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      {block.label}
-                    </Text>
-                  </TouchableOpacity>
-                  {block.note ? (
-                    <Text className="text-white/80 text-xs mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {block.note}
-                    </Text>
-                  ) : null}
-                </View>
-              );
-            }
-
-            return null;
-          })}
+          <TestimonialBlock />
         </View>
 
         {article.faqs.length > 0 ? (
-          <View className="px-5 mb-3 md:px-6">
+          <View className="px-5 mb-3 md:px-6 max-w-[680px] w-full self-center">
             <Text className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
               Frequently asked questions
             </Text>
@@ -215,7 +171,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
         ) : null}
 
         {article.internalLinks.length > 0 ? (
-          <View className="px-5 md:px-6">
+          <View className="px-5 md:px-6 max-w-[680px] w-full self-center">
             <InternalLinksBlock title="Related resources" links={article.internalLinks} />
           </View>
         ) : null}

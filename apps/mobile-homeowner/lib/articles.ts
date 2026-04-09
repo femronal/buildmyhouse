@@ -1,6 +1,11 @@
 import { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import { api } from '@/lib/api';
+import {
+  extractYoutubeVideoIdsFromContent,
+  normalizeStoredArticleContent,
+} from '@/lib/article-content-normalize';
 
+/** @deprecated Legacy block shape — only used to seed bundled articles; runtime uses TipTap `content`. */
 export type ArticleBlock =
   | { type: 'heading'; text: string }
   | { type: 'paragraph'; text: string }
@@ -30,7 +35,8 @@ export type Article = {
   authorName: string;
   faqs: ArticleFaqItem[];
   internalLinks: InternalLinkItem[];
-  blocks: ArticleBlock[];
+  /** TipTap / ProseMirror JSON document */
+  content: Record<string, unknown>;
 };
 
 type RemoteArticle = {
@@ -49,6 +55,8 @@ type RemoteArticle = {
   authorName?: string;
   faqs?: Array<{ question: string; answer: string }>;
   internalLinks?: InternalLinkItem[];
+  content?: Record<string, unknown>;
+  /** Legacy API field */
   blocks?: ArticleBlock[];
 };
 
@@ -61,7 +69,7 @@ const organizationSchema = {
   url: WEB_URL,
 };
 
-export const articles: Article[] = [
+const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = [
   {
     slug: 'cost-to-build-house-in-nigeria-2026',
     title: 'Cost to Build a House in Nigeria (2026 Guide)',
@@ -292,6 +300,11 @@ export const articles: Article[] = [
   },
 ];
 
+export const articles: Article[] = articleSeeds.map(({ blocks, ...rest }) => ({
+  ...rest,
+  content: normalizeStoredArticleContent(blocks),
+}));
+
 function normalizeRemoteArticle(input: RemoteArticle): Article {
   const slug = String(input.slug || '').trim();
   return {
@@ -309,7 +322,9 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
     authorName: String(input.authorName || 'BuildMyHouse Editorial'),
     faqs: Array.isArray(input.faqs) ? input.faqs : [],
     internalLinks: Array.isArray(input.internalLinks) ? input.internalLinks : [],
-    blocks: Array.isArray(input.blocks) ? input.blocks : [],
+    content: normalizeStoredArticleContent(
+      input.content ?? (Array.isArray(input.blocks) ? input.blocks : []),
+    ),
   };
 }
 
@@ -340,7 +355,7 @@ export function getArticlePaths() {
 
 export function getArticleSchema(article: Article) {
   const articleUrl = `${WEB_URL}${article.canonicalPath}`;
-  const videoBlocks = article.blocks.filter((block) => block.type === 'youtube');
+  const videoBlocks = extractYoutubeVideoIdsFromContent(article.content);
 
   const schema: Record<string, any>[] = [
     organizationSchema,
@@ -385,7 +400,7 @@ export function getArticleSchema(article: Article) {
       '@context': 'https://schema.org',
       '@type': 'VideoObject',
       name: block.title,
-      description: block.caption || article.description,
+      description: article.description,
       embedUrl: `https://www.youtube.com/embed/${block.videoId}`,
       uploadDate: article.updatedAt,
       thumbnailUrl: `https://i.ytimg.com/vi/${block.videoId}/hqdefault.jpg`,

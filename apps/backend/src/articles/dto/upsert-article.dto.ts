@@ -2,7 +2,6 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
-  IsIn,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -31,82 +30,6 @@ class InternalLinkDto {
   @IsString()
   @IsNotEmpty()
   href: string;
-}
-
-class BaseBlockDto {
-  @IsString()
-  @IsIn(['heading', 'paragraph', 'bullets', 'quote', 'image', 'youtube', 'cta'])
-  type: string;
-}
-
-class HeadingBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  text: string;
-}
-
-class ParagraphBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  text: string;
-}
-
-class BulletsBlockDto extends BaseBlockDto {
-  @IsArray()
-  @IsString({ each: true })
-  items: string[];
-}
-
-class QuoteBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  text: string;
-
-  @IsOptional()
-  @IsString()
-  author?: string;
-}
-
-class ImageBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  src: string;
-
-  @IsString()
-  @IsNotEmpty()
-  alt: string;
-
-  @IsOptional()
-  @IsString()
-  caption?: string;
-}
-
-class YoutubeBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  videoId: string;
-
-  @IsString()
-  @IsNotEmpty()
-  title: string;
-
-  @IsOptional()
-  @IsString()
-  caption?: string;
-}
-
-class CtaBlockDto extends BaseBlockDto {
-  @IsString()
-  @IsNotEmpty()
-  label: string;
-
-  @IsString()
-  @IsNotEmpty()
-  href: string;
-
-  @IsOptional()
-  @IsString()
-  note?: string;
 }
 
 export class UpsertArticleDto {
@@ -152,10 +75,9 @@ export class UpsertArticleDto {
   @IsNotEmpty()
   canonicalPath: string;
 
-  @IsArray()
-  @IsObject({ each: true })
-  @Type(() => Object)
-  blocks: Record<string, any>[];
+  /** TipTap / ProseMirror JSON: { type: "doc", content: [...] } */
+  @IsObject()
+  content: Record<string, unknown>;
 
   @IsArray()
   @ValidateNested({ each: true })
