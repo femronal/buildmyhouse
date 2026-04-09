@@ -19,7 +19,6 @@ export default function ArticleHtmlBody({ htmlFragment, minHeight = 480 }: Props
     return (
       <View
         className="w-full max-w-[680px] self-center article-html-host"
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         {...({ dangerouslySetInnerHTML: { __html: htmlFragment } } as any)}
       />
     );

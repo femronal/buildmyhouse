@@ -27,6 +27,7 @@ export type ArticleEditorProps = {
   onChange: (doc: Record<string, unknown>) => void;
   placeholder?: string;
   onUploadImage?: (file: File) => Promise<string>;
+  showToolbar?: boolean;
 };
 
 const emptyDoc: JSONContent = { type: 'doc', content: [] };
@@ -36,6 +37,7 @@ export default function ArticleEditor({
   onChange,
   placeholder,
   onUploadImage,
+  showToolbar = false,
 }: ArticleEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -136,6 +138,70 @@ export default function ArticleEditor({
 
   return (
     <div className="w-full">
+      <div className="flex items-center gap-2 pb-2 mb-2">
+        <button
+          type="button"
+          title="Insert image from URL"
+          onClick={addImageByUrl}
+          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+        >
+          <ImageIcon className="w-3.5 h-3.5" />
+        </button>
+        {onUploadImage ? (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onPickImageFile}
+            />
+            <button
+              type="button"
+              title="Upload image"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+            >
+              <span className="text-[10px] font-semibold">Up</span>
+            </button>
+          </>
+        ) : null}
+        <button
+          type="button"
+          title="Embed YouTube"
+          onClick={addYoutube}
+          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+        >
+          <Youtube className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          title="Insert callout"
+          onClick={() =>
+            editor
+              .chain()
+              .focus()
+              .insertContent({
+                type: 'callout',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: 'Important: ' }],
+                  },
+                ],
+              })
+              .run()
+          }
+          className="w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:bg-gray-50"
+        >
+          <StickyNote className="w-3.5 h-3.5" />
+        </button>
+        <p className="text-xs text-gray-400 ml-1">
+          Type <kbd className="px-1 rounded bg-gray-100">/</kbd> for commands
+        </p>
+      </div>
+
+      {showToolbar ? (
       <div className="flex flex-wrap items-center gap-1 pb-3 border-b border-gray-100 mb-2">
         <ToolbarBtn
           title="Heading 1"
@@ -226,20 +292,6 @@ export default function ArticleEditor({
         <ToolbarBtn title="Image from URL" onClick={addImageByUrl}>
           <ImageIcon className="w-4 h-4" />
         </ToolbarBtn>
-        {onUploadImage ? (
-          <>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={onPickImageFile}
-            />
-            <ToolbarBtn title="Upload image" onClick={() => fileInputRef.current?.click()}>
-              <span className="text-[10px] font-semibold">Up</span>
-            </ToolbarBtn>
-          </>
-        ) : null}
         <ToolbarBtn title="YouTube" onClick={addYoutube}>
           <Youtube className="w-4 h-4" />
         </ToolbarBtn>
@@ -264,6 +316,7 @@ export default function ArticleEditor({
           <StickyNote className="w-4 h-4" />
         </ToolbarBtn>
       </div>
+      ) : null}
 
       <BubbleMenu
         editor={editor}
@@ -334,8 +387,7 @@ export default function ArticleEditor({
       <EditorContent editor={editor} />
 
       <p className="mt-3 text-xs text-gray-400">
-        Type <kbd className="px-1 rounded bg-gray-100">/</kbd> for slash commands (headings, lists, media,
-        callout).
+        Highlight text to format (bubble menu), or type <kbd className="px-1 rounded bg-gray-100">/</kbd> to insert blocks.
       </p>
     </div>
   );

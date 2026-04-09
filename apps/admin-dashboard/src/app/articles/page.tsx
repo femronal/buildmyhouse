@@ -332,218 +332,237 @@ export default function ArticlesAdminPage() {
       </div>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="w-full max-w-5xl bg-white rounded-xl shadow-lg max-h-[95vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                {editingArticle ? 'Edit article' : 'Create article'}
-              </h3>
-              <button onClick={closeModal} className="p-1 rounded hover:bg-gray-100">
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-3">
+          <div className="w-full max-w-[1150px] bg-white rounded-2xl shadow-2xl max-h-[96vh] overflow-y-auto">
+            <div className="sticky top-0 z-20 bg-white/95 backdrop-blur border-b px-6 py-4 flex items-center justify-between">
+              <div className="min-w-0">
+                <h3 className="text-base font-semibold">
+                  {editingArticle ? 'Edit draft' : 'New draft'}
+                </h3>
+                <p className="text-xs text-gray-500">Medium-style writing canvas</p>
+              </div>
+              <button onClick={closeModal} className="p-1.5 rounded hover:bg-gray-100">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={onSubmit} className="p-6 space-y-4">
+            <form onSubmit={onSubmit} className="px-6 py-6">
               {formError ? (
-                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{formError}</div>
+                <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">{formError}</div>
               ) : null}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
-                  <input
-                    type="text"
-                    value={form.slug}
-                    onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
-                    placeholder="cost-to-build-house-in-nigeria-2026"
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Canonical path *</label>
-                  <input
-                    type="text"
-                    value={form.canonicalPath}
-                    onChange={(e) => setForm((prev) => ({ ...prev, canonicalPath: e.target.value }))}
-                    placeholder="/articles/cost-to-build-house-in-nigeria-2026"
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+              <div className="max-w-[760px] mx-auto space-y-4">
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  placeholder="Title"
+                  className="w-full border-0 text-5xl font-bold leading-tight px-0 py-1 focus:outline-none focus:ring-0 placeholder:text-gray-300"
                   required
                 />
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
-                  <textarea
-                    rows={3}
-                    value={form.description}
-                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt *</label>
-                  <textarea
-                    rows={3}
-                    value={form.excerpt}
-                    onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cover image URL *</label>
-                  <input
-                    type="text"
-                    value={form.coverImageUrl}
-                    onChange={(e) => setForm((prev) => ({ ...prev, coverImageUrl: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cover alt text *</label>
-                  <input
-                    type="text"
-                    value={form.coverImageAlt}
-                    onChange={(e) => setForm((prev) => ({ ...prev, coverImageAlt: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <label className="px-3 py-2 rounded-lg border border-gray-300 text-sm cursor-pointer inline-flex items-center gap-2 hover:bg-gray-50">
-                  <UploadCloud className="w-4 h-4" />
-                  {uploadingCover ? 'Uploading...' : 'Upload cover image'}
-                  <input type="file" accept="image/*" className="hidden" onChange={onUploadCover} />
-                </label>
-                {form.coverImageUrl ? (
-                  <a
-                    href={form.coverImageUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    Preview image URL
-                  </a>
-                ) : null}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reading minutes *</label>
-                  <input
-                    type="number"
-                    min={1}
-                    value={form.readingMinutes}
-                    onChange={(e) => setForm((prev) => ({ ...prev, readingMinutes: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    required
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
-                  <input
-                    type="text"
-                    value={form.tagsCsv}
-                    onChange={(e) => setForm((prev) => ({ ...prev, tagsCsv: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                    placeholder="construction, nigeria, cost guide"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Author name</label>
-                  <input
-                    type="text"
-                    value={form.authorName}
-                    onChange={(e) => setForm((prev) => ({ ...prev, authorName: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Article body *</label>
-                <div className="rounded-xl border border-gray-200 bg-[#fafafa] px-4 py-3">
-                  <ArticleEditor
-                    value={form.contentDoc}
-                    onChange={(doc) => setForm((prev) => ({ ...prev, contentDoc: doc }))}
-                    placeholder="Start writing…"
-                    onUploadImage={async (file) => {
-                      const result = await api.uploadFile(file);
-                      return result.url;
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">FAQs JSON *</label>
-                  <textarea
-                    rows={12}
-                    value={form.faqsJson}
-                    onChange={(e) => setForm((prev) => ({ ...prev, faqsJson: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Internal links JSON *</label>
-                  <textarea
-                    rows={12}
-                    value={form.internalLinksJson}
-                    onChange={(e) => setForm((prev) => ({ ...prev, internalLinksJson: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
-                    required
-                  />
-                </div>
-              </div>
-
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.isPublished}
-                  onChange={(e) => setForm((prev) => ({ ...prev, isPublished: e.target.checked }))}
+                <textarea
+                  rows={2}
+                  value={form.description}
+                  onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Add a subtitle that explains what readers will learn..."
+                  className="w-full border-0 text-xl text-gray-600 px-0 py-1 resize-none focus:outline-none focus:ring-0 placeholder:text-gray-300"
+                  required
                 />
-                <span className="text-sm text-gray-700">Publish immediately</span>
-              </label>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving || uploadingCover}
-                  className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm disabled:opacity-50"
-                >
-                  {isSaving ? 'Saving...' : editingArticle ? 'Update article' : 'Create article'}
-                </button>
+                <div className="flex items-center gap-2">
+                  <label className="px-3 py-2 rounded-full border border-gray-300 text-sm cursor-pointer inline-flex items-center gap-2 hover:bg-gray-50">
+                    <UploadCloud className="w-4 h-4" />
+                    {uploadingCover ? 'Uploading...' : 'Upload cover image'}
+                    <input type="file" accept="image/*" className="hidden" onChange={onUploadCover} />
+                  </label>
+                  {form.coverImageUrl ? (
+                    <a
+                      href={form.coverImageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-blue-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      Preview image URL
+                    </a>
+                  ) : null}
+                </div>
+
+                {form.coverImageUrl ? (
+                  <img
+                    src={form.coverImageUrl}
+                    alt={form.coverImageAlt || 'Cover preview'}
+                    className="w-full rounded-2xl border border-gray-200 max-h-[320px] object-cover"
+                  />
+                ) : null}
+
+                <div className="pt-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Article body *</label>
+                  <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
+                    <ArticleEditor
+                      value={form.contentDoc}
+                      onChange={(doc) => setForm((prev) => ({ ...prev, contentDoc: doc }))}
+                      placeholder="Tell your story..."
+                      onUploadImage={async (file) => {
+                        const result = await api.uploadFile(file);
+                        return result.url;
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <details className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-800">
+                    Publishing & SEO settings
+                  </summary>
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Slug *</label>
+                        <input
+                          type="text"
+                          value={form.slug}
+                          onChange={(e) => setForm((prev) => ({ ...prev, slug: e.target.value }))}
+                          placeholder="cost-to-build-house-in-nigeria-2026"
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Canonical path *</label>
+                        <input
+                          type="text"
+                          value={form.canonicalPath}
+                          onChange={(e) => setForm((prev) => ({ ...prev, canonicalPath: e.target.value }))}
+                          placeholder="/articles/cost-to-build-house-in-nigeria-2026"
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt *</label>
+                        <textarea
+                          rows={3}
+                          value={form.excerpt}
+                          onChange={(e) => setForm((prev) => ({ ...prev, excerpt: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Cover image URL *</label>
+                          <input
+                            type="text"
+                            value={form.coverImageUrl}
+                            onChange={(e) => setForm((prev) => ({ ...prev, coverImageUrl: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Cover alt text *</label>
+                          <input
+                            type="text"
+                            value={form.coverImageAlt}
+                            onChange={(e) => setForm((prev) => ({ ...prev, coverImageAlt: e.target.value }))}
+                            className="w-full px-3 py-2 border rounded-lg text-sm"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Reading minutes *</label>
+                        <input
+                          type="number"
+                          min={1}
+                          value={form.readingMinutes}
+                          onChange={(e) => setForm((prev) => ({ ...prev, readingMinutes: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          required
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+                        <input
+                          type="text"
+                          value={form.tagsCsv}
+                          onChange={(e) => setForm((prev) => ({ ...prev, tagsCsv: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                          placeholder="construction, nigeria, cost guide"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Author name</label>
+                        <input
+                          type="text"
+                          value={form.authorName}
+                          onChange={(e) => setForm((prev) => ({ ...prev, authorName: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">FAQs JSON *</label>
+                        <textarea
+                          rows={10}
+                          value={form.faqsJson}
+                          onChange={(e) => setForm((prev) => ({ ...prev, faqsJson: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Internal links JSON *</label>
+                        <textarea
+                          rows={10}
+                          value={form.internalLinksJson}
+                          onChange={(e) => setForm((prev) => ({ ...prev, internalLinksJson: e.target.value }))}
+                          className="w-full px-3 py-2 border rounded-lg text-xs font-mono"
+                          required
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </details>
+              </div>
+
+              <div className="sticky bottom-0 mt-6 bg-white/95 backdrop-blur border-t pt-4">
+                <div className="max-w-[760px] mx-auto flex items-center justify-between">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={form.isPublished}
+                      onChange={(e) => setForm((prev) => ({ ...prev, isPublished: e.target.checked }))}
+                    />
+                    <span className="text-sm text-gray-700">Publish immediately</span>
+                  </label>
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={closeModal}
+                      className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSaving || uploadingCover}
+                      className="px-5 py-2 rounded-lg bg-gray-900 text-white text-sm disabled:opacity-50"
+                    >
+                      {isSaving ? 'Saving...' : editingArticle ? 'Update article' : 'Create article'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
