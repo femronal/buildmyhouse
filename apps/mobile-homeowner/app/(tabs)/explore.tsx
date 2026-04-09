@@ -14,6 +14,7 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
   getTwoColumnCardWidth,
+  getTabListingChrome,
 } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
 
@@ -41,10 +42,15 @@ export default function ExploreScreen() {
     () => getScreenHorizontalPadding(screenWidth),
     [screenWidth],
   );
-  const tabContentBottomPadding = useMemo(
-    () => getTabContentBottomPadding(tabBarMetrics),
-    [tabBarMetrics],
+  const listingChrome = useMemo(
+    () => getTabListingChrome(screenWidth, insets.top),
+    [screenWidth, insets.top],
   );
+  const tabContentBottomPadding = useMemo(
+    () => getTabContentBottomPadding(tabBarMetrics, { webCompact: listingChrome.mobileWeb }),
+    [tabBarMetrics, listingChrome.mobileWeb],
+  );
+  const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-10' : 'py-20';
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
   const { data: housesForSale = [], isLoading: housesLoading } = useHousesForSale();
@@ -96,10 +102,14 @@ export default function ExploreScreen() {
     setActiveImageIndex(prev => ({ ...prev, [designId]: index }));
   }, []);
 
-  const filterHeight = filterAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 60],
-  });
+  const filterHeight = useMemo(
+    () =>
+      filterAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, listingChrome.mobileWeb ? 52 : 60],
+      }),
+    [filterAnim, listingChrome.mobileWeb],
+  );
 
   const filterOpacity = filterAnim.interpolate({
     inputRange: [0, 1],
@@ -150,12 +160,17 @@ export default function ExploreScreen() {
     <View className="flex-1 bg-white">
       {/* Header */}
       <View
-        className="pb-4 flex-row items-center justify-between"
-        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        className="flex-row items-center justify-between"
+        style={{
+          paddingTop: listingChrome.headerPaddingTop,
+          paddingBottom: listingChrome.headerPaddingBottom,
+          paddingHorizontal: horizontalPadding,
+        }}
       >
         <TouchableOpacity 
           onPress={() => router.push('/profile')}
-          className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden"
+          className="bg-black rounded-full items-center justify-center overflow-hidden"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
           {userPicture ? (
             <Image 
@@ -164,13 +179,13 @@ export default function ExploreScreen() {
               resizeMode="cover"
             />
           ) : (
-            <User size={24} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
           )}
         </TouchableOpacity>
         
         <Text 
-          className="text-2xl text-black"
-          style={{ fontFamily: 'Poppins_600SemiBold' }}
+          className="text-black"
+          style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}
         >
           Projects
         </Text>
@@ -179,9 +194,12 @@ export default function ExploreScreen() {
       </View>
 
       {/* Search & Filter */}
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
+          <View
+            className="flex-1 bg-gray-100 rounded-2xl px-3 flex-row items-center mr-3"
+            style={{ paddingVertical: listingChrome.searchBarPaddingY }}
+          >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
               placeholder="Search plans, estates, and land..."
@@ -194,19 +212,21 @@ export default function ExploreScreen() {
           </View>
           <TouchableOpacity 
             onPress={toggleFilters}
-            className={`w-12 h-12 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
           >
-            <Filter size={22} color="#000000" strokeWidth={2.5} />
+            <Filter size={listingChrome.mobileWeb ? 20 : 22} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Tabs */}
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row bg-gray-100 rounded-2xl p-1">
           <TouchableOpacity
             onPress={() => setActiveTab('designs')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'designs' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'designs' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'designs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Plans
@@ -214,7 +234,8 @@ export default function ExploreScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('houses')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'houses' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'houses' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'houses' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Estates
@@ -222,7 +243,8 @@ export default function ExploreScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('lands')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'lands' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'lands' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'lands' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Land
@@ -255,9 +277,14 @@ export default function ExploreScreen() {
 
       {/* Current Filter Indicator (only for designs) */}
       {activeTab === 'designs' && (
-        <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
+        <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-            <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+            <Text
+              className="text-black"
+              style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
+            >
+              {activeFilter}
+            </Text>
             <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
@@ -269,28 +296,30 @@ export default function ExploreScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        <InternalLinksBlock
-          title="Popular searches in Nigeria"
-          links={[
-            { label: 'Construction in Lagos', href: '/construction/lagos' },
-            { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
-            { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
-            { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
-          ]}
-        />
+        {!listingChrome.mobileWeb && (
+          <InternalLinksBlock
+            title="Popular searches in Nigeria"
+            links={[
+              { label: 'Construction in Lagos', href: '/construction/lagos' },
+              { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+              { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+              { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+            ]}
+          />
+        )}
 
         {/* Designs Tab */}
         {activeTab === 'designs' && (
           <>
             {designsLoading ? (
-              <View className="items-center justify-center py-20">
+              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 <ActivityIndicator size="large" color="#000" />
                 <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
                   Loading designs...
                 </Text>
               </View>
             ) : filteredDesigns.length === 0 ? (
-              <View className="items-center justify-center py-20">
+              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 {!currentUser && !userLoading && !searchQuery ? (
                   <>
                     <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -467,7 +496,7 @@ export default function ExploreScreen() {
         {activeTab === 'houses' && (
           <>
             {filteredHouses.length === 0 ? (
-              <View className="items-center justify-center py-20">
+              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   {searchQuery ? 'No houses found' : 'No houses available'}
                 </Text>
@@ -539,7 +568,7 @@ export default function ExploreScreen() {
         {activeTab === 'lands' && (
           <>
             {filteredLands.length === 0 ? (
-              <View className="items-center justify-center py-20">
+              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   {searchQuery ? 'No lands found' : 'No lands available'}
                 </Text>
@@ -604,6 +633,19 @@ export default function ExploreScreen() {
               </View>
             )}
           </>
+        )}
+
+        {listingChrome.mobileWeb && (
+          <InternalLinksBlock
+            compact
+            title="Popular searches in Nigeria"
+            links={[
+              { label: 'Construction in Lagos', href: '/construction/lagos' },
+              { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+              { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+              { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+            ]}
+          />
         )}
       </ScrollView>
     </View>

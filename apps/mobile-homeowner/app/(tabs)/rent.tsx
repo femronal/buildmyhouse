@@ -50,6 +50,7 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
   getTwoColumnCardWidth,
+  getTabListingChrome,
 } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
 
@@ -108,10 +109,15 @@ export default function RentScreen() {
     () => getScreenHorizontalPadding(screenWidth),
     [screenWidth],
   );
-  const tabContentBottomPadding = useMemo(
-    () => getTabContentBottomPadding(tabBarMetrics),
-    [tabBarMetrics],
+  const listingChrome = useMemo(
+    () => getTabListingChrome(screenWidth, insets.top),
+    [screenWidth, insets.top],
   );
+  const tabContentBottomPadding = useMemo(
+    () => getTabContentBottomPadding(tabBarMetrics, { webCompact: listingChrome.mobileWeb }),
+    [tabBarMetrics, listingChrome.mobileWeb],
+  );
+  const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-12' : 'py-24';
   const { data: currentUser } = useCurrentUser();
   const { data: rentalsForLease = [] } = useRentalsForLease();
   const requestInspectionMutation = useRequestRentalInspection();
@@ -132,10 +138,14 @@ export default function RentScreen() {
 
   const cardWidth = getTwoColumnCardWidth(screenWidth);
 
-  const filterHeight = filterAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 60],
-  });
+  const filterHeight = useMemo(
+    () =>
+      filterAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, listingChrome.mobileWeb ? 52 : 60],
+      }),
+    [filterAnim, listingChrome.mobileWeb],
+  );
   const filterOpacity = filterAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [0, 1],
@@ -245,30 +255,38 @@ export default function RentScreen() {
   return (
     <View className="flex-1 bg-white">
       <View
-        className="pb-4 flex-row items-center justify-between"
-        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        className="flex-row items-center justify-between"
+        style={{
+          paddingTop: listingChrome.headerPaddingTop,
+          paddingBottom: listingChrome.headerPaddingBottom,
+          paddingHorizontal: horizontalPadding,
+        }}
       >
         <TouchableOpacity
           onPress={() => router.push('/profile')}
-          className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden"
+          className="bg-black rounded-full items-center justify-center overflow-hidden"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
           {userPicture ? (
             <Image source={{ uri: getBackendAssetUrl(userPicture) }} className="w-full h-full" resizeMode="cover" />
           ) : (
-            <User size={24} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
           )}
         </TouchableOpacity>
 
-        <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}>
           Build
         </Text>
 
         <NotificationBell />
       </View>
 
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
+          <View
+            className="flex-1 bg-gray-100 rounded-2xl px-3 flex-row items-center mr-3"
+            style={{ paddingVertical: listingChrome.searchBarPaddingY }}
+          >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
               placeholder="Search rentals, areas, and budgets..."
@@ -281,18 +299,20 @@ export default function RentScreen() {
           </View>
           <TouchableOpacity
             onPress={toggleFilters}
-            className={`w-12 h-12 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
           >
-            <Filter size={22} color="#000000" strokeWidth={2.5} />
+            <Filter size={listingChrome.mobileWeb ? 20 : 22} color="#000000" strokeWidth={2.5} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row bg-gray-100 rounded-2xl p-1">
           <TouchableOpacity
             onPress={() => setActiveTab('all')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'all' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'all' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'all' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               All
@@ -300,7 +320,8 @@ export default function RentScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('house')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'house' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'house' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'house' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Houses
@@ -308,7 +329,8 @@ export default function RentScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             onPress={() => setActiveTab('apartment')}
-            className={`flex-1 py-2.5 px-4 rounded-xl items-center ${activeTab === 'apartment' ? 'bg-black' : ''}`}
+            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'apartment' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
             <Text className={`text-sm ${activeTab === 'apartment' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Apartments
@@ -333,9 +355,14 @@ export default function RentScreen() {
         </ScrollView>
       </Animated.View>
 
-      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-          <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+          <Text
+            className="text-black"
+            style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
+          >
+            {activeFilter}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -345,18 +372,20 @@ export default function RentScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        <InternalLinksBlock
-          title="Need more options?"
-          links={[
-            { label: 'Homes for Rent (Guide)', href: '/homes-for-rent/nigeria' },
-            { label: 'Houses for Sale', href: '/houses-for-sale/nigeria' },
-            { label: 'Land for Sale', href: '/land-for-sale/nigeria' },
-            { label: 'Construction in Nigeria', href: '/construction/nigeria' },
-          ]}
-        />
+        {!listingChrome.mobileWeb && (
+          <InternalLinksBlock
+            title="Need more options?"
+            links={[
+              { label: 'Homes for Rent (Guide)', href: '/homes-for-rent/nigeria' },
+              { label: 'Houses for Sale', href: '/houses-for-sale/nigeria' },
+              { label: 'Land for Sale', href: '/land-for-sale/nigeria' },
+              { label: 'Construction in Nigeria', href: '/construction/nigeria' },
+            ]}
+          />
+        )}
 
         {filteredListings.length === 0 ? (
-          <View className="items-center justify-center py-24">
+          <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
             <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               No rentals match this filter
             </Text>
@@ -416,7 +445,13 @@ export default function RentScreen() {
                     <Maximize size={12} color="#737373" strokeWidth={2} />
                     <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.sizeSqm}m²</Text>
                   </View>
-                  <Text className="text-black text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                  <Text
+                    className="text-black text-lg"
+                    style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.75}
+                  >
                     {formatNaira(listing.annualRent)}/yr
                   </Text>
                   <View className="flex-row justify-between items-center mt-1 min-w-0">
@@ -434,6 +469,19 @@ export default function RentScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        )}
+
+        {listingChrome.mobileWeb && (
+          <InternalLinksBlock
+            compact
+            title="Need more options?"
+            links={[
+              { label: 'Homes for Rent (Guide)', href: '/homes-for-rent/nigeria' },
+              { label: 'Houses for Sale', href: '/houses-for-sale/nigeria' },
+              { label: 'Land for Sale', href: '/land-for-sale/nigeria' },
+              { label: 'Construction in Nigeria', href: '/construction/nigeria' },
+            ]}
+          />
         )}
       </ScrollView>
 

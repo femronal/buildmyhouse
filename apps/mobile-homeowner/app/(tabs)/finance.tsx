@@ -11,6 +11,7 @@ import {
   getFloatingTabBarMetrics,
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
+  getTabListingChrome,
 } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
 
@@ -36,9 +37,13 @@ export default function FinanceScreen() {
     [width, insets.bottom],
   );
   const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
+  const listingChrome = useMemo(
+    () => getTabListingChrome(width, insets.top),
+    [width, insets.top],
+  );
   const tabContentBottomPadding = useMemo(
-    () => getTabContentBottomPadding(tabBarMetrics),
-    [tabBarMetrics],
+    () => getTabContentBottomPadding(tabBarMetrics, { webCompact: listingChrome.mobileWeb }),
+    [tabBarMetrics, listingChrome.mobileWeb],
   );
   const params = useLocalSearchParams<{ tab?: string }>();
   const tabParam = params.tab as TabKey | undefined;
@@ -86,7 +91,14 @@ export default function FinanceScreen() {
     setShowFilters(!showFilters);
   };
 
-  const filterHeight = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 70] });
+  const filterHeight = useMemo(
+    () =>
+      filterAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, listingChrome.mobileWeb ? 56 : 70],
+      }),
+    [filterAnim, listingChrome.mobileWeb],
+  );
   const filterOpacity = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   const tabLabel =
@@ -140,10 +152,18 @@ export default function FinanceScreen() {
   return (
     <View className="flex-1 bg-white">
       <View
-        className="pb-4 flex-row items-center justify-between"
-        style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        className="flex-row items-center justify-between"
+        style={{
+          paddingTop: listingChrome.headerPaddingTop,
+          paddingBottom: listingChrome.headerPaddingBottom,
+          paddingHorizontal: horizontalPadding,
+        }}
       >
-        <TouchableOpacity onPress={() => router.push('/profile')} className="w-12 h-12 bg-black rounded-full items-center justify-center overflow-hidden">
+        <TouchableOpacity
+          onPress={() => router.push('/profile')}
+          className="bg-black rounded-full items-center justify-center overflow-hidden"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
+        >
           {userPicture ? (
             <Image
               source={{ uri: getBackendAssetUrl(userPicture) }}
@@ -151,18 +171,29 @@ export default function FinanceScreen() {
               resizeMode="cover"
             />
           ) : (
-            <User size={24} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
           )}
         </TouchableOpacity>
-        <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>Finance</Text>
-        <TouchableOpacity onPress={toggleFilters} className={`w-12 h-12 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}>
-          <Filter size={24} color="#000000" strokeWidth={2.5} />
+        <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}>
+          Finance
+        </Text>
+        <TouchableOpacity
+          onPress={toggleFilters}
+          className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
+        >
+          <Filter size={listingChrome.mobileWeb ? 20 : 24} color="#000000" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
       {/* Animated Filter Tabs */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-4" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className={listingChrome.mobileWeb ? 'pb-2' : 'pb-4'}
+          contentContainerStyle={{ paddingHorizontal: horizontalPadding }}
+        >
           {[
             { key: 'overview' as TabKey, label: 'Overview', icon: Home },
             { key: 'payments' as TabKey, label: 'Payments', icon: CreditCard },
@@ -180,9 +211,14 @@ export default function FinanceScreen() {
       </Animated.View>
 
       {/* Current Tab Indicator */}
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-          <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{tabLabel}</Text>
+          <Text
+            className="text-black"
+            style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 17 : 20 }}
+          >
+            {tabLabel}
+          </Text>
           <ChevronDown size={20} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
@@ -192,18 +228,42 @@ export default function FinanceScreen() {
         contentContainerStyle={{ paddingBottom: tabContentBottomPadding, paddingHorizontal: horizontalPadding }}
       >
         {activeTab === 'overview' && (
-          <View className="pb-8">
-            <View className="bg-black rounded-3xl p-6 mb-6">
-              <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-4xl mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalInvested.toLocaleString()}</Text>
+          <View className={listingChrome.mobileWeb ? 'pb-4' : 'pb-8'}>
+            <View
+              className={`bg-black rounded-3xl ${listingChrome.mobileWeb ? 'mb-4' : 'mb-6'}`}
+              style={{ padding: listingChrome.mobileWeb ? 16 : 24 }}
+            >
+              <Text className="text-white/70 mb-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
+                Total Invested
+              </Text>
+              <Text
+                className="text-white mb-3"
+                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 28 : 36 }}
+              >
+                ₦{totalInvested.toLocaleString()}
+              </Text>
               <View className="flex-row justify-between">
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeCount}</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalBudget.toLocaleString()}</Text></View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 18 : 20 }}>{activeCount}</Text>
+                </View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text>
+                  <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 16 : 20 }}>₦{totalBudget.toLocaleString()}</Text>
+                </View>
               </View>
             </View>
-            <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>Project Budgets</Text>
+            <Text
+              className="text-black mb-2"
+              style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 17 : 20 }}
+            >
+              Project Budgets
+            </Text>
             {allProjects.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
+              <View
+                style={cardShadowStyle}
+                className={`bg-gray-50 rounded-3xl border border-gray-200 items-center ${listingChrome.mobileWeb ? 'p-5' : 'p-8'}`}
+              >
                 <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No projects yet. Start a project to see your budget breakdown here.</Text>
               </View>
             ) : (
