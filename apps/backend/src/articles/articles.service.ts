@@ -6,6 +6,7 @@ import { UpsertArticleDto } from './dto/upsert-article.dto';
 @Injectable()
 export class ArticlesService {
   private prisma = new PrismaClient() as any;
+  private readonly validAudiences = new Set(['homeowner', 'gc']);
 
   private normalizeSlug(slug: string) {
     const clean = String(slug || '')
@@ -23,6 +24,12 @@ export class ArticlesService {
     if (!raw) return `/articles/${slug}`;
     const prefixed = raw.startsWith('/') ? raw : `/${raw}`;
     return prefixed.replace(/\/+$/, '') || `/articles/${slug}`;
+  }
+
+  private normalizeAudience(audience?: string): 'homeowner' | 'gc' {
+    const raw = String(audience || 'homeowner').trim().toLowerCase();
+    if (!this.validAudiences.has(raw)) return 'homeowner';
+    return raw as 'homeowner' | 'gc';
   }
 
   private normalizeUpsertPayload(dto: UpsertArticleDto) {
@@ -56,6 +63,7 @@ export class ArticlesService {
       readingMinutes: Number(dto.readingMinutes || 5),
       tags: Array.isArray(dto.tags) ? dto.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [],
       authorName: String(dto.authorName || '').trim() || 'BuildMyHouse Editorial',
+      audience: this.normalizeAudience(dto.audience),
       canonicalPath,
       content: dto.content as object,
       faqs: Array.isArray(dto.faqs) ? dto.faqs : [],
@@ -71,9 +79,10 @@ export class ArticlesService {
     };
   }
 
-  async listPublished() {
+  async listPublished(audience?: string) {
+    const normalizedAudience = this.normalizeAudience(audience);
     const rows = await this.prisma.cmsArticle.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, audience: normalizedAudience },
       orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
       select: {
         id: true,
@@ -86,6 +95,7 @@ export class ArticlesService {
         readingMinutes: true,
         tags: true,
         authorName: true,
+        audience: true,
         canonicalPath: true,
         content: true,
         faqs: true,
@@ -99,11 +109,13 @@ export class ArticlesService {
     return rows.map((r) => this.withNormalizedContent(r));
   }
 
-  async getPublishedBySlug(slug: string) {
+  async getPublishedBySlug(slug: string, audience?: string) {
+    const normalizedAudience = this.normalizeAudience(audience);
     const article = await this.prisma.cmsArticle.findFirst({
       where: {
         slug: this.normalizeSlug(slug),
         isPublished: true,
+        audience: normalizedAudience,
       },
     });
 
@@ -114,8 +126,10 @@ export class ArticlesService {
     return this.withNormalizedContent(article);
   }
 
-  async listAdmin() {
+  async listAdmin(audience?: string) {
+    const normalizedAudience = audience ? this.normalizeAudience(audience) : undefined;
     const rows = await this.prisma.cmsArticle.findMany({
+      where: normalizedAudience ? { audience: normalizedAudience } : undefined,
       orderBy: [{ updatedAt: 'desc' }],
     });
     return rows.map((r) => this.withNormalizedContent(r));

@@ -5,6 +5,8 @@ import {
   normalizeStoredArticleContent,
 } from '@/lib/article-content-normalize';
 
+export type ArticleAudience = 'homeowner' | 'gc';
+
 /** @deprecated Legacy block shape — only used to seed bundled articles; runtime uses TipTap `content`. */
 export type ArticleBlock =
   | { type: 'heading'; text: string }
@@ -33,6 +35,7 @@ export type Article = {
   tags: string[];
   canonicalPath: string;
   authorName: string;
+  audience?: ArticleAudience;
   faqs: ArticleFaqItem[];
   internalLinks: InternalLinkItem[];
   /** TipTap / ProseMirror JSON document */
@@ -53,7 +56,8 @@ type RemoteArticle = {
   tags?: string[];
   canonicalPath?: string;
   authorName?: string;
-  faqs?: Array<{ question: string; answer: string }>;
+  audience?: ArticleAudience;
+  faqs?: { question: string; answer: string }[];
   internalLinks?: InternalLinkItem[];
   content?: Record<string, unknown>;
   /** Legacy API field */
@@ -320,6 +324,7 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
     tags: Array.isArray(input.tags) ? input.tags : [],
     canonicalPath: String(input.canonicalPath || `/articles/${slug}`),
     authorName: String(input.authorName || 'BuildMyHouse Editorial'),
+    audience: input.audience === 'gc' ? 'gc' : 'homeowner',
     faqs: Array.isArray(input.faqs) ? input.faqs : [],
     internalLinks: Array.isArray(input.internalLinks) ? input.internalLinks : [],
     content: normalizeStoredArticleContent(
@@ -334,13 +339,13 @@ export function getArticleBySlug(slug?: string) {
 }
 
 export async function fetchPublishedArticles() {
-  const remote = await api.get('/articles');
+  const remote = await api.get('/articles?audience=homeowner');
   if (!Array.isArray(remote)) return [];
   return remote.map((item) => normalizeRemoteArticle(item as RemoteArticle));
 }
 
 export async function fetchPublishedArticleBySlug(slug: string) {
-  const remote = await api.get(`/articles/${encodeURIComponent(slug)}`);
+  const remote = await api.get(`/articles/${encodeURIComponent(slug)}?audience=homeowner`);
   if (!remote) return undefined;
   return normalizeRemoteArticle(remote as RemoteArticle);
 }

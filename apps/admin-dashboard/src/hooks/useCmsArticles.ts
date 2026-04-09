@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 
 export type CmsArticleFaq = { question: string; answer: string };
 export type CmsArticleInternalLink = { label: string; href: string };
+export type CmsArticleAudience = 'homeowner' | 'gc';
 
 export interface CmsArticle {
   id: string;
@@ -16,6 +17,7 @@ export interface CmsArticle {
   tags: string[];
   authorName: string;
   canonicalPath: string;
+  audience: CmsArticleAudience;
   /** TipTap / ProseMirror JSON document */
   content: Record<string, unknown>;
   faqs: CmsArticleFaq[];
@@ -30,13 +32,16 @@ export type UpsertCmsArticlePayload = Omit<CmsArticle, 'id' | 'createdAt' | 'upd
   isPublished?: boolean;
 };
 
-export function useCmsArticles() {
+export function useCmsArticles(audience?: CmsArticleAudience) {
   const queryClient = useQueryClient();
-  const queryKey = ['cms-articles', 'admin'];
+  const queryKey = ['cms-articles', 'admin', audience || 'all'];
 
   const query = useQuery({
     queryKey,
-    queryFn: () => api.get<CmsArticle[]>('/articles/admin/list'),
+    queryFn: () =>
+      api.get<CmsArticle[]>(
+        `/articles/admin/list${audience ? `?audience=${encodeURIComponent(audience)}` : ''}`,
+      ),
   });
 
   const createMutation = useMutation({

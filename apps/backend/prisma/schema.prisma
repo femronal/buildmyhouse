@@ -35,6 +35,11 @@ enum ProjectRiskLevel {
   high
 }
 
+enum ArticleAudience {
+  homeowner
+  gc
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -118,6 +123,7 @@ model CmsArticle {
   readingMinutes Int     @default(5)
   tags          String[] @default([])
   authorName    String   @default("BuildMyHouse Editorial")
+  audience      ArticleAudience @default(homeowner)
   canonicalPath String
   content       Json
   faqs          Json

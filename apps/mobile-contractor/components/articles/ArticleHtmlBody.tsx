@@ -8,9 +8,6 @@ type Props = {
   minHeight?: number;
 };
 
-/**
- * Renders TipTap-generated HTML. Web: RN Web View + dangerouslySetInnerHTML. Native: WebView.
- */
 export default function ArticleHtmlBody({ htmlFragment, minHeight = 480 }: Props) {
   const fullHtml = wrapArticleHtmlFragment(
     `<div class="bmx-article-body">${htmlFragment}</div>`,

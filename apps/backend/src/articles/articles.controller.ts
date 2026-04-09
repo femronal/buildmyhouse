@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
@@ -10,15 +10,15 @@ export class ArticlesController {
   constructor(private readonly articlesService: ArticlesService) {}
 
   @Get()
-  listPublished() {
-    return this.articlesService.listPublished();
+  listPublished(@Query('audience') audience?: string) {
+    return this.articlesService.listPublished(audience);
   }
 
   @Get('admin/list')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  listAdmin() {
-    return this.articlesService.listAdmin();
+  listAdmin(@Query('audience') audience?: string) {
+    return this.articlesService.listAdmin(audience);
   }
 
   @Get('admin/:id')
@@ -57,7 +57,7 @@ export class ArticlesController {
   }
 
   @Get(':slug')
-  getPublishedBySlug(@Param('slug') slug: string) {
-    return this.articlesService.getPublishedBySlug(slug);
+  getPublishedBySlug(@Param('slug') slug: string, @Query('audience') audience?: string) {
+    return this.articlesService.getPublishedBySlug(slug, audience);
   }
 }

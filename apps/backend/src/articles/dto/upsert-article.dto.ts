@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -70,6 +71,10 @@ export class UpsertArticleDto {
   @IsString()
   @IsNotEmpty()
   authorName: string;
+
+  @IsString()
+  @IsIn(['homeowner', 'gc'])
+  audience: 'homeowner' | 'gc';
 
   @IsString()
   @IsNotEmpty()

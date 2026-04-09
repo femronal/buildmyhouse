@@ -1,3 +1,104 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.article-html-host {
+  max-width: 680px;
+  width: 100%;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #1f2937;
+}
+.article-html-host h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5rem 0 0.75rem;
+  color: #111827;
+}
+.article-html-host h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 2rem 0 0.5rem;
+  color: #111827;
+}
+.article-html-host h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  color: #111827;
+}
+.article-html-host p {
+  margin: 0 0 1.25rem;
+}
+.article-html-host ul,
+.article-html-host ol {
+  margin: 0 0 1.25rem;
+  padding-left: 1.5rem;
+}
+.article-html-host li {
+  margin: 0.35rem 0;
+}
+.article-html-host blockquote {
+  border-left: 4px solid #2563eb;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  color: #374151;
+  font-style: italic;
+  background: #f9fafb;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+.article-html-host pre {
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.9rem;
+  margin: 1.25rem 0;
+}
+.article-html-host code {
+  background: #f3f4f6;
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+.article-html-host pre code {
+  background: transparent;
+  padding: 0;
+}
+.article-html-host hr {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 2rem 0;
+}
+.article-html-host img.bmx-article-image {
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  margin: 1.5rem 0;
+  display: block;
+}
+.article-html-host .bmx-youtube-embed {
+  margin: 1.5rem 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+}
+.article-html-host .bmx-youtube-embed iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.article-html-host aside.bmx-callout {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin: 1.5rem 0;
+}
+.article-html-host .bmx-article-link {
+  color: #2563eb;
+  text-decoration: underline;
+}

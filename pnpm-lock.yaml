@@ -304,6 +304,30 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.90.12
         version: 5.90.12(react@19.1.0)
+      '@tiptap/core':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/pm@2.27.2)
+      '@tiptap/extension-image':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+      '@tiptap/extension-link':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
+      '@tiptap/extension-text-align':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+      '@tiptap/extension-underline':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+      '@tiptap/extension-youtube':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
+      '@tiptap/html':
+        specifier: ^2.11.5
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
+      '@tiptap/starter-kit':
+        specifier: ^2.11.5
+        version: 2.27.2
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.23(postcss@8.5.6)

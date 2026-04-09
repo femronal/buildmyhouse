@@ -156,7 +156,10 @@ export const SlashCommandList = forwardRef<SlashListRef, ListProps>(function Sla
           className={`w-full text-left px-3 py-2 text-sm ${
             index === selected ? 'bg-gray-100' : 'hover:bg-gray-50'
           }`}
-          onClick={() => suggestionCommand({ editor, range, props: item })}
+          onMouseDown={(event) => {
+            event.preventDefault();
+            suggestionCommand({ editor, range, props: item });
+          }}
         >
           <div className="font-medium text-gray-900">{item.title}</div>
           <div className="text-xs text-gray-500">{item.description}</div>
