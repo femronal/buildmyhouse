@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Animated, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Animated, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Filter, CreditCard, Receipt, FileText, TrendingUp, ChevronRight, Building, ChevronDown } from "lucide-react-native";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { useInvestments } from '@/contexts/InvestmentContext';
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
@@ -24,8 +24,9 @@ const loanOptions = [
 export default function FinanceScreen() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+  const { horizontalPad, headerPaddingTop, headerPaddingBottom, scrollBottomPadding, listingChrome } =
     useResponsivePadding("tab");
+  const mw = listingChrome.mobileWeb;
   const { userInvestments, getTotalInvested, getTotalCurrentValue } = useInvestments();
   const [activeTab, setActiveTab] = useState<'overview' | 'payments' | 'invoices' | 'loans' | 'investments'>('overview');
   const [showFilters, setShowFilters] = useState(false);
@@ -41,22 +42,37 @@ export default function FinanceScreen() {
     setShowFilters(!showFilters);
   };
 
-  const filterHeight = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 70] });
+  const filterHeight = useMemo(
+    () =>
+      filterAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, mw ? 56 : 70],
+      }),
+    [filterAnim, mw],
+  );
   const filterOpacity = filterAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   return (
     <View className="flex-1 bg-white">
       <View
-        className="pb-2 flex-row items-center justify-between gap-2"
-        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+        className="flex-row items-center justify-between gap-2"
+        style={{
+          paddingTop: headerPaddingTop,
+          paddingBottom: headerPaddingBottom,
+          paddingHorizontal: horizontalPad,
+        }}
       >
-        <TouchableOpacity onPress={() => router.push('/profile')} className="w-10 h-10 bg-black rounded-full items-center justify-center flex-shrink-0">
-          <User size={22} color="#FFFFFF" strokeWidth={2.5} />
+        <TouchableOpacity
+          onPress={() => router.push('/profile')}
+          className="bg-black rounded-full items-center justify-center flex-shrink-0"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
+        >
+          <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
         <View className="flex-1 min-w-0 items-center">
           <Text
-            className="text-xl text-black text-center"
-            style={{ fontFamily: 'Poppins_700Bold' }}
+            className="text-black text-center"
+            style={{ fontFamily: 'Poppins_700Bold', fontSize: listingChrome.titleFontSize }}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.85}
@@ -64,14 +80,23 @@ export default function FinanceScreen() {
             Finance
           </Text>
         </View>
-        <TouchableOpacity onPress={toggleFilters} className={`w-10 h-10 rounded-full items-center justify-center flex-shrink-0 ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}>
-          <Filter size={22} color="#000000" strokeWidth={2.5} />
+        <TouchableOpacity
+          onPress={toggleFilters}
+          className={`rounded-full items-center justify-center flex-shrink-0 ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
+        >
+          <Filter size={mw ? 20 : 24} color="#000000" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
       {/* Animated Filter Tabs */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: horizontalPad }} className="pb-4">
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: horizontalPad }}
+          className={mw ? 'pb-2' : 'pb-4'}
+        >
           {[
             { key: 'overview', label: 'Overview', icon: TrendingUp },
             { key: 'payments', label: 'Payments', icon: CreditCard },
@@ -88,9 +113,14 @@ export default function FinanceScreen() {
       </Animated.View>
 
       {/* Current Tab Indicator */}
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPad }}>
+      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPad }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-          <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>{activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</Text>
+          <Text
+            className="text-black"
+            style={{ fontFamily: 'Poppins_700Bold', fontSize: mw ? 17 : 20 }}
+          >
+            {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+          </Text>
           <ChevronDown size={20} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
@@ -103,12 +133,23 @@ export default function FinanceScreen() {
         }}
       >
         {activeTab === 'overview' && (
-          <View className="pb-8">
-            <View className="bg-black rounded-3xl p-6 mb-6">
-              <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
+          <View className={mw ? 'pb-4' : 'pb-8'}>
+            <View
+              className={`bg-black rounded-3xl ${mw ? 'mb-4' : 'mb-6'}`}
+              style={{ padding: mw ? 16 : 24 }}
+            >
               <Text
-                className="text-white mb-4"
-                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: width <= 390 ? 28 : 36 }}
+                className="text-white/70 mb-1"
+                style={{ fontFamily: 'Poppins_400Regular', fontSize: mw ? 12 : 14 }}
+              >
+                Total Invested
+              </Text>
+              <Text
+                className="text-white mb-3"
+                style={{
+                  fontFamily: 'JetBrainsMono_500Medium',
+                  fontSize: mw ? 28 : width <= 390 ? 28 : 36,
+                }}
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 minimumFontScale={0.7}
@@ -116,11 +157,22 @@ export default function FinanceScreen() {
                 ₦321,500
               </Text>
               <View className="flex-row justify-between">
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>2</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text><Text className="text-white text-xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦670,000</Text></View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold', fontSize: mw ? 18 : 20 }}>2</Text>
+                </View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text>
+                  <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: mw ? 16 : 20 }}>₦670,000</Text>
+                </View>
               </View>
             </View>
-            <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Project Budgets</Text>
+            <Text
+              className="text-black mb-2"
+              style={{ fontFamily: 'Poppins_700Bold', fontSize: mw ? 17 : 20 }}
+            >
+              Project Budgets
+            </Text>
             {[{ name: "Modern Minimalist", budget: 285000, spent: 71250, percent: 25 }, { name: "Classic Colonial", budget: 385000, spent: 250250, percent: 65 }].map((p, i) => (
               <View key={i} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
                 <Text className="text-lg text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
@@ -137,7 +189,7 @@ export default function FinanceScreen() {
         )}
 
         {activeTab === 'payments' && (
-          <View className="pb-8">
+          <View className={mw ? 'pb-4' : 'pb-8'}>
             {recentPayments.map((payment) => (
               <TouchableOpacity key={payment.id} className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row items-center border border-gray-200">
                 <View className="w-12 h-12 bg-black rounded-full items-center justify-center flex-shrink-0"><Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text></View>
@@ -152,7 +204,7 @@ export default function FinanceScreen() {
         )}
 
         {activeTab === 'invoices' && (
-          <View className="pb-8">
+          <View className={mw ? 'pb-4' : 'pb-8'}>
             {invoices.map((invoice) => (
               <TouchableOpacity key={invoice.id} className="bg-gray-50 rounded-2xl p-4 mb-3 flex-row items-center border border-gray-200">
                 <View className="w-12 h-12 bg-gray-200 rounded-xl items-center justify-center"><FileText size={24} color="#000000" strokeWidth={2} /></View>
@@ -170,7 +222,7 @@ export default function FinanceScreen() {
         )}
 
         {activeTab === 'loans' && (
-          <View className="pb-8">
+          <View className={mw ? 'pb-4' : 'pb-8'}>
             {loanOptions.map((loan) => (
               <TouchableOpacity key={loan.id} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
                 <View className="flex-row justify-between items-start mb-3 gap-2">
@@ -191,13 +243,32 @@ export default function FinanceScreen() {
         )}
 
         {activeTab === 'investments' && (
-          <View className="pb-8">
-            <View className="bg-black rounded-3xl p-6 mb-6">
-              <Text className="text-white/70 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Total Invested</Text>
-              <Text className="text-white text-3xl mb-2" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalInvested.toLocaleString()}</Text>
+          <View className={mw ? 'pb-4' : 'pb-8'}>
+            <View
+              className={`bg-black rounded-3xl ${mw ? 'mb-4' : 'mb-6'}`}
+              style={{ padding: mw ? 16 : 24 }}
+            >
+              <Text
+                className="text-white/70 mb-1"
+                style={{ fontFamily: 'Poppins_400Regular', fontSize: mw ? 12 : 14 }}
+              >
+                Total Invested
+              </Text>
+              <Text
+                className="text-white mb-2"
+                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: mw ? 28 : 30 }}
+              >
+                ₦{totalInvested.toLocaleString()}
+              </Text>
               <View className="flex-row justify-between">
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text><Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalCurrentValue.toLocaleString()}</Text></View>
-                <View><Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Returns</Text><Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>+{totalReturns}%</Text></View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Current Value</Text>
+                  <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: mw ? 16 : 18 }}>₦{totalCurrentValue.toLocaleString()}</Text>
+                </View>
+                <View>
+                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Returns</Text>
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold', fontSize: mw ? 16 : 18 }}>+{totalReturns}%</Text>
+                </View>
               </View>
             </View>
             <Text className="text-lg text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Your Investments</Text>

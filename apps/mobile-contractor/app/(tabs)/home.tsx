@@ -88,8 +88,9 @@ const landedProperties = [
 export default function HomeScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
-  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+  const { horizontalPad, headerPaddingTop, headerPaddingBottom, scrollBottomPadding, listingChrome } =
     useResponsivePadding("tab");
+  const compactTab = listingChrome.mobileWeb;
   const { addInvestment } = useInvestments();
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: number]: number}>({1: 0});
   const [showInvestModal, setShowInvestModal] = useState(false);
@@ -151,22 +152,30 @@ export default function HomeScreen() {
     <View className="flex-1 bg-white">
       {/* Header */}
       <View
-        className="pb-2 flex-row items-center justify-between gap-2"
-        style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
+        className="flex-row items-center justify-between gap-2"
+        style={{
+          paddingTop: headerPaddingTop,
+          paddingBottom: headerPaddingBottom,
+          paddingHorizontal: horizontalPad,
+        }}
       >
         <TouchableOpacity
           onPress={() => router.push('/profile')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
-          className="w-10 h-10 bg-black rounded-full items-center justify-center flex-shrink-0"
+          className="bg-black rounded-full items-center justify-center flex-shrink-0"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
-          <User size={22} color="#FFFFFF" strokeWidth={2.5} />
+          <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>
 
         <View className="flex-1 min-w-0 items-center justify-center px-1">
           <Text
-            className="text-xl text-black text-center"
-            style={{ fontFamily: 'Poppins_700Bold' }}
+            className="text-black text-center"
+            style={{
+              fontFamily: 'Poppins_700Bold',
+              fontSize: listingChrome.titleFontSize,
+            }}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.85}
@@ -177,9 +186,10 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           onPress={() => router.push('/notifications')}
-          className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center flex-shrink-0"
+          className="bg-gray-100 rounded-full items-center justify-center flex-shrink-0"
+          style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
-          <Bell size={22} color="#000000" strokeWidth={2.5} />
+          <Bell size={listingChrome.headerUserIconSize} color="#000000" strokeWidth={2.5} />
           <View className="absolute top-2 right-2 w-3 h-3 bg-black rounded-full" />
         </TouchableOpacity>
       </View>
@@ -192,16 +202,16 @@ export default function HomeScreen() {
         }}
       >
         {/* Welcome Section */}
-        <View className="mb-8">
+        <View className={compactTab ? 'mb-5' : 'mb-8'}>
           <Text
-            className="text-3xl text-black mb-2"
-            style={{ fontFamily: 'Poppins_800ExtraBold' }}
+            className="text-black mb-1"
+            style={{ fontFamily: 'Poppins_800ExtraBold', fontSize: compactTab ? 26 : 30 }}
           >
             Welcome back,
           </Text>
           <Text
-            className="text-3xl text-black"
-            style={{ fontFamily: 'Poppins_800ExtraBold' }}
+            className="text-black"
+            style={{ fontFamily: 'Poppins_800ExtraBold', fontSize: compactTab ? 26 : 30 }}
           >
             Ifeoma 👋
           </Text>
@@ -210,32 +220,36 @@ export default function HomeScreen() {
         {/* Start New Project */}
         <TouchableOpacity
           onPress={() => router.push('/')}
-          className="bg-black rounded-3xl p-6 mb-8 flex-row items-center justify-between"
+          className={`bg-black rounded-3xl flex-row items-center justify-between ${compactTab ? 'mb-5' : 'mb-8'}`}
+          style={{ padding: compactTab ? 16 : 24 }}
         >
           <View className="flex-1">
             <Text 
-              className="text-white text-xl mb-2"
-              style={{ fontFamily: 'Poppins_700Bold' }}
+              className="text-white mb-1"
+              style={{ fontFamily: 'Poppins_700Bold', fontSize: compactTab ? 17 : 20 }}
             >
               Start New Project
             </Text>
             <Text 
               className="text-white/70"
-              style={{ fontFamily: 'Poppins_400Regular' }}
+              style={{ fontFamily: 'Poppins_400Regular', fontSize: compactTab ? 13 : 14 }}
             >
               Build your dream home today
             </Text>
           </View>
-          <View className="w-14 h-14 bg-white rounded-full items-center justify-center">
-            <Plus size={28} color="#000000" strokeWidth={2.5} />
+          <View
+            className="bg-white rounded-full items-center justify-center flex-shrink-0"
+            style={{ width: compactTab ? 48 : 56, height: compactTab ? 48 : 56 }}
+          >
+            <Plus size={compactTab ? 24 : 28} color="#000000" strokeWidth={2.5} />
           </View>
         </TouchableOpacity>
 
         {/* Current Projects */}
-        <View className="mb-8">
+        <View className={compactTab ? 'mb-5' : 'mb-8'}>
           <Text 
-            className="text-2xl text-black mb-4"
-            style={{ fontFamily: 'Poppins_700Bold' }}
+            className={`text-black ${compactTab ? 'mb-3' : 'mb-4'}`}
+            style={{ fontFamily: 'Poppins_700Bold', fontSize: compactTab ? 20 : 24 }}
           >
             Your Projects
           </Text>
@@ -382,8 +396,8 @@ export default function HomeScreen() {
         </View>
 
         {/* Real Estate Investments */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4 gap-2">
+        <View className={compactTab ? 'mb-5' : 'mb-8'}>
+          <View className={`flex-row items-center justify-between gap-2 ${compactTab ? 'mb-3' : 'mb-4'}`}>
             <View className="flex-1 min-w-0 flex-row items-center">
               <View className="flex-shrink-0">
                 <TrendingUp size={22} color="#000000" strokeWidth={2.5} />
@@ -407,10 +421,10 @@ export default function HomeScreen() {
           </View>
 
           <Text 
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
+            className={`text-gray-500 ${compactTab ? 'mb-3' : 'mb-4'}`}
+            style={{ fontFamily: 'Poppins_400Regular', fontSize: compactTab ? 14 : 16 }}
           >
-            Can't build now? Invest in verified real estate opportunities
+            {"Can't build now? Invest in verified real estate opportunities"}
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -475,8 +489,8 @@ export default function HomeScreen() {
         </View>
 
         {/* Landed Properties Section */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4 gap-2">
+        <View className={compactTab ? 'mb-5' : 'mb-8'}>
+          <View className={`flex-row items-center justify-between gap-2 ${compactTab ? 'mb-3' : 'mb-4'}`}>
             <View className="flex-1 min-w-0 flex-row items-center">
               <View className="flex-shrink-0">
                 <LandPlot size={22} color="#000000" strokeWidth={2.5} />
@@ -500,8 +514,8 @@ export default function HomeScreen() {
           </View>
 
           <Text 
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
+            className={`text-gray-500 ${compactTab ? 'mb-3' : 'mb-4'}`}
+            style={{ fontFamily: 'Poppins_400Regular', fontSize: compactTab ? 14 : 16 }}
           >
             Verified estates with all legal documents
           </Text>
