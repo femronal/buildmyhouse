@@ -11,6 +11,11 @@ import { diasporaBuildNigeriaFromAbroadPageContent as content } from '@/lib/dias
 
 const sectionBodyClass = 'text-gray-700 text-sm leading-7 mb-3';
 const coverImage = require('@/assets/images/cover-image-for-blog-1.png');
+const coverImageSource = Image.resolveAssetSource(coverImage);
+const coverImageAspectRatio =
+  coverImageSource?.width && coverImageSource?.height
+    ? coverImageSource.width / coverImageSource.height
+    : 16 / 9;
 
 function ParagraphBlock({ paragraphs }: { paragraphs: readonly string[] }) {
   return (
@@ -57,12 +62,17 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           >
             {content.hero.title}
           </SeoHeading>
-          <Image
-            source={coverImage}
-            resizeMode="cover"
-            className="w-full rounded-3xl mb-4"
-            style={{ height: 320, maxWidth: 920 }}
-          />
+          <View
+            className="w-full rounded-3xl mb-4 overflow-hidden bg-gray-100"
+            style={{ maxWidth: 920, alignSelf: 'flex-start' }}
+          >
+            <Image
+              source={coverImage}
+              resizeMode="contain"
+              className="w-full"
+              style={{ aspectRatio: coverImageAspectRatio }}
+            />
+          </View>
           <Text
             className="text-gray-600 text-base leading-7 mb-5 md:text-lg"
             style={{ fontFamily: 'Poppins_400Regular', maxWidth: 920 }}
