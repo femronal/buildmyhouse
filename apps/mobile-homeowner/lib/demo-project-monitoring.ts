@@ -1,162 +1,159 @@
-import type { ProofOfProcessDemoContent } from '@/components/seo/proof-of-process-types';
-
-export type ProjectOverview = {
-  projectName: string;
-  location: string;
-  type: string;
-  currentStage: string;
-  completion: number;
-  lastUpdate: string;
-  budgetBand: string;
+type DemoStageMaterial = {
+  name: string;
+  supplier: string;
+  quantity: string;
+  brand: string;
+  price: number;
 };
 
-export type StageTrackerItem = {
-  stage: string;
-  status: 'completed' | 'in_progress' | 'up_next';
-  note: string;
+type DemoChatMessage = {
+  sender: 'homeowner' | 'gc';
+  message: string;
+  date: string;
 };
 
-export type ProjectMonitoringDemoContent = {
-  title: string;
-  description: string;
-  eyebrow: string;
-  overview: ProjectOverview;
-  stages: StageTrackerItem[];
-  trustMessage: string;
-  ctaLabel: string;
-  ctaHref: string;
-  proofDemo: ProofOfProcessDemoContent;
+export type DemoStage = {
+  id: string;
+  order: number;
+  name: string;
+  duration: string;
+  budget: number;
+  status: 'in_progress' | 'locked';
+  locked: boolean;
+  paymentStatus?: string;
+  completionRule?: string;
+  materials?: DemoStageMaterial[];
+  chat?: DemoChatMessage[];
+  notifications?: string[];
 };
 
-export const projectMonitoringDemoContent: ProjectMonitoringDemoContent = {
-  title: 'Remote Project Monitoring Demo | BuildMyHouse',
-  description:
-    'Interactive trust demo showing how diaspora homeowners can monitor construction progress, milestone evidence, payments, and communication before signup.',
-  eyebrow: 'Interactive Demo',
-  overview: {
-    projectName: '3-Bedroom Duplex Build (Demo)',
-    location: 'Ajah, Lagos',
-    type: 'New Construction',
-    currentStage: 'Blockwork',
-    completion: 36,
-    lastUpdate: 'Updated 2 hours ago',
-    budgetBand: 'Planned budget band: NGN 42M - 48M',
+export type ProjectMonitoringDemoData = {
+  project: {
+    name: string;
+    location: string;
+    progressLabel: string;
+  };
+  stages: DemoStage[];
+  trustPoints: string[];
+};
+
+export const projectMonitoringDemoData: ProjectMonitoringDemoData = {
+  project: {
+    name: "Daddy Obinna Redesign",
+    location: "University of Lagos Cricket Oval, Ransome Kuti Road, Shomolu, Lagos State, Nigeria",
+    progressLabel: "0/6 Complete",
   },
+
   stages: [
     {
-      stage: 'Site prep and foundation',
-      status: 'completed',
-      note: 'Completed with stage evidence and checklist sign-off.',
+      id: "stage-1",
+      order: 1,
+      name: "Site Preparation & Foundation",
+      duration: "2 months",
+      budget: 330000,
+      status: "in_progress",
+      locked: false,
+      paymentStatus: "approved_work_in_progress",
+      completionRule:
+        "GC executes stage work. Homeowner follows progress and satisfaction is confirmed before stage completion/payment flow continues.",
+      materials: [
+        {
+          name: "Cement",
+          supplier: "Mr Adewale Cements Store",
+          quantity: "50 bags",
+          brand: "Dangote",
+          price: 500000,
+        },
+        {
+          name: "Transportation",
+          supplier: "Mr Stevens of GiG",
+          quantity: "5 pieces",
+          brand: "God Is Good Trucks",
+          price: 150000,
+        },
+      ],
+      chat: [
+        {
+          sender: "homeowner",
+          message: "Hello, when are we starting?",
+          date: "Apr 5",
+        },
+        {
+          sender: "gc",
+          message: "We have started already by getting the necessary permits from",
+          date: "Apr 5",
+        },
+        {
+          sender: "gc",
+          message: "the local government.",
+          date: "Apr 5",
+        },
+        {
+          sender: "homeowner",
+          message: "Okay",
+          date: "Apr 5",
+        },
+      ],
+      notifications: [
+        "New item added to Site Preparation & Foundation",
+        "New chat message from your GC",
+        "Payment approved. Work in progress",
+      ],
+    },
+
+    {
+      id: "stage-2",
+      order: 2,
+      name: "Framing & Structural",
+      duration: "6–8 weeks",
+      budget: 440000,
+      status: "locked",
+      locked: true,
     },
     {
-      stage: 'Blockwork and structural walls',
-      status: 'in_progress',
-      note: 'Current stage. Evidence is being uploaded with daily progress notes.',
+      id: "stage-3",
+      order: 3,
+      name: "Rough-in (MEP)",
+      duration: "4–5 weeks",
+      budget: 400000,
+      status: "locked",
+      locked: true,
     },
     {
-      stage: 'Roofing and waterproofing',
-      status: 'up_next',
-      note: 'Prepared after blockwork QA and milestone review.',
+      id: "stage-4",
+      order: 4,
+      name: "Insulation & Drywall",
+      duration: "3–4 weeks",
+      budget: 300000,
+      status: "locked",
+      locked: true,
     },
     {
-      stage: 'MEP and interior finishing',
-      status: 'up_next',
-      note: 'Planned after structure and roofing milestones are approved.',
+      id: "stage-5",
+      order: 5,
+      name: "Interior Finishes",
+      duration: "6–8 weeks",
+      budget: 550000,
+      status: "locked",
+      locked: true,
+    },
+    {
+      id: "stage-6",
+      order: 6,
+      name: "Exterior & Landscaping",
+      duration: "3–4 weeks",
+      budget: 220000,
+      status: "locked",
+      locked: true,
     },
   ],
-  trustMessage:
-    'This is a safe public preview with demo data. It shows the workflow style, not a live client dashboard.',
-  ctaLabel: 'Start a tracked project',
-  ctaHref: '/location?mode=explore',
-  proofDemo: {
-    stageEvidenceGallery: [
-      {
-        id: 'foundation',
-        stageLabel: 'Foundation stage',
-        date: '14 Apr 2026',
-        explanation: 'Footing, rebar layout, and pour prep captured for review before payment trigger.',
-        imageUrl:
-          'https://images.unsplash.com/photo-1504307651254-35680f356df?auto=format&fit=crop&w=1000&q=60',
-      },
-      {
-        id: 'blockwork',
-        stageLabel: 'Blockwork stage',
-        date: '29 Apr 2026',
-        explanation: 'Wall lines and level checks documented to reduce rework and disputes.',
-        imageUrl:
-          'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=1000&q=60',
-      },
-      {
-        id: 'site-progress',
-        stageLabel: 'Site progress',
-        date: '03 May 2026',
-        explanation: 'Daily update photos show actual progress against planned stage outcomes.',
-        imageUrl:
-          'https://images.unsplash.com/photo-1472220625704-91e1462799b2?auto=format&fit=crop&w=1000&q=60',
-      },
-    ],
-    contractorVerification: {
-      contractorLabel: 'Demo contractor: PrimeNest Projects',
-      checks: [
-        { label: 'Business registration match', status: 'verified', note: 'Registration details reviewed.' },
-        { label: 'Director identity verification', status: 'verified', note: 'Identity and role checks passed.' },
-        { label: 'Project reference validation', status: 'in_review', note: 'Recent references under review.' },
-        { label: 'Final scope alignment', status: 'pending', note: 'Waiting for homeowner confirmation.' },
-      ],
-      note: 'Verification statuses shown here are demo-only for public preview.',
-    },
-    milestonePaymentBreakdown: [
-      {
-        stageName: 'Foundation',
-        completionDefinition: 'Excavation, rebar, and concrete pour complete.',
-        requiredEvidence: ['Stage photos', 'Checklist completion', 'Material usage summary'],
-        paymentTrigger: 'Release when milestone evidence is approved.',
-      },
-      {
-        stageName: 'Blockwork',
-        completionDefinition: 'Load-bearing walls complete to approved layout.',
-        requiredEvidence: ['Progress images', 'Supervisor notes', 'Deviation report if needed'],
-        paymentTrigger: 'Release when stage completion criteria are met.',
-      },
-    ],
-    documentationSamples: [
-      {
-        title: 'Weekly stage report',
-        caption: 'Sample report card',
-        description: 'Summarizes completed work, blockers, and plan for next 7 days.',
-      },
-      {
-        title: 'Material receipt log',
-        caption: 'Sample document pack',
-        description: 'Date-stamped records for key material deliveries tied to stage progress.',
-      },
-    ],
-    chatTimeline: [
-      {
-        at: 'Mon 08:46',
-        actor: 'contractor',
-        message: 'Blockwork reached lintel level. Uploading photo set and quantity summary.',
-        type: 'update',
-      },
-      {
-        at: 'Mon 09:02',
-        actor: 'homeowner',
-        message: 'Thanks. Please confirm if staircase formwork starts this week.',
-        type: 'question',
-      },
-      {
-        at: 'Mon 09:35',
-        actor: 'buildmyhouse',
-        message: 'Evidence packet added to milestone review queue.',
-        type: 'evidence',
-      },
-      {
-        at: 'Mon 10:12',
-        actor: 'buildmyhouse',
-        message: 'Milestone condition satisfied. Payment trigger can proceed.',
-        type: 'approval',
-      },
-    ],
-  },
+
+  trustPoints: [
+    "Each stage is visible and ordered clearly",
+    "The GC adds items and updates inside the active stage",
+    "The homeowner receives notifications when something changes",
+    "Chat is tied to the project workflow",
+    "The homeowner influences payment progression through satisfaction confirmation",
+  ],
 };
 
