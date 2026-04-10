@@ -58,14 +58,15 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
             {content.hero.title}
           </SeoHeading>
           <View
-            className="w-full rounded-3xl mb-4 overflow-hidden bg-gray-100 items-center justify-center"
+            className="w-full rounded-3xl mb-2 overflow-hidden items-center justify-center"
             style={{ maxWidth: 920, alignSelf: 'center' }}
           >
             <Image
               source={coverImage}
-              resizeMode="contain"
-              className="w-full h-[220px] md:h-[340px] lg:h-[420px]"
-              style={{ alignSelf: 'center' }}
+              resizeMode="cover"
+              className="w-full"
+              style={{ aspectRatio: 4 / 3, alignSelf: 'center' }}
+              accessibilityLabel={content.hero.title}
             />
           </View>
           <Text
