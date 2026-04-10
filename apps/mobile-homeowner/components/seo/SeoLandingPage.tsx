@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, type ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import RelatedLinkSections, { type RelatedLinkSection } from '@/components/seo/RelatedLinkSections';
 import TrustBlocks, { type TrustBlock } from '@/components/seo/TrustBlocks';
+import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import ProofOfProcessDemoSection from '@/components/seo/ProofOfProcessDemoSection';
 import type { ProofOfProcessDemoContent } from '@/components/seo/proof-of-process-types';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -30,6 +31,9 @@ type SeoLandingPageProps = {
   relatedLinkSections?: RelatedLinkSection[];
   ctaLabel?: string;
   ctaHref?: string;
+  coverImageSource?: ImageSourcePropType;
+  coverImageAlt?: string;
+  coverImageAspectRatio?: number;
   preWhySections?: SeoContentSection[];
   whySectionTitle?: string;
   afterWhySections?: SeoContentSection[];
@@ -108,6 +112,9 @@ export default function SeoLandingPage({
   relatedLinkSections = [],
   ctaLabel = 'Start your project',
   ctaHref = '/location?mode=explore',
+  coverImageSource,
+  coverImageAlt = '',
+  coverImageAspectRatio = 4 / 3,
   preWhySections = [],
   whySectionTitle = 'Why people choose BuildMyHouse',
   afterWhySections = [],
@@ -140,6 +147,9 @@ export default function SeoLandingPage({
           >
             {title}
           </SeoHeading>
+          {coverImageSource ? (
+            <SeoCoverImage source={coverImageSource} alt={coverImageAlt || title} aspectRatio={coverImageAspectRatio} className="mb-3" />
+          ) : null}
           <Text
             className="text-gray-600 text-xs leading-5 md:text-sm md:leading-6"
             style={{ fontFamily: 'Poppins_400Regular' }}

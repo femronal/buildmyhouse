@@ -1,9 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import TrustBlocks from '@/components/seo/TrustBlocks';
+import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -57,17 +58,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           >
             {content.hero.title}
           </SeoHeading>
-          <View
-            className="w-full rounded-3xl mb-2 overflow-hidden items-center justify-center"
-            style={{ maxWidth: 920, alignSelf: 'center', aspectRatio: 4 / 3 }}
-          >
-            <Image
-              source={coverImage}
-              resizeMode="contain"
-              style={{ width: '100%', height: '100%', alignSelf: 'center' }}
-              accessibilityLabel={content.hero.title}
-            />
-          </View>
+          <SeoCoverImage source={coverImage} alt={content.hero.title} />
           <Text
             className="text-gray-600 text-base leading-7 mb-5 md:text-lg"
             style={{ fontFamily: 'Poppins_400Regular', maxWidth: 920 }}
