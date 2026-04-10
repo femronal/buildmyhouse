@@ -46,7 +46,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           >
             <ArrowLeft size={18} color="#111827" strokeWidth={2.2} />
           </TouchableOpacity>
-          <Text className="text-[11px] tracking-wide uppercase text-blue-700 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          <Text className="text-[11px] tracking-wide uppercase text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
           <SeoHeading
@@ -157,9 +157,9 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           <ParagraphBlock paragraphs={content.permits.paragraphs} />
           <TouchableOpacity
             onPress={() => router.push(content.permits.primaryLink.href as any)}
-            className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2.5 self-start mt-1"
+            className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2.5 self-start mt-1"
           >
-            <Text className="text-blue-700 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               {content.permits.primaryLink.label}
             </Text>
           </TouchableOpacity>
@@ -179,7 +179,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
             </SeoHeading>
             {content.whyBuildMyHouse.cardItems.map((item) => (
               <View key={item} className="flex-row items-start mb-2">
-                <Text className="text-emerald-300 mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                <Text className="text-gray-300 mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                   •
                 </Text>
                 <Text className="text-white text-sm leading-6 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -215,7 +215,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           ]}
         />
 
-        <View style={cardShadowStyle} className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-8">
+        <View style={cardShadowStyle} className="bg-gray-100 border border-gray-300 rounded-2xl p-5 mb-8">
           <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.publicDemoTeaser.title}
           </SeoHeading>
@@ -223,7 +223,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           <View className="flex-col md:flex-row gap-3 mt-2">
             <TouchableOpacity
               onPress={() => router.push(content.publicDemoTeaser.primaryCta.href as any)}
-              className="rounded-full bg-blue-700 px-5 py-3"
+              className="rounded-full bg-black px-5 py-3"
             >
               <Text className="text-white text-sm md:text-base text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
                 {content.publicDemoTeaser.primaryCta.label}

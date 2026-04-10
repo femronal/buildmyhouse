@@ -93,7 +93,7 @@ export default function ProjectMonitoringDemoPage() {
           </TouchableOpacity>
 
           <Text
-            className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1"
+            className="text-[10px] md:text-xs uppercase tracking-wide text-gray-500 mb-1"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
             Interactive Demo
@@ -109,9 +109,9 @@ export default function ProjectMonitoringDemoPage() {
             This demo shows how BuildMyHouse remote project monitoring can work for diaspora homeowners:
             GC-led execution, homeowner visibility, and satisfaction-based payment progression.
           </Text>
-          <View className="flex-row items-start bg-blue-50 border border-blue-200 rounded-2xl p-3 mb-4">
-            <ShieldCheck size={18} color="#1d4ed8" style={{ marginTop: 1, marginRight: 8 }} />
-            <Text className="text-xs text-blue-900 flex-1 leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+          <View className="flex-row items-start bg-gray-100 border border-gray-300 rounded-2xl p-3 mb-4">
+            <ShieldCheck size={18} color="#1f2937" style={{ marginTop: 1, marginRight: 8 }} />
+            <Text className="text-xs text-gray-800 flex-1 leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
               This is a demo experience with sample data, built for public preview.
             </Text>
           </View>
@@ -120,11 +120,11 @@ export default function ProjectMonitoringDemoPage() {
             <TouchableOpacity
               onPress={() => {
                 trackWebEvent('demo_project_monitoring_cta_top_start', {
-                  cta_href: '/projects/new',
+                  cta_href: '/location?mode=explore',
                 });
-                router.push('/projects/new' as any);
+                router.push('/location?mode=explore' as any);
               }}
-              className="bg-blue-600 rounded-full py-3.5 px-5"
+              className="bg-black rounded-full py-3.5 px-5"
             >
               <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Start a Tracked Project
@@ -154,7 +154,7 @@ export default function ProjectMonitoringDemoPage() {
               </View>
 
               <View className="px-4 pb-3">
-                <Text className="text-[11px] uppercase tracking-wide text-blue-700 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-[11px] uppercase tracking-wide text-gray-500 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Your Project (Demo)
                 </Text>
                 <Text className="text-black text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -163,8 +163,8 @@ export default function ProjectMonitoringDemoPage() {
                 <Text className="text-gray-600 text-xs leading-5 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {projectMonitoringDemoData.project.location}
                 </Text>
-                <View className="self-start bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                  <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <View className="self-start bg-gray-200 border border-gray-300 rounded-full px-3 py-1">
+                  <Text className="text-gray-800 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {projectMonitoringDemoData.project.progressLabel}
                   </Text>
                 </View>
@@ -189,19 +189,19 @@ export default function ProjectMonitoringDemoPage() {
                   </TouchableOpacity>
                 ) : null}
                 {showCoach ? (
-                  <View className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-2">
-                    <Text className="text-amber-900 text-xs leading-5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <View className="bg-gray-100 border border-gray-300 rounded-xl px-3 py-2 mb-2">
+                    <Text className="text-gray-800 text-xs leading-5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       {coachMessage}
                     </Text>
                     <View className="flex-row mt-1.5">
                       <TouchableOpacity onPress={() => setShowCoach(false)} className="mr-3">
-                        <Text className="text-[11px] text-amber-800" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        <Text className="text-[11px] text-gray-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                           Skip guide
                         </Text>
                       </TouchableOpacity>
                       {coachStep === 'done' ? (
                         <TouchableOpacity onPress={() => setShowCoach(false)}>
-                          <Text className="text-[11px] text-amber-800" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          <Text className="text-[11px] text-gray-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                             Dismiss
                           </Text>
                         </TouchableOpacity>
@@ -227,16 +227,16 @@ export default function ProjectMonitoringDemoPage() {
                         onPress={() => handlePanelOpen(item.id)}
                         className={`rounded-full px-3 py-2 border ${
                           selected
-                            ? 'bg-blue-600 border-blue-600'
+                            ? 'bg-black border-black'
                             : coachTarget
-                              ? 'bg-amber-50 border-amber-400'
+                              ? 'bg-gray-200 border-gray-400'
                               : 'bg-white border-gray-300'
                         }`}
                       >
                         <View className="flex-row items-center">
-                          <Icon size={14} color={selected ? '#ffffff' : coachTarget ? '#92400e' : '#1f2937'} />
+                          <Icon size={14} color={selected ? '#ffffff' : '#1f2937'} />
                           <Text
-                            className={`text-xs ml-1.5 ${selected ? 'text-white' : coachTarget ? 'text-amber-900' : 'text-gray-700'}`}
+                            className={`text-xs ml-1.5 ${selected ? 'text-white' : 'text-gray-700'}`}
                             style={{ fontFamily: 'Poppins_600SemiBold' }}
                           >
                             {item.label}
@@ -280,7 +280,7 @@ export default function ProjectMonitoringDemoPage() {
                         <TouchableOpacity
                           key={stage.id}
                           onPress={() => setSelectedStageId(stage.id)}
-                          className={`rounded-xl border p-3 mb-2 ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}
+                          className={`rounded-xl border p-3 mb-2 ${selected ? 'border-gray-500 bg-gray-200' : 'border-gray-200 bg-gray-50'}`}
                         >
                           <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                             {stage.order}. {stage.name}
@@ -288,7 +288,7 @@ export default function ProjectMonitoringDemoPage() {
                           <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                             Duration: {stage.duration} | Budget: {formatCurrency(stage.budget)}
                           </Text>
-                          <Text className={`text-xs ${stageLocked ? 'text-gray-500' : 'text-emerald-700'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                          <Text className={`text-xs ${stageLocked ? 'text-gray-500' : 'text-gray-800'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
                             {stageLocked ? 'Locked' : 'Available'}
                           </Text>
                         </TouchableOpacity>
@@ -310,14 +310,14 @@ export default function ProjectMonitoringDemoPage() {
                     </Text>
                     <TouchableOpacity
                       onPress={handleSatisfactionToggle}
-                      className={`rounded-full px-4 py-2 self-start ${satisfactionConfirmed ? 'bg-emerald-600' : 'bg-blue-600'}`}
+                      className={`rounded-full px-4 py-2 self-start ${satisfactionConfirmed ? 'bg-gray-700' : 'bg-black'}`}
                     >
                       <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
                         {satisfactionConfirmed ? 'Satisfaction Confirmed (Demo)' : 'Confirm Satisfaction (Demo)'}
                       </Text>
                     </TouchableOpacity>
                     {showCoach && coachStep === 'confirm' ? (
-                      <Text className="text-[11px] text-blue-700 mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      <Text className="text-[11px] text-gray-600 mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                         Tip: confirming satisfaction demonstrates how next-stage payment flow can continue.
                       </Text>
                     ) : null}
@@ -421,7 +421,7 @@ export default function ProjectMonitoringDemoPage() {
                           <TouchableOpacity
                             key={file.id}
                             onPress={() => setSelectedFileId(file.id)}
-                            className={`rounded-xl p-3 mb-2 border ${selectedFileId === file.id ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-200'}`}
+                            className={`rounded-xl p-3 mb-2 border ${selectedFileId === file.id ? 'bg-gray-200 border-gray-400' : 'bg-gray-50 border-gray-200'}`}
                           >
                             <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                               {file.name}
@@ -458,7 +458,7 @@ export default function ProjectMonitoringDemoPage() {
                         <Text className="text-[11px] text-gray-500 mb-0.5" style={{ fontFamily: 'Poppins_500Medium' }}>
                           {item.sender === 'gc' ? 'GC' : 'Homeowner'} • {item.date}
                         </Text>
-                        <View className={`rounded-xl px-3 py-2 ${item.sender === 'gc' ? 'bg-gray-100' : 'bg-blue-50'}`}>
+                        <View className={`rounded-xl px-3 py-2 ${item.sender === 'gc' ? 'bg-gray-100' : 'bg-gray-200'}`}>
                           <Text className="text-sm text-gray-700 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
                             {item.message}
                           </Text>
@@ -485,24 +485,16 @@ export default function ProjectMonitoringDemoPage() {
           </View>
         </View>
 
-        <View style={cardShadowStyle} className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+        <View style={cardShadowStyle} className="bg-gray-100 border border-gray-300 rounded-2xl p-4 mb-4">
           <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             Payment and workflow explanation
           </SeoHeading>
-          <Text className="text-blue-900 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className="text-gray-800 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
             Payment progression is controlled through homeowner satisfaction confirmation before the GC continues into the next paid stage.
           </Text>
-          <Text className="text-blue-900 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className="text-gray-800 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
             The homeowner does not manually mark stages complete. The GC drives execution and marks stage completion in the workflow.
           </Text>
-          <Text className="text-blue-900 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Current payment status: {satisfactionConfirmed ? 'satisfaction confirmed - stage 2 payment flow can proceed (demo)' : activeStage.paymentStatus?.replace(/_/g, ' ') ?? 'N/A'}
-          </Text>
-          {(activeStage.notifications ?? []).map((notice) => (
-            <Text key={notice} className="text-blue-900 text-sm leading-6" style={{ fontFamily: 'Poppins_500Medium' }}>
-              • {notice}
-            </Text>
-          ))}
         </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
@@ -527,9 +519,9 @@ export default function ProjectMonitoringDemoPage() {
             <TouchableOpacity
               onPress={() => {
                 trackWebEvent('demo_project_monitoring_cta_bottom_start', {
-                  cta_href: '/projects/new',
+                  cta_href: '/location?mode=explore',
                 });
-                router.push('/projects/new' as any);
+                router.push('/location?mode=explore' as any);
               }}
               className="bg-white rounded-full py-3.5 px-5"
             >

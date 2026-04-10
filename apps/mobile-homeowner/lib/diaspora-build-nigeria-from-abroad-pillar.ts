@@ -14,7 +14,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
       "If you live in the UK, US, Canada, UAE, or anywhere else abroad, BuildMyHouse helps you manage your building project in Nigeria with clearer visibility, milestone tracking, contractor accountability, and a more structured way to build remotely.",
     primaryCta: {
       label: "Start a Tracked Project",
-      href: "/projects/new",
+      href: "/location?mode=explore",
     },
     secondaryCta: {
       label: "See How Remote Monitoring Works",
@@ -177,7 +177,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     },
     secondaryCta: {
       label: "Start a Tracked Project",
-      href: "/projects/new",
+      href: "/location?mode=explore",
     },
   },
 
@@ -264,7 +264,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
       "If you want to build in Nigeria without the usual confusion, uncontrolled spending, and weak visibility, use BuildMyHouse to manage the project with more structure, more clarity, and more confidence.",
     primary: {
       label: "Start a Tracked Project",
-      href: "/projects/new",
+      href: "/location?mode=explore",
     },
     secondary: {
       label: "See How Remote Monitoring Works",
