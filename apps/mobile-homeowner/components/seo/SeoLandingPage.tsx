@@ -2,6 +2,10 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
+import RelatedLinkSections, { type RelatedLinkSection } from '@/components/seo/RelatedLinkSections';
+import TrustBlocks, { type TrustBlock } from '@/components/seo/TrustBlocks';
+import ProofOfProcessDemoSection from '@/components/seo/ProofOfProcessDemoSection';
+import type { ProofOfProcessDemoContent } from '@/components/seo/proof-of-process-types';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
 import type { SeoContentSection } from '@/lib/seo-pages';
@@ -19,8 +23,11 @@ type SeoLandingPageProps = {
   bulletPoints: string[];
   processTitle?: string;
   processSteps?: string[];
+  trustBlocks?: TrustBlock[];
+  proofOfProcessDemo?: ProofOfProcessDemoContent;
   faqs?: FaqItem[];
   internalLinks?: InternalLinkItem[];
+  relatedLinkSections?: RelatedLinkSection[];
   ctaLabel?: string;
   ctaHref?: string;
   preWhySections?: SeoContentSection[];
@@ -94,8 +101,11 @@ export default function SeoLandingPage({
   bulletPoints,
   processTitle = 'How BuildMyHouse helps',
   processSteps = [],
+  trustBlocks = [],
+  proofOfProcessDemo,
   faqs = [],
   internalLinks = [],
+  relatedLinkSections = [],
   ctaLabel = 'Start your project',
   ctaHref = '/location?mode=explore',
   preWhySections = [],
@@ -183,6 +193,9 @@ export default function SeoLandingPage({
           <SeoRichSection key={section.heading} section={section} />
         ))}
 
+        {trustBlocks.length > 0 ? <TrustBlocks blocks={trustBlocks} /> : null}
+        {proofOfProcessDemo ? <ProofOfProcessDemoSection content={proofOfProcessDemo} /> : null}
+
         {faqs.length > 0 && (
           <View className="mb-6">
             <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -200,6 +213,8 @@ export default function SeoLandingPage({
             ))}
           </View>
         )}
+
+        {relatedLinkSections.length > 0 ? <RelatedLinkSections sections={relatedLinkSections} /> : null}
 
         {internalLinks.length > 0 ? <InternalLinksBlock links={internalLinks} /> : null}
 

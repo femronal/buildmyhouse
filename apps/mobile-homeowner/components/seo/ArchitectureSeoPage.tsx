@@ -1,14 +1,18 @@
 import SeoLandingPage from '@/components/seo/SeoLandingPage';
-import { getArchitectureJsonLd, getArchitecturePage } from '@/lib/diaspora-seo-architecture';
 import { useWebSeo } from '@/lib/seo';
+import { getArchitectureJsonLd, getArchitecturePage } from '@/lib/diaspora-seo-architecture';
 
-export default function BuildInNigeriaFromUkSeoPage() {
-  const page = getArchitecturePage('ukBuildCountry');
+type Props = {
+  pageKey: Parameters<typeof getArchitecturePage>[0];
+};
+
+export default function ArchitectureSeoPage({ pageKey }: Props) {
+  const page = getArchitecturePage(pageKey);
   useWebSeo({
     title: page.title,
     description: page.description,
-    canonicalPath: '/diaspora/uk/build-in-nigeria',
-    robots: 'noindex,nofollow',
+    canonicalPath: page.path,
+    robots: page.robots,
     jsonLd: getArchitectureJsonLd(page),
   });
 
@@ -20,11 +24,13 @@ export default function BuildInNigeriaFromUkSeoPage() {
       bulletPoints={page.bullets}
       processSteps={page.processSteps}
       trustBlocks={page.trustBlocks}
+      proofOfProcessDemo={page.proofOfProcessDemo}
       relatedLinkSections={page.relatedLinkSections}
       faqs={page.faqs}
       internalLinks={page.internalLinks}
-      ctaLabel={page.ctaLabel}
-      ctaHref={page.ctaHref}
+      ctaLabel={page.ctaLabel || 'Start your project'}
+      ctaHref={page.ctaHref || '/location?mode=explore'}
     />
   );
 }
+

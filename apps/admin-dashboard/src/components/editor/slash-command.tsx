@@ -106,8 +106,8 @@ type ListProps = {
   items: SlashItem[];
   editor: Editor;
   range: { from: number; to: number };
-  /** TipTap Suggestion command — invoke with selected slash item as `props`. */
-  suggestionCommand: (p: { editor: Editor; range: { from: number; to: number }; props: SlashItem }) => void;
+  /** TipTap Suggestion command — invoke with selected slash item. */
+  suggestionCommand: (item: SlashItem) => void;
 };
 
 export type SlashListRef = {
@@ -126,6 +126,7 @@ export const SlashCommandList = forwardRef<SlashListRef, ListProps>(function Sla
 
   useImperativeHandle(ref, () => ({
     onKeyDown: (event: KeyboardEvent) => {
+      if (!items.length) return false;
       if (event.key === 'ArrowDown') {
         setSelected((s) => (s + 1) % items.length);
         return true;
@@ -136,7 +137,7 @@ export const SlashCommandList = forwardRef<SlashListRef, ListProps>(function Sla
       }
       if (event.key === 'Enter') {
         const item = items[selected];
-        if (item) suggestionCommand({ editor, range, props: item });
+        if (item) suggestionCommand(item);
         return true;
       }
       return false;
@@ -158,7 +159,7 @@ export const SlashCommandList = forwardRef<SlashListRef, ListProps>(function Sla
           }`}
           onMouseDown={(event) => {
             event.preventDefault();
-            suggestionCommand({ editor, range, props: item });
+            suggestionCommand(item);
           }}
         >
           <div className="font-medium text-gray-900">{item.title}</div>
@@ -199,7 +200,7 @@ export function SlashCommandExtension() {
                   items: props.items,
                   editor: props.editor,
                   range: props.range,
-                  suggestionCommand: props.command,
+                  suggestionCommand: (item: SlashItem) => props.command(item),
                 },
                 editor: props.editor,
               });
@@ -219,7 +220,7 @@ export function SlashCommandExtension() {
                 items: props.items,
                 editor: props.editor,
                 range: props.range,
-                suggestionCommand: props.command,
+                suggestionCommand: (item: SlashItem) => props.command(item),
               });
               if (!props.clientRect) return;
               popup?.[0]?.setProps({ getReferenceClientRect: props.clientRect as () => DOMRect });

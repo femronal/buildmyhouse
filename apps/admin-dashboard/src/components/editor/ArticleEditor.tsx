@@ -18,7 +18,7 @@ import {
   Underline as UnderlineIcon,
   Youtube,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { buildArticleEditorExtensions } from './build-extensions';
 import 'tippy.js/dist/tippy.css';
 
@@ -40,7 +40,6 @@ export default function ArticleEditor({
   showToolbar = false,
 }: ArticleEditorProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [insertOpen, setInsertOpen] = useState(false);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -139,60 +138,6 @@ export default function ArticleEditor({
 
   return (
     <div className="w-full relative">
-      <div className="absolute -left-14 top-16 z-30">
-        <button
-          type="button"
-          title="Insert block"
-          onClick={() => setInsertOpen((v) => !v)}
-          className="w-9 h-9 rounded-full border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm"
-        >
-          +
-        </button>
-        {insertOpen ? (
-          <div className="mt-2 w-52 rounded-xl border border-gray-200 bg-white shadow-xl p-1">
-            {[
-              { label: 'Paragraph', run: () => editor.chain().focus().setParagraph().run() },
-              { label: 'Heading 1', run: () => editor.chain().focus().toggleHeading({ level: 1 }).run() },
-              { label: 'Heading 2', run: () => editor.chain().focus().toggleHeading({ level: 2 }).run() },
-              { label: 'Bullet list', run: () => editor.chain().focus().toggleBulletList().run() },
-              { label: 'Numbered list', run: () => editor.chain().focus().toggleOrderedList().run() },
-              { label: 'Divider', run: () => editor.chain().focus().setHorizontalRule().run() },
-              { label: 'Code block', run: () => editor.chain().focus().toggleCodeBlock().run() },
-              {
-                label: 'Callout',
-                run: () =>
-                  editor
-                    .chain()
-                    .focus()
-                    .insertContent({
-                      type: 'callout',
-                      content: [
-                        {
-                          type: 'paragraph',
-                          content: [{ type: 'text', text: 'Important: ' }],
-                        },
-                      ],
-                    })
-                    .run(),
-              },
-              { label: 'Image (URL)', run: addImageByUrl },
-              { label: 'YouTube', run: addYoutube },
-            ].map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                className="w-full text-left px-3 py-2 text-sm rounded-lg hover:bg-gray-50"
-                onClick={() => {
-                  item.run();
-                  setInsertOpen(false);
-                }}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        ) : null}
-      </div>
       <div className="flex items-center gap-2 pb-2 mb-2">
         <button
           type="button"

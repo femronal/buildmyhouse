@@ -7,8 +7,8 @@ export default function BuildingPermitLagosNigeriaGuidePage() {
   useWebSeo({
     title: content.title,
     description: content.description,
-    canonicalPath: content.canonicalPath,
-    robots: 'index,follow',
+    canonicalPath: '/guides/lagos-building-permits-and-stage-inspections',
+    robots: 'noindex,nofollow',
     jsonLd: content.schema,
   });
 
