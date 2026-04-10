@@ -4,12 +4,25 @@ type DemoStageMaterial = {
   quantity: string;
   brand: string;
   price: number;
+  imageUrl: string;
 };
 
 type DemoChatMessage = {
   sender: 'homeowner' | 'gc';
   message: string;
   date: string;
+};
+
+type DemoStageFile = {
+  id: string;
+  name: string;
+  uploadedAt: string;
+  previewImageUrl: string;
+};
+
+type DemoTeamMember = {
+  name: string;
+  role: string;
 };
 
 export type DemoStage = {
@@ -23,6 +36,8 @@ export type DemoStage = {
   paymentStatus?: string;
   completionRule?: string;
   materials?: DemoStageMaterial[];
+  files?: DemoStageFile[];
+  team?: DemoTeamMember[];
   chat?: DemoChatMessage[];
   notifications?: string[];
 };
@@ -63,6 +78,8 @@ export const projectMonitoringDemoData: ProjectMonitoringDemoData = {
           quantity: "50 bags",
           brand: "Dangote",
           price: 500000,
+          imageUrl:
+            "https://images.unsplash.com/photo-1590247813693-5541d1c609fd?auto=format&fit=crop&w=800&q=60",
         },
         {
           name: "Transportation",
@@ -70,7 +87,29 @@ export const projectMonitoringDemoData: ProjectMonitoringDemoData = {
           quantity: "5 pieces",
           brand: "God Is Good Trucks",
           price: 150000,
+          imageUrl:
+            "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=800&q=60",
         },
+      ],
+      files: [
+        {
+          id: "file-1",
+          name: "Foundation Layout Drawing.png",
+          uploadedAt: "Apr 5",
+          previewImageUrl:
+            "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=60",
+        },
+        {
+          id: "file-2",
+          name: "Permit Acknowledgement.pdf",
+          uploadedAt: "Apr 5",
+          previewImageUrl:
+            "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=60",
+        },
+      ],
+      team: [
+        { name: "Adewale A.", role: "GC" },
+        { name: "Fatima O.", role: "Site Supervisor" },
       ],
       chat: [
         {
