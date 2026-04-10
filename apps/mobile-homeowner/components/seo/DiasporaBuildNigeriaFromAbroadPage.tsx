@@ -1,5 +1,4 @@
-import { createElement } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -62,27 +61,12 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
             className="w-full rounded-3xl mb-4 overflow-hidden bg-gray-100 items-center justify-center"
             style={{ maxWidth: 920, alignSelf: 'center' }}
           >
-            {Platform.OS === 'web'
-              ? createElement('img', {
-                  src: '/assets/images/cover-image-for-blog-1.png',
-                  alt: content.hero.title,
-                  style: {
-                    width: '100%',
-                    height: '100%',
-                    minHeight: 220,
-                    maxHeight: 420,
-                    objectFit: 'contain',
-                    objectPosition: 'center center',
-                    display: 'block',
-                  },
-                })
-              : (
-                <Image
-                  source={coverImage}
-                  resizeMode="contain"
-                  className="w-full h-[220px] md:h-[340px] lg:h-[420px]"
-                />
-                )}
+            <Image
+              source={coverImage}
+              resizeMode="contain"
+              className="w-full h-[220px] md:h-[340px] lg:h-[420px]"
+              style={{ alignSelf: 'center' }}
+            />
           </View>
           <Text
             className="text-gray-600 text-base leading-7 mb-5 md:text-lg"
