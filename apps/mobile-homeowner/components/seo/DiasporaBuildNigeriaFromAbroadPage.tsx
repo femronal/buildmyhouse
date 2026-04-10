@@ -11,11 +11,6 @@ import { diasporaBuildNigeriaFromAbroadPageContent as content } from '@/lib/dias
 
 const sectionBodyClass = 'text-gray-700 text-sm leading-7 mb-3';
 const coverImage = require('@/assets/images/cover-image-for-blog-1.png');
-const coverImageSource = Image.resolveAssetSource(coverImage);
-const coverImageAspectRatio =
-  coverImageSource?.width && coverImageSource?.height
-    ? coverImageSource.width / coverImageSource.height
-    : 16 / 9;
 
 function ParagraphBlock({ paragraphs }: { paragraphs: readonly string[] }) {
   return (
@@ -69,8 +64,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
             <Image
               source={coverImage}
               resizeMode="contain"
-              className="w-full"
-              style={{ aspectRatio: coverImageAspectRatio }}
+              className="w-full h-[220px] md:h-[340px] lg:h-[420px]"
             />
           </View>
           <Text
