@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import LagosBuildingPermitsGuidePage from '@/components/seo/LagosBuildingPermitsGuidePage';
 
 export default function LagosPermitsAndStageInspectionsGuidePage() {
-  return <ArchitectureSeoPage pageKey="lagosPermitsGuide" />;
+  return <LagosBuildingPermitsGuidePage />;
 }
 
