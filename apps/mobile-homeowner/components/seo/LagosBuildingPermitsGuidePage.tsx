@@ -4,10 +4,13 @@ import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import TrustBlocks from '@/components/seo/TrustBlocks';
+import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
 import { lagosBuildingPermitsAndStageInspectionsPageContent as content } from '@/lib/lagos-building-permits-and-stage-inspections-content';
+
+const lagosGuideCoverImage = require('@/assets/images/lagos-building-permits-image.png');
 
 function resolveInternalHref(href: string) {
   return href === '/projects/new' ? '/location?mode=explore' : href;
@@ -84,24 +87,11 @@ export default function LagosBuildingPermitsGuidePage() {
           <SeoHeading level={1} className="text-black text-3xl leading-tight mb-3 md:text-4xl" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.hero.title}
           </SeoHeading>
+          <SeoCoverImage source={lagosGuideCoverImage} alt={content.hero.title} />
           <Text className="text-gray-700 text-base leading-7 mb-5 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <View className="flex-col md:flex-row gap-3 mb-2">
-            <TouchableOpacity onPress={() => openLink(content.hero.primaryCta.href, router)} className="rounded-full bg-black px-6 py-3.5">
-              <Text className="text-white text-sm md:text-base text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
-                {content.hero.primaryCta.label}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => openLink(content.hero.secondaryCta.href, router)} className="rounded-full border border-gray-300 px-6 py-3.5">
-              <Text className="text-gray-900 text-sm md:text-base text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {content.hero.secondaryCta.label}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
-
-        <LeadMagnetCard compact />
 
         <View className="mb-7">
           <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
