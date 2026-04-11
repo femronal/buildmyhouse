@@ -1,4 +1,5 @@
-import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { createElement } from 'react';
+import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -22,6 +23,35 @@ function openLink(href: string, router: ReturnType<typeof useRouter>) {
     return;
   }
   router.push(resolveInternalHref(href) as any);
+}
+
+function SourceAnchor({ href, label }: { href: string; label: string }) {
+  if (Platform.OS === 'web') {
+    return createElement(
+      'a',
+      {
+        href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        style: {
+          color: '#111827',
+          textDecorationLine: 'underline',
+          textUnderlineOffset: '2px',
+          fontFamily: 'Poppins_600SemiBold',
+          fontSize: 12,
+        },
+      },
+      label,
+    );
+  }
+
+  return (
+    <TouchableOpacity onPress={() => Linking.openURL(href)}>
+      <Text className="text-gray-900 text-xs underline" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
 }
 
 function LeadMagnetCard({ compact = false }: { compact?: boolean }) {
@@ -157,6 +187,11 @@ export default function LagosBuildingPermitsGuidePage() {
               <Text className="text-gray-700 text-sm leading-7" style={{ fontFamily: 'Poppins_400Regular' }}>
                 {section.text}
               </Text>
+              {'sourceHref' in section && section.sourceHref ? (
+                <View className="mt-2">
+                  <SourceAnchor href={section.sourceHref} label={section.sourceLabel || 'Official source'} />
+                </View>
+              ) : null}
             </View>
           ))}
         </View>

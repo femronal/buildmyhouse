@@ -67,8 +67,8 @@ export const lagosBuildingPermitsAndStageInspectionsPageContent = {
     title: "Why Lagos Compliance Matters More When You Are Abroad",
     paragraphs: [
       "In Lagos, building control is not just theory. There is a real regulatory structure around planning permits, commencement, stage oversight, and completion.",
-      "The Lagos State Physical Planning Permit Authority explains that planning permit is the legal permission required for development in the state, and its e-planning portal is the official route for applications and process updates. Readers who want the formal process can learn more directly from the government planning permit portal. :contentReference[oaicite:1]{index=1}",
-      "On the building-control side, the Lagos State Building Control Agency explains that it issues authorization to commence construction, issues the green sticker after necessary documentation, carries out stage inspections and certifications, and later issues certificate of completion and fitness for habitation or use. Readers can learn more directly from the LASBCA site. :contentReference[oaicite:2]{index=2}",
+      "The Lagos State Physical Planning Permit Authority explains that planning permit is the legal permission required for development in the state, and its e-planning portal is the official route for applications and process updates.",
+      "On the building-control side, the Lagos State Building Control Agency explains that it issues authorization to commence construction, issues the green sticker after necessary documentation, carries out stage inspections and certifications, and later issues certificate of completion and fitness for habitation or use.",
       "For a homeowner abroad, the practical meaning is this: compliance should be part of your project control system, not an afterthought someone promises to sort out later.",
     ],
   },
@@ -79,27 +79,38 @@ export const lagosBuildingPermitsAndStageInspectionsPageContent = {
       {
         heading: "Planning Permit",
         text:
-          "Planning permit is the legal permission for development in Lagos. LASPPPA describes it as the permit required to carry out development in the state, and its e-planning system is where applications move through the process. If you want the official version, the Lagos government planning permit portal explains more. :contentReference[oaicite:3]{index=3}",
+          "Planning permit is the legal permission for development in Lagos. LASPPPA describes it as the permit required to carry out development in the state, and its e-planning system is where applications move through the process.",
+        sourceLabel: "Planning Permit source",
+        sourceHref: "https://lagosepppsuat.eppps.com/services/71",
       },
       {
         heading: "Authorization to Commence Construction",
         text:
-          "LASBCA explains that before construction begins, owners or developers are expected to approach the agency with building plan approval so that a letter of authorization to commence construction can be issued. The agency also says this authorization supports proper stage-by-stage inspection. Diaspora homeowners can learn more on the LASBCA site. :contentReference[oaicite:4]{index=4}",
+          "LASBCA explains that before construction begins, owners or developers are expected to approach the agency with building plan approval so that a letter of authorization to commence construction can be issued. The agency also says this authorization supports proper stage-by-stage inspection.",
+        sourceLabel: "Authorization to Commence Construction source",
+        sourceHref:
+          "https://lasbca.lagosstate.gov.ng/letter-of-authorization-to-commence-construction-a-must-for-builders-developers-lasg/",
       },
       {
         heading: "Green Sticker",
         text:
-          "LASBCA states that the green sticker is issued after submission of all necessary documents and forms part of the lawful building-control process. It is not just a decorative item. It sits inside the compliance chain that supports inspection and certification. The government site explains more. :contentReference[oaicite:5]{index=5}",
+          "LASBCA states that the green sticker is issued after submission of all necessary documents and forms part of the lawful building-control process. It is not just a decorative item. It sits inside the compliance chain that supports inspection and certification.",
+        sourceLabel: "Green Sticker source",
+        sourceHref: "https://lasbca.lagosstate.gov.ng/service/inspectorate-and-quality-control/",
       },
       {
         heading: "Stage Inspection and Certification",
         text:
-          "LASBCA says it carries out stage inspections and certification at various stages of construction. In practice, that means building in Lagos is not supposed to be treated as one long unchecked flow from excavation to finishing. Readers can see this directly on LASBCA’s service pages and inspection examples. :contentReference[oaicite:6]{index=6}",
+          "LASBCA says it carries out stage inspections and certification at various stages of construction. In practice, that means building in Lagos is not supposed to be treated as one long unchecked flow from excavation to finishing.",
+        sourceLabel: "Stage Inspection and Certification source",
+        sourceHref: "https://lasbca.lagosstate.gov.ng/service/inspectorate-and-quality-control/",
       },
       {
         heading: "Completion and Fitness for Habitation",
         text:
-          "LASBCA also states that certificates of completion and fitness for habitation or use are issued after the relevant process is satisfied. Diaspora homeowners should understand that finishing a structure physically is not the same thing as closing out the compliance journey properly. The agency site explains more. :contentReference[oaicite:7]{index=7}",
+          "LASBCA also states that certificates of completion and fitness for habitation or use are issued after the relevant process is satisfied. Diaspora homeowners should understand that finishing a structure physically is not the same thing as closing out the compliance journey properly.",
+        sourceLabel: "Completion and Fitness for Habitation source",
+        sourceHref: "https://lasbca.lagosstate.gov.ng/service/inspectorate-and-quality-control/",
       },
     ],
   },
@@ -198,11 +209,11 @@ export const lagosBuildingPermitsAndStageInspectionsPageContent = {
     links: [
       {
         label: "Lagos e-Planning Permit portal",
-        href: "https://www.epp.lagosstate.gov.ng/",
+        href: "https://lagosepppsuat.eppps.com/services/71",
       },
       {
         label: "About planning permit in Lagos",
-        href: "https://epp.lagosstate.gov.ng/Home/AboutPlanningPermit",
+        href: "https://lagosepppsuat.eppps.com/services/71",
       },
       {
         label: "LASBCA inspectorate and quality control",
@@ -213,8 +224,8 @@ export const lagosBuildingPermitsAndStageInspectionsPageContent = {
         href: "https://lasbca.lagosstate.gov.ng/letter-of-authorization-to-commence-construction-a-must-for-builders-developers-lasg/",
       },
       {
-        label: "About building control in Lagos",
-        href: "https://www.epp.lagosstate.gov.ng/Home/BuildingControl",
+        label: "Lagos EPPPS official home",
+        href: "https://lagosepppsuat.eppps.com/home",
       },
     ],
   },
