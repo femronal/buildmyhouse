@@ -116,7 +116,7 @@ export const diasporaRenovateNigeriaFromAbroadPageContent = {
     paragraphs: [
       "Many people assume renovation is informal, especially when a building already exists. That is dangerous thinking in Lagos.",
       "LASBCA’s inspectorate and quality control page states that its service scope includes issuance of authorization to commence construction, issuance of green sticker after necessary documents, stage inspections and certification, and certificates of completion and fitness for habitation or use. Readers who want the official explanation can learn more on the LASBCA site. :contentReference[oaicite:3]{index=3}",
-      "For renovation-specific action in Lagos, use the renovation permit application link you provided as the current route for that service. Diaspora homeowners should treat that as a serious checkpoint when the renovation goes beyond casual cosmetic touch-ups.",
+      "For renovation-specific action in Lagos, the renovation permit application link below can be treated as the current route for that service. Diaspora homeowners should treat that as a serious checkpoint when the renovation goes beyond casual cosmetic touch-ups.",
       "The practical takeaway is simple: if the nature of the work may trigger compliance or permit questions, do not guess. Verify early, then proceed with clearer confidence.",
     ],
     permitLink: {
