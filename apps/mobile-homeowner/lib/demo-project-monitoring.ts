@@ -1,10 +1,22 @@
 /**
- * Public project-monitoring demo: mock payloads only. Image URLs point at the
- * deployed marketing site so the demo matches production asset hosting.
+ * Public project-monitoring demo: mock payloads only.
+ * Images use Unsplash (construction-related); GC and team use portraits of Black professionals.
  */
-const demoWebBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
+const unsplash = (photoId: string, width = 800) =>
+  `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=${width}&q=80`;
 
-export const demoMarketingImage = (fileName: string) => `${demoWebBase()}/assets/images/${fileName}`;
+const DEMO_IMAGES = {
+  /** Construction site / structural work */
+  projectCover: unsplash('photo-1541888946425-d81bb19240f5', 1200),
+  /** Stacked cement bags */
+  cement: unsplash('photo-1590247813693-5541d1c609fd', 800),
+  /** Highway logistics / heavy transport */
+  transportation: unsplash('photo-1519003722824-194d4455a60c', 800),
+  /** GC chat avatar — Black man, professional portrait */
+  gcAvatar: unsplash('photo-1519085360753-af0119f7cbe7', 400),
+  /** Team member — Black man, portrait (site / trades context) */
+  teamMember: unsplash('photo-1507003211169-0a1dd7228f2d', 400),
+} as const;
 
 export type DemoStageUiStatus = 'completed' | 'in_progress' | 'not_started';
 
@@ -62,7 +74,7 @@ export const projectMonitoringDemoData = {
     name: 'Daddy Obinna Redesign',
     address:
       'University of Lagos Cricket Oval, Ransome Kuti Road, Shomolu, Lagos State, 104233, Nigeria',
-    coverImageUrl: demoMarketingImage('cover-image-for-blog-1.png'),
+    coverImageUrl: DEMO_IMAGES.projectCover,
     /** Shown on the home project card progress row (screenshot 1) */
     listProgressStageLabel: 'Site Preparation & Foundation',
     progressPercent: 17,
@@ -70,7 +82,7 @@ export const projectMonitoringDemoData = {
     spent: 330_000,
     startDateLabel: '4/5/2026',
     gcName: 'Godswill Oluwafemi Okunola',
-    gcAvatarUrl: demoMarketingImage('icon.png'),
+    gcAvatarUrl: DEMO_IMAGES.gcAvatar,
     aiAnalysis: {
       bedrooms: 4,
       bathrooms: 3,
@@ -122,7 +134,7 @@ export const projectMonitoringDemoData = {
           unit: 'bags',
           brand: 'Dangote',
           totalPrice: 500_000,
-          photoUrl: demoMarketingImage('lagos-building-permits-image.png'),
+          photoUrl: DEMO_IMAGES.cement,
         },
         {
           name: 'Transportation',
@@ -131,7 +143,7 @@ export const projectMonitoringDemoData = {
           unit: 'pieces',
           brand: 'God Is Good Trucks',
           totalPrice: 150_000,
-          photoUrl: demoMarketingImage('renovate-in-nigeria-from-abroad.png'),
+          photoUrl: DEMO_IMAGES.transportation,
         },
       ],
       team: [
@@ -140,7 +152,7 @@ export const projectMonitoringDemoData = {
           role: 'DPC Expert',
           email: 'okunolafemi8@gmail.com',
           phone: '+2348000000000',
-          photoUrl: demoMarketingImage('adaptive-icon.png'),
+          photoUrl: DEMO_IMAGES.teamMember,
           compensationLabel: '₦300,000/fixed',
         },
       ],
