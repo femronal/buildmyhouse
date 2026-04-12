@@ -408,7 +408,7 @@ export default function StageDetailScreen() {
                   No Materials Yet
                 </Text>
                 <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Materials will appear here once your GC adds them
+                  Materials will appear here once the GC adds them
                 </Text>
               </View>
             ) : (
@@ -490,7 +490,7 @@ export default function StageDetailScreen() {
                   No Team Members Yet
                 </Text>
                 <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Team members will appear here once your GC adds them
+                  Team members will appear here once the GC adds them
                 </Text>
               </View>
             ) : (
@@ -572,7 +572,7 @@ export default function StageDetailScreen() {
                   No Files Yet
                 </Text>
                 <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Files, photos, and videos will appear here once your GC uploads them
+                  Files, photos, and videos will appear here once the GC uploads them
                 </Text>
               </View>
             ) : (
@@ -649,7 +649,7 @@ export default function StageDetailScreen() {
               className="text-green-600 text-center text-xs"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Your GC is now working on this stage. They will mark it complete when finished.
+              The GC is now working on this stage. It will be marked complete when finished.
             </Text>
           </View>
         ) : (
