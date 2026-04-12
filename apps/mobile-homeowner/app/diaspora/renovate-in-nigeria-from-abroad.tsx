@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import DiasporaRenovateNigeriaFromAbroadPage from '@/components/seo/DiasporaRenovateNigeriaFromAbroadPage';
 
 export default function DiasporaRenovateFromAbroadPage() {
-  return <ArchitectureSeoPage pageKey="diasporaRenovateFromAbroad" />;
+  return <DiasporaRenovateNigeriaFromAbroadPage />;
 }
 
