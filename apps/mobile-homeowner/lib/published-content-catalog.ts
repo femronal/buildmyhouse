@@ -16,22 +16,41 @@ export function marketingImageAsset(fileName: string): string {
   return `${webBase()}/assets/images/${fileName}`;
 }
 
-/** Same files as `@/assets/images/*` — use with `SeoCoverImage` / `Image`. */
+const PILLAR_IMAGE_FILES = {
+  buildAbroad: 'cover-image-for-blog-1.png',
+  renovateAbroad: 'renovate-in-nigeria-from-abroad.png',
+  lagosPermits: 'lagos-building-permits-image.png',
+} as const;
+
+/** Same files as `@/assets/images/*` — use with `SeoCoverImage` (`require` works on web + native). */
 export const PILLAR_COVER_SOURCES = {
   buildAbroad: require('@/assets/images/cover-image-for-blog-1.png'),
   renovateAbroad: require('@/assets/images/renovate-in-nigeria-from-abroad.png'),
   lagosPermits: require('@/assets/images/lagos-building-permits-image.png'),
 } as const;
 
-function bundledCoverUri(source: number): string {
-  return Image.resolveAssetSource(source).uri;
+/**
+ * `/articles` list uses `Image` + `{ uri }`. `Image.resolveAssetSource` is not implemented on
+ * react-native-web, so we use Metro-resolved URIs on native and canonical `/assets/images/` URLs on web.
+ */
+function listCoverUri(key: keyof typeof PILLAR_COVER_SOURCES, source: number): string {
+  const resolve = (Image as { resolveAssetSource?: (s: number) => { uri: string } }).resolveAssetSource;
+  if (typeof resolve === 'function') {
+    try {
+      const out = resolve.call(Image, source);
+      if (out?.uri) return out.uri;
+    } catch {
+      /* fall through */
+    }
+  }
+  return marketingImageAsset(PILLAR_IMAGE_FILES[key]);
 }
 
-/** String URIs for `/articles` cards (`source={{ uri }}`) — resolves bundled PNGs. */
+/** String URIs for `/articles` cards (`source={{ uri }}`). */
 export const HOMEPAGE_PUBLISHED_COVERS = {
-  buildAbroad: bundledCoverUri(PILLAR_COVER_SOURCES.buildAbroad),
-  renovateAbroad: bundledCoverUri(PILLAR_COVER_SOURCES.renovateAbroad),
-  lagosPermits: bundledCoverUri(PILLAR_COVER_SOURCES.lagosPermits),
+  buildAbroad: listCoverUri('buildAbroad', PILLAR_COVER_SOURCES.buildAbroad),
+  renovateAbroad: listCoverUri('renovateAbroad', PILLAR_COVER_SOURCES.renovateAbroad),
+  lagosPermits: listCoverUri('lagosPermits', PILLAR_COVER_SOURCES.lagosPermits),
 } as const;
 
 /** Landing guides without a bundled hero — list + page use the same URI. */
