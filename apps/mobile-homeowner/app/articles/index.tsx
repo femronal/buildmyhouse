@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   Image,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
@@ -25,6 +26,22 @@ import {
 import { useWebSeo } from '@/lib/seo';
 import { cardShadowStyle } from '@/lib/card-styles';
 
+/** Matches Tailwind `h-44` (11rem). RN Web often skips height on `Image` for `require()` sources unless boxed. */
+const ARTICLE_CARD_COVER_HEIGHT = 176;
+
+const articleCardStyles = StyleSheet.create({
+  coverSlot: {
+    width: '100%',
+    height: ARTICLE_CARD_COVER_HEIGHT,
+    overflow: 'hidden',
+    backgroundColor: '#f3f4f6',
+  },
+  coverImage: {
+    width: '100%',
+    height: '100%',
+  },
+});
+
 function ArticleCard({ item, onPress }: { item: PublishedIndexItem; onPress: () => void }) {
   const tagLabel = (item.tags[0] || 'Guide').toUpperCase();
   const isArticleRoute = item.href.startsWith('/articles/');
@@ -37,12 +54,14 @@ function ArticleCard({ item, onPress }: { item: PublishedIndexItem; onPress: () 
       activeOpacity={0.92}
     >
       <View className="overflow-hidden rounded-3xl">
-        <Image
-          source={publishedIndexCoverSource(item)}
-          accessibilityLabel={item.coverImageAlt}
-          className="w-full h-44"
-          resizeMode="cover"
-        />
+        <View style={articleCardStyles.coverSlot}>
+          <Image
+            source={publishedIndexCoverSource(item)}
+            accessibilityLabel={item.coverImageAlt}
+            style={articleCardStyles.coverImage}
+            resizeMode="cover"
+          />
+        </View>
         <View className="p-4">
           <Text className="text-xs text-blue-700 uppercase mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {tagLabel}
