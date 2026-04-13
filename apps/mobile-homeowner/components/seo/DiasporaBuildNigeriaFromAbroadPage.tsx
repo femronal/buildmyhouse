@@ -9,9 +9,9 @@ import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { diasporaBuildNigeriaFromAbroadPageContent as content } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
+import { HOMEPAGE_PUBLISHED_COVERS } from '@/lib/published-content-catalog';
 
 const sectionBodyClass = 'text-gray-700 text-sm leading-7 mb-3';
-const coverImage = require('@/assets/images/cover-image-for-blog-1.png');
 
 function ParagraphBlock({ paragraphs }: { paragraphs: readonly string[] }) {
   return (
@@ -58,7 +58,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           >
             {content.hero.title}
           </SeoHeading>
-          <SeoCoverImage source={coverImage} alt={content.hero.title} />
+          <SeoCoverImage source={{ uri: HOMEPAGE_PUBLISHED_COVERS.buildAbroad }} alt={content.hero.title} />
           <Text
             className="text-gray-600 text-base leading-7 mb-5 md:text-lg"
             style={{ fontFamily: 'Poppins_400Regular', maxWidth: 920 }}

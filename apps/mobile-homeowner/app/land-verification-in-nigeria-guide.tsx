@@ -1,4 +1,5 @@
 import SeoLandingPage from '@/components/seo/SeoLandingPage';
+import { SEO_LANDING_COVERS } from '@/lib/published-content-catalog';
 import { getSeoPageContent } from '@/lib/seo-pages';
 import { useWebSeo } from '@/lib/seo';
 
@@ -22,6 +23,8 @@ export default function LandVerificationNigeriaGuidePage() {
       processSteps={content.processSteps}
       faqs={content.faqs}
       internalLinks={content.internalLinks}
+      coverImageSource={{ uri: SEO_LANDING_COVERS.land }}
+      coverImageAlt={content.heroTitle}
     />
   );
 }

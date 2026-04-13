@@ -65,8 +65,6 @@ export const ARTICLE_PILLAR_META: {
   },
 ];
 
-const PILLAR_ORDER: ArticlePillarKey[] = ['build-abroad', 'renovate-abroad', 'lagos-compliance', 'general'];
-
 export function inferArticlePillar(article: Article): ArticlePillarKey {
   if (article.articlePillar) return article.articlePillar;
 
@@ -79,7 +77,7 @@ export function inferArticlePillar(article: Article): ArticlePillarKey {
   ) {
     return 'lagos-compliance';
   }
-  if (blob.includes('renovation') || blob.includes('renovate')) {
+  if (blob.includes('renovation') || blob.includes('renovate') || slug.includes('renovation')) {
     return 'renovate-abroad';
   }
   if (blob.includes('diaspora') || blob.includes('from abroad') || blob.includes('remote')) {
@@ -91,24 +89,6 @@ export function inferArticlePillar(article: Article): ArticlePillarKey {
 
   return 'general';
 }
-
-const CURATED_LAGOS_GUIDE: ArticleIndexItem = {
-  key: 'curated-lagos-building-permits',
-  pillarKey: 'lagos-compliance',
-  slug: 'curated-lagos-building-permits',
-  title: 'Lagos Building Permits & Stage Inspections',
-  excerpt:
-    'A practical guide to Lagos approvals, what to expect at stage inspections, and how to reduce compliance risk on your project.',
-  description:
-    'Lagos-focused permit and inspection guidance for homeowners and diaspora clients planning builds or major renovations.',
-  coverImageUrl:
-    'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&w=1200&q=80',
-  coverImageAlt: 'Architectural plans and building documentation on a desk',
-  readingMinutes: 12,
-  tags: ['lagos', 'permits', 'compliance'],
-  href: '/guides/lagos-building-permits-and-stage-inspections',
-  isCuratedGuide: true,
-};
 
 export function articleToIndexItem(article: Article): ArticleIndexItem {
   const pillarKey = inferArticlePillar(article);
@@ -127,42 +107,20 @@ export function articleToIndexItem(article: Article): ArticleIndexItem {
   };
 }
 
-/** Articles as index rows plus the flagship Lagos guide (hosted as a guide route, not /articles/). */
-export function buildArticleIndexItems(articles: Article[]): ArticleIndexItem[] {
-  const fromArticles = articles.map(articleToIndexItem);
-  const hasLagosSlug = fromArticles.some(
-    (i) =>
-      i.href.includes('lagos-building-permits') ||
-      i.title.toLowerCase().includes('lagos') && i.title.toLowerCase().includes('permit'),
-  );
-  if (hasLagosSlug) {
-    return fromArticles;
-  }
-  return [...fromArticles, CURATED_LAGOS_GUIDE];
-}
-
 export function itemMatchesSearch(item: ArticleIndexItem, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
-  const hay = `${item.title} ${item.excerpt} ${item.description} ${item.tags.join(' ')}`.toLowerCase();
-  return hay.includes(q);
+  const raw = query.trim().toLowerCase();
+  if (!raw) return true;
+  const hay = `${item.title} ${item.excerpt} ${item.description} ${item.tags.join(' ')} ${item.href}`.toLowerCase();
+  if (hay.includes(raw)) return true;
+  const tokens = raw.split(/\s+/).filter((t) => t.length > 1);
+  if (tokens.some((t) => hay.includes(t))) return true;
+  if (raw.includes('renovat') && (hay.includes('renovat') || hay.includes('renovation'))) return true;
+  return false;
 }
 
-export function filterByPillar(items: ArticleIndexItem[], filter: ArticlePillarFilter): ArticleIndexItem[] {
+export function filterByPillar<T extends ArticleIndexItem>(items: T[], filter: ArticlePillarFilter): T[] {
   if (filter === 'all') return items;
   return items.filter((i) => i.pillarKey === filter);
-}
-
-export function groupItemsByPillar(items: ArticleIndexItem[]): Map<ArticlePillarKey, ArticleIndexItem[]> {
-  const map = new Map<ArticlePillarKey, ArticleIndexItem[]>();
-  for (const key of PILLAR_ORDER) {
-    map.set(key, []);
-  }
-  for (const item of items) {
-    const list = map.get(item.pillarKey) ?? map.get('general')!;
-    list.push(item);
-  }
-  return map;
 }
 
 export const PILLAR_FILTER_CHIPS: { id: ArticlePillarFilter; label: string }[] = [

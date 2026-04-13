@@ -11,27 +11,19 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock3, Search } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import {
-  ARTICLE_PILLAR_META,
   PILLAR_FILTER_CHIPS,
-  buildArticleIndexItems,
   filterByPillar,
-  groupItemsByPillar,
   itemMatchesSearch,
-  type ArticleIndexItem,
   type ArticlePillarFilter,
 } from '@/lib/article-pillars';
 import { articles as fallbackArticles, fetchPublishedArticles, type Article } from '@/lib/articles';
+import { mergePublishedIndexItems, type PublishedIndexItem } from '@/lib/published-content-catalog';
 import { useWebSeo } from '@/lib/seo';
 import { cardShadowStyle } from '@/lib/card-styles';
 
-function ArticleCard({
-  item,
-  onPress,
-}: {
-  item: ArticleIndexItem;
-  onPress: () => void;
-}) {
-  const tagLabel = item.tags[0] ? item.tags[0].toUpperCase() : 'GUIDE';
+function ArticleCard({ item, onPress }: { item: PublishedIndexItem; onPress: () => void }) {
+  const tagLabel = (item.tags[0] || 'Guide').toUpperCase();
+  const isArticleRoute = item.href.startsWith('/articles/');
 
   return (
     <TouchableOpacity
@@ -57,17 +49,14 @@ function ArticleCard({
           <Text className="text-gray-600 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
             {item.excerpt}
           </Text>
-          <View className="flex-row items-center">
+          <View className="flex-row items-center flex-wrap">
             <Clock3 size={14} color="#6b7280" />
             <Text className="text-gray-500 text-xs ml-1.5" style={{ fontFamily: 'Poppins_400Regular' }}>
               {item.readingMinutes} min read
             </Text>
-            {item.isCuratedGuide ? (
-              <Text
-                className="text-gray-400 text-xs ml-2"
-                style={{ fontFamily: 'Poppins_500Medium' }}
-              >
-                • Full guide
+            {!isArticleRoute ? (
+              <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                • Guide
               </Text>
             ) : null}
           </View>
@@ -92,9 +81,7 @@ export default function ArticlesIndexPage() {
           setRemoteArticles(items);
         }
       })
-      .catch(() => {
-        // Keep static fallback articles when API is unavailable.
-      });
+      .catch(() => {});
 
     return () => {
       active = false;
@@ -103,18 +90,14 @@ export default function ArticlesIndexPage() {
 
   const list = remoteArticles && remoteArticles.length > 0 ? remoteArticles : fallbackArticles;
 
-  const indexItems = useMemo(() => buildArticleIndexItems(list), [list]);
+  const indexItems = useMemo(() => mergePublishedIndexItems(list), [list]);
 
   const filteredItems = useMemo(() => {
     const byPillar = filterByPillar(indexItems, pillarFilter);
     return byPillar.filter((item) => itemMatchesSearch(item, searchQuery));
   }, [indexItems, pillarFilter, searchQuery]);
 
-  const groupedAll = useMemo(() => groupItemsByPillar(indexItems), [indexItems]);
-
-  const showPillarSections = pillarFilter === 'all' && searchQuery.trim() === '';
-
-  const openItem = (item: ArticleIndexItem) => {
+  const openItem = (item: PublishedIndexItem) => {
     router.push(item.href as any);
   };
 
@@ -161,8 +144,8 @@ export default function ArticlesIndexPage() {
             className="text-gray-600 text-xs leading-5 md:text-sm md:leading-6 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Persuasive and practical guides to help you plan, fund, and execute better projects in Nigeria. Browse by
-            pillar or search by keyword.
+            Persuasive and practical guides to help you plan, fund, and execute better projects in Nigeria. Search by
+            keyword or filter by topic.
           </Text>
 
           <View className="flex-row items-center bg-gray-100 border border-gray-200 rounded-2xl px-3 py-2 mb-3">
@@ -218,96 +201,24 @@ export default function ArticlesIndexPage() {
         </View>
 
         <View className="px-5 md:px-6">
-          {!showPillarSections ? (
-            <>
-              <Text className="text-gray-500 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
-                {searchQuery.trim() ? ` for “${searchQuery.trim()}”` : ''}
+          <Text className="text-gray-500 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {filteredItems.length} result{filteredItems.length === 1 ? '' : 's'}
+            {searchQuery.trim() ? ` for “${searchQuery.trim()}”` : ''}
+          </Text>
+          {filteredItems.length === 0 ? (
+            <View className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-4">
+              <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                No matches
               </Text>
-              {filteredItems.length === 0 ? (
-                <View className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-4">
-                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    No matches
-                  </Text>
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Try a different keyword, choose “All”, or pick another pillar filter.
-                  </Text>
-                </View>
-              ) : (
-                filteredItems.map((item) => (
-                  <ArticleCard key={item.key} item={item} onPress={() => openItem(item)} />
-                ))
-              )}
-            </>
+              <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Try a different keyword, choose “All”, or pick another pillar filter.
+              </Text>
+            </View>
           ) : (
-            ARTICLE_PILLAR_META.filter((meta) => meta.key !== 'general').map((meta) => {
-              const sectionItems = groupedAll.get(meta.key) ?? [];
-              if (sectionItems.length === 0) return null;
-
-              return (
-                <View key={meta.key} className="mb-2">
-                  <Text
-                    className="text-[10px] uppercase tracking-wide text-blue-700 mb-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {meta.eyebrow}
-                  </Text>
-                  <SeoHeading
-                    level={2}
-                    className="text-lg text-black mb-1.5"
-                    style={{ fontFamily: 'Poppins_700Bold' }}
-                  >
-                    {meta.label}
-                  </SeoHeading>
-                  <Text
-                    className="text-gray-600 text-sm leading-5 mb-3"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {meta.description}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => router.push(meta.pillarPath as any)}
-                    className="self-start mb-4 border border-gray-300 rounded-full px-4 py-2 bg-white"
-                  >
-                    <Text className="text-gray-900 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Open pillar guide →
-                    </Text>
-                  </TouchableOpacity>
-                  {sectionItems.map((item) => (
-                    <ArticleCard key={item.key} item={item} onPress={() => openItem(item)} />
-                  ))}
-                </View>
-              );
-            })
+            filteredItems.map((item) => (
+              <ArticleCard key={item.key} item={item} onPress={() => openItem(item)} />
+            ))
           )}
-
-          {showPillarSections ? (
-            (() => {
-              const generalItems = groupedAll.get('general') ?? [];
-              if (generalItems.length === 0) return null;
-              const meta = ARTICLE_PILLAR_META.find((m) => m.key === 'general');
-              return (
-                <View className="mb-2 mt-2">
-                  <SeoHeading
-                    level={2}
-                    className="text-lg text-black mb-1.5"
-                    style={{ fontFamily: 'Poppins_700Bold' }}
-                  >
-                    {meta?.label ?? 'More guides'}
-                  </SeoHeading>
-                  <Text
-                    className="text-gray-600 text-sm leading-5 mb-3"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    {meta?.description}
-                  </Text>
-                  {generalItems.map((item) => (
-                    <ArticleCard key={item.key} item={item} onPress={() => openItem(item)} />
-                  ))}
-                </View>
-              );
-            })()
-          ) : null}
         </View>
       </ScrollView>
     </View>

@@ -10,8 +10,7 @@ import { cardShadowStyle } from '@/lib/card-styles';
 import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
 import { lagosBuildingPermitsAndStageInspectionsPageContent as content } from '@/lib/lagos-building-permits-and-stage-inspections-content';
-
-const lagosGuideCoverImage = require('@/assets/images/lagos-building-permits-image.png');
+import { HOMEPAGE_PUBLISHED_COVERS } from '@/lib/published-content-catalog';
 
 function resolveInternalHref(href: string) {
   return href === '/projects/new' ? '/location?mode=explore' : href;
@@ -117,7 +116,7 @@ export default function LagosBuildingPermitsGuidePage() {
           <SeoHeading level={1} className="text-black text-3xl leading-tight mb-3 md:text-4xl" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.hero.title}
           </SeoHeading>
-          <SeoCoverImage source={lagosGuideCoverImage} alt={content.hero.title} />
+          <SeoCoverImage source={{ uri: HOMEPAGE_PUBLISHED_COVERS.lagosPermits }} alt={content.hero.title} />
           <Text className="text-gray-700 text-base leading-7 mb-5 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>

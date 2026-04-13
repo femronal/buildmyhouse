@@ -110,9 +110,17 @@ export default function RootLayout() {
           <Stack.Screen name="homes-for-rent/nigeria" options={{ headerShown: false }} />
           <Stack.Screen name="houses-for-sale/nigeria" options={{ headerShown: false }} />
           <Stack.Screen name="land-for-sale/nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/build-in-nigeria-from-abroad" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/renovate-in-nigeria-from-abroad" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/build-in-nigeria-from-uk" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/build-in-nigeria-from-usa-canada" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/build-in-nigeria-from-uae" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/uk/build-in-nigeria" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/uk/renovate-parents-house" options={{ headerShown: false }} />
+          <Stack.Screen name="guides/lagos-building-permits-and-stage-inspections" options={{ headerShown: false }} />
+          <Stack.Screen name="tools/milestone-payment-schedule" options={{ headerShown: false }} />
+          <Stack.Screen name="tools/renovation-budget-planner" options={{ headerShown: false }} />
+          <Stack.Screen name="demo/project-monitoring" options={{ headerShown: false }} />
           <Stack.Screen name="mistakes-nigerians-in-diaspora-make-when-building" options={{ headerShown: false }} />
           <Stack.Screen name="how-to-choose-a-general-contractor-in-nigeria" options={{ headerShown: false }} />
           <Stack.Screen name="land-verification-in-nigeria-guide" options={{ headerShown: false }} />
