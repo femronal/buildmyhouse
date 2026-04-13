@@ -1,8 +1,7 @@
 /**
- * Pillar cover art: bundled assets so listings (`Image` + uri) and in-page heroes match and work offline/dev.
- * Merge layer combines CMS `/articles/*` with long-form in-app guides.
+ * Pillar in-page heroes use bundled `require()`; list cards use canonical `/assets/images/` URLs
+ * (same files) so SSR/hydration stay aligned. Merge layer combines CMS `/articles/*` with long-form guides.
  */
-import { Image } from 'react-native';
 import type { Article } from '@/lib/articles';
 import { articleToIndexItem, type ArticleIndexItem, type ArticlePillarKey } from '@/lib/article-pillars';
 import { diasporaBuildNigeriaFromAbroadPageContent as buildPillar } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
@@ -30,27 +29,14 @@ export const PILLAR_COVER_SOURCES = {
 } as const;
 
 /**
- * `/articles` list uses `Image` + `{ uri }`. `Image.resolveAssetSource` is not implemented on
- * react-native-web, so we use Metro-resolved URIs on native and canonical `/assets/images/` URLs on web.
+ * List cards must use stable `src` strings for SSR + hydration (React #418 if server HTML ≠ client).
+ * Never use `Image.resolveAssetSource` here — it can differ between Node export and the browser.
+ * Same filenames as `PILLAR_COVER_SOURCES`; in-page heroes still use `require()` via `SeoCoverImage`.
  */
-function listCoverUri(key: keyof typeof PILLAR_COVER_SOURCES, source: number): string {
-  const resolve = (Image as { resolveAssetSource?: (s: number) => { uri: string } }).resolveAssetSource;
-  if (typeof resolve === 'function') {
-    try {
-      const out = resolve.call(Image, source);
-      if (out?.uri) return out.uri;
-    } catch {
-      /* fall through */
-    }
-  }
-  return marketingImageAsset(PILLAR_IMAGE_FILES[key]);
-}
-
-/** String URIs for `/articles` cards (`source={{ uri }}`). */
 export const HOMEPAGE_PUBLISHED_COVERS = {
-  buildAbroad: listCoverUri('buildAbroad', PILLAR_COVER_SOURCES.buildAbroad),
-  renovateAbroad: listCoverUri('renovateAbroad', PILLAR_COVER_SOURCES.renovateAbroad),
-  lagosPermits: listCoverUri('lagosPermits', PILLAR_COVER_SOURCES.lagosPermits),
+  buildAbroad: marketingImageAsset(PILLAR_IMAGE_FILES.buildAbroad),
+  renovateAbroad: marketingImageAsset(PILLAR_IMAGE_FILES.renovateAbroad),
+  lagosPermits: marketingImageAsset(PILLAR_IMAGE_FILES.lagosPermits),
 } as const;
 
 /** Landing guides without a bundled hero — list + page use the same URI. */
