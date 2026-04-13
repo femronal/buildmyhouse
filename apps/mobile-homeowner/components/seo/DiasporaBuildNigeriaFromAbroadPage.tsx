@@ -9,7 +9,7 @@ import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { diasporaBuildNigeriaFromAbroadPageContent as content } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
-import { HOMEPAGE_PUBLISHED_COVERS } from '@/lib/published-content-catalog';
+import { PILLAR_COVER_SOURCES } from '@/lib/published-content-catalog';
 
 const sectionBodyClass = 'text-gray-700 text-sm leading-7 mb-3';
 
@@ -58,7 +58,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
           >
             {content.hero.title}
           </SeoHeading>
-          <SeoCoverImage source={{ uri: HOMEPAGE_PUBLISHED_COVERS.buildAbroad }} alt={content.hero.title} />
+          <SeoCoverImage source={PILLAR_COVER_SOURCES.buildAbroad} alt={content.hero.title} />
           <Text
             className="text-gray-600 text-base leading-7 mb-5 md:text-lg"
             style={{ fontFamily: 'Poppins_400Regular', maxWidth: 920 }}

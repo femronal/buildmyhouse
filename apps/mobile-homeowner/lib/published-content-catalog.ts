@@ -1,7 +1,8 @@
 /**
- * Marketing asset URLs for pillar heroes (must match list thumbnails on /articles).
+ * Pillar cover art: bundled assets so listings (`Image` + uri) and in-page heroes match and work offline/dev.
  * Merge layer combines CMS `/articles/*` with long-form in-app guides.
  */
+import { Image } from 'react-native';
 import type { Article } from '@/lib/articles';
 import { articleToIndexItem, type ArticleIndexItem, type ArticlePillarKey } from '@/lib/article-pillars';
 import { diasporaBuildNigeriaFromAbroadPageContent as buildPillar } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
@@ -15,10 +16,22 @@ export function marketingImageAsset(fileName: string): string {
   return `${webBase()}/assets/images/${fileName}`;
 }
 
+/** Same files as `@/assets/images/*` — use with `SeoCoverImage` / `Image`. */
+export const PILLAR_COVER_SOURCES = {
+  buildAbroad: require('@/assets/images/cover-image-for-blog-1.png'),
+  renovateAbroad: require('@/assets/images/renovate-in-nigeria-from-abroad.png'),
+  lagosPermits: require('@/assets/images/lagos-building-permits-image.png'),
+} as const;
+
+function bundledCoverUri(source: number): string {
+  return Image.resolveAssetSource(source).uri;
+}
+
+/** String URIs for `/articles` cards (`source={{ uri }}`) — resolves bundled PNGs. */
 export const HOMEPAGE_PUBLISHED_COVERS = {
-  buildAbroad: marketingImageAsset('cover-image-for-blog-1.png'),
-  renovateAbroad: marketingImageAsset('renovate-in-nigeria-from-abroad.png'),
-  lagosPermits: marketingImageAsset('lagos-building-permits-image.png'),
+  buildAbroad: bundledCoverUri(PILLAR_COVER_SOURCES.buildAbroad),
+  renovateAbroad: bundledCoverUri(PILLAR_COVER_SOURCES.renovateAbroad),
+  lagosPermits: bundledCoverUri(PILLAR_COVER_SOURCES.lagosPermits),
 } as const;
 
 /** Landing guides without a bundled hero — list + page use the same URI. */
