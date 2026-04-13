@@ -1,7 +1,9 @@
 /**
- * Pillar in-page heroes use bundled `require()`; list cards use canonical `/assets/images/` URLs
- * (same files) so SSR/hydration stay aligned. Merge layer combines CMS `/articles/*` with long-form guides.
+ * Pillar in-page heroes use bundled `require()`; list cards use the same `require()` sources for those
+ * rows so SSR and the browser hydrate identical `Image` props (avoids React #418 when `EXPO_PUBLIC_WEB_URL`
+ * differs between export and runtime). Other rows still use remote `coverImageUrl` URIs.
  */
+import type { ImageSourcePropType } from 'react-native';
 import type { Article } from '@/lib/articles';
 import { articleToIndexItem, type ArticleIndexItem, type ArticlePillarKey } from '@/lib/article-pillars';
 import { diasporaBuildNigeriaFromAbroadPageContent as buildPillar } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
@@ -28,11 +30,7 @@ export const PILLAR_COVER_SOURCES = {
   lagosPermits: require('@/assets/images/lagos-building-permits-image.png'),
 } as const;
 
-/**
- * List cards must use stable `src` strings for SSR + hydration (React #418 if server HTML ≠ client).
- * Never use `Image.resolveAssetSource` here — it can differ between Node export and the browser.
- * Same filenames as `PILLAR_COVER_SOURCES`; in-page heroes still use `require()` via `SeoCoverImage`.
- */
+/** Canonical absolute URLs for homepage / schema; `/articles` list images use `publishedIndexCoverSource`. */
 export const HOMEPAGE_PUBLISHED_COVERS = {
   buildAbroad: marketingImageAsset(PILLAR_IMAGE_FILES.buildAbroad),
   renovateAbroad: marketingImageAsset(PILLAR_IMAGE_FILES.renovateAbroad),
@@ -49,6 +47,20 @@ export const SEO_LANDING_COVERS = {
 } as const;
 
 export type PublishedIndexItem = ArticleIndexItem & { publishedAt: string };
+
+/** List card `Image` source for `/articles` — bundled for flagship guides, `{ uri }` elsewhere. */
+export function publishedIndexCoverSource(item: PublishedIndexItem): ImageSourcePropType {
+  switch (item.href) {
+    case '/diaspora/build-in-nigeria-from-abroad':
+      return PILLAR_COVER_SOURCES.buildAbroad;
+    case '/diaspora/renovate-in-nigeria-from-abroad':
+      return PILLAR_COVER_SOURCES.renovateAbroad;
+    case '/guides/lagos-building-permits-and-stage-inspections':
+      return PILLAR_COVER_SOURCES.lagosPermits;
+    default:
+      return { uri: item.coverImageUrl };
+  }
+}
 
 const RESERVED_LONG_FORM_HREFS = new Set<string>([
   '/diaspora/build-in-nigeria-from-abroad',
@@ -197,5 +209,9 @@ export function mergePublishedIndexItems(articles: Article[]): PublishedIndexIte
     byHref.set(staticRow.href, staticRow);
   }
 
-  return Array.from(byHref.values()).sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
+  return Array.from(byHref.values()).sort((a, b) => {
+    const byDate = b.publishedAt.localeCompare(a.publishedAt);
+    if (byDate !== 0) return byDate;
+    return a.key.localeCompare(b.key);
+  });
 }

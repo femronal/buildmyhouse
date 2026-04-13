@@ -17,7 +17,11 @@ import {
   type ArticlePillarFilter,
 } from '@/lib/article-pillars';
 import { articles as fallbackArticles, fetchPublishedArticles, type Article } from '@/lib/articles';
-import { mergePublishedIndexItems, type PublishedIndexItem } from '@/lib/published-content-catalog';
+import {
+  mergePublishedIndexItems,
+  publishedIndexCoverSource,
+  type PublishedIndexItem,
+} from '@/lib/published-content-catalog';
 import { useWebSeo } from '@/lib/seo';
 import { cardShadowStyle } from '@/lib/card-styles';
 
@@ -34,7 +38,7 @@ function ArticleCard({ item, onPress }: { item: PublishedIndexItem; onPress: () 
     >
       <View className="overflow-hidden rounded-3xl">
         <Image
-          source={{ uri: item.coverImageUrl }}
+          source={publishedIndexCoverSource(item)}
           accessibilityLabel={item.coverImageAlt}
           className="w-full h-44"
           resizeMode="cover"
