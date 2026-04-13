@@ -7,6 +7,9 @@ import {
 
 export type ArticleAudience = 'homeowner' | 'gc';
 
+/** Groups articles under the three flagship resource pillars (+ general for uncategorized). */
+export type ArticlePillarKey = 'build-abroad' | 'renovate-abroad' | 'lagos-compliance' | 'general';
+
 /** @deprecated Legacy block shape — only used to seed bundled articles; runtime uses TipTap `content`. */
 export type ArticleBlock =
   | { type: 'heading'; text: string }
@@ -40,6 +43,8 @@ export type Article = {
   internalLinks: InternalLinkItem[];
   /** TipTap / ProseMirror JSON document */
   content: Record<string, unknown>;
+  /** When set (CMS or seed), drives articles index sections and filters. */
+  articlePillar?: ArticlePillarKey;
 };
 
 type RemoteArticle = {
@@ -62,9 +67,17 @@ type RemoteArticle = {
   content?: Record<string, unknown>;
   /** Legacy API field */
   blocks?: ArticleBlock[];
+  articlePillar?: string;
 };
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
+
+function parseArticlePillar(value: unknown): ArticlePillarKey | undefined {
+  if (value === 'build-abroad' || value === 'renovate-abroad' || value === 'lagos-compliance' || value === 'general') {
+    return value;
+  }
+  return undefined;
+}
 
 const organizationSchema = {
   '@context': 'https://schema.org',
@@ -88,6 +101,7 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
     readingMinutes: 8,
     tags: ['construction', 'cost guide', 'nigeria'],
     canonicalPath: '/articles/cost-to-build-house-in-nigeria-2026',
+    articlePillar: 'build-abroad',
     authorName: 'BuildMyHouse Editorial',
     faqs: [
       {
@@ -171,6 +185,7 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
     readingMinutes: 7,
     tags: ['renovation', 'homeowner guide', 'nigeria'],
     canonicalPath: '/articles/renovation-checklist-for-homeowners-nigeria',
+    articlePillar: 'renovate-abroad',
     authorName: 'BuildMyHouse Editorial',
     faqs: [
       {
@@ -247,6 +262,7 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
     readingMinutes: 9,
     tags: ['diaspora', 'construction', 'remote project'],
     canonicalPath: '/articles/diaspora-guide-build-in-nigeria-from-abroad',
+    articlePillar: 'build-abroad',
     authorName: 'BuildMyHouse Editorial',
     faqs: [
       {
@@ -327,6 +343,7 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
     audience: input.audience === 'gc' ? 'gc' : 'homeowner',
     faqs: Array.isArray(input.faqs) ? input.faqs : [],
     internalLinks: Array.isArray(input.internalLinks) ? input.internalLinks : [],
+    articlePillar: parseArticlePillar(input.articlePillar),
     content: normalizeStoredArticleContent(
       input.content ?? (Array.isArray(input.blocks) ? input.blocks : []),
     ),
