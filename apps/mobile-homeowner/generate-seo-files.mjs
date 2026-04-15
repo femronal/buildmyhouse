@@ -30,6 +30,7 @@ const indexableRoutes = [
   '/how-to-choose-a-general-contractor-in-nigeria',
   '/land-verification-in-nigeria-guide',
   '/building-permit-in-lagos-nigeria-guide',
+  '/downloads/remote-renovation-scope-worksheet',
 ];
 
 async function getCmsArticleRoutes() {

@@ -128,6 +128,7 @@ export function isIndexablePath(pathname?: string) {
     '/diaspora/uk/build-in-nigeria',
     '/diaspora/uk/renovate-parents-house',
     '/guides/lagos-building-permits-and-stage-inspections',
+    '/downloads/remote-renovation-scope-worksheet',
     '/tools/milestone-payment-schedule',
     '/tools/renovation-budget-planner',
     '/demo/project-monitoring',
