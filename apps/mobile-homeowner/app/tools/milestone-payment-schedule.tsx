@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import MilestonePaymentScheduleBuilderPage from '@/components/seo/MilestonePaymentScheduleBuilderPage';
 
 export default function MilestonePaymentScheduleToolPage() {
-  return <ArchitectureSeoPage pageKey="milestoneTool" />;
+  return <MilestonePaymentScheduleBuilderPage />;
 }
 
