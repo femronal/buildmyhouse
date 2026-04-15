@@ -3,12 +3,12 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Clock3, Tag } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { Article } from '@/lib/articles';
-import { cardShadowStyle } from '@/lib/card-styles';
 
 type SeoArticlePageProps = {
   article: Article;
@@ -99,23 +99,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
 
         {article.faqs.length > 0 ? (
           <View className="px-5 mb-3 mt-6 md:px-6 max-w-[680px] w-full self-center">
-            <Text className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Frequently asked questions
-            </Text>
-            {article.faqs.map((faq) => (
-              <View
-                key={faq.question}
-                style={cardShadowStyle}
-                className="bg-white border border-gray-200 rounded-2xl p-4 mb-3"
-              >
-                <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {faq.question}
-                </Text>
-                <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {faq.answer}
-                </Text>
-              </View>
-            ))}
+            <CollapsibleFaqSection items={article.faqs} />
           </View>
         ) : null}
 

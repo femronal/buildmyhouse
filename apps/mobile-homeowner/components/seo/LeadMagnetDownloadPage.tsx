@@ -1,8 +1,30 @@
 import { createElement } from 'react';
 import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CheckCircle2, Download } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  BookText,
+  Building2,
+  CheckCircle2,
+  ClipboardCheck,
+  Download,
+  FileText,
+  Gavel,
+  Hammer,
+  Home,
+  HousePlus,
+  Layers,
+  ListChecks,
+  MapPinned,
+  ScanSearch,
+  ShieldCheck,
+  SquareLibrary,
+  Users,
+  Wrench,
+} from 'lucide-react-native';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import InternalLinksBlock, { type InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -81,7 +103,10 @@ function normalizeRobots(robots: string): 'index,follow' | 'noindex,nofollow' {
 }
 
 function resolveInternalHref(href: string) {
-  return href === '/projects/new' ? '/location?mode=explore' : href;
+  if (href.startsWith('/projects/new')) {
+    return '/location?mode=explore';
+  }
+  return href;
 }
 
 function openCtaLink(href: string, router: ReturnType<typeof useRouter>) {
@@ -172,12 +197,15 @@ function ParagraphStack({ paragraphs }: { paragraphs: string[] }) {
 function BulletSection({ title, items }: { title: string; items: string[] }) {
   return (
     <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-5">
-      <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-        {title}
-      </SeoHeading>
+      <View className="flex-row items-center mb-3">
+        <SquareLibrary size={18} color="#374151" />
+        <SeoHeading level={2} className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+          {title}
+        </SeoHeading>
+      </View>
       {items.map((item) => (
         <View key={item} className="flex-row items-start mb-2">
-          <CheckCircle2 size={16} color="#2563eb" strokeWidth={2.2} style={{ marginTop: 2 }} />
+          <CheckCircle2 size={16} color="#4b5563" strokeWidth={2.2} style={{ marginTop: 2 }} />
           <Text className="text-gray-700 text-sm leading-6 ml-2 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
             {item}
           </Text>
@@ -185,6 +213,20 @@ function BulletSection({ title, items }: { title: string; items: string[] }) {
       ))}
     </View>
   );
+}
+
+function getWorksheetSectionIcon(heading: string) {
+  const key = heading.toLowerCase();
+  if (key.includes('property overview')) return Home;
+  if (key.includes('renovation goal')) return ClipboardCheck;
+  if (key.includes('repairs vs upgrades')) return Wrench;
+  if (key.includes('room-by-room scope')) return HousePlus;
+  if (key.includes('live-in family')) return Users;
+  if (key.includes('structural') || key.includes('compliance')) return Hammer;
+  if (key.includes('lagos permit')) return MapPinned;
+  if (key.includes('stage breakdown')) return Layers;
+  if (key.includes('final pre-progression')) return ListChecks;
+  return FileText;
 }
 
 export default function LeadMagnetDownloadPage({ content }: { content: LeadMagnetDownloadPageContent }) {
@@ -209,7 +251,7 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
           >
             <ArrowLeft size={18} color="#111827" strokeWidth={2.2} />
           </TouchableOpacity>
-          <Text className="text-[11px] uppercase tracking-wide text-blue-700 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          <Text className="text-[11px] uppercase tracking-wide text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
           <SeoHeading level={1} className="text-black text-3xl leading-tight mb-3 md:text-4xl" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -218,40 +260,21 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
           <Text className="text-gray-700 text-base leading-7 mb-4 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-
-          <View className="flex-col gap-3 mb-5">
-            <CtaButton
-              cta={content.hero.primaryCta}
-              kind="primary"
-              router={router}
-              onPress={() =>
-                trackWebEvent('lead_magnet_download_click', {
-                  canonical_path: canonicalPath,
-                  cta_label: content.hero.primaryCta.label,
-                  cta_href: content.hero.primaryCta.href,
-                  cta_download: Boolean(content.hero.primaryCta.download),
-                })
-              }
-            />
-            <CtaButton
-              cta={content.hero.secondaryCta}
-              kind="secondary"
-              router={router}
-              onPress={() =>
-                trackWebEvent('lead_magnet_secondary_click', {
-                  canonical_path: canonicalPath,
-                  cta_label: content.hero.secondaryCta.label,
-                  cta_href: content.hero.secondaryCta.href,
-                })
-              }
-            />
-          </View>
+          <SeoCoverImage
+            source={require('@/assets/images/worksheet-renovation-cover-image.png')}
+            alt={content.hero.title}
+            className="mb-5"
+            aspectRatio={1.55}
+          />
         </View>
 
         <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.trustNote.title}
-          </SeoHeading>
+          <View className="flex-row items-center mb-2">
+            <ShieldCheck size={18} color="#374151" />
+            <SeoHeading level={2} className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.trustNote.title}
+            </SeoHeading>
+          </View>
           <ParagraphStack paragraphs={content.trustNote.paragraphs} />
         </View>
 
@@ -260,50 +283,73 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
         <BulletSection title={content.whatItHelpsWith.title} items={content.whatItHelpsWith.items} />
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.whatsInside.title}
-          </SeoHeading>
+          <View className="flex-row items-center mb-3">
+            <BookText size={18} color="#374151" />
+            <SeoHeading level={2} className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.whatsInside.title}
+            </SeoHeading>
+          </View>
           {content.whatsInside.sections.map((section) => (
-            <View key={section.heading} className="mb-3">
-              <SeoHeading level={3} className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {section.heading}
-              </SeoHeading>
-              <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {section.text}
-              </Text>
+            <View key={section.heading} className="mb-3 flex-row items-start">
+              <View className="w-8 h-8 rounded-full bg-gray-100 border border-gray-200 items-center justify-center mr-2 mt-0.5">
+                {(() => {
+                  const Icon = getWorksheetSectionIcon(section.heading);
+                  return <Icon size={15} color="#4b5563" strokeWidth={2.1} />;
+                })()}
+              </View>
+              <View className="flex-1">
+                <SeoHeading level={3} className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {section.heading}
+                </SeoHeading>
+                <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {section.text}
+                </Text>
+              </View>
             </View>
           ))}
         </View>
 
         <View style={cardShadowStyle} className="bg-black rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.previewCallout.title}
-          </SeoHeading>
+          <View className="flex-row items-center mb-2">
+            <Gavel size={18} color="#e5e7eb" />
+            <SeoHeading level={2} className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.previewCallout.title}
+            </SeoHeading>
+          </View>
           <Text className="text-white text-base leading-7 italic" style={{ fontFamily: 'Poppins_500Medium' }}>
             "{content.previewCallout.quote}"
           </Text>
         </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.whyThisMatters.title}
-          </SeoHeading>
+          <View className="flex-row items-center mb-2">
+            <ScanSearch size={18} color="#374151" />
+            <SeoHeading level={2} className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.whyThisMatters.title}
+            </SeoHeading>
+          </View>
           <ParagraphStack paragraphs={content.whyThisMatters.paragraphs} />
         </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.buildMyHouseFit.title}
-          </SeoHeading>
+          <View className="flex-row items-center mb-2">
+            <Building2 size={18} color="#374151" />
+            <SeoHeading level={2} className="text-black text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.buildMyHouseFit.title}
+            </SeoHeading>
+          </View>
           <ParagraphStack paragraphs={content.buildMyHouseFit.paragraphs} />
         </View>
 
         <InternalLinksBlock title={content.relatedResources.title} links={content.relatedResources.links} />
 
-        <View style={cardShadowStyle} className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6">
-          <SeoHeading level={2} className="text-black text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.finalCta.title}
-          </SeoHeading>
+        <View style={cardShadowStyle} className="bg-gray-100 border border-gray-300 rounded-2xl p-5 mb-6">
+          <View className="flex-row items-center mb-2">
+            <Building2 size={18} color="#374151" />
+            <SeoHeading level={2} className="text-black text-xl ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {content.finalCta.title}
+            </SeoHeading>
+          </View>
           <Text className="text-gray-700 text-sm leading-7 mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.finalCta.description}
           </Text>
@@ -336,21 +382,7 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
           </View>
         </View>
 
-        <View className="mb-6">
-          <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.faq.title}
-          </SeoHeading>
-          {content.faq.items.map((item) => (
-            <View key={item.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-              <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {item.question}
-              </SeoHeading>
-              <Text className="text-gray-600 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {item.answer}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <CollapsibleFaqSection title={content.faq.title} items={content.faq.items} />
       </ScrollView>
     </View>
   );

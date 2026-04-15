@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import { SeoRichSection } from '@/components/seo/SeoLandingPage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
@@ -180,23 +181,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
 
         <InternalLinksBlock title="Learn more about building in Nigeria" links={constructionNigeriaHubClusterLinks} />
 
-        {faqs.length > 0 && (
-          <View className="mb-6">
-            <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Frequently asked questions
-            </SeoHeading>
-            {faqs.map((faq) => (
-              <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-                <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {faq.question}
-                </SeoHeading>
-                <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {faq.answer}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {faqs.length > 0 ? <CollapsibleFaqSection items={faqs} /> : null}
 
         {internalLinks.length > 0 ? <InternalLinksBlock links={internalLinks} /> : null}
 

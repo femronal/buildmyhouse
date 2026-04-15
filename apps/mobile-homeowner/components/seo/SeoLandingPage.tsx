@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, type ImageSourcePropType } fr
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import RelatedLinkSections, { type RelatedLinkSection } from '@/components/seo/RelatedLinkSections';
 import TrustBlocks, { type TrustBlock } from '@/components/seo/TrustBlocks';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
@@ -206,23 +207,7 @@ export default function SeoLandingPage({
         {trustBlocks.length > 0 ? <TrustBlocks blocks={trustBlocks} /> : null}
         {proofOfProcessDemo ? <ProofOfProcessDemoSection content={proofOfProcessDemo} /> : null}
 
-        {faqs.length > 0 && (
-          <View className="mb-6">
-            <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Frequently asked questions
-            </SeoHeading>
-            {faqs.map((faq) => (
-              <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-                <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {faq.question}
-                </SeoHeading>
-                <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {faq.answer}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
+        {faqs.length > 0 ? <CollapsibleFaqSection items={faqs} /> : null}
 
         {relatedLinkSections.length > 0 ? <RelatedLinkSections sections={relatedLinkSections} /> : null}
 

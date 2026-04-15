@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import TrustBlocks from '@/components/seo/TrustBlocks';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import { useWebSeo } from '@/lib/seo';
@@ -245,21 +246,7 @@ export default function DiasporaBuildNigeriaFromAbroadPage() {
 
         <InternalLinksBlock title={content.internalLinks.title} links={[...content.internalLinks.links]} />
 
-        <View className="mb-8">
-          <SeoHeading level={2} className="text-black text-2xl mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.faq.title}
-          </SeoHeading>
-          {content.faq.items.map((faq) => (
-            <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-              <SeoHeading level={3} className="text-black text-base mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {faq.question}
-              </SeoHeading>
-              <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {faq.answer}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <CollapsibleFaqSection title={content.faq.title} items={[...content.faq.items]} className="mb-8" />
 
         <View style={cardShadowStyle} className="bg-black rounded-3xl p-6 mb-5">
           <SeoHeading level={2} className="text-white text-2xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>

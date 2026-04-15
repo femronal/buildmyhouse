@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import TrustBlocks from '@/components/seo/TrustBlocks';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -13,7 +14,10 @@ import { lagosBuildingPermitsAndStageInspectionsPageContent as content } from '@
 import { PILLAR_COVER_SOURCES } from '@/lib/published-content-catalog';
 
 function resolveInternalHref(href: string) {
-  return href === '/projects/new' ? '/location?mode=explore' : href;
+  if (href.startsWith('/projects/new')) {
+    return '/location?mode=explore';
+  }
+  return href;
 }
 
 function openLink(href: string, router: ReturnType<typeof useRouter>) {
@@ -278,21 +282,7 @@ export default function LagosBuildingPermitsGuidePage() {
           ))}
         </View>
 
-        <View className="mb-7">
-          <SeoHeading level={2} className="text-black text-2xl mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.faq.title}
-          </SeoHeading>
-          {content.faq.items.map((faq) => (
-            <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-              <SeoHeading level={3} className="text-black text-base mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {faq.question}
-              </SeoHeading>
-              <Text className="text-gray-700 text-sm leading-7" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {faq.answer}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <CollapsibleFaqSection title={content.faq.title} items={content.faq.items} className="mb-7" />
 
         <LeadMagnetCard />
 

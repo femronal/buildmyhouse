@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import { SeoRichSection } from '@/components/seo/SeoLandingPage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
@@ -202,21 +203,7 @@ export default function RenovationNigeriaHub() {
           <ParagraphBlock paragraphs={c.emotionalPayoff.paragraphs} className="" />
         </View>
 
-        <View className="mb-6">
-          <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {c.faq.title}
-          </SeoHeading>
-          {c.faq.items.map((faq) => (
-            <View key={faq.question} style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-3">
-              <SeoHeading level={3} className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {faq.question}
-              </SeoHeading>
-              <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {faq.answer}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <CollapsibleFaqSection title={c.faq.title} items={c.faq.items} />
 
         <View className="bg-blue-50 border border-blue-200 rounded-2xl p-5 mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
