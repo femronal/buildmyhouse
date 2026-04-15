@@ -48,15 +48,30 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    if (Platform.OS === 'web') {
+      void SplashScreen.hideAsync();
+    }
+  }, []);
+
+  useEffect(() => {
     if (loaded) {
       Text.defaultProps = Text.defaultProps || {};
       Text.defaultProps.style = [{ fontFamily: 'Poppins_400Regular' }, Text.defaultProps.style];
 
       TextInput.defaultProps = TextInput.defaultProps || {};
       TextInput.defaultProps.style = [{ fontFamily: 'Poppins_400Regular' }, TextInput.defaultProps.style];
-      SplashScreen.hideAsync();
+      if (Platform.OS !== 'web') {
+        void SplashScreen.hideAsync();
+      }
     }
   }, [loaded]);
+
+  /**
+   * On web, `useFonts` often flips to `loaded` after the first paint, while static export / SSR already
+   * emitted the real route tree. Returning `null` until fonts load makes the client’s first render differ
+   * from that HTML and triggers hydration error #418. Native still waits on the splash gate.
+   */
+  const blockRenderUntilFonts = Platform.OS !== 'web';
 
   const defaultSeo = getDefaultSeoForPath(pathname);
   useWebSeo({
@@ -75,7 +90,7 @@ export default function RootLayout() {
         : undefined,
   });
 
-  if (!loaded) {
+  if (!loaded && blockRenderUntilFonts) {
     return null;
   }
 
