@@ -26,13 +26,27 @@ import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import {
+  initialWindowMetrics,
+  SafeAreaProvider,
+} from 'react-native-safe-area-context';
+import type { Metrics } from 'react-native-safe-area-context';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
+/**
+ * Web: `initialWindowMetrics` is null, so SafeAreaProvider falls back to `Dimensions` for the first
+ * frame — Node/prerender often disagrees with the real viewport → React hydration #418. Pin a stable
+ * initial frame; NativeSafeAreaProvider.web’s effect then applies real insets after hydration.
+ */
+const WEB_SAFE_AREA_INITIAL: Metrics = {
+  frame: { x: 0, y: 0, width: 393, height: 852 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
 
 export default function RootLayout() {
   const pathname = usePathname();
@@ -94,8 +108,11 @@ export default function RootLayout() {
     return null;
   }
 
+  const safeAreaInitialMetrics: Metrics | null | undefined =
+    Platform.OS === 'web' ? WEB_SAFE_AREA_INITIAL : initialWindowMetrics;
+
   const app = (
-    <SafeAreaProvider>
+    <SafeAreaProvider initialMetrics={safeAreaInitialMetrics ?? undefined}>
       <InvestmentProvider>
         <ThemeProvider value={DefaultTheme}>
           <Stack

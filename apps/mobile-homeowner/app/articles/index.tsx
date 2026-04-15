@@ -38,7 +38,8 @@ const articleCardStyles = StyleSheet.create({
   },
   coverImage: {
     width: '100%',
-    height: '100%',
+    /** Explicit height: RN Web `<img>` can ignore `%` height vs remote assets without this. */
+    height: ARTICLE_CARD_COVER_HEIGHT,
   },
 });
 
