@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
+import { ArrowLeft, Brush, CheckCircle2, FileText, Hammer, HardHat, Sofa, Trees, Wrench } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -29,6 +29,8 @@ type SummaryRow = {
   amountRemaining: number;
 };
 
+const BUILDER_STORAGE_KEY = 'bmh_milestone_payment_schedule_v1';
+
 function resolveInternalHref(href: string) {
   if (href.startsWith('/projects/new')) return '/location?mode=explore';
   return href;
@@ -50,6 +52,35 @@ function formatMoney(value: number, currency: Currency) {
   } catch {
     return `${currency} ${value.toLocaleString('en-NG', { maximumFractionDigits: 2 })}`;
   }
+}
+
+function stageIconFor(name: string) {
+  const normalized = name.toLowerCase();
+  if (normalized.includes('foundation') || normalized.includes('site preparation')) return HardHat;
+  if (normalized.includes('structural') || normalized.includes('repairs') || normalized.includes('systems')) return Hammer;
+  if (normalized.includes('wall') || normalized.includes('surface') || normalized.includes('strip-out')) return Wrench;
+  if (normalized.includes('interior') || normalized.includes('finishes') || normalized.includes('styling')) return Sofa;
+  if (normalized.includes('exterior') || normalized.includes('landscaping')) return Trees;
+  if (normalized.includes('planning') || normalized.includes('measurement') || normalized.includes('procurement')) return FileText;
+  return Brush;
+}
+
+function guidanceRange(projectType: ProjectType, index: number) {
+  const ranges: Record<ProjectType, string[]> = {
+    'New build': ['usually 25% to 35%', 'usually 20% to 30%', 'usually 10% to 15%', 'usually 10% to 15%', 'usually 15% to 25%', 'usually 5% to 10%'],
+    Renovation: ['usually 10% to 15%', 'usually 20% to 30%', 'usually 10% to 20%', 'usually 10% to 15%', 'usually 20% to 30%', 'usually 5% to 10%'],
+    'Interior design': ['usually 5% to 10%', 'usually 35% to 50%', 'usually 10% to 15%', 'usually 20% to 30%', 'usually 5% to 10%'],
+  };
+  return ranges[projectType][index] || 'use your project reality';
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function SelectField<T extends string>({
@@ -105,6 +136,7 @@ export default function MilestonePaymentScheduleBuilderPage() {
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('Percentage by stage');
   const [contingencyPercentage, setContingencyPercentage] = useState('10');
   const [stages, setStages] = useState<StageRow[]>([]);
+  const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
 
   const canonicalPath = content.seo.canonical.replace('https://buildmyhouse.app', '');
   const normalizedRobots = content.seo.robots.replace(/\s+/g, '') as 'index,follow' | 'noindex,nofollow';
@@ -119,6 +151,42 @@ export default function MilestonePaymentScheduleBuilderPage() {
 
   const stageCountNumber = Math.max(1, Number(stageCount) || 1);
   const defaultStageNames = content.suggestedDefaults.byProjectType[projectType];
+
+  useEffect(() => {
+    if (Platform.OS !== 'web') {
+      setHasHydratedDraft(true);
+      return;
+    }
+
+    try {
+      const raw = window.localStorage.getItem(BUILDER_STORAGE_KEY);
+      if (!raw) {
+        setHasHydratedDraft(true);
+        return;
+      }
+      const parsed = JSON.parse(raw) as {
+        projectType?: ProjectType;
+        totalBudget?: string;
+        currency?: Currency;
+        stageCount?: string;
+        paymentMode?: PaymentMode;
+        contingencyPercentage?: string;
+        stages?: StageRow[];
+      };
+
+      if (parsed.projectType) setProjectType(parsed.projectType);
+      if (parsed.totalBudget !== undefined) setTotalBudget(parsed.totalBudget);
+      if (parsed.currency) setCurrency(parsed.currency);
+      if (parsed.stageCount) setStageCount(parsed.stageCount);
+      if (parsed.paymentMode) setPaymentMode(parsed.paymentMode);
+      if (parsed.contingencyPercentage !== undefined) setContingencyPercentage(parsed.contingencyPercentage);
+      if (Array.isArray(parsed.stages)) setStages(parsed.stages);
+    } catch {
+      // no-op: ignore malformed draft data
+    } finally {
+      setHasHydratedDraft(true);
+    }
+  }, []);
 
   useEffect(() => {
     setStages((previous) => {
@@ -138,6 +206,30 @@ export default function MilestonePaymentScheduleBuilderPage() {
       return next;
     });
   }, [defaultStageNames, stageCountNumber]);
+
+  useEffect(() => {
+    if (!hasHydratedDraft || Platform.OS !== 'web') return;
+
+    const draft = {
+      projectType,
+      totalBudget,
+      currency,
+      stageCount,
+      paymentMode,
+      contingencyPercentage,
+      stages,
+    };
+    window.localStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(draft));
+  }, [
+    contingencyPercentage,
+    currency,
+    hasHydratedDraft,
+    paymentMode,
+    projectType,
+    stageCount,
+    stages,
+    totalBudget,
+  ]);
 
   const contingencyPercentValue = Math.max(0, Math.min(100, toNumber(contingencyPercentage)));
   const totalBudgetValue = Math.max(0, toNumber(totalBudget));
@@ -167,18 +259,18 @@ export default function MilestonePaymentScheduleBuilderPage() {
 
   const dynamicWarnings = useMemo(() => {
     const warnings: string[] = [];
-    if (totalBudgetValue <= 0) warnings.push('Enter a valid total project budget greater than zero.');
+    if (totalBudgetValue <= 0) warnings.push('Enter your total budget first so the plan can calculate correctly.');
     if (paymentMode === 'Percentage by stage' && Math.abs(totalStageValueRaw - 100) > 0.01) {
-      warnings.push(`Stage percentages currently add up to ${totalStageValueRaw.toFixed(2)}%, not 100%.`);
+      warnings.push(`Your stage percentages currently add up to ${totalStageValueRaw.toFixed(2)}%, not 100%.`);
     }
     if (paymentMode === 'Amount by stage' && totalAllocatedAmount > usableBudget) {
-      warnings.push('Your stage allocations are above the usable budget after contingency.');
+      warnings.push('Money assigned to stages is above the usable budget after contingency.');
     }
     if (paymentMode === 'Amount by stage' && totalAllocatedAmount < usableBudget) {
-      warnings.push('Your stage allocations are below the usable budget. Some budget is still unallocated.');
+      warnings.push('You still have some usable budget not yet assigned to any stage.');
     }
     if (contingencyPercentValue > 30) {
-      warnings.push('Contingency above 30% may signal unclear scope. Review your stage definitions.');
+      warnings.push('Contingency above 30% can mean scope is still unclear. Review your stage plan again.');
     }
     return warnings;
   }, [contingencyPercentValue, paymentMode, totalAllocatedAmount, totalBudgetValue, totalStageValueRaw, usableBudget]);
@@ -208,8 +300,104 @@ export default function MilestonePaymentScheduleBuilderPage() {
     updateStage(stageIndex, { proofRequired: Array.from(set) });
   };
 
+  const resetBuilder = () => {
+    setProjectType('New build');
+    setTotalBudget('');
+    setCurrency('NGN');
+    setStageCount('4');
+    setPaymentMode('Percentage by stage');
+    setContingencyPercentage('10');
+    setStages([]);
+    if (Platform.OS === 'web') {
+      window.localStorage.removeItem(BUILDER_STORAGE_KEY);
+    }
+  };
+
   const budgetPlaceholder = content.builder.fields.find((field) => field.name === 'totalBudget')?.placeholder ?? 'Enter total budget';
   const contingencyHelpText = content.builder.fields.find((field) => field.name === 'contingencyPercentage')?.helpText ?? '';
+  const unallocatedBalance = usableBudget - totalAllocatedAmount;
+  const firstPlannedPayment = summaryRows.find((row) => row.stagePayment > 0) || summaryRows[0];
+
+  const summaryLines = [
+    `Your total project budget is ${formatMoney(totalBudgetValue, currency)}.`,
+    `You have assigned ${formatMoney(totalAllocatedAmount, currency)} across ${summaryRows.length} stages.`,
+    `You are keeping ${formatMoney(contingencyAmount, currency)} aside as contingency for unexpected changes.`,
+    `Your unallocated balance is ${formatMoney(Math.max(unallocatedBalance, 0), currency)}.`,
+    firstPlannedPayment
+      ? `Your first planned payment is ${formatMoney(firstPlannedPayment.stagePayment, currency)} for ${firstPlannedPayment.stageName}, but only after the required proof is available.`
+      : 'Add stage values to see your first planned payment clearly.',
+  ];
+
+  const exportScheduleAsPdf = () => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      Alert.alert('Export unavailable', 'PDF export is currently available on web.');
+      return;
+    }
+
+    const tableRows = summaryRows
+      .map(
+        (row) => `
+          <tr>
+            <td>${escapeHtml(row.stageName)}</td>
+            <td>${escapeHtml(formatMoney(row.stagePayment, currency))}</td>
+            <td>${escapeHtml(row.proofRequired.join(', ') || 'Not selected')}</td>
+            <td>${escapeHtml(row.notes || '—')}</td>
+            <td>${escapeHtml(formatMoney(row.runningTotalPaid, currency))}</td>
+            <td>${escapeHtml(formatMoney(row.amountRemaining, currency))}</td>
+          </tr>
+        `,
+      )
+      .join('');
+
+    const html = `
+      <html>
+        <head>
+          <title>BuildMyHouse Payment Schedule</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+            h1, h2 { margin: 0 0 10px 0; }
+            p { margin: 0 0 8px 0; line-height: 1.5; }
+            .card { border: 1px solid #d1d5db; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { border: 1px solid #d1d5db; padding: 8px; text-align: left; vertical-align: top; }
+            th { background: #f3f4f6; }
+          </style>
+        </head>
+        <body>
+          <h1>BuildMyHouse - Milestone Payment Schedule</h1>
+          <div class="card">
+            <h2>Your Project Summary</h2>
+            ${summaryLines.map((line) => `<p>${escapeHtml(line)}</p>`).join('')}
+          </div>
+          <div class="card">
+            <h2>${escapeHtml(content.resultSection.title)}</h2>
+            <table>
+              <thead>
+                <tr>${content.paymentTableColumns.map((column) => `<th>${escapeHtml(column)}</th>`).join('')}</tr>
+              </thead>
+              <tbody>${tableRows}</tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h2>${escapeHtml(content.smartWarnings.title)}</h2>
+            ${content.smartWarnings.items.map((item) => `<p>- ${escapeHtml(item)}</p>`).join('')}
+          </div>
+        </body>
+      </html>
+    `;
+
+    const popup = window.open('', '_blank');
+    if (!popup) {
+      Alert.alert('Popup blocked', 'Please allow popups to export your schedule as PDF.');
+      return;
+    }
+
+    popup.document.open();
+    popup.document.write(html);
+    popup.document.close();
+    popup.focus();
+    setTimeout(() => popup.print(), 300);
+  };
 
   return (
     <View className="flex-1 bg-white">
@@ -286,6 +474,16 @@ export default function MilestonePaymentScheduleBuilderPage() {
           <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.builder.title}
           </SeoHeading>
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-xs text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Your progress is saved on this device.
+            </Text>
+            <TouchableOpacity onPress={resetBuilder} className="border border-gray-300 rounded-full px-3 py-1">
+              <Text className="text-xs text-gray-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Reset builder
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           <SelectField label={content.builder.fields[0].label} value={projectType} options={content.builder.fields[0].options} onChange={setProjectType} />
 
@@ -330,7 +528,7 @@ export default function MilestonePaymentScheduleBuilderPage() {
             {content.builder.stageFields.title}
           </SeoHeading>
           <Text className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Suggested defaults are prefilled based on selected project type. Adjust any stage to fit your scope.
+            We prefill stage names based on your project type. Edit any stage to match your actual work done on site.
           </Text>
 
           {stages.map((stage, index) => (
@@ -399,6 +597,9 @@ export default function MilestonePaymentScheduleBuilderPage() {
                 className="rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-black bg-white"
                 style={{ fontFamily: 'Poppins_400Regular', textAlignVertical: 'top' }}
               />
+              <Text className="text-[11px] text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Example: Confirm blockwork level and structural progress before paying the next stage.
+              </Text>
             </View>
           ))}
         </View>
@@ -409,6 +610,9 @@ export default function MilestonePaymentScheduleBuilderPage() {
           </SeoHeading>
           <Text className="text-gray-700 text-sm leading-6 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.resultSection.description}
+          </Text>
+          <Text className="text-xs text-gray-500 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+            This table shows money planned for each stage, proof of work to check before payment, total paid so far, and money left after each stage.
           </Text>
 
           <View className="bg-gray-100 border border-gray-300 rounded-xl p-3 mb-3">
@@ -463,18 +667,22 @@ export default function MilestonePaymentScheduleBuilderPage() {
               ))}
             </View>
           </ScrollView>
+        </View>
 
-          <View className="bg-gray-100 border border-gray-300 rounded-xl p-3">
-            <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Total allocated amount: {formatMoney(totalAllocatedAmount, currency)}
+        <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
+          <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Your Project Summary
+          </SeoHeading>
+          {summaryLines.map((line) => (
+            <Text key={line} className="text-gray-700 text-sm leading-7 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {line}
             </Text>
-            <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Total reserved contingency: {formatMoney(contingencyAmount, currency)}
+          ))}
+          <TouchableOpacity onPress={exportScheduleAsPdf} className="rounded-full border border-gray-300 px-4 py-2.5 mt-3 self-start">
+            <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Export as PDF (save/share)
             </Text>
-            <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Unallocated balance: {formatMoney(Math.max(usableBudget - totalAllocatedAmount, 0), currency)}
-            </Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={cardShadowStyle} className="bg-black rounded-2xl p-4 mb-6">
@@ -502,15 +710,27 @@ export default function MilestonePaymentScheduleBuilderPage() {
             {content.suggestedDefaults.title}
           </SeoHeading>
           {Object.entries(content.suggestedDefaults.byProjectType).map(([type, defaults]) => (
-            <View key={type} className="mb-2">
-              <Text className="text-gray-900 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            <View key={type} className="mb-3">
+              <Text className="text-gray-900 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 {type}
               </Text>
-              <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {defaults.join(' • ')}
-              </Text>
+              {defaults.map((stageName, index) => {
+                const Icon = stageIconFor(stageName);
+                const range = guidanceRange(type as ProjectType, index);
+                return (
+                  <View key={`${type}-${stageName}`} className="flex-row items-start mb-2">
+                    <Icon size={16} color="#4b5563" style={{ marginTop: 2 }} />
+                    <Text className="text-gray-700 text-sm leading-6 ml-2 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {stageName} - {range}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           ))}
+          <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            These are guidance examples only, not fixed rules. Adjust based on your project scope and site reality.
+          </Text>
         </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-6">

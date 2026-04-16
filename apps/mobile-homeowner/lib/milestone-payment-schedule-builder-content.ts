@@ -11,7 +11,7 @@ export const milestonePaymentScheduleBuilderPageContent = {
     eyebrow: "FREE TOOL",
     title: "Milestone Payment Schedule Builder",
     description:
-      "Plan how money should be released stage by stage during your building or renovation project in Nigeria, so you do not keep paying based on pressure, sweet talk, or confusion.",
+      "Plan how money should be released stage by stage during your building or renovation project in Nigeria, so you do not keep sending money because of pressure, sweet talk, or confusion.",
     primaryCta: {
       label: "Build My Payment Plan",
       href: "#builder",
@@ -24,9 +24,9 @@ export const milestonePaymentScheduleBuilderPageContent = {
 
   intro: {
     paragraphs: [
-      "Many diaspora homeowners do not lose money only because a project is bad. They lose money because they pay too early.",
-      "This tool helps you create a simple payment schedule that says what stage comes next, how much should be paid at that stage, what proof should exist before payment, and how much money should still remain under your control.",
-      "It is not a legal contract. It is a planning tool to help you think with more discipline before money starts moving.",
+      "Many Nigerians abroad do not lose money only because a project is bad. They lose money because they release payment too early.",
+      "This tool helps you build a simple stage-by-stage payment plan showing what comes next, how much to pay, what proof of work to request, and how much money should still remain under your control.",
+      "It is not a legal contract. It is a practical planning tool to help you think clearly before money starts moving.",
     ],
   },
 
@@ -36,9 +36,9 @@ export const milestonePaymentScheduleBuilderPageContent = {
       "Break your project into payment stages",
       "Assign money to each stage clearly",
       "Add a contingency buffer for unexpected changes",
-      "Decide what proof should come before payment",
-      "Reduce pressure-based payments",
-      "Think more clearly before releasing the next tranche of money",
+      "Decide what proof of work should come before payment",
+      "Reduce pressure-based payment requests",
+      "Think clearly before releasing money for the next stage",
     ],
   },
 
@@ -64,9 +64,9 @@ export const milestonePaymentScheduleBuilderPageContent = {
       },
       {
         name: "totalBudget",
-        label: "Total project budget",
+        label: "Total project budget (overall money for this project)",
         type: "number",
-        placeholder: "Enter total budget",
+        placeholder: "Enter your full project budget",
         required: true,
       },
       {
@@ -85,24 +85,24 @@ export const milestonePaymentScheduleBuilderPageContent = {
       },
       {
         name: "paymentMode",
-        label: "How do you want to assign stage payments?",
+        label: "How do you want to set stage payments?",
         type: "select",
         options: ["Percentage by stage", "Amount by stage"],
         required: true,
       },
       {
         name: "contingencyPercentage",
-        label: "Buffer / contingency percentage for unexpected changes",
+        label: "Contingency percentage (money to keep aside for surprises)",
         type: "number",
         placeholder: "Example: 10",
         helpText:
-          "This is the extra percentage you want to reserve for changes, hidden defects, price movement, or unexpected work.",
+          "This is the percentage you want to keep aside for hidden defects, price changes, or extra work you did not expect at first.",
         required: true,
       },
     ],
 
     stageFields: {
-      title: "Stage details",
+      title: "Stage-by-stage details",
       fields: [
         {
           name: "stageName",
@@ -113,9 +113,9 @@ export const milestonePaymentScheduleBuilderPageContent = {
         },
         {
           name: "stageValue",
-          label: "Stage payment value",
+          label: "Money for this stage",
           type: "number",
-          placeholder: "Enter percentage or amount",
+          placeholder: "Enter percentage or amount for this stage",
           required: true,
         },
         {
@@ -123,20 +123,21 @@ export const milestonePaymentScheduleBuilderPageContent = {
           label: "Proof required before payment",
           type: "multiselect",
           options: [
-            "Photos",
-            "Videos",
+            "Photos/Videos",
             "Material list",
             "Stage explanation",
             "Progress update",
             "Homeowner satisfaction confirmed",
+            "Receipts/Invoices",
+            "Artisan lists",
           ],
           required: true,
         },
         {
           name: "notes",
-          label: "Notes for this stage",
+          label: "Notes for this stage (optional)",
           type: "textarea",
-          placeholder: "Optional notes about what must be true before payment",
+          placeholder: "Example: Do not release this payment until foundation digging, concrete work, and site photos are confirmed.",
           required: false,
         },
       ],
@@ -146,7 +147,7 @@ export const milestonePaymentScheduleBuilderPageContent = {
   resultSection: {
     title: "Your Payment Schedule",
     description:
-      "This section should generate a simple, readable payment plan the user can review, screenshot, or print.",
+      "This section shows your stage payment plan in a clear format you can review, save, and share.",
     outputs: [
       "Project type summary",
       "Total budget",
@@ -162,11 +163,11 @@ export const milestonePaymentScheduleBuilderPageContent = {
 
   paymentTableColumns: [
     "Stage",
-    "Stage payment",
-    "Proof required before payment",
+    "Money for this stage",
+    "Proof of work before payment",
     "Notes",
-    "Running total paid",
-    "Amount remaining",
+    "Total paid so far",
+    "Money left after this payment",
   ],
 
   smartWarnings: {
@@ -187,7 +188,7 @@ export const milestonePaymentScheduleBuilderPageContent = {
         "Site Preparation & Foundation",
         "Framing & Structural",
         "Rough-in (MEP)",
-        "Insulation & Drywall",
+        "Wall/Ceiling Preparation",
         "Interior Finishes",
         "Exterior & Landscaping",
       ],
