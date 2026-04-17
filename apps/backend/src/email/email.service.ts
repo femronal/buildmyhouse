@@ -10,18 +10,32 @@ export interface SendEmailOptions {
   text?: string;
 }
 
+export type EmailHealthReport = {
+  configured: boolean;
+  provider: 'resend';
+  fromAddress: string;
+  fromUsesResendOnboarding: boolean;
+  keySource: string | null;
+  resendApiReachable: boolean | null;
+  resendStatus: 'ok' | 'misconfigured' | 'provider_error' | 'not_checked';
+  resendMessage: string;
+  checkedAt: string;
+};
+
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
   private readonly resend: Resend | null = null;
   private readonly from: string;
   private readonly enabled: boolean;
+  private readonly keySource: string | null = null;
   private readonly checkedKeyNames = [
     'RESEND_API_KEY',
     'RESEND_API_TOKEN',
     'RESEND_KEY',
     'RESEND_TOKEN',
   ] as const;
+  private readonly resendSendOnlyKeyMessage = 'restricted to only send emails';
 
   constructor(private readonly config: ConfigService) {
     const apiKey =
@@ -29,6 +43,7 @@ export class EmailService {
       this.config.get<string>('RESEND_API_TOKEN') ||
       this.config.get<string>('RESEND_KEY') ||
       this.config.get<string>('RESEND_TOKEN');
+    this.keySource = this.checkedKeyNames.find((name) => !!this.config.get<string>(name)) || null;
     this.from =
       this.config.get<string>('EMAIL_FROM') ||
       this.config.get<string>('RESEND_FROM') ||
@@ -82,6 +97,110 @@ export class EmailService {
         `Email dispatch failed for ${options.to}: ${err?.message || 'unknown error'}`,
       );
       return false;
+    }
+  }
+
+  async getHealthReport(): Promise<EmailHealthReport> {
+    const checkedAt = new Date().toISOString();
+    const fromUsesResendOnboarding = /onboarding@resend\.dev/i.test(this.from);
+
+    if (!this.enabled || !this.resend) {
+      return {
+        configured: false,
+        provider: 'resend',
+        fromAddress: this.from,
+        fromUsesResendOnboarding,
+        keySource: this.keySource,
+        resendApiReachable: null,
+        resendStatus: 'misconfigured',
+        resendMessage:
+          'Resend API key is missing. Set RESEND_API_KEY (or supported alias) in backend environment.',
+        checkedAt,
+      };
+    }
+
+    try {
+      const resendAny = this.resend as any;
+      if (resendAny?.domains?.list) {
+        const probe = await resendAny.domains.list();
+        if (probe?.error) {
+          const providerMessage = probe.error?.message || 'Unknown provider error from Resend';
+          const isSendOnlyKey = providerMessage
+            .toLowerCase()
+            .includes(this.resendSendOnlyKeyMessage);
+          if (isSendOnlyKey) {
+            return {
+              configured: true,
+              provider: 'resend',
+              fromAddress: this.from,
+              fromUsesResendOnboarding,
+              keySource: this.keySource,
+              resendApiReachable: true,
+              resendStatus: 'ok',
+              resendMessage: fromUsesResendOnboarding
+                ? 'Resend key is valid (send-only scope). NOTE: onboarding@resend.dev can only deliver to your Resend signup email.'
+                : 'Resend key is valid (send-only scope). Domain listing is blocked for this key type.',
+              checkedAt,
+            };
+          }
+          return {
+            configured: true,
+            provider: 'resend',
+            fromAddress: this.from,
+            fromUsesResendOnboarding,
+            keySource: this.keySource,
+            resendApiReachable: false,
+            resendStatus: 'provider_error',
+            resendMessage: providerMessage,
+            checkedAt,
+          };
+        }
+      }
+
+      return {
+        configured: true,
+        provider: 'resend',
+        fromAddress: this.from,
+        fromUsesResendOnboarding,
+        keySource: this.keySource,
+        resendApiReachable: true,
+        resendStatus: 'ok',
+        resendMessage: fromUsesResendOnboarding
+          ? 'Resend is reachable. NOTE: onboarding@resend.dev can only deliver to your Resend signup email.'
+          : 'Resend API is reachable and email configuration looks valid.',
+        checkedAt,
+      };
+    } catch (err: any) {
+      const message = err?.message || 'Unknown provider error';
+      const isSendOnlyKey = String(message)
+        .toLowerCase()
+        .includes(this.resendSendOnlyKeyMessage);
+      if (isSendOnlyKey) {
+        return {
+          configured: true,
+          provider: 'resend',
+          fromAddress: this.from,
+          fromUsesResendOnboarding,
+          keySource: this.keySource,
+          resendApiReachable: true,
+          resendStatus: 'ok',
+          resendMessage: fromUsesResendOnboarding
+            ? 'Resend key is valid (send-only scope). NOTE: onboarding@resend.dev can only deliver to your Resend signup email.'
+            : 'Resend key is valid (send-only scope). Domain listing is blocked for this key type.',
+          checkedAt,
+        };
+      }
+      return {
+        configured: true,
+        provider: 'resend',
+        fromAddress: this.from,
+        fromUsesResendOnboarding,
+        keySource: this.keySource,
+        resendApiReachable: false,
+        resendStatus: 'provider_error',
+        resendMessage: message,
+        checkedAt,
+      };
     }
   }
 

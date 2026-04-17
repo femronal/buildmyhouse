@@ -4,6 +4,7 @@ import { ContractorsService } from '../contractors/contractors.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlanFileHealthService } from './plan-file-health.service';
 import { EmailService } from '../email/email.service';
+import type { EmailHealthReport } from '../email/email.service';
 import { AdminEmailAudience, SendBulkEmailDto } from './dto/send-bulk-email.dto';
 
 const STALLED_DAYS = 7;
@@ -56,6 +57,10 @@ export class AdminService {
     ]);
 
     return { stats, criticalAlerts, recentActivity };
+  }
+
+  async getEmailHealth(): Promise<EmailHealthReport> {
+    return this.emailService.getHealthReport();
   }
 
   private async getStats(): Promise<DashboardStats> {

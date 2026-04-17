@@ -20,6 +20,11 @@ export class AdminController {
     return this.adminService.getDashboard(userId);
   }
 
+  @Get('email-health')
+  getEmailHealth() {
+    return this.adminService.getEmailHealth();
+  }
+
   @Get('emails/audience-counts')
   getEmailAudienceCounts() {
     return this.adminService.getBulkEmailAudienceCounts();
