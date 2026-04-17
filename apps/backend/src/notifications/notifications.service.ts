@@ -157,7 +157,7 @@ export class NotificationsService {
         return;
       }
 
-      await this.emailService.sendNotificationEmail({
+      const delivered = await this.emailService.sendNotificationEmail({
         to: user.email,
         recipientName: user.fullName || 'User',
         notificationType: dto.type,
@@ -165,6 +165,11 @@ export class NotificationsService {
         message: dto.message,
         data: dto.data as Record<string, unknown> | undefined,
       });
+      if (!delivered) {
+        this.logger.warn(
+          `Email notification not delivered to ${user.email} for notification type "${dto.type}"`,
+        );
+      }
     } catch (error: any) {
       this.logger.warn(
         `Email dispatch failed for user ${userId}: ${error?.message || 'unknown error'}`,

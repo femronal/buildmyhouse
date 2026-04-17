@@ -16,11 +16,22 @@ export class EmailService {
   private readonly resend: Resend | null = null;
   private readonly from: string;
   private readonly enabled: boolean;
+  private readonly checkedKeyNames = [
+    'RESEND_API_KEY',
+    'RESEND_API_TOKEN',
+    'RESEND_KEY',
+    'RESEND_TOKEN',
+  ] as const;
 
   constructor(private readonly config: ConfigService) {
-    const apiKey = this.config.get<string>('RESEND_API_KEY');
+    const apiKey =
+      this.config.get<string>('RESEND_API_KEY') ||
+      this.config.get<string>('RESEND_API_TOKEN') ||
+      this.config.get<string>('RESEND_KEY') ||
+      this.config.get<string>('RESEND_TOKEN');
     this.from =
       this.config.get<string>('EMAIL_FROM') ||
+      this.config.get<string>('RESEND_FROM') ||
       'BuildMyHouse <onboarding@resend.dev>';
     this.enabled = !!apiKey;
 
@@ -28,15 +39,20 @@ export class EmailService {
       this.resend = new Resend(apiKey);
       this.logger.log('Email service initialized with Resend');
     } else {
-      this.logger.warn(
-        'RESEND_API_KEY not set - email notifications will be skipped',
-      );
+      const checkedNames = this.checkedKeyNames.join(', ');
+      const env = this.config.get<string>('NODE_ENV') || 'development';
+      const message = `Resend key not set (${checkedNames}) - email notifications will be skipped`;
+      if (env === 'production') {
+        this.logger.error(message);
+      } else {
+        this.logger.warn(message);
+      }
     }
   }
 
   async send(options: SendEmailOptions): Promise<boolean> {
     if (!this.enabled || !this.resend) {
-      this.logger.warn('Email send skipped: RESEND_API_KEY not configured');
+      this.logger.warn('Email send skipped: Resend API key not configured');
       return false;
     }
 
