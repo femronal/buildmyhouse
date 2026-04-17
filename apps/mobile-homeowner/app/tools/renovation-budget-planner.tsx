@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import RenovationBudgetPlannerPage from '@/components/seo/RenovationBudgetPlannerPage';
 
 export default function RenovationBudgetPlannerToolPage() {
-  return <ArchitectureSeoPage pageKey="renovationTool" />;
+  return <RenovationBudgetPlannerPage />;
 }
 

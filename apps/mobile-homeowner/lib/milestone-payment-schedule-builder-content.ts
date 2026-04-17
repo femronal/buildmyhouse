@@ -12,6 +12,10 @@ export const milestonePaymentScheduleBuilderPageContent = {
     title: "Milestone Payment Schedule Builder",
     description:
       "Plan how money should be released stage by stage during your building or renovation project in Nigeria, so you do not keep sending money because of pressure, sweet talk, or confusion.",
+    coverImage: {
+      url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1600&q=80",
+      alt: "Construction planning documents and project budgeting setup",
+    },
     primaryCta: {
       label: "Build My Payment Plan",
       href: "#builder",

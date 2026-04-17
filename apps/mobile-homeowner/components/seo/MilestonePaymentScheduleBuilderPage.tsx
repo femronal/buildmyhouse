@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Brush, CheckCircle2, FileText, Hammer, HardHat, Sofa, Trees, Wrench } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
@@ -72,6 +72,40 @@ function guidanceRange(projectType: ProjectType, index: number) {
     'Interior design': ['usually 5% to 10%', 'usually 35% to 50%', 'usually 10% to 15%', 'usually 20% to 30%', 'usually 5% to 10%'],
   };
   return ranges[projectType][index] || 'use your project reality';
+}
+
+function stageAwareNoteExample(stageName: string, projectType: ProjectType) {
+  const normalized = stageName.toLowerCase();
+  if (normalized.includes('foundation') || normalized.includes('site preparation')) {
+    return 'Do not release this payment until digging, concrete work, and site photos are confirmed.';
+  }
+  if (normalized.includes('structural') || normalized.includes('framing') || normalized.includes('repairs')) {
+    return 'Confirm blockwork level and structural progress before paying the next stage.';
+  }
+  if (
+    normalized.includes('mep') ||
+    normalized.includes('rough-in') ||
+    normalized.includes('systems') ||
+    normalized.includes('electrical') ||
+    normalized.includes('plumbing')
+  ) {
+    return 'Make sure wiring or plumbing progress is explained clearly before approving payment.';
+  }
+  if (
+    normalized.includes('finishes') ||
+    normalized.includes('interior') ||
+    normalized.includes('fittings') ||
+    normalized.includes('styling')
+  ) {
+    return 'Confirm visible finishing quality and item delivery before releasing this payment.';
+  }
+  if (projectType === 'Interior design') {
+    return 'Confirm what has been procured, delivered, and installed before you release this payment.';
+  }
+  if (projectType === 'Renovation') {
+    return 'Confirm old defects are corrected and fresh work is visible before releasing this payment.';
+  }
+  return 'Only release this payment after clear site proof and stage completion have been confirmed.';
 }
 
 function escapeHtml(value: string) {
@@ -256,6 +290,9 @@ export default function MilestonePaymentScheduleBuilderPage() {
 
   const totalAllocatedAmount = summaryRows.reduce((sum, row) => sum + row.stagePayment, 0);
   const totalStageValueRaw = stages.reduce((sum, stage) => sum + Math.max(0, toNumber(stage.stageValue)), 0);
+  const hasContingencyInput = contingencyPercentage.trim().length > 0;
+  const hasStageValueInput = stages.some((stage) => Math.max(0, toNumber(stage.stageValue)) > 0);
+  const showGeneratedResults = totalBudgetValue > 0 && hasContingencyInput && hasStageValueInput;
 
   const dynamicWarnings = useMemo(() => {
     const warnings: string[] = [];
@@ -316,16 +353,16 @@ export default function MilestonePaymentScheduleBuilderPage() {
   const budgetPlaceholder = content.builder.fields.find((field) => field.name === 'totalBudget')?.placeholder ?? 'Enter total budget';
   const contingencyHelpText = content.builder.fields.find((field) => field.name === 'contingencyPercentage')?.helpText ?? '';
   const unallocatedBalance = usableBudget - totalAllocatedAmount;
-  const firstPlannedPayment = summaryRows.find((row) => row.stagePayment > 0) || summaryRows[0];
+  const firstPlannedPayment = summaryRows.find((row) => row.stagePayment > 0);
+  const firstPlannedPaymentLine = firstPlannedPayment
+    ? `Your first planned payment is ${formatMoney(firstPlannedPayment.stagePayment, currency)} for ${firstPlannedPayment.stageName}, but only after the required proof is available.`
+    : 'Add stage values to see your first planned payment clearly.';
 
   const summaryLines = [
     `Your total project budget is ${formatMoney(totalBudgetValue, currency)}.`,
     `You have assigned ${formatMoney(totalAllocatedAmount, currency)} across ${summaryRows.length} stages.`,
     `You are keeping ${formatMoney(contingencyAmount, currency)} aside as contingency for unexpected changes.`,
     `Your unallocated balance is ${formatMoney(Math.max(unallocatedBalance, 0), currency)}.`,
-    firstPlannedPayment
-      ? `Your first planned payment is ${formatMoney(firstPlannedPayment.stagePayment, currency)} for ${firstPlannedPayment.stageName}, but only after the required proof is available.`
-      : 'Add stage values to see your first planned payment clearly.',
   ];
 
   const exportScheduleAsPdf = () => {
@@ -419,6 +456,15 @@ export default function MilestonePaymentScheduleBuilderPage() {
           <Text className="text-gray-700 text-base leading-7 mb-4 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
+
+          <View className="w-full rounded-2xl overflow-hidden border border-gray-200 mb-4" style={{ height: 210 }}>
+            <Image
+              source={{ uri: content.hero.coverImage.url }}
+              accessibilityLabel={content.hero.coverImage.alt}
+              resizeMode="cover"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </View>
 
           <View className="flex-col md:flex-row gap-3">
             <TouchableOpacity onPress={() => openLink(content.hero.primaryCta.href)} className="rounded-full bg-black px-5 py-3">
@@ -531,7 +577,9 @@ export default function MilestonePaymentScheduleBuilderPage() {
             We prefill stage names based on your project type. Edit any stage to match your actual work done on site.
           </Text>
 
-          {stages.map((stage, index) => (
+          {stages.map((stage, index) => {
+            const notesExample = stageAwareNoteExample(stage.stageName || '', projectType);
+            return (
             <View key={`stage-${index + 1}`} className="border border-gray-200 rounded-xl p-3 mb-3 bg-gray-50">
               <Text className="text-xs uppercase text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 Stage {index + 1}
@@ -591,17 +639,18 @@ export default function MilestonePaymentScheduleBuilderPage() {
               <TextInput
                 value={stage.notes}
                 onChangeText={(text) => updateStage(index, { notes: text })}
-                placeholder={content.builder.stageFields.fields[3].placeholder}
+                placeholder={notesExample}
                 multiline
                 numberOfLines={3}
                 className="rounded-xl border border-gray-300 px-3 py-2.5 text-sm text-black bg-white"
                 style={{ fontFamily: 'Poppins_400Regular', textAlignVertical: 'top' }}
               />
               <Text className="text-[11px] text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Example: Confirm blockwork level and structural progress before paying the next stage.
+                Example: {notesExample}
               </Text>
             </View>
-          ))}
+            );
+          })}
         </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
@@ -615,6 +664,14 @@ export default function MilestonePaymentScheduleBuilderPage() {
             This table shows money planned for each stage, proof of work to check before payment, total paid so far, and money left after each stage.
           </Text>
 
+          {!showGeneratedResults ? (
+            <View className="bg-gray-100 border border-gray-300 rounded-xl p-4">
+              <Text className="text-gray-700 text-sm leading-7" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Your payment schedule will appear here after you enter your budget and stage details.
+              </Text>
+            </View>
+          ) : (
+            <>
           <View className="bg-gray-100 border border-gray-300 rounded-xl p-3 mb-3">
             <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
               Project type: {projectType}
@@ -667,23 +724,32 @@ export default function MilestonePaymentScheduleBuilderPage() {
               ))}
             </View>
           </ScrollView>
+            </>
+          )}
         </View>
 
-        <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-4 mb-6">
+        {showGeneratedResults ? (
+          <View style={cardShadowStyle} className="bg-gray-50 border border-gray-900/20 rounded-2xl p-5 mb-6">
           <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
             Your Project Summary
           </SeoHeading>
           {summaryLines.map((line) => (
-            <Text key={line} className="text-gray-700 text-sm leading-7 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text key={line} className="text-gray-700 text-sm leading-7 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
               {line}
             </Text>
           ))}
+          <View className="rounded-xl bg-black px-3 py-3 mt-1 mb-2">
+            <Text className="text-white text-sm leading-6" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              {firstPlannedPaymentLine}
+            </Text>
+          </View>
           <TouchableOpacity onPress={exportScheduleAsPdf} className="rounded-full border border-gray-300 px-4 py-2.5 mt-3 self-start">
             <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Export as PDF (save/share)
             </Text>
           </TouchableOpacity>
-        </View>
+          </View>
+        ) : null}
 
         <View style={cardShadowStyle} className="bg-black rounded-2xl p-4 mb-6">
           <SeoHeading level={2} className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -709,8 +775,9 @@ export default function MilestonePaymentScheduleBuilderPage() {
           <SeoHeading level={2} className="text-black text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.suggestedDefaults.title}
           </SeoHeading>
+          <View className="flex-col md:flex-row md:flex-wrap md:justify-between">
           {Object.entries(content.suggestedDefaults.byProjectType).map(([type, defaults]) => (
-            <View key={type} className="mb-3">
+            <View key={type} className="mb-3 md:w-[48%] border border-gray-200 rounded-xl p-3 bg-gray-50">
               <Text className="text-gray-900 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 {type}
               </Text>
@@ -728,6 +795,7 @@ export default function MilestonePaymentScheduleBuilderPage() {
               })}
             </View>
           ))}
+          </View>
           <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
             These are guidance examples only, not fixed rules. Adjust based on your project scope and site reality.
           </Text>
@@ -755,7 +823,7 @@ export default function MilestonePaymentScheduleBuilderPage() {
           ))}
         </View>
 
-        <InternalLinksBlock title={content.relatedResources.title} links={content.relatedResources.links} />
+        <InternalLinksBlock title={content.relatedResources.title} links={[...content.relatedResources.links]} />
 
         <View style={cardShadowStyle} className="bg-gray-100 border border-gray-300 rounded-2xl p-5 mb-6">
           <SeoHeading level={2} className="text-black text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>

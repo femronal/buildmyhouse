@@ -32,6 +32,7 @@ const indexableRoutes = [
   '/building-permit-in-lagos-nigeria-guide',
   '/downloads/remote-renovation-scope-worksheet',
   '/tools/milestone-payment-schedule',
+  '/tools/renovation-budget-planner',
 ];
 
 async function getCmsArticleRoutes() {
