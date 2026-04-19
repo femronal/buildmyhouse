@@ -129,6 +129,7 @@ export function isIndexablePath(pathname?: string) {
     '/diaspora/uk/renovate-parents-house',
     '/guides/lagos-building-permits-and-stage-inspections',
     '/downloads/remote-renovation-scope-worksheet',
+    '/downloads/lagos-permit-starter-checklist',
     '/tools/milestone-payment-schedule',
     '/tools/renovation-budget-planner',
     '/demo/project-monitoring',

@@ -151,6 +151,7 @@ export default function RootLayout() {
           <Stack.Screen name="diaspora/uk/renovate-parents-house" options={{ headerShown: false }} />
           <Stack.Screen name="guides/lagos-building-permits-and-stage-inspections" options={{ headerShown: false }} />
           <Stack.Screen name="downloads/remote-renovation-scope-worksheet" options={{ headerShown: false }} />
+          <Stack.Screen name="downloads/lagos-permit-starter-checklist" options={{ headerShown: false }} />
           <Stack.Screen name="tools/milestone-payment-schedule" options={{ headerShown: false }} />
           <Stack.Screen name="tools/renovation-budget-planner" options={{ headerShown: false }} />
           <Stack.Screen name="demo/project-monitoring" options={{ headerShown: false }} />

@@ -31,6 +31,7 @@ const indexableRoutes = [
   '/land-verification-in-nigeria-guide',
   '/building-permit-in-lagos-nigeria-guide',
   '/downloads/remote-renovation-scope-worksheet',
+  '/downloads/lagos-permit-starter-checklist',
   '/tools/milestone-payment-schedule',
   '/tools/renovation-budget-planner',
 ];

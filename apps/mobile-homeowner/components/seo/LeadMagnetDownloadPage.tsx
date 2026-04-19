@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   ArrowLeft,
@@ -49,6 +49,10 @@ type LeadMagnetDownloadPageContent = {
     description: string;
     primaryCta: CtaConfig;
     secondaryCta: CtaConfig;
+  };
+  coverImage?: {
+    src: string;
+    alt: string;
   };
   trustNote: {
     title: string;
@@ -260,12 +264,23 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
           <Text className="text-gray-700 text-base leading-7 mb-4 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <SeoCoverImage
-            source={require('@/assets/images/worksheet-renovation-cover-image.png')}
-            alt={content.hero.title}
-            className="mb-5"
-            aspectRatio={1.55}
-          />
+          {content.coverImage ? (
+            <View className="w-full rounded-2xl overflow-hidden border border-gray-200 mb-5" style={{ height: 210 }}>
+              <Image
+                source={{ uri: content.coverImage.src }}
+                accessibilityLabel={content.coverImage.alt}
+                resizeMode="cover"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          ) : (
+            <SeoCoverImage
+              source={require('@/assets/images/worksheet-renovation-cover-image.png')}
+              alt={content.hero.title}
+              className="mb-5"
+              aspectRatio={1.55}
+            />
+          )}
         </View>
 
         <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6">
@@ -341,7 +356,7 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
           <ParagraphStack paragraphs={content.buildMyHouseFit.paragraphs} />
         </View>
 
-        <InternalLinksBlock title={content.relatedResources.title} links={content.relatedResources.links} />
+        <InternalLinksBlock title={content.relatedResources.title} links={[...content.relatedResources.links]} />
 
         <View style={cardShadowStyle} className="bg-gray-100 border border-gray-300 rounded-2xl p-5 mb-6">
           <View className="flex-row items-center mb-2">
