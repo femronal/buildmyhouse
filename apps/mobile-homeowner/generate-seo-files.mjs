@@ -30,6 +30,7 @@ const indexableRoutes = [
   '/how-to-choose-a-general-contractor-in-nigeria',
   '/land-verification-in-nigeria-guide',
   '/building-permit-in-lagos-nigeria-guide',
+  '/guides/contractor-vetting-nigeria-diaspora',
   '/downloads/remote-renovation-scope-worksheet',
   '/downloads/lagos-permit-starter-checklist',
   '/tools/milestone-payment-schedule',

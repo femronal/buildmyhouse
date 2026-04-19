@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, Image, ActivityIndicator, Platform } from "react-native";
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, Platform, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
@@ -164,10 +164,17 @@ export default function LoginScreen() {
             { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
             { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
             { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+            { label: 'LLMs.txt', href: '/llms.txt' },
           ].map((link) => (
             <TouchableOpacity
               key={link.href}
-              onPress={() => router.push(link.href as any)}
+              onPress={() => {
+                if (link.href === '/llms.txt') {
+                  Linking.openURL('https://buildmyhouse.app/llms.txt');
+                  return;
+                }
+                router.push(link.href as any);
+              }}
               className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
             >
               <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
