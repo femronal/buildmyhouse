@@ -1,10 +1,9 @@
 import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, BadgeCheck, FileCheck2, IdCard } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
-import TrustBlocks from '@/components/seo/TrustBlocks';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
@@ -23,6 +22,12 @@ function openLink(href: string, router: ReturnType<typeof useRouter>) {
     return;
   }
   router.push(resolveInternalHref(href) as any);
+}
+
+function verificationDocumentIcon(name: string) {
+  if (name.includes('ID')) return IdCard;
+  if (name.includes('Certificate')) return BadgeCheck;
+  return FileCheck2;
 }
 
 export default function ContractorVettingNigeriaDiasporaPage() {
@@ -149,21 +154,87 @@ export default function ContractorVettingNigeriaDiasporaPage() {
           ))}
         </View>
 
-        <TrustBlocks
-          blocks={[
-            {
-              key: 'common_mistakes',
-              title: content.redFlags.title,
-              bullets: [...content.redFlags.items],
-            },
-            {
-              key: 'proof_of_process',
-              title: content.proofOfProcess.title,
-              description: content.proofOfProcess.paragraphs.join(' '),
-              bullets: [...content.proofOfProcess.items],
-            },
-          ]}
-        />
+        <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
+          <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.redFlags.title}
+          </SeoHeading>
+          {content.redFlags.items.map((item) => (
+            <Text key={item} className="text-gray-700 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              • {item}
+            </Text>
+          ))}
+        </View>
+
+        <View style={cardShadowStyle} className="bg-black rounded-3xl p-6 mb-7">
+          <SeoHeading level={2} className="text-white text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.proofOfProcess.title}
+          </SeoHeading>
+          {content.proofOfProcess.paragraphs.map((paragraph) => (
+            <Text key={paragraph} className="text-white/90 text-sm leading-7 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {paragraph}
+            </Text>
+          ))}
+
+          <SeoHeading level={3} className="text-white text-lg mt-3 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.proofOfProcess.introTitle}
+          </SeoHeading>
+          {content.proofOfProcess.introParagraphs.map((paragraph) => (
+            <Text key={paragraph} className="text-white/90 text-sm leading-7 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {paragraph}
+            </Text>
+          ))}
+
+          <SeoHeading level={3} className="text-white text-lg mt-4 mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.proofOfProcess.verificationTitle}
+          </SeoHeading>
+          {content.proofOfProcess.documents.map((document) => {
+            const Icon = verificationDocumentIcon(document.name);
+            return (
+              <View key={document.name} className="bg-white/5 border border-white/15 rounded-2xl p-4 mb-3">
+                <View className="flex-row items-center mb-2">
+                  <Icon size={16} color="#e5e7eb" />
+                  <Text className="text-white text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    {document.name}
+                  </Text>
+                </View>
+                <Text className="text-white/90 text-xs mb-1.5" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Why it matters
+                </Text>
+                <Text className="text-white/90 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {document.whyItMatters}
+                </Text>
+                <Text className="text-white/90 text-xs mb-1.5" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  How it helps later if something goes wrong
+                </Text>
+                <Text className="text-white/90 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {document.howItHelpsLater}
+                </Text>
+              </View>
+            );
+          })}
+
+          <SeoHeading level={3} className="text-white text-lg mt-3 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.proofOfProcess.whyThisMattersTitle}
+          </SeoHeading>
+          {content.proofOfProcess.whyThisMattersParagraphs.map((paragraph) => (
+            <Text key={paragraph} className="text-white/90 text-sm leading-7 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {paragraph}
+            </Text>
+          ))}
+
+          <SeoHeading level={3} className="text-white text-lg mt-3 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.proofOfProcess.summaryTitle}
+          </SeoHeading>
+          {content.proofOfProcess.summaryPoints.map((point) => (
+            <Text key={point} className="text-white/90 text-sm leading-6 mb-1.5" style={{ fontFamily: 'Poppins_400Regular' }}>
+              • {point}
+            </Text>
+          ))}
+
+          <Text className="text-white text-sm leading-7 mt-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            {content.proofOfProcess.closingParagraph}
+          </Text>
+        </View>
 
         <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
           <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>

@@ -167,19 +167,93 @@ export const contractorVettingNigeriaDiasporaPageContent = {
   },
 
   proofOfProcess: {
-    title: "What Real Contractor Trust Should Look Like",
+    title: "How BuildMyHouse Verifies General Contractors Before Approval",
     paragraphs: [
-      "The research behind this content plan showed that competitors often talk about trust, transparency, and contractor verification, but few show what that means in practical execution.",
-      "BuildMyHouse can win here by tying contractor trust to real proof: project stages, documentation, payment logic, communication flow, and verification summary.",
-      "That is the difference between trusting a person and trusting a system.",
+      "If you are abroad, one of your biggest questions is simple: who exactly am I trusting with my building or renovation project in Nigeria?",
+      "That is why BuildMyHouse does not allow contractor trust to rest only on smooth talk, family recommendation, or good-looking photos. General Contractors who want to join the platform are expected to go through a verification process before approval.",
+      "The goal is to reduce the risk of dealing with people who cannot be properly traced, challenged, or held accountable later if something goes wrong on your project.",
+      "In simple terms, BuildMyHouse wants contractor trust to start from documents and identity, not from pressure and promises."
     ],
-    items: [
-      "Verified contractor details",
-      "Stage-based project structure",
-      "Proof of work before payment",
-      "Communication tied to the project flow",
-      "Clearer operational review instead of blind trust",
+    introTitle: "What This Means for You as a Homeowner Abroad",
+    introParagraphs: [
+      "When a project goes bad, the problem is not always that the contractor disappeared completely. Sometimes the bigger problem is that the homeowner never had enough real information about who was behind the business in the first place.",
+      "That is why these verification documents matter. They create a clearer record of who the contractor is, what business they operate, and what trail exists if there is a payment issue, project dispute, quality complaint, or any serious disagreement later."
     ],
+    verificationTitle: "Documents BuildMyHouse Requests From General Contractors",
+    documents: [
+      {
+        name: "CAC Registration Certificate",
+        whyItMatters:
+          "This helps confirm that the contractor is operating as a registered business and not just showing up online without a formal business identity.",
+        howItHelpsLater:
+          "If a dispute happens, this helps tie the contractor profile to a real registered business name instead of a vague personal claim."
+      },
+      {
+        name: "Tax Identification Number (TIN)",
+        whyItMatters:
+          "This helps show that the contractor has a recognized tax identity linked to business activity.",
+        howItHelpsLater:
+          "If anything goes wrong, it adds another layer of traceability and helps show the contractor is not operating as a completely hidden person."
+      },
+      {
+        name: "Tax Clearance Certificate",
+        whyItMatters:
+          "This gives more confidence that the contractor is functioning within a more formal business system and not merely claiming to be established.",
+        howItHelpsLater:
+          "It strengthens the due diligence record behind the contractor profile and supports accountability if the relationship breaks down."
+      },
+      {
+        name: "Professional License / Council Registration",
+        whyItMatters:
+          "This helps show whether the contractor or company has relevant professional recognition, registration, or industry standing where applicable.",
+        howItHelpsLater:
+          "If workmanship, competence, or professional claims are questioned later, this helps review what qualifications were actually presented."
+      },
+      {
+        name: "Government-Issued ID",
+        whyItMatters:
+          "This helps confirm the real identity of the person behind the contractor application.",
+        howItHelpsLater:
+          "If there is impersonation, fraud, disappearance, or a serious project dispute, the contractor is not just an anonymous voice on the phone."
+      },
+      {
+        name: "Proof of Business Address",
+        whyItMatters:
+          "This helps confirm that the contractor has a traceable operating address and is not working like a ghost entity with no real business location.",
+        howItHelpsLater:
+          "If issues escalate, it adds another layer of business traceability and reduces the risk of dealing with someone who cannot be found."
+      },
+      {
+        name: "Insurance Certificate",
+        whyItMatters:
+          "This helps show whether the contractor carries insurance protection relevant to their operations.",
+        howItHelpsLater:
+          "If site damage, incident-related issues, or other risk events happen, insurance may become an important part of the risk picture."
+      },
+      {
+        name: "Director / Proprietor ID",
+        whyItMatters:
+          "This helps connect the business itself to the real owner or responsible principal behind it.",
+        howItHelpsLater:
+          "It strengthens accountability by linking the contractor business to a specific person responsible for that operation."
+      }
+    ],
+    whyThisMattersTitle: "Why These Documents Matter During the Project, Not Just Before It",
+    whyThisMattersParagraphs: [
+      "These documents do not mean a project can never have problems. But they make it much harder for a contractor to enter the process without identity, without business trace, and without accountability.",
+      "That matters a lot when you are living abroad. If there is a delay, a quality complaint, a disagreement over payment, or a dispute about what was promised, you are not starting from total darkness.",
+      "Instead of relying only on memory, family pressure, or chat history, there is a more formal record behind the contractor profile."
+    ],
+    summaryTitle: "What This Gives You as a Diaspora Homeowner",
+    summaryPoints: [
+      "You are not relying only on sweet talk or family introduction",
+      "The contractor has a clearer identity and business trail",
+      "There is stronger accountability if the project becomes difficult",
+      "Trust starts from records and verification, not only promises",
+      "Your project begins on a more disciplined trust foundation"
+    ],
+    closingParagraph:
+      "The safest contractor is not just the one who sounds convincing. It is the one who can be properly identified, reviewed, and kept inside a more structured project system from day one."
   },
 
   publicDemoTeaser: {
