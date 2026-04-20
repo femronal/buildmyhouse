@@ -160,7 +160,7 @@ export const contractorVettingNigeriaDiasporaPageContent = {
     ],
     sectionTitle: "Why BuildMyHouse Fits This Problem",
     paragraphs: [
-      "BuildMyHouse is better positioned than ordinary content competitors because it is not only giving advice. It already has contractor-related workflows, verification operations, project structures, payments, chat, and admin oversight in the actual system. :contentReference[oaicite:2]{index=2}",
+      "BuildMyHouse is better positioned than ordinary content competitors because it is not only giving advice. It already has contractor-related workflows, verification operations, project structures, payments, chat, and admin oversight in the actual system.",
       "That means contractor trust can be connected to a real project environment instead of relying only on pre-project promises.",
       "For a diaspora homeowner, that matters. The safest contractor is not just one who sounds convincing. It is one who can operate inside a structured process with visibility, stage discipline, and clearer accountability.",
     ],
@@ -169,7 +169,7 @@ export const contractorVettingNigeriaDiasporaPageContent = {
   proofOfProcess: {
     title: "What Real Contractor Trust Should Look Like",
     paragraphs: [
-      "The research behind this content plan showed that competitors often talk about trust, transparency, and contractor verification, but few show what that means in practical execution. :contentReference[oaicite:3]{index=3}",
+      "The research behind this content plan showed that competitors often talk about trust, transparency, and contractor verification, but few show what that means in practical execution.",
       "BuildMyHouse can win here by tying contractor trust to real proof: project stages, documentation, payment logic, communication flow, and verification summary.",
       "That is the difference between trusting a person and trusting a system.",
     ],
@@ -236,7 +236,7 @@ export const contractorVettingNigeriaDiasporaPageContent = {
       {
         question: "How does BuildMyHouse help with contractor trust?",
         answer:
-          "BuildMyHouse connects contractor trust to structured project workflows, verification operations, stages, payments, communication, and oversight, which is safer than relying only on informal recommendation. :contentReference[oaicite:4]{index=4}",
+          "BuildMyHouse connects contractor trust to structured project workflows, verification operations, stages, payments, communication, and oversight, which is safer than relying only on informal recommendation.",
       },
     ],
   },
