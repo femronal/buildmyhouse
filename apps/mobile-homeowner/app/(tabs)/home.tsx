@@ -708,7 +708,7 @@ export default function HomeScreen() {
           </View>
         </Modal>
 
-        {/* Start a Project — rental listings preview */}
+        {/* Interior Design Plans */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center flex-1 min-w-0 pr-2">
@@ -718,7 +718,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Start a Project
+                Interior Design Plans
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -726,7 +726,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Guided
+                Mood + BOQ
               </Text>
             </View>
           </View>
@@ -735,7 +735,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Begin your building journey with structure and guidance.
+            Explore curated interior concepts with room-by-room planning guidance.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -804,7 +804,7 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Buy a Home Section */}
+        {/* Renovation Plans */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center flex-1 min-w-0 pr-2">
@@ -814,7 +814,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Move-In Ready Homes
+                Renovation Plans
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -822,7 +822,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Verified
+                Scope + Budget
               </Text>
             </View>
           </View>
@@ -831,7 +831,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Skip construction. Own a completed home with verified documentation.
+            Upgrade existing spaces with phased renovation plans and cost clarity.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -901,7 +901,7 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Landed Properties Section */}
+        {/* Building Plans */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center flex-1 min-w-0 pr-2">
@@ -911,7 +911,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Start With Land
+                Building Plans
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -919,7 +919,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Verified Title
+                Permit Ready
               </Text>
             </View>
           </View>
@@ -928,7 +928,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Find verified land you can confidently build on.
+            Review complete building plan options prepared for execution and approvals.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
