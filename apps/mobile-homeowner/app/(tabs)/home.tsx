@@ -718,7 +718,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Interior Design Plans
+                Interior Designs
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -814,7 +814,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Renovation Plans
+                Renovations
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -911,7 +911,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Building Plans
+                New Builds
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -919,7 +919,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Permit Ready
+                Ready to Build
               </Text>
             </View>
           </View>
