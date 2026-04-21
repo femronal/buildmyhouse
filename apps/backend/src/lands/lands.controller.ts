@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } fro
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { CreateLandForSaleDto } from './dto/create-land-for-sale.dto';
+import { UpdateLandForSaleDto } from './dto/update-land-for-sale.dto';
 import { UpdateLandViewingOutcomeDto } from './dto/update-land-viewing-outcome.dto';
 import { LandsService } from './lands.service';
 
@@ -62,6 +63,13 @@ export class LandsController {
   @Roles('admin')
   create(@Body() dto: CreateLandForSaleDto) {
     return this.landsService.create(dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  update(@Param('id') id: string, @Body() dto: UpdateLandForSaleDto) {
+    return this.landsService.update(id, dto);
   }
 
   @Post(':id/schedule-viewing')

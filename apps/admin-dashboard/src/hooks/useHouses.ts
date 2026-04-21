@@ -53,6 +53,8 @@ export interface CreateHousePayload {
   images: { url: string; label?: string; order?: number }[];
 }
 
+export type UpdateHousePayload = CreateHousePayload;
+
 export function useHouses() {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -74,6 +76,14 @@ export function useHouses() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateHousePayload }) =>
+      api.patch<HouseForSale>(`/houses/${id}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['houses', 'admin'] });
+    },
+  });
+
   return {
     houses: query.data ?? [],
     isLoading: query.isLoading,
@@ -82,5 +92,7 @@ export function useHouses() {
     createHouse: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     deleteHouse: deleteMutation.mutateAsync,
+    updateHouse: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 }

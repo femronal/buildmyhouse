@@ -49,6 +49,8 @@ export interface CreateLandPayload {
   images: { url: string; label?: string; order?: number }[];
 }
 
+export type UpdateLandPayload = CreateLandPayload;
+
 export function useLands() {
   const queryClient = useQueryClient();
   const query = useQuery({
@@ -70,6 +72,14 @@ export function useLands() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateLandPayload }) =>
+      api.patch<LandForSale>(`/lands/${id}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lands', 'admin'] });
+    },
+  });
+
   return {
     lands: query.data ?? [],
     isLoading: query.isLoading,
@@ -77,5 +87,7 @@ export function useLands() {
     createLand: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     deleteLand: deleteMutation.mutateAsync,
+    updateLand: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 }

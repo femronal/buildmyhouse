@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
+import { UpdateHouseForSaleDto } from './dto/update-house-for-sale.dto';
 
 @Injectable()
 export class HousesService {
@@ -75,6 +76,52 @@ export class HousesService {
       },
     });
     return created;
+  }
+
+  async update(id: string, dto: UpdateHouseForSaleDto) {
+    const existing = await this.prisma.houseForSale.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('House not found');
+    }
+
+    return this.prisma.houseForSale.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.location !== undefined ? { location: dto.location } : {}),
+        ...(dto.price !== undefined ? { price: Number(dto.price) } : {}),
+        ...(dto.bedrooms !== undefined ? { bedrooms: Number(dto.bedrooms) } : {}),
+        ...(dto.bathrooms !== undefined ? { bathrooms: Number(dto.bathrooms) } : {}),
+        ...(dto.squareFootage !== undefined ? { squareFootage: Number(dto.squareFootage) } : {}),
+        ...(dto.squareMeters !== undefined ? { squareMeters: Number(dto.squareMeters) } : {}),
+        ...(dto.propertyType !== undefined ? { propertyType: dto.propertyType } : {}),
+        ...(dto.yearBuilt !== undefined ? { yearBuilt: Number(dto.yearBuilt) } : {}),
+        ...(dto.condition !== undefined ? { condition: dto.condition } : {}),
+        ...(dto.parking !== undefined ? { parking: Number(dto.parking) } : {}),
+        ...(dto.documents !== undefined ? { documents: dto.documents } : {}),
+        ...(dto.amenities !== undefined ? { amenities: dto.amenities } : {}),
+        ...(dto.nearbyFacilities !== undefined ? { nearbyFacilities: dto.nearbyFacilities } : {}),
+        ...(dto.contactName !== undefined ? { contactName: dto.contactName } : {}),
+        ...(dto.contactPhone !== undefined ? { contactPhone: dto.contactPhone } : {}),
+        ...(dto.images !== undefined
+          ? {
+              images: {
+                deleteMany: {},
+                create: (dto.images || []).map((img, i: number) => ({
+                  url: this.normalizeAssetUrl(img.url),
+                  label: img.label || `Image ${i + 1}`,
+                  order: img.order ?? i,
+                })),
+              },
+            }
+          : {}),
+      },
+      include: { images: { orderBy: { order: 'asc' } } },
+    });
   }
 
   async getAdminList() {

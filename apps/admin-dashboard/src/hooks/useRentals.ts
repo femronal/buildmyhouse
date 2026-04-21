@@ -65,6 +65,8 @@ export interface CreateRentalPayload {
   images: { url: string; label?: string; order?: number }[];
 }
 
+export type UpdateRentalPayload = CreateRentalPayload;
+
 export function useRentals() {
   const queryClient = useQueryClient();
 
@@ -88,6 +90,14 @@ export function useRentals() {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateRentalPayload }) =>
+      api.patch<RentalListing>(`/rentals/${id}`, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['rentals', 'admin'] });
+    },
+  });
+
   return {
     rentals: query.data ?? [],
     isLoading: query.isLoading,
@@ -95,6 +105,8 @@ export function useRentals() {
     createRental: createMutation.mutateAsync,
     isCreating: createMutation.isPending,
     deleteRental: deleteMutation.mutateAsync,
+    updateRental: updateMutation.mutateAsync,
+    isUpdating: updateMutation.isPending,
   };
 }
 

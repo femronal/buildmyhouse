@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { FileUp, Home, X, Plus, Trash2, User, Mail, Phone, Clock3 } from 'lucide-react';
-import { useHouses, type CreateHousePayload } from '@/hooks/useHouses';
+import { FileUp, Home, X, Plus, Trash2, User, Mail, Phone, Clock3, Pencil } from 'lucide-react';
+import { useHouses, type CreateHousePayload, type HouseForSale, type UpdateHousePayload } from '@/hooks/useHouses';
 import { useHouseViewingInterests } from '@/hooks/useHouseViewingInterests';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 
 export default function HousesPage() {
-  const { houses, isLoading, createHouse, isCreating, deleteHouse, refetch } = useHouses();
+  const { houses, isLoading, createHouse, isCreating, deleteHouse, updateHouse, isUpdating, refetch } = useHouses();
   const { interests, markAllRead, updateOutcome } = useHouseViewingInterests();
   const [selectedId, setSelectedId] = useState<string | null>(houses[0]?.id ?? null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDeleteHouseId, setPendingDeleteHouseId] = useState<string | null>(null);
   const [interestHouseId, setInterestHouseId] = useState<string | null>(null);
@@ -37,10 +39,41 @@ export default function HousesPage() {
     contactName: '',
     contactPhone: '',
   });
-  const [images, setImages] = useState<{ file: File; label: string; preview: string }[]>([]);
+  const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const selected = houses.find((h) => h.id === selectedId) ?? houses[0];
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      description: '',
+      location: '',
+      price: '',
+      bedrooms: '',
+      bathrooms: '',
+      squareFootage: '',
+      squareMeters: '',
+      propertyType: '',
+      yearBuilt: '',
+      condition: '',
+      parking: '',
+      documents: '',
+      amenities: '',
+      nearbyFacilities: '',
+      contactName: '',
+      contactPhone: '',
+    });
+  };
+
+  const resetImages = () => {
+    setImages((prev) => {
+      prev.forEach((img) => {
+        if (img.file) URL.revokeObjectURL(img.preview);
+      });
+      return [];
+    });
+  };
 
   const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -56,10 +89,42 @@ export default function HousesPage() {
   const removeImage = (index: number) => {
     setImages((prev) => {
       const next = [...prev];
-      URL.revokeObjectURL(next[index].preview);
+      if (next[index].file) URL.revokeObjectURL(next[index].preview);
       next.splice(index, 1);
       return next;
     });
+  };
+
+  const startEditHouse = (house: HouseForSale) => {
+    setEditingId(house.id);
+    setForm({
+      name: house.name,
+      description: house.description || '',
+      location: house.location,
+      price: String(house.price ?? ''),
+      bedrooms: String(house.bedrooms ?? ''),
+      bathrooms: String(house.bathrooms ?? ''),
+      squareFootage: String(house.squareFootage ?? ''),
+      squareMeters: house.squareMeters !== null && house.squareMeters !== undefined ? String(house.squareMeters) : '',
+      propertyType: house.propertyType || '',
+      yearBuilt: house.yearBuilt !== null && house.yearBuilt !== undefined ? String(house.yearBuilt) : '',
+      condition: house.condition || '',
+      parking: house.parking !== null && house.parking !== undefined ? String(house.parking) : '',
+      documents: (house.documents || []).join(', '),
+      amenities: (house.amenities || []).join(', '),
+      nearbyFacilities: (house.nearbyFacilities || []).join(', '),
+      contactName: house.contactName || '',
+      contactPhone: house.contactPhone || '',
+    });
+    resetImages();
+    setImages(
+      (house.images || []).map((img) => ({
+        url: img.url,
+        label: img.label || 'Image',
+        preview: getBackendAssetUrl(img.url) || img.url,
+      })),
+    );
+    setShowEditModal(true);
   };
 
   const handleDeleteHouse = async (houseId: string) => {
@@ -128,29 +193,76 @@ export default function HousesPage() {
 
       await createHouse(payload);
       setShowUploadModal(false);
-      setForm({
-        name: '',
-        description: '',
-        location: '',
-        price: '',
-        bedrooms: '',
-        bathrooms: '',
-        squareFootage: '',
-        squareMeters: '',
-        propertyType: '',
-        yearBuilt: '',
-        condition: '',
-        parking: '',
-        documents: '',
-        amenities: '',
-        nearbyFacilities: '',
-        contactName: '',
-        contactPhone: '',
-      });
-      setImages([]);
+      resetForm();
+      resetImages();
       refetch();
     } catch (err: any) {
       setUploadError(err?.message || 'Upload failed');
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setUploadError(null);
+    if (images.length === 0) {
+      setUploadError('Please keep at least one photo');
+      return;
+    }
+    try {
+      const uploadedImages: { url: string; label: string; order: number }[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        let url = img.url || '';
+        if (img.file) {
+          const uploaded = await api.uploadFile(img.file);
+          url = uploaded.url;
+        }
+        uploadedImages.push({
+          url,
+          label: img.label || `Image ${i + 1}`,
+          order: i,
+        });
+      }
+
+      const payload: UpdateHousePayload = {
+        name: form.name.trim(),
+        description: form.description.trim() || undefined,
+        location: form.location.trim(),
+        price: parseFloat(form.price) || 0,
+        bedrooms: parseInt(form.bedrooms, 10) || 1,
+        bathrooms: parseInt(form.bathrooms, 10) || 1,
+        squareFootage: parseFloat(form.squareFootage) || 0,
+        squareMeters: form.squareMeters ? parseFloat(form.squareMeters) : undefined,
+        propertyType: form.propertyType.trim() || undefined,
+        yearBuilt: form.yearBuilt ? parseInt(form.yearBuilt, 10) : undefined,
+        condition: form.condition.trim() || undefined,
+        parking: form.parking ? parseInt(form.parking, 10) : undefined,
+        documents: form.documents
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        amenities: form.amenities
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        nearbyFacilities: form.nearbyFacilities
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        contactName: form.contactName.trim() || undefined,
+        contactPhone: form.contactPhone.trim() || undefined,
+        images: uploadedImages,
+      };
+
+      await updateHouse({ id: editingId, payload });
+      await refetch();
+      setShowEditModal(false);
+      setEditingId(null);
+      resetForm();
+      resetImages();
+    } catch (err: any) {
+      setUploadError(err?.message || 'Update failed');
     }
   };
 
@@ -241,6 +353,17 @@ export default function HousesPage() {
                     </div>
                   </button>
                   <div className="absolute right-4 bottom-3 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditHouse(house);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -822,6 +945,256 @@ export default function HousesPage() {
                   className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50"
                 >
                   {isCreating ? 'Uploading...' : 'Upload'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Edit house listing</h3>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingId(null);
+                  setUploadError(null);
+                  resetForm();
+                  resetImages();
+                }}
+                className="p-1 hover:bg-gray-100 rounded"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
+              {uploadError && (
+                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+                  {uploadError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Location *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={form.location}
+                  onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price (₦) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    value={form.price}
+                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Condition
+                  </label>
+                  <input
+                    type="text"
+                    value={form.condition}
+                    onChange={(e) => setForm((f) => ({ ...f, condition: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bedrooms *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={form.bedrooms}
+                    onChange={(e) => setForm((f) => ({ ...f, bedrooms: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Bathrooms *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={form.bathrooms}
+                    onChange={(e) => setForm((f) => ({ ...f, bathrooms: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sq Ft *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={form.squareFootage}
+                    onChange={(e) => setForm((f) => ({ ...f, squareFootage: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Sq m
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.squareMeters}
+                    onChange={(e) => setForm((f) => ({ ...f, squareMeters: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  placeholder="Property type"
+                  value={form.propertyType}
+                  onChange={(e) => setForm((f) => ({ ...f, propertyType: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+                <input
+                  type="number"
+                  placeholder="Year built"
+                  value={form.yearBuilt}
+                  onChange={(e) => setForm((f) => ({ ...f, yearBuilt: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Parking"
+                  value={form.parking}
+                  onChange={(e) => setForm((f) => ({ ...f, parking: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              </div>
+              <input type="text" placeholder="Documents (comma-separated)" value={form.documents} onChange={(e) => setForm((f) => ({ ...f, documents: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <input type="text" placeholder="Amenities (comma-separated)" value={form.amenities} onChange={(e) => setForm((f) => ({ ...f, amenities: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <input type="text" placeholder="Nearby Facilities (comma-separated)" value={form.nearbyFacilities} onChange={(e) => setForm((f) => ({ ...f, nearbyFacilities: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              <div className="grid grid-cols-2 gap-3">
+                <input type="text" placeholder="Contact Name" value={form.contactName} onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
+                <input type="text" placeholder="Contact Phone" value={form.contactPhone} onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Photos * (with labels)
+                </label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleAddImages}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center gap-2 text-gray-500 hover:border-gray-400"
+                >
+                  <Plus className="w-5 h-5" />
+                  Add more photos
+                </button>
+                <div className="mt-3 space-y-2">
+                  {images.map((img, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg"
+                    >
+                      <img
+                        src={img.preview}
+                        alt=""
+                        className="w-12 h-12 rounded object-cover"
+                      />
+                      <input
+                        type="text"
+                        value={img.label}
+                        onChange={(e) =>
+                          setImages((prev) => {
+                            const next = [...prev];
+                            next[i] = { ...next[i], label: e.target.value };
+                            return next;
+                          })
+                        }
+                        className="flex-1 px-2 py-1 border rounded text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(i)}
+                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingId(null);
+                    setUploadError(null);
+                    resetForm();
+                    resetImages();
+                  }}
+                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50"
+                >
+                  {isUpdating ? 'Saving...' : 'Save changes'}
                 </button>
               </div>
             </form>

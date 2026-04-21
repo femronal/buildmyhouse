@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRentalListingDto } from './dto/create-rental-listing.dto';
+import { UpdateRentalListingDto } from './dto/update-rental-listing.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 
 @Injectable()
@@ -77,6 +78,58 @@ export class RentalsService {
             order: img.order ?? i,
           })),
         },
+      },
+      include: { images: { orderBy: { order: 'asc' } } },
+    });
+  }
+
+  async update(id: string, dto: UpdateRentalListingDto) {
+    const existing = await this.prisma.rentalListing.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Rental listing not found');
+    }
+
+    return this.prisma.rentalListing.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.propertyType !== undefined ? { propertyType: dto.propertyType } : {}),
+        ...(dto.location !== undefined ? { location: dto.location } : {}),
+        ...(dto.annualRent !== undefined ? { annualRent: Number(dto.annualRent) } : {}),
+        ...(dto.serviceCharge !== undefined ? { serviceCharge: Number(dto.serviceCharge) } : {}),
+        ...(dto.cautionDeposit !== undefined ? { cautionDeposit: Number(dto.cautionDeposit) } : {}),
+        ...(dto.legalFeePercent !== undefined ? { legalFeePercent: Number(dto.legalFeePercent) } : {}),
+        ...(dto.agencyFeePercent !== undefined ? { agencyFeePercent: Number(dto.agencyFeePercent) } : {}),
+        ...(dto.bedrooms !== undefined ? { bedrooms: Number(dto.bedrooms) } : {}),
+        ...(dto.bathrooms !== undefined ? { bathrooms: Number(dto.bathrooms) } : {}),
+        ...(dto.sizeSqm !== undefined ? { sizeSqm: Number(dto.sizeSqm) } : {}),
+        ...(dto.furnishing !== undefined ? { furnishing: dto.furnishing } : {}),
+        ...(dto.paymentPattern !== undefined ? { paymentPattern: dto.paymentPattern } : {}),
+        ...(dto.power !== undefined ? { power: dto.power } : {}),
+        ...(dto.water !== undefined ? { water: dto.water } : {}),
+        ...(dto.internet !== undefined ? { internet: dto.internet } : {}),
+        ...(dto.parking !== undefined ? { parking: dto.parking } : {}),
+        ...(dto.security !== undefined ? { security: dto.security } : {}),
+        ...(dto.rules !== undefined ? { rules: dto.rules } : {}),
+        ...(dto.inspectionWindow !== undefined ? { inspectionWindow: dto.inspectionWindow } : {}),
+        ...(dto.proximity !== undefined ? { proximity: dto.proximity } : {}),
+        ...(dto.verificationDocs !== undefined ? { verificationDocs: dto.verificationDocs } : {}),
+        ...(dto.images !== undefined
+          ? {
+              images: {
+                deleteMany: {},
+                create: (dto.images || []).map((img, i) => ({
+                  url: this.normalizeAssetUrl(img.url),
+                  label: img.label || `Image ${i + 1}`,
+                  order: img.order ?? i,
+                })),
+              },
+            }
+          : {}),
       },
       include: { images: { orderBy: { order: 'asc' } } },
     });

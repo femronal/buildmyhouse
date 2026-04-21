@@ -12,6 +12,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { CreateRentalListingDto } from './dto/create-rental-listing.dto';
+import { UpdateRentalListingDto } from './dto/update-rental-listing.dto';
 import { UpdateRentalViewingOutcomeDto } from './dto/update-rental-viewing-outcome.dto';
 import { RentalsService } from './rentals.service';
 
@@ -79,6 +80,13 @@ export class RentalsController {
   @Roles('admin')
   create(@Body() dto: CreateRentalListingDto) {
     return this.rentalsService.create(dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  update(@Param('id') id: string, @Body() dto: UpdateRentalListingDto) {
+    return this.rentalsService.update(id, dto);
   }
 
   @Delete(':id')

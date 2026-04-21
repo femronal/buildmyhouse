@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Delete, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { HousesService } from './houses.service';
 import { CreateHouseForSaleDto } from './dto/create-house-for-sale.dto';
+import { UpdateHouseForSaleDto } from './dto/update-house-for-sale.dto';
 import { UpdateHouseViewingOutcomeDto } from './dto/update-house-viewing-outcome.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
@@ -62,6 +63,13 @@ export class HousesController {
   @Roles('admin')
   create(@Body() dto: CreateHouseForSaleDto) {
     return this.housesService.create(dto);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  update(@Param('id') id: string, @Body() dto: UpdateHouseForSaleDto) {
+    return this.housesService.update(id, dto);
   }
 
   @Post(':id/schedule-viewing')

@@ -1,17 +1,19 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Building, Clock3, FileUp, Mail, MapPin, Phone, Plus, Trash2, User, X } from 'lucide-react';
+import { Building, Clock3, FileUp, Mail, MapPin, Pencil, Phone, Plus, Trash2, User, X } from 'lucide-react';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
-import { useRentals, type CreateRentalPayload } from '@/hooks/useRentals';
+import { useRentals, type CreateRentalPayload, type RentalListing, type UpdateRentalPayload } from '@/hooks/useRentals';
 import { useRentalViewingInterests } from '@/hooks/useRentalViewingInterests';
 
 export default function RentalsPage() {
-  const { rentals, isLoading, createRental, isCreating, deleteRental, refetch } = useRentals();
+  const { rentals, isLoading, createRental, isCreating, deleteRental, updateRental, isUpdating, refetch } = useRentals();
   const { interests, markAllRead, updateOutcome } = useRentalViewingInterests();
   const [selectedId, setSelectedId] = useState<string | null>(rentals[0]?.id ?? null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [interestRentalId, setInterestRentalId] = useState<string | null>(null);
@@ -43,10 +45,47 @@ export default function RentalsPage() {
     proximity: '',
     verificationDocs: '',
   });
-  const [images, setImages] = useState<{ file: File; label: string; preview: string }[]>([]);
+  const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const selected = rentals.find((r) => r.id === selectedId) ?? rentals[0];
+
+  const resetForm = () => {
+    setForm({
+      title: '',
+      description: '',
+      propertyType: 'House',
+      location: '',
+      annualRent: '',
+      serviceCharge: '',
+      cautionDeposit: '',
+      legalFeePercent: '10',
+      agencyFeePercent: '2',
+      bedrooms: '',
+      bathrooms: '',
+      sizeSqm: '',
+      furnishing: '',
+      paymentPattern: '',
+      power: '',
+      water: '',
+      internet: '',
+      parking: '',
+      security: '',
+      rules: '',
+      inspectionWindow: '',
+      proximity: '',
+      verificationDocs: '',
+    });
+  };
+
+  const resetImages = () => {
+    setImages((prev) => {
+      prev.forEach((img) => {
+        if (img.file) URL.revokeObjectURL(img.preview);
+      });
+      return [];
+    });
+  };
 
   const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -62,10 +101,48 @@ export default function RentalsPage() {
   const removeImage = (index: number) => {
     setImages((prev) => {
       const next = [...prev];
-      URL.revokeObjectURL(next[index].preview);
+      if (next[index].file) URL.revokeObjectURL(next[index].preview);
       next.splice(index, 1);
       return next;
     });
+  };
+
+  const startEditRental = (rental: RentalListing) => {
+    setEditingId(rental.id);
+    setForm({
+      title: rental.title,
+      description: rental.description || '',
+      propertyType: rental.propertyType || 'House',
+      location: rental.location,
+      annualRent: String(rental.annualRent ?? ''),
+      serviceCharge: String(rental.serviceCharge ?? ''),
+      cautionDeposit: String(rental.cautionDeposit ?? ''),
+      legalFeePercent: String(rental.legalFeePercent ?? ''),
+      agencyFeePercent: String(rental.agencyFeePercent ?? ''),
+      bedrooms: String(rental.bedrooms ?? ''),
+      bathrooms: String(rental.bathrooms ?? ''),
+      sizeSqm: String(rental.sizeSqm ?? ''),
+      furnishing: rental.furnishing || '',
+      paymentPattern: rental.paymentPattern || '',
+      power: rental.power || '',
+      water: rental.water || '',
+      internet: rental.internet || '',
+      parking: rental.parking || '',
+      security: rental.security || '',
+      rules: rental.rules || '',
+      inspectionWindow: rental.inspectionWindow || '',
+      proximity: (rental.proximity || []).join(', '),
+      verificationDocs: (rental.verificationDocs || []).join(', '),
+    });
+    resetImages();
+    setImages(
+      (rental.images || []).map((img) => ({
+        url: img.url,
+        label: img.label || 'Image',
+        preview: getBackendAssetUrl(img.url) || img.url,
+      })),
+    );
+    setShowEditModal(true);
   };
 
   const handleDeleteRental = async (rentalId: string) => {
@@ -140,34 +217,78 @@ export default function RentalsPage() {
       await createRental(payload);
       await refetch();
       setShowUploadModal(false);
-      setForm({
-        title: '',
-        description: '',
-        propertyType: 'House',
-        location: '',
-        annualRent: '',
-        serviceCharge: '',
-        cautionDeposit: '',
-        legalFeePercent: '10',
-        agencyFeePercent: '2',
-        bedrooms: '',
-        bathrooms: '',
-        sizeSqm: '',
-        furnishing: '',
-        paymentPattern: '',
-        power: '',
-        water: '',
-        internet: '',
-        parking: '',
-        security: '',
-        rules: '',
-        inspectionWindow: '',
-        proximity: '',
-        verificationDocs: '',
-      });
-      setImages([]);
+      resetForm();
+      resetImages();
     } catch (err: any) {
       setUploadError(err?.message || 'Upload failed');
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setUploadError(null);
+    if (images.length === 0) {
+      setUploadError('Please keep at least one photo');
+      return;
+    }
+    try {
+      const uploadedImages: { url: string; label: string; order: number }[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        let url = img.url || '';
+        if (img.file) {
+          const uploaded = await api.uploadFile(img.file);
+          url = uploaded.url;
+        }
+        uploadedImages.push({
+          url,
+          label: img.label || `Image ${i + 1}`,
+          order: i,
+        });
+      }
+
+      const payload: UpdateRentalPayload = {
+        title: form.title.trim(),
+        description: form.description.trim() || undefined,
+        propertyType: form.propertyType.trim(),
+        location: form.location.trim(),
+        annualRent: parseFloat(form.annualRent) || 0,
+        serviceCharge: parseFloat(form.serviceCharge) || 0,
+        cautionDeposit: parseFloat(form.cautionDeposit) || 0,
+        legalFeePercent: parseFloat(form.legalFeePercent) || 0,
+        agencyFeePercent: parseFloat(form.agencyFeePercent) || 2,
+        bedrooms: parseInt(form.bedrooms, 10) || 0,
+        bathrooms: parseInt(form.bathrooms, 10) || 0,
+        sizeSqm: parseFloat(form.sizeSqm) || 0,
+        furnishing: form.furnishing.trim() || undefined,
+        paymentPattern: form.paymentPattern.trim() || undefined,
+        power: form.power.trim() || undefined,
+        water: form.water.trim() || undefined,
+        internet: form.internet.trim() || undefined,
+        parking: form.parking.trim() || undefined,
+        security: form.security.trim() || undefined,
+        rules: form.rules.trim() || undefined,
+        inspectionWindow: form.inspectionWindow.trim() || undefined,
+        proximity: form.proximity
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        verificationDocs: form.verificationDocs
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
+        images: uploadedImages,
+      };
+
+      await updateRental({ id: editingId, payload });
+      await refetch();
+      setShowEditModal(false);
+      setEditingId(null);
+      resetForm();
+      resetImages();
+    } catch (err: any) {
+      setUploadError(err?.message || 'Update failed');
     }
   };
 
@@ -263,6 +384,17 @@ export default function RentalsPage() {
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
+                        startEditRental(rental);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
                         void openRentalInterests(rental.id);
                       }}
                       className="relative w-7 h-7 rounded-full border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50"
@@ -332,16 +464,28 @@ export default function RentalsPage() {
         </div>
       </div>
 
-      {showUploadModal ? (
+      {showUploadModal || showEditModal ? (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-end md:items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[92vh] overflow-y-auto">
             <div className="p-5 border-b flex items-center justify-between">
-              <h3 className="text-xl font-semibold">Upload rental listing</h3>
-              <button onClick={() => setShowUploadModal(false)} className="p-2 rounded-lg hover:bg-gray-100">
+              <h3 className="text-xl font-semibold">
+                {showEditModal ? 'Edit rental listing' : 'Upload rental listing'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowUploadModal(false);
+                  setShowEditModal(false);
+                  setEditingId(null);
+                  setUploadError(null);
+                  resetForm();
+                  resetImages();
+                }}
+                className="p-2 rounded-lg hover:bg-gray-100"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form className="p-5 space-y-4" onSubmit={handleSubmit}>
+            <form className="p-5 space-y-4" onSubmit={showEditModal ? handleEditSubmit : handleSubmit}>
               <div className="grid md:grid-cols-2 gap-4">
                 <input className="border rounded-lg px-3 py-2" placeholder="Title" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} required />
                 <input className="border rounded-lg px-3 py-2" placeholder="Property Type (House/Apartment)" value={form.propertyType} onChange={(e) => setForm((f) => ({ ...f, propertyType: e.target.value }))} required />
@@ -394,9 +538,32 @@ export default function RentalsPage() {
 
               {uploadError ? <p className="text-sm text-red-600">{uploadError}</p> : null}
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowUploadModal(false)} className="px-4 py-2 rounded-lg border">Cancel</button>
-                <button type="submit" disabled={isCreating} className="px-4 py-2 rounded-lg bg-gray-900 text-white disabled:opacity-50">
-                  {isCreating ? 'Uploading...' : 'Upload rental'}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setShowEditModal(false);
+                    setEditingId(null);
+                    setUploadError(null);
+                    resetForm();
+                    resetImages();
+                  }}
+                  className="px-4 py-2 rounded-lg border"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={showEditModal ? isUpdating : isCreating}
+                  className="px-4 py-2 rounded-lg bg-gray-900 text-white disabled:opacity-50"
+                >
+                  {showEditModal
+                    ? isUpdating
+                      ? 'Saving...'
+                      : 'Save changes'
+                    : isCreating
+                      ? 'Uploading...'
+                      : 'Upload rental'}
                 </button>
               </div>
             </form>

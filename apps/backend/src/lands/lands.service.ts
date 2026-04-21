@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateLandForSaleDto } from './dto/create-land-for-sale.dto';
+import { UpdateLandForSaleDto } from './dto/update-land-for-sale.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebSocketService } from '../websocket/websocket.service';
 
@@ -90,6 +91,48 @@ export class LandsService {
             order: img.order ?? i,
           })),
         },
+      },
+      include: { images: { orderBy: { order: 'asc' } } },
+    });
+  }
+
+  async update(id: string, dto: UpdateLandForSaleDto) {
+    const landModel = this.getLandModel();
+    const existing = await landModel.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) {
+      throw new NotFoundException('Land not found');
+    }
+
+    return landModel.update({
+      where: { id },
+      data: {
+        ...(dto.name !== undefined ? { name: dto.name } : {}),
+        ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.location !== undefined ? { location: dto.location } : {}),
+        ...(dto.price !== undefined ? { price: Number(dto.price) } : {}),
+        ...(dto.sizeSqm !== undefined ? { sizeSqm: Number(dto.sizeSqm) } : {}),
+        ...(dto.titleDocument !== undefined ? { titleDocument: dto.titleDocument } : {}),
+        ...(dto.zoningType !== undefined ? { zoningType: dto.zoningType } : {}),
+        ...(dto.topography !== undefined ? { topography: dto.topography } : {}),
+        ...(dto.roadAccess !== undefined ? { roadAccess: dto.roadAccess } : {}),
+        ...(dto.ownershipType !== undefined ? { ownershipType: dto.ownershipType } : {}),
+        ...(dto.documents !== undefined ? { documents: dto.documents } : {}),
+        ...(dto.nearbyLandmarks !== undefined ? { nearbyLandmarks: dto.nearbyLandmarks } : {}),
+        ...(dto.restrictions !== undefined ? { restrictions: dto.restrictions } : {}),
+        ...(dto.contactName !== undefined ? { contactName: dto.contactName } : {}),
+        ...(dto.contactPhone !== undefined ? { contactPhone: dto.contactPhone } : {}),
+        ...(dto.images !== undefined
+          ? {
+              images: {
+                deleteMany: {},
+                create: (dto.images || []).map((img, i: number) => ({
+                  url: this.normalizeAssetUrl(img.url),
+                  label: img.label || `Image ${i + 1}`,
+                  order: img.order ?? i,
+                })),
+              },
+            }
+          : {}),
       },
       include: { images: { orderBy: { order: 'asc' } } },
     });
