@@ -153,7 +153,11 @@ export default function HousesPage() {
     try {
       const uploadedImages: { url: string; label: string; order: number }[] = [];
       for (let i = 0; i < images.length; i++) {
-        const { url } = await api.uploadFile(images[i].file);
+        const imageFile = images[i].file;
+        if (!imageFile) {
+          throw new Error('Please re-add all selected photos before uploading');
+        }
+        const { url } = await api.uploadFile(imageFile);
         uploadedImages.push({
           url,
           label: images[i].label || `Image ${i + 1}`,
