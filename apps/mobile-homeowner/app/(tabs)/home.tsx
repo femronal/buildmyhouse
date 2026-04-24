@@ -1366,11 +1366,24 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <Image
-                  source={{ uri: selectedLand?.images?.[0]?.url ? getBackendAssetUrl(selectedLand.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
-                  className="w-full h-40 rounded-2xl mb-3"
-                  resizeMode="cover"
-                />
+                <View className="-mx-5 mb-3">
+                  <ImageCarousel
+                    images={
+                      selectedLand?.images?.length
+                        ? selectedLand.images.map((img: any, index: number) => ({
+                            url: getBackendAssetUrl(img.url) || img.url,
+                            label: img.label || (index === 0 ? 'Main view' : `View ${index + 1}`),
+                          }))
+                        : [
+                            {
+                              url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80',
+                              label: 'Main view',
+                            },
+                          ]
+                    }
+                    height={192}
+                  />
+                </View>
 
                 <Text 
                   className="text-gray-600 mb-3 text-sm"
