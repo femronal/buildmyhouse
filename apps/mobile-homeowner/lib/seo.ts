@@ -130,6 +130,7 @@ export function isIndexablePath(pathname?: string) {
     '/guides/lagos-building-permits-and-stage-inspections',
     '/guides/contractor-vetting-nigeria-diaspora',
     '/guides/weekly-site-updates-standard',
+    '/guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad',
     '/downloads/remote-renovation-scope-worksheet',
     '/downloads/lagos-permit-starter-checklist',
     '/tools/milestone-payment-schedule',

@@ -174,7 +174,7 @@ export const weeklySiteUpdatesStandardPageContent = {
     ],
     sectionTitle: "Why BuildMyHouse Is Well Positioned for This",
     paragraphs: [
-      "BuildMyHouse is not just writing theory here. The actual platform already includes project stages, chat, notifications, and project workflow structure across the homeowner, GC, admin, and backend systems. :contentReference[oaicite:2]{index=2}",
+      "BuildMyHouse is not just writing theory here. The actual platform already includes project stages, chat, notifications, and project workflow structure across the homeowner, GC, admin, and backend systems.",
       "That means weekly updates do not have to live as random messages outside the project. They can be tied to a clearer structure of stages, activity, and communication.",
       "For a diaspora homeowner, that is a major difference. The goal is not just to hear from site often. The goal is to receive updates that actually improve control.",
     ],
@@ -248,7 +248,7 @@ export const weeklySiteUpdatesStandardPageContent = {
       {
         question: "How does BuildMyHouse help with project updates?",
         answer:
-          "BuildMyHouse supports stages, communication, notifications, and project workflows that help make updates more structured and easier to connect to actual project progress. :contentReference[oaicite:3]{index=3}",
+          "BuildMyHouse supports stages, communication, notifications, and project workflows that help make updates more structured and easier to connect to actual project progress.",
       },
     ],
   },
