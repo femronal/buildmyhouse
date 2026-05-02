@@ -20,23 +20,45 @@ const getImageUrl = (imageUrl: string) => {
   return `${backendOrigin}${imageUrl}`;
 };
 
-const formatPlanTypeLabel = (planType?: string | null) => {
-  if (planType === 'renovation') return 'Renovation';
-  if (planType === 'interior_design') return 'Interior Design';
-  return 'Home Construction';
+type UiProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+
+const resolveUiProjectTag = (params: { projectTypeTag?: string | null; planType?: string | null }): UiProjectTag => {
+  const explicitTag = `${params.projectTypeTag || ''}`.toLowerCase();
+  if (explicitTag === 'repair') return 'repair';
+  if (explicitTag === 'upgrades') return 'upgrades';
+  if (explicitTag === 'renovation') return 'renovation';
+  if (explicitTag === 'full_builds') return 'full_builds';
+
+  const legacyPlanType = `${params.planType || ''}`.toLowerCase();
+  if (legacyPlanType === 'interior_design') return 'upgrades';
+  if (legacyPlanType === 'homebuilding') return 'full_builds';
+  return 'renovation';
 };
 
-const getPlanTypeTagClasses = (planType?: string | null) => {
-  if (planType === 'renovation') {
+const formatPlanTypeLabel = (projectTag: UiProjectTag) => {
+  if (projectTag === 'repair') return 'Repair';
+  if (projectTag === 'upgrades') return 'Upgrades';
+  if (projectTag === 'renovation') return 'Renovation';
+  return 'Full Builds';
+};
+
+const getPlanTypeTagClasses = (projectTag: UiProjectTag) => {
+  if (projectTag === 'repair') {
     return {
-      container: 'bg-amber-50 border-amber-200',
-      text: 'text-amber-700',
+      container: 'bg-cyan-50 border-cyan-200',
+      text: 'text-cyan-700',
     };
   }
-  if (planType === 'interior_design') {
+  if (projectTag === 'upgrades') {
     return {
       container: 'bg-purple-50 border-purple-200',
       text: 'text-purple-700',
+    };
+  }
+  if (projectTag === 'renovation') {
+    return {
+      container: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
     };
   }
   return {
@@ -316,6 +338,11 @@ export default function DesignLibraryScreen() {
             {filteredDesigns.map((design: any) => {
               const images = design.images || [];
               const squareMeters = design.squareMeters || (design.squareFootage * 0.092903);
+              const projectTag = resolveUiProjectTag({
+                projectTypeTag: design.projectTypeTag,
+                planType: design.planType,
+              });
+              const projectTagStyles = getPlanTypeTagClasses(projectTag);
               return (
             <TouchableOpacity
               key={design.id}
@@ -386,11 +413,18 @@ export default function DesignLibraryScreen() {
                 >
                   {design.name}
                 </Text>
-                <View className={`self-start border rounded-full px-2 py-1 mb-2 ${getPlanTypeTagClasses(design.planType).container}`}>
-                  <Text className={getPlanTypeTagClasses(design.planType).text} style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
-                    {formatPlanTypeLabel(design.planType)}
+                <View className={`self-start border rounded-full px-2 py-1 mb-2 ${projectTagStyles.container}`}>
+                  <Text className={projectTagStyles.text} style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
+                    {formatPlanTypeLabel(projectTag)}
                   </Text>
                 </View>
+                {!!design.projectTypeFilter && (
+                  <View className="self-start border rounded-full px-2 py-1 mb-2 bg-gray-100 border-gray-200">
+                    <Text className="text-gray-700" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
+                      {design.projectTypeFilter}
+                    </Text>
+                  </View>
+                )}
                 
                 <View className="flex-row items-center mb-2">
                   <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />

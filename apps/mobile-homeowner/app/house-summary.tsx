@@ -22,23 +22,48 @@ import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import { getBackendAssetUrl } from '@/lib/image';
 
-function formatPlanTypeLabel(planType?: string | null): string {
-  if (planType === 'renovation') return 'Renovation';
-  if (planType === 'interior_design') return 'Interior Design';
-  return 'Home Construction';
+type UiProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+
+function resolveUiProjectTag(params: {
+  projectTypeTag?: string | null;
+  planType?: string | null;
+}): UiProjectTag {
+  const explicitTag = `${params.projectTypeTag || ''}`.toLowerCase();
+  if (explicitTag === 'repair') return 'repair';
+  if (explicitTag === 'upgrades') return 'upgrades';
+  if (explicitTag === 'renovation') return 'renovation';
+  if (explicitTag === 'full_builds') return 'full_builds';
+
+  const legacyPlanType = `${params.planType || ''}`.toLowerCase();
+  if (legacyPlanType === 'interior_design') return 'upgrades';
+  if (legacyPlanType === 'homebuilding') return 'full_builds';
+  return 'renovation';
 }
 
-function getPlanTypeTagClasses(planType?: string | null): { container: string; text: string } {
-  if (planType === 'renovation') {
+function formatPlanTypeLabel(projectTag: UiProjectTag): string {
+  if (projectTag === 'repair') return 'Repair';
+  if (projectTag === 'upgrades') return 'Upgrades';
+  if (projectTag === 'renovation') return 'Renovation';
+  return 'Full Builds';
+}
+
+function getPlanTypeTagClasses(projectTag: UiProjectTag): { container: string; text: string } {
+  if (projectTag === 'repair') {
     return {
-      container: 'bg-amber-50 border-amber-200',
-      text: 'text-amber-700',
+      container: 'bg-cyan-50 border-cyan-200',
+      text: 'text-cyan-700',
     };
   }
-  if (planType === 'interior_design') {
+  if (projectTag === 'upgrades') {
     return {
       container: 'bg-purple-50 border-purple-200',
       text: 'text-purple-700',
+    };
+  }
+  if (projectTag === 'renovation') {
+    return {
+      container: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-700',
     };
   }
   return {
@@ -184,8 +209,14 @@ export default function HouseSummaryScreen() {
   // Use GC's edited analysis if available, otherwise use original AI analysis
   // For design selection, use real design data
   const aiAnalysis = isDesignSelection ? designAnalysis : (gcEditedAnalysis || originalAiAnalysis);
-  const summaryPlanType = isDesignSelection ? designData?.planType : projectAnalysisData?.projectType;
-  const summaryPlanTypeTag = getPlanTypeTagClasses(summaryPlanType);
+  const summaryProjectTag = resolveUiProjectTag({
+    projectTypeTag: isDesignSelection ? designData?.projectTypeTag : projectAnalysisData?.projectTypeTag,
+    planType: isDesignSelection ? designData?.planType : projectAnalysisData?.projectType,
+  });
+  const summaryPlanTypeTag = getPlanTypeTagClasses(summaryProjectTag);
+  const summaryProjectFilter = isDesignSelection
+    ? `${designData?.projectTypeFilter || ''}`.trim()
+    : `${projectAnalysisData?.projectTypeFilter || ''}`.trim();
 
   // For design selection, show only the GC who uploaded the design
   // For project flow, fetch recommended GCs
@@ -573,9 +604,16 @@ export default function HouseSummaryScreen() {
         </Text>
         <View className={`self-start mt-3 border rounded-full px-3 py-1 ${summaryPlanTypeTag.container}`}>
           <Text className={`${summaryPlanTypeTag.text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-            {formatPlanTypeLabel(summaryPlanType)}
+            {formatPlanTypeLabel(summaryProjectTag)}
           </Text>
         </View>
+        {!!summaryProjectFilter && (
+          <View className="self-start mt-2 border rounded-full px-3 py-1 bg-gray-100 border-gray-200">
+            <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              {summaryProjectFilter}
+            </Text>
+          </View>
+        )}
       </View>
 
       <ScrollView className="flex-1 px-6">
