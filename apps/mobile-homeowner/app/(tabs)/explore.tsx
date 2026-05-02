@@ -1,9 +1,9 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, Home, LandPlot } from "lucide-react-native";
+import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useDesigns, useHousesForSale, useLandsForSale } from '@/hooks';
+import { useDesigns } from '@/hooks';
 import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
 import { useWebSeo } from '@/lib/seo';
@@ -53,13 +53,11 @@ export default function ExploreScreen() {
   const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-10' : 'py-20';
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const { data: designs = [], isLoading: designsLoading } = useDesigns();
-  const { data: housesForSale = [], isLoading: housesLoading } = useHousesForSale();
-  const { data: landsForSale = [] } = useLandsForSale();
   const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-  const [activeTab, setActiveTab] = useState<'designs' | 'houses' | 'lands'>('designs');
+  const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
@@ -118,35 +116,81 @@ export default function ExploreScreen() {
 
   const cardWidth = getTwoColumnCardWidth(screenWidth);
 
-  // Filter designs, houses, and lands based on search query
+  const tabFilters = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]>>(
+    () => ({
+      repairs: [
+        'All',
+        'Electricals',
+        'Plumbing Fixes',
+        'Roof Leak Repair',
+        'Drainage Fix',
+        'Bathroom Repair',
+        'Gate/Fence Repair',
+      ],
+      upgrades: [
+        'All',
+        'Kitchen Upgrade',
+        'Bedroom Upgrade',
+        'Security Gate Upgrade',
+        'Door Upgrade',
+        'Bathroom Upgrade',
+        'Lighting Upgrade',
+      ],
+      renovation: [
+        'All',
+        'Room-by-Room',
+        'Occupied Home',
+        'Family Home Rehab',
+        'Rental Prep',
+        'Interior Refresh',
+      ],
+      full_builds: [
+        'All',
+        'Bungalow Build',
+        'Duplex Build',
+        'Blockwork + Roofing',
+        'Shell to Finish',
+        'Turnkey Build',
+      ],
+    }),
+    [],
+  );
+
+  const tabDescription = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string>>(
+    () => ({
+      repairs:
+        'GC-uploaded repair scopes you can adapt to your own property before speaking to anyone on site.',
+      upgrades:
+        'Practical upgrade scope ideas to improve existing spaces without jumping straight into full renovation.',
+      renovation:
+        'Phased renovation scope ideas for homeowners who want clearer budget and stage discipline.',
+      full_builds:
+        'Full build plan ideas with clearer execution direction for bigger projects when you are ready.',
+    }),
+    [],
+  );
+
+  // Filter GC plans based on search query + active tab + active filter
   const filteredDesigns = useMemo(() => {
-    if (!searchQuery.trim()) return designs;
-    const query = searchQuery.toLowerCase();
-    return designs.filter((design: any) => 
-      design.name?.toLowerCase().includes(query) ||
-      design.description?.toLowerCase().includes(query) ||
-      design.createdBy?.fullName?.toLowerCase().includes(query)
-    );
-  }, [designs, searchQuery]);
+    const tabKeywords: Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]> = {
+      repairs: ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage', 'maintenance'],
+      upgrades: ['upgrade', 'interior', 'kitchen', 'bedroom', 'gate', 'door', 'lighting'],
+      renovation: ['renovation', 'rehab', 'remodel', 'occupied', 'refresh'],
+      full_builds: ['build', 'construction', 'new build', 'duplex', 'bungalow', 'foundation', 'shell'],
+    };
 
-  const filteredHouses = useMemo(() => {
-    if (!searchQuery.trim()) return housesForSale;
-    const query = searchQuery.toLowerCase();
-    return housesForSale.filter((house: any) => 
-      house.name?.toLowerCase().includes(query) ||
-      house.location?.toLowerCase().includes(query) ||
-      house.propertyType?.toLowerCase().includes(query)
-    );
-  }, [housesForSale, searchQuery]);
+    return (designs || []).filter((design: any) => {
+      const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''} ${design?.projectType || ''}`.toLowerCase();
+      const matchesSearch = !searchQuery.trim() || searchable.includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
 
-  const filteredLands = useMemo(() => {
-    if (!searchQuery.trim()) return landsForSale;
-    const query = searchQuery.toLowerCase();
-    return landsForSale.filter((land: any) => 
-      land.name?.toLowerCase().includes(query) ||
-      land.location?.toLowerCase().includes(query)
-    );
-  }, [landsForSale, searchQuery]);
+      const matchesTab = tabKeywords[activeTab].some((word) => searchable.includes(word));
+      if (!matchesTab) return false;
+
+      if (activeFilter === 'All') return true;
+      return searchable.includes(activeFilter.toLowerCase());
+    });
+  }, [activeFilter, activeTab, designs, searchQuery]);
 
   useWebSeo({
     title: 'Explore Designs, Homes & Land in Nigeria | BuildMyHouse',
@@ -202,7 +246,7 @@ export default function ExploreScreen() {
           >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
-              placeholder="Search plans, estates, and land..."
+              placeholder="Search repair, upgrade, renovation, and build plans..."
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -224,40 +268,66 @@ export default function ExploreScreen() {
       <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row bg-gray-100 rounded-2xl p-1">
           <TouchableOpacity
-            onPress={() => setActiveTab('designs')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'designs' ? 'bg-black' : ''}`}
+            onPress={() => {
+              setActiveTab('repairs');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
             style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
-            <Text className={`text-sm ${activeTab === 'designs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Plans
+            <Text className={`text-xs ${activeTab === 'repairs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Repairs
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setActiveTab('houses')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'houses' ? 'bg-black' : ''}`}
+            onPress={() => {
+              setActiveTab('upgrades');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
             style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
-            <Text className={`text-sm ${activeTab === 'houses' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Estates
+            <Text className={`text-xs ${activeTab === 'upgrades' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Upgrades
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => setActiveTab('lands')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'lands' ? 'bg-black' : ''}`}
+            onPress={() => {
+              setActiveTab('renovation');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
             style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
           >
-            <Text className={`text-sm ${activeTab === 'lands' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Land
+            <Text className={`text-xs ${activeTab === 'renovation' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Renovation
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setActiveTab('full_builds');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
+          >
+            <Text className={`text-xs ${activeTab === 'full_builds' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Full Builds
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Animated Filter Tags (only for designs) */}
-      {activeTab === 'designs' && (
-        <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
+      <View style={{ paddingHorizontal: horizontalPadding, marginBottom: 10 }}>
+        <Text className="text-gray-500 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+          GC-uploaded project scopes only. These are abstract plan ideas (not tied to one physical location) you can adapt to your own project. {tabDescription[activeTab]}
+        </Text>
+      </View>
+
+      {/* Animated Filter Tags */}
+      <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-            {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
+            {(tabFilters[activeTab] || ['All']).map((tag) => (
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
@@ -272,12 +342,10 @@ export default function ExploreScreen() {
             </TouchableOpacity>
             ))}
           </ScrollView>
-        </Animated.View>
-      )}
+      </Animated.View>
 
-      {/* Current Filter Indicator (only for designs) */}
-      {activeTab === 'designs' && (
-        <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
+      {/* Current Filter Indicator */}
+      <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
             <Text
               className="text-black"
@@ -287,8 +355,7 @@ export default function ExploreScreen() {
             </Text>
             <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
           </TouchableOpacity>
-        </View>
-      )}
+      </View>
 
       <ScrollView 
         className="flex-1"
@@ -308,9 +375,7 @@ export default function ExploreScreen() {
           />
         )}
 
-        {/* Designs Tab */}
-        {activeTab === 'designs' && (
-          <>
+        {/* GC Plans */}
             {designsLoading ? (
               <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 <ActivityIndicator size="large" color="#000" />
@@ -340,10 +405,10 @@ export default function ExploreScreen() {
                 ) : (
                   <>
                     <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {searchQuery ? 'No designs found' : 'No designs available yet'}
+                      {searchQuery ? 'No project scopes found' : 'No project scopes available yet'}
                     </Text>
                     <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {searchQuery ? 'Try a different search term' : 'General Contractors can upload design plans that will appear here'}
+                      {searchQuery ? 'Try a different search term or filter' : 'General Contractors can upload project scopes that will appear here'}
                     </Text>
                   </>
                 )}
@@ -489,151 +554,6 @@ export default function ExploreScreen() {
                 })}
               </View>
             )}
-          </>
-        )}
-
-        {/* Houses for Sale Tab */}
-        {activeTab === 'houses' && (
-          <>
-            {filteredHouses.length === 0 ? (
-              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
-                <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {searchQuery ? 'No houses found' : 'No houses available'}
-                </Text>
-                <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {searchQuery ? 'Try a different search term' : 'Check back later for available properties'}
-                </Text>
-              </View>
-            ) : (
-              <View className="flex-row flex-wrap justify-between pb-8">
-                {filteredHouses.map((house: any) => (
-                  <TouchableOpacity
-                    key={house.id}
-                    onPress={() => router.push(`/house-detail?houseId=${house.id}`)}
-                    style={[cardShadowStyle, { width: cardWidth }]}
-                    className="mb-5 bg-white rounded-3xl border border-gray-200"
-                  >
-                    <View className="overflow-hidden rounded-3xl">
-                    <View className="relative">
-                      <Image
-                        source={{ uri: house.images?.[0]?.url ? getImageUrl(house.images[0].url) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80' }}
-                        className="h-40"
-                        style={{ width: cardWidth }}
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        onPress={() => toggleFavorite(`house-${house.id}`)}
-                        className="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full items-center justify-center"
-                      >
-                        <Heart size={18} color={favorites.includes(`house-${house.id}`) ? "#EF4444" : "#000000"} strokeWidth={2} fill={favorites.includes(`house-${house.id}`) ? "#EF4444" : "none"} />
-                      </TouchableOpacity>
-                    </View>
-                    <View className="p-4">
-                      <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }} numberOfLines={1}>
-                        {house.name}
-                      </Text>
-                      <View className="flex-row items-center mb-2">
-                        <Star size={14} color="#F59E0B" strokeWidth={2} fill="#F59E0B" />
-                        <Text className="text-gray-500 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          0.0 (0)
-                        </Text>
-                      </View>
-                      <View className="flex-row items-center mb-3">
-                        <Bed size={14} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-600 text-xs ml-1 mr-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {house.bedrooms}
-                        </Text>
-                        <Bath size={14} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-600 text-xs ml-1 mr-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {house.bathrooms}
-                        </Text>
-                        <Maximize size={14} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-600 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {(house.squareMeters ?? house.squareFootage)}m²
-                        </Text>
-                      </View>
-                      <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        ₦{house.price.toLocaleString()}
-                      </Text>
-                    </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </>
-        )}
-
-        {/* Lands for Rent Tab */}
-        {activeTab === 'lands' && (
-          <>
-            {filteredLands.length === 0 ? (
-              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
-                <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {searchQuery ? 'No lands found' : 'No lands available'}
-                </Text>
-                <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {searchQuery ? 'Try a different search term' : 'Check back later for available properties'}
-                </Text>
-              </View>
-            ) : (
-              <View className="flex-row flex-wrap justify-between pb-8">
-                {filteredLands.map((land: any) => (
-                  <TouchableOpacity
-                    key={land.id}
-                    onPress={() => router.push(`/land-detail?landId=${land.id}`)}
-                    style={[cardShadowStyle, { width: cardWidth }]}
-                    className="mb-5 bg-white rounded-3xl border border-gray-200"
-                  >
-                    <View className="overflow-hidden rounded-3xl">
-                    <View className="relative">
-                      <Image
-                        source={{ uri: land.images?.[0]?.url ? getImageUrl(land.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
-                        className="h-40"
-                        style={{ width: cardWidth }}
-                        resizeMode="cover"
-                      />
-                      <TouchableOpacity
-                        onPress={() => toggleFavorite(`land-${land.id}`)}
-                        className="absolute top-3 right-3 w-8 h-8 bg-white/80 rounded-full items-center justify-center"
-                      >
-                        <Heart size={18} color={favorites.includes(`land-${land.id}`) ? "#EF4444" : "#000000"} strokeWidth={2} fill={favorites.includes(`land-${land.id}`) ? "#EF4444" : "none"} />
-                      </TouchableOpacity>
-                    </View>
-                    <View className="p-4">
-                      <Text
-                        className="text-black text-base mb-1"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
-                        numberOfLines={1}
-                        ellipsizeMode="tail"
-                      >
-                        {land.name}
-                      </Text>
-                      <Text
-                        className="text-gray-500 text-xs mb-2"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                        numberOfLines={2}
-                        ellipsizeMode="tail"
-                      >
-                        {land.location}
-                      </Text>
-                      <View className="flex-row items-center mb-3">
-                        <LandPlot size={14} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-600 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {land.sizeSqm} sqm
-                        </Text>
-                      </View>
-                      <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        ₦{land.price.toLocaleString()}
-                      </Text>
-                    </View>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </>
-        )}
 
         {listingChrome.mobileWeb && (
           <InternalLinksBlock
@@ -642,7 +562,7 @@ export default function ExploreScreen() {
             links={[
               { label: 'Construction in Lagos', href: '/construction/lagos' },
               { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
-              { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+              { label: 'Upgrade ideas in Nigeria', href: '/interior-design/nigeria' },
               { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
             ]}
           />

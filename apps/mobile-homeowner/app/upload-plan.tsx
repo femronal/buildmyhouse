@@ -20,7 +20,7 @@ export default function UploadPlanScreen() {
   
   const [projectName, setProjectName] = useState("");
   const [budget, setBudget] = useState("");
-  const [selectedProjectType, setSelectedProjectType] = useState<'homebuilding' | 'renovation' | 'interior_design' | null>(null);
+  const [selectedProjectType, setSelectedProjectType] = useState<'repair' | 'upgrades' | 'renovation' | 'full_builds' | null>(null);
   const [selectedPlanPhoto, setSelectedPlanPhoto] = useState<any>(null);
   const [selectedPdf, setSelectedPdf] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -162,6 +162,15 @@ export default function UploadPlanScreen() {
     let progressInterval: ReturnType<typeof setInterval> | null = null;
 
     try {
+      const mapProjectTypeForApi = (
+        type: 'repair' | 'upgrades' | 'renovation' | 'full_builds',
+      ): 'renovation' | 'interior_design' | 'homebuilding' => {
+        if (type === 'repair') return 'renovation';
+        if (type === 'upgrades') return 'interior_design';
+        if (type === 'renovation') return 'renovation';
+        return 'homebuilding';
+      };
+
       // Simulate upload progress
       progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -186,7 +195,7 @@ export default function UploadPlanScreen() {
         latitude: latitude || undefined,
         longitude: longitude || undefined,
         budget: parseFloat(budget),
-        projectType: selectedProjectType,
+        projectType: mapProjectTypeForApi(selectedProjectType),
         planImageUrl,
       };
 
@@ -416,22 +425,41 @@ export default function UploadPlanScreen() {
           >
             Project Type *
           </Text>
-          <View className="flex-row" style={{ gap: 8 }}>
+          <View className="flex-row flex-wrap" style={{ gap: 8 }}>
             <TouchableOpacity
-              onPress={() => setSelectedProjectType('homebuilding')}
+              onPress={() => setSelectedProjectType('repair')}
               className={`flex-1 rounded-2xl py-3 px-3 border ${
-                selectedProjectType === 'homebuilding'
+                selectedProjectType === 'repair'
                   ? 'bg-black border-black'
                   : 'bg-gray-50 border-gray-200'
               }`}
+              style={{ minWidth: '47%' }}
             >
               <Text
                 className={`text-center text-xs ${
-                  selectedProjectType === 'homebuilding' ? 'text-white' : 'text-gray-700'
+                  selectedProjectType === 'repair' ? 'text-white' : 'text-gray-700'
                 }`}
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Building
+                Repair
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setSelectedProjectType('upgrades')}
+              className={`flex-1 rounded-2xl py-3 px-3 border ${
+                selectedProjectType === 'upgrades'
+                  ? 'bg-black border-black'
+                  : 'bg-gray-50 border-gray-200'
+              }`}
+              style={{ minWidth: '47%' }}
+            >
+              <Text
+                className={`text-center text-xs ${
+                  selectedProjectType === 'upgrades' ? 'text-white' : 'text-gray-700'
+                }`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Upgrades
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -441,9 +469,10 @@ export default function UploadPlanScreen() {
                   ? 'bg-black border-black'
                   : 'bg-gray-50 border-gray-200'
               }`}
+              style={{ minWidth: '47%' }}
             >
               <Text
-                className={`text-center text-xs ${
+                className={`text-center text-[11px] ${
                   selectedProjectType === 'renovation' ? 'text-white' : 'text-gray-700'
                 }`}
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -452,20 +481,21 @@ export default function UploadPlanScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => setSelectedProjectType('interior_design')}
+              onPress={() => setSelectedProjectType('full_builds')}
               className={`flex-1 rounded-2xl py-3 px-3 border ${
-                selectedProjectType === 'interior_design'
+                selectedProjectType === 'full_builds'
                   ? 'bg-black border-black'
                   : 'bg-gray-50 border-gray-200'
               }`}
+              style={{ minWidth: '47%' }}
             >
               <Text
                 className={`text-center text-[11px] ${
-                  selectedProjectType === 'interior_design' ? 'text-white' : 'text-gray-700'
+                  selectedProjectType === 'full_builds' ? 'text-white' : 'text-gray-700'
                 }`}
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Interior Design
+                Full Builds
               </Text>
             </TouchableOpacity>
           </View>
