@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Download, Search, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Download, Search, ShieldCheck, X } from 'lucide-react';
 import { useUnverifiedGCs, useVerifyGC } from '@/hooks/useUnverifiedGCs';
 import {
   useGoLiveDesignPlan,
   usePendingProjectDocs,
   useRejectDesignPlan,
+  useUpdateDesignPlan,
   type PendingDesignDoc,
 } from '@/hooks/useProjectDocsVerification';
 
@@ -20,6 +21,87 @@ function formatSubmittedAt(dateStr: string) {
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
   return date.toLocaleDateString();
+}
+
+const DESIGN_TAG_OPTIONS = [
+  { value: 'repair', label: 'Repair' },
+  { value: 'upgrades', label: 'Upgrades' },
+  { value: 'renovation', label: 'Renovation' },
+  { value: 'full_builds', label: 'Full Builds' },
+] as const;
+
+const DESIGN_FILTER_PRESETS: Record<(typeof DESIGN_TAG_OPTIONS)[number]['value'], string[]> = {
+  repair: [
+    'Electricals',
+    'Plumbing Fixes',
+    'Roof Leak Repair',
+    'Drainage Fix',
+    'Bathroom Repair',
+    'Gate/Fence Repair',
+  ],
+  upgrades: [
+    'Kitchen Upgrade',
+    'Bedroom Upgrade',
+    'Security Gate Upgrade',
+    'Door Upgrade',
+    'Bathroom Upgrade',
+    'Lighting Upgrade',
+  ],
+  renovation: ['Room-by-Room', 'Occupied Home', 'Family Home Rehab', 'Rental Prep', 'Interior Refresh'],
+  full_builds: ['Bungalow Build', 'Duplex Build', 'Blockwork + Roofing', 'Shell to Finish', 'Turnkey Build'],
+};
+
+type EditableDesignForm = {
+  name: string;
+  description: string;
+  planType: 'homebuilding' | 'renovation' | 'interior_design';
+  projectTypeTag: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+  projectTypeFilter: string;
+  bedrooms: string;
+  bathrooms: string;
+  squareFootage: string;
+  estimatedCost: string;
+  floors: string;
+  estimatedDuration: string;
+  rooms: string;
+  materials: string;
+  features: string;
+  constructionPhases: string;
+};
+
+function buildEditableDesignForm(doc: PendingDesignDoc): EditableDesignForm {
+  const normalizedTag = (() => {
+    const saved = `${doc.projectTypeTag || ''}`.toLowerCase();
+    if (saved === 'repair' || saved === 'upgrades' || saved === 'renovation' || saved === 'full_builds') {
+      return saved;
+    }
+    if (doc.planType === 'interior_design') return 'upgrades';
+    if (doc.planType === 'homebuilding') return 'full_builds';
+    return 'renovation';
+  })();
+
+  return {
+    name: doc.name || '',
+    description: doc.description || '',
+    planType: doc.planType || 'renovation',
+    projectTypeTag: normalizedTag,
+    projectTypeFilter: doc.projectTypeFilter || '',
+    bedrooms: String(doc.bedrooms ?? ''),
+    bathrooms: String(doc.bathrooms ?? ''),
+    squareFootage: String(doc.squareFootage ?? ''),
+    estimatedCost: String(doc.estimatedCost ?? ''),
+    floors: doc.floors == null ? '' : String(doc.floors),
+    estimatedDuration: doc.estimatedDuration || '',
+    rooms: Array.isArray(doc.rooms) ? doc.rooms.join(', ') : '',
+    materials: Array.isArray(doc.materials) ? doc.materials.join(', ') : '',
+    features: Array.isArray(doc.features) ? doc.features.join(', ') : '',
+    constructionPhases:
+      doc.constructionPhases == null
+        ? ''
+        : typeof doc.constructionPhases === 'string'
+          ? doc.constructionPhases
+          : JSON.stringify(doc.constructionPhases, null, 2),
+  };
 }
 
 export default function VerificationPage() {
@@ -40,8 +122,11 @@ export default function VerificationPage() {
   const { data: pendingProjectDocs = [], isLoading: loadingProjectDocs } = usePendingProjectDocs();
   const goLivePlan = useGoLiveDesignPlan();
   const rejectPlan = useRejectDesignPlan();
+  const updatePlan = useUpdateDesignPlan();
   const [selectedDesignForGoLive, setSelectedDesignForGoLive] = useState<PendingDesignDoc | null>(null);
   const [selectedDesignForReject, setSelectedDesignForReject] = useState<PendingDesignDoc | null>(null);
+  const [selectedDesignForReview, setSelectedDesignForReview] = useState<PendingDesignDoc | null>(null);
+  const [editForm, setEditForm] = useState<EditableDesignForm | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [gcSearch, setGcSearch] = useState('');
   const [gcVerificationFilter, setGcVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
@@ -160,6 +245,91 @@ export default function VerificationPage() {
         open: true,
         title: 'Reject Failed',
         message: e?.message || 'Could not reject this plan right now.',
+      });
+    }
+  };
+
+  const openReviewModal = (doc: PendingDesignDoc) => {
+    setSelectedDesignForReview(doc);
+    setEditForm(buildEditableDesignForm(doc));
+  };
+
+  const closeReviewModal = () => {
+    setSelectedDesignForReview(null);
+    setEditForm(null);
+  };
+
+  const handleEditField = <K extends keyof EditableDesignForm>(field: K, value: EditableDesignForm[K]) => {
+    setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev));
+  };
+
+  const handleSaveDesignEdits = async () => {
+    if (!selectedDesignForReview || !editForm) return;
+
+    const toNumber = (value: string) => {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    const bedrooms = toNumber(editForm.bedrooms);
+    const bathrooms = toNumber(editForm.bathrooms);
+    const squareFootage = toNumber(editForm.squareFootage);
+    const estimatedCost = toNumber(editForm.estimatedCost);
+    const floors = editForm.floors.trim() ? toNumber(editForm.floors) : null;
+
+    if (!editForm.name.trim()) {
+      setFeedbackModal({ open: true, title: 'Validation', message: 'Design name is required.' });
+      return;
+    }
+    if (!editForm.projectTypeFilter.trim()) {
+      setFeedbackModal({ open: true, title: 'Validation', message: 'Project filter is required.' });
+      return;
+    }
+    if (bedrooms <= 0 || bathrooms <= 0 || squareFootage <= 0 || estimatedCost < 0) {
+      setFeedbackModal({
+        open: true,
+        title: 'Validation',
+        message: 'Bedrooms, bathrooms, square footage, and estimated cost must be valid numbers.',
+      });
+      return;
+    }
+    if (floors !== null && floors <= 0) {
+      setFeedbackModal({ open: true, title: 'Validation', message: 'Floors must be greater than 0.' });
+      return;
+    }
+
+    try {
+      await updatePlan.mutateAsync({
+        designId: selectedDesignForReview.id,
+        data: {
+          name: editForm.name.trim(),
+          description: editForm.description.trim(),
+          planType: editForm.planType,
+          projectTypeTag: editForm.projectTypeTag,
+          projectTypeFilter: editForm.projectTypeFilter.trim(),
+          bedrooms,
+          bathrooms,
+          squareFootage,
+          estimatedCost,
+          floors,
+          estimatedDuration: editForm.estimatedDuration.trim() || null,
+          rooms: editForm.rooms.trim(),
+          materials: editForm.materials.trim(),
+          features: editForm.features.trim(),
+          constructionPhases: editForm.constructionPhases.trim(),
+        },
+      });
+      setFeedbackModal({
+        open: true,
+        title: 'Plan updated',
+        message: 'Design plan changes were saved. Review and then publish when ready.',
+      });
+      closeReviewModal();
+    } catch (e: any) {
+      setFeedbackModal({
+        open: true,
+        title: 'Update failed',
+        message: e?.message || 'Could not save plan edits right now.',
       });
     }
   };
@@ -363,6 +533,18 @@ export default function VerificationPage() {
                     <p className="text-sm text-gray-600 mt-2">
                       {doc.bedrooms} bed • {doc.bathrooms} bath • ₦{doc.estimatedCost.toLocaleString()}
                     </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {doc.projectTypeTag && (
+                        <span className="px-2 py-1 rounded-full text-xs bg-gray-900 text-white">
+                          {doc.projectTypeTag.replace('_', ' ')}
+                        </span>
+                      )}
+                      {doc.projectTypeFilter && (
+                        <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                          {doc.projectTypeFilter}
+                        </span>
+                      )}
+                    </div>
                     {doc.images?.[0]?.url && (
                       <a
                         href={getAssetUrl(doc.images[0].url)}
@@ -375,6 +557,12 @@ export default function VerificationPage() {
                     )}
                   </div>
                   <div className="flex flex-col gap-2 md:min-w-[180px]">
+                    <button
+                      onClick={() => openReviewModal(doc)}
+                      className="px-4 py-2 bg-gray-900 text-white rounded-lg"
+                    >
+                      Review & Edit
+                    </button>
                     <button
                       onClick={() => setSelectedDesignForGoLive(doc)}
                       disabled={goLivePlan.isPending}
@@ -403,6 +591,255 @@ export default function VerificationPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {selectedDesignForReview && editForm && (
+        <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto">
+          <div className="mx-auto my-6 w-full max-w-5xl rounded-2xl border border-gray-200 bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b px-6 py-4">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Review & Edit Design Plan</h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Review details, edit metadata, and then approve the plan to go live.
+                </p>
+              </div>
+              <button
+                onClick={closeReviewModal}
+                className="rounded-full border border-gray-300 p-2 text-gray-500 hover:bg-gray-50"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="grid lg:grid-cols-2 gap-6 p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Design Name</label>
+                  <input
+                    value={editForm.name}
+                    onChange={(e) => handleEditField('name', e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Description</label>
+                  <textarea
+                    value={editForm.description}
+                    onChange={(e) => handleEditField('description', e.target.value)}
+                    rows={4}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Bedrooms</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.bedrooms}
+                      onChange={(e) => handleEditField('bedrooms', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Bathrooms</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.bathrooms}
+                      onChange={(e) => handleEditField('bathrooms', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Square Footage</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.squareFootage}
+                      onChange={(e) => handleEditField('squareFootage', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Estimated Cost (NGN)</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={editForm.estimatedCost}
+                      onChange={(e) => handleEditField('estimatedCost', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Floors</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editForm.floors}
+                      onChange={(e) => handleEditField('floors', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-gray-600">Estimated Duration</label>
+                    <input
+                      value={editForm.estimatedDuration}
+                      onChange={(e) => handleEditField('estimatedDuration', e.target.value)}
+                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Legacy Plan Type</label>
+                  <select
+                    value={editForm.planType}
+                    onChange={(e) => handleEditField('planType', e.target.value as EditableDesignForm['planType'])}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white"
+                  >
+                    <option value="renovation">renovation</option>
+                    <option value="interior_design">interior_design</option>
+                    <option value="homebuilding">homebuilding</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Project Type Tag</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {DESIGN_TAG_OPTIONS.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleEditField('projectTypeTag', option.value)}
+                        className={`px-3 py-1.5 rounded-full text-xs border ${
+                          editForm.projectTypeTag === option.value
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-300'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Project Filter</label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(DESIGN_FILTER_PRESETS[editForm.projectTypeTag] || []).map((preset) => (
+                      <button
+                        key={preset}
+                        onClick={() => handleEditField('projectTypeFilter', preset)}
+                        className={`px-3 py-1.5 rounded-full text-xs border ${
+                          editForm.projectTypeFilter.toLowerCase() === preset.toLowerCase()
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-blue-50 text-blue-700 border-blue-200'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    value={editForm.projectTypeFilter}
+                    onChange={(e) => handleEditField('projectTypeFilter', e.target.value)}
+                    placeholder="Use a preset or type custom filter..."
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Rooms (comma-separated)</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.rooms}
+                    onChange={(e) => handleEditField('rooms', e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Materials (comma-separated)</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.materials}
+                    onChange={(e) => handleEditField('materials', e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Features (comma-separated)</label>
+                  <textarea
+                    rows={2}
+                    value={editForm.features}
+                    onChange={(e) => handleEditField('features', e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600">Construction Phases (JSON/Text)</label>
+                  <textarea
+                    rows={8}
+                    value={editForm.constructionPhases}
+                    onChange={(e) => handleEditField('constructionPhases', e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-xs font-medium text-gray-600 mb-2">Plan Images</p>
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {selectedDesignForReview.images?.length ? (
+                      selectedDesignForReview.images.map((image) => (
+                        <a
+                          key={image.id}
+                          href={getAssetUrl(image.url)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block rounded-lg border border-gray-200 p-2 hover:bg-gray-50"
+                        >
+                          <p className="text-sm font-medium text-gray-900">{image.label || 'Image'}</p>
+                          <p className="text-xs text-blue-600 truncate">{getAssetUrl(image.url)}</p>
+                        </a>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">No images uploaded.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t px-6 py-4">
+              <button
+                onClick={closeReviewModal}
+                className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveDesignEdits}
+                disabled={updatePlan.isPending}
+                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+              >
+                {updatePlan.isPending ? 'Saving…' : 'Save Edits'}
+              </button>
+              <button
+                onClick={() => {
+                  closeReviewModal();
+                  setSelectedDesignForGoLive(selectedDesignForReview);
+                }}
+                className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white"
+              >
+                Continue to Go Live
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

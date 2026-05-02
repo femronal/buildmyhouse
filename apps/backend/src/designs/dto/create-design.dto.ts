@@ -41,6 +41,15 @@ export class CreateDesignDto {
   @IsIn(['homebuilding', 'renovation', 'interior_design'])
   planType?: 'homebuilding' | 'renovation' | 'interior_design';
 
+  @IsOptional()
+  @IsString()
+  @IsIn(['repair', 'upgrades', 'renovation', 'full_builds'])
+  projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+
+  @IsOptional()
+  @IsString()
+  projectTypeFilter?: string;
+
   @IsNumber()
   @Min(1)
   bedrooms: number;

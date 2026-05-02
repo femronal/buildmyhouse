@@ -117,6 +117,11 @@ export class DesignsService {
         name: dto.name,
         description: dto.description,
         planType: dto.planType || 'homebuilding',
+        projectTypeTag: dto.projectTypeTag || null,
+        projectTypeFilter:
+          typeof dto.projectTypeFilter === 'string' && dto.projectTypeFilter.trim()
+            ? dto.projectTypeFilter.trim()
+            : null,
         createdById: userId,
         bedrooms: dto.bedrooms,
         bathrooms: dto.bathrooms,
@@ -311,6 +316,8 @@ export class DesignsService {
       'features',
       'constructionPhases',
       'planType',
+      'projectTypeTag',
+      'projectTypeFilter',
       'isActive',
     ];
     for (const key of fields) {
@@ -337,6 +344,10 @@ export class DesignsService {
         // If not valid JSON, keep raw string for backward compatibility.
         allowed.constructionPhases = raw;
       }
+    }
+    if (typeof allowed.projectTypeFilter === 'string') {
+      const trimmed = allowed.projectTypeFilter.trim();
+      allowed.projectTypeFilter = trimmed || null;
     }
 
     const updated = await this.prisma.design.update({

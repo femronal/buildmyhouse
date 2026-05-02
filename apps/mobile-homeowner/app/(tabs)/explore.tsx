@@ -116,44 +116,76 @@ export default function ExploreScreen() {
 
   const cardWidth = getTwoColumnCardWidth(screenWidth);
 
+  const normalizeDesignTab = useCallback((design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' => {
+    const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
+    if (explicitTag === 'repair') return 'repairs';
+    if (explicitTag === 'upgrades') return 'upgrades';
+    if (explicitTag === 'renovation') return 'renovation';
+    if (explicitTag === 'full_builds') return 'full_builds';
+
+    const apiPlanType = `${design?.planType || ''}`.toLowerCase();
+    if (apiPlanType === 'interior_design') return 'upgrades';
+    if (apiPlanType === 'homebuilding') return 'full_builds';
+
+    const searchable = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+    const likelyRepair = ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage'].some((keyword) =>
+      searchable.includes(keyword),
+    );
+    return likelyRepair ? 'repairs' : 'renovation';
+  }, []);
+
   const tabFilters = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]>>(
-    () => ({
-      repairs: [
-        'All',
-        'Electricals',
-        'Plumbing Fixes',
-        'Roof Leak Repair',
-        'Drainage Fix',
-        'Bathroom Repair',
-        'Gate/Fence Repair',
-      ],
-      upgrades: [
-        'All',
-        'Kitchen Upgrade',
-        'Bedroom Upgrade',
-        'Security Gate Upgrade',
-        'Door Upgrade',
-        'Bathroom Upgrade',
-        'Lighting Upgrade',
-      ],
-      renovation: [
-        'All',
-        'Room-by-Room',
-        'Occupied Home',
-        'Family Home Rehab',
-        'Rental Prep',
-        'Interior Refresh',
-      ],
-      full_builds: [
-        'All',
-        'Bungalow Build',
-        'Duplex Build',
-        'Blockwork + Roofing',
-        'Shell to Finish',
-        'Turnkey Build',
-      ],
-    }),
-    [],
+    () => {
+      const defaults = {
+        repairs: [
+          'Electricals',
+          'Plumbing Fixes',
+          'Roof Leak Repair',
+          'Drainage Fix',
+          'Bathroom Repair',
+          'Gate/Fence Repair',
+        ],
+        upgrades: [
+          'Kitchen Upgrade',
+          'Bedroom Upgrade',
+          'Security Gate Upgrade',
+          'Door Upgrade',
+          'Bathroom Upgrade',
+          'Lighting Upgrade',
+        ],
+        renovation: ['Room-by-Room', 'Occupied Home', 'Family Home Rehab', 'Rental Prep', 'Interior Refresh'],
+        full_builds: ['Bungalow Build', 'Duplex Build', 'Blockwork + Roofing', 'Shell to Finish', 'Turnkey Build'],
+      } as const;
+
+      const dynamicByTab: Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]> = {
+        repairs: [],
+        upgrades: [],
+        renovation: [],
+        full_builds: [],
+      };
+
+      (designs || []).forEach((design: any) => {
+        const filter = `${design?.projectTypeFilter || ''}`.trim();
+        if (!filter) return;
+        dynamicByTab[normalizeDesignTab(design)].push(filter);
+      });
+
+      const mergeFilters = (tab: 'repairs' | 'upgrades' | 'renovation' | 'full_builds') => {
+        const merged = [...defaults[tab], ...dynamicByTab[tab]];
+        const unique = Array.from(new Set(merged.map((item) => item.toLowerCase()))).map(
+          (lower) => merged.find((item) => item.toLowerCase() === lower) as string,
+        );
+        return ['All', ...unique];
+      };
+
+      return {
+        repairs: mergeFilters('repairs'),
+        upgrades: mergeFilters('upgrades'),
+        renovation: mergeFilters('renovation'),
+        full_builds: mergeFilters('full_builds'),
+      };
+    },
+    [designs, normalizeDesignTab],
   );
 
   const tabDescription = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string>>(
@@ -172,25 +204,19 @@ export default function ExploreScreen() {
 
   // Filter GC plans based on search query + active tab + active filter
   const filteredDesigns = useMemo(() => {
-    const tabKeywords: Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]> = {
-      repairs: ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage', 'maintenance'],
-      upgrades: ['upgrade', 'interior', 'kitchen', 'bedroom', 'gate', 'door', 'lighting'],
-      renovation: ['renovation', 'rehab', 'remodel', 'occupied', 'refresh'],
-      full_builds: ['build', 'construction', 'new build', 'duplex', 'bungalow', 'foundation', 'shell'],
-    };
-
     return (designs || []).filter((design: any) => {
-      const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''} ${design?.projectType || ''}`.toLowerCase();
+      const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''}`.toLowerCase();
       const matchesSearch = !searchQuery.trim() || searchable.includes(searchQuery.toLowerCase());
       if (!matchesSearch) return false;
 
-      const matchesTab = tabKeywords[activeTab].some((word) => searchable.includes(word));
-      if (!matchesTab) return false;
+      if (normalizeDesignTab(design) !== activeTab) return false;
 
       if (activeFilter === 'All') return true;
-      return searchable.includes(activeFilter.toLowerCase());
+      const normalizedFilter = activeFilter.toLowerCase();
+      const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
+      return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
     });
-  }, [activeFilter, activeTab, designs, searchQuery]);
+  }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
   useWebSeo({
     title: 'Explore Designs, Homes & Land in Nigeria | BuildMyHouse',

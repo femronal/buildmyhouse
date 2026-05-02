@@ -451,6 +451,8 @@ model Design {
   name               String
   description        String?
   planType           ProjectType @default(homebuilding)
+  projectTypeTag     String?
+  projectTypeFilter  String?
   createdById        String
   bedrooms           Int
   bathrooms          Int

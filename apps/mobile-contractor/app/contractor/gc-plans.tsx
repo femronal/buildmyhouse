@@ -25,6 +25,41 @@ const PLAN_TYPE_OPTIONS: Array<{ value: PlanType; label: string }> = [
   { value: 'full_builds', label: 'Full Builds' },
 ];
 
+const CUSTOM_FILTER_VALUE = '__custom__';
+
+const PLAN_TYPE_FILTER_OPTIONS: Record<PlanType, string[]> = {
+  repair: [
+    'Electricals',
+    'Plumbing Fixes',
+    'Roof Leak Repair',
+    'Drainage Fix',
+    'Bathroom Repair',
+    'Gate/Fence Repair',
+  ],
+  upgrades: [
+    'Kitchen Upgrade',
+    'Bedroom Upgrade',
+    'Security Gate Upgrade',
+    'Door Upgrade',
+    'Bathroom Upgrade',
+    'Lighting Upgrade',
+  ],
+  renovation: [
+    'Room-by-Room',
+    'Occupied Home',
+    'Family Home Rehab',
+    'Rental Prep',
+    'Interior Refresh',
+  ],
+  full_builds: [
+    'Bungalow Build',
+    'Duplex Build',
+    'Blockwork + Roofing',
+    'Shell to Finish',
+    'Turnkey Build',
+  ],
+};
+
 function formatPlanTypeLabel(planType?: string | null): string {
   if (planType === 'repair') return 'Repair';
   if (planType === 'upgrades' || planType === 'interior_design') return 'Upgrades';
@@ -45,6 +80,28 @@ function mapApiPlanTypeToUi(planType?: string | null): PlanType {
   if (planType === 'homebuilding' || planType === 'full_builds') return 'full_builds';
   if (planType === 'renovation') return 'renovation';
   return 'repair';
+}
+
+function resolveUiPlanTypeFromDesign(design: any): PlanType {
+  const tag = `${design?.projectTypeTag || ''}`.toLowerCase();
+  if (tag === 'repair') return 'repair';
+  if (tag === 'upgrades') return 'upgrades';
+  if (tag === 'renovation') return 'renovation';
+  if (tag === 'full_builds') return 'full_builds';
+  return mapApiPlanTypeToUi(design?.planType);
+}
+
+function getProjectFilterSelection(planType: PlanType, savedFilter?: string | null) {
+  const available = PLAN_TYPE_FILTER_OPTIONS[planType] || [];
+  const normalizedSaved = (savedFilter || '').trim();
+  if (!normalizedSaved) {
+    return { selectedFilter: available[0] || CUSTOM_FILTER_VALUE, customFilter: '' };
+  }
+  const match = available.find((filter) => filter.toLowerCase() === normalizedSaved.toLowerCase());
+  if (match) {
+    return { selectedFilter: match, customFilter: '' };
+  }
+  return { selectedFilter: CUSTOM_FILTER_VALUE, customFilter: normalizedSaved };
 }
 
 function getPlanTypeTagClasses(planType?: string | null): { container: string; text: string } {
@@ -109,6 +166,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [planType, setPlanType] = useState<PlanType>('repair');
+  const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>(
+    PLAN_TYPE_FILTER_OPTIONS.repair[0],
+  );
+  const [customPlanFilter, setCustomPlanFilter] = useState("");
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [squareFootage, setSquareFootage] = useState("");
@@ -127,6 +188,11 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const [images, setImages] = useState<ImageWithLabel[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
+  const availablePlanFilters = PLAN_TYPE_FILTER_OPTIONS[planType] || [];
+  const resolvedPlanFilter =
+    selectedPlanFilter === CUSTOM_FILTER_VALUE
+      ? customPlanFilter.trim()
+      : selectedPlanFilter.trim();
 
   const createDesignMutation = useMutation({
     mutationFn: ({ designData, imageUris }: { designData: any; imageUris: any[] }) =>
@@ -233,6 +299,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       showAlert('Validation Error', 'Please enter an estimated duration');
       return;
     }
+    if (!resolvedPlanFilter) {
+      showAlert('Validation Error', 'Please select a project filter or enter a custom one');
+      return;
+    }
     if (rooms.length === 0 || rooms.some((r) => !r.trim())) {
       showAlert('Validation Error', 'Please add rooms and ensure none are empty');
       return;
@@ -297,6 +367,8 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         name: name.trim(),
         description: description.trim(),
         planType: mapPlanTypeForApi(planType),
+        projectTypeTag: planType,
+        projectTypeFilter: resolvedPlanFilter,
         bedrooms: parseInt(bedrooms, 10),
         bathrooms: parseInt(bathrooms, 10),
         squareFootage: parseFloat(squareFootage),
@@ -345,6 +417,8 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       setName("");
       setDescription("");
       setPlanType('repair');
+      setSelectedPlanFilter(PLAN_TYPE_FILTER_OPTIONS.repair[0]);
+      setCustomPlanFilter("");
       setBedrooms("");
       setBathrooms("");
       setSquareFootage("");
@@ -417,7 +491,11 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             return (
               <TouchableOpacity
                 key={option.value}
-                onPress={() => setPlanType(option.value)}
+                onPress={() => {
+                  setPlanType(option.value);
+                  setSelectedPlanFilter(PLAN_TYPE_FILTER_OPTIONS[option.value][0]);
+                  setCustomPlanFilter('');
+                }}
                 className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
                 activeOpacity={0.8}
               >
@@ -431,6 +509,54 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             );
           })}
         </View>
+      </View>
+
+      <View className="mb-4">
+        <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+          Project Filter *
+        </Text>
+        <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+          {availablePlanFilters.map((filter) => {
+            const isActive = selectedPlanFilter === filter;
+            return (
+              <TouchableOpacity
+                key={filter}
+                onPress={() => setSelectedPlanFilter(filter)}
+                className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+                activeOpacity={0.8}
+              >
+                <Text
+                  className={isActive ? 'text-white' : 'text-gray-300'}
+                  style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+                >
+                  {filter}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+          <TouchableOpacity
+            onPress={() => setSelectedPlanFilter(CUSTOM_FILTER_VALUE)}
+            className={`rounded-full px-4 py-2 border ${selectedPlanFilter === CUSTOM_FILTER_VALUE ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+            activeOpacity={0.8}
+          >
+            <Text
+              className={selectedPlanFilter === CUSTOM_FILTER_VALUE ? 'text-white' : 'text-gray-300'}
+              style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+            >
+              Custom
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {selectedPlanFilter === CUSTOM_FILTER_VALUE && (
+          <TextInput
+            className="mt-3 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+            placeholder="Enter custom filter (e.g., POP ceiling repairs)"
+            placeholderTextColor="#6B7280"
+            value={customPlanFilter}
+            onChangeText={setCustomPlanFilter}
+          />
+        )}
       </View>
 
       {/* Specifications */}
@@ -887,9 +1013,13 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
 
 function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () => void; onCancel: () => void }) {
   const { showAlert } = useAppAlert();
+  const initialPlanType = resolveUiPlanTypeFromDesign(design);
+  const initialProjectFilterSelection = getProjectFilterSelection(initialPlanType, design.projectTypeFilter);
   const [name, setName] = useState(design.name || "");
   const [description, setDescription] = useState(design.description || "");
-  const [planType, setPlanType] = useState<PlanType>(mapApiPlanTypeToUi(design.planType));
+  const [planType, setPlanType] = useState<PlanType>(initialPlanType);
+  const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>(initialProjectFilterSelection.selectedFilter);
+  const [customPlanFilter, setCustomPlanFilter] = useState<string>(initialProjectFilterSelection.customFilter);
   const [bedrooms, setBedrooms] = useState(design.bedrooms?.toString() || "");
   const [bathrooms, setBathrooms] = useState(design.bathrooms?.toString() || "");
   const [squareFootage, setSquareFootage] = useState(design.squareFootage?.toString() || "");
@@ -917,6 +1047,11 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const updateDesignMutation = useUpdateDesign();
+  const availablePlanFilters = PLAN_TYPE_FILTER_OPTIONS[planType] || [];
+  const resolvedPlanFilter =
+    selectedPlanFilter === CUSTOM_FILTER_VALUE
+      ? customPlanFilter.trim()
+      : selectedPlanFilter.trim();
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -949,6 +1084,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
     }
     if (!estimatedDuration.trim()) {
       showAlert('Validation Error', 'Please enter an estimated duration');
+      return;
+    }
+    if (!resolvedPlanFilter) {
+      showAlert('Validation Error', 'Please select a project filter or enter a custom one');
       return;
     }
     if (rooms.length === 0 || rooms.some((r) => !r.trim())) {
@@ -1008,6 +1147,8 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
           name: name.trim(),
           description: description.trim(),
           planType: mapPlanTypeForApi(planType),
+          projectTypeTag: planType,
+          projectTypeFilter: resolvedPlanFilter,
           bedrooms: parseInt(bedrooms),
           bathrooms: parseInt(bathrooms),
           squareFootage: parseFloat(squareFootage),
@@ -1084,7 +1225,11 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               return (
                 <TouchableOpacity
                   key={option.value}
-                  onPress={() => setPlanType(option.value)}
+                  onPress={() => {
+                    setPlanType(option.value);
+                    setSelectedPlanFilter(PLAN_TYPE_FILTER_OPTIONS[option.value][0]);
+                    setCustomPlanFilter('');
+                  }}
                   className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
                   activeOpacity={0.8}
                 >
@@ -1098,6 +1243,54 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               );
             })}
           </View>
+        </View>
+
+        <View className="mb-4">
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Project Filter *
+          </Text>
+          <View className="flex-row flex-wrap" style={{ gap: 8 }}>
+            {availablePlanFilters.map((filter) => {
+              const isActive = selectedPlanFilter === filter;
+              return (
+                <TouchableOpacity
+                  key={filter}
+                  onPress={() => setSelectedPlanFilter(filter)}
+                  className={`rounded-full px-4 py-2 border ${isActive ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    className={isActive ? 'text-white' : 'text-gray-300'}
+                    style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+                  >
+                    {filter}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+            <TouchableOpacity
+              onPress={() => setSelectedPlanFilter(CUSTOM_FILTER_VALUE)}
+              className={`rounded-full px-4 py-2 border ${selectedPlanFilter === CUSTOM_FILTER_VALUE ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+              activeOpacity={0.8}
+            >
+              <Text
+                className={selectedPlanFilter === CUSTOM_FILTER_VALUE ? 'text-white' : 'text-gray-300'}
+                style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+              >
+                Custom
+              </Text>
+            </TouchableOpacity>
+          </View>
+          {selectedPlanFilter === CUSTOM_FILTER_VALUE && (
+            <TextInput
+              className="mt-3 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+              placeholder="Enter custom filter (e.g., POP ceiling repairs)"
+              placeholderTextColor="#6B7280"
+              value={customPlanFilter}
+              onChangeText={setCustomPlanFilter}
+            />
+          )}
         </View>
 
         {/* Specifications */}
@@ -1616,7 +1809,10 @@ export default function GCPlansScreen() {
           </View>
         ) : (
           <View className="mb-8">
-            {designs.map((design: any) => (
+            {designs.map((design: any) => {
+              const uiPlanType = resolveUiPlanTypeFromDesign(design);
+              const tagClasses = getPlanTypeTagClasses(uiPlanType);
+              return (
               <View key={design.id} className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900/50">
                 {/* Image Carousel */}
                 {design.images && design.images.length > 0 ? (
@@ -1651,11 +1847,18 @@ export default function GCPlansScreen() {
                   <Text className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                     {design.name}
                   </Text>
-                  <View className={`self-start border rounded-full px-3 py-1 mb-2 ${getPlanTypeTagClasses(design.planType).container}`}>
-                    <Text className={`${getPlanTypeTagClasses(design.planType).text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {formatPlanTypeLabel(design.planType)}
+                  <View className={`self-start border rounded-full px-3 py-1 mb-2 ${tagClasses.container}`}>
+                    <Text className={`${tagClasses.text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {formatPlanTypeLabel(uiPlanType)}
                     </Text>
                   </View>
+                  {design.projectTypeFilter && (
+                    <View className="self-start border border-blue-500 bg-blue-500/20 rounded-full px-3 py-1 mb-2">
+                      <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {design.projectTypeFilter}
+                      </Text>
+                    </View>
+                  )}
                   
                   {design.description && (
                     <Text className="text-gray-400 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -1734,7 +1937,8 @@ export default function GCPlansScreen() {
                   </View>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         )}
       </ScrollView>

@@ -11,6 +11,8 @@ export interface CreateDesignData {
   name: string;
   description?: string;
   planType?: 'homebuilding' | 'renovation' | 'interior_design';
+  projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+  projectTypeFilter?: string;
   bedrooms: number;
   bathrooms: number;
   squareFootage: number;
@@ -49,6 +51,8 @@ export const designService = {
       name: designData.name.trim(),
       description: designData.description?.trim() || undefined,
       planType: designData.planType || 'homebuilding',
+      projectTypeTag: designData.projectTypeTag,
+      projectTypeFilter: designData.projectTypeFilter?.trim() || undefined,
       bedrooms: Number(designData.bedrooms),
       bathrooms: Number(designData.bathrooms),
       squareFootage: Number(designData.squareFootage),
@@ -107,6 +111,8 @@ export const designService = {
     name?: string;
     description?: string;
     planType?: 'homebuilding' | 'renovation' | 'interior_design';
+    projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+    projectTypeFilter?: string;
     bedrooms?: number;
     bathrooms?: number;
     squareFootage?: number;

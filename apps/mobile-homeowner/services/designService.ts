@@ -11,6 +11,8 @@ export interface Design {
   name: string;
   description?: string;
   planType?: 'homebuilding' | 'renovation' | 'interior_design';
+  projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+  projectTypeFilter?: string;
   bedrooms: number;
   bathrooms: number;
   squareFootage: number;

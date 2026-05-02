@@ -1,16 +1,16 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi, Wrench } from "lucide-react-native";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useActiveProjects, usePendingProjects, usePausedProjects, useHousesForSale, useLandsForSale } from '@/hooks';
+import { useActiveProjects, usePendingProjects, usePausedProjects, useHousesForSale, useLandsForSale, useActivateProject } from '@/hooks';
 import { useRentalsForLease } from '@/hooks/useRentalsForLease';
+import { useDesigns } from '@/hooks/useDesigns';
 import { useScheduleHouseViewing } from '@/hooks/useHouseViewing';
 import { useScheduleLandViewing } from '@/hooks/useLandViewing';
 import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
-import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
 import ImageCarousel from '@/components/ImageCarousel';
 import NotificationBell from '@/components/NotificationBell';
@@ -44,6 +44,7 @@ export default function HomeScreen() {
   const { data: housesForSale = [], isLoading: loadingHouses } = useHousesForSale();
   const { data: landsForSale = [], isLoading: loadingLands } = useLandsForSale();
   const { data: rentalsForLease = [], isLoading: loadingRentals } = useRentalsForLease();
+  const { data: designs = [], isLoading: loadingDesigns } = useDesigns();
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: pendingProjects = [], isLoading: loadingPending } = usePendingProjects();
   const { data: pausedProjects = [], isLoading: loadingPaused } = usePausedProjects();
@@ -73,6 +74,7 @@ export default function HomeScreen() {
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any>(null);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
+  const [activeRepairFilter, setActiveRepairFilter] = useState('All');
   
   const userName = currentUser?.fullName || 'User';
   const userPicture = currentUser?.pictureUrl;
@@ -267,33 +269,68 @@ export default function HomeScreen() {
   };
 
   const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
+  const repairFilterSuggestions = useMemo(
+    () => [
+      'Electricals',
+      'Plumbing Fixes',
+      'Roof Leak Repair',
+      'Drainage Fix',
+      'Bathroom Repair',
+      'Gate/Fence Repair',
+    ],
+    [],
+  );
 
-  const repairsQuickStarts = [
-    {
-      key: 'electrical-correction',
-      title: 'Electrical Corrections',
-      subtitle: 'Fix risky wiring and unstable fittings',
-      priceHint: 'From ₦150,000',
-      image:
-        'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80',
-    },
-    {
-      key: 'plumbing-fixes',
-      title: 'Plumbing Fixes',
-      subtitle: 'Resolve leaks, pressure, and drainage issues',
-      priceHint: 'From ₦120,000',
-      image:
-        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80',
-    },
-    {
-      key: 'roof-leak-repair',
-      title: 'Roof Leak Repairs',
-      subtitle: 'Stop leak damage before it spreads',
-      priceHint: 'From ₦220,000',
-      image:
-        'https://images.unsplash.com/photo-1632759145351-1d592f2f6f58?auto=format&fit=crop&w=1200&q=80',
-    },
-  ] as const;
+  const normalizeRepairPlanType = useCallback((design: any) => {
+    const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
+    if (explicitTag === 'repair') return 'repair';
+    if (explicitTag === 'upgrades') return 'upgrades';
+    if (explicitTag === 'renovation') return 'renovation';
+    if (explicitTag === 'full_builds') return 'full_builds';
+
+    // Backward compatibility for older records that only stored backend planType.
+    const apiPlanType = `${design?.planType || ''}`.toLowerCase();
+    if (apiPlanType === 'interior_design') return 'upgrades';
+    if (apiPlanType === 'homebuilding') return 'full_builds';
+
+    const searchable = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+    const likelyRepair = ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage'].some((keyword) =>
+      searchable.includes(keyword),
+    );
+    return likelyRepair ? 'repair' : 'renovation';
+  }, []);
+
+  const repairDesignPlans = useMemo(
+    () => (designs || []).filter((design: any) => normalizeRepairPlanType(design) === 'repair'),
+    [designs, normalizeRepairPlanType],
+  );
+
+  const availableRepairFilters = useMemo(() => {
+    const dynamicFilters = repairDesignPlans
+      .map((design: any) => `${design?.projectTypeFilter || ''}`.trim())
+      .filter(Boolean);
+    const merged = [...repairFilterSuggestions, ...dynamicFilters];
+    const unique = Array.from(new Set(merged.map((filter) => filter.toLowerCase()))).map(
+      (lower) => merged.find((item) => item.toLowerCase() === lower) as string,
+    );
+    return ['All', ...unique];
+  }, [repairDesignPlans, repairFilterSuggestions]);
+
+  const filteredRepairDesignPlans = useMemo(() => {
+    if (activeRepairFilter === 'All') return repairDesignPlans;
+    const selected = activeRepairFilter.toLowerCase();
+    return repairDesignPlans.filter((design: any) => {
+      const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
+      const fallbackSearch = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+      return explicitFilter.includes(selected) || fallbackSearch.includes(selected);
+    });
+  }, [activeRepairFilter, repairDesignPlans]);
+
+  useEffect(() => {
+    if (!availableRepairFilters.includes(activeRepairFilter)) {
+      setActiveRepairFilter('All');
+    }
+  }, [activeRepairFilter, availableRepairFilters]);
 
   const openRentModal = (listing: any) => {
     setSelectedRent(listing);
@@ -764,54 +801,94 @@ export default function HomeScreen() {
           >
             Start with urgent fixes before moving into bigger upgrade or renovation scope.
           </Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {repairsQuickStarts.map((repair) => (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            {availableRepairFilters.map((filter) => (
               <TouchableOpacity
-                key={repair.key}
-                onPress={() => router.push('/location?mode=explore')}
-                style={[
-                  cardShadowStyle,
-                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
-                ]}
-                className="bg-white rounded-3xl mr-4 border border-gray-200"
+                key={filter}
+                onPress={() => setActiveRepairFilter(filter)}
+                className={`px-4 py-2 rounded-full mr-2 ${activeRepairFilter === filter ? 'bg-black' : 'bg-gray-100'}`}
               >
-                <View className="overflow-hidden rounded-3xl">
-                  <Image
-                    source={{ uri: repair.image }}
-                    className="w-full h-32"
-                    resizeMode="cover"
-                  />
-                  <View className="p-3">
-                    <Text
-                      className="text-base text-black mb-1"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                      numberOfLines={1}
-                    >
-                      {repair.title}
-                    </Text>
-                    <Text
-                      className="text-gray-500 text-xs mb-2"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                      numberOfLines={2}
-                    >
-                      {repair.subtitle}
-                    </Text>
-                    <View className="flex-row justify-between items-center">
-                      <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                        {repair.priceHint}
-                      </Text>
-                      <View className="bg-gray-100 rounded-full px-2 py-0.5">
-                        <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          Small job
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
+                <Text
+                  className={activeRepairFilter === filter ? 'text-white text-xs' : 'text-black text-xs'}
+                  style={{ fontFamily: 'Poppins_500Medium' }}
+                >
+                  {filter}
+                </Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
+
+          {loadingDesigns ? (
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 items-center border border-gray-200">
+              <ActivityIndicator size="small" color="#000" />
+              <Text className="text-gray-500 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Loading repair scopes...
+              </Text>
+            </View>
+          ) : filteredRepairDesignPlans.length === 0 ? (
+            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
+              <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                No repair scopes yet
+              </Text>
+              <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                {activeRepairFilter === 'All'
+                  ? 'Approved GC repair plans will appear here once uploaded.'
+                  : `No repair plans found for "${activeRepairFilter}" yet.`}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {filteredRepairDesignPlans.map((design: any) => (
+                <TouchableOpacity
+                  key={design.id}
+                  onPress={() => router.push(`/house-summary?designId=${design.id}&designName=${encodeURIComponent(design.name || 'Repair Scope')}`)}
+                  style={[
+                    cardShadowStyle,
+                    { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
+                  ]}
+                  className="bg-white rounded-3xl mr-4 border border-gray-200"
+                >
+                  <View className="overflow-hidden rounded-3xl">
+                    <Image
+                      source={{
+                        uri: design?.images?.[0]?.url
+                          ? getBackendAssetUrl(design.images[0].url)
+                          : 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80',
+                      }}
+                      className="w-full h-32"
+                      resizeMode="cover"
+                    />
+                    <View className="p-3">
+                      <Text
+                        className="text-base text-black mb-1"
+                        style={{ fontFamily: 'Poppins_600SemiBold' }}
+                        numberOfLines={1}
+                      >
+                        {design.name}
+                      </Text>
+                      <Text
+                        className="text-gray-500 text-xs mb-2"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        numberOfLines={2}
+                      >
+                        {design.description || 'Repair scope uploaded by a verified GC.'}
+                      </Text>
+                      <View className="flex-row justify-between items-center">
+                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                          {formatNaira(Number(design.estimatedCost || 0))}
+                        </Text>
+                        <View className="bg-gray-100 rounded-full px-2 py-0.5">
+                          <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            {design.projectTypeFilter || 'Repair'}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
         </View>
 
         {/* Upgrades */}
