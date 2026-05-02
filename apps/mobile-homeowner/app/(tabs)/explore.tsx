@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown } from "lucide-react-native";
+import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, ChevronUp, Info } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDesigns } from '@/hooks';
@@ -58,6 +58,7 @@ export default function ExploreScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
+  const [isProjectsMessageExpanded, setIsProjectsMessageExpanded] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
@@ -344,10 +345,38 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      <View style={{ paddingHorizontal: horizontalPadding, marginBottom: 10 }}>
-        <Text className="text-gray-500 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-          GC-uploaded project scopes only. These are abstract plan ideas (not tied to one physical location) you can adapt to your own project. {tabDescription[activeTab]}
-        </Text>
+  <View style={{ paddingHorizontal: horizontalPadding, marginBottom: 12 }}>
+        <View className="bg-gray-50 border border-gray-200 rounded-2xl p-3">
+          <TouchableOpacity
+            onPress={() => setIsProjectsMessageExpanded((prev) => !prev)}
+            className="flex-row items-start justify-between"
+            activeOpacity={0.85}
+          >
+            <View className="flex-row items-start flex-1 pr-2">
+              <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
+                <Info size={14} color="#374151" strokeWidth={2.2} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  GC-uploaded project scopes
+                </Text>
+                <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {isProjectsMessageExpanded
+                    ? 'These scopes are abstract project ideas (not tied to one physical location). Use them to plan better before speaking to anyone on site. Filter by project type and compare options to find the best fit for your property. '
+                    : 'These scopes are abstract project ideas you can adapt to your property.'}
+                  {isProjectsMessageExpanded ? tabDescription[activeTab] : ''}
+                </Text>
+              </View>
+            </View>
+            <View className="pl-1 pt-0.5">
+              {isProjectsMessageExpanded ? (
+                <ChevronUp size={18} color="#111827" strokeWidth={2.2} />
+              ) : (
+                <ChevronDown size={18} color="#111827" strokeWidth={2.2} />
+              )}
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Animated Filter Tags */}
