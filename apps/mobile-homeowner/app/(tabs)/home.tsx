@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi } from "lucide-react-native";
+import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi, Wrench } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -267,6 +267,33 @@ export default function HomeScreen() {
   };
 
   const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
+
+  const repairsQuickStarts = [
+    {
+      key: 'electrical-correction',
+      title: 'Electrical Corrections',
+      subtitle: 'Fix risky wiring and unstable fittings',
+      priceHint: 'From ₦150,000',
+      image:
+        'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+      key: 'plumbing-fixes',
+      title: 'Plumbing Fixes',
+      subtitle: 'Resolve leaks, pressure, and drainage issues',
+      priceHint: 'From ₦120,000',
+      image:
+        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=1200&q=80',
+    },
+    {
+      key: 'roof-leak-repair',
+      title: 'Roof Leak Repairs',
+      subtitle: 'Stop leak damage before it spreads',
+      priceHint: 'From ₦220,000',
+      image:
+        'https://images.unsplash.com/photo-1632759145351-1d592f2f6f58?auto=format&fit=crop&w=1200&q=80',
+    },
+  ] as const;
 
   const openRentModal = (listing: any) => {
     setSelectedRent(listing);
@@ -708,7 +735,86 @@ export default function HomeScreen() {
           </View>
         </Modal>
 
-        {/* Interior Design Plans */}
+        {/* Repairs */}
+        <View className="mb-8">
+          <View className="flex-row items-center justify-between mb-4">
+            <View className="flex-row items-center flex-1 min-w-0 pr-2">
+              <Wrench size={24} color="#000000" strokeWidth={2.5} />
+              <Text
+                className="text-2xl text-black ml-2 flex-shrink"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+                numberOfLines={1}
+              >
+                Repairs
+              </Text>
+            </View>
+            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
+              <Text
+                className="text-white text-xs"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Fix + Stabilize
+              </Text>
+            </View>
+          </View>
+
+          <Text
+            className="text-gray-500 mb-4"
+            style={{ fontFamily: 'Poppins_400Regular' }}
+          >
+            Start with urgent fixes before moving into bigger upgrade or renovation scope.
+          </Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {repairsQuickStarts.map((repair) => (
+              <TouchableOpacity
+                key={repair.key}
+                onPress={() => router.push('/location?mode=explore')}
+                style={[
+                  cardShadowStyle,
+                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
+                ]}
+                className="bg-white rounded-3xl mr-4 border border-gray-200"
+              >
+                <View className="overflow-hidden rounded-3xl">
+                  <Image
+                    source={{ uri: repair.image }}
+                    className="w-full h-32"
+                    resizeMode="cover"
+                  />
+                  <View className="p-3">
+                    <Text
+                      className="text-base text-black mb-1"
+                      style={{ fontFamily: 'Poppins_600SemiBold' }}
+                      numberOfLines={1}
+                    >
+                      {repair.title}
+                    </Text>
+                    <Text
+                      className="text-gray-500 text-xs mb-2"
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                      numberOfLines={2}
+                    >
+                      {repair.subtitle}
+                    </Text>
+                    <View className="flex-row justify-between items-center">
+                      <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                        {repair.priceHint}
+                      </Text>
+                      <View className="bg-gray-100 rounded-full px-2 py-0.5">
+                        <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Small job
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Upgrades */}
         <View className="mb-8">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center flex-1 min-w-0 pr-2">
@@ -718,7 +824,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                Interior Designs
+                Upgrades
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
@@ -726,7 +832,7 @@ export default function HomeScreen() {
                 className="text-white text-xs"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Mood + BOQ
+                Room + Finish
               </Text>
             </View>
           </View>
@@ -735,7 +841,7 @@ export default function HomeScreen() {
             className="text-gray-500 mb-4"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Explore curated interior concepts with room-by-room planning guidance.
+            Improve existing spaces with practical room-by-room upgrade direction.
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -911,7 +1017,7 @@ export default function HomeScreen() {
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
                 numberOfLines={1}
               >
-                New Builds
+                Full Builds
               </Text>
             </View>
             <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
