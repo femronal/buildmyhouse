@@ -12,6 +12,8 @@ export interface LandForSale {
   id: string;
   name: string;
   description?: string | null;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   location: string;
   price: number;
   sizeSqm: number;

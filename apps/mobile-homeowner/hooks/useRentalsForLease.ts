@@ -12,6 +12,8 @@ export interface RentalListing {
   id: string;
   title: string;
   description?: string | null;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   propertyType: string;
   location: string;
   annualRent: number;

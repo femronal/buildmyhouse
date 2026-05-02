@@ -497,6 +497,8 @@ model HouseForSale {
   id               String   @id @default(uuid())
   name             String
   description      String?
+  opportunityCategory String?
+  opportunityType  String?
   location         String
   price            Float
   bedrooms         Int
@@ -563,6 +565,8 @@ model LandForSale {
   id               String   @id @default(uuid())
   name             String
   description      String?
+  opportunityCategory String?
+  opportunityType  String?
   location         String
   price            Float
   sizeSqm          Float
@@ -628,6 +632,8 @@ model RentalListing {
   id               String   @id @default(uuid())
   title            String
   description      String?
+  opportunityCategory String?
+  opportunityType  String?
   propertyType     String
   location         String
   annualRent       Float

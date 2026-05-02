@@ -21,6 +21,14 @@ export class CreateHouseForSaleDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  opportunityCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  opportunityType?: string;
+
   @IsString()
   location: string;
 

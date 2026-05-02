@@ -18,8 +18,6 @@ import {
   Filter,
   Search,
   Heart,
-  Home,
-  Building2,
   MapPin,
   Bed,
   Bath,
@@ -35,11 +33,15 @@ import {
   Lock,
   Clock,
 } from "lucide-react-native";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ImageCarousel from '@/components/ImageCarousel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useRentalsForLease } from '@/hooks/useRentalsForLease';
 import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
+import { useHousesForSale } from '@/hooks/useHousesForSale';
+import { useLandsForSale } from '@/hooks/useLandsForSale';
+import { useScheduleHouseViewing } from '@/hooks/useHouseViewing';
+import { useScheduleLandViewing } from '@/hooks/useLandViewing';
 import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
 import { useWebSeo } from '@/lib/seo';
@@ -53,22 +55,31 @@ import {
   getTabListingChrome,
 } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
+import {
+  BUILD_OPPORTUNITY_CATEGORIES,
+  BUILD_OPPORTUNITY_FILTERS,
+  formatBuildOpportunityKey,
+  type BuildOpportunityCategoryKey,
+} from "@/lib/build-opportunity-taxonomy";
 
-type RentalListing = {
+type BuildOpportunity = {
   id: string;
+  source: 'rental' | 'house' | 'land';
   title: string;
-  propertyType: string;
+  subtitle?: string;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   location: string;
-  annualRent: number;
-  serviceCharge: number;
-  cautionDeposit: number;
-  legalFeePercent: number;
-  agencyFeePercent: number;
-  bedrooms: number;
-  bathrooms: number;
-  sizeSqm: number;
-  furnishing?: string | null;
-  paymentPattern?: string | null;
+  priceLabel: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  sizeLabel: string;
+  serviceHint?: string;
+  annualRent?: number;
+  serviceCharge?: number;
+  cautionDeposit?: number;
+  legalFeePercent?: number;
+  agencyFeePercent?: number;
   power?: string | null;
   water?: string | null;
   internet?: string | null;
@@ -76,26 +87,12 @@ type RentalListing = {
   security?: string | null;
   rules?: string | null;
   inspectionWindow?: string | null;
-  verificationDocs: string[];
+  verificationDocs?: string[];
+  extraDocs?: string[];
   images: { id?: string; url: string; label?: string | null; order?: number }[];
 };
 
 const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
-
-const rentalFilterTags = [
-  'All',
-  'Under ₦3M/yr',
-  '₦3M-₦7M/yr',
-  'Above ₦7M/yr',
-  '1 Bedroom',
-  '2 Bedrooms',
-  '3+ Bedrooms',
-  'Furnished',
-  'Semi-furnished',
-  'Unfurnished',
-  'High Security',
-  '2+ Parking',
-];
 
 export default function RentScreen() {
   const router = useRouter();
@@ -120,17 +117,21 @@ export default function RentScreen() {
   const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-12' : 'py-24';
   const { data: currentUser } = useCurrentUser();
   const { data: rentalsForLease = [] } = useRentalsForLease();
+  const { data: housesForSale = [] } = useHousesForSale();
+  const { data: landsForSale = [] } = useLandsForSale();
   const requestInspectionMutation = useRequestRentalInspection();
+  const scheduleHouseViewingMutation = useScheduleHouseViewing();
+  const scheduleLandViewingMutation = useScheduleLandViewing();
   const userPicture = currentUser?.pictureUrl;
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
-  const [activeTab, setActiveTab] = useState<'all' | 'house' | 'apartment'>('all');
+  const [activeTab, setActiveTab] = useState<BuildOpportunityCategoryKey>('residential');
 
   const [showRentModal, setShowRentModal] = useState(false);
-  const [selectedRent, setSelectedRent] = useState<RentalListing | null>(null);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<BuildOpportunity | null>(null);
   const [rentRequestSuccess, setRentRequestSuccess] = useState(false);
 
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -152,9 +153,9 @@ export default function RentScreen() {
   });
 
   useWebSeo({
-    title: 'Homes for Rent in Nigeria | BuildMyHouse',
+    title: 'Build Opportunities in Nigeria | BuildMyHouse',
     description:
-      'Browse owner-listed rental homes in Nigeria with transparent fees and inspection request support on BuildMyHouse.',
+      'Browse location-specific build opportunities curated by BuildMyHouse admin for verified properties in Nigeria.',
     canonicalPath: '/rent',
     robots: 'index,follow',
   });
@@ -182,73 +183,132 @@ export default function RentScreen() {
     lastScrollY.current = currentScrollY;
   };
 
-  const matchesFilter = (listing: RentalListing, filter: string) => {
-    switch (filter) {
-      case 'Under ₦3M/yr':
-        return listing.annualRent < 3_000_000;
-      case '₦3M-₦7M/yr':
-        return listing.annualRent >= 3_000_000 && listing.annualRent <= 7_000_000;
-      case 'Above ₦7M/yr':
-        return listing.annualRent > 7_000_000;
-      case '1 Bedroom':
-        return listing.bedrooms === 1;
-      case '2 Bedrooms':
-        return listing.bedrooms === 2;
-      case '3+ Bedrooms':
-        return listing.bedrooms >= 3;
-      case 'Furnished':
-      case 'Semi-furnished':
-      case 'Unfurnished':
-        return String(listing.furnishing || '') === filter;
-      case 'High Security':
-        return /24\/7|cctv|guard|patrol|access control/i.test(String(listing.security || ''));
-      case '2+ Parking':
-        return /[2-9]/.test(String(listing.parking || ''));
-      default:
-        return true;
-    }
-  };
+  const allOpportunities = useMemo<BuildOpportunity[]>(() => {
+    const rentalOpportunities: BuildOpportunity[] = rentalsForLease.map((listing) => ({
+      id: listing.id,
+      source: 'rental',
+      title: listing.title,
+      subtitle: `Rental • ${formatBuildOpportunityKey(listing.propertyType)}`,
+      opportunityCategory: listing.opportunityCategory || 'residential',
+      opportunityType: listing.opportunityType || undefined,
+      location: listing.location,
+      priceLabel: `${formatNaira(listing.annualRent)}/yr`,
+      bedrooms: listing.bedrooms,
+      bathrooms: listing.bathrooms,
+      sizeLabel: `${listing.sizeSqm}m²`,
+      serviceHint: `Service: ${formatNaira(listing.serviceCharge)}`,
+      annualRent: listing.annualRent,
+      serviceCharge: listing.serviceCharge,
+      cautionDeposit: listing.cautionDeposit,
+      legalFeePercent: listing.legalFeePercent,
+      agencyFeePercent: listing.agencyFeePercent,
+      power: listing.power,
+      water: listing.water,
+      internet: listing.internet,
+      parking: listing.parking,
+      security: listing.security,
+      rules: listing.rules,
+      inspectionWindow: listing.inspectionWindow,
+      verificationDocs: listing.verificationDocs,
+      images: listing.images || [],
+    }));
+
+    const houseOpportunities: BuildOpportunity[] = housesForSale.map((house) => ({
+      id: house.id,
+      source: 'house',
+      title: house.name,
+      subtitle: `House • ${formatBuildOpportunityKey(house.propertyType || 'residential')}`,
+      opportunityCategory: house.opportunityCategory || 'residential',
+      opportunityType: house.opportunityType || undefined,
+      location: house.location,
+      priceLabel: formatNaira(house.price),
+      bedrooms: house.bedrooms,
+      bathrooms: house.bathrooms,
+      sizeLabel: `${house.squareMeters ?? Math.round(house.squareFootage * 0.092903)}m²`,
+      serviceHint: house.condition ? `Condition: ${house.condition}` : undefined,
+      verificationDocs: house.documents,
+      extraDocs: house.amenities,
+      images: house.images || [],
+    }));
+
+    const landOpportunities: BuildOpportunity[] = landsForSale.map((land) => ({
+      id: land.id,
+      source: 'land',
+      title: land.name,
+      subtitle: `Land • ${formatBuildOpportunityKey(land.zoningType || 'development')}`,
+      opportunityCategory: land.opportunityCategory || 'residential',
+      opportunityType: land.opportunityType || undefined,
+      location: land.location,
+      priceLabel: formatNaira(land.price),
+      sizeLabel: `${land.sizeSqm} sqm`,
+      serviceHint: land.roadAccess ? `Road access: ${land.roadAccess}` : undefined,
+      verificationDocs: land.documents,
+      extraDocs: land.restrictions,
+      images: land.images || [],
+    }));
+
+    return [...rentalOpportunities, ...houseOpportunities, ...landOpportunities];
+  }, [rentalsForLease, housesForSale, landsForSale]);
+
+  const availableFilters = useMemo(() => {
+    const baseFilters = BUILD_OPPORTUNITY_FILTERS[activeTab] || [];
+    const observed = new Set<string>();
+    allOpportunities.forEach((item) => {
+      if ((item.opportunityCategory || 'residential') === activeTab && item.opportunityType) {
+        observed.add(item.opportunityType);
+      }
+    });
+    return ['All', ...Array.from(new Set([...baseFilters, ...Array.from(observed)]))];
+  }, [activeTab, allOpportunities]);
 
   const filteredListings = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return rentalsForLease.filter((listing: any) => {
-      const type = String(listing.propertyType || '').toLowerCase();
-      const tabMatch =
-        activeTab === 'all' ||
-        (activeTab === 'house' && type === 'house') ||
-        (activeTab === 'apartment' && type === 'apartment');
+    return allOpportunities.filter((listing) => {
+      const tabMatch = (listing.opportunityCategory || 'residential') === activeTab;
       const queryMatch =
         !query ||
         listing.title.toLowerCase().includes(query) ||
         listing.location.toLowerCase().includes(query) ||
-        String(listing.propertyType || '').toLowerCase().includes(query) ||
-        String(listing.furnishing || '').toLowerCase().includes(query);
-      const filterMatch = matchesFilter(listing, activeFilter);
+        String(listing.subtitle || '').toLowerCase().includes(query) ||
+        String(listing.opportunityType || '').toLowerCase().includes(query);
+      const filterMatch = activeFilter === 'All' || listing.opportunityType === activeFilter;
       return tabMatch && queryMatch && filterMatch;
     });
-  }, [activeTab, searchQuery, activeFilter, rentalsForLease]);
+  }, [activeTab, searchQuery, activeFilter, allOpportunities]);
+
+  useEffect(() => {
+    if (!availableFilters.includes(activeFilter)) {
+      setActiveFilter('All');
+    }
+  }, [availableFilters, activeFilter]);
 
   const toggleFavorite = (id: string) => {
     setFavorites((prev) => (prev.includes(id) ? prev.filter((v) => v !== id) : [...prev, id]));
   };
 
-  const openRentModal = (listing: RentalListing) => {
-    setSelectedRent(listing);
+  const openRentModal = (listing: BuildOpportunity) => {
+    setSelectedOpportunity(listing);
     setRentRequestSuccess(false);
     setShowRentModal(true);
   };
 
   const requestRentInspection = async () => {
-    if (!selectedRent?.id) return;
+    if (!selectedOpportunity?.id) return;
     try {
-      await requestInspectionMutation.mutateAsync(selectedRent.id);
+      if (selectedOpportunity.source === 'rental') {
+        await requestInspectionMutation.mutateAsync(selectedOpportunity.id);
+      } else if (selectedOpportunity.source === 'house') {
+        await scheduleHouseViewingMutation.mutateAsync(selectedOpportunity.id);
+      } else {
+        await scheduleLandViewingMutation.mutateAsync(selectedOpportunity.id);
+      }
       setRentRequestSuccess(true);
       setTimeout(() => {
         setShowRentModal(false);
         setRentRequestSuccess(false);
       }, 2000);
     } catch (error: any) {
-      Alert.alert('Request failed', error?.message || 'Could not request inspection. Please try again.');
+      Alert.alert('Request failed', error?.message || 'Could not request property inspection. Please try again.');
     }
   };
 
@@ -289,7 +349,7 @@ export default function RentScreen() {
           >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
-              placeholder="Search rentals, areas, and budgets..."
+              placeholder="Search opportunities, locations, or project types..."
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -308,47 +368,48 @@ export default function RentScreen() {
       </View>
 
       <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
-        <View className="flex-row bg-gray-100 rounded-2xl p-1">
-          <TouchableOpacity
-            onPress={() => setActiveTab('all')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'all' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-sm ${activeTab === 'all' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              All
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setActiveTab('house')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'house' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-sm ${activeTab === 'house' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Houses
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setActiveTab('apartment')}
-            className={`flex-1 px-2 rounded-xl items-center ${activeTab === 'apartment' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-sm ${activeTab === 'apartment' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Apartments
-            </Text>
-          </TouchableOpacity>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
+          <View className="flex-row">
+            {BUILD_OPPORTUNITY_CATEGORIES.map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                className={`px-4 rounded-full items-center mr-2 ${activeTab === tab.key ? 'bg-black' : 'bg-gray-100'}`}
+                style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
+              >
+                <Text
+                  className={`text-sm ${activeTab === tab.key ? 'text-white' : 'text-gray-600'}`}
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+
+      <View style={{ marginBottom: 12, paddingHorizontal: horizontalPadding }}>
+        <View className="bg-gray-50 border border-gray-200 rounded-2xl p-3">
+          <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Location-verified build opportunities
+          </Text>
+          <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+            These scopes are tied to real properties and curated by BuildMyHouse admin. You may purchase the property first, then continue with transparent remote monitoring on BuildMyHouse or outside the app if you prefer.
+          </Text>
         </View>
       </View>
 
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-          {rentalFilterTags.map((tag) => (
+          {availableFilters.map((tag) => (
             <TouchableOpacity
               key={tag}
               onPress={() => setActiveFilter(tag)}
               className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-black' : 'bg-gray-100'}`}
             >
               <Text className={activeFilter === tag ? 'text-white' : 'text-black'} style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}>
-                {tag}
+                {tag === 'All' ? 'All' : formatBuildOpportunityKey(tag)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -361,7 +422,7 @@ export default function RentScreen() {
             className="text-black"
             style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
           >
-            {activeFilter}
+            {activeFilter === 'All' ? 'All' : formatBuildOpportunityKey(activeFilter)}
           </Text>
         </TouchableOpacity>
       </View>
@@ -387,10 +448,10 @@ export default function RentScreen() {
         {filteredListings.length === 0 ? (
           <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
             <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              No rentals match this filter
+              No opportunities match this filter
             </Text>
             <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Try changing budget, bedrooms, or furnishing filters.
+              Try another category, filter, or location keyword.
             </Text>
           </View>
         ) : (
@@ -431,6 +492,11 @@ export default function RentScreen() {
                   <Text className="text-lg text-black mb-1" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
                     {listing.title}
                   </Text>
+                  {listing.subtitle ? (
+                    <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }} numberOfLines={1}>
+                      {listing.subtitle}
+                    </Text>
+                  ) : null}
                   <View className="flex-row items-center mb-2">
                     <MapPin size={12} color="#737373" strokeWidth={2} />
                     <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
@@ -438,12 +504,20 @@ export default function RentScreen() {
                     </Text>
                   </View>
                   <View className="flex-row items-center mb-2">
-                    <Bed size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bedrooms}</Text>
-                    <Bath size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bathrooms}</Text>
+                    {typeof listing.bedrooms === 'number' ? (
+                      <>
+                        <Bed size={12} color="#737373" strokeWidth={2} />
+                        <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bedrooms}</Text>
+                      </>
+                    ) : null}
+                    {typeof listing.bathrooms === 'number' ? (
+                      <>
+                        <Bath size={12} color="#737373" strokeWidth={2} />
+                        <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bathrooms}</Text>
+                      </>
+                    ) : null}
                     <Maximize size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.sizeSqm}m²</Text>
+                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.sizeLabel}</Text>
                   </View>
                   <Text
                     className="text-black text-lg"
@@ -452,15 +526,15 @@ export default function RentScreen() {
                     adjustsFontSizeToFit
                     minimumFontScale={0.75}
                   >
-                    {formatNaira(listing.annualRent)}/yr
+                    {listing.priceLabel}
                   </Text>
                   <View className="flex-row justify-between items-center mt-1 min-w-0">
                     <Text className="text-gray-500 text-xs flex-1 pr-2" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
-                      Service: {formatNaira(listing.serviceCharge)}
+                      {listing.serviceHint || 'Verified property opportunity'}
                     </Text>
                     <View className="bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">
                       <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {listing.propertyType}
+                        {formatBuildOpportunityKey(listing.opportunityType || listing.source)}
                       </Text>
                     </View>
                   </View>
@@ -498,7 +572,7 @@ export default function RentScreen() {
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View className="flex-row justify-between items-start mb-3">
                   <Text className="text-xl text-black flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {selectedRent?.title}
+                    {selectedOpportunity?.title}
                   </Text>
                   <TouchableOpacity onPress={() => setShowRentModal(false)}>
                     <X size={24} color="#000000" strokeWidth={2} />
@@ -507,8 +581,8 @@ export default function RentScreen() {
 
                 <ImageCarousel
                   images={
-                    selectedRent?.images?.length
-                      ? selectedRent.images.map((img: any, index: number) => ({
+                    selectedOpportunity?.images?.length
+                      ? selectedOpportunity.images.map((img: any, index: number) => ({
                           url: getBackendAssetUrl(img.url) || img.url,
                           label: img.label || (index === 0 ? 'Exterior' : 'Interior'),
                         }))
@@ -524,43 +598,54 @@ export default function RentScreen() {
 
                 <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
                   <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse agency fee is fixed at 5% of annual rent.
+                    This opportunity is tied to a real location and should be inspected before any commitment.
                   </Text>
                 </View>
 
                 <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
                   <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Key Rent Breakdown
+                    Opportunity Snapshot
                   </Text>
                   <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Annual rent: {formatNaira(selectedRent?.annualRent || 0)}
+                    Price: {selectedOpportunity?.priceLabel || 'N/A'}
                   </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Service charge: {formatNaira(selectedRent?.serviceCharge || 0)}
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Caution deposit: {formatNaira(selectedRent?.cautionDeposit || 0)}
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Legal fee: {selectedRent?.legalFeePercent || 0}%
-                  </Text>
+                  {typeof selectedOpportunity?.annualRent === 'number' ? (
+                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Annual rent: {formatNaira(selectedOpportunity.annualRent)}
+                    </Text>
+                  ) : null}
+                  {typeof selectedOpportunity?.serviceCharge === 'number' ? (
+                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Service charge: {formatNaira(selectedOpportunity.serviceCharge)}
+                    </Text>
+                  ) : null}
+                  {typeof selectedOpportunity?.cautionDeposit === 'number' ? (
+                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Caution deposit: {formatNaira(selectedOpportunity.cautionDeposit)}
+                    </Text>
+                  ) : null}
+                  {typeof selectedOpportunity?.legalFeePercent === 'number' ? (
+                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Legal fee: {selectedOpportunity.legalFeePercent}%
+                    </Text>
+                  ) : null}
                   <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse agency fee: {selectedRent?.agencyFeePercent || 2}%
+                    BuildMyHouse fee: {selectedOpportunity?.agencyFeePercent || 2}%
                   </Text>
                 </View>
 
                 <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
                   <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Confirm these features before going renting a new home.
+                    Confirm key checks before proceeding.
                   </Text>
                   {[
-                    { label: `Power: ${selectedRent?.power}`, icon: Zap },
-                    { label: `Water: ${selectedRent?.water}`, icon: Droplets },
-                    { label: `Security: ${selectedRent?.security}`, icon: Shield },
-                    { label: `Internet: ${selectedRent?.internet}`, icon: Wifi },
-                    { label: `Parking: ${selectedRent?.parking}`, icon: Car },
-                    { label: `Rules: ${selectedRent?.rules}`, icon: Lock },
-                    { label: `Inspection window: ${selectedRent?.inspectionWindow}`, icon: Clock },
+                    { label: `Power: ${selectedOpportunity?.power || 'N/A'}`, icon: Zap },
+                    { label: `Water: ${selectedOpportunity?.water || 'N/A'}`, icon: Droplets },
+                    { label: `Security: ${selectedOpportunity?.security || 'N/A'}`, icon: Shield },
+                    { label: `Internet: ${selectedOpportunity?.internet || 'N/A'}`, icon: Wifi },
+                    { label: `Parking: ${selectedOpportunity?.parking || 'N/A'}`, icon: Car },
+                    { label: `Rules: ${selectedOpportunity?.rules || 'N/A'}`, icon: Lock },
+                    { label: `Inspection window: ${selectedOpportunity?.inspectionWindow || 'By arrangement'}`, icon: Clock },
                   ].map((item) => (
                     <View key={item.label} className="flex-row items-start mb-2">
                       <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
@@ -578,7 +663,7 @@ export default function RentScreen() {
                     BuildMyHouse Verification Checks
                   </Text>
                   <View className="flex-row flex-wrap">
-                    {(selectedRent?.verificationDocs || []).map((doc: string) => (
+                    {((selectedOpportunity?.verificationDocs || []).concat(selectedOpportunity?.extraDocs || [])).map((doc: string) => (
                       <View key={doc} className="bg-black rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
                         <FileCheck size={12} color="#FFFFFF" strokeWidth={2} />
                         <Text className="text-white text-xs ml-1" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -591,15 +676,23 @@ export default function RentScreen() {
 
                 <TouchableOpacity
                   onPress={requestRentInspection}
-                  disabled={requestInspectionMutation.isPending}
+                  disabled={
+                    requestInspectionMutation.isPending ||
+                    scheduleHouseViewingMutation.isPending ||
+                    scheduleLandViewingMutation.isPending
+                  }
                   className="bg-black rounded-full py-4 px-8 mb-2"
                 >
                   <Text className="text-white text-base text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {requestInspectionMutation.isPending ? 'Submitting...' : 'Request Inspection'}
+                    {(requestInspectionMutation.isPending ||
+                      scheduleHouseViewingMutation.isPending ||
+                      scheduleLandViewingMutation.isPending)
+                      ? 'Submitting...'
+                      : 'Request Property Inspection'}
                   </Text>
                 </TouchableOpacity>
                 <Text className="text-gray-500 text-xs text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  BuildMyHouse will coordinate inspection directly with the homeowner.
+                  BuildMyHouse will coordinate inspection and next steps for this location-specific scope.
                 </Text>
               </ScrollView>
             ) : (

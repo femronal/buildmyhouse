@@ -12,6 +12,8 @@ export interface RentalListing {
   id: string;
   title: string;
   description?: string | null;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   propertyType: string;
   location: string;
   annualRent: number;
@@ -41,6 +43,8 @@ export interface RentalListing {
 export interface CreateRentalPayload {
   title: string;
   description?: string;
+  opportunityCategory?: string;
+  opportunityType?: string;
   propertyType: string;
   location: string;
   annualRent: number;

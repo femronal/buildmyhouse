@@ -12,6 +12,8 @@ export interface HouseForSale {
   id: string;
   name: string;
   description?: string | null;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   location: string;
   price: number;
   bedrooms: number;

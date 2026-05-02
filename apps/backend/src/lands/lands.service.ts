@@ -71,6 +71,8 @@ export class LandsService {
       data: {
         name: dto.name,
         description: dto.description,
+        opportunityCategory: dto.opportunityCategory,
+        opportunityType: dto.opportunityType,
         location: dto.location,
         price: Number(dto.price),
         sizeSqm: Number(dto.sizeSqm),
@@ -108,6 +110,10 @@ export class LandsService {
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.opportunityCategory !== undefined
+          ? { opportunityCategory: dto.opportunityCategory }
+          : {}),
+        ...(dto.opportunityType !== undefined ? { opportunityType: dto.opportunityType } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.price !== undefined ? { price: Number(dto.price) } : {}),
         ...(dto.sizeSqm !== undefined ? { sizeSqm: Number(dto.sizeSqm) } : {}),

@@ -12,6 +12,8 @@ export interface HouseForSale {
   id: string;
   name: string;
   description?: string | null;
+  opportunityCategory?: string | null;
+  opportunityType?: string | null;
   location: string;
   price: number;
   bedrooms: number;
@@ -35,6 +37,8 @@ export interface HouseForSale {
 export interface CreateHousePayload {
   name: string;
   description?: string;
+  opportunityCategory?: string;
+  opportunityType?: string;
   location: string;
   price: number;
   bedrooms: number;

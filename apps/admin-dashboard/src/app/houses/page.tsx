@@ -6,6 +6,12 @@ import { useHouses, type CreateHousePayload, type HouseForSale, type UpdateHouse
 import { useHouseViewingInterests } from '@/hooks/useHouseViewingInterests';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
+import {
+  BUILD_OPPORTUNITY_CATEGORY_OPTIONS,
+  BUILD_OPPORTUNITY_TYPE_OPTIONS,
+  slugifyBuildOpportunityType,
+  type BuildOpportunityCategoryKey,
+} from '@/lib/build-opportunity-taxonomy';
 
 export default function HousesPage() {
   const { houses, isLoading, createHouse, isCreating, deleteHouse, updateHouse, isUpdating, refetch } = useHouses();
@@ -23,6 +29,9 @@ export default function HousesPage() {
   const [form, setForm] = useState({
     name: '',
     description: '',
+    opportunityCategory: 'residential' as BuildOpportunityCategoryKey,
+    opportunityType: '',
+    opportunityTypeCustom: '',
     location: '',
     price: '',
     bedrooms: '',
@@ -42,12 +51,25 @@ export default function HousesPage() {
   const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
+  const getTypeOptions = (category: BuildOpportunityCategoryKey) =>
+    BUILD_OPPORTUNITY_TYPE_OPTIONS[category] ?? [];
+
+  const resolveOpportunityType = () => {
+    if (form.opportunityType === '__custom__') {
+      return slugifyBuildOpportunityType(form.opportunityTypeCustom);
+    }
+    return form.opportunityType;
+  };
+
   const selected = houses.find((h) => h.id === selectedId) ?? houses[0];
 
   const resetForm = () => {
     setForm({
       name: '',
       description: '',
+      opportunityCategory: 'residential',
+      opportunityType: '',
+      opportunityTypeCustom: '',
       location: '',
       price: '',
       bedrooms: '',
@@ -96,10 +118,17 @@ export default function HousesPage() {
   };
 
   const startEditHouse = (house: HouseForSale) => {
+    const category = (house.opportunityCategory || 'residential') as BuildOpportunityCategoryKey;
+    const categoryOptions = getTypeOptions(category);
+    const matchedOption = categoryOptions.find((option) => option.value === house.opportunityType);
+    const usingCustom = !!house.opportunityType && !matchedOption;
     setEditingId(house.id);
     setForm({
       name: house.name,
       description: house.description || '',
+      opportunityCategory: category,
+      opportunityType: usingCustom ? '__custom__' : (house.opportunityType || ''),
+      opportunityTypeCustom: usingCustom ? String(house.opportunityType) : '',
       location: house.location,
       price: String(house.price ?? ''),
       bedrooms: String(house.bedrooms ?? ''),
@@ -168,6 +197,8 @@ export default function HousesPage() {
       const payload: CreateHousePayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        opportunityCategory: form.opportunityCategory || undefined,
+        opportunityType: resolveOpportunityType() || undefined,
         location: form.location.trim(),
         price: parseFloat(form.price) || 0,
         bedrooms: parseInt(form.bedrooms, 10) || 1,
@@ -232,6 +263,8 @@ export default function HousesPage() {
       const payload: UpdateHousePayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        opportunityCategory: form.opportunityCategory || undefined,
+        opportunityType: resolveOpportunityType() || undefined,
         location: form.location.trim(),
         price: parseFloat(form.price) || 0,
         bedrooms: parseInt(form.bedrooms, 10) || 1,
@@ -348,6 +381,18 @@ export default function HousesPage() {
                       <p className="text-sm text-gray-500 mt-1">
                         {house.location} • {house.bedrooms} bed, {house.bathrooms} bath
                       </p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {house.opportunityCategory ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                            {house.opportunityCategory.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                        {house.opportunityType ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                            {house.opportunityType.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">
                         ₦{house.price.toLocaleString()}
                       </p>
@@ -424,6 +469,14 @@ export default function HousesPage() {
                 <div>
                   <p className="text-gray-500">Price</p>
                   <p className="font-medium">₦{selected.price.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Category</p>
+                  <p className="font-medium">{selected.opportunityCategory?.replace(/_/g, ' ') || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Filter</p>
+                  <p className="font-medium">{selected.opportunityType?.replace(/_/g, ' ') || '—'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Bedrooms</p>
@@ -669,6 +722,54 @@ export default function HousesPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
+                  <select
+                    value={form.opportunityCategory}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
+                        opportunityType: '',
+                        opportunityTypeCustom: '',
+                      }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
+                  <select
+                    value={form.opportunityType || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Select filter</option>
+                    {getTypeOptions(form.opportunityCategory).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                    <option value="__custom__">Custom filter...</option>
+                  </select>
+                </div>
+              </div>
+              {form.opportunityType === '__custom__' ? (
+                <input
+                  type="text"
+                  placeholder="Custom filter (e.g. mixed_use_residential_hub)"
+                  value={form.opportunityTypeCustom}
+                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              ) : null}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1003,6 +1104,54 @@ export default function HousesPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
+                  <select
+                    value={form.opportunityCategory}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
+                        opportunityType: '',
+                        opportunityTypeCustom: '',
+                      }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
+                  <select
+                    value={form.opportunityType || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Select filter</option>
+                    {getTypeOptions(form.opportunityCategory).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                    <option value="__custom__">Custom filter...</option>
+                  </select>
+                </div>
+              </div>
+              {form.opportunityType === '__custom__' ? (
+                <input
+                  type="text"
+                  placeholder="Custom filter (e.g. mixed_use_residential_hub)"
+                  value={form.opportunityTypeCustom}
+                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              ) : null}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Location *

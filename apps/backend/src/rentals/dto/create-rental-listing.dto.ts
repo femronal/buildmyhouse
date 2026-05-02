@@ -21,6 +21,14 @@ export class CreateRentalListingDto {
   @IsString()
   description?: string;
 
+  @IsOptional()
+  @IsString()
+  opportunityCategory?: string;
+
+  @IsOptional()
+  @IsString()
+  opportunityType?: string;
+
   @IsString()
   propertyType: string;
 

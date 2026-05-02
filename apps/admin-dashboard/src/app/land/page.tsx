@@ -6,6 +6,12 @@ import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useLands, type CreateLandPayload, type LandForSale, type UpdateLandPayload } from '@/hooks/useLands';
 import { useLandViewingInterests } from '@/hooks/useLandViewingInterests';
+import {
+  BUILD_OPPORTUNITY_CATEGORY_OPTIONS,
+  BUILD_OPPORTUNITY_TYPE_OPTIONS,
+  slugifyBuildOpportunityType,
+  type BuildOpportunityCategoryKey,
+} from '@/lib/build-opportunity-taxonomy';
 
 export default function LandPage() {
   const { lands, isLoading, createLand, isCreating, deleteLand, updateLand, isUpdating, refetch } = useLands();
@@ -24,6 +30,9 @@ export default function LandPage() {
   const [form, setForm] = useState({
     name: '',
     description: '',
+    opportunityCategory: 'residential' as BuildOpportunityCategoryKey,
+    opportunityType: '',
+    opportunityTypeCustom: '',
     location: '',
     price: '',
     sizeSqm: '',
@@ -39,6 +48,16 @@ export default function LandPage() {
     contactPhone: '',
   });
   const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
+
+  const resolveOpportunityType = () => {
+    if (form.opportunityType === '__custom__') {
+      return slugifyBuildOpportunityType(form.opportunityTypeCustom);
+    }
+    return form.opportunityType;
+  };
+
+  const getTypeOptions = (category: BuildOpportunityCategoryKey) =>
+    BUILD_OPPORTUNITY_TYPE_OPTIONS[category] ?? [];
 
   const selected = lands.find((l) => l.id === selectedId) ?? lands[0];
   const selectedInterestLand = lands.find((l) => l.id === interestLandId) ?? null;
@@ -63,6 +82,9 @@ export default function LandPage() {
     setForm({
       name: '',
       description: '',
+      opportunityCategory: 'residential',
+      opportunityType: '',
+      opportunityTypeCustom: '',
       location: '',
       price: '',
       sizeSqm: '',
@@ -109,10 +131,17 @@ export default function LandPage() {
   };
 
   const startEditLand = (land: LandForSale) => {
+    const category = (land.opportunityCategory || 'residential') as BuildOpportunityCategoryKey;
+    const categoryOptions = getTypeOptions(category);
+    const matchedOption = categoryOptions.find((option) => option.value === land.opportunityType);
+    const usingCustom = !!land.opportunityType && !matchedOption;
     setEditingId(land.id);
     setForm({
       name: land.name,
       description: land.description || '',
+      opportunityCategory: category,
+      opportunityType: usingCustom ? '__custom__' : (land.opportunityType || ''),
+      opportunityTypeCustom: usingCustom ? String(land.opportunityType) : '',
       location: land.location,
       price: String(land.price ?? ''),
       sizeSqm: String(land.sizeSqm ?? ''),
@@ -186,6 +215,8 @@ export default function LandPage() {
       const payload: CreateLandPayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        opportunityCategory: form.opportunityCategory || undefined,
+        opportunityType: resolveOpportunityType() || undefined,
         location: form.location.trim(),
         price: parseFloat(form.price) || 0,
         sizeSqm: parseFloat(form.sizeSqm) || 0,
@@ -238,6 +269,8 @@ export default function LandPage() {
       const payload: UpdateLandPayload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        opportunityCategory: form.opportunityCategory || undefined,
+        opportunityType: resolveOpportunityType() || undefined,
         location: form.location.trim(),
         price: parseFloat(form.price) || 0,
         sizeSqm: parseFloat(form.sizeSqm) || 0,
@@ -314,6 +347,18 @@ export default function LandPage() {
                         {land.name}
                       </p>
                       <p className="text-sm text-gray-500 mt-1">{land.location}</p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {land.opportunityCategory ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                            {land.opportunityCategory.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                        {land.opportunityType ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                            {land.opportunityType.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">
                         {land.sizeSqm} sqm • ₦{land.price.toLocaleString()}
                       </p>
@@ -391,6 +436,14 @@ export default function LandPage() {
                 <div>
                   <p className="text-gray-500">Title</p>
                   <p className="font-medium">{selected.titleDocument || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Category</p>
+                  <p className="font-medium">{selected.opportunityCategory?.replace(/_/g, ' ') || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Filter</p>
+                  <p className="font-medium">{selected.opportunityType?.replace(/_/g, ' ') || '—'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Zoning</p>
@@ -622,6 +675,53 @@ export default function LandPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
+                  <select
+                    value={form.opportunityCategory}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
+                        opportunityType: '',
+                        opportunityTypeCustom: '',
+                      }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
+                  <select
+                    value={form.opportunityType || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Select filter</option>
+                    {getTypeOptions(form.opportunityCategory).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                    <option value="__custom__">Custom filter...</option>
+                  </select>
+                </div>
+              </div>
+              {form.opportunityType === '__custom__' ? (
+                <input
+                  placeholder="Custom filter (e.g. gated_estate_infrastructure)"
+                  value={form.opportunityTypeCustom}
+                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              ) : null}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦) *</label>
                   <input
                     type="number"
@@ -763,6 +863,53 @@ export default function LandPage() {
                   className="w-full px-3 py-2 border rounded-lg text-sm"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
+                  <select
+                    value={form.opportunityCategory}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
+                        opportunityType: '',
+                        opportunityTypeCustom: '',
+                      }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
+                  <select
+                    value={form.opportunityType || ''}
+                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
+                    className="w-full px-3 py-2 border rounded-lg text-sm"
+                  >
+                    <option value="">Select filter</option>
+                    {getTypeOptions(form.opportunityCategory).map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                    <option value="__custom__">Custom filter...</option>
+                  </select>
+                </div>
+              </div>
+              {form.opportunityType === '__custom__' ? (
+                <input
+                  placeholder="Custom filter (e.g. gated_estate_infrastructure)"
+                  value={form.opportunityTypeCustom}
+                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                />
+              ) : null}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦) *</label>

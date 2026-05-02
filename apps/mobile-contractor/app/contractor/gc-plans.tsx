@@ -15,31 +15,56 @@ interface ImageWithLabel {
   label: string;
 }
 
-type PlanType = 'homebuilding' | 'renovation' | 'interior_design';
+type PlanType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+type ApiPlanType = 'homebuilding' | 'renovation' | 'interior_design';
 
 const PLAN_TYPE_OPTIONS: Array<{ value: PlanType; label: string }> = [
-  { value: 'homebuilding', label: 'Home Construction' },
+  { value: 'repair', label: 'Repair' },
+  { value: 'upgrades', label: 'Upgrades' },
   { value: 'renovation', label: 'Renovation' },
-  { value: 'interior_design', label: 'Interior Design' },
+  { value: 'full_builds', label: 'Full Builds' },
 ];
 
 function formatPlanTypeLabel(planType?: string | null): string {
+  if (planType === 'repair') return 'Repair';
+  if (planType === 'upgrades' || planType === 'interior_design') return 'Upgrades';
   if (planType === 'renovation') return 'Renovation';
-  if (planType === 'interior_design') return 'Interior Design';
-  return 'Home Construction';
+  if (planType === 'full_builds' || planType === 'homebuilding') return 'Full Builds';
+  return 'Repair';
+}
+
+function mapPlanTypeForApi(planType: PlanType): ApiPlanType {
+  if (planType === 'upgrades') return 'interior_design';
+  if (planType === 'full_builds') return 'homebuilding';
+  // Keep both Repair and Renovation under backend's renovation type for now.
+  return 'renovation';
+}
+
+function mapApiPlanTypeToUi(planType?: string | null): PlanType {
+  if (planType === 'interior_design' || planType === 'upgrades') return 'upgrades';
+  if (planType === 'homebuilding' || planType === 'full_builds') return 'full_builds';
+  if (planType === 'renovation') return 'renovation';
+  return 'repair';
 }
 
 function getPlanTypeTagClasses(planType?: string | null): { container: string; text: string } {
-  if (planType === 'renovation') {
+  const normalized = mapApiPlanTypeToUi(planType);
+  if (normalized === 'repair') {
     return {
-      container: 'bg-amber-500/20 border-amber-400',
-      text: 'text-amber-300',
+      container: 'bg-cyan-500/20 border-cyan-400',
+      text: 'text-cyan-300',
     };
   }
-  if (planType === 'interior_design') {
+  if (normalized === 'upgrades') {
     return {
       container: 'bg-purple-500/20 border-purple-400',
       text: 'text-purple-300',
+    };
+  }
+  if (normalized === 'renovation') {
+    return {
+      container: 'bg-amber-500/20 border-amber-400',
+      text: 'text-amber-300',
     };
   }
   return {
@@ -83,7 +108,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [planType, setPlanType] = useState<PlanType>('homebuilding');
+  const [planType, setPlanType] = useState<PlanType>('repair');
   const [bedrooms, setBedrooms] = useState("");
   const [bathrooms, setBathrooms] = useState("");
   const [squareFootage, setSquareFootage] = useState("");
@@ -271,7 +296,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       const designData = {
         name: name.trim(),
         description: description.trim(),
-        planType,
+        planType: mapPlanTypeForApi(planType),
         bedrooms: parseInt(bedrooms, 10),
         bathrooms: parseInt(bathrooms, 10),
         squareFootage: parseFloat(squareFootage),
@@ -319,7 +344,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       // Reset form
       setName("");
       setDescription("");
-      setPlanType('homebuilding');
+      setPlanType('repair');
       setBedrooms("");
       setBathrooms("");
       setSquareFootage("");
@@ -864,11 +889,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   const { showAlert } = useAppAlert();
   const [name, setName] = useState(design.name || "");
   const [description, setDescription] = useState(design.description || "");
-  const [planType, setPlanType] = useState<PlanType>(
-    design.planType === 'renovation' || design.planType === 'interior_design'
-      ? design.planType
-      : 'homebuilding',
-  );
+  const [planType, setPlanType] = useState<PlanType>(mapApiPlanTypeToUi(design.planType));
   const [bedrooms, setBedrooms] = useState(design.bedrooms?.toString() || "");
   const [bathrooms, setBathrooms] = useState(design.bathrooms?.toString() || "");
   const [squareFootage, setSquareFootage] = useState(design.squareFootage?.toString() || "");
@@ -986,7 +1007,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
         updateData: {
           name: name.trim(),
           description: description.trim(),
-          planType,
+          planType: mapPlanTypeForApi(planType),
           bedrooms: parseInt(bedrooms),
           bathrooms: parseInt(bathrooms),
           squareFootage: parseFloat(squareFootage),

@@ -48,6 +48,8 @@ export class HousesService {
       data: {
         name: dto.name,
         description: dto.description,
+        opportunityCategory: dto.opportunityCategory,
+        opportunityType: dto.opportunityType,
         location: dto.location,
         price: Number(dto.price),
         bedrooms: Number(dto.bedrooms),
@@ -92,6 +94,10 @@ export class HousesService {
       data: {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.opportunityCategory !== undefined
+          ? { opportunityCategory: dto.opportunityCategory }
+          : {}),
+        ...(dto.opportunityType !== undefined ? { opportunityType: dto.opportunityType } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.price !== undefined ? { price: Number(dto.price) } : {}),
         ...(dto.bedrooms !== undefined ? { bedrooms: Number(dto.bedrooms) } : {}),

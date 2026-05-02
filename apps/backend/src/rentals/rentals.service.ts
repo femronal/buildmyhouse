@@ -49,6 +49,8 @@ export class RentalsService {
       data: {
         title: dto.title,
         description: dto.description,
+        opportunityCategory: dto.opportunityCategory,
+        opportunityType: dto.opportunityType,
         propertyType: dto.propertyType,
         location: dto.location,
         annualRent: Number(dto.annualRent),
@@ -97,6 +99,10 @@ export class RentalsService {
       data: {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
         ...(dto.description !== undefined ? { description: dto.description } : {}),
+        ...(dto.opportunityCategory !== undefined
+          ? { opportunityCategory: dto.opportunityCategory }
+          : {}),
+        ...(dto.opportunityType !== undefined ? { opportunityType: dto.opportunityType } : {}),
         ...(dto.propertyType !== undefined ? { propertyType: dto.propertyType } : {}),
         ...(dto.location !== undefined ? { location: dto.location } : {}),
         ...(dto.annualRent !== undefined ? { annualRent: Number(dto.annualRent) } : {}),
