@@ -6,6 +6,8 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 
 /**
  * Roles decorator to specify which roles can access an endpoint
@@ -15,9 +17,13 @@ export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(
+    private reflector: Reflector,
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
     
     // If no roles are specified, allow access (endpoint is public or role-checked elsewhere)
@@ -40,6 +46,56 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException(
         `Access denied. Required roles: ${requiredRoles.join(', ')}. Your role: ${user.role}`,
       );
+    }
+
+    if (requiredRoles.includes('admin')) {
+      const hasAccess = await this.hasAdminDashboardAccess(String(user.email || ''));
+      if (!hasAccess) {
+        throw new ForbiddenException('Admin access is restricted for this account.');
+      }
+    }
+
+    return true;
+  }
+
+  private getAdminDashboardAllowlist() {
+    const raw =
+      this.configService.get<string>('ADMIN_DASHBOARD_ALLOWED_EMAILS') ||
+      this.configService.get<string>('ADMIN_ALLOWED_EMAILS') ||
+      '';
+
+    const emails = raw
+      .split(',')
+      .map((item) => String(item || '').trim().toLowerCase())
+      .filter(Boolean);
+
+    return new Set(emails);
+  }
+
+  private async hasAdminDashboardAccess(email: string) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      return false;
+    }
+
+    const enabledAdmins = await this.prisma.user.findMany({
+      where: {
+        role: 'admin',
+        adminDashboardAccess: true,
+      },
+      select: { email: true },
+      take: 200,
+    });
+
+    if (enabledAdmins.length > 0) {
+      return enabledAdmins.some(
+        (admin) => String(admin.email || '').trim().toLowerCase() === normalizedEmail,
+      );
+    }
+
+    const envAllowlist = this.getAdminDashboardAllowlist();
+    if (envAllowlist.size > 0) {
+      return envAllowlist.has(normalizedEmail);
     }
 
     return true;

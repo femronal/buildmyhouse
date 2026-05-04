@@ -15,10 +15,19 @@ export interface AuthResponse {
   };
 }
 
+export interface CurrentUser {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+  verified: boolean;
+}
+
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {
-  // TODO: Replace with actual auth endpoint when implemented
-  // For now, this is a placeholder
-  const response = await api.post<AuthResponse>('/auth/login', credentials);
+  const response = await api.post<AuthResponse>('/auth/admin/login', credentials);
+  if (response?.user?.role !== 'admin') {
+    throw new Error('Only approved admin accounts can access this dashboard.');
+  }
   auth.setToken(response.token);
   return response;
 };
@@ -31,9 +40,8 @@ export const logout = (): void => {
 };
 
 export const getCurrentUser = async () => {
-  // TODO: Replace with actual user endpoint when implemented
   try {
-    return await api.get('/auth/me');
+    return await api.get<CurrentUser>('/auth/me');
   } catch (error) {
     return null;
   }

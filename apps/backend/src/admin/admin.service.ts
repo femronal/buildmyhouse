@@ -6,6 +6,7 @@ import { PlanFileHealthService } from './plan-file-health.service';
 import { EmailService } from '../email/email.service';
 import type { EmailHealthReport } from '../email/email.service';
 import { AdminEmailAudience, SendBulkEmailDto } from './dto/send-bulk-email.dto';
+import * as bcrypt from 'bcryptjs';
 
 const STALLED_DAYS = 7;
 const RECENT_ACTIVITY_LIMIT = 10;
@@ -39,6 +40,17 @@ export type RecentActivityItem = {
   data?: Record<string, unknown>;
 };
 
+export type FullAdminAccessAccount = {
+  id: string;
+  email: string;
+  fullName: string | null;
+  verified: boolean;
+  adminDashboardAccess: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  hasDashboardAllowlistAccess: boolean;
+};
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -61,6 +73,145 @@ export class AdminService {
 
   async getEmailHealth(): Promise<EmailHealthReport> {
     return this.emailService.getHealthReport();
+  }
+
+  async getFullAdminAccessAccounts(): Promise<FullAdminAccessAccount[]> {
+    await this.bootstrapAdminAccessFromEnvIfNeeded();
+
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'admin' },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        verified: true,
+        adminDashboardAccess: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const dbEnabledEmails = new Set(
+      admins
+        .filter((admin) => admin.adminDashboardAccess)
+        .map((admin) => String(admin.email || '').trim().toLowerCase()),
+    );
+    const usingDatabaseAccessList = dbEnabledEmails.size > 0;
+    const envAllowlist = this.getAdminDashboardAllowlist();
+
+    return admins.map((admin) => ({
+      ...admin,
+      hasDashboardAllowlistAccess: usingDatabaseAccessList
+        ? dbEnabledEmails.has(String(admin.email || '').trim().toLowerCase())
+        : envAllowlist.size > 0
+          ? envAllowlist.has(String(admin.email || '').trim().toLowerCase())
+          : true,
+    }));
+  }
+
+  async setAdminDashboardAccess(params: {
+    actorUserId: string;
+    targetUserId: string;
+    enabled: boolean;
+  }) {
+    await this.bootstrapAdminAccessFromEnvIfNeeded();
+
+    const actor = await this.prisma.user.findUnique({
+      where: { id: params.actorUserId },
+      select: { id: true, role: true, email: true },
+    });
+    if (!actor || actor.role !== 'admin') {
+      throw new BadRequestException('Only admins can manage dashboard access.');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: params.targetUserId },
+      select: {
+        id: true,
+        role: true,
+        email: true,
+        adminDashboardAccess: true,
+      },
+    });
+    if (!target || target.role !== 'admin') {
+      throw new BadRequestException('Target account must be an admin user.');
+    }
+
+    if (!params.enabled) {
+      if (target.id === actor.id) {
+        throw new BadRequestException('You cannot remove your own dashboard access.');
+      }
+
+      const otherEnabledCount = await this.prisma.user.count({
+        where: {
+          role: 'admin',
+          adminDashboardAccess: true,
+          id: { not: target.id },
+        },
+      });
+      if (otherEnabledCount === 0) {
+        throw new BadRequestException('At least one admin must keep dashboard access.');
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: target.id },
+      data: { adminDashboardAccess: params.enabled },
+    });
+
+    return this.getFullAdminAccessAccounts();
+  }
+
+  async createAdminAccount(params: {
+    actorUserId: string;
+    email: string;
+    password: string;
+    fullName: string;
+  }) {
+    const actor = await this.prisma.user.findUnique({
+      where: { id: params.actorUserId },
+      select: { id: true, role: true },
+    });
+    if (!actor || actor.role !== 'admin') {
+      throw new BadRequestException('Only admins can create admin accounts.');
+    }
+
+    const email = String(params.email || '').trim().toLowerCase();
+    const password = String(params.password || '');
+    const fullName = String(params.fullName || '').trim();
+
+    if (!email) {
+      throw new BadRequestException('Admin email is required.');
+    }
+    if (password.length < 6) {
+      throw new BadRequestException('Admin password must be at least 6 characters.');
+    }
+    if (!fullName) {
+      throw new BadRequestException('Admin full name is required.');
+    }
+
+    const existing = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new BadRequestException('A user with this email already exists.');
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await this.prisma.user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        fullName,
+        role: 'admin',
+        verified: true,
+        adminDashboardAccess: true,
+      },
+    });
+
+    return this.getFullAdminAccessAccounts();
   }
 
   private async getStats(): Promise<DashboardStats> {
@@ -481,5 +632,41 @@ export class AdminService {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  private getAdminDashboardAllowlist() {
+    const raw =
+      process.env.ADMIN_DASHBOARD_ALLOWED_EMAILS ||
+      process.env.ADMIN_ALLOWED_EMAILS ||
+      '';
+
+    return new Set(
+      raw
+        .split(',')
+        .map((email) => String(email || '').trim().toLowerCase())
+        .filter(Boolean),
+    );
+  }
+
+  private async bootstrapAdminAccessFromEnvIfNeeded() {
+    const enabledCount = await this.prisma.user.count({
+      where: { role: 'admin', adminDashboardAccess: true },
+    });
+    if (enabledCount > 0) {
+      return;
+    }
+
+    const envAllowlist = this.getAdminDashboardAllowlist();
+    if (envAllowlist.size === 0) {
+      return;
+    }
+
+    await this.prisma.user.updateMany({
+      where: {
+        role: 'admin',
+        email: { in: Array.from(envAllowlist) },
+      },
+      data: { adminDashboardAccess: true },
+    });
   }
 }

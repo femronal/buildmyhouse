@@ -115,3 +115,72 @@ body {
   pointer-events: none;
 }
 
+.admin-content {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  .admin-content {
+    overflow-x: hidden;
+  }
+
+  .admin-content > .p-8 {
+    padding: 1rem;
+  }
+
+  .admin-content .p-6 {
+    padding: 1rem;
+  }
+
+  .admin-content > .space-y-8 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse));
+  }
+
+  .admin-content > div > .flex.items-center.justify-between {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .admin-content > div > .flex.items-center.justify-between > .flex-shrink-0 {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .admin-content .flex.items-start.justify-between {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .admin-content .grid.grid-cols-2,
+  .admin-content .grid.grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .admin-content h1 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+
+  .admin-content h2 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+
+  .admin-content .rounded-xl {
+    border-radius: 1rem;
+  }
+
+  .admin-content .overflow-hidden:has(> table) {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .admin-content table {
+    min-width: 42rem;
+  }
+}
+

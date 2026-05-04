@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +21,12 @@ import { GC_WELCOME_EMAIL_TEMPLATE } from '../email/templates/gc-welcome.templat
 @Injectable()
 export class AuthService {
   private prisma = new PrismaClient();
+  private static readonly PUBLIC_SIGNUP_ROLES = new Set([
+    'homeowner',
+    'general_contractor',
+    'subcontractor',
+    'vendor',
+  ]);
 
   constructor(
     private readonly jwtService: JwtService,
@@ -31,6 +38,17 @@ export class AuthService {
 
   async register(registerDto: RegisterDto) {
     const { email, password, fullName, role, phone } = registerDto;
+    const normalizedRole = String(role || '').trim().toLowerCase();
+
+    if (normalizedRole === 'admin') {
+      throw new ForbiddenException(
+        'Admin accounts cannot be created through public registration.',
+      );
+    }
+
+    if (!AuthService.PUBLIC_SIGNUP_ROLES.has(normalizedRole)) {
+      throw new BadRequestException('Invalid role selected for registration.');
+    }
 
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
@@ -50,14 +68,14 @@ export class AuthService {
         email,
         password: hashedPassword,
         fullName,
-        role,
+        role: normalizedRole,
         phone,
-        verified: role === 'admin', // Auto-verify admins
+        verified: false,
       },
     });
 
     // Create Contractor profile for GCs so they appear in admin Contractors and Verification pages
-    if (role === 'general_contractor') {
+    if (normalizedRole === 'general_contractor') {
       await this.prisma.contractor.create({
         data: {
           userId: user.id,
@@ -70,8 +88,8 @@ export class AuthService {
     }
 
     await this.notifyAdminNewSignup(user.fullName ?? 'Unknown', user.email, user.role);
-    await this.sendHomeownerWelcomeEmail(user.email, user.fullName, user.role);
-    await this.sendGeneralContractorWelcomeEmail(user.email, user.role);
+    await this.sendHomeownerWelcomeEmail(user.email, user.fullName, normalizedRole);
+    await this.sendGeneralContractorWelcomeEmail(user.email, normalizedRole);
 
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
@@ -90,9 +108,30 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+    const user = await this.validateEmailPassword(loginDto);
 
-    // Find user
+    return this.buildAuthResponse(user);
+  }
+
+  async loginAdmin(loginDto: LoginDto) {
+    const user = await this.validateEmailPassword(loginDto);
+
+    if (user.role !== 'admin') {
+      throw new UnauthorizedException('Only approved admin accounts can sign in here.');
+    }
+
+    const hasDashboardAccess = await this.hasAdminDashboardAccess(user.email);
+    if (!hasDashboardAccess) {
+      throw new UnauthorizedException('Your admin dashboard access is currently restricted.');
+    }
+
+    return this.buildAuthResponse(user);
+  }
+
+  private async validateEmailPassword(loginDto: LoginDto) {
+    const email = String(loginDto.email || '').trim().toLowerCase();
+    const password = String(loginDto.password || '');
+
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -101,7 +140,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // Verify password
     if (!user.password) {
       throw new UnauthorizedException('User account not properly configured');
     }
@@ -111,6 +149,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    return user;
+  }
+
+  private async buildAuthResponse(user: {
+    id: string;
+    email: string;
+    fullName: string | null;
+    pictureUrl: string | null;
+    role: string;
+    verified: boolean;
+  }) {
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
 
@@ -125,6 +174,50 @@ export class AuthService {
         verified: user.verified,
       },
     };
+  }
+
+  private getAdminDashboardAllowedEmails() {
+    const raw =
+      this.configService.get<string>('ADMIN_DASHBOARD_ALLOWED_EMAILS') ||
+      this.configService.get<string>('ADMIN_ALLOWED_EMAILS') ||
+      '';
+
+    const emails = raw
+      .split(',')
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean);
+
+    return new Set(emails);
+  }
+
+  private async hasAdminDashboardAccess(email: string) {
+    const normalizedEmail = String(email || '').trim().toLowerCase();
+    if (!normalizedEmail) {
+      return false;
+    }
+
+    const enabledAdmins = await this.prisma.user.findMany({
+      where: {
+        role: 'admin',
+        adminDashboardAccess: true,
+      },
+      select: { email: true },
+      take: 200,
+    });
+
+    if (enabledAdmins.length > 0) {
+      return enabledAdmins.some(
+        (admin) => String(admin.email || '').trim().toLowerCase() === normalizedEmail,
+      );
+    }
+
+    const envAllowlist = this.getAdminDashboardAllowedEmails();
+    if (envAllowlist.size > 0) {
+      return envAllowlist.has(normalizedEmail);
+    }
+
+    // Safety fallback when no explicit allowlist is configured yet.
+    return true;
   }
 
   async getCurrentUser(userId: string) {

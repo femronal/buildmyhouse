@@ -1,4 +1,5 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsIn } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterDto {
   @IsEmail()
@@ -12,7 +13,9 @@ export class RegisterDto {
   fullName: string;
 
   @IsString()
-  role: string; // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
+  @Transform(({ value }) => String(value || '').trim().toLowerCase())
+  @IsIn(['homeowner', 'general_contractor', 'subcontractor', 'vendor'])
+  role: string;
 
   @IsOptional()
   @IsString()

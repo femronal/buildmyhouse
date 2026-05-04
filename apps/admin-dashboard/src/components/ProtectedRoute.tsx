@@ -1,30 +1,59 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/api';
+import { getCurrentUser, logout } from '@/lib/auth';
 
 export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    let cancelled = false;
+    const verifyAdminAccess = async () => {
+      if (!auth.isAuthenticated()) {
+        if (!cancelled) {
+          setHasAccess(false);
+          setIsCheckingAccess(false);
+        }
+        router.push('/login');
+        return;
+      }
 
-  useEffect(() => {
-    if (mounted && !auth.isAuthenticated()) {
-      router.push('/login');
-    }
-  }, [mounted, router]);
+      try {
+        const currentUser = await getCurrentUser();
+        const isAdmin = currentUser?.role === 'admin';
+        if (!isAdmin) {
+          logout();
+          return;
+        }
+        if (!cancelled) {
+          setHasAccess(true);
+          setIsCheckingAccess(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setHasAccess(false);
+          setIsCheckingAccess(false);
+        }
+        router.push('/login');
+      }
+    };
 
-  // Keep server and first client render identical to avoid hydration mismatch.
-  if (!mounted) {
+    verifyAdminAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  if (isCheckingAccess) {
     return null;
   }
 
-  if (!auth.isAuthenticated()) {
+  if (!hasAccess) {
     return null;
   }
 

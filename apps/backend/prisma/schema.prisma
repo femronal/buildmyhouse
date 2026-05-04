@@ -49,6 +49,7 @@ model User {
   fullName  String
   role      String   // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
   verified  Boolean  @default(false)
+  adminDashboardAccess Boolean @default(false)
   stripeCustomerId String? @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -10,10 +10,12 @@ import { RolesGuard } from './rbac.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { S3UploadService } from '../upload/s3-upload.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
     PassportModule,
+    PrismaModule,
     forwardRef(() => WebSocketModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],

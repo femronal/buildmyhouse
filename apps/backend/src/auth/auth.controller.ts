@@ -42,6 +42,12 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Post('admin/login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  loginAdmin(@Body() loginDto: LoginDto) {
+    return this.authService.loginAdmin(loginDto);
+  }
+
   @Get('google')
   @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 per minute (OAuth redirect)
   @UseGuards(AuthGuard('google'))
