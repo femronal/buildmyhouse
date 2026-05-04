@@ -9,8 +9,11 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { createHash, randomBytes } from 'crypto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthService, JWTPayload } from './jwt-auth.service';
 import { UpdateMeDto } from './dto/update-me.dto';
 import { WebSocketService } from '../websocket/websocket.service';
@@ -21,6 +24,10 @@ import { GC_WELCOME_EMAIL_TEMPLATE } from '../email/templates/gc-welcome.templat
 @Injectable()
 export class AuthService {
   private prisma = new PrismaClient();
+  private static readonly PASSWORD_RESET_TTL_MS = 1000 * 60 * 30;
+  private static readonly PASSWORD_RESET_RESPONSE = {
+    message: 'If an account exists for that email, a password reset link has been sent.',
+  };
   private static readonly PUBLIC_SIGNUP_ROLES = new Set([
     'homeowner',
     'general_contractor',
@@ -111,6 +118,109 @@ export class AuthService {
     const user = await this.validateEmailPassword(loginDto);
 
     return this.buildAuthResponse(user);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto) {
+    const email = String(dto.email || '').trim().toLowerCase();
+    if (!email) {
+      return AuthService.PASSWORD_RESET_RESPONSE;
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        role: true,
+      },
+    });
+
+    const requestedRole = dto.appRole;
+    const canResetForApp =
+      user &&
+      (user.role === 'homeowner' || user.role === 'general_contractor') &&
+      (!requestedRole || user.role === requestedRole);
+
+    if (!canResetForApp) {
+      return AuthService.PASSWORD_RESET_RESPONSE;
+    }
+
+    const rawToken = randomBytes(32).toString('hex');
+    const tokenHash = this.hashPasswordResetToken(rawToken);
+    const expiresAt = new Date(Date.now() + AuthService.PASSWORD_RESET_TTL_MS);
+
+    await this.prisma.$transaction([
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: user.id,
+          usedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt,
+        },
+      }),
+    ]);
+
+    await this.sendPasswordResetEmail({
+      email: user.email,
+      fullName: user.fullName,
+      role: user.role,
+      token: rawToken,
+      expiresAt,
+    });
+
+    return AuthService.PASSWORD_RESET_RESPONSE;
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    const token = String(dto.token || '').trim();
+    if (!token) {
+      throw new BadRequestException('Reset token is required');
+    }
+
+    const tokenHash = this.hashPasswordResetToken(token);
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt <= new Date()) {
+      throw new BadRequestException('This password reset link is invalid or has expired.');
+    }
+
+    const sameAsCurrent = await bcrypt.compare(dto.newPassword, resetToken.user.password);
+    if (sameAsCurrent) {
+      throw new BadRequestException('New password must be different from your current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: resetToken.userId },
+        data: { password: hashedPassword },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { id: resetToken.id },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.passwordResetToken.updateMany({
+        where: {
+          userId: resetToken.userId,
+          id: { not: resetToken.id },
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return { message: 'Password reset successfully. You can now sign in with your new password.' };
   }
 
   async loginAdmin(loginDto: LoginDto) {
@@ -503,6 +613,74 @@ export class AuthService {
     } catch {
       // Never block signup due to email delivery issues.
     }
+  }
+
+  private hashPasswordResetToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private getPasswordResetUrl(role: string, token: string) {
+    const baseUrl =
+      role === 'general_contractor'
+        ? this.configService.get<string>('CONTRACTOR_APP_URL') || 'https://gc.buildmyhouse.app'
+        : this.configService.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app';
+
+    const url = new URL('/reset-password', baseUrl);
+    url.searchParams.set('token', token);
+    return url.toString();
+  }
+
+  private async sendPasswordResetEmail(params: {
+    email: string;
+    fullName: string | null;
+    role: string;
+    token: string;
+    expiresAt: Date;
+  }) {
+    const resetUrl = this.getPasswordResetUrl(params.role, params.token);
+    const safeName = this.escapeHtml(params.fullName || 'there');
+    const safeResetUrl = this.escapeHtml(resetUrl);
+    const expiresAt = params.expiresAt.toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset your BuildMyHouse password</title>
+</head>
+<body style="margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif; background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px; margin:0 auto; padding:24px;">
+    <tr>
+      <td style="background-color:#ffffff; border-radius:12px; padding:32px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+        <h1 style="margin:0 0 8px 0; font-size:22px; color:#111827;">Reset your password</h1>
+        <p style="margin:0 0 20px 0; font-size:15px; line-height:1.6; color:#374151;">Hi ${safeName},</p>
+        <p style="margin:0 0 24px 0; font-size:15px; line-height:1.6; color:#374151;">
+          We received a request to reset your BuildMyHouse password. Tap the button below to choose a new password.
+        </p>
+        <a href="${safeResetUrl}" style="display:inline-block; background-color:#111827; color:#ffffff; text-decoration:none; font-weight:600; padding:14px 20px; border-radius:10px;">
+          Reset password
+        </a>
+        <p style="margin:24px 0 0 0; font-size:13px; line-height:1.6; color:#6b7280;">
+          This link expires at ${this.escapeHtml(expiresAt)}. If you did not request this, you can safely ignore this email.
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    await this.emailService.send({
+      to: params.email,
+      subject: 'Reset your BuildMyHouse password',
+      html,
+      text: `Reset your BuildMyHouse password: ${resetUrl}\n\nThis link expires at ${expiresAt}.`,
+    });
   }
 
   private escapeHtml(value: string) {

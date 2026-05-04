@@ -192,7 +192,7 @@ export default function EmailLoginScreen() {
         </View>
 
         {/* Password Input */}
-        <View className="mb-6">
+        <View className="mb-3">
           <Text className="text-gray-300 mb-2 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
             Password
           </Text>
@@ -211,6 +211,17 @@ export default function EmailLoginScreen() {
             />
           </View>
         </View>
+
+        {mode === 'signin' && (
+          <TouchableOpacity
+            onPress={() => router.push('/forgot-password' as any)}
+            className="self-end mb-6"
+          >
+            <Text className="text-blue-300 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Forgot password?
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Auth Button */}
         <TouchableOpacity

@@ -18,6 +18,8 @@
         { "name": "PORT", "value": "3001" },
         { "name": "GOOGLE_CALLBACK_URL", "value": "https://api.buildmyhouse.app/api/auth/google/callback" },
         { "name": "ALLOWED_ORIGINS", "value": "https://admin.buildmyhouse.app,https://buildmyhouse.app,https://gc.buildmyhouse.app,http://localhost:3000,http://localhost:8081,http://localhost:1990,http://localhost:3988" },
+        { "name": "HOMEOWNER_APP_URL", "value": "https://buildmyhouse.app" },
+        { "name": "CONTRACTOR_APP_URL", "value": "https://gc.buildmyhouse.app" },
         { "name": "AWS_REGION", "value": "eu-north-1" },
         { "name": "AWS_S3_UPLOADS_PREFIX", "value": "uploads" },
         { "name": "AWS_S3_PUBLIC_BASE_URL", "value": "" }
