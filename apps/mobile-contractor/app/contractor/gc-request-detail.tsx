@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X } from "lucide-react-native";
 import { useState, useEffect } from "react";
@@ -7,6 +7,15 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+
+const REJECTION_REASONS = [
+  'Currently too busy',
+  'Not available in the requested timeline',
+  'Project location is too far',
+  'Project scope is outside my specialty',
+  'Budget may not match the required work',
+  'Need more project information before quoting',
+];
 
 function moneyToCents(value: unknown): number {
   const n =
@@ -45,6 +54,9 @@ export default function GCRequestDetailScreen() {
   const [estimatedDuration, setEstimatedDuration] = useState<string>('');
   const [gcNotes, setGcNotes] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [selectedRejectReasons, setSelectedRejectReasons] = useState<string[]>([]);
+  const [customRejectReason, setCustomRejectReason] = useState('');
 
   // Initialize editable fields from AI analysis
   useEffect(() => {
@@ -260,38 +272,50 @@ export default function GCRequestDetailScreen() {
   const handleReject = async () => {
     if (!request) return;
 
-    showAlert(
-      'Reject Request',
-      'Are you sure you want to reject this project request?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Reject',
-          style: 'destructive',
-          onPress: async () => {
-            setIsSubmitting(true);
-            try {
-              await rejectRequestMutation.mutateAsync(request.id);
-              showAlert(
-                'Request Rejected',
-                'The homeowner has been notified.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => router.replace('/contractor/gc-dashboard'),
-                  },
-                ]
-              );
-            } catch (error: any) {
-              console.error('Error rejecting request:', error);
-              showAlert('Error', error.message || 'Failed to reject request. Please try again.');
-            } finally {
-              setIsSubmitting(false);
-            }
-          },
-        },
-      ]
+    setSelectedRejectReasons([]);
+    setCustomRejectReason('');
+    setShowRejectModal(true);
+  };
+
+  const toggleRejectReason = (reason: string) => {
+    setSelectedRejectReasons((prev) =>
+      prev.includes(reason) ? prev.filter((item) => item !== reason) : [...prev, reason],
     );
+  };
+
+  const submitRejectRequest = async () => {
+    if (!request) return;
+
+    const customReason = customRejectReason.trim();
+    const reasons = customReason ? [...selectedRejectReasons, customReason] : selectedRejectReasons;
+    if (reasons.length === 0) {
+      showAlert('Reason Required', 'Please select at least one reason before declining the request.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await rejectRequestMutation.mutateAsync({
+        requestId: request.id,
+        reason: reasons.join('; '),
+      });
+      setShowRejectModal(false);
+      showAlert(
+        'Request Rejected',
+        'The homeowner has been notified with your reason.',
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/contractor/gc-dashboard'),
+          },
+        ]
+      );
+    } catch (error: any) {
+      console.error('Error rejecting request:', error);
+      showAlert('Error', error.message || 'Failed to reject request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -786,6 +810,106 @@ export default function GCRequestDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={showRejectModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowRejectModal(false)}
+      >
+        <View className="flex-1 bg-black/60 justify-end">
+          <View
+            className="bg-[#1E3A5F] rounded-t-3xl border border-blue-900"
+            style={{ paddingHorizontal: horizontalPad, paddingTop: 24, paddingBottom: scrollBottomPadding }}
+          >
+            <View className="flex-row items-start justify-between mb-4">
+              <View className="flex-1 pr-3">
+                <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Decline Request
+                </Text>
+                <Text className="text-gray-300 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Select the reason so the homeowner understands why this request was declined.
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowRejectModal(false)}
+                disabled={isSubmitting}
+                className="w-10 h-10 bg-[#0A1628] rounded-full items-center justify-center"
+              >
+                <X size={20} color="#FFFFFF" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <View className="mb-4">
+              {REJECTION_REASONS.map((reason) => {
+                const selected = selectedRejectReasons.includes(reason);
+                return (
+                  <TouchableOpacity
+                    key={reason}
+                    onPress={() => toggleRejectReason(reason)}
+                    disabled={isSubmitting}
+                    className={`mb-2 rounded-xl border px-4 py-3 flex-row items-center ${
+                      selected ? 'bg-red-600/20 border-red-500' : 'bg-[#0A1628] border-blue-900'
+                    }`}
+                    activeOpacity={0.8}
+                  >
+                    <View
+                      className={`w-5 h-5 rounded border mr-3 items-center justify-center ${
+                        selected ? 'bg-red-500 border-red-500' : 'border-gray-500'
+                      }`}
+                    >
+                      {selected && (
+                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
+                          ✓
+                        </Text>
+                      )}
+                    </View>
+                    <Text className="text-white text-sm flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {reason}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TextInput
+              className="bg-[#0A1628] rounded-xl px-4 py-3 text-white text-sm border border-blue-900 mb-5"
+              style={{ fontFamily: 'Poppins_400Regular', minHeight: 76, textAlignVertical: 'top' }}
+              placeholder="Optional extra detail"
+              placeholderTextColor="#6B7280"
+              value={customRejectReason}
+              onChangeText={setCustomRejectReason}
+              multiline
+            />
+
+            <View className="flex-row" style={{ gap: 12 }}>
+              <TouchableOpacity
+                onPress={() => setShowRejectModal(false)}
+                disabled={isSubmitting}
+                className="flex-1 bg-[#0A1628] rounded-xl py-4 items-center justify-center border border-blue-900"
+              >
+                <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={submitRejectRequest}
+                disabled={isSubmitting}
+                className="flex-1 bg-red-600 rounded-xl py-4 items-center justify-center"
+                style={{ opacity: isSubmitting ? 0.6 : 1 }}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Decline
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

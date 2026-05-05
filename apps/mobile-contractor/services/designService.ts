@@ -118,6 +118,13 @@ export const designService = {
     squareFootage?: number;
     estimatedCost?: number;
     isActive?: boolean;
+    floors?: number;
+    estimatedDuration?: string;
+    rooms?: string;
+    materials?: string;
+    features?: string;
+    constructionPhases?: string;
+    images?: Array<{ url: string; label?: string; order?: number }>;
   }) => {
     const response = await api.patch(`/designs/${designId}`, updateData);
     return response;

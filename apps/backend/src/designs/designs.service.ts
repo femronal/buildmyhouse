@@ -384,7 +384,7 @@ export class DesignsService {
         .filter(Boolean);
     };
 
-    // Only allow updating safe scalar fields via this endpoint for now.
+    // Only allow updating safe scalar fields via this endpoint.
     const allowed: Record<string, any> = {};
     const fields = [
       'name',
@@ -434,9 +434,46 @@ export class DesignsService {
       allowed.projectTypeFilter = trimmed || null;
     }
 
+    const imageUpdates = Array.isArray(params.data?.images) ? params.data.images : undefined;
+    const nextImages =
+      imageUpdates === undefined
+        ? undefined
+        : imageUpdates
+            .map((image: any, index: number) => ({
+              url: String(image?.url || '').trim(),
+              label:
+                typeof image?.label === 'string' && image.label.trim()
+                  ? image.label.trim()
+                  : `Image ${index + 1}`,
+              order: Number.isFinite(Number(image?.order)) ? Number(image.order) : index,
+            }))
+            .filter((image) => image.url);
+
+    if (imageUpdates !== undefined && (!nextImages || nextImages.length === 0)) {
+      throw new BadRequestException('At least one design image is required');
+    }
+
+    if (params.actorRole === 'general_contractor' && existing.adminApprovalStatus === 'rejected') {
+      allowed.adminApprovalStatus = 'pending';
+      allowed.adminReviewReason = null;
+      allowed.adminReviewedAt = null;
+      allowed.adminReviewedById = null;
+      allowed.isActive = false;
+    }
+
     const updated = await this.prisma.design.update({
       where: { id: params.designId },
-      data: allowed,
+      data: {
+        ...allowed,
+        ...(nextImages
+          ? {
+              images: {
+                deleteMany: {},
+                create: nextImages,
+              },
+            }
+          : {}),
+      },
       include: {
         images: { orderBy: { order: 'asc' } },
         createdBy: { select: { id: true, fullName: true, email: true } },

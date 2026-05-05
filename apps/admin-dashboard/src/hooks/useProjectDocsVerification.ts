@@ -79,6 +79,11 @@ export type UpdateDesignPlanPayload = Partial<{
   materials: string;
   features: string;
   constructionPhases: string;
+  images: Array<{
+    url: string;
+    label?: string | null;
+    order?: number;
+  }>;
 }>;
 
 export function useUpdateDesignPlan() {

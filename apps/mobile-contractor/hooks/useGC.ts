@@ -30,7 +30,8 @@ export function useRejectRequest() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: (requestId: string) => gcService.rejectRequest(requestId),
+    mutationFn: ({ requestId, reason }: { requestId: string; reason?: string }) =>
+      gcService.rejectRequest(requestId, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
     },

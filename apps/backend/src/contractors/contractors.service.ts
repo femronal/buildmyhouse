@@ -921,6 +921,7 @@ export class ContractorsService {
    * Reject a project request
    */
   async rejectRequest(requestId: string, contractorId: string, reason?: string) {
+    const rejectionReason = String(reason || '').trim();
     const request = await this.prisma.projectRequest.findFirst({
       where: {
         id: requestId,
@@ -955,7 +956,7 @@ export class ContractorsService {
       data: {
         status: 'rejected',
         respondedAt: new Date(),
-        gcNotes: reason,
+        gcNotes: rejectionReason || null,
       },
       include: {
         project: {
@@ -1000,7 +1001,9 @@ export class ContractorsService {
         event: 'gc_rejected',
         projectId: request.projectId,
         requestId: updatedRequest.id,
-        message: 'A contractor has declined your project request',
+        message: rejectionReason
+          ? `A contractor has declined your project request. Reason: ${rejectionReason}`
+          : 'A contractor has declined your project request',
       },
     });
 
@@ -1009,10 +1012,13 @@ export class ContractorsService {
       this.wsService.sendNotification(request.project.homeownerId, {
         type: 'gc_rejected',
         title: 'Request Declined',
-        message: `A contractor has declined your project: ${request.project.name}`,
+        message: rejectionReason
+          ? `A contractor has declined your project: ${request.project.name}. Reason: ${rejectionReason}`
+          : `A contractor has declined your project: ${request.project.name}`,
         data: {
           projectId: request.projectId,
           requestId: updatedRequest.id,
+          reason: rejectionReason || undefined,
         },
       });
     }

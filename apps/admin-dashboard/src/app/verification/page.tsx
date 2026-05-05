@@ -10,6 +10,7 @@ import {
   useUpdateDesignPlan,
   type PendingDesignDoc,
 } from '@/hooks/useProjectDocsVerification';
+import { api } from '@/lib/api';
 
 function formatSubmittedAt(dateStr: string) {
   const date = new Date(dateStr);
@@ -67,6 +68,14 @@ type EditableDesignForm = {
   materials: string;
   features: string;
   constructionPhases: string;
+  images: EditableDesignImage[];
+};
+
+type EditableDesignImage = {
+  id?: string;
+  url: string;
+  label: string;
+  order: number;
 };
 
 function buildEditableDesignForm(doc: PendingDesignDoc): EditableDesignForm {
@@ -101,6 +110,12 @@ function buildEditableDesignForm(doc: PendingDesignDoc): EditableDesignForm {
         : typeof doc.constructionPhases === 'string'
           ? doc.constructionPhases
           : JSON.stringify(doc.constructionPhases, null, 2),
+    images: (doc.images || []).map((image, index) => ({
+      id: image.id,
+      url: image.url,
+      label: image.label || `Image ${index + 1}`,
+      order: image.order ?? index,
+    })),
   };
 }
 
@@ -128,6 +143,7 @@ export default function VerificationPage() {
   const [selectedDesignForReview, setSelectedDesignForReview] = useState<PendingDesignDoc | null>(null);
   const [editForm, setEditForm] = useState<EditableDesignForm | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [isUploadingPlanImage, setIsUploadingPlanImage] = useState(false);
   const [gcSearch, setGcSearch] = useState('');
   const [gcVerificationFilter, setGcVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
 
@@ -263,6 +279,59 @@ export default function VerificationPage() {
     setEditForm((prev) => (prev ? { ...prev, [field]: value } : prev));
   };
 
+  const handlePlanImageUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setIsUploadingPlanImage(true);
+    try {
+      const uploadedImages: EditableDesignImage[] = [];
+      for (const file of Array.from(files)) {
+        const { url } = await api.uploadFile(file);
+        uploadedImages.push({
+          url,
+          label: file.name.replace(/\.[^.]+$/, '') || 'Plan image',
+          order: 0,
+        });
+      }
+      setEditForm((prev) => {
+        if (!prev) return prev;
+        const images = [...prev.images, ...uploadedImages].map((image, index) => ({
+          ...image,
+          order: index,
+          label: image.label || `Image ${index + 1}`,
+        }));
+        return { ...prev, images };
+      });
+    } catch (e: any) {
+      setFeedbackModal({
+        open: true,
+        title: 'Image upload failed',
+        message: e?.message || 'Could not upload this plan photo right now.',
+      });
+    } finally {
+      setIsUploadingPlanImage(false);
+    }
+  };
+
+  const updatePlanImageLabel = (index: number, label: string) => {
+    setEditForm((prev) => {
+      if (!prev) return prev;
+      const images = prev.images.map((image, imageIndex) =>
+        imageIndex === index ? { ...image, label } : image,
+      );
+      return { ...prev, images };
+    });
+  };
+
+  const removePlanImage = (index: number) => {
+    setEditForm((prev) => {
+      if (!prev) return prev;
+      const images = prev.images
+        .filter((_, imageIndex) => imageIndex !== index)
+        .map((image, imageIndex) => ({ ...image, order: imageIndex }));
+      return { ...prev, images };
+    });
+  };
+
   const handleSaveDesignEdits = async () => {
     if (!selectedDesignForReview || !editForm) return;
 
@@ -297,6 +366,10 @@ export default function VerificationPage() {
       setFeedbackModal({ open: true, title: 'Validation', message: 'Floors must be greater than 0.' });
       return;
     }
+    if (editForm.images.length === 0) {
+      setFeedbackModal({ open: true, title: 'Validation', message: 'Please keep at least one plan photo.' });
+      return;
+    }
 
     try {
       await updatePlan.mutateAsync({
@@ -317,6 +390,11 @@ export default function VerificationPage() {
           materials: editForm.materials.trim(),
           features: editForm.features.trim(),
           constructionPhases: editForm.constructionPhases.trim(),
+          images: editForm.images.map((image, index) => ({
+            url: image.url,
+            label: image.label.trim() || `Image ${index + 1}`,
+            order: index,
+          })),
         },
       });
       setFeedbackModal({
@@ -595,11 +673,11 @@ export default function VerificationPage() {
       )}
 
       {selectedDesignForReview && editForm && (
-        <div className="fixed inset-0 z-50 bg-black/60 p-4 overflow-y-auto">
-          <div className="mx-auto my-6 w-full max-w-5xl rounded-2xl border border-gray-200 bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b px-6 py-4">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Review & Edit Design Plan</h3>
+        <div className="fixed inset-0 z-50 bg-black/60 p-0 sm:p-4 overflow-y-auto">
+          <div className="mx-auto flex min-h-screen w-full flex-col bg-white shadow-2xl sm:my-6 sm:min-h-0 sm:max-w-5xl sm:rounded-2xl sm:border sm:border-gray-200">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b bg-white px-4 py-4 sm:rounded-t-2xl sm:px-6">
+              <div className="min-w-0">
+                <h3 className="text-lg font-semibold text-gray-900 sm:text-xl">Review & Edit Design Plan</h3>
                 <p className="text-sm text-gray-500 mt-1">
                   Review details, edit metadata, and then approve the plan to go live.
                 </p>
@@ -613,7 +691,7 @@ export default function VerificationPage() {
               </button>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6 p-6">
+            <div className="grid flex-1 gap-5 overflow-y-auto px-4 py-5 sm:p-6 lg:grid-cols-2 lg:gap-6">
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-gray-600">Design Name</label>
@@ -634,7 +712,7 @@ export default function VerificationPage() {
                   />
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label className="text-xs font-medium text-gray-600">Bedrooms</label>
                     <input
@@ -793,39 +871,75 @@ export default function VerificationPage() {
 
                 <div>
                   <p className="text-xs font-medium text-gray-600 mb-2">Plan Images</p>
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                    {selectedDesignForReview.images?.length ? (
-                      selectedDesignForReview.images.map((image) => (
-                        <a
-                          key={image.id}
-                          href={getAssetUrl(image.url)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="block rounded-lg border border-gray-200 p-2 hover:bg-gray-50"
-                        >
-                          <p className="text-sm font-medium text-gray-900">{image.label || 'Image'}</p>
-                          <p className="text-xs text-blue-600 truncate">{getAssetUrl(image.url)}</p>
-                        </a>
+                  <div className="space-y-3">
+                    {editForm.images.length ? (
+                      editForm.images.map((image, index) => (
+                        <div key={`${image.id || image.url}-${index}`} className="rounded-xl border border-gray-200 p-3">
+                          <div className="flex gap-3">
+                            <img
+                              src={getAssetUrl(image.url)}
+                              alt={image.label || `Plan image ${index + 1}`}
+                              className="h-20 w-24 flex-shrink-0 rounded-lg object-cover"
+                            />
+                            <div className="min-w-0 flex-1">
+                              <input
+                                value={image.label}
+                                onChange={(e) => updatePlanImageLabel(index, e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                                placeholder={`Image ${index + 1} label`}
+                              />
+                              <a
+                                href={getAssetUrl(image.url)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="mt-2 block truncate text-xs text-blue-600"
+                              >
+                                {getAssetUrl(image.url)}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removePlanImage(index)}
+                              className="h-9 rounded-lg border border-red-200 px-3 text-xs font-medium text-red-600"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        </div>
                       ))
                     ) : (
                       <p className="text-sm text-gray-500">No images uploaded.</p>
                     )}
                   </div>
+                  <label className="mt-3 flex cursor-pointer items-center justify-center rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    {isUploadingPlanImage ? 'Uploading photo…' : 'Add or replace plan photos'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      disabled={isUploadingPlanImage}
+                      onChange={(e) => {
+                        void handlePlanImageUpload(e.target.files);
+                        e.currentTarget.value = '';
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 border-t px-6 py-4">
+            <div className="sticky bottom-0 flex flex-col gap-3 border-t bg-white px-4 py-4 sm:flex-row sm:justify-end sm:px-6 sm:rounded-b-2xl">
               <button
                 onClick={closeReviewModal}
-                className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-gray-700"
+                className="rounded-lg border border-gray-300 px-5 py-3 text-sm font-medium text-gray-700 sm:py-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveDesignEdits}
-                disabled={updatePlan.isPending}
-                className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white disabled:opacity-50"
+                disabled={updatePlan.isPending || isUploadingPlanImage}
+                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-medium text-white disabled:opacity-50 sm:py-2"
               >
                 {updatePlan.isPending ? 'Saving…' : 'Save Edits'}
               </button>
@@ -834,7 +948,7 @@ export default function VerificationPage() {
                   closeReviewModal();
                   setSelectedDesignForGoLive(selectedDesignForReview);
                 }}
-                className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white"
+                className="rounded-lg bg-green-600 px-5 py-3 text-sm font-medium text-white sm:py-2"
               >
                 Continue to Go Live
               </button>

@@ -55,8 +55,8 @@ export const gcService = {
     }
   },
 
-  rejectRequest: async (requestId: string) => {
-    return api.post(`/contractors/requests/${requestId}/reject`, {});
+  rejectRequest: async (requestId: string, reason?: string) => {
+    return api.post(`/contractors/requests/${requestId}/reject`, { reason });
   },
 
   getEarnings: async (): Promise<GCEarningsProject[]> => {

@@ -9,10 +9,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from '@/hooks/useGCProfile';
 import { useResponsivePadding } from '@/lib/responsive-layout';
+import { uploadFile } from '@/utils/fileUpload';
 
 interface ImageWithLabel {
   uri: string;
   label: string;
+  existingUrl?: string;
+  fileName?: string;
+  mimeType?: string;
 }
 
 type PlanType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
@@ -1045,6 +1049,15 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
       return [];
     }
   });
+  const [images, setImages] = useState<ImageWithLabel[]>(() =>
+    Array.isArray(design.images)
+      ? design.images.map((image: any, index: number) => ({
+          uri: getImageUrl(image.url),
+          existingUrl: image.url,
+          label: image.label || `Image ${index + 1}`,
+        }))
+      : [],
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const updateDesignMutation = useUpdateDesign();
   const availablePlanFilters = PLAN_TYPE_FILTER_OPTIONS[planType] || [];
@@ -1126,6 +1139,14 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
         return;
       }
     }
+    if (images.length === 0) {
+      showAlert('Validation Error', 'Please keep at least one design photo');
+      return;
+    }
+    if (images.some((img) => !img?.label?.trim())) {
+      showAlert('Validation Error', 'Please provide a label for every photo');
+      return;
+    }
 
     // Budget integrity check: sum of phase costs must equal estimatedCost
     const estCostCents = moneyToCents(estimatedCost);
@@ -1141,6 +1162,24 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
     setIsSubmitting(true);
 
     try {
+      const imagePayload = [];
+      for (let i = 0; i < images.length; i++) {
+        const image = images[i];
+        let url = image.existingUrl;
+        if (!url) {
+          const uploadedUrl = await uploadFile(image.uri, 'image', {
+            fileName: image.fileName,
+            mimeType: image.mimeType,
+          });
+          url = uploadedUrl.startsWith('http') ? new URL(uploadedUrl).pathname : uploadedUrl;
+        }
+        imagePayload.push({
+          url,
+          label: image.label.trim() || `Image ${i + 1}`,
+          order: i,
+        });
+      }
+
       await updateDesignMutation.mutateAsync({
         designId: design.id,
         updateData: {
@@ -1165,6 +1204,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             estimatedDuration: p.estimatedDuration.trim(),
             estimatedCost: p.estimatedCost,
           }))),
+          images: imagePayload,
         },
       });
       
@@ -1175,6 +1215,58 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePickImage = async () => {
+    try {
+      if (Platform.OS === 'web') return;
+
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showAlert('Permission needed', 'We need camera roll permissions to update design photos');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+        allowsMultipleSelection: Platform.OS === 'ios',
+      });
+
+      if (!result.canceled) {
+        const selectedAssets =
+          result.assets && result.assets.length > 0
+            ? result.assets
+            : (result as any).uri
+              ? [{ uri: (result as any).uri }]
+              : [];
+
+        if (selectedAssets.length > 0) {
+          setImages((prev) => [
+            ...prev,
+            ...selectedAssets.map((asset: any, index: number) => ({
+              uri: asset.uri,
+              label: `Image ${prev.length + index + 1}`,
+              fileName: asset.fileName,
+              mimeType: asset.mimeType,
+            })),
+          ]);
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ [Edit Form] Error picking images:', error);
+      showAlert('Error', error.message || 'Failed to pick images. Please try again.');
+    }
+  };
+
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => prev.filter((_, imageIndex) => imageIndex !== index));
+  };
+
+  const handleUpdateImageLabel = (index: number, label: string) => {
+    setImages((prev) =>
+      prev.map((image, imageIndex) => (imageIndex === index ? { ...image, label } : image)),
+    );
   };
 
   return (
@@ -1213,6 +1305,100 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             multiline
             numberOfLines={4}
           />
+        </View>
+
+        {/* Images */}
+        <View className="mb-6">
+          <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Design Photos *
+          </Text>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            {images.map((image, index) => (
+              <View key={`${image.existingUrl || image.uri}-${index}`} className="mr-3 relative">
+                <Image
+                  source={{ uri: image.uri }}
+                  className="w-32 h-32 rounded-xl"
+                  resizeMode="cover"
+                />
+                <TouchableOpacity
+                  onPress={() => handleRemoveImage(index)}
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 rounded-full items-center justify-center"
+                >
+                  <X size={14} color="#FFFFFF" strokeWidth={2} />
+                </TouchableOpacity>
+                <TextInput
+                  className="bg-black/70 rounded-lg px-2 py-1 mt-1 text-white text-xs"
+                  style={{ fontFamily: 'Poppins_400Regular', width: 128 }}
+                  placeholder="Label"
+                  placeholderTextColor="#9CA3AF"
+                  value={image.label}
+                  onChangeText={(label) => handleUpdateImageLabel(index, label)}
+                />
+              </View>
+            ))}
+
+            {Platform.OS === 'web' ? (
+              <label
+                htmlFor="file-input-edit-gc-plan"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: 128,
+                  height: 128,
+                  backgroundColor: '#1E3A5F',
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: '#1E40AF',
+                  cursor: 'pointer',
+                }}
+              >
+                <input
+                  id="file-input-edit-gc-plan"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={(e: any) => {
+                    const files = Array.from(e.target.files || []) as File[];
+                    if (files.length > 0) {
+                      setImages((prev) => [
+                        ...prev,
+                        ...files.map((file, index) => ({
+                          uri: URL.createObjectURL(file),
+                          label: `Image ${prev.length + index + 1}`,
+                          fileName: file.name,
+                          mimeType: file.type,
+                        })),
+                      ]);
+                    }
+                    if (e.target) e.target.value = '';
+                  }}
+                />
+                <Camera size={24} color="#3B82F6" strokeWidth={2} />
+                <Text className="text-blue-400 text-xs mt-2 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Add Photo
+                </Text>
+              </label>
+            ) : (
+              <TouchableOpacity
+                onPress={handlePickImage}
+                className="w-32 h-32 bg-[#1E3A5F] rounded-xl items-center justify-center border border-dashed border-blue-700"
+                activeOpacity={0.7}
+              >
+                <Camera size={24} color="#3B82F6" strokeWidth={2} />
+                <Text className="text-blue-400 text-xs mt-2 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Add Photo
+                </Text>
+              </TouchableOpacity>
+            )}
+          </ScrollView>
+          <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+            You can update photos anytime, even after the plan is live.
+          </Text>
         </View>
 
         <View className="mb-4">
