@@ -14,7 +14,28 @@ export class DesignsService {
       where: { isActive: true, adminApprovalStatus: 'approved' },
       include: {
         images: { orderBy: { order: 'asc' } },
-        createdBy: { select: { id: true, fullName: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            pictureUrl: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                description: true,
+                location: true,
+                rating: true,
+                reviews: true,
+                projects: true,
+                verified: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -27,7 +48,28 @@ export class DesignsService {
       where: { id },
       include: {
         images: { orderBy: { order: 'asc' } },
-        createdBy: { select: { id: true, fullName: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            pictureUrl: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                description: true,
+                location: true,
+                rating: true,
+                reviews: true,
+                projects: true,
+                verified: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -46,7 +88,28 @@ export class DesignsService {
       where: { createdById: userId },
       include: {
         images: { orderBy: { order: 'asc' } },
-        createdBy: { select: { id: true, fullName: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            pictureUrl: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                description: true,
+                location: true,
+                rating: true,
+                reviews: true,
+                projects: true,
+                verified: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -146,7 +209,28 @@ export class DesignsService {
       },
       include: {
         images: { orderBy: { order: 'asc' } },
-        createdBy: { select: { id: true, fullName: true, email: true } },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            pictureUrl: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                description: true,
+                location: true,
+                rating: true,
+                reviews: true,
+                projects: true,
+                verified: true,
+                imageUrl: true,
+              },
+            },
+          },
+        },
       },
     });
 

@@ -10,6 +10,7 @@ export interface RecommendedGC {
   projects: number;
   verified: boolean;
   location: string;
+  description?: string | null;
   matchScore: number;
   imageUrl?: string | null;
   user: {

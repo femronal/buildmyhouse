@@ -48,7 +48,7 @@ export class RolesGuard implements CanActivate {
       );
     }
 
-    if (requiredRoles.includes('admin')) {
+    if (user.role === 'admin' && requiredRoles.includes('admin')) {
       const hasAccess = await this.hasAdminDashboardAccess(String(user.email || ''));
       if (!hasAccess) {
         throw new ForbiddenException('Admin access is restricted for this account.');

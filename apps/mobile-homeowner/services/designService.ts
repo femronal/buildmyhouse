@@ -31,6 +31,19 @@ export interface Design {
     id: string;
     fullName: string;
     email: string;
+    pictureUrl?: string | null;
+    contractorProfile?: {
+      id: string;
+      name: string;
+      specialty?: string | null;
+      description?: string | null;
+      location?: string | null;
+      rating?: number | null;
+      reviews?: number | null;
+      projects?: number | null;
+      verified?: boolean | null;
+      imageUrl?: string | null;
+    } | null;
   };
   createdAt: string;
   updatedAt: string;
