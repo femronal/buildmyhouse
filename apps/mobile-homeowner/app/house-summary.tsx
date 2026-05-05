@@ -24,15 +24,6 @@ import { getBackendAssetUrl } from '@/lib/image';
 
 type UiProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 
-type ContractorProfileModal = {
-  name: string;
-  specialty?: string | null;
-  description?: string | null;
-  projectDescription?: string | null;
-  avatarUrl?: string | null;
-  initial: string;
-};
-
 function resolveUiProjectTag(params: {
   projectTypeTag?: string | null;
   planType?: string | null;
@@ -98,7 +89,6 @@ export default function HouseSummaryScreen() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
-  const [selectedContractorProfile, setSelectedContractorProfile] = useState<ContractorProfileModal | null>(null);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
   const autocompleteRef = useRef<any>(null);
 
@@ -265,10 +255,6 @@ export default function HouseSummaryScreen() {
     acceptedGC?.imageUrl || acceptedRequest?.contractor?.pictureUrl || undefined
   );
   const acceptedContractorInitial = acceptedContractorName.trim().charAt(0).toUpperCase();
-
-  const openContractorProfileModal = (profile: ContractorProfileModal) => {
-    setSelectedContractorProfile(profile);
-  };
 
   // Check GC acceptance status - poll every 5 seconds if we haven't detected acceptance yet
   // Keep polling until we detect acceptance OR we're already in 'accepted' state
@@ -704,11 +690,11 @@ export default function HouseSummaryScreen() {
           </Text>
 
           {!!designDescription && (
-            <View className="bg-white rounded-2xl p-4 mb-5 border border-gray-200">
-              <Text className="text-xs text-gray-500 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            <View className="bg-black rounded-2xl p-4 mb-5">
+              <Text className="text-xs text-white/60 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 Project Description
               </Text>
-              <Text className="text-sm text-gray-700 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <Text className="text-sm text-white leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
                 {designDescription}
               </Text>
             </View>
@@ -895,33 +881,15 @@ export default function HouseSummaryScreen() {
             <View className="bg-blue-50 border-2 border-blue-200 rounded-2xl p-5 mb-4">
               <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-1 flex-row items-start">
-                  <TouchableOpacity
-                    onPress={() =>
-                      openContractorProfileModal({
-                        name: designGC.name,
-                        specialty: designGC.specialty,
-                        description: designGC.description,
-                        projectDescription: designDescription,
-                        avatarUrl: designGC.avatarUrl,
-                        initial: designGC.initial,
-                      })
-                    }
-                    className="relative mr-3"
-                    activeOpacity={0.85}
-                  >
-                    <View className="w-14 h-14 rounded-full overflow-hidden items-center justify-center border-2 border-blue-200 bg-white">
-                      {designGC.avatarUrl ? (
-                        <Image source={{ uri: designGC.avatarUrl }} className="w-full h-full" resizeMode="cover" />
-                      ) : (
-                        <Text className="text-blue-900 text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                          {designGC.initial}
-                        </Text>
-                      )}
-                    </View>
-                    <View className="absolute -right-1 -top-1 bg-red-500 rounded-full w-6 h-6 items-center justify-center border-2 border-blue-50">
-                      <AlertCircle size={14} color="#FFFFFF" strokeWidth={2.5} />
-                    </View>
-                  </TouchableOpacity>
+                  <View className="w-14 h-14 rounded-full mr-3 overflow-hidden items-center justify-center border-2 border-blue-200 bg-white">
+                    {designGC.avatarUrl ? (
+                      <Image source={{ uri: designGC.avatarUrl }} className="w-full h-full" resizeMode="cover" />
+                    ) : (
+                      <Text className="text-blue-900 text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                        {designGC.initial}
+                      </Text>
+                    )}
+                  </View>
                 <View className="flex-1">
                   <View className="flex-row items-center mb-1">
                     <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -946,9 +914,6 @@ export default function HouseSummaryScreen() {
                       📧 {designGC.email}
                     </Text>
                   )}
-                  <Text className="text-xs text-red-500 mt-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Tap photo for GC details
-                  </Text>
                 </View>
                 </View>
               </View>
@@ -990,33 +955,15 @@ export default function HouseSummaryScreen() {
             <View className="bg-green-50 border-2 border-green-200 rounded-2xl p-5 mb-4">
               <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-1 flex-row items-start">
-                  <TouchableOpacity
-                    onPress={() =>
-                      openContractorProfileModal({
-                        name: acceptedContractorName,
-                        specialty: acceptedGC?.specialty || 'General Construction',
-                        description: acceptedGC?.description || null,
-                        projectDescription: null,
-                        avatarUrl: acceptedContractorAvatarUrl,
-                        initial: acceptedContractorInitial,
-                      })
-                    }
-                    className="relative mr-3"
-                    activeOpacity={0.85}
-                  >
-                    <View className="w-14 h-14 rounded-full overflow-hidden items-center justify-center border-2 border-green-200 bg-white">
-                      {acceptedContractorAvatarUrl ? (
-                        <Image source={{ uri: acceptedContractorAvatarUrl }} className="w-full h-full" resizeMode="cover" />
-                      ) : (
-                        <Text className="text-green-900 text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                          {acceptedContractorInitial}
-                        </Text>
-                      )}
-                    </View>
-                    <View className="absolute -right-1 -top-1 bg-red-500 rounded-full w-6 h-6 items-center justify-center border-2 border-green-50">
-                      <AlertCircle size={14} color="#FFFFFF" strokeWidth={2.5} />
-                    </View>
-                  </TouchableOpacity>
+                  <View className="w-14 h-14 rounded-full mr-3 overflow-hidden items-center justify-center border-2 border-green-200 bg-white">
+                    {acceptedContractorAvatarUrl ? (
+                      <Image source={{ uri: acceptedContractorAvatarUrl }} className="w-full h-full" resizeMode="cover" />
+                    ) : (
+                      <Text className="text-green-900 text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                        {acceptedContractorInitial}
+                      </Text>
+                    )}
+                  </View>
                 <View className="flex-1">
                   <View className="flex-row items-center mb-1">
                     <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -1041,9 +988,6 @@ export default function HouseSummaryScreen() {
                       📧 {acceptedRequest.contractor.email}
                     </Text>
                   )}
-                  <Text className="text-xs text-red-500 mt-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Tap photo for GC details
-                  </Text>
                 </View>
                 </View>
               </View>
@@ -1139,45 +1083,24 @@ export default function HouseSummaryScreen() {
             >
               <View className="flex-row items-start justify-between mb-3">
                 <View className="flex-1 flex-row items-center pr-2">
-                  <TouchableOpacity
-                    onPress={(event: any) => {
-                      event?.stopPropagation?.();
-                      openContractorProfileModal({
-                        name: gc.name || gc.user?.fullName || 'General Contractor',
-                        specialty: gc.specialty || 'General Construction',
-                        description: gc.description || null,
-                        projectDescription: null,
-                        avatarUrl: gcAvatarUrl,
-                        initial: gcInitial,
-                      });
-                    }}
-                    className="relative mr-3"
-                    activeOpacity={0.85}
-                  >
-                    <View className={`w-12 h-12 rounded-full overflow-hidden items-center justify-center border ${
-                      isSelected ? 'border-white/30 bg-white/10' : 'border-gray-200 bg-gray-100'
-                    }`}>
-                      {gcAvatarUrl ? (
-                        <Image
-                          source={{ uri: gcAvatarUrl }}
-                          className="w-full h-full"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Text
-                          className={`${isSelected ? 'text-white' : 'text-gray-700'} text-base`}
-                          style={{ fontFamily: 'Poppins_700Bold' }}
-                        >
-                          {gcInitial}
-                        </Text>
-                      )}
-                    </View>
-                    <View className={`absolute -right-1 -top-1 bg-red-500 rounded-full w-5 h-5 items-center justify-center border-2 ${
-                      isSelected ? 'border-black' : 'border-white'
-                    }`}>
-                      <AlertCircle size={12} color="#FFFFFF" strokeWidth={2.5} />
-                    </View>
-                  </TouchableOpacity>
+                  <View className={`w-12 h-12 rounded-full mr-3 overflow-hidden items-center justify-center border ${
+                    isSelected ? 'border-white/30 bg-white/10' : 'border-gray-200 bg-gray-100'
+                  }`}>
+                    {gcAvatarUrl ? (
+                      <Image
+                        source={{ uri: gcAvatarUrl }}
+                        className="w-full h-full"
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <Text
+                        className={`${isSelected ? 'text-white' : 'text-gray-700'} text-base`}
+                        style={{ fontFamily: 'Poppins_700Bold' }}
+                      >
+                        {gcInitial}
+                      </Text>
+                    )}
+                  </View>
                   <View className="flex-1">
                     <View className="flex-row items-center mb-1">
                     <Text 
@@ -1197,9 +1120,6 @@ export default function HouseSummaryScreen() {
                       style={{ fontFamily: 'Poppins_400Regular' }}
                     >
                       {gc.specialty}
-                    </Text>
-                    <Text className={`text-xs ${isSelected ? 'text-red-200' : 'text-red-500'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Tap photo for GC details
                     </Text>
                   </View>
                 </View>
@@ -1476,87 +1396,6 @@ export default function HouseSummaryScreen() {
         clientSecret={paymentClientSecret || undefined}
         externalError={paymentError || undefined}
       />
-
-      {/* Contractor Profile Modal */}
-      <Modal
-        visible={!!selectedContractorProfile}
-        animationType="fade"
-        transparent={true}
-        onRequestClose={() => setSelectedContractorProfile(null)}
-      >
-        <View className="flex-1 bg-black/60 justify-center px-6">
-          <View className="bg-white rounded-3xl p-6 border border-gray-100">
-            <View className="flex-row items-start justify-between mb-5">
-              <View className="flex-row items-center flex-1 pr-3">
-                <View className="relative mr-4">
-                  <View className="w-16 h-16 rounded-full overflow-hidden items-center justify-center bg-blue-50 border-2 border-blue-100">
-                    {selectedContractorProfile?.avatarUrl ? (
-                      <Image
-                        source={{ uri: selectedContractorProfile.avatarUrl }}
-                        className="w-full h-full"
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <Text className="text-blue-900 text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                        {selectedContractorProfile?.initial || 'G'}
-                      </Text>
-                    )}
-                  </View>
-                  <View className="absolute -right-1 -top-1 bg-red-500 rounded-full w-6 h-6 items-center justify-center border-2 border-white">
-                    <AlertCircle size={14} color="#FFFFFF" strokeWidth={2.5} />
-                  </View>
-                </View>
-                <View className="flex-1">
-                  <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    {selectedContractorProfile?.name}
-                  </Text>
-                  {!!selectedContractorProfile?.specialty && (
-                    <Text className="text-sm text-gray-500 mt-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      {selectedContractorProfile.specialty}
-                    </Text>
-                  )}
-                </View>
-              </View>
-              <TouchableOpacity
-                onPress={() => setSelectedContractorProfile(null)}
-                className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
-              >
-                <X size={20} color="#111827" strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-
-            <View className="bg-gray-50 rounded-2xl p-4 border border-gray-100 mb-4">
-              <Text className="text-xs text-gray-500 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Contractor Description
-              </Text>
-              <Text className="text-sm text-gray-700 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {selectedContractorProfile?.description ||
-                  'This contractor has not added a public description yet. You can still review their specialty, experience, and project history before sending a request.'}
-              </Text>
-            </View>
-
-            {!!selectedContractorProfile?.projectDescription && (
-              <View className="bg-blue-50 rounded-2xl p-4 border border-blue-100 mb-5">
-                <Text className="text-xs text-blue-700 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Uploaded Project Description
-                </Text>
-                <Text className="text-sm text-blue-900 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {selectedContractorProfile.projectDescription}
-                </Text>
-              </View>
-            )}
-
-            <TouchableOpacity
-              onPress={() => setSelectedContractorProfile(null)}
-              className="bg-black rounded-full py-4 items-center"
-            >
-              <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Got it
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Address Input Modal */}
       <Modal
