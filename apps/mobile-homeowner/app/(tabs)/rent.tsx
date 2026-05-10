@@ -32,6 +32,9 @@ import {
   Car,
   Lock,
   Clock,
+  ChevronDown,
+  ChevronUp,
+  Info,
 } from "lucide-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageCarousel from '@/components/ImageCarousel';
@@ -61,6 +64,7 @@ import {
   formatBuildOpportunityKey,
   type BuildOpportunityCategoryKey,
 } from "@/lib/build-opportunity-taxonomy";
+import { matchesKeywordPhraseQuery } from "@/lib/keyword-search";
 
 type BuildOpportunity = {
   id: string;
@@ -129,6 +133,7 @@ export default function RentScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeTab, setActiveTab] = useState<BuildOpportunityCategoryKey>('residential');
+  const [isBuildMessageExpanded, setIsBuildMessageExpanded] = useState(false);
 
   const [showRentModal, setShowRentModal] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState<BuildOpportunity | null>(null);
@@ -262,15 +267,22 @@ export default function RentScreen() {
   }, [activeTab, allOpportunities]);
 
   const filteredListings = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
+    const query = searchQuery.trim();
     return allOpportunities.filter((listing) => {
       const tabMatch = (listing.opportunityCategory || 'residential') === activeTab;
-      const queryMatch =
-        !query ||
-        listing.title.toLowerCase().includes(query) ||
-        listing.location.toLowerCase().includes(query) ||
-        String(listing.subtitle || '').toLowerCase().includes(query) ||
-        String(listing.opportunityType || '').toLowerCase().includes(query);
+      const queryMatch = matchesKeywordPhraseQuery({
+        query,
+        fields: [
+          listing.title,
+          listing.location,
+          listing.subtitle,
+          listing.opportunityType,
+          listing.opportunityCategory,
+          listing.serviceHint,
+          ...(listing.verificationDocs || []),
+          ...(listing.extraDocs || []),
+        ],
+      });
       const filterMatch = activeFilter === 'All' || listing.opportunityType === activeFilter;
       return tabMatch && queryMatch && filterMatch;
     });
@@ -349,7 +361,7 @@ export default function RentScreen() {
           >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
-              placeholder="Search opportunities, locations, or project types..."
+              placeholder="Search by phrases and keywords (e.g. AC repair in Akoka)"
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -391,12 +403,34 @@ export default function RentScreen() {
 
       <View style={{ marginBottom: 12, paddingHorizontal: horizontalPadding }}>
         <View className="bg-gray-50 border border-gray-200 rounded-2xl p-3">
-          <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-            Location-verified build opportunities
-          </Text>
-          <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-            These scopes are tied to real properties and curated by BuildMyHouse admin. You may purchase the property first, then continue with transparent remote monitoring on BuildMyHouse or outside the app if you prefer.
-          </Text>
+          <TouchableOpacity
+            onPress={() => setIsBuildMessageExpanded((prev) => !prev)}
+            className="flex-row items-start justify-between"
+            activeOpacity={0.85}
+          >
+            <View className="flex-row items-start flex-1 pr-2">
+              <View className="w-5 h-5 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
+                <Info size={11} color="#374151" strokeWidth={2.2} />
+              </View>
+              <View className="flex-1">
+                <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 7 }}>
+                  Location-verified build opportunities
+                </Text>
+                <Text className="text-gray-600" style={{ fontFamily: 'Poppins_400Regular', fontSize: 7, lineHeight: 10 }}>
+                  {isBuildMessageExpanded
+                    ? 'These scopes are tied to real properties and curated by BuildMyHouse admin. You may purchase the property first, then continue with transparent remote monitoring on BuildMyHouse or outside the app if you prefer.'
+                    : 'These scopes are tied to real properties curated by BuildMyHouse admin.'}
+                </Text>
+              </View>
+            </View>
+            <View className="pl-1 pt-0.5">
+              {isBuildMessageExpanded ? (
+                <ChevronUp size={16} color="#111827" strokeWidth={2.2} />
+              ) : (
+                <ChevronDown size={16} color="#111827" strokeWidth={2.2} />
+              )}
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 

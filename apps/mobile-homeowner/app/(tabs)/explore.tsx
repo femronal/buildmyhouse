@@ -8,6 +8,7 @@ import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
 import { useWebSeo } from '@/lib/seo';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -203,11 +204,22 @@ export default function ExploreScreen() {
     [],
   );
 
-  // Filter GC plans based on search query + active tab + active filter
+  // Filter GC plans based on keyword-aware phrase search + active tab + active filter
   const filteredDesigns = useMemo(() => {
     return (designs || []).filter((design: any) => {
       const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''}`.toLowerCase();
-      const matchesSearch = !searchQuery.trim() || searchable.includes(searchQuery.toLowerCase());
+      const matchesSearch = matchesKeywordPhraseQuery({
+        query: searchQuery,
+        fields: [
+          design?.name,
+          design?.description,
+          design?.createdBy?.fullName,
+          design?.projectTypeFilter,
+          design?.projectTypeTag,
+          design?.planType,
+          ...(design?.images || []).map((image: any) => image?.label || ''),
+        ],
+      });
       if (!matchesSearch) return false;
 
       if (normalizeDesignTab(design) !== activeTab) return false;
@@ -273,7 +285,7 @@ export default function ExploreScreen() {
           >
             <Search size={20} color="#737373" strokeWidth={2} />
             <TextInput
-              placeholder="Search repair, upgrade, renovation, and build plans..."
+              placeholder="Search by phrases and keywords (e.g. AC repair in Akoka)"
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
