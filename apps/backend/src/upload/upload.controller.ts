@@ -10,11 +10,15 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { S3UploadService } from './s3-upload.service';
+import { ImageCompressionService } from './image-compression.service';
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
-  constructor(private readonly s3UploadService: S3UploadService) {}
+  constructor(
+    private readonly s3UploadService: S3UploadService,
+    private readonly imageCompressionService: ImageCompressionService,
+  ) {}
 
   @Post('image')
   @UseInterceptors(
@@ -45,19 +49,25 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
+    const processed = await this.imageCompressionService.compressIfNeeded(file);
+    const targetOriginalName = processed.wasCompressed
+      ? `${(file.originalname || 'image').replace(/\.[^/.]+$/, '')}.jpg`
+      : file.originalname;
+
     const uploaded = await this.s3UploadService.uploadBuffer({
-      buffer: file.buffer,
+      buffer: processed.buffer,
       folder: 'images',
-      contentType: file.mimetype,
-      originalName: file.originalname,
+      contentType: processed.contentType,
+      originalName: targetOriginalName,
     });
 
     return {
       url: uploaded.url,
       key: uploaded.key,
       filename: uploaded.filename,
-      size: file.size,
-      mimetype: file.mimetype,
+      size: processed.size,
+      mimetype: processed.contentType,
+      compressed: processed.wasCompressed,
     };
   }
 
@@ -119,19 +129,25 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
+    const processed = await this.imageCompressionService.compressIfNeeded(file);
+    const targetOriginalName = processed.wasCompressed
+      ? `${(file.originalname || 'file').replace(/\.[^/.]+$/, '')}.jpg`
+      : file.originalname;
+
     const uploaded = await this.s3UploadService.uploadBuffer({
-      buffer: file.buffer,
+      buffer: processed.buffer,
       folder: 'files',
-      contentType: file.mimetype,
-      originalName: file.originalname,
+      contentType: processed.contentType,
+      originalName: targetOriginalName,
     });
 
     return {
       url: uploaded.url,
       key: uploaded.key,
       filename: uploaded.filename,
-      size: file.size,
-      mimetype: file.mimetype,
+      size: processed.size,
+      mimetype: processed.contentType,
+      compressed: processed.wasCompressed,
     };
   }
 }
