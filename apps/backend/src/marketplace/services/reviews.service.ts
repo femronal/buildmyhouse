@@ -263,7 +263,7 @@ export class ReviewsService {
       await this.prisma.contractor.update({
         where: { id: contractorId },
         data: {
-          rating: 0,
+          rating: 5.0,
           reviews: 0,
         },
       });

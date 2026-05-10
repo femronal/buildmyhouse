@@ -352,6 +352,8 @@ export class ContractorsController {
   ) {
     return this.contractorsService.adminSetGCVerification(userId, body.verified, {
       force: !!body.force,
+      specialtyCategory: body.specialtyCategory,
+      specialtyTags: body.specialtyTags,
     });
   }
 

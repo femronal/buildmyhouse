@@ -52,6 +52,48 @@ const DESIGN_FILTER_PRESETS: Record<(typeof DESIGN_TAG_OPTIONS)[number]['value']
   full_builds: ['Bungalow Build', 'Duplex Build', 'Blockwork + Roofing', 'Shell to Finish', 'Turnkey Build'],
 };
 
+const GC_SPECIALTY_OPTIONS = [
+  { value: 'repairer', label: 'Repairer' },
+  { value: 'upgrader', label: 'Upgrader' },
+  { value: 'renovator', label: 'Renovator' },
+  { value: 'general_contractor', label: 'General Contractor' },
+] as const;
+
+const GC_SPECIALTY_FILTER_PRESETS: Record<(typeof GC_SPECIALTY_OPTIONS)[number]['value'], string[]> = {
+  repairer: [
+    'Electrical Fixes',
+    'Plumbing Repairs',
+    'Roof Leak Repair',
+    'Tiling Repair',
+    'Painting Touch-Up',
+    'Carpentry Repair',
+  ],
+  upgrader: [
+    'Kitchen Upgrade',
+    'Bathroom Upgrade',
+    'Lighting Upgrade',
+    'Security Upgrade',
+    'Floor Upgrade',
+    'Facade Upgrade',
+  ],
+  renovator: [
+    'Room Renovation',
+    'Full Home Renovation',
+    'Office Renovation',
+    'Rental Renovation',
+    'Interior Renovation',
+    'Exterior Renovation',
+  ],
+  general_contractor: [
+    'Residential Building',
+    'Commercial Building',
+    'Turnkey Delivery',
+    'Site Supervision',
+    'Structural Works',
+    'Project Management',
+  ],
+};
+
 type EditableDesignForm = {
   name: string;
   description: string;
@@ -146,6 +188,20 @@ export default function VerificationPage() {
   const [isUploadingPlanImage, setIsUploadingPlanImage] = useState(false);
   const [gcSearch, setGcSearch] = useState('');
   const [gcVerificationFilter, setGcVerificationFilter] = useState<'all' | 'verified' | 'pending'>('all');
+  const [specialtyModal, setSpecialtyModal] = useState<{
+    open: boolean;
+    mode: 'approve' | 'edit';
+    gc: (typeof gcs)[number] | null;
+  }>({
+    open: false,
+    mode: 'approve',
+    gc: null,
+  });
+  const [selectedSpecialtyCategory, setSelectedSpecialtyCategory] =
+    useState<(typeof GC_SPECIALTY_OPTIONS)[number]['value']>('general_contractor');
+  const [selectedSpecialtyTags, setSelectedSpecialtyTags] = useState<string[]>([]);
+  const [customSpecialtyInput, setCustomSpecialtyInput] = useState('');
+  const [specialtyReminderAccepted, setSpecialtyReminderAccepted] = useState(false);
 
   const filteredGCs = useMemo(() => {
     let list = gcs;
@@ -173,10 +229,105 @@ export default function VerificationPage() {
     };
   }, [gcs.length, pendingProjectDocs.length]);
 
+  const openSpecialtyModal = (item: (typeof gcs)[number], mode: 'approve' | 'edit') => {
+    const currentCategory =
+      item.specialtyCategory &&
+      GC_SPECIALTY_OPTIONS.some((option) => option.value === item.specialtyCategory)
+        ? item.specialtyCategory
+        : 'general_contractor';
+    setSelectedSpecialtyCategory(currentCategory);
+    setSelectedSpecialtyTags(item.specialtyTags?.length ? item.specialtyTags : item.specialty ? [item.specialty] : []);
+    setCustomSpecialtyInput('');
+    setSpecialtyReminderAccepted(false);
+    setSpecialtyModal({
+      open: true,
+      mode,
+      gc: item,
+    });
+  };
+
+  const closeSpecialtyModal = () => {
+    setSpecialtyModal({ open: false, mode: 'approve', gc: null });
+    setSelectedSpecialtyTags([]);
+    setCustomSpecialtyInput('');
+    setSpecialtyReminderAccepted(false);
+  };
+
+  const toggleSpecialtyTag = (tag: string) => {
+    setSelectedSpecialtyTags((prev) =>
+      prev.some((item) => item.toLowerCase() === tag.toLowerCase())
+        ? prev.filter((item) => item.toLowerCase() !== tag.toLowerCase())
+        : [...prev, tag],
+    );
+  };
+
+  const addCustomSpecialtyTag = () => {
+    const next = customSpecialtyInput.trim();
+    if (!next) return;
+    setSelectedSpecialtyTags((prev) => {
+      if (prev.some((item) => item.toLowerCase() === next.toLowerCase())) return prev;
+      return [...prev, next];
+    });
+    setCustomSpecialtyInput('');
+  };
+
   const handleToggleGCVerification = async (item: (typeof gcs)[number]) => {
     const nextVerified = !item.verified;
+    if (nextVerified) {
+      openSpecialtyModal(item, 'approve');
+      return;
+    }
+
+    try {
+      await verifyGC.mutateAsync({
+        userId: item.userId,
+        verified: false,
+      });
+      setFeedbackModal({
+        open: true,
+        title: 'GC Disapproved',
+        message: 'This GC has been marked as not verified.',
+      });
+    } catch (e: any) {
+      setFeedbackModal({
+        open: true,
+        title: 'Update Failed',
+        message: e?.message || 'Failed to update GC verification status',
+      });
+    }
+  };
+
+  const handleSaveSpecialtySettings = async () => {
+    const item = specialtyModal.gc;
+    if (!item) return;
+    if (!selectedSpecialtyCategory) {
+      setFeedbackModal({
+        open: true,
+        title: 'Select major specialty',
+        message: 'Please choose one major specialty before continuing.',
+      });
+      return;
+    }
+    if (selectedSpecialtyTags.length === 0) {
+      setFeedbackModal({
+        open: true,
+        title: 'Select specialty filters',
+        message: 'Please pick at least one specialty filter (or add a custom one).',
+      });
+      return;
+    }
+    if (!specialtyReminderAccepted) {
+      setFeedbackModal({
+        open: true,
+        title: 'Reminder not confirmed',
+        message: 'Please confirm the specialty reminder checkbox before saving.',
+      });
+      return;
+    }
+
+    const approvingNow = specialtyModal.mode === 'approve';
     if (
-      nextVerified &&
+      approvingNow &&
       !item.hasUploadedAllVerificationDocuments
     ) {
       const shouldProceed = window.confirm(
@@ -188,15 +339,18 @@ export default function VerificationPage() {
     try {
       await verifyGC.mutateAsync({
         userId: item.userId,
-        verified: nextVerified,
-        force: nextVerified && !item.hasUploadedAllVerificationDocuments,
+        verified: approvingNow ? true : !!item.verified,
+        force: approvingNow && !item.hasUploadedAllVerificationDocuments,
+        specialtyCategory: selectedSpecialtyCategory,
+        specialtyTags: selectedSpecialtyTags,
       });
+      closeSpecialtyModal();
       setFeedbackModal({
         open: true,
-        title: nextVerified ? 'GC Approved' : 'GC Disapproved',
-        message: nextVerified
-          ? 'This GC has been verified successfully.'
-          : 'This GC has been marked as not verified.',
+        title: approvingNow ? 'GC Approved' : 'Specialty Updated',
+        message: approvingNow
+          ? 'This GC has been verified and specialty settings were saved successfully.'
+          : 'This GC specialty settings were updated successfully.',
       });
     } catch (e: any) {
       setFeedbackModal({
@@ -487,6 +641,19 @@ export default function VerificationPage() {
                   </div>
                   <h3 className="text-lg font-semibold mt-2">{item.name}</h3>
                   <p className="text-sm text-gray-500">{item.email ?? item.user?.email ?? '—'}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white">
+                      {item.specialty || 'General Contractor'}
+                    </span>
+                    {(item.specialtyTags || []).map((tag) => (
+                      <span
+                        key={`${item.id}-${tag}`}
+                        className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 border border-blue-200"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                   <div className="mt-3 rounded-lg border border-gray-200 p-3 bg-gray-50">
                     <div className="flex items-center justify-between">
                       <p className="text-xs font-medium text-gray-700">
@@ -547,6 +714,14 @@ export default function VerificationPage() {
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Approve GC
+                    </button>
+                  )}
+                  {item.verified && (
+                    <button
+                      onClick={() => openSpecialtyModal(item, 'edit')}
+                      className="px-4 py-2 border rounded-lg text-sm text-center bg-blue-50 text-blue-700 border-blue-200"
+                    >
+                      Edit Specialty
                     </button>
                   )}
                   <a
@@ -1033,6 +1208,132 @@ export default function VerificationPage() {
                 className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-500"
               >
                 OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {specialtyModal.open && specialtyModal.gc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-2xl border border-blue-900 bg-[#0A1628] p-6 shadow-2xl">
+            <h3 className="text-xl font-semibold text-white">
+              {specialtyModal.mode === 'approve' ? 'Set GC Specialty Before Approval' : 'Edit GC Specialty'}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-gray-300">
+              Configure one major specialty and multiple filters for <span className="font-medium text-white">{specialtyModal.gc.name}</span>.
+            </p>
+
+            <div className="mt-5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-300">Major Specialty</label>
+              <select
+                value={selectedSpecialtyCategory}
+                onChange={(e) =>
+                  setSelectedSpecialtyCategory(
+                    e.target.value as (typeof GC_SPECIALTY_OPTIONS)[number]['value'],
+                  )
+                }
+                className="mt-2 w-full rounded-lg border border-gray-600 bg-[#0F243F] px-3 py-2 text-sm text-white"
+              >
+                {GC_SPECIALTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-300">
+                Specialty Filters (multi-select)
+              </label>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(GC_SPECIALTY_FILTER_PRESETS[selectedSpecialtyCategory] || []).map((tag) => {
+                  const selected = selectedSpecialtyTags.some(
+                    (item) => item.toLowerCase() === tag.toLowerCase(),
+                  );
+                  return (
+                    <button
+                      key={tag}
+                      onClick={() => toggleSpecialtyTag(tag)}
+                      className={`rounded-full border px-3 py-1.5 text-xs ${
+                        selected
+                          ? 'border-blue-500 bg-blue-600 text-white'
+                          : 'border-blue-300 bg-blue-100 text-blue-800'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="mt-5">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-300">
+                Add Custom Filter
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  value={customSpecialtyInput}
+                  onChange={(e) => setCustomSpecialtyInput(e.target.value)}
+                  placeholder="Type custom specialty filter"
+                  className="flex-1 rounded-lg border border-gray-600 bg-[#0F243F] px-3 py-2 text-sm text-white"
+                />
+                <button
+                  type="button"
+                  onClick={addCustomSpecialtyTag}
+                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {selectedSpecialtyTags.map((tag) => (
+                <button
+                  key={`selected-${tag}`}
+                  onClick={() => toggleSpecialtyTag(tag)}
+                  className="rounded-full border border-white/30 bg-white/10 px-3 py-1.5 text-xs text-white"
+                >
+                  {tag} ×
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-lg border border-amber-700/50 bg-amber-900/20 p-3">
+              <p className="text-xs leading-5 text-amber-200">
+                Reminder: confirm this GC specialty carefully before saving. If the GC wants to operate under another major specialty later, a new account should be opened for that specialty path.
+              </p>
+              <label className="mt-3 flex items-start gap-2 text-xs text-amber-100">
+                <input
+                  type="checkbox"
+                  checked={specialtyReminderAccepted}
+                  onChange={(e) => setSpecialtyReminderAccepted(e.target.checked)}
+                  className="mt-0.5"
+                />
+                I confirm these specialty settings are correct.
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={closeSpecialtyModal}
+                className="rounded-lg border border-gray-600 px-5 py-2 text-sm font-medium text-gray-200 hover:bg-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSpecialtySettings}
+                disabled={verifyGC.isPending}
+                className="rounded-lg bg-green-600 px-5 py-2 text-sm font-medium text-white hover:bg-green-500 disabled:opacity-50"
+              >
+                {verifyGC.isPending
+                  ? 'Saving...'
+                  : specialtyModal.mode === 'approve'
+                    ? 'Confirm & Approve GC'
+                    : 'Save Specialty'}
               </button>
             </div>
           </div>

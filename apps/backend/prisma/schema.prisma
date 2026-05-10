@@ -333,12 +333,14 @@ model Contractor {
   userId          String   @unique
   name            String
   specialty       String
+  specialtyCategory String?
+  specialtyTags   String[] @default([])
   description     String?
   location        String?
   experienceYears Int?     // Years of experience (e.g. 15)
-  rating          Float    @default(0)
+  rating          Float    @default(5.0)
   reviews         Int      @default(0)
-  projects        Int      @default(0)
+  projects        Int      @default(10)
   verified        Boolean  @default(false)
   imageUrl        String?
   hiringFee       Float

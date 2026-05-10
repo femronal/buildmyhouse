@@ -7,6 +7,8 @@ export type UnverifiedGC = {
   name: string;
   verified?: boolean;
   specialty: string;
+  specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor' | null;
+  specialtyTags?: string[];
   location?: string | null;
   email?: string;
   user?: { id: string; fullName: string; email: string; phone?: string | null };
@@ -41,15 +43,21 @@ export function useVerifyGC() {
       userId,
       verified,
       force,
+      specialtyCategory,
+      specialtyTags,
     }: {
       userId: string;
       verified: boolean;
       force?: boolean;
+      specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor';
+      specialtyTags?: string[];
     }) => {
       try {
         return await api.patch(`/contractors/admin/${userId}/verification`, {
           verified,
           force: !!force,
+          specialtyCategory,
+          specialtyTags,
         });
       } catch (error: any) {
         const message = String(error?.message || '');

@@ -369,10 +369,10 @@ export default function ExploreScreen() {
                 <Info size={14} color="#374151" strokeWidth={2.2} />
               </View>
               <View className="flex-1">
-                <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
                   GC-uploaded project scopes
                 </Text>
-                <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-gray-600" style={{ fontFamily: 'Poppins_400Regular', fontSize: 10, lineHeight: 14 }}>
                   {isProjectsMessageExpanded
                     ? 'These scopes are abstract project ideas (not tied to one physical location). Use them to plan better before speaking to anyone on site. Filter by project type and compare options to find the best fit for your property. '
                     : 'These scopes are abstract project ideas you can adapt to your property.'}

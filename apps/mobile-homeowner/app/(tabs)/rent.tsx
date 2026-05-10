@@ -413,10 +413,10 @@ export default function RentScreen() {
                 <Info size={11} color="#374151" strokeWidth={2.2} />
               </View>
               <View className="flex-1">
-                <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 7 }}>
+                <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
                   Location-verified build opportunities
                 </Text>
-                <Text className="text-gray-600" style={{ fontFamily: 'Poppins_400Regular', fontSize: 7, lineHeight: 10 }}>
+                <Text className="text-gray-600" style={{ fontFamily: 'Poppins_400Regular', fontSize: 10, lineHeight: 14 }}>
                   {isBuildMessageExpanded
                     ? 'These scopes are tied to real properties and curated by BuildMyHouse admin. You may purchase the property first, then continue with transparent remote monitoring on BuildMyHouse or outside the app if you prefer.'
                     : 'These scopes are tied to real properties curated by BuildMyHouse admin.'}

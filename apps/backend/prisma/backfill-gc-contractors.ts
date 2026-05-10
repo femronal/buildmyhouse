@@ -27,7 +27,11 @@ async function main() {
       data: {
         userId: user.id,
         name: user.fullName || 'General Contractor',
-        specialty: 'General Construction',
+        specialty: 'General Contractor',
+        specialtyCategory: 'general_contractor',
+        specialtyTags: ['General Contractor'],
+        rating: 5.0,
+        projects: 10,
         type: 'general_contractor',
         hiringFee: 0,
       },
