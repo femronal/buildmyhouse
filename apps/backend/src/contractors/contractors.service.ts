@@ -1612,7 +1612,8 @@ export class ContractorsService {
       }
     }
 
-    if (verified && !verification.hasUploadedAllRequiredDocuments && !isForce) {
+    const isVerificationTransition = verified && !user.verified;
+    if (isVerificationTransition && !verification.hasUploadedAllRequiredDocuments && !isForce) {
       throw new BadRequestException(
         `This GC has not uploaded all required verification documents. Missing: ${verification.missingRequiredDocuments.join(', ')}`,
       );

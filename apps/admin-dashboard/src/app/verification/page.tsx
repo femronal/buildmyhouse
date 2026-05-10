@@ -326,16 +326,6 @@ export default function VerificationPage() {
     }
 
     const approvingNow = specialtyModal.mode === 'approve';
-    if (
-      approvingNow &&
-      !item.hasUploadedAllVerificationDocuments
-    ) {
-      const shouldProceed = window.confirm(
-        `This GC has not uploaded all required verification documents.\n\nMissing: ${item.missingRequiredDocuments.join(', ') || 'Some required documents'}\n\nDo you still want to verify this GC now?`,
-      );
-      if (!shouldProceed) return;
-    }
-
     try {
       await verifyGC.mutateAsync({
         userId: item.userId,
@@ -1198,7 +1188,7 @@ export default function VerificationPage() {
       )}
 
       {feedbackModal.open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl border border-blue-900 bg-[#0A1628] p-6 shadow-2xl">
             <h3 className="text-xl font-semibold text-white">{feedbackModal.title}</h3>
             <p className="mt-3 text-sm leading-6 text-gray-300">{feedbackModal.message}</p>
@@ -1223,6 +1213,11 @@ export default function VerificationPage() {
             <p className="mt-2 text-sm leading-6 text-gray-300">
               Configure one major specialty and multiple filters for <span className="font-medium text-white">{specialtyModal.gc.name}</span>.
             </p>
+            {specialtyModal.mode === 'approve' && !specialtyModal.gc.hasUploadedAllVerificationDocuments && (
+              <p className="mt-3 rounded-lg border border-amber-600/50 bg-amber-900/20 px-3 py-2 text-xs leading-5 text-amber-200">
+                This GC is missing required verification documents. If you continue, approval will still proceed because admin override is enabled.
+              </p>
+            )}
 
             <div className="mt-5">
               <label className="text-xs font-semibold uppercase tracking-wide text-gray-300">Major Specialty</label>
