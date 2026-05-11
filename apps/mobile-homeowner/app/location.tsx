@@ -125,13 +125,19 @@ export default function LocationScreen() {
             className="text-3xl text-black mb-2"
             style={{ fontFamily: 'Poppins_800ExtraBold' }}
           >
-            Where are you building?
+            Where is this project located?
           </Text>
           <Text 
             className="text-sm text-gray-500 leading-5"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Search or tap on the map to select your project location
+            Set the location to begin.
+          </Text>
+          <Text
+            className="text-sm text-gray-700 leading-6 mt-3"
+            style={{ fontFamily: 'Poppins_500Medium' }}
+          >
+            From repairs and upgrades to renovations and full builds, your address anchors everything—matching, planning, and oversight.
           </Text>
         </View>
 
@@ -139,7 +145,7 @@ export default function LocationScreen() {
         <View className="mb-2 z-20">
           <GooglePlacesAutocomplete
             ref={autocompleteRef}
-            placeholder="Search for an address..."
+            placeholder="Enter project address"
             fetchDetails={true}
             onPress={handlePlaceSelect}
             query={{
@@ -206,13 +212,13 @@ export default function LocationScreen() {
             className="text-black text-sm mb-1.5"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
-            Build with confidence
+            One platform. Every project type.
           </Text>
           <Text
             className="text-gray-600 text-xs leading-5"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
-            Start with the right location and manage your project with more trust, structure, and visibility from abroad.
+            Initiate with precision. Execute with confidence—wherever you are.
           </Text>
         </View>
       </View>

@@ -42,11 +42,11 @@ export class ContractorsService {
     tags?: string[];
     fallback?: string | null;
   }) {
-    const firstTag = this.normalizeSpecialtyTags(params.tags)[0];
-    if (firstTag) return firstTag;
     if (params.category && GC_SPECIALTY_LABELS[params.category]) {
       return GC_SPECIALTY_LABELS[params.category];
     }
+    const firstTag = this.normalizeSpecialtyTags(params.tags)[0];
+    if (firstTag) return firstTag;
     return params.fallback || 'General Contractor';
   }
 
@@ -1479,7 +1479,10 @@ export class ContractorsService {
       id: c.id,
       userId: c.userId,
       name: c.name,
-      specialty: c.specialty,
+      specialty: this.buildContractorSpecialtyDisplay({
+        category: c.specialtyCategory as GCSpecialtyCategory | null,
+        fallback: c.specialty,
+      }),
       specialtyCategory: c.specialtyCategory || null,
       specialtyTags: c.specialtyTags || [],
       location: c.location,
@@ -1520,7 +1523,10 @@ export class ContractorsService {
       id: c.id,
       userId: c.userId,
       name: c.name,
-      specialty: c.specialty,
+      specialty: this.buildContractorSpecialtyDisplay({
+        category: c.specialtyCategory as GCSpecialtyCategory | null,
+        fallback: c.specialty,
+      }),
       specialtyCategory: c.specialtyCategory || null,
       specialtyTags: c.specialtyTags || [],
       location: c.location,
@@ -1629,8 +1635,7 @@ export class ContractorsService {
               specialtyTags: normalizedTags,
               specialty: this.buildContractorSpecialtyDisplay({
                 category: specialtyCategory,
-                tags: normalizedTags,
-                fallback: contractor.specialty,
+                fallback: GC_SPECIALTY_LABELS[specialtyCategory],
               }),
             }
           : {}),

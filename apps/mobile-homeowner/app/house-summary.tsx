@@ -35,6 +35,10 @@ function resolveUiProjectTag(params: {
   if (explicitTag === 'full_builds') return 'full_builds';
 
   const legacyPlanType = `${params.planType || ''}`.toLowerCase();
+  if (legacyPlanType === 'repair') return 'repair';
+  if (legacyPlanType === 'upgrades') return 'upgrades';
+  if (legacyPlanType === 'renovation') return 'renovation';
+  if (legacyPlanType === 'full_builds') return 'full_builds';
   if (legacyPlanType === 'interior_design') return 'upgrades';
   if (legacyPlanType === 'homebuilding') return 'full_builds';
   return 'renovation';
@@ -210,13 +214,17 @@ export default function HouseSummaryScreen() {
   // For design selection, use real design data
   const aiAnalysis = isDesignSelection ? designAnalysis : (gcEditedAnalysis || originalAiAnalysis);
   const summaryProjectTag = resolveUiProjectTag({
-    projectTypeTag: isDesignSelection ? designData?.projectTypeTag : projectAnalysisData?.projectTypeTag,
-    planType: isDesignSelection ? designData?.planType : projectAnalysisData?.projectType,
+    projectTypeTag: isDesignSelection
+      ? designData?.projectTypeTag
+      : (projectAnalysisData?.projectTypeTag || originalAiAnalysis?.projectTypeTag || (params.projectType as string | undefined)),
+    planType: isDesignSelection
+      ? designData?.planType
+      : (projectAnalysisData?.projectType || originalAiAnalysis?.projectType || (params.projectType as string | undefined)),
   });
   const summaryPlanTypeTag = getPlanTypeTagClasses(summaryProjectTag);
   const summaryProjectFilter = isDesignSelection
     ? `${designData?.projectTypeFilter || ''}`.trim()
-    : `${projectAnalysisData?.projectTypeFilter || ''}`.trim();
+    : `${params.projectTypeFilter || projectAnalysisData?.projectTypeFilter || originalAiAnalysis?.projectTypeFilter || ''}`.trim();
 
   // For design selection, show only the GC who uploaded the design
   // For project flow, fetch recommended GCs
@@ -250,6 +258,15 @@ export default function HouseSummaryScreen() {
   }, [isDesignSelection, designData]);
 
   const designDescription = isDesignSelection ? `${designData?.description || ''}`.trim() : '';
+  const homeownerBrief = isDesignSelection
+    ? designDescription
+    : `${params.projectDescription || aiAnalysis?.homeownerProjectDescription || ''}`.trim();
+  const successGoal = isDesignSelection
+    ? ''
+    : `${params.successCriteria || aiAnalysis?.successCriteria || ''}`.trim();
+  const projectImageCount = isDesignSelection
+    ? 0
+    : (Array.isArray(aiAnalysis?.projectImageUrls) ? aiAnalysis.projectImageUrls.length : Number(params.planImageCount || 0));
   const acceptedContractorName = acceptedGC?.name || acceptedRequest?.contractor?.fullName || 'General Contractor';
   const acceptedContractorAvatarUrl = getBackendAssetUrl(
     acceptedGC?.imageUrl || acceptedRequest?.contractor?.pictureUrl || undefined
@@ -689,14 +706,36 @@ export default function HouseSummaryScreen() {
             📍 {params.address || (isDesignSelection ? 'Location to be determined' : 'Address not available')}
           </Text>
 
-          {!!designDescription && (
+          {!!homeownerBrief && (
             <View className="bg-black rounded-2xl p-4 mb-5">
               <Text className="text-xs text-white/60 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Project Description
+                {isDesignSelection ? 'Project Description' : 'Your Project Brief'}
               </Text>
               <Text className="text-sm text-white leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {designDescription}
+                {homeownerBrief}
               </Text>
+            </View>
+          )}
+
+          {!isDesignSelection && (!!successGoal || projectImageCount > 0) && (
+            <View className="bg-white rounded-2xl p-4 mb-5 border border-gray-200">
+              {!!successGoal && (
+                <View className="mb-3">
+                  <Text className="text-xs text-gray-500 mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Success Goal
+                  </Text>
+                  <Text className="text-sm text-gray-800 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {successGoal}
+                  </Text>
+                </View>
+              )}
+              {projectImageCount > 0 && (
+                <View className="self-start rounded-full border border-gray-200 px-3 py-1 bg-gray-50">
+                  <Text className="text-xs text-gray-700" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {projectImageCount} project photo{projectImageCount > 1 ? 's' : ''} uploaded
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 

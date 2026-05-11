@@ -73,10 +73,6 @@ export class PlansController {
     @UploadedFile() file: Express.Multer.File,
     @Body() uploadPlanDto: UploadPlanDto,
   ) {
-    if (!file) {
-      throw new BadRequestException('PDF file is required');
-    }
-
     const homeownerId = req.user.sub;
 
     return this.plansService.uploadAndProcessPlan(

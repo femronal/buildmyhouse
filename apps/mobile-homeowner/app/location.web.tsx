@@ -120,16 +120,16 @@ export default function LocationScreenWeb() {
 
       <View className="mb-8">
         <Text className="text-3xl text-black mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
-          Where are you building?
+          Where is this project located?
         </Text>
         <Text className="text-sm text-gray-500 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-          Enter your project address below
+          Set the location to begin.
         </Text>
         <Text
           className="text-sm text-gray-700 leading-6 mt-4"
           style={{ fontFamily: 'Poppins_500Medium' }}
         >
-          Write the correct address where your project - building construction, renovation or interior design - will be taking place.
+          From repairs and upgrades to renovations and full builds, your address anchors everything—matching, planning, and oversight.
         </Text>
       </View>
 
@@ -140,7 +140,7 @@ export default function LocationScreenWeb() {
           <TextInput
             className="flex-1 ml-3 text-base text-black"
             style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
-            placeholder="123 Main Street, City, State, ZIP"
+            placeholder="Enter project address"
             placeholderTextColor="#A3A3A3"
             value={address}
             onChangeText={setAddress}
@@ -167,7 +167,7 @@ export default function LocationScreenWeb() {
                 className={`text-base ml-2 ${address.trim() ? 'text-white' : 'text-gray-400'}`}
                 style={{ fontFamily: 'Poppins_700Bold' }}
               >
-                Find Address
+                Search Address
               </Text>
             </>
           )}
@@ -176,10 +176,10 @@ export default function LocationScreenWeb() {
 
       <View className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
         <Text className="text-black text-sm mb-1.5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          Build with confidence
+          One platform. Every project type.
         </Text>
         <Text className="text-gray-600 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-          Start with the right location and manage your project with more trust, structure, and visibility from abroad.
+          Initiate with precision. Execute with confidence—wherever you are.
         </Text>
       </View>
 

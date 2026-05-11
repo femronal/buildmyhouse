@@ -6,7 +6,7 @@ import { planService, UploadPlanData } from '@/services/planService';
  */
 export function useUploadPlan() {
   return useMutation({
-    mutationFn: ({ planData, pdfFile }: { planData: UploadPlanData; pdfFile: any }) =>
+    mutationFn: ({ planData, pdfFile }: { planData: UploadPlanData; pdfFile?: any }) =>
       planService.uploadPlan(planData, pdfFile),
   });
 }

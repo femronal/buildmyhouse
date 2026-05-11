@@ -13,47 +13,54 @@ export interface UploadPlanData {
   budget: number;
   projectType: 'homebuilding' | 'renovation' | 'interior_design';
   planImageUrl: string;
+  planImageUrls?: string[];
+  projectTypeTag?: string;
+  projectTypeFilter?: string;
+  projectDescription?: string;
+  successCriteria?: string;
 }
 
 export const planService = {
   /**
    * Upload plan PDF and process with AI
    */
-  uploadPlan: async (planData: UploadPlanData, pdfFile: any) => {
+  uploadPlan: async (planData: UploadPlanData, pdfFile?: any) => {
     const formData = new FormData();
 
-    // Add PDF file - backend expects field name 'planPdf'
-    // For React Native web, expo-document-picker returns a file object
-    // We need to fetch the file and create a proper File/Blob
-    let fileToUpload: File | Blob;
-    
-    try {
-      if (pdfFile.uri) {
-        // Fetch the file from the URI
-        const response = await fetch(pdfFile.uri);
-        const blob = await response.blob();
-        // Create a File object with the correct name and type
-        fileToUpload = new File([blob], pdfFile.name || 'plan.pdf', { 
-          type: 'application/pdf' 
-        });
-      } else if (pdfFile instanceof File) {
-        // Already a File object
-        fileToUpload = pdfFile;
-      } else if (pdfFile instanceof Blob) {
-        // Convert Blob to File
-        fileToUpload = new File([pdfFile], (pdfFile as any).name || 'plan.pdf', { 
-          type: 'application/pdf' 
-        });
-      } else {
-        // Fallback: try to use as-is
-        fileToUpload = pdfFile as any;
+    if (pdfFile) {
+      // Add PDF file - backend expects field name 'planPdf'
+      // For React Native web, expo-document-picker returns a file object
+      // We need to fetch the file and create a proper File/Blob
+      let fileToUpload: File | Blob;
+
+      try {
+        if (pdfFile.uri) {
+          // Fetch the file from the URI
+          const response = await fetch(pdfFile.uri);
+          const blob = await response.blob();
+          // Create a File object with the correct name and type
+          fileToUpload = new File([blob], pdfFile.name || 'plan.pdf', {
+            type: 'application/pdf',
+          });
+        } else if (pdfFile instanceof File) {
+          // Already a File object
+          fileToUpload = pdfFile;
+        } else if (pdfFile instanceof Blob) {
+          // Convert Blob to File
+          fileToUpload = new File([pdfFile], (pdfFile as any).name || 'plan.pdf', {
+            type: 'application/pdf',
+          });
+        } else {
+          // Fallback: try to use as-is
+          fileToUpload = pdfFile as any;
+        }
+      } catch (error) {
+        console.error('❌ Error preparing file:', error);
+        throw new Error('Failed to prepare PDF file for upload');
       }
-    } catch (error) {
-      console.error('❌ Error preparing file:', error);
-      throw new Error('Failed to prepare PDF file for upload');
+
+      formData.append('planPdf', fileToUpload);
     }
-    
-    formData.append('planPdf', fileToUpload);
 
     // Add plan data as strings (FormData only accepts strings)
     // Backend will transform them to numbers using @Type(() => Number)
@@ -77,6 +84,13 @@ export const planService = {
     formData.append('budget', planData.budget.toString());
     formData.append('projectType', planData.projectType);
     formData.append('planImageUrl', planData.planImageUrl);
+    if (planData.planImageUrls?.length) {
+      planData.planImageUrls.forEach((url) => formData.append('planImageUrls', url));
+    }
+    if (planData.projectTypeTag) formData.append('projectTypeTag', planData.projectTypeTag);
+    if (planData.projectTypeFilter) formData.append('projectTypeFilter', planData.projectTypeFilter);
+    if (planData.projectDescription) formData.append('projectDescription', planData.projectDescription);
+    if (planData.successCriteria) formData.append('successCriteria', planData.successCriteria);
 
     // For FormData, don't set Content-Type header - browser will set it automatically with boundary
     const response = await api.post('/plans/upload', formData);

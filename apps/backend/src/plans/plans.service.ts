@@ -40,54 +40,60 @@ export class PlansService {
    */
   async uploadAndProcessPlan(
     homeownerId: string,
-    file: Express.Multer.File,
+    file: Express.Multer.File | undefined,
     uploadPlanDto: UploadPlanDto,
   ) {
     try {
       // 1. Save file metadata. Keep legacy local path fallback for existing flows.
-      let planPdfUrl = `/uploads/plans/${file.filename}`;
-      const planFileName = file.originalname;
+      let planPdfUrl: string | null = null;
+      let planFileName: string | null = null;
+      let aiAnalysis: any = this.buildFallbackAiAnalysis(uploadPlanDto);
 
-      // 2. Read file from disk (diskStorage saves to disk, not buffer)
-      const filePath = join(process.cwd(), 'uploads', 'plans', file.filename);
-      let pdfBuffer: Buffer;
-      
-      if (file.buffer) {
-        // If buffer exists (memoryStorage), use it
-        pdfBuffer = file.buffer;
-      } else {
-        // If no buffer (diskStorage), read from disk
-        if (!existsSync(filePath)) {
-          throw new NotFoundException('Uploaded file could not be processed. Please try uploading again.');
+      if (file) {
+        planPdfUrl = `/uploads/plans/${file.filename}`;
+        planFileName = file.originalname;
+
+        // 2. Read file from disk (diskStorage saves to disk, not buffer)
+        const filePath = join(process.cwd(), 'uploads', 'plans', file.filename);
+        let pdfBuffer: Buffer;
+
+        if (file.buffer) {
+          // If buffer exists (memoryStorage), use it
+          pdfBuffer = file.buffer;
+        } else {
+          // If no buffer (diskStorage), read from disk
+          if (!existsSync(filePath)) {
+            throw new NotFoundException('Uploaded file could not be processed. Please try uploading again.');
+          }
+          pdfBuffer = readFileSync(filePath);
         }
-        pdfBuffer = readFileSync(filePath);
+
+        const requireDurableStorage = this.nodeEnv === 'production';
+        if (requireDurableStorage && !this.s3Client) {
+          throw new BadRequestException('Plan upload storage is not configured. Please contact support.');
+        }
+
+        // 3. Upload to storage. In production this must be durable (S3).
+        const uploaded = await this.s3UploadService.uploadBuffer({
+          buffer: pdfBuffer,
+          folder: 'plans',
+          contentType: 'application/pdf',
+          originalName: file.originalname,
+        });
+        if (uploaded?.url) {
+          planPdfUrl = uploaded.url;
+        }
+
+        // 4. Extract text from PDF
+        const pdfText = await this.openaiService.extractTextFromPdf(pdfBuffer);
+
+        // 5. Analyze with AI
+        aiAnalysis = await this.openaiService.analyzePlan(
+          pdfText,
+          uploadPlanDto.name,
+          uploadPlanDto.budget,
+        );
       }
-
-      const requireDurableStorage = this.nodeEnv === 'production';
-      if (requireDurableStorage && !this.s3Client) {
-        throw new BadRequestException('Plan upload storage is not configured. Please contact support.');
-      }
-
-      // 3. Upload to storage. In production this must be durable (S3).
-      const uploaded = await this.s3UploadService.uploadBuffer({
-        buffer: pdfBuffer,
-        folder: 'plans',
-        contentType: 'application/pdf',
-        originalName: file.originalname,
-      });
-      if (uploaded?.url) {
-        planPdfUrl = uploaded.url;
-      }
-
-      // 4. Extract text from PDF
-      const pdfText = await this.openaiService.extractTextFromPdf(pdfBuffer);
-
-      // 5. Analyze with AI
-      const aiAnalysis = await this.openaiService.analyzePlan(
-        pdfText,
-        uploadPlanDto.name,
-        uploadPlanDto.budget,
-      );
 
       // 6. Create project with analysis
       const project = await this.prisma.project.create({
@@ -113,6 +119,15 @@ export class PlansService {
             ...(aiAnalysis as any),
             projectType: uploadPlanDto.projectType || (aiAnalysis as any)?.projectType || 'homebuilding',
             projectImageUrl: uploadPlanDto.planImageUrl,
+            projectImageUrls:
+              uploadPlanDto.planImageUrls && uploadPlanDto.planImageUrls.length > 0
+                ? uploadPlanDto.planImageUrls
+                : [uploadPlanDto.planImageUrl],
+            projectTypeTag: uploadPlanDto.projectTypeTag || null,
+            projectTypeFilter: uploadPlanDto.projectTypeFilter || null,
+            homeownerProjectDescription: uploadPlanDto.projectDescription || null,
+            successCriteria: uploadPlanDto.successCriteria || null,
+            aiStatus: file ? 'processed' : 'pending_manual_scope',
           } as any, // JSON field
           aiProcessedAt: new Date(),
         },
@@ -149,6 +164,19 @@ export class PlansService {
         'Failed to process the uploaded plan. Please ensure the file is valid and try again.',
       );
     }
+  }
+
+  private buildFallbackAiAnalysis(uploadPlanDto: UploadPlanDto) {
+    return {
+      summary:
+        'Scope analysis is pending. A detailed AI scope will be generated after the AI endpoint is connected.',
+      estimatedBudget: uploadPlanDto.budget,
+      materials: [],
+      labor: [],
+      timeline: null,
+      recommendations: [],
+      confidence: 'low',
+    };
   }
 
   /**
