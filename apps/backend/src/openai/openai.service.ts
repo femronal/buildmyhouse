@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
-import { PDFParse } from 'pdf-parse';
 
 export interface PlanAnalysis {
   projectType: string; // 'repair' | 'upgrades' | 'renovation' | 'full_builds'
@@ -336,19 +335,26 @@ export class OpenAIService {
   }
 
   async extractTextFromPdf(pdfBuffer: Buffer): Promise<string> {
-    let parser: PDFParse | null = null;
     try {
-      parser = new PDFParse({ data: pdfBuffer });
-      const result = await parser.getText();
+      // Lazy-load pdf parser to avoid hard startup failures in runtimes
+      // where the package may rely on unsupported globals.
+      const moduleRef: any = await import('pdf-parse');
+      const parserFactory = moduleRef?.default || moduleRef;
+      if (typeof parserFactory !== 'function') {
+        this.logger.warn('PDF parser is unavailable in current runtime, skipping PDF text extraction');
+        return '';
+      }
+
+      const result = await parserFactory(pdfBuffer);
       const text = `${result?.text || ''}`.replace(/\s+/g, ' ').trim();
       return text.slice(0, 25000);
     } catch (error) {
-      this.logger.error(`PDF extraction error: ${error instanceof Error ? error.message : String(error)}`);
+      this.logger.warn(
+        `PDF extraction unavailable, continuing without PDF text: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       return '';
-    } finally {
-      if (parser) {
-        await parser.destroy().catch(() => undefined);
-      }
     }
   }
 }
