@@ -52,13 +52,13 @@ export default function ChooseProjectTypeScreen() {
           className="text-3xl text-black mb-2"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
         >
-          Choose Your Project Type
+          Start Your Project
         </Text>
         <Text 
           className="text-sm text-gray-500 leading-5"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          Select how you’d like to proceed with your project
+          Choose how you want to begin. We’ll guide the rest.
         </Text>
       </View>
 
@@ -81,13 +81,13 @@ export default function ChooseProjectTypeScreen() {
                 className="text-xl text-black mb-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
               >
-                Choose from Existing Designs
+                Browse Verified Project Ideas
               </Text>
               <Text 
                 className="text-sm text-gray-600 leading-5"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                Browse and select from designs uploaded by verified General Contractors. Get started quickly with proven designs.
+                Explore ready project options from verified General Contractors and move faster with proven direction.
               </Text>
             </View>
           </View>
@@ -97,19 +97,19 @@ export default function ChooseProjectTypeScreen() {
               <View className="flex-row items-center mb-1">
                 <Text className="text-gray-400 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Pre-designed by professionals
+                  Verified by professionals
                 </Text>
               </View>
               <View className="flex-row items-center mb-1">
                 <Text className="text-gray-400 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Cost estimates included
+                  Clear scope and cost guidance
                 </Text>
               </View>
               <View className="flex-row items-center">
                 <Text className="text-gray-400 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Quick project setup
+                  Fast project kickoff
                 </Text>
               </View>
             </View>
@@ -130,13 +130,13 @@ export default function ChooseProjectTypeScreen() {
                 className="text-xl text-white mb-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
               >
-                Upload Your Own Plan
+                Upload Your Own Project Brief
               </Text>
               <Text 
                 className="text-sm text-white/70 leading-5"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                Upload your architectural plans and get AI-powered analysis, cost estimates, and construction timeline.
+                Share your photos, goals, and project details. BuildMyHouse turns it into a structured scope you can execute with confidence.
               </Text>
             </View>
           </View>
@@ -146,19 +146,19 @@ export default function ChooseProjectTypeScreen() {
               <View className="flex-row items-center mb-1">
                 <Text className="text-white/70 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  AI-powered plan analysis
+                  AI-ready project intake
                 </Text>
               </View>
               <View className="flex-row items-center mb-1">
                 <Text className="text-white/70 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Custom cost breakdown
+                  Personalized scope guidance
                 </Text>
               </View>
               <View className="flex-row items-center">
                 <Text className="text-white/70 text-xs mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>✓</Text>
                 <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Detailed construction phases
+                  Built for repairs, upgrades, renovations, and full builds
                 </Text>
               </View>
             </View>

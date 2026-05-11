@@ -47,7 +47,11 @@ export class PlansService {
       // 1. Save file metadata. Keep legacy local path fallback for existing flows.
       let planPdfUrl: string | null = null;
       let planFileName: string | null = null;
-      let aiAnalysis: any = this.buildFallbackAiAnalysis(uploadPlanDto);
+      let pdfText = '';
+      const submissionImageUrls =
+        uploadPlanDto.planImageUrls && uploadPlanDto.planImageUrls.length > 0
+          ? uploadPlanDto.planImageUrls
+          : [uploadPlanDto.planImageUrl].filter(Boolean);
 
       if (file) {
         planPdfUrl = `/uploads/plans/${file.filename}`;
@@ -85,15 +89,22 @@ export class PlansService {
         }
 
         // 4. Extract text from PDF
-        const pdfText = await this.openaiService.extractTextFromPdf(pdfBuffer);
-
-        // 5. Analyze with AI
-        aiAnalysis = await this.openaiService.analyzePlan(
-          pdfText,
-          uploadPlanDto.name,
-          uploadPlanDto.budget,
-        );
+        pdfText = await this.openaiService.extractTextFromPdf(pdfBuffer);
       }
+
+      // 5. Analyze with AI using all available submission context
+      const aiAnalysis = await this.openaiService.analyzePlan({
+        projectName: uploadPlanDto.name,
+        userBudget: uploadPlanDto.budget,
+        projectTypeTag: uploadPlanDto.projectTypeTag,
+        projectTypeFilter: uploadPlanDto.projectTypeFilter,
+        projectDescription: uploadPlanDto.projectDescription,
+        successCriteria: uploadPlanDto.successCriteria,
+        address: uploadPlanDto.address,
+        pdfText,
+        imageUrls: submissionImageUrls,
+        hasPdf: !!file,
+      });
 
       // 6. Create project with analysis
       const project = await this.prisma.project.create({
@@ -119,15 +130,12 @@ export class PlansService {
             ...(aiAnalysis as any),
             projectType: uploadPlanDto.projectType || (aiAnalysis as any)?.projectType || 'homebuilding',
             projectImageUrl: uploadPlanDto.planImageUrl,
-            projectImageUrls:
-              uploadPlanDto.planImageUrls && uploadPlanDto.planImageUrls.length > 0
-                ? uploadPlanDto.planImageUrls
-                : [uploadPlanDto.planImageUrl],
+            projectImageUrls: submissionImageUrls,
             projectTypeTag: uploadPlanDto.projectTypeTag || null,
             projectTypeFilter: uploadPlanDto.projectTypeFilter || null,
             homeownerProjectDescription: uploadPlanDto.projectDescription || null,
             successCriteria: uploadPlanDto.successCriteria || null,
-            aiStatus: file ? 'processed' : 'pending_manual_scope',
+            aiStatus: 'processed',
           } as any, // JSON field
           aiProcessedAt: new Date(),
         },
@@ -164,19 +172,6 @@ export class PlansService {
         'Failed to process the uploaded plan. Please ensure the file is valid and try again.',
       );
     }
-  }
-
-  private buildFallbackAiAnalysis(uploadPlanDto: UploadPlanDto) {
-    return {
-      summary:
-        'Scope analysis is pending. A detailed AI scope will be generated after the AI endpoint is connected.',
-      estimatedBudget: uploadPlanDto.budget,
-      materials: [],
-      labor: [],
-      timeline: null,
-      recommendations: [],
-      confidence: 'low',
-    };
   }
 
   /**
