@@ -467,13 +467,13 @@ export default function HomeScreen() {
             className="text-white text-xl mb-2"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
-            Start New Project
+            Launch a New Project
           </Text>
             <Text 
               className="text-white/70"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Create and manage your construction project from anywhere in the world.
+              Define your goal, upload your brief, and get a structured scope in minutes.
             </Text>
           </View>
           <View className="w-14 h-14 bg-white rounded-full items-center justify-center">

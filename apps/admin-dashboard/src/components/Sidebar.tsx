@@ -50,7 +50,11 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
   };
 
   return (
-    <aside className={`w-64 bg-gray-900 text-white p-4 flex flex-col ${isMobile ? 'min-h-full' : 'min-h-screen'}`}>
+    <aside
+      className={`w-64 bg-gray-900 text-white p-4 flex flex-col ${
+        isMobile ? 'min-h-full' : 'h-full min-h-screen'
+      }`}
+    >
       <div className="mb-8 flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold font-poppins">BuildMyHouse</h1>

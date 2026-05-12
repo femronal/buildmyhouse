@@ -4,6 +4,7 @@ import { ArrowLeft, Home, Bed, Bath, Maximize, Star, Filter, Search, ChevronDown
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding, getTwoColumnCardWidth } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
@@ -80,6 +81,7 @@ export default function DesignLibraryScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
@@ -140,44 +142,104 @@ export default function DesignLibraryScreen() {
 
   const cardWidth = getTwoColumnCardWidth(screenWidth);
 
+  const normalizeDesignTab = useCallback((design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' => {
+    const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
+    if (explicitTag === 'repair') return 'repairs';
+    if (explicitTag === 'upgrades') return 'upgrades';
+    if (explicitTag === 'renovation') return 'renovation';
+    if (explicitTag === 'full_builds') return 'full_builds';
+
+    const apiPlanType = `${design?.planType || ''}`.toLowerCase();
+    if (apiPlanType === 'interior_design') return 'upgrades';
+    if (apiPlanType === 'homebuilding') return 'full_builds';
+
+    const searchable = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+    const likelyRepair = ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage'].some((keyword) =>
+      searchable.includes(keyword),
+    );
+    return likelyRepair ? 'repairs' : 'renovation';
+  }, []);
+
+  const tabFilters = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]>>(
+    () => {
+      const defaults = {
+        repairs: [
+          'Electricals',
+          'Plumbing Fixes',
+          'Roof Leak Repair',
+          'Drainage Fix',
+          'Bathroom Repair',
+          'Gate/Fence Repair',
+        ],
+        upgrades: [
+          'Kitchen Upgrade',
+          'Bedroom Upgrade',
+          'Security Gate Upgrade',
+          'Door Upgrade',
+          'Bathroom Upgrade',
+          'Lighting Upgrade',
+        ],
+        renovation: ['Room-by-Room', 'Occupied Home', 'Family Home Rehab', 'Rental Prep', 'Interior Refresh'],
+        full_builds: ['Bungalow Build', 'Duplex Build', 'Blockwork + Roofing', 'Shell to Finish', 'Turnkey Build'],
+      } as const;
+
+      const dynamicByTab: Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]> = {
+        repairs: [],
+        upgrades: [],
+        renovation: [],
+        full_builds: [],
+      };
+
+      (designs || []).forEach((design: any) => {
+        const filter = `${design?.projectTypeFilter || ''}`.trim();
+        if (!filter) return;
+        dynamicByTab[normalizeDesignTab(design)].push(filter);
+      });
+
+      const mergeFilters = (tab: 'repairs' | 'upgrades' | 'renovation' | 'full_builds') => {
+        const merged = [...defaults[tab], ...dynamicByTab[tab]];
+        const unique = Array.from(new Set(merged.map((item) => item.toLowerCase()))).map(
+          (lower) => merged.find((item) => item.toLowerCase() === lower) as string,
+        );
+        return ['All', ...unique];
+      };
+
+      return {
+        repairs: mergeFilters('repairs'),
+        upgrades: mergeFilters('upgrades'),
+        renovation: mergeFilters('renovation'),
+        full_builds: mergeFilters('full_builds'),
+      };
+    },
+    [designs, normalizeDesignTab],
+  );
+
   // Filter designs based on search query and active filter
   const filteredDesigns = useMemo(() => {
-    let filtered = designs;
+    return (designs || []).filter((design: any) => {
+      const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''}`.toLowerCase();
+      const matchesSearch = matchesKeywordPhraseQuery({
+        query: searchQuery,
+        fields: [
+          design?.name,
+          design?.description,
+          design?.createdBy?.fullName,
+          design?.projectTypeFilter,
+          design?.projectTypeTag,
+          design?.planType,
+          ...(design?.images || []).map((image: any) => image?.label || ''),
+        ],
+      });
+      if (!matchesSearch) return false;
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((design: any) => 
-        design.name.toLowerCase().includes(query) ||
-        design.description?.toLowerCase().includes(query)
-      );
-    }
+      if (normalizeDesignTab(design) !== activeTab) return false;
 
-    // Filter by active filter tag
-    if (activeFilter !== 'All') {
-      switch (activeFilter) {
-        case '2 Beds':
-          filtered = filtered.filter((d: any) => d.bedrooms === 2);
-          break;
-        case '3 Beds':
-          filtered = filtered.filter((d: any) => d.bedrooms === 3);
-          break;
-        case '4+ Beds':
-          filtered = filtered.filter((d: any) => d.bedrooms >= 4);
-          break;
-        case 'Under ₦300k':
-          filtered = filtered.filter((d: any) => d.estimatedCost < 300000);
-          break;
-        case 'Luxury':
-          filtered = filtered.filter((d: any) => d.estimatedCost >= 500000);
-          break;
-        default:
-          break;
-      }
-    }
-
-    return filtered;
-  }, [designs, searchQuery, activeFilter]);
+      if (activeFilter === 'All') return true;
+      const normalizedFilter = activeFilter.toLowerCase();
+      const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
+      return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
+    });
+  }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
   const handleUseDesign = (design: any) => {
     // Build query params with location data and design info
@@ -258,10 +320,64 @@ export default function DesignLibraryScreen() {
         </View>
       </View>
 
+      {/* Project Type Tabs */}
+      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
+        <View className="flex-row bg-gray-100 rounded-2xl p-1">
+          <TouchableOpacity
+            onPress={() => {
+              setActiveTab('repairs');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 10 }}
+          >
+            <Text className={`text-xs ${activeTab === 'repairs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Repairs
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setActiveTab('upgrades');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 10 }}
+          >
+            <Text className={`text-xs ${activeTab === 'upgrades' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Upgrades
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setActiveTab('renovation');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 10 }}
+          >
+            <Text className={`text-xs ${activeTab === 'renovation' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Renovation
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setActiveTab('full_builds');
+              setActiveFilter('All');
+            }}
+            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 10 }}
+          >
+            <Text className={`text-xs ${activeTab === 'full_builds' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Full Builds
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-          {['All', '2 Beds', '3 Beds', '4+ Beds', 'Under ₦300k', 'Luxury'].map((tag) => (
+          {(tabFilters[activeTab] || ['All']).map((tag) => (
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
@@ -327,7 +443,7 @@ export default function DesignLibraryScreen() {
                 </Text>
                 <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {searchQuery || activeFilter !== 'All' 
-                    ? 'Try adjusting your search or filters'
+                    ? 'Try adjusting your search, project type, or filters'
                     : 'General Contractors can upload design plans that will appear here'}
                 </Text>
               </>

@@ -38,8 +38,8 @@ export default function RootLayout({
             children
           ) : (
             <ProtectedRoute>
-              <div className="min-h-screen md:flex">
-                <div className="hidden md:block md:shrink-0">
+              <div className="min-h-screen md:flex md:items-stretch">
+                <div className="hidden md:flex md:shrink-0">
                   <Sidebar />
                 </div>
 
