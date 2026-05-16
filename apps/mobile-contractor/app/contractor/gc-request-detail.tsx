@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X } from "lucide-react-native";
+import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X, Phone } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
@@ -353,6 +353,21 @@ export default function GCRequestDetailScreen() {
       }
       showAlert('Error', 'Failed to open PDF. Please try again.');
     }
+  };
+
+  const handleCallHomeowner = async () => {
+    const homeownerPhone = request?.project?.homeowner?.phone?.trim();
+    if (!homeownerPhone) {
+      showAlert('Phone Not Available', 'No phone number is available yet for this homeowner.');
+      return;
+    }
+    const callUrl = `tel:${homeownerPhone}`;
+    const canOpen = await Linking.canOpenURL(callUrl);
+    if (!canOpen) {
+      showAlert('Unable to Dial', 'This device cannot place a call right now.');
+      return;
+    }
+    await Linking.openURL(callUrl);
   };
 
   // If still loading, show loading state
@@ -762,14 +777,33 @@ export default function GCRequestDetailScreen() {
             <Text className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
               Contact Information
             </Text>
+            <View className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-3 mb-4">
+              <Text className="text-amber-300 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Before accepting:
+              </Text>
+              <Text className="text-amber-200 text-sm mt-1 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Contact the homeowner for a physical inspection first, then confirm final scope and pricing.
+              </Text>
+            </View>
             <Text className="text-blue-400 text-base mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
               {req.project.homeowner.email}
             </Text>
-            {req.project.homeowner.phone && (
-              <Text className="text-gray-300 text-base" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {req.project.homeowner.phone}
+            <View className="flex-row items-center justify-between mt-1">
+              <Text className="text-gray-300 text-base flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                {req.project.homeowner.phone || 'Phone number not provided yet'}
               </Text>
-            )}
+              {!!req.project.homeowner.phone && (
+                <TouchableOpacity
+                  onPress={handleCallHomeowner}
+                  className="ml-3 bg-blue-600/20 border border-blue-600 rounded-full px-3 py-2 flex-row items-center"
+                >
+                  <Phone size={14} color="#60A5FA" strokeWidth={2.5} />
+                  <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Call
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           {/* Action Buttons */}

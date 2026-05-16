@@ -527,6 +527,13 @@ export class ContractorsService {
         status: 'pending',
       },
       include: {
+        sender: {
+          select: {
+            id: true,
+            email: true,
+            phone: true,
+          },
+        },
         project: {
           include: {
             homeowner: {
@@ -553,9 +560,23 @@ export class ContractorsService {
         sentAt: 'desc',
       },
     });
-    
-    
-    return requests;
+
+    return requests.map((request: any) => {
+      const fallbackPhone = request?.sender?.phone || null;
+      const fallbackEmail = request?.sender?.email || null;
+
+      return {
+        ...request,
+        project: {
+          ...request.project,
+          homeowner: {
+            ...request.project.homeowner,
+            phone: request.project?.homeowner?.phone || fallbackPhone,
+            email: request.project?.homeowner?.email || fallbackEmail,
+          },
+        },
+      };
+    });
   }
 
   /**

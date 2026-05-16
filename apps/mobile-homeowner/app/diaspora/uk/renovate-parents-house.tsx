@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import DiasporaUkRenovateParentsHousePage from '@/components/seo/DiasporaUkRenovateParentsHousePage';
 
 export default function UkRenovateParentsHouseCountryPage() {
-  return <ArchitectureSeoPage pageKey="ukRenovateCountry" />;
+  return <DiasporaUkRenovateParentsHousePage />;
 }
 
