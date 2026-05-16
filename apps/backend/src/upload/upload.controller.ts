@@ -33,7 +33,7 @@ export class UploadController {
     '.jxl',
   ]);
 
-  private static isAcceptedImage(file: Express.Multer.File): boolean {
+  private static isAcceptedImage(file: { originalname?: string; mimetype?: string }): boolean {
     const ext = extname(file.originalname || '').toLowerCase();
     const mime = (file.mimetype || '').toLowerCase();
     if (mime.startsWith('image/')) return true;
