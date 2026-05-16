@@ -20,6 +20,26 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { uploadFile } from "@/utils/fileUpload";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
+function getExtensionFromName(name?: string | null) {
+  if (!name) return '';
+  const clean = name.split('?')[0];
+  const dot = clean.lastIndexOf('.');
+  if (dot < 0) return '';
+  return clean.slice(dot + 1).toLowerCase();
+}
+
+function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
+  const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : '');
+  const fileName =
+    asset?.fileName ||
+    asset?.name ||
+    `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
+  const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
+  return { fileName, mimeType };
+}
+
 export default function GCProfileScreen() {
   const router = useRouter();
   const navigation = useNavigation();
@@ -90,12 +110,12 @@ export default function GCProfileScreen() {
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
-      const mimeType = (asset as any).mimeType || 'image/jpeg';
-      const fileName = (asset as any).fileName || `profile-${Date.now()}.jpg`;
+      const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'profile');
       await uploadProfilePicture.mutateAsync({ uri: asset.uri, name: fileName, type: mimeType });
       Alert.alert('Updated', 'Your profile picture has been updated.');
     } catch (e: any) {

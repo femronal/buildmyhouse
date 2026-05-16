@@ -22,6 +22,26 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
+function getExtensionFromName(name?: string | null) {
+  if (!name) return '';
+  const clean = name.split('?')[0];
+  const dot = clean.lastIndexOf('.');
+  if (dot < 0) return '';
+  return clean.slice(dot + 1).toLowerCase();
+}
+
+function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
+  const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : '');
+  const fileName =
+    asset?.fileName ||
+    asset?.name ||
+    `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
+  const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
+  return { fileName, mimeType };
+}
+
 // Mock data removed - using real data from API
 
 export default function ContractorChatScreen() {
@@ -108,8 +128,7 @@ export default function ContractorChatScreen() {
     mutationFn: async (asset: { uri: string; fileName?: string; mimeType?: string }) => {
       if (!conversation?.id) throw new Error('No conversation found');
       const formData = new FormData();
-      const fileName = asset.fileName || `chat-image-${Date.now()}.jpg`;
-      const mimeType = asset.mimeType || 'image/jpeg';
+      const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'chat-image');
       if (Platform.OS === 'web') {
         const res = await fetch(asset.uri);
         const blob = await res.blob();
@@ -142,6 +161,7 @@ export default function ContractorChatScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.8,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
       if (result.canceled || !result.assets?.length) return;
       const asset = result.assets[0];

@@ -15,6 +15,34 @@ import { ImageCompressionService } from './image-compression.service';
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
+  private static readonly ALLOWED_IMAGE_EXTS = new Set([
+    '.jpg',
+    '.jpeg',
+    '.jpe',
+    '.png',
+    '.webp',
+    '.gif',
+    '.heic',
+    '.heif',
+    '.dng',
+    '.tif',
+    '.tiff',
+    '.bmp',
+    '.avif',
+    '.jfif',
+    '.jxl',
+  ]);
+
+  private static isAcceptedImage(file: Express.Multer.File): boolean {
+    const ext = extname(file.originalname || '').toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    if (mime.startsWith('image/')) return true;
+    if (mime === 'application/octet-stream' || mime === 'binary/octet-stream') {
+      return UploadController.ALLOWED_IMAGE_EXTS.has(ext);
+    }
+    return false;
+  }
+
   constructor(
     private readonly s3UploadService: S3UploadService,
     private readonly imageCompressionService: ImageCompressionService,
@@ -24,14 +52,7 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
-        const ext = extname(file.originalname || '').toLowerCase();
-        const allowedImageExts = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.heic', '.heif']);
-        const mime = (file.mimetype || '').toLowerCase();
-        const isImageMime =
-          mime.startsWith('image/') ||
-          mime === 'application/octet-stream' ||
-          mime === 'binary/octet-stream';
-        if (!isImageMime || !allowedImageExts.has(ext)) {
+        if (!UploadController.isAcceptedImage(file)) {
           return callback(
             new BadRequestException('Only image files are allowed'),
             false,
@@ -75,41 +96,27 @@ export class UploadController {
   @UseInterceptors(
     FileInterceptor('file', {
       fileFilter: (req, file, callback) => {
-        const allowedMimes = new Set([
+        const allowedDocumentMimes = new Set([
           'application/pdf',
           'application/msword',
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'image/jpeg',
-          'image/jpg',
-          'image/png',
-          'image/webp',
-          'image/gif',
-          'image/heic',
-          'image/heif',
           'video/mp4',
           'video/quicktime',
           'video/webm',
-          'application/octet-stream',
-          'binary/octet-stream',
         ]);
-        const allowedExts = new Set([
+        const allowedDocumentExts = new Set([
           '.pdf',
           '.doc',
           '.docx',
-          '.jpg',
-          '.jpeg',
-          '.png',
-          '.webp',
-          '.gif',
-          '.heic',
-          '.heif',
           '.mp4',
           '.mov',
           '.webm',
         ]);
         const ext = extname(file.originalname || '').toLowerCase();
         const mime = (file.mimetype || '').toLowerCase();
-        if (!allowedMimes.has(mime) || !allowedExts.has(ext)) {
+        const isDocument = allowedDocumentMimes.has(mime) && allowedDocumentExts.has(ext);
+        const isImage = UploadController.isAcceptedImage(file);
+        if (!isDocument && !isImage) {
           return callback(
             new BadRequestException(
               'Only PDF, DOC, DOCX, image, and video files are allowed',

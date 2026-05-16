@@ -255,6 +255,7 @@ export default function GCStageDetailScreen() {
           : ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsMultipleSelection: false,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {

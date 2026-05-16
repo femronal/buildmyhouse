@@ -232,6 +232,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsMultipleSelection: Platform.OS === 'ios', // iOS supports multiple selection
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
 
       // Handle both new API (assets array) and old API (uri directly)
@@ -1231,6 +1232,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.8,
         allowsMultipleSelection: Platform.OS === 'ios',
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
 
       if (!result.canceled) {

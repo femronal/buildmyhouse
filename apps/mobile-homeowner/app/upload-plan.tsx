@@ -13,6 +13,36 @@ import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 type ProjectType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 
 const MAX_PLAN_PHOTOS = 5;
+const IMAGE_EXTENSIONS = new Set([
+  'jpg', 'jpeg', 'jpe', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif', 'jfif', 'jxl',
+]);
+
+function getExtensionFromName(name?: string | null) {
+  if (!name) return '';
+  const clean = name.split('?')[0];
+  const dot = clean.lastIndexOf('.');
+  if (dot < 0) return '';
+  return clean.slice(dot + 1).toLowerCase();
+}
+
+function isImageLikeAsset(asset: any) {
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  if (mime.startsWith('image/')) return true;
+  const ext = getExtensionFromName(asset?.name || asset?.fileName || asset?.uri);
+  return IMAGE_EXTENSIONS.has(ext);
+}
+
+function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
+  const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : '');
+  const fileName =
+    asset?.fileName ||
+    asset?.name ||
+    `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
+  const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
+  return { fileName, mimeType };
+}
 
 const PROJECT_TYPE_FILTERS: Record<ProjectType, string[]> = {
   repair: [
@@ -146,6 +176,37 @@ export default function UploadPlanScreen() {
 
   const handlePickPlanPhotos = async () => {
     try {
+      if (Platform.OS === 'web') {
+        const remainingSlots = MAX_PLAN_PHOTOS - selectedPlanPhotos.length;
+        if (remainingSlots <= 0) {
+          Alert.alert('Limit reached', `You can upload up to ${MAX_PLAN_PHOTOS} photos.`);
+          return;
+        }
+
+        const result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: true,
+          multiple: true,
+        });
+        if (result.canceled || !result.assets?.length) return;
+
+        const imageAssets = result.assets.filter(isImageLikeAsset);
+        if (!imageAssets.length) {
+          Alert.alert('No images selected', 'Please choose image files (including formats like HEIC, HEIF, or DNG).');
+          return;
+        }
+
+        const nextAssets = imageAssets.slice(0, remainingSlots);
+        setSelectedPlanPhotos((prev) => {
+          const merged = [...prev, ...nextAssets];
+          const deduped = merged.filter(
+            (asset, index, arr) => arr.findIndex((candidate) => candidate.uri === asset.uri) === index,
+          );
+          return deduped.slice(0, MAX_PLAN_PHOTOS);
+        });
+        return;
+      }
+
       if (Platform.OS !== 'web') {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) {
@@ -166,6 +227,7 @@ export default function UploadPlanScreen() {
         quality: 0.85,
         allowsMultipleSelection: true,
         selectionLimit: remainingSlots,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
 
       if (result.canceled || !result.assets?.length) return;
@@ -190,8 +252,7 @@ export default function UploadPlanScreen() {
 
   const uploadPlanImage = async (asset: any): Promise<string> => {
     const formData = new FormData();
-    const fileName = asset?.fileName || `project-image-${Date.now()}.jpg`;
-    const mimeType = asset?.mimeType || 'image/jpeg';
+    const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'project-image');
 
     if (Platform.OS === 'web') {
       const res = await fetch(asset.uri);

@@ -17,6 +17,7 @@ export default function LocationScreenWeb() {
   const [address, setAddress] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
+  const [locationLookupMessage, setLocationLookupMessage] = useState<string | null>(null);
   const mapsApiKey = GOOGLE_MAPS_CONFIG.apiKey?.trim() ?? "";
   const hasMapsApiKey =
     mapsApiKey.length > 0 &&
@@ -58,6 +59,7 @@ export default function LocationScreenWeb() {
     if (!address.trim()) return;
     
     setIsGeocoding(true);
+    setLocationLookupMessage(null);
     try {
       const addressDetails = hasMapsApiKey
         ? await geocodeAddress(address)
@@ -65,15 +67,30 @@ export default function LocationScreenWeb() {
       
       if (addressDetails) {
         setSelectedAddress(addressDetails);
+        setLocationLookupMessage(null);
         // Don't show alert on web, the UI already shows success
       } else {
-        Alert.alert('Error', 'Could not find this address. Please try a different one.');
+        setSelectedAddress(null);
+        setLocationLookupMessage(
+          'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
+        );
       }
     } catch (error: any) {
-      Alert.alert(
-        'Geocoding Error',
-        error.message || 'Could not geocode this address. Please check your internet connection and try again.'
-      );
+      const errorMessage = String(error?.message || '');
+      if (
+        errorMessage.toLowerCase().includes('no results') ||
+        errorMessage.toLowerCase().includes('invalid address')
+      ) {
+        setSelectedAddress(null);
+        setLocationLookupMessage(
+          'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
+        );
+      } else {
+        Alert.alert(
+          'Geocoding Error',
+          error.message || 'Could not geocode this address. Please check your internet connection and try again.'
+        );
+      }
     } finally {
       setIsGeocoding(false);
     }
@@ -143,7 +160,11 @@ export default function LocationScreenWeb() {
             placeholder="Enter project address"
             placeholderTextColor="#A3A3A3"
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(value) => {
+              setAddress(value);
+              setLocationLookupMessage(null);
+              setSelectedAddress(null);
+            }}
             onSubmitEditing={handleGeocode}
           />
         </View>
@@ -173,6 +194,14 @@ export default function LocationScreenWeb() {
           )}
         </View>
       </TouchableOpacity>
+
+      {locationLookupMessage ? (
+        <View className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 mb-4">
+          <Text className="text-red-700 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+            {locationLookupMessage}
+          </Text>
+        </View>
+      ) : null}
 
       <View className="bg-gray-50 rounded-2xl p-4 mb-6 border border-gray-100">
         <Text className="text-black text-sm mb-1.5" style={{ fontFamily: 'Poppins_600SemiBold' }}>

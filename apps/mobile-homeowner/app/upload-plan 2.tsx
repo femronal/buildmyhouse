@@ -10,6 +10,37 @@ import { api } from '@/lib/api';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
+const IMAGE_EXTENSIONS = new Set([
+  'jpg', 'jpeg', 'jpe', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif', 'jfif', 'jxl',
+]);
+
+function getExtensionFromName(name?: string | null) {
+  if (!name) return '';
+  const clean = name.split('?')[0];
+  const dot = clean.lastIndexOf('.');
+  if (dot < 0) return '';
+  return clean.slice(dot + 1).toLowerCase();
+}
+
+function isImageLikeAsset(asset: any) {
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  if (mime.startsWith('image/')) return true;
+  const ext = getExtensionFromName(asset?.name || asset?.fileName || asset?.uri);
+  return IMAGE_EXTENSIONS.has(ext);
+}
+
+function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
+  const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : '');
+  const fileName =
+    asset?.fileName ||
+    asset?.name ||
+    `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
+  const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
+  return { fileName, mimeType };
+}
+
 export default function UploadPlanScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -73,6 +104,21 @@ export default function UploadPlanScreen() {
 
   const handlePickPlanPhoto = async () => {
     try {
+      if (Platform.OS === 'web') {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: true,
+        });
+        if (result.canceled || !result.assets?.length) return;
+        const asset = result.assets[0];
+        if (!isImageLikeAsset(asset)) {
+          Alert.alert('Invalid file', 'Please select an image file (including formats like HEIC, HEIF, or DNG).');
+          return;
+        }
+        setSelectedPlanPhoto(asset);
+        return;
+      }
+
       if (Platform.OS !== 'web') {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
         if (!perm.granted) {
@@ -86,6 +132,7 @@ export default function UploadPlanScreen() {
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.85,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
 
       if (result.canceled || !result.assets?.length) return;
@@ -102,8 +149,7 @@ export default function UploadPlanScreen() {
 
   const uploadPlanCoverImage = async (asset: any): Promise<string> => {
     const formData = new FormData();
-    const fileName = asset?.fileName || `project-cover-${Date.now()}.jpg`;
-    const mimeType = asset?.mimeType || 'image/jpeg';
+    const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'project-cover');
 
     if (Platform.OS === 'web') {
       const res = await fetch(asset.uri);

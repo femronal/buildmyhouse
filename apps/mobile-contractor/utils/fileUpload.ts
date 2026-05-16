@@ -20,6 +20,12 @@ function inferExtensionFromMime(mimeType?: string): string {
   if (normalized.includes('png')) return 'png';
   if (normalized.includes('jpeg') || normalized.includes('jpg')) return 'jpg';
   if (normalized.includes('webp')) return 'webp';
+  if (normalized.includes('heic')) return 'heic';
+  if (normalized.includes('heif')) return 'heif';
+  if (normalized.includes('dng')) return 'dng';
+  if (normalized.includes('tiff')) return 'tiff';
+  if (normalized.includes('bmp')) return 'bmp';
+  if (normalized.includes('avif')) return 'avif';
   if (normalized.includes('gif')) return 'gif';
   if (normalized.includes('mp4')) return 'mp4';
   if (normalized.includes('quicktime')) return 'mov';
@@ -45,19 +51,26 @@ export async function uploadFile(
     let filename =
       options.fileName ||
       (isDataUrl ? `file-${Date.now()}` : uri.split('/').pop()) ||
-      `file-${Date.now()}.jpg`;
+      `file-${Date.now()}`;
     filename = filename.split('?')[0]; // Remove query parameters
     filename = filename.replace(/[^a-zA-Z0-9._ -]/g, '_');
     
     // Determine MIME type from extension
     const match = /\.(\w+)$/.exec(filename);
-    let mimeType = options.mimeType || 'image/jpeg'; // default
+    let mimeType = options.mimeType || 'application/octet-stream';
     
     if (!options.mimeType && match) {
       const ext = match[1].toLowerCase();
       if (ext === 'png') mimeType = 'image/png';
       else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
       else if (ext === 'webp') mimeType = 'image/webp';
+      else if (ext === 'heic') mimeType = 'image/heic';
+      else if (ext === 'heif') mimeType = 'image/heif';
+      else if (ext === 'dng') mimeType = 'image/x-adobe-dng';
+      else if (ext === 'tif' || ext === 'tiff') mimeType = 'image/tiff';
+      else if (ext === 'bmp') mimeType = 'image/bmp';
+      else if (ext === 'avif') mimeType = 'image/avif';
+      else if (ext === 'jxl') mimeType = 'image/jxl';
       else if (ext === 'pdf') mimeType = 'application/pdf';
       else if (ext === 'doc') mimeType = 'application/msword';
       else if (ext === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';

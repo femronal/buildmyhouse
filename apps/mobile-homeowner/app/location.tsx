@@ -23,6 +23,7 @@ export default function LocationScreen() {
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
   const [markerCoordinate, setMarkerCoordinate] = useState<{latitude: number, longitude: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [locationLookupMessage, setLocationLookupMessage] = useState<string | null>(null);
 
   const handleContinue = () => {
     if (!selectedAddress) {
@@ -53,6 +54,7 @@ export default function LocationScreen() {
     const { latitude, longitude } = event.nativeEvent.coordinate;
     setMarkerCoordinate({ latitude, longitude });
     setIsGeocoding(true);
+    setLocationLookupMessage(null);
 
     // Reverse geocode the coordinates
     const addressDetails = await reverseGeocode(latitude, longitude);
@@ -73,6 +75,7 @@ export default function LocationScreen() {
         longitudeDelta: 0.01,
       }, 500);
     } else {
+      setSelectedAddress(null);
       Alert.alert('Error', 'Could not get address details for this location');
     }
 
@@ -87,6 +90,7 @@ export default function LocationScreen() {
     
     setMarkerCoordinate(coordinate);
     setIsGeocoding(true);
+    setLocationLookupMessage(null);
 
     // Get full address details
     const addressDetails = await reverseGeocode(lat, lng);
@@ -148,6 +152,18 @@ export default function LocationScreen() {
             placeholder="Enter project address"
             fetchDetails={true}
             onPress={handlePlaceSelect}
+            onFail={() => {
+              setSelectedAddress(null);
+              setLocationLookupMessage(
+                'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
+              );
+            }}
+            onNotFound={() => {
+              setSelectedAddress(null);
+              setLocationLookupMessage(
+                'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
+              );
+            }}
             query={{
               key: GOOGLE_MAPS_CONFIG.apiKey,
               language: 'en',
@@ -203,9 +219,21 @@ export default function LocationScreen() {
             textInputProps={{
               placeholderTextColor: '#A3A3A3',
               style: { paddingLeft: 36 },
+              onChangeText: () => {
+                setLocationLookupMessage(null);
+                setSelectedAddress(null);
+              },
             }}
           />
         </View>
+
+        {locationLookupMessage ? (
+          <View className="mb-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
+            <Text className="text-red-700 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+              {locationLookupMessage}
+            </Text>
+          </View>
+        ) : null}
 
         <View className="mt-4 mb-2 bg-gray-50 rounded-2xl p-4 border border-gray-100">
           <Text

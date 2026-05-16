@@ -36,12 +36,6 @@ export class ImageCompressionService {
     wasCompressed: boolean;
   }> {
     if (!this.isCompressibleImage(file)) {
-      if (file.size > MAX_IMAGE_BYTES) {
-        throw new BadRequestException(
-          'Uploaded file must be 2MB or less. Please reduce file size and try again.',
-        );
-      }
-
       return {
         buffer: file.buffer,
         contentType: file.mimetype || 'application/octet-stream',
