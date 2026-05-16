@@ -13,6 +13,8 @@ import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 type ProjectType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 
 const MAX_PLAN_PHOTOS = 5;
+const MAX_IMAGE_UPLOAD_BYTES = 50 * 1024 * 1024;
+const MAX_IMAGE_UPLOAD_MB = 50;
 const IMAGE_EXTENSIONS = new Set([
   'jpg', 'jpeg', 'jpe', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif', 'jfif', 'jxl',
 ]);
@@ -42,6 +44,12 @@ function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
     `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
   const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
   return { fileName, mimeType };
+}
+
+function getAssetSizeBytes(asset: any): number | null {
+  const raw = asset?.fileSize ?? asset?.size;
+  if (typeof raw !== 'number' || Number.isNaN(raw) || raw <= 0) return null;
+  return raw;
 }
 
 const PROJECT_TYPE_FILTERS: Record<ProjectType, string[]> = {
@@ -121,6 +129,7 @@ export default function UploadPlanScreen() {
   const [selectedProjectType, setSelectedProjectType] = useState<ProjectType | null>(null);
   const [selectedProjectFilter, setSelectedProjectFilter] = useState("");
   const [selectedPlanPhotos, setSelectedPlanPhotos] = useState<any[]>([]);
+  const [planPhotoSizeMessage, setPlanPhotoSizeMessage] = useState<string | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<any | null>(null);
   const [projectDescription, setProjectDescription] = useState("");
   const [successCriteria, setSuccessCriteria] = useState("");
@@ -176,6 +185,7 @@ export default function UploadPlanScreen() {
 
   const handlePickPlanPhotos = async () => {
     try {
+      setPlanPhotoSizeMessage(null);
       if (Platform.OS === 'web') {
         const remainingSlots = MAX_PLAN_PHOTOS - selectedPlanPhotos.length;
         if (remainingSlots <= 0) {
@@ -196,7 +206,25 @@ export default function UploadPlanScreen() {
           return;
         }
 
-        const nextAssets = imageAssets.slice(0, remainingSlots);
+        const oversizedAssets = imageAssets.filter((asset) => {
+          const size = getAssetSizeBytes(asset);
+          return size !== null && size > MAX_IMAGE_UPLOAD_BYTES;
+        });
+        const acceptedAssets = imageAssets.filter((asset) => {
+          const size = getAssetSizeBytes(asset);
+          return size === null || size <= MAX_IMAGE_UPLOAD_BYTES;
+        });
+        if (oversizedAssets.length > 0) {
+          setPlanPhotoSizeMessage(
+            `Some images were skipped because they are above ${MAX_IMAGE_UPLOAD_MB}MB. Please upload images below ${MAX_IMAGE_UPLOAD_MB}MB.`,
+          );
+        }
+
+        const nextAssets = acceptedAssets.slice(0, remainingSlots);
+        if (!nextAssets.length) {
+          Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each.`);
+          return;
+        }
         setSelectedPlanPhotos((prev) => {
           const merged = [...prev, ...nextAssets];
           const deduped = merged.filter(
@@ -232,7 +260,25 @@ export default function UploadPlanScreen() {
 
       if (result.canceled || !result.assets?.length) return;
 
-      const nextAssets = result.assets.slice(0, remainingSlots);
+      const oversizedAssets = result.assets.filter((asset) => {
+        const size = getAssetSizeBytes(asset);
+        return size !== null && size > MAX_IMAGE_UPLOAD_BYTES;
+      });
+      const acceptedAssets = result.assets.filter((asset) => {
+        const size = getAssetSizeBytes(asset);
+        return size === null || size <= MAX_IMAGE_UPLOAD_BYTES;
+      });
+      if (oversizedAssets.length > 0) {
+        setPlanPhotoSizeMessage(
+          `Some images were skipped because they are above ${MAX_IMAGE_UPLOAD_MB}MB. Please upload images below ${MAX_IMAGE_UPLOAD_MB}MB.`,
+        );
+      }
+
+      const nextAssets = acceptedAssets.slice(0, remainingSlots);
+      if (!nextAssets.length) {
+        Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each.`);
+        return;
+      }
       setSelectedPlanPhotos((prev) => {
         const merged = [...prev, ...nextAssets];
         const deduped = merged.filter(
@@ -247,16 +293,27 @@ export default function UploadPlanScreen() {
   };
 
   const handleRemovePlanPhoto = (indexToRemove: number) => {
-    setSelectedPlanPhotos((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setSelectedPlanPhotos((prev) => {
+      const next = prev.filter((_, index) => index !== indexToRemove);
+      if (!next.length) setPlanPhotoSizeMessage(null);
+      return next;
+    });
   };
 
   const uploadPlanImage = async (asset: any): Promise<string> => {
     const formData = new FormData();
     const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'project-image');
+    const knownSize = getAssetSizeBytes(asset);
+    if (knownSize !== null && knownSize > MAX_IMAGE_UPLOAD_BYTES) {
+      throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
+    }
 
     if (Platform.OS === 'web') {
       const res = await fetch(asset.uri);
       const blob = await res.blob();
+      if (blob.size > MAX_IMAGE_UPLOAD_BYTES) {
+        throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
+      }
       formData.append('file', blob, fileName);
     } else {
       formData.append('file', {
@@ -348,6 +405,16 @@ export default function UploadPlanScreen() {
 
     if (selectedPlanPhotos.length === 0) {
       Alert.alert('Photos Required', 'Please upload at least one project photo');
+      return;
+    }
+
+    const oversizedSelectedPhoto = selectedPlanPhotos.find((photo) => {
+      const size = getAssetSizeBytes(photo);
+      return size !== null && size > MAX_IMAGE_UPLOAD_BYTES;
+    });
+    if (oversizedSelectedPhoto) {
+      setPlanPhotoSizeMessage(`Please upload images below ${MAX_IMAGE_UPLOAD_MB}MB each.`);
+      Alert.alert('Image too large', `One or more selected images are above ${MAX_IMAGE_UPLOAD_MB}MB.`);
       return;
     }
 
@@ -761,6 +828,14 @@ export default function UploadPlanScreen() {
               </Text>
             </View>
           </TouchableOpacity>
+
+          {planPhotoSizeMessage ? (
+            <View className="bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 mb-3">
+              <Text className="text-red-700 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {planPhotoSizeMessage}
+              </Text>
+            </View>
+          ) : null}
 
           {selectedPlanPhotos.length > 0 && (
             <View className="flex-row flex-wrap" style={{ gap: 8 }}>

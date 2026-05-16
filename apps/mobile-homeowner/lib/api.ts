@@ -47,6 +47,9 @@ export const api = {
     });
 
     if (!response.ok) {
+      if (response.status === 413) {
+        throw new Error('Selected file is too large. Please choose a smaller image or reduce image quality and try again.');
+      }
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
       throw new Error(error.message || `Failed to create resource: ${response.status} ${response.statusText}`);
     }

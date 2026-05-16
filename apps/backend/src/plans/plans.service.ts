@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { OpenAIService } from '../openai/openai.service';
 import { UploadPlanDto } from './dto/upload-plan.dto';
@@ -8,15 +8,18 @@ import { ConfigService } from '@nestjs/config';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3UploadService } from '../upload/s3-upload.service';
+import sharp from 'sharp';
 
 @Injectable()
 export class PlansService {
   private prisma = new PrismaClient();
+  private readonly logger = new Logger(PlansService.name);
   private readonly bucket: string;
   private readonly region: string;
   private readonly publicBaseUrl: string;
   private readonly s3Client: S3Client | null;
   private readonly nodeEnv: string;
+  private static readonly OPENAI_NATIVE_IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif']);
 
   constructor(
     private readonly openaiService: OpenAIService,
@@ -52,6 +55,7 @@ export class PlansService {
         uploadPlanDto.planImageUrls && uploadPlanDto.planImageUrls.length > 0
           ? uploadPlanDto.planImageUrls
           : [uploadPlanDto.planImageUrl].filter(Boolean);
+      const aiReadyImageUrls = await this.prepareImageUrlsForAi(submissionImageUrls);
 
       if (file) {
         planPdfUrl = `/uploads/plans/${file.filename}`;
@@ -102,7 +106,7 @@ export class PlansService {
         successCriteria: uploadPlanDto.successCriteria,
         address: uploadPlanDto.address,
         pdfText,
-        imageUrls: submissionImageUrls,
+        imageUrls: aiReadyImageUrls,
         hasPdf: !!file,
       });
 
@@ -367,6 +371,66 @@ export class PlansService {
     }
 
     return planPdfUrl;
+  }
+
+  private getFileExtension(url: string): string {
+    try {
+      const parsed = new URL(url);
+      return (parsed.pathname.match(/\.[^./]+$/)?.[0] || '').toLowerCase();
+    } catch {
+      return (String(url || '').match(/\.[^./?]+(?=($|\?))/)?.[0] || '').toLowerCase();
+    }
+  }
+
+  private async prepareImageUrlsForAi(imageUrls: string[]): Promise<string[]> {
+    const cleaned = (imageUrls || []).filter(Boolean).slice(0, 5);
+    const aiReady: string[] = [];
+
+    for (const url of cleaned) {
+      const ext = this.getFileExtension(url);
+      if (PlansService.OPENAI_NATIVE_IMAGE_EXTS.has(ext)) {
+        aiReady.push(url);
+        continue;
+      }
+
+      const converted = await this.convertImageUrlToJpeg(url);
+      if (converted) {
+        aiReady.push(converted);
+      } else {
+        this.logger.warn(`Skipping unsupported AI image format for URL: ${url}`);
+      }
+    }
+
+    return aiReady;
+  }
+
+  private async convertImageUrlToJpeg(url: string): Promise<string | null> {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.logger.warn(`Failed to fetch image for AI normalization: ${response.status} ${response.statusText}`);
+        return null;
+      }
+
+      const inputBuffer = Buffer.from(await response.arrayBuffer());
+      const outputBuffer = await sharp(inputBuffer, { failOn: 'none' })
+        .rotate()
+        .jpeg({ quality: 82, mozjpeg: true, chromaSubsampling: '4:2:0' })
+        .toBuffer();
+
+      const uploaded = await this.s3UploadService.uploadBuffer({
+        buffer: outputBuffer,
+        folder: 'images',
+        contentType: 'image/jpeg',
+        originalName: `ai-normalized-${Date.now()}.jpg`,
+      });
+      return uploaded.url;
+    } catch (error) {
+      this.logger.warn(
+        `Image normalization failed for AI analysis: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
   }
 }
 
