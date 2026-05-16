@@ -16,6 +16,46 @@ function replaceExtensionWithJpg(fileName?: string) {
   return fileName.replace(/\.[^./]+$/, '.jpg');
 }
 
+function getBlobFromUriOnWeb(uri: string): Promise<Blob> {
+  return fetch(uri).then((res) => res.blob());
+}
+
+async function compressBlobOnWeb(
+  blob: Blob,
+  quality: number,
+  maxDimension: number,
+): Promise<Blob | null> {
+  if (typeof document === 'undefined') return null;
+
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error('Image decode failed'));
+      img.src = objectUrl;
+    });
+
+    const width = image.naturalWidth || image.width;
+    const height = image.naturalHeight || image.height;
+    if (!width || !height) return null;
+
+    const scale = Math.min(1, maxDimension / Math.max(width, height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.floor(width * scale));
+    canvas.height = Math.max(1, Math.floor(height * scale));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob((compressed) => resolve(compressed), 'image/jpeg', quality);
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 async function getUriSizeBytes(uri: string): Promise<number | null> {
   try {
     const res = await fetch(uri);
@@ -38,11 +78,54 @@ export async function ensureImageWithinUploadLimit(asset: any): Promise<EnsureIm
     return { asset, wasCompressed: false, exceedsLimit: false };
   }
 
-  // On web we skip heavy in-app transcoding.
   if (Platform.OS === 'web') {
     const webSize = knownSize ?? (asset?.uri ? await getUriSizeBytes(asset.uri) : null);
-    const exceedsLimit = webSize !== null && webSize > MAX_IMAGE_UPLOAD_BYTES;
-    return { asset, wasCompressed: false, exceedsLimit };
+    if (webSize !== null && webSize <= MAX_IMAGE_UPLOAD_BYTES) {
+      return {
+        asset: { ...asset, size: webSize, fileSize: webSize },
+        wasCompressed: false,
+        exceedsLimit: false,
+      };
+    }
+
+    if (!asset?.uri) return { asset, wasCompressed: false, exceedsLimit: true };
+    try {
+      const sourceBlob = await getBlobFromUriOnWeb(asset.uri);
+      if (sourceBlob.size <= MAX_IMAGE_UPLOAD_BYTES) {
+        return {
+          asset: { ...asset, size: sourceBlob.size, fileSize: sourceBlob.size },
+          wasCompressed: false,
+          exceedsLimit: false,
+        };
+      }
+
+      const dimensions = [4096, 3072, 2560, 2048, 1600, 1280];
+      for (const dimension of dimensions) {
+        for (const quality of AUTO_COMPRESS_QUALITIES) {
+          const compressedBlob = await compressBlobOnWeb(sourceBlob, quality, dimension);
+          if (!compressedBlob) continue;
+          if (compressedBlob.size > MAX_IMAGE_UPLOAD_BYTES) continue;
+
+          const compressedUrl = URL.createObjectURL(compressedBlob);
+          return {
+            asset: {
+              ...asset,
+              uri: compressedUrl,
+              mimeType: 'image/jpeg',
+              fileName: replaceExtensionWithJpg(asset?.fileName || asset?.name),
+              size: compressedBlob.size,
+              fileSize: compressedBlob.size,
+            },
+            wasCompressed: true,
+            exceedsLimit: false,
+          };
+        }
+      }
+    } catch {
+      // no-op: fall through to exceedsLimit below
+    }
+
+    return { asset, wasCompressed: false, exceedsLimit: true };
   }
 
   const initialSize = knownSize ?? (asset?.uri ? await getUriSizeBytes(asset.uri) : null);
