@@ -21,6 +21,7 @@ import { useUserConversations } from "@/hooks/useChat";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -164,7 +165,16 @@ export default function ContractorChatScreen() {
         preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
       if (result.canceled || !result.assets?.length) return;
-      const asset = result.assets[0];
+      const prepared = await ensureImageWithinUploadLimit(result.assets[0]);
+      if (prepared.exceedsLimit) {
+        Alert.alert('Image too large', 'Please choose an image below 50MB.');
+        return;
+      }
+      if (prepared.wasCompressed) {
+        Alert.alert('Large image optimized', 'Your image was automatically compressed for upload.');
+      }
+
+      const asset = prepared.asset;
       sendImageMutation.mutate({
         uri: asset.uri,
         fileName: asset.fileName,

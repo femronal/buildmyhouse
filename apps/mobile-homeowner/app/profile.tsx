@@ -11,6 +11,7 @@ import { getBackendAssetUrl } from '@/lib/image';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
+import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
 
 type MenuItem = {
   icon: any;
@@ -109,10 +110,19 @@ export default function ProfileScreen() {
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
 
-      const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'profile');
+      const prepared = await ensureImageWithinUploadLimit(asset);
+      if (prepared.exceedsLimit) {
+        Alert.alert('Image too large', 'Please choose an image below 50MB.');
+        return;
+      }
+      if (prepared.wasCompressed) {
+        Alert.alert('Large image optimized', 'Your profile image was automatically compressed for upload.');
+      }
+
+      const { fileName, mimeType } = normalizeImageAssetMeta(prepared.asset, 'profile');
 
       await uploadProfilePicture.mutateAsync({
-        uri: asset.uri,
+        uri: prepared.asset.uri,
         name: fileName,
         type: mimeType,
       });

@@ -4,6 +4,7 @@ import { ArrowLeft, FileText, Upload, Home, X, AlertCircle } from "lucide-react-
 import { useState, useRef, useEffect, useMemo } from "react";
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
 import { useUploadPlan } from '@/hooks/usePlan';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
@@ -15,6 +16,8 @@ type ProjectType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 const MAX_PLAN_PHOTOS = 5;
 const MAX_IMAGE_UPLOAD_BYTES = 50 * 1024 * 1024;
 const MAX_IMAGE_UPLOAD_MB = 50;
+const AUTO_COMPRESS_TARGET_BYTES = 45 * 1024 * 1024;
+const AUTO_COMPRESS_QUALITIES = [0.82, 0.7, 0.58, 0.45, 0.35];
 const IMAGE_EXTENSIONS = new Set([
   'jpg', 'jpeg', 'jpe', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif', 'jfif', 'jxl',
 ]);
@@ -50,6 +53,90 @@ function getAssetSizeBytes(asset: any): number | null {
   const raw = asset?.fileSize ?? asset?.size;
   if (typeof raw !== 'number' || Number.isNaN(raw) || raw <= 0) return null;
   return raw;
+}
+
+async function getUriSizeBytes(uri: string): Promise<number | null> {
+  try {
+    const res = await fetch(uri);
+    const blob = await res.blob();
+    return typeof blob.size === 'number' && blob.size > 0 ? blob.size : null;
+  } catch {
+    return null;
+  }
+}
+
+function replaceExtensionWithJpg(fileName: string) {
+  if (!fileName) return `project-image-${Date.now()}.jpg`;
+  return fileName.replace(/\.[^./]+$/, '.jpg');
+}
+
+async function compressOversizedImageAsset(asset: any): Promise<any | null> {
+  const originalSize = getAssetSizeBytes(asset);
+  if (originalSize === null || originalSize <= MAX_IMAGE_UPLOAD_BYTES) {
+    return asset;
+  }
+
+  if (Platform.OS === 'web') {
+    // Web picker assets are File-backed; skip heavy in-app transcoding for now.
+    return null;
+  }
+
+  let workingUri = asset.uri;
+  let width = Number(asset?.width) || 0;
+  let height = Number(asset?.height) || 0;
+
+  for (let i = 0; i < AUTO_COMPRESS_QUALITIES.length; i += 1) {
+    const quality = AUTO_COMPRESS_QUALITIES[i];
+    const shouldResize = i >= 2 && width > 0 && height > 0;
+    const scale = shouldResize ? (i === 2 ? 0.9 : i === 3 ? 0.8 : 0.7) : 1;
+
+    const actions: ImageManipulator.Action[] = [];
+    if (shouldResize) {
+      actions.push({
+        resize: {
+          width: Math.max(1280, Math.floor(width * scale)),
+          height: Math.max(1280, Math.floor(height * scale)),
+        },
+      });
+    }
+
+    const manipulated = await ImageManipulator.manipulateAsync(
+      workingUri,
+      actions,
+      { compress: quality, format: ImageManipulator.SaveFormat.JPEG },
+    );
+
+    workingUri = manipulated.uri;
+    width = manipulated.width || width;
+    height = manipulated.height || height;
+    const compressedSize = await getUriSizeBytes(manipulated.uri);
+    if (compressedSize !== null && compressedSize <= AUTO_COMPRESS_TARGET_BYTES) {
+      return {
+        ...asset,
+        uri: manipulated.uri,
+        width: manipulated.width || asset?.width,
+        height: manipulated.height || asset?.height,
+        mimeType: 'image/jpeg',
+        fileName: replaceExtensionWithJpg(asset?.fileName || asset?.name || ''),
+        size: compressedSize,
+        fileSize: compressedSize,
+      };
+    }
+  }
+
+  const finalSize = await getUriSizeBytes(workingUri);
+  if (finalSize !== null && finalSize <= MAX_IMAGE_UPLOAD_BYTES) {
+    return {
+      ...asset,
+      uri: workingUri,
+      mimeType: 'image/jpeg',
+      fileName: replaceExtensionWithJpg(asset?.fileName || asset?.name || ''),
+      size: finalSize,
+      fileSize: finalSize,
+    };
+  }
+
+  return null;
 }
 
 const PROJECT_TYPE_FILTERS: Record<ProjectType, string[]> = {
@@ -260,23 +347,41 @@ export default function UploadPlanScreen() {
 
       if (result.canceled || !result.assets?.length) return;
 
-      const oversizedAssets = result.assets.filter((asset) => {
+      const processedAssets: any[] = [];
+      const uncompressibleOversizedAssets: any[] = [];
+      let autoCompressedCount = 0;
+
+      for (const asset of result.assets) {
         const size = getAssetSizeBytes(asset);
-        return size !== null && size > MAX_IMAGE_UPLOAD_BYTES;
-      });
-      const acceptedAssets = result.assets.filter((asset) => {
-        const size = getAssetSizeBytes(asset);
-        return size === null || size <= MAX_IMAGE_UPLOAD_BYTES;
-      });
-      if (oversizedAssets.length > 0) {
+        if (size === null || size <= MAX_IMAGE_UPLOAD_BYTES) {
+          processedAssets.push(asset);
+          continue;
+        }
+
+        const compressedAsset = await compressOversizedImageAsset(asset);
+        if (compressedAsset) {
+          processedAssets.push(compressedAsset);
+          autoCompressedCount += 1;
+        } else {
+          uncompressibleOversizedAssets.push(asset);
+        }
+      }
+
+      if (uncompressibleOversizedAssets.length > 0) {
         setPlanPhotoSizeMessage(
-          `Some images were skipped because they are above ${MAX_IMAGE_UPLOAD_MB}MB. Please upload images below ${MAX_IMAGE_UPLOAD_MB}MB.`,
+          `Some images are still above ${MAX_IMAGE_UPLOAD_MB}MB after auto-compression. Please choose smaller photos.`,
+        );
+      }
+      if (autoCompressedCount > 0) {
+        Alert.alert(
+          'Large image optimized',
+          `${autoCompressedCount} image${autoCompressedCount > 1 ? 's were' : ' was'} automatically compressed for upload.`,
         );
       }
 
-      const nextAssets = acceptedAssets.slice(0, remainingSlots);
+      const nextAssets = processedAssets.slice(0, remainingSlots);
       if (!nextAssets.length) {
-        Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each.`);
+        Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each, or lower camera quality.`);
         return;
       }
       setSelectedPlanPhotos((prev) => {
@@ -301,15 +406,25 @@ export default function UploadPlanScreen() {
   };
 
   const uploadPlanImage = async (asset: any): Promise<string> => {
-    const formData = new FormData();
-    const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'project-image');
-    const knownSize = getAssetSizeBytes(asset);
+    let preparedAsset = asset;
+    const knownSize = getAssetSizeBytes(preparedAsset);
     if (knownSize !== null && knownSize > MAX_IMAGE_UPLOAD_BYTES) {
+      const compressedAsset = await compressOversizedImageAsset(preparedAsset);
+      if (!compressedAsset) {
+        throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
+      }
+      preparedAsset = compressedAsset;
+    }
+
+    const formData = new FormData();
+    const { fileName, mimeType } = normalizeImageAssetMeta(preparedAsset, 'project-image');
+    const preparedSize = getAssetSizeBytes(preparedAsset);
+    if (preparedSize !== null && preparedSize > MAX_IMAGE_UPLOAD_BYTES) {
       throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
     }
 
     if (Platform.OS === 'web') {
-      const res = await fetch(asset.uri);
+      const res = await fetch(preparedAsset.uri);
       const blob = await res.blob();
       if (blob.size > MAX_IMAGE_UPLOAD_BYTES) {
         throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
@@ -317,7 +432,7 @@ export default function UploadPlanScreen() {
       formData.append('file', blob, fileName);
     } else {
       formData.append('file', {
-        uri: asset.uri,
+        uri: preparedAsset.uri,
         name: fileName,
         type: mimeType,
       } as any);

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Platform } from 'react-native';
+import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
 
 type CurrentUser = {
   id: string;
@@ -24,18 +25,36 @@ export function useUploadProfilePicture() {
 
   return useMutation({
     mutationFn: async (file: UploadProfilePictureInput) => {
+      let preparedFile = file;
+      if ((file?.type || '').startsWith('image/')) {
+        const prepared = await ensureImageWithinUploadLimit({
+          uri: file.uri,
+          fileName: file.name,
+          mimeType: file.type,
+          name: file.name,
+        });
+        if (prepared.exceedsLimit) {
+          throw new Error('Image too large. Please choose an image below 50MB.');
+        }
+        preparedFile = {
+          uri: prepared.asset.uri,
+          name: prepared.asset.fileName || file.name,
+          type: prepared.asset.mimeType || file.type,
+        };
+      }
+
       const formData = new FormData();
       if (Platform.OS === 'web') {
         // On web, multer expects an actual Blob/File part.
-        const res = await fetch(file.uri);
+        const res = await fetch(preparedFile.uri);
         const blob = await res.blob();
-        formData.append('file', blob, file.name);
+        formData.append('file', blob, preparedFile.name);
       } else {
         // React Native FormData file type
         formData.append('file', {
-          uri: file.uri,
-          name: file.name,
-          type: file.type,
+          uri: preparedFile.uri,
+          name: preparedFile.name,
+          type: preparedFile.type,
         } as any);
       }
       return api.post('/auth/me/picture', formData);

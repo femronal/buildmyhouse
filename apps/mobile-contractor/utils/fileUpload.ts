@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { api } from '@/lib/api';
+import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -43,23 +44,41 @@ export async function uploadFile(
   options: UploadFileOptions = {},
 ): Promise<string> {
   try {
+    let uploadUri = uri;
+    let uploadFileName = options.fileName;
+    let uploadMimeType = options.mimeType;
+    if (type === 'image') {
+      const prepared = await ensureImageWithinUploadLimit({
+        uri,
+        fileName: options.fileName,
+        mimeType: options.mimeType,
+        name: options.fileName,
+      });
+      if (prepared.exceedsLimit) {
+        throw new Error('Image too large. Please choose an image below 50MB.');
+      }
+      uploadUri = prepared.asset.uri || uri;
+      uploadFileName = prepared.asset.fileName || options.fileName;
+      uploadMimeType = prepared.asset.mimeType || options.mimeType;
+    }
+
     const formData = new FormData();
     
-    const isDataUrl = typeof uri === 'string' && uri.startsWith('data:');
+    const isDataUrl = typeof uploadUri === 'string' && uploadUri.startsWith('data:');
 
     // Extract filename from URI (avoid using data URL content as filename)
     let filename =
-      options.fileName ||
-      (isDataUrl ? `file-${Date.now()}` : uri.split('/').pop()) ||
+      uploadFileName ||
+      (isDataUrl ? `file-${Date.now()}` : uploadUri.split('/').pop()) ||
       `file-${Date.now()}`;
     filename = filename.split('?')[0]; // Remove query parameters
     filename = filename.replace(/[^a-zA-Z0-9._ -]/g, '_');
     
     // Determine MIME type from extension
     const match = /\.(\w+)$/.exec(filename);
-    let mimeType = options.mimeType || 'application/octet-stream';
+    let mimeType = uploadMimeType || 'application/octet-stream';
     
-    if (!options.mimeType && match) {
+    if (!uploadMimeType && match) {
       const ext = match[1].toLowerCase();
       if (ext === 'png') mimeType = 'image/png';
       else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
@@ -89,7 +108,7 @@ export async function uploadFile(
     // For web platform, fetch and convert to Blob/File
     if (Platform.OS === 'web') {
       try {
-        const response = await fetch(uri);
+        const response = await fetch(uploadUri);
         const blob = await response.blob();
         const file = new File([blob], filename, { type: mimeType });
         
@@ -101,7 +120,7 @@ export async function uploadFile(
     } else {
       // Native platform - use React Native FormData format
       formData.append('file', {
-        uri,
+        uri: uploadUri,
         type: mimeType,
         name: filename,
       } as any);

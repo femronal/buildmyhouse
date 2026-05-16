@@ -9,6 +9,7 @@ import { useProject } from "@/hooks/useProject";
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
+import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -188,8 +189,17 @@ export default function ChatScreen() {
       if (result.canceled || !result.assets?.length) return;
 
       const asset = result.assets[0];
-      const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'chat-image');
-      await uploadImageAttachment(asset.uri, fileName, mimeType);
+      const prepared = await ensureImageWithinUploadLimit(asset);
+      if (prepared.exceedsLimit) {
+        Alert.alert('Image too large', 'Please choose an image below 50MB.');
+        return;
+      }
+      if (prepared.wasCompressed) {
+        Alert.alert('Large image optimized', 'Your image was automatically compressed for upload.');
+      }
+
+      const { fileName, mimeType } = normalizeImageAssetMeta(prepared.asset, 'chat-image');
+      await uploadImageAttachment(prepared.asset.uri, fileName, mimeType);
 
       refetchMessages();
       queryClient.invalidateQueries({ queryKey: ['messages', conversation.id] });
