@@ -38,12 +38,13 @@ function isImageLikeAsset(asset: any) {
 function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
   const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
   const mime = String(asset?.mimeType || '').toLowerCase();
-  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : '');
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : 'jpg');
+  const normalizedExt = safeExt || 'jpg';
   const fileName =
     asset?.fileName ||
     asset?.name ||
-    `${fallbackBase}-${Date.now()}${safeExt ? `.${safeExt}` : ''}`;
-  const mimeType = mime || (safeExt ? `image/${safeExt === 'jpg' ? 'jpeg' : safeExt}` : 'application/octet-stream');
+    `${fallbackBase}-${Date.now()}.${normalizedExt}`;
+  const mimeType = mime || `image/${normalizedExt === 'jpg' ? 'jpeg' : normalizedExt}`;
   return { fileName, mimeType };
 }
 
@@ -253,14 +254,35 @@ export default function UploadPlanScreen() {
         return;
       }
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: false,
-        quality: 0.85,
-        allowsMultipleSelection: true,
-        selectionLimit: remainingSlots,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+      const source = await new Promise<'camera' | 'library' | null>((resolve) => {
+        Alert.alert(
+          'Add project photo',
+          'Choose how you want to add photos',
+          [
+            { text: 'Take Photo', onPress: () => resolve('camera') },
+            { text: 'Choose from Library', onPress: () => resolve('library') },
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+          ],
+          { cancelable: true, onDismiss: () => resolve(null) },
+        );
       });
+      if (!source) return;
+
+      const result =
+        source === 'camera'
+          ? await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: false,
+              quality: 0.9,
+            })
+          : await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: false,
+              quality: 0.85,
+              allowsMultipleSelection: true,
+              selectionLimit: remainingSlots,
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+            });
 
       if (result.canceled || !result.assets?.length) return;
 
@@ -332,7 +354,8 @@ export default function UploadPlanScreen() {
       if (blob.size > MAX_IMAGE_UPLOAD_BYTES) {
         throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
       }
-      formData.append('file', blob, fileName);
+      const file = new File([blob], fileName, { type: mimeType || blob.type || 'image/jpeg' });
+      formData.append('file', file);
     } else {
       formData.append('file', {
         uri: preparedAsset.uri,
