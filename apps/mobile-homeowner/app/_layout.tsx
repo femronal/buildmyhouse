@@ -147,6 +147,7 @@ export default function RootLayout() {
           <Stack.Screen name="diaspora/build-in-nigeria-from-uk" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/build-in-nigeria-from-usa-canada" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/build-in-nigeria-from-uae" options={{ headerShown: false }} />
+          <Stack.Screen name="diaspora/us/build-in-nigeria" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/uk/build-in-nigeria" options={{ headerShown: false }} />
           <Stack.Screen name="diaspora/uk/renovate-parents-house" options={{ headerShown: false }} />
           <Stack.Screen name="guides/lagos-building-permits-and-stage-inspections" options={{ headerShown: false }} />
