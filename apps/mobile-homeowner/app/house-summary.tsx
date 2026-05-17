@@ -1371,8 +1371,8 @@ export default function HouseSummaryScreen() {
                 </Text>
               </View>
 
-              <View className="flex-row justify-between pt-3 border-t border-white/20">
-                <View>
+              <View className="pt-3 border-t border-white/20">
+                <View className="mb-2">
                   <Text className={`text-xs ${isSelected ? 'text-white/70' : 'text-gray-500'}`} style={{ fontFamily: 'Poppins_400Regular' }}>
                     Experience
                   </Text>
@@ -1380,11 +1380,15 @@ export default function HouseSummaryScreen() {
                     {gc.projects}+ projects
                   </Text>
                 </View>
-                <View>
+                <View className="pr-2">
                   <Text className={`text-xs ${isSelected ? 'text-white/70' : 'text-gray-500'}`} style={{ fontFamily: 'Poppins_400Regular' }}>
                     Location
                   </Text>
-                  <Text className={`${isSelected ? 'text-white' : 'text-black'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                  <Text
+                    className={`${isSelected ? 'text-white' : 'text-black'}`}
+                    style={{ fontFamily: 'Poppins_500Medium' }}
+                    numberOfLines={2}
+                  >
                     {gc.location || 'N/A'}
                   </Text>
                 </View>

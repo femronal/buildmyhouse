@@ -265,32 +265,32 @@ export default function DesignLibraryScreen() {
   return (
     <View className="flex-1 bg-white">
       <View
-        className="pb-4"
-        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        className="pb-2"
+        style={{ paddingTop: Math.max(8, insets.top + 2), paddingHorizontal: horizontalPadding }}
       >
-        <View className="flex-row items-center mb-4">
+        <View className="flex-row items-center mb-2">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-2"
           >
-            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            <ArrowLeft size={19} color="#000000" strokeWidth={2} />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-black rounded-full items-center justify-center"
+            className="w-9 h-9 bg-black rounded-full items-center justify-center"
           >
-            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            <Home size={17} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
         
         <Text 
-          className="text-3xl text-black mb-2"
+          className="text-2xl text-black mb-1"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
         >
           Choose Your Design
         </Text>
         <Text 
-          className="text-sm text-gray-500"
+          className="text-xs text-gray-500"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           Browse designs uploaded by General Contractors
@@ -298,38 +298,38 @@ export default function DesignLibraryScreen() {
       </View>
 
       {/* Search & Filter */}
-      <View className="mb-4" style={{ paddingHorizontal: horizontalPadding }}>
+      <View className="mb-2" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-2xl px-4 py-4 flex-row items-center mr-3">
-            <Search size={20} color="#737373" strokeWidth={2} />
+          <View className="flex-1 bg-gray-100 rounded-xl px-3 h-11 flex-row items-center mr-2">
+            <Search size={18} color="#737373" strokeWidth={2} />
             <TextInput
               placeholder="Search designs..."
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              className="flex-1 ml-3 text-black"
-              style={{ fontFamily: 'Poppins_400Regular' }}
+              className="flex-1 ml-2 text-black text-sm"
+              style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0 }}
             />
           </View>
           <TouchableOpacity 
             onPress={toggleFilters}
-            className={`w-12 h-12 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`w-10 h-10 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
           >
-            <Filter size={22} color="#000000" strokeWidth={2.5} />
+            <Filter size={19} color="#000000" strokeWidth={2.3} />
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Project Type Tabs */}
-      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
-        <View className="flex-row bg-gray-100 rounded-2xl p-1">
+      <View className="mb-2" style={{ paddingHorizontal: horizontalPadding }}>
+        <View className="flex-row bg-gray-100 rounded-xl p-1">
           <TouchableOpacity
             onPress={() => {
               setActiveTab('repairs');
               setActiveFilter('All');
             }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 10 }}
+            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 8 }}
           >
             <Text className={`text-xs ${activeTab === 'repairs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Repairs
@@ -340,8 +340,8 @@ export default function DesignLibraryScreen() {
               setActiveTab('upgrades');
               setActiveFilter('All');
             }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 10 }}
+            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 8 }}
           >
             <Text className={`text-xs ${activeTab === 'upgrades' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Upgrades
@@ -352,8 +352,8 @@ export default function DesignLibraryScreen() {
               setActiveTab('renovation');
               setActiveFilter('All');
             }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 10 }}
+            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 8 }}
           >
             <Text className={`text-xs ${activeTab === 'renovation' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Renovation
@@ -364,8 +364,8 @@ export default function DesignLibraryScreen() {
               setActiveTab('full_builds');
               setActiveFilter('All');
             }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 10 }}
+            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
+            style={{ paddingVertical: 8 }}
           >
             <Text className={`text-xs ${activeTab === 'full_builds' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Full Builds
