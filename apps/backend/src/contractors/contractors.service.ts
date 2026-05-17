@@ -5,6 +5,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
@@ -16,6 +17,12 @@ import {
 } from './constants/gc-verification-documents';
 import { UpsertVerificationDocumentDto } from './dto/upsert-verification-document.dto';
 import { GCSpecialtyCategory } from './dto/set-gc-verification.dto';
+import {
+  ContractorMatcherCandidateInput,
+  ContractorMatcherDisputeStats,
+  ContractorMatcherRequestStats,
+  ContractorMatcherService,
+} from './contractor-matcher.service';
 
 const GC_SPECIALTY_LABELS: Record<GCSpecialtyCategory, string> = {
   repairer: 'Repairer',
@@ -26,6 +33,8 @@ const GC_SPECIALTY_LABELS: Record<GCSpecialtyCategory, string> = {
 
 @Injectable()
 export class ContractorsService {
+  private readonly logger = new Logger(ContractorsService.name);
+
   private normalizeSpecialtyTags(tags?: string[]) {
     const normalized = Array.from(
       new Set(
@@ -58,6 +67,30 @@ export class ContractorsService {
     if (!raw) return '';
     if (/^\/+https?:\/\//i.test(raw)) return raw.replace(/^\/+/, '');
     return raw;
+  }
+
+  private extractProjectImageUrls(aiAnalysis: any): string[] {
+    if (!aiAnalysis || typeof aiAnalysis !== 'object') return [];
+    const candidates = [
+      ...(Array.isArray(aiAnalysis.projectImageUrls) ? aiAnalysis.projectImageUrls : []),
+      aiAnalysis.projectImageUrl,
+    ];
+    const normalized = Array.from(
+      new Set(
+        candidates
+          .map((url) => this.normalizeAssetUrl(String(url || '').trim()))
+          .filter(Boolean),
+      ),
+    );
+    return normalized.slice(0, 20);
+  }
+
+  private inferFileNameFromUrl(url?: string | null, fallback: string = 'file') {
+    const raw = String(url || '').trim();
+    if (!raw) return fallback;
+    const sanitized = raw.split('?')[0].split('#')[0];
+    const parts = sanitized.split('/').filter(Boolean);
+    return parts[parts.length - 1] || fallback;
   }
 
   private moneyToCents(value: unknown): number {
@@ -136,6 +169,7 @@ export class ContractorsService {
     private readonly wsService: WebSocketService,
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
+    private readonly contractorMatcherService: ContractorMatcherService,
   ) {}
 
   private async getContractorProfileOrThrow(userId: string) {
@@ -275,45 +309,129 @@ export class ContractorsService {
     };
   }
 
+  private getMatchingVersion(): string {
+    return String(this.configService.get<string>('MATCHING_ALGO_VERSION') || 'v1')
+      .trim()
+      .toLowerCase();
+  }
+
+  private buildRequestStats(requestRows: any[]): ContractorMatcherRequestStats {
+    const total = requestRows.length;
+    const accepted = requestRows.filter((row) => row.status === 'accepted').length;
+    const rejected = requestRows.filter((row) => row.status === 'rejected').length;
+    const pending = requestRows.filter((row) => row.status === 'pending').length;
+    const respondedRows = requestRows.filter((row) => !!row.respondedAt);
+    const responded = respondedRows.length;
+    const responseRate = total > 0 ? responded / total : 0;
+    const acceptanceRate = total > 0 ? accepted / total : 0;
+
+    const responseHours = respondedRows
+      .map((row) => {
+        const sentAt = new Date(row.sentAt || 0).getTime();
+        const respondedAt = new Date(row.respondedAt || 0).getTime();
+        if (!sentAt || !respondedAt || respondedAt < sentAt) return null;
+        return (respondedAt - sentAt) / (1000 * 60 * 60);
+      })
+      .filter((value): value is number => Number.isFinite(value) && value >= 0);
+
+    const avgResponseHours =
+      responseHours.length > 0
+        ? responseHours.reduce((sum, value) => sum + value, 0) / responseHours.length
+        : null;
+
+    return {
+      total,
+      accepted,
+      rejected,
+      pending,
+      responded,
+      responseRate,
+      acceptanceRate,
+      avgResponseHours,
+    };
+  }
+
+  private buildDisputeStats(disputeRows: any[]): ContractorMatcherDisputeStats {
+    const total = disputeRows.length;
+    const open = disputeRows.filter((row) => row.status === 'open').length;
+    const inReview = disputeRows.filter((row) => row.status === 'in_review').length;
+    const resolved = disputeRows.filter((row) => row.status === 'resolved').length;
+    return { total, open, inReview, resolved };
+  }
+
+  private legacyRecommendGCs(project: any, contractors: any[], limit: number) {
+    const strict = contractors.filter((contractor) => {
+      const ratingOk = Number(contractor.rating || 0) >= 4.5;
+      const cityOk = project.city
+        ? String(contractor.location || '')
+            .toLowerCase()
+            .includes(String(project.city || '').toLowerCase())
+        : true;
+      return ratingOk && cityOk;
+    });
+    const pool = strict.length > 0 ? strict : contractors;
+
+    const scored = pool.map((contractor) => {
+      let matchScore = 70;
+      if (
+        project.city &&
+        String(contractor.location || '')
+          .toLowerCase()
+          .includes(String(project.city || '').toLowerCase())
+      ) {
+        matchScore += 15;
+      }
+      if (
+        project.state &&
+        String(contractor.location || '')
+          .toLowerCase()
+          .includes(String(project.state || '').toLowerCase())
+      ) {
+        matchScore += 10;
+      }
+      if (Number(contractor.rating || 0) >= 4.9) matchScore += 5;
+      else if (Number(contractor.rating || 0) >= 4.7) matchScore += 3;
+      if (Number(contractor.projects || 0) >= 80) matchScore += 5;
+      else if (Number(contractor.projects || 0) >= 50) matchScore += 3;
+      if (contractor.verified) matchScore += 5;
+
+      return {
+        ...contractor,
+        matchScore: Math.min(100, Math.round(matchScore)),
+      };
+    });
+
+    scored.sort((a, b) => b.matchScore - a.matchScore);
+    return scored.slice(0, limit);
+  }
+
   /**
-   * Recommend GCs based on project details
-   * Matching criteria:
-   * - Location (same city/state)
-   * - Specialty (residential vs commercial)
-   * - Rating (4.5+)
-   * - Verified status
-   * 
-   * For now, returns all GCs in database for testing purposes
+   * Recommend verified GCs for a project with deterministic scoring.
+   * Returns backward-compatible matchScore and richer scoring details.
    */
-  async recommendGCs(
-    projectId: string,
-    limit: number = 3,
-  ) {
-    // Get project details
+  async recommendGCs(projectId: string, limit: number = 3) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        city: true,
+        state: true,
+        budget: true,
+        projectType: true,
+        aiAnalysis: true,
+      },
     });
 
     if (!project) {
-      console.error('❌ [ContractorsService] Project not found:', projectId);
-      throw new Error('Project not found');
+      throw new NotFoundException('Project not found');
     }
 
-    // First, try to find contractors matching strict criteria
-    let contractors = await this.prisma.contractor.findMany({
+    const contractors = await this.prisma.contractor.findMany({
       where: {
         type: 'general_contractor',
         verified: true,
-        rating: {
-          gte: 4.5,
-        },
-        // Location matching (if available)
-        ...(project.city && {
-          location: {
-            contains: project.city,
-            mode: 'insensitive',
-          },
-        }),
       },
       include: {
         user: {
@@ -323,75 +441,113 @@ export class ContractorsService {
             email: true,
             phone: true,
             pictureUrl: true,
+            role: true,
+            verified: true,
+          },
+        },
+        _count: {
+          select: {
+            certifications: true,
           },
         },
       },
-      orderBy: [
-        { rating: 'desc' },
-        { projects: 'desc' },
-      ],
-      take: limit,
+      orderBy: [{ rating: 'desc' }, { projects: 'desc' }],
     });
 
-    // If no contractors found with strict criteria, get all GCs (for testing)
     if (contractors.length === 0) {
-      contractors = await this.prisma.contractor.findMany({
-        where: {
-          type: 'general_contractor',
-          verified: true,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              pictureUrl: true,
-            },
-          },
-        },
-        orderBy: [
-          { rating: 'desc' },
-          { projects: 'desc' },
-        ],
-        take: limit,
-      });
+      return [];
     }
 
-    // Calculate match score for each contractor
-    const scoredContractors = contractors.map((contractor) => {
-      let matchScore = 70; // Base score
+    const contractorUserIds = contractors.map((contractor) => contractor.userId);
 
-      // Location bonus
-      if (project.city && contractor.location?.toLowerCase().includes(project.city.toLowerCase())) {
-        matchScore += 15;
+    const [requestRows, disputeRows] = await Promise.all([
+      this.prisma.projectRequest.findMany({
+        where: {
+          contractorId: { in: contractorUserIds },
+        },
+        select: {
+          contractorId: true,
+          status: true,
+          sentAt: true,
+          respondedAt: true,
+        },
+      }),
+      this.prisma.projectStageDispute.findMany({
+        where: {
+          generalContractorId: { in: contractorUserIds },
+        },
+        select: {
+          generalContractorId: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    const requestRowsByContractor = new Map<string, any[]>();
+    for (const row of requestRows) {
+      if (!requestRowsByContractor.has(row.contractorId)) {
+        requestRowsByContractor.set(row.contractorId, []);
       }
-      if (project.state && contractor.location?.toLowerCase().includes(project.state.toLowerCase())) {
-        matchScore += 10;
+      requestRowsByContractor.get(row.contractorId)!.push(row);
+    }
+
+    const disputeRowsByContractor = new Map<string, any[]>();
+    for (const row of disputeRows) {
+      if (!row.generalContractorId) continue;
+      if (!disputeRowsByContractor.has(row.generalContractorId)) {
+        disputeRowsByContractor.set(row.generalContractorId, []);
       }
+      disputeRowsByContractor.get(row.generalContractorId)!.push(row);
+    }
 
-      // Rating bonus
-      if (contractor.rating >= 4.9) matchScore += 5;
-      else if (contractor.rating >= 4.7) matchScore += 3;
+    const enrichedCandidates: ContractorMatcherCandidateInput[] = contractors.map(
+      (contractor: any) => {
+        const requestStats = this.buildRequestStats(
+          requestRowsByContractor.get(contractor.userId) || [],
+        );
+        const disputeStats = this.buildDisputeStats(
+          disputeRowsByContractor.get(contractor.userId) || [],
+        );
 
-      // Experience bonus
-      if (contractor.projects >= 80) matchScore += 5;
-      else if (contractor.projects >= 50) matchScore += 3;
+        return {
+          ...contractor,
+          certificationCount: Number(contractor?._count?.certifications || 0),
+          requestStats,
+          disputeStats,
+        };
+      },
+    );
 
-      // Verified bonus
-      if (contractor.verified) matchScore += 5;
+    const matchingVersion = this.getMatchingVersion();
+    if (matchingVersion === 'legacy') {
+      const legacy = this.legacyRecommendGCs(project, enrichedCandidates, limit);
+      this.logger.log(
+        JSON.stringify({
+          event: 'gc_matching_completed',
+          algorithmVersion: 'legacy',
+          projectId,
+          requestedLimit: limit,
+          totalCandidates: contractors.length,
+          selectedCount: legacy.length,
+        }),
+      );
+      return legacy;
+    }
 
-      return {
-        ...contractor,
-        matchScore: Math.min(matchScore, 100),
-      };
+    const result = this.contractorMatcherService.recommend({
+      project,
+      candidates: enrichedCandidates,
+      limit,
     });
 
-    // Sort by match score
-    scoredContractors.sort((a, b) => b.matchScore - a.matchScore);
+    this.logger.log(
+      JSON.stringify({
+        event: 'gc_matching_completed',
+        ...result.diagnostics,
+      }),
+    );
 
-    return scoredContractors;
+    return result.matches;
   }
 
   /**
@@ -564,11 +720,29 @@ export class ContractorsService {
     return requests.map((request: any) => {
       const fallbackPhone = request?.sender?.phone || null;
       const fallbackEmail = request?.sender?.email || null;
+      const photoUrls = this.extractProjectImageUrls(request?.project?.aiAnalysis);
+      const rawPlanPdfUrl = this.normalizeAssetUrl(request?.project?.planPdfUrl);
+      const planFileName =
+        request?.project?.planFileName ||
+        this.inferFileNameFromUrl(rawPlanPdfUrl, 'plan.pdf');
 
       return {
         ...request,
         project: {
           ...request.project,
+          homeownerFiles: {
+            photoUrls,
+            photos: photoUrls.map((url, index) => ({
+              url,
+              name: this.inferFileNameFromUrl(url, `project-photo-${index + 1}.jpg`),
+            })),
+            totalPhotos: photoUrls.length,
+            pdfUrl: rawPlanPdfUrl || null,
+            pdfFileName: rawPlanPdfUrl ? planFileName : null,
+            hasPdf: !!rawPlanPdfUrl,
+          },
+          planPdfUrl: rawPlanPdfUrl || request?.project?.planPdfUrl || null,
+          planFileName,
           homeowner: {
             ...request.project.homeowner,
             phone: request.project?.homeowner?.phone || fallbackPhone,

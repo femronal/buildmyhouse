@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking, Modal } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Linking, Modal, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, FileText, MapPin, User, Calendar, MessageSquare, CheckCircle, XCircle, Download, Edit3, X, Phone } from "lucide-react-native";
+import { ArrowLeft, FileText, MapPin, User, Calendar, CheckCircle, XCircle, Download, Edit3, X, Phone, Image as ImageIcon } from "lucide-react-native";
 import { useState, useEffect } from "react";
 import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
@@ -327,7 +327,10 @@ export default function GCRequestDetailScreen() {
 
     try {
       const result = await api.get(`/plans/${projectId}/download-url`);
-      const rawUrl = result?.url || request?.project?.planPdfUrl;
+      const rawUrl =
+        result?.url ||
+        request?.project?.homeownerFiles?.pdfUrl ||
+        request?.project?.planPdfUrl;
       const pdfUrl = getBackendAssetUrl(rawUrl);
 
       const supported = await Linking.canOpenURL(pdfUrl);
@@ -339,8 +342,10 @@ export default function GCRequestDetailScreen() {
     } catch (error) {
       console.error('Error opening PDF:', error);
       // Fallback to old URL path for backward compatibility.
-      const fallbackUrl = request?.project?.planPdfUrl
-        ? getBackendAssetUrl(request.project.planPdfUrl)
+      const fallbackRawUrl =
+        request?.project?.homeownerFiles?.pdfUrl || request?.project?.planPdfUrl;
+      const fallbackUrl = fallbackRawUrl
+        ? getBackendAssetUrl(fallbackRawUrl)
         : null;
       if (fallbackUrl) {
         try {
@@ -368,6 +373,24 @@ export default function GCRequestDetailScreen() {
       return;
     }
     await Linking.openURL(callUrl);
+  };
+
+  const handleOpenPhoto = async (rawUrl?: string | null) => {
+    const normalized = getBackendAssetUrl(rawUrl);
+    if (!normalized) {
+      showAlert('Photo Not Available', 'This project photo is not available right now.');
+      return;
+    }
+    try {
+      const canOpen = await Linking.canOpenURL(normalized);
+      if (!canOpen) {
+        showAlert('Unable to Open', 'Unable to open this photo on your device.');
+        return;
+      }
+      await Linking.openURL(normalized);
+    } catch {
+      showAlert('Unable to Open', 'Unable to open this photo on your device.');
+    }
   };
 
   // If still loading, show loading state
@@ -408,6 +431,21 @@ export default function GCRequestDetailScreen() {
   // so we bind a non-null reference for the render path.
   const req = request!;
   const aiAnalysis = editedAnalysis || req.project.aiAnalysis || {};
+  const homeownerPhotoUrls = Array.isArray(req?.project?.homeownerFiles?.photoUrls)
+    ? req.project.homeownerFiles.photoUrls
+    : Array.isArray(req?.project?.homeownerFiles?.photos)
+      ? req.project.homeownerFiles.photos
+          .map((photo: any) => String(photo?.url || '').trim())
+          .filter(Boolean)
+      : Array.isArray(aiAnalysis?.projectImageUrls)
+        ? aiAnalysis.projectImageUrls
+            .map((url: any) => String(url || '').trim())
+            .filter(Boolean)
+        : [];
+  const homeownerHasPdf =
+    !!req?.project?.homeownerFiles?.hasPdf || !!req?.project?.planPdfUrl;
+  const homeownerPdfFileName =
+    req?.project?.homeownerFiles?.pdfFileName || req?.project?.planFileName || 'plan.pdf';
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -466,7 +504,7 @@ export default function GCRequestDetailScreen() {
           </View>
 
           {/* Plan PDF Section */}
-          {req.project.planPdfUrl && (
+          {homeownerHasPdf && (
             <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
               <View className="flex-row items-center justify-between mb-3 gap-2">
                 <View className="flex-row items-center flex-1">
@@ -485,13 +523,52 @@ export default function GCRequestDetailScreen() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              {req.project.planFileName && (
+              {homeownerPdfFileName && (
                 <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {req.project.planFileName}
+                  {homeownerPdfFileName}
                 </Text>
               )}
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Review the plan PDF before accepting the project
+              </Text>
+            </View>
+          )}
+
+          {/* Homeowner Photo References */}
+          {homeownerPhotoUrls.length > 0 && (
+            <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
+              <View className="flex-row items-center mb-3">
+                <ImageIcon size={20} color="#60A5FA" strokeWidth={2} />
+                <Text className="text-white text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Homeowner Reference Photos ({homeownerPhotoUrls.length})
+                </Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {homeownerPhotoUrls.map((url: string, index: number) => {
+                  const assetUrl = getBackendAssetUrl(url);
+                  return (
+                    <TouchableOpacity
+                      key={`${url}-${index}`}
+                      onPress={() => handleOpenPhoto(assetUrl)}
+                      className="mr-3"
+                      activeOpacity={0.85}
+                    >
+                      <View className="w-28 h-28 rounded-xl overflow-hidden bg-[#0A1628] border border-blue-900">
+                        <Image source={{ uri: assetUrl }} className="w-full h-full" resizeMode="cover" />
+                      </View>
+                      <Text
+                        className="text-gray-400 text-xs mt-1 max-w-[112px]"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        numberOfLines={1}
+                      >
+                        Photo {index + 1}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <Text className="text-gray-500 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Tap a photo to open it in full view.
               </Text>
             </View>
           )}

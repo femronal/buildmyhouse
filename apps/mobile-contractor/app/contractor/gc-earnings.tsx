@@ -25,8 +25,6 @@ export default function GCEarningsScreen() {
   const totalPending = earnings.reduce((sum, p) => sum + p.pending, 0);
   const totalMaterials = earnings.reduce((sum, p) => sum + p.materialsTotal, 0);
   const totalTeam = earnings.reduce((sum, p) => sum + p.teamTotal, 0);
-  const totalRecordedCosts = earnings.reduce((sum, p) => sum + p.recordedCosts, 0);
-
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}

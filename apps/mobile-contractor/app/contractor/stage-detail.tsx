@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Plus, Camera, X, Phone, Mail, Calendar, Upload, Download, Trash2, Check } from "lucide-react-native";
-import { useState, useRef } from "react";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check } from "lucide-react-native";
+import { useState } from "react";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
 import { stageDocumentationService } from '@/services/stageDocumentationService';
 import * as ImagePicker from 'expo-image-picker';
@@ -180,7 +180,11 @@ export default function GCStageDetailScreen() {
     setPaymentRequested(true);
     setTimeout(() => {
       setShowPaymentModal(false);
-      router.canGoBack() ? router.back() : router.push(`/contractor/gc-project-detail?id=${projectId}`);
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.push(`/contractor/gc-project-detail?id=${projectId}`);
+      }
     }, 1500);
   };
 
@@ -1943,7 +1947,7 @@ export default function GCStageDetailScreen() {
                 Delete Material
               </Text>
               <Text className="text-gray-400 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete "{materialToDelete?.name}"?
+                Are you sure you want to delete &quot;{materialToDelete?.name}&quot;?
               </Text>
               <Text className="text-red-400 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
                 This action cannot be undone.
@@ -1995,7 +1999,7 @@ export default function GCStageDetailScreen() {
                 Delete Team Member
               </Text>
               <Text className="text-gray-400 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete "{teamMemberToDelete?.name}"?
+                Are you sure you want to delete &quot;{teamMemberToDelete?.name}&quot;?
               </Text>
               <Text className="text-red-400 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
                 This action cannot be undone.
@@ -2047,7 +2051,7 @@ export default function GCStageDetailScreen() {
                 Delete File
               </Text>
               <Text className="text-gray-400 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete "{fileToDelete?.name}"?
+                Are you sure you want to delete &quot;{fileToDelete?.name}&quot;?
               </Text>
               <Text className="text-red-400 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
                 This action cannot be undone.
@@ -2270,7 +2274,7 @@ export default function GCStageDetailScreen() {
                     <View className="flex-row items-start">
                       <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
                       <Text className="text-gray-300 flex-1 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        Upload at least one <Text className="text-blue-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>photo</Text> in the Files/Media section (click "Add File/Media" → select "Photo")
+                        Upload at least one <Text className="text-blue-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>photo</Text> in the Files/Media section (click &quot;Add File/Media&quot; → select &quot;Photo&quot;)
                       </Text>
                     </View>
                   )}
@@ -2279,7 +2283,7 @@ export default function GCStageDetailScreen() {
                     <View className="flex-row items-start">
                       <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
                       <Text className="text-gray-300 flex-1 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        Upload at least one <Text className="text-blue-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>video</Text> in the Files/Media section (click "Add File/Media" → select "Video")
+                        Upload at least one <Text className="text-blue-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>video</Text> in the Files/Media section (click &quot;Add File/Media&quot; → select &quot;Video&quot;)
                       </Text>
                     </View>
                   )}
@@ -2306,7 +2310,7 @@ export default function GCStageDetailScreen() {
             </View>
 
             <Text className="text-gray-400 text-center text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Once all documentation is added, try "Mark as Complete" again. The system will verify everything is in place before allowing completion.
+              Once all documentation is added, try &quot;Mark as Complete&quot; again. The system will verify everything is in place before allowing completion.
             </Text>
 
             <TouchableOpacity
@@ -2317,7 +2321,7 @@ export default function GCStageDetailScreen() {
               className="bg-blue-600 rounded-xl py-3"
             >
               <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Got It, I'll Add the Documentation
+                Got It, I&apos;ll Add the Documentation
               </Text>
             </TouchableOpacity>
           </View>

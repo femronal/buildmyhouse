@@ -12,6 +12,16 @@ export interface RecommendedGC {
   location: string;
   description?: string | null;
   matchScore: number;
+  matchVersion?: 'v1' | 'legacy' | string;
+  matchBreakdown?: {
+    capabilityFit: number;
+    geoFit: number;
+    qualityReliability: number;
+    commercialFit: number;
+    confidenceAdjustment: number;
+  };
+  matchReasons?: string[];
+  matchProjectTag?: string;
   imageUrl?: string | null;
   user: {
     id: string;
@@ -69,7 +79,7 @@ export const projectService = {
       projectId,
       contractorIds,
     });
-    return response.data;
+    return response;
   },
 
   /**

@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform } from "react-native";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2 } from "lucide-react-native";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { clearAuthToken } from "@/lib/auth";
 import { useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
@@ -98,7 +98,7 @@ export default function GCProfileScreen() {
     return url;
   };
 
-  const handlePickProfilePicture = async () => {
+  const handlePickProfilePicture = useCallback(async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
@@ -121,7 +121,7 @@ export default function GCProfileScreen() {
     } catch (e: any) {
       Alert.alert('Upload failed', e?.message || 'Please try again.');
     }
-  };
+  }, [uploadProfilePicture]);
 
   const openEditModal = (field: 'company' | 'email' | 'phone' | 'location' | 'experience') => {
     setEditModal(field);
@@ -257,7 +257,7 @@ export default function GCProfileScreen() {
     if (hasTriggeredLogoUpload.current) return;
     hasTriggeredLogoUpload.current = true;
     void handlePickProfilePicture();
-  }, [params.openLogoUpload]);
+  }, [handlePickProfilePicture, params.openLogoUpload]);
 
   const handleSaveBankAccount = async () => {
     const { bankName, accountNumber, accountOwnerName } = bankForm;

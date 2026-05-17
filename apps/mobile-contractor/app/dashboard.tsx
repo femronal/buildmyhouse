@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { MessageCircle, Calendar, TrendingUp, ChevronRight, FileText, File, Video, Image as ImageIcon, Music, ArrowLeft, Home } from "lucide-react-native";
+import { MessageCircle, Calendar, ChevronRight, FileText, File, Video, Image as ImageIcon, Music, ArrowLeft, Home } from "lucide-react-native";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
 const recentFiles = [

@@ -1,12 +1,18 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { 
-  ArrowLeft, 
-  Send, 
-  Paperclip, 
+import {
+  ArrowLeft,
+  Send,
+  Paperclip,
   Check,
   CheckCheck,
-  Trash2
+  Trash2,
+  AlertCircle,
+  MessageCircle,
+  ChevronRight,
+  MapPin,
+  Calendar,
+  FileText,
 } from "lucide-react-native";
 import { useState, useRef, useEffect, useMemo } from "react";
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +21,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { requestService } from "@/services/requestService";
 import type { ProjectRequest } from "@/services/requestService";
-import { AlertCircle, CheckCircle, XCircle, MessageCircle, ChevronRight, MapPin, Calendar, FileText } from "lucide-react-native";
 import { useProject } from "@/hooks/useProjects";
 import { useUserConversations } from "@/hooks/useChat";
 import { getBackendAssetUrl } from "@/lib/image";
@@ -197,6 +202,94 @@ export default function ContractorChatScreen() {
     const date = new Date(dateString);
     return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
   };
+
+  // MVP: contractor app is GC-only
+  const isGC = currentUser?.role === 'general_contractor';
+  const isAuthenticated = !!currentUser?.id;
+
+  // Used to show per-chat unread badges and sort by newest activity.
+  const { data: allConversations = [] } = useUserConversations(isAuthenticated);
+
+  // Subcontractor/vendor request flows removed for MVP
+  // Fetch sent requests for GC
+  const { data: sentRequests = [], refetch: refetchSentRequests, isLoading: loadingSentRequests } = useQuery({
+    queryKey: ['sent-requests'],
+    queryFn: async () => requestService.getSentRequests(),
+    enabled: !projectId && !userId && isGC && !!currentUser?.id, // Only fetch for GC when not in a direct chat and user is loaded
+    refetchInterval: 5000, // Poll every 5 seconds for new requests
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: true, // Refetch when component mounts
+  });
+
+  // Fetch accepted counterparts for GC
+  const { data: acceptedContractors = [] } = useQuery({
+    queryKey: ['accepted-contractors'],
+    queryFn: () => requestService.getAcceptedContractors(),
+    enabled: !projectId && !userId && isGC,
+    refetchInterval: 5000, // Poll every 5 seconds
+  });
+
+  // Subcontractor request accept/reject removed for MVP
+
+  // Delete request mutation (for GC to delete rejected requests)
+  const deleteRequestMutation = useMutation({
+    mutationFn: (requestId: string) => requestService.deleteRequest(requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sent-requests'] });
+      refetchSentRequests();
+    },
+    onError: (error: any) => {
+      Alert.alert('Error', error?.message || 'Failed to delete request');
+    },
+  });
+
+  const visibleAcceptedContractors = useMemo(() => {
+    return (acceptedContractors || []).filter((c: any) => c?.id && c.id !== currentUser?.id);
+  }, [acceptedContractors, currentUser?.id]);
+
+  const enrichedAcceptedConversations = useMemo(() => {
+    const conversations = Array.isArray(allConversations) ? allConversations : [];
+
+    const byParticipantAndProject = new Map<string, any>();
+    const byParticipantOnly = new Map<string, any>();
+
+    for (const conv of conversations) {
+      const participants = Array.isArray(conv?.participants) ? conv.participants : [];
+      const other = participants.find((p: any) => p?.id && p.id !== currentUser?.id);
+      if (!other?.id) continue;
+
+      const key = `${other.id}:${conv?.projectId || ''}`;
+      byParticipantAndProject.set(key, conv);
+
+      const existing = byParticipantOnly.get(other.id);
+      const existingTs = existing ? new Date(existing.updatedAt || 0).getTime() : 0;
+      const currentTs = new Date(conv?.updatedAt || 0).getTime();
+      if (!existing || currentTs > existingTs) {
+        byParticipantOnly.set(other.id, conv);
+      }
+    }
+
+    return visibleAcceptedContractors
+      .map((contractor: any) => {
+        const key = `${contractor.id}:${contractor.projectId || ''}`;
+        const conversation = byParticipantAndProject.get(key) || byParticipantOnly.get(contractor.id);
+        const unreadCount = Number(conversation?.unreadCount || 0);
+        const lastMessage = conversation?.messages?.[0];
+        const lastActivityAt = conversation?.updatedAt || lastMessage?.createdAt || null;
+        return {
+          contractor,
+          conversationId: conversation?.id || null,
+          unreadCount,
+          lastMessage,
+          lastActivityAt,
+        };
+      })
+      .sort((a, b) => {
+        const aTs = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
+        const bTs = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
+        return bTs - aTs;
+      });
+  }, [allConversations, currentUser?.id, visibleAcceptedContractors]);
 
   // If projectId and userId are provided, show direct chat
   if (projectId && userId && userName) {
@@ -424,46 +517,6 @@ export default function ContractorChatScreen() {
     );
   }
 
-  // MVP: contractor app is GC-only
-  const isGC = currentUser?.role === 'general_contractor';
-  const isAuthenticated = !!currentUser?.id;
-
-  // Used to show per-chat unread badges and sort by newest activity.
-  const { data: allConversations = [] } = useUserConversations(isAuthenticated);
-
-  // Subcontractor/vendor request flows removed for MVP
-  // Fetch sent requests for GC
-  const { data: sentRequests = [], refetch: refetchSentRequests, isLoading: loadingSentRequests } = useQuery({
-    queryKey: ['sent-requests'],
-    queryFn: async () => requestService.getSentRequests(),
-    enabled: !projectId && !userId && isGC && !!currentUser?.id, // Only fetch for GC when not in a direct chat and user is loaded
-    refetchInterval: 5000, // Poll every 5 seconds for new requests
-    refetchOnWindowFocus: true, // Refetch when window regains focus
-    refetchOnMount: true, // Refetch when component mounts
-  });
-
-  // Fetch accepted counterparts for GC
-  const { data: acceptedContractors = [], refetch: refetchAccepted } = useQuery({
-    queryKey: ['accepted-contractors'],
-    queryFn: () => requestService.getAcceptedContractors(),
-    enabled: !projectId && !userId && isGC,
-    refetchInterval: 5000, // Poll every 5 seconds
-  });
-
-  // Subcontractor request accept/reject removed for MVP
-
-  // Delete request mutation (for GC to delete rejected requests)
-  const deleteRequestMutation = useMutation({
-    mutationFn: (requestId: string) => requestService.deleteRequest(requestId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sent-requests'] });
-      refetchSentRequests();
-    },
-    onError: (error: any) => {
-      Alert.alert('Error', error?.message || 'Failed to delete request');
-    },
-  });
-
   // Format time helper
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -480,11 +533,6 @@ export default function ContractorChatScreen() {
     return date.toLocaleDateString();
   };
 
-  // Get project name from request
-  const getProjectName = (request: ProjectRequest) => {
-    return request.project?.name || 'Project Request';
-  };
-
   // Get contractor name from request
   const getContractorName = (request: ProjectRequest) => {
     return request.contractor?.fullName || request.contractor?.contractorProfile?.name || 'Contractor';
@@ -497,54 +545,6 @@ export default function ContractorChatScreen() {
       'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80'
     );
   };
-
-  const visibleAcceptedContractors = useMemo(() => {
-    return (acceptedContractors || []).filter((c: any) => c?.id && c.id !== currentUser?.id);
-  }, [acceptedContractors, currentUser?.id]);
-
-  const enrichedAcceptedConversations = useMemo(() => {
-    const conversations = Array.isArray(allConversations) ? allConversations : [];
-
-    const byParticipantAndProject = new Map<string, any>();
-    const byParticipantOnly = new Map<string, any>();
-
-    for (const conv of conversations) {
-      const participants = Array.isArray(conv?.participants) ? conv.participants : [];
-      const other = participants.find((p: any) => p?.id && p.id !== currentUser?.id);
-      if (!other?.id) continue;
-
-      const key = `${other.id}:${conv?.projectId || ''}`;
-      byParticipantAndProject.set(key, conv);
-
-      const existing = byParticipantOnly.get(other.id);
-      const existingTs = existing ? new Date(existing.updatedAt || 0).getTime() : 0;
-      const currentTs = new Date(conv?.updatedAt || 0).getTime();
-      if (!existing || currentTs > existingTs) {
-        byParticipantOnly.set(other.id, conv);
-      }
-    }
-
-    return visibleAcceptedContractors
-      .map((contractor: any) => {
-        const key = `${contractor.id}:${contractor.projectId || ''}`;
-        const conversation = byParticipantAndProject.get(key) || byParticipantOnly.get(contractor.id);
-        const unreadCount = Number(conversation?.unreadCount || 0);
-        const lastMessage = conversation?.messages?.[0];
-        const lastActivityAt = conversation?.updatedAt || lastMessage?.createdAt || null;
-        return {
-          contractor,
-          conversationId: conversation?.id || null,
-          unreadCount,
-          lastMessage,
-          lastActivityAt,
-        };
-      })
-      .sort((a, b) => {
-        const aTs = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
-        const bTs = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
-        return bTs - aTs;
-      });
-  }, [allConversations, currentUser?.id, visibleAcceptedContractors]);
 
   // Default: Show conversations list with real project requests
   return (
@@ -602,7 +602,7 @@ export default function ContractorChatScreen() {
                   No Pending Requests
                 </Text>
                 <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  You haven't sent any work requests yet. Send requests from the project detail page.
+                  You have not sent any work requests yet. Send requests from the project detail page.
                 </Text>
               </View>
             ) : (

@@ -29,7 +29,7 @@ export default function VerificationScreen() {
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [pulseAnim, status]);
 
   const getStatusContent = () => {
     switch (status) {

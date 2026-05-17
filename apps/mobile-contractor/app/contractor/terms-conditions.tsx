@@ -7,7 +7,7 @@ export default function TermsConditionsScreen() {
   const router = useRouter();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
-  const sections: Array<[string, string]> = [
+  const sections: [string, string][] = [
     ['Service Scope', 'BuildMyHouse provides a digital platform for project management, contractor engagement, verification, and payment workflows.'],
     ['Account Responsibility', 'You are responsible for maintaining accurate account information, credentials, and lawful use of the platform.'],
     ['Verification & Compliance', 'GC verification, document checks, and compliance review may be required before certain features are enabled.'],

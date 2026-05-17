@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Upload, Camera, FileText, CheckCircle, User, Building, Phone, Mail, MapPin } from "lucide-react-native";
 import { useState } from "react";
@@ -16,7 +16,7 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
-  const { type } = useLocalSearchParams<{ type: 'gc' }>();
+  useLocalSearchParams<{ type: 'gc' }>();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     fullName: "",

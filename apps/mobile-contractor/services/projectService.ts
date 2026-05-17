@@ -13,6 +13,16 @@ export interface GCProject {
   dueDate?: string;
   planPdfUrl?: string;
   planFileName?: string;
+  aiAnalysis?: any;
+  projectRequests?: any[];
+  homeownerFiles?: {
+    photoUrls?: string[];
+    photos?: Array<{ url: string; name?: string }>;
+    totalPhotos?: number;
+    pdfUrl?: string | null;
+    pdfFileName?: string | null;
+    hasPdf?: boolean;
+  };
   homeowner: {
     id: string;
     fullName: string;

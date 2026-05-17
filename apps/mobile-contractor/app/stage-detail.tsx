@@ -101,13 +101,15 @@ export default function StageDetailScreen() {
   const [paymentApproved, setPaymentApproved] = useState(false);
 
   const isComplete = status === 'complete';
-  const isInProgress = status === 'in-progress';
-
   const handleApprovePayment = () => {
     setPaymentApproved(true);
     setTimeout(() => {
       setShowPaymentModal(false);
-      router.canGoBack() ? router.back() : router.push('/(tabs)/home');
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.push('/(tabs)/home');
+      }
     }, 1500);
   };
 

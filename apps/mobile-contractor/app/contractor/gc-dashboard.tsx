@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
 import { useRouter } from "expo-router";
-import { Bell, Settings, Briefcase, Clock, CheckCircle, Users, ChevronRight, Plus, MessageCircle, TrendingUp, Calendar, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign } from "lucide-react-native";
+import { Bell, Briefcase, Clock, Users, ChevronRight, MessageCircle, TrendingUp, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign, Camera } from "lucide-react-native";
 import { useState, useMemo, useEffect } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
 import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
@@ -40,7 +40,7 @@ export default function GCDashboardScreen() {
   }, [profileData?.pictureUrl]);
   
   // Fetch real pending requests
-  const { data: pendingRequests = [], isLoading: loadingPendingRequests } = usePendingRequests();
+  const { data: pendingRequests = [] } = usePendingRequests();
 
   // Fetch real projects
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
@@ -148,6 +148,41 @@ export default function GCDashboardScreen() {
       return getBackendAssetUrl(coverUrl) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
     }
     return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
+  };
+
+  const getHomeownerFileSummary = (project: any) => {
+    const homeownerFiles = project?.homeownerFiles || {};
+    const photoUrlsFromHomeownerFiles = Array.isArray(homeownerFiles.photoUrls)
+      ? homeownerFiles.photoUrls
+      : Array.isArray(homeownerFiles.photos)
+        ? homeownerFiles.photos
+            .map((photo: any) => String(photo?.url || '').trim())
+            .filter(Boolean)
+        : [];
+
+    let aiAnalysis = project?.aiAnalysis;
+    if (typeof aiAnalysis === 'string') {
+      try {
+        aiAnalysis = JSON.parse(aiAnalysis);
+      } catch {
+        aiAnalysis = null;
+      }
+    }
+
+    const photoUrlsFromAi = Array.isArray(aiAnalysis?.projectImageUrls)
+      ? aiAnalysis.projectImageUrls.map((url: any) => String(url || '').trim()).filter(Boolean)
+      : [];
+    const singleAiImage = String(aiAnalysis?.projectImageUrl || '').trim();
+
+    const photoCount =
+      Number(homeownerFiles.totalPhotos || 0) ||
+      photoUrlsFromHomeownerFiles.length ||
+      photoUrlsFromAi.length ||
+      (singleAiImage ? 1 : 0);
+
+    const hasPdf = !!homeownerFiles.hasPdf || !!homeownerFiles.pdfUrl || !!project?.planPdfUrl;
+
+    return { photoCount, hasPdf };
   };
 
   return (
@@ -334,11 +369,14 @@ export default function GCDashboardScreen() {
                   No Active Projects
                 </Text>
                 <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Projects you've reviewed and been paid for will appear here
+                  Projects you have reviewed and been paid for will appear here
                 </Text>
               </View>
             ) : (
             activeProjects.map((project) => (
+              (() => {
+                const fileSummary = getHomeownerFileSummary(project);
+                return (
               <TouchableOpacity
                 key={project.id}
                 onPress={() => {
@@ -395,6 +433,21 @@ export default function GCDashboardScreen() {
                     </View>
                   </View>
                     )}
+
+                    <View className="flex-row items-center mb-3 flex-wrap">
+                      <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
+                        <Camera size={12} color="#60A5FA" strokeWidth={2} />
+                        <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {fileSummary.photoCount} photo{fileSummary.photoCount === 1 ? '' : 's'}
+                        </Text>
+                      </View>
+                      <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
+                        <FileText size={12} color="#60A5FA" strokeWidth={2} />
+                        <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {fileSummary.hasPdf ? 'PDF available' : 'No PDF'}
+                        </Text>
+                      </View>
+                    </View>
                   
                   <View className="mb-3">
                     <View className="flex-row justify-between mb-1">
@@ -423,6 +476,8 @@ export default function GCDashboardScreen() {
                   </View>
                 </View>
               </TouchableOpacity>
+                );
+              })()
             ))
             )
           ) : loadingUnpaid ? (
@@ -439,11 +494,14 @@ export default function GCDashboardScreen() {
                 No Unpaid Projects
               </Text>
               <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Projects you've reviewed but haven't been paid for will appear here
+                Projects you have reviewed but have not been paid for will appear here
               </Text>
             </View>
           ) : (
             unpaidProjects.map((project) => (
+              (() => {
+                const fileSummary = getHomeownerFileSummary(project);
+                return (
               <TouchableOpacity
                 key={project.id}
                 onPress={() => handleUnpaidProjectPress(project)}
@@ -467,6 +525,21 @@ export default function GCDashboardScreen() {
                     {project.address}
                 </Text>
 
+                <View className="flex-row items-center mb-3 flex-wrap">
+                  <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
+                    <Camera size={12} color="#60A5FA" strokeWidth={2} />
+                    <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {fileSummary.photoCount} photo{fileSummary.photoCount === 1 ? '' : 's'}
+                    </Text>
+                  </View>
+                  <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
+                    <FileText size={12} color="#60A5FA" strokeWidth={2} />
+                    <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {fileSummary.hasPdf ? 'PDF available' : 'No PDF'}
+                    </Text>
+                  </View>
+                </View>
+
                 <View className="flex-row justify-between items-center">
                   <View>
                     <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
@@ -482,6 +555,8 @@ export default function GCDashboardScreen() {
                   </View>
                 </View>
               </TouchableOpacity> 
+                );
+              })()
             )) 
           )} 
         </View>
@@ -505,7 +580,7 @@ export default function GCDashboardScreen() {
                 Project Dashboard Unavailable
               </Text>
               <Text className="text-gray-300 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                The project dashboard for "{selectedUnpaidProject?.name || 'this project'}" cannot be accessed at this time.
+                The project dashboard for &quot;{selectedUnpaidProject?.name || 'this project'}&quot; cannot be accessed at this time.
               </Text>
             </View>
 
@@ -517,7 +592,7 @@ export default function GCDashboardScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    The homeowner has not yet paid 100% of the project fees. Once payment is received and the project status becomes active, you'll be able to access the full project dashboard.
+                    The homeowner has not yet paid 100% of the project fees. Once payment is received and the project status becomes active, you will be able to access the full project dashboard.
                   </Text>
                 </View>
               </View>

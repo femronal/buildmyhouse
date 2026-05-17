@@ -76,6 +76,11 @@ function getPlanTypeTagClasses(projectTag: UiProjectTag): { container: string; t
   };
 }
 
+function toPercent(value?: number | null): string {
+  const safe = Math.max(0, Math.min(100, Math.round(Number(value || 0))));
+  return `${safe}%`;
+}
+
 export default function HouseSummaryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -1063,13 +1068,13 @@ export default function HouseSummaryScreen() {
               </Text>
               <View className="bg-blue-100 rounded-full px-3 py-1">
                 <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Top {recommendedGCs.length} Matches
+                  Top {recommendedGCs.length} Ranked Matches
                 </Text>
               </View>
             </View>
 
             <Text className="text-gray-500 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Based on your location, project type, and budget. Select 2-3 to send your project request.
+              Strictly filtered by eligibility, then ranked by capability, location, reliability, and budget fit.
             </Text>
 
           {loadingGCs ? (
@@ -1208,6 +1213,42 @@ export default function HouseSummaryScreen() {
                   </Text>
                 </View>
               </View>
+
+              {!!gc.matchBreakdown && (
+                <View className={`mt-3 pt-3 border-t ${isSelected ? 'border-white/20' : 'border-gray-200'}`}>
+                  <View className="flex-row flex-wrap">
+                    <View className={`rounded-full px-3 py-1 mr-2 mb-2 ${isSelected ? 'bg-white/20' : 'bg-blue-50'}`}>
+                      <Text className={`text-xs ${isSelected ? 'text-white' : 'text-blue-700'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Capability {toPercent(gc.matchBreakdown.capabilityFit)}
+                      </Text>
+                    </View>
+                    <View className={`rounded-full px-3 py-1 mr-2 mb-2 ${isSelected ? 'bg-white/20' : 'bg-purple-50'}`}>
+                      <Text className={`text-xs ${isSelected ? 'text-white' : 'text-purple-700'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Geo {toPercent(gc.matchBreakdown.geoFit)}
+                      </Text>
+                    </View>
+                    <View className={`rounded-full px-3 py-1 mr-2 mb-2 ${isSelected ? 'bg-white/20' : 'bg-green-50'}`}>
+                      <Text className={`text-xs ${isSelected ? 'text-white' : 'text-green-700'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Reliability {toPercent(gc.matchBreakdown.qualityReliability)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {!!gc.matchReasons?.length && (
+                <View className={`mt-2 ${isSelected ? '' : ''}`}>
+                  {gc.matchReasons.slice(0, 2).map((reason, reasonIndex) => (
+                    <Text
+                      key={`${gc.id}-reason-${reasonIndex}`}
+                      className={`text-xs mb-1 ${isSelected ? 'text-white/80' : 'text-gray-600'}`}
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                    >
+                      • {reason}
+                    </Text>
+                  ))}
+                </View>
+              )}
             </TouchableOpacity>
             );
           })

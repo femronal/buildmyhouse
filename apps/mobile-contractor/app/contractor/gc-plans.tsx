@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, Edit, Trash2, Plus, Info, Calendar, Edit3, Upload } from "lucide-react-native";
 import { useState, useRef } from "react";
@@ -22,7 +22,7 @@ interface ImageWithLabel {
 type PlanType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 type ApiPlanType = 'homebuilding' | 'renovation' | 'interior_design';
 
-const PLAN_TYPE_OPTIONS: Array<{ value: PlanType; label: string }> = [
+const PLAN_TYPE_OPTIONS: { value: PlanType; label: string }[] = [
   { value: 'repair', label: 'Repair' },
   { value: 'upgrades', label: 'Upgrades' },
   { value: 'renovation', label: 'Renovation' },
@@ -146,7 +146,7 @@ function moneyToCents(value: unknown): number {
 }
 
 function sumConstructionPhaseCents(
-  phases: Array<{ estimatedCost: number }>,
+  phases: { estimatedCost: number }[],
 ): number {
   return phases.reduce((sum, p) => sum + (moneyToCents(p?.estimatedCost) || 0), 0);
 }
@@ -164,7 +164,6 @@ const getImageUrl = (imageUrl: string) => {
 };
 
 function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
-  const router = useRouter();
   const { showAlert } = useAppAlert();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
@@ -183,12 +182,12 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const [rooms, setRooms] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>([]);
   const [features, setFeatures] = useState<string[]>([]);
-  const [constructionPhases, setConstructionPhases] = useState<Array<{
+  const [constructionPhases, setConstructionPhases] = useState<{
     name: string;
     description: string;
     estimatedDuration: string;
     estimatedCost: number;
-  }>>([]);
+  }[]>([]);
   const [images, setImages] = useState<ImageWithLabel[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
@@ -1034,12 +1033,12 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   const [rooms, setRooms] = useState<string[]>(Array.isArray(design.rooms) ? design.rooms : (design.rooms ? design.rooms.split(',').map((r: string) => r.trim()).filter((r: string) => r) : []));
   const [materials, setMaterials] = useState<string[]>(Array.isArray(design.materials) ? design.materials : (design.materials ? design.materials.split(',').map((m: string) => m.trim()).filter((m: string) => m) : []));
   const [features, setFeatures] = useState<string[]>(Array.isArray(design.features) ? design.features : (design.features ? design.features.split(',').map((f: string) => f.trim()).filter((f: string) => f) : []));
-  const [constructionPhases, setConstructionPhases] = useState<Array<{
+  const [constructionPhases, setConstructionPhases] = useState<{
     name: string;
     description: string;
     estimatedDuration: string;
     estimatedCost: number;
-  }>>(() => {
+  }[]>(() => {
     if (!design.constructionPhases) return [];
     try {
       const phases = typeof design.constructionPhases === 'string' 
@@ -1833,7 +1832,6 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
 
 export default function GCPlansScreen() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { showAlert } = useAppAlert();
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [editingDesign, setEditingDesign] = useState<any | null>(null);
@@ -1972,7 +1970,7 @@ export default function GCPlansScreen() {
             </Text>
             <Text className="text-blue-200 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
               Your design plans can be purchased by homeowners who are interested in them. Once purchased, 
-              homeowners can either build using our app's construction management system or build outside of the app.
+              homeowners can either build using our app&apos;s construction management system or build outside of the app.
             </Text>
           </View>
         </View>
@@ -2181,7 +2179,7 @@ export default function GCPlansScreen() {
                 Delete Design Plan?
               </Text>
               <Text className="text-gray-300 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete "{designToDelete?.name}"? This action cannot be undone and will permanently remove it from both your plans page and the Explore page.
+                Are you sure you want to delete &quot;{designToDelete?.name}&quot;? This action cannot be undone and will permanently remove it from both your plans page and the Explore page.
               </Text>
             </View>
 

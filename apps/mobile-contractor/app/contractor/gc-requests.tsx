@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, ChevronRight, FileText, MapPin, Calendar } from "lucide-react-native";
+import { ArrowLeft, ChevronRight, FileText, MapPin, Calendar, Image as ImageIcon } from "lucide-react-native";
 import { usePendingRequests } from "../../hooks/useGC";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
@@ -76,6 +76,15 @@ export default function GCRequestsScreen() {
               </View>
             ) : (
               pendingRequests.map((req: any) => (
+              (() => {
+                const photoCount =
+                  Number(req?.project?.homeownerFiles?.totalPhotos || 0) ||
+                  (Array.isArray(req?.project?.homeownerFiles?.photoUrls)
+                    ? req.project.homeownerFiles.photoUrls.length
+                    : 0);
+                const hasPdf =
+                  !!req?.project?.homeownerFiles?.hasPdf || !!req?.project?.planPdfUrl;
+                return (
                 <TouchableOpacity
                   key={req.id}
                   onPress={() => router.push(`/contractor/gc-request-detail?id=${req.id}`)}
@@ -109,7 +118,7 @@ export default function GCRequestsScreen() {
                           Budget: {typeof req.estimatedBudget === "number" ? `₦${req.estimatedBudget.toLocaleString()}` : "—"}
                         </Text>
                       </View>
-                      {req.project?.planPdfUrl ? (
+                      {hasPdf ? (
                         <View className="flex-row items-center mt-2">
                           <FileText size={14} color="#3B82F6" strokeWidth={2} />
                           <Text className="text-blue-300 text-sm ml-2" style={{ fontFamily: "Poppins_600SemiBold" }}>
@@ -117,10 +126,20 @@ export default function GCRequestsScreen() {
                           </Text>
                         </View>
                       ) : null}
+                      {photoCount > 0 ? (
+                        <View className="flex-row items-center mt-2">
+                          <ImageIcon size={14} color="#60A5FA" strokeWidth={2} />
+                          <Text className="text-blue-300 text-sm ml-2" style={{ fontFamily: "Poppins_600SemiBold" }}>
+                            {photoCount} homeowner photo{photoCount === 1 ? "" : "s"}
+                          </Text>
+                        </View>
+                      ) : null}
                     </View>
                     <ChevronRight size={22} color="#6B7280" strokeWidth={2} />
                   </View>
                 </TouchableOpacity>
+                );
+              })()
               ))
             )}
           </View>

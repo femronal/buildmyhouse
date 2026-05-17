@@ -5,7 +5,7 @@ import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function PrivacySettingsScreen() {
   const router = useRouter();
-  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+  const { horizontalPad, scrollBottomPadding } =
     useResponsivePadding("stack");
 
   return (

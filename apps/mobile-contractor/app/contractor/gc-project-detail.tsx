@@ -1,69 +1,31 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, Linking, ActivityIndicator, Modal, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Alert, Linking, ActivityIndicator, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { 
   ArrowLeft, 
   MapPin, 
-  Calendar, 
-  Camera, 
+  Calendar,
   CheckCircle, 
   Clock, 
   MessageCircle,
   ChevronRight,
-  Plus,
   AlertCircle,
   FileText,
   Phone,
   X,
   Home,
   Lock,
-  Star
+  Star,
+  Image as ImageIcon
 } from "lucide-react-native";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useProject, useUpdateStageStatus } from "@/hooks/useProjects";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
-
-// Helper to get project image
-const getProjectImage = (project: any) => {
-  let aiAnalysis = project?.aiAnalysis;
-  if (typeof aiAnalysis === 'string') {
-    try {
-      aiAnalysis = JSON.parse(aiAnalysis);
-    } catch {
-      aiAnalysis = null;
-    }
-  }
-
-  const acceptedReq = (project?.projectRequests || []).find((r: any) => r?.status === 'accepted');
-  const parsedFromAcceptedNotes = (() => {
-    const notes = acceptedReq?.gcNotes;
-    if (!notes || typeof notes !== 'string') return null;
-    const match = notes.match(/\{[\s\S]*\}$/);
-    if (!match) return null;
-    try {
-      const parsed = JSON.parse(match[0]);
-      return parsed?.projectImageUrl || parsed?.planImageUrl || null;
-    } catch {
-      return null;
-    }
-  })();
-
-  const coverFromAnalysis =
-    aiAnalysis?.projectImageUrl ||
-    aiAnalysis?.planImageUrl ||
-    project?.projectImageUrl ||
-    project?.planImageUrl ||
-    parsedFromAcceptedNotes;
-  if (coverFromAnalysis) {
-    return getBackendAssetUrl(coverFromAnalysis) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80";
-  }
-  return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800&q=80";
-};
 
 // Format date helper
 const formatDate = (dateString?: string) => {
@@ -88,7 +50,6 @@ export default function GCProjectDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const projectId = id as string;
-  const queryClient = useQueryClient();
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [selectedStage, setSelectedStage] = useState<any>(null);
   const [confirmations, setConfirmations] = useState({
@@ -124,23 +85,17 @@ export default function GCProjectDetailScreen() {
   // Reviews/marketplace removed for MVP
   const projectReview = null;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return { bg: 'bg-green-600/20', text: 'text-green-400', icon: '#10B981' };
-      case 'in_progress': return { bg: 'bg-blue-600/20', text: 'text-blue-400', icon: '#3B82F6' };
-      default: return { bg: 'bg-gray-600/20', text: 'text-gray-400', icon: '#6B7280' };
-    }
-  };
-
   const handleDownloadPDF = async () => {
-    if (!project?.planPdfUrl) {
+    const rawProjectPdfUrl =
+      (project as any)?.homeownerFiles?.pdfUrl || project?.planPdfUrl;
+    if (!rawProjectPdfUrl) {
       Alert.alert('No Plan Available', 'The project plan PDF is not available.');
       return;
     }
 
     try {
       const result = await api.get(`/plans/${projectId}/download-url`);
-      const rawUrl = result?.url || project.planPdfUrl;
+      const rawUrl = result?.url || rawProjectPdfUrl;
       const pdfUrl = getBackendAssetUrl(rawUrl);
       const supported = await Linking.canOpenURL(pdfUrl);
       if (supported) {
@@ -152,7 +107,7 @@ export default function GCProjectDetailScreen() {
       console.error('Error opening PDF:', error);
       // Fallback to direct URL for older projects/environments.
       try {
-        const fallbackUrl = getBackendAssetUrl(project.planPdfUrl);
+        const fallbackUrl = getBackendAssetUrl(rawProjectPdfUrl);
         const supported = await Linking.canOpenURL(fallbackUrl);
         if (supported) {
           await Linking.openURL(fallbackUrl);
@@ -195,12 +150,6 @@ export default function GCProjectDetailScreen() {
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to start stage. Please try again.');
     }
-  };
-
-  const handleCompleteStage = (stage: any) => {
-    setSelectedStage(stage);
-    setConfirmations({ stageComplete: false, evidenceProvided: false });
-    setShowCompleteModal(true);
   };
 
   const handleConfirmComplete = async () => {
@@ -327,9 +276,60 @@ export default function GCProjectDetailScreen() {
   const stages = project.stages || [];
   const homeowner = project.homeowner;
   const homeownerInitials = getInitials(homeowner?.fullName || 'Homeowner');
+  const homeownerPhotoUrls = (() => {
+    const normalizedFromHomeownerFiles = Array.isArray((project as any)?.homeownerFiles?.photoUrls)
+      ? (project as any).homeownerFiles.photoUrls
+      : Array.isArray((project as any)?.homeownerFiles?.photos)
+        ? (project as any).homeownerFiles.photos
+            .map((photo: any) => String(photo?.url || '').trim())
+            .filter(Boolean)
+        : [];
+    if (normalizedFromHomeownerFiles.length > 0) {
+      return normalizedFromHomeownerFiles;
+    }
+
+    let aiAnalysis = (project as any)?.aiAnalysis;
+    if (typeof aiAnalysis === 'string') {
+      try {
+        aiAnalysis = JSON.parse(aiAnalysis);
+      } catch {
+        aiAnalysis = null;
+      }
+    }
+    const aiImages = Array.isArray(aiAnalysis?.projectImageUrls)
+      ? aiAnalysis.projectImageUrls.map((url: any) => String(url || '').trim()).filter(Boolean)
+      : [];
+    if (aiImages.length > 0) {
+      return aiImages;
+    }
+    const singleImage = String(aiAnalysis?.projectImageUrl || '').trim();
+    return singleImage ? [singleImage] : [];
+  })();
+  const homeownerPdfFileName =
+    (project as any)?.homeownerFiles?.pdfFileName ||
+    project?.planFileName ||
+    'plan.pdf';
   
   // Check if project is complete (all stages completed)
   const isProjectComplete = stages.length > 0 && stages.every((stage: any) => stage.status === 'completed');
+
+  const handleOpenPhoto = async (rawUrl?: string | null) => {
+    const normalized = getBackendAssetUrl(rawUrl);
+    if (!normalized) {
+      Alert.alert('Photo Not Available', 'This project photo is not available right now.');
+      return;
+    }
+    try {
+      const canOpen = await Linking.canOpenURL(normalized);
+      if (!canOpen) {
+        Alert.alert('Unable to Open', 'Unable to open this photo on your device.');
+        return;
+      }
+      await Linking.openURL(normalized);
+    } catch {
+      Alert.alert('Unable to Open', 'Unable to open this photo on your device.');
+    }
+  };
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -410,6 +410,76 @@ export default function GCProjectDetailScreen() {
               <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>Contact</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Homeowner Files */}
+        <View className="bg-[#1E3A5F] rounded-xl p-4 mb-6 border border-blue-900">
+          <Text className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Homeowner Reference Files
+          </Text>
+          <View className="flex-row flex-wrap mb-3">
+            <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2">
+              <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Photos: {homeownerPhotoUrls.length}
+              </Text>
+            </View>
+            <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2">
+              <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                PDF: {((project as any)?.homeownerFiles?.hasPdf || !!project?.planPdfUrl) ? 'Available' : 'Not provided'}
+              </Text>
+            </View>
+          </View>
+
+          {((project as any)?.homeownerFiles?.hasPdf || !!project?.planPdfUrl) && (
+            <TouchableOpacity
+              onPress={handleDownloadPDF}
+              className="bg-blue-600 rounded-lg px-4 py-3 flex-row items-center justify-center mb-4"
+            >
+              <FileText size={16} color="#FFFFFF" strokeWidth={2} />
+              <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Open Plan PDF ({homeownerPdfFileName})
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {homeownerPhotoUrls.length > 0 ? (
+            <>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {homeownerPhotoUrls.map((url: string, index: number) => {
+                  const assetUrl = getBackendAssetUrl(url);
+                  return (
+                    <TouchableOpacity
+                      key={`${url}-${index}`}
+                      onPress={() => handleOpenPhoto(assetUrl)}
+                      className="mr-3"
+                      activeOpacity={0.85}
+                    >
+                      <View className="w-28 h-28 rounded-xl overflow-hidden bg-[#0A1628] border border-blue-900">
+                        <Image source={{ uri: assetUrl }} className="w-full h-full" resizeMode="cover" />
+                      </View>
+                      <Text
+                        className="text-gray-400 text-xs mt-1 max-w-[112px]"
+                        style={{ fontFamily: 'Poppins_400Regular' }}
+                        numberOfLines={1}
+                      >
+                        Photo {index + 1}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <Text className="text-gray-500 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Tap a photo to open full-size.
+              </Text>
+            </>
+          ) : (
+            <View className="bg-[#0A1628] rounded-lg px-4 py-3 border border-blue-900 flex-row items-center">
+              <ImageIcon size={16} color="#6B7280" strokeWidth={2} />
+              <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                No homeowner photos uploaded.
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Stats Row */}
@@ -594,7 +664,7 @@ export default function GCProjectDetailScreen() {
                   className="text-white text-lg ml-2"
                   style={{ fontFamily: 'Poppins_700Bold' }}
                 >
-                  Homeowner's Rating
+                  Homeowner&apos;s Rating
                 </Text>
               </View>
               
@@ -624,7 +694,7 @@ export default function GCProjectDetailScreen() {
                     className="text-gray-300 text-sm"
                     style={{ fontFamily: 'Poppins_400Regular' }}
                   >
-                    "{projectReview.comment}"
+                    &quot;{projectReview.comment}&quot;
                   </Text>
                   {projectReview.user && (
                     <Text 

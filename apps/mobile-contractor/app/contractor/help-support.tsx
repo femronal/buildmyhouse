@@ -6,7 +6,7 @@ import { useResponsivePadding } from "@/lib/responsive-layout";
 
 export default function HelpSupportScreen() {
   const router = useRouter();
-  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+  const { horizontalPad, scrollBottomPadding } =
     useResponsivePadding("stack");
 
   const Item = ({

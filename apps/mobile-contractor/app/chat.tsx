@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, FileText, Image as ImageIcon, Play, Home } from "lucide-react-native";
+import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, FileText, Play, Home } from "lucide-react-native";
 import { useState } from "react";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 

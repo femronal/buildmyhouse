@@ -39,7 +39,6 @@ function getNotificationLink(item: NotificationItem): string | null {
   const projectId = data.projectId as string | undefined;
   const stageId = data.stageId as string | undefined;
   const disputeId = data.disputeId as string | undefined;
-  const conversationId = data.conversationId as string | undefined;
   const requestId = data.requestId as string | undefined;
 
   // Chat/message → chat list (user finds conversation)
@@ -93,7 +92,7 @@ function categorizeNotification(item: NotificationItem): "payment" | "project" |
 
 export default function GCNotificationsScreen() {
   const router = useRouter();
-  const { data, isLoading, error } = useNotifications();
+  const { data, isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
@@ -101,7 +100,7 @@ export default function GCNotificationsScreen() {
 
   const [activeFilter, setActiveFilter] = useState<string>("all");
 
-  const items: NotificationItem[] = data?.items ?? [];
+  const items = useMemo<NotificationItem[]>(() => data?.items ?? [], [data?.items]);
   const unreadCount = data?.unreadCount ?? 0;
 
   const notificationTypes = useMemo(() => {
@@ -227,7 +226,7 @@ export default function GCNotificationsScreen() {
                 No Notifications
               </Text>
               <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: "Poppins_400Regular" }}>
-                You're all caught up! New notifications will appear here.
+                You are all caught up! New notifications will appear here.
               </Text>
             </View>
           ) : (
