@@ -1,8 +1,8 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, Star, File, Video, Image as ImageIcon, Music, ChevronRight, Home, Phone, Download, Lock, CreditCard, Clock, AlertTriangle, Check } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Phone, Download, Lock, CreditCard, Clock, AlertTriangle, Check } from "lucide-react-native";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
 import { projectService } from '@/services/projectService';
 import { getBackendAssetUrl } from '@/lib/image';

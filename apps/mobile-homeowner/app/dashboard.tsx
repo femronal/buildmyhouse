@@ -1,13 +1,13 @@
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput, Alert, Modal, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Calendar, ChevronRight, FileText, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
+import { MessageCircle, Calendar, ChevronRight, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import { useProjectAnalysis } from "@/hooks/usePlan";
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from "react";
+import { useQuery } from '@tanstack/react-query';
+import { useMemo } from "react";
 import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
@@ -23,10 +23,8 @@ export default function DashboardScreen() {
   const projectId = params.projectId as string;
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId || '');
-  const { data: analysisData, isLoading: analysisLoading } = useProjectAnalysis(projectId || null);
+  const { data: analysisData } = useProjectAnalysis(projectId || null);
   const { data: currentUser } = useCurrentUser();
-  const queryClient = useQueryClient();
-  
   // Get GC info for chat
   const gcId = (project as any)?.generalContractorId || (project as any)?.generalContractor?.id;
   

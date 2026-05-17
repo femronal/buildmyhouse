@@ -22,6 +22,7 @@ import {
   JetBrainsMono_500Medium,
 } from '@expo-google-fonts/jetbrains-mono';
 import { InvestmentProvider } from '@/contexts/InvestmentContext';
+// eslint-disable-next-line import/no-unresolved
 import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';

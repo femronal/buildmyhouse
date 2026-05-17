@@ -71,7 +71,7 @@ type LeadMagnetDownloadPageContent = {
   };
   whatsInside: {
     title: string;
-    sections: Array<{ heading: string; text: string }>;
+    sections: { heading: string; text: string }[];
   };
   whyThisMatters: {
     title: string;
@@ -97,7 +97,7 @@ type LeadMagnetDownloadPageContent = {
   };
   faq: {
     title: string;
-    items: Array<{ question: string; answer: string }>;
+    items: { question: string; answer: string }[];
   };
   faqSchema: Record<string, any>;
 };
@@ -332,7 +332,7 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
             </SeoHeading>
           </View>
           <Text className="text-white text-base leading-7 italic" style={{ fontFamily: 'Poppins_500Medium' }}>
-            "{content.previewCallout.quote}"
+            &quot;{content.previewCallout.quote}&quot;
           </Text>
         </View>
 

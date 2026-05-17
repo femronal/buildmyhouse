@@ -10,7 +10,7 @@ import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 // Simple web version without maps (maps don't work on web)
 export default function LocationScreenWeb() {
   const router = useRouter();
-  const { mode } = useLocalSearchParams();
+  useLocalSearchParams();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);

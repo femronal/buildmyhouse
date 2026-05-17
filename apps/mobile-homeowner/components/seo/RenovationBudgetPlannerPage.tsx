@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Image, Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AlertTriangle, ArrowLeft, CheckCircle2, Hammer, Home, Paintbrush2, Wrench } from 'lucide-react-native';
+import { AlertTriangle, ArrowLeft, CheckCircle2, Hammer } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -87,16 +87,6 @@ function escapeHtml(value: string) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
-}
-
-function spaceIcon(space: SpaceName) {
-  const normalized = space.toLowerCase();
-  if (normalized.includes('kitchen') || normalized.includes('bathroom')) return Home;
-  if (normalized.includes('roof') || normalized.includes('electrical') || normalized.includes('plumbing')) {
-    return Wrench;
-  }
-  if (normalized.includes('exterior') || normalized.includes('compound')) return Hammer;
-  return Paintbrush2;
 }
 
 function SelectField<T extends string>({

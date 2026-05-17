@@ -12,7 +12,7 @@ export interface UploadPlanData {
   longitude?: number;
   budget: number;
   projectType: 'homebuilding' | 'renovation' | 'interior_design';
-  planImageUrl: string;
+  planImageUrl?: string;
   planImageUrls?: string[];
   projectTypeTag?: string;
   projectTypeFilter?: string;
@@ -83,7 +83,9 @@ export const planService = {
     }
     formData.append('budget', planData.budget.toString());
     formData.append('projectType', planData.projectType);
-    formData.append('planImageUrl', planData.planImageUrl);
+    if (planData.planImageUrl) {
+      formData.append('planImageUrl', planData.planImageUrl);
+    }
     if (planData.planImageUrls?.length) {
       planData.planImageUrls.forEach((url) => formData.append('planImageUrls', url));
     }

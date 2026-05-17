@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, ActivityIndicator, Image, Platform, useWindowDimensions } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Animated, Alert, ScrollView, Image, Platform, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, FileText, Upload, Home, X, CheckCircle, AlertCircle } from "lucide-react-native";
 import { useState, useRef, useEffect, useMemo } from "react";
@@ -74,7 +74,7 @@ export default function UploadPlanScreen() {
         })
       ).start();
     }
-  }, [isProcessing]);
+  }, [isProcessing, rotateAnim]);
 
   const spin = rotateAnim.interpolate({
     inputRange: [0, 1],

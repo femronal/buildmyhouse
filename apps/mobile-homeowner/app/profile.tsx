@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Package, Briefcase, Clock } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Briefcase, Clock } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';

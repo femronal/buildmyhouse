@@ -226,6 +226,12 @@ export const projectService = {
     country?: string;
     latitude?: number;
     longitude?: number;
+    planImageUrl?: string;
+    planImageUrls?: string[];
+    planPdfUrl?: string;
+    planFileName?: string;
+    projectDescription?: string;
+    successCriteria?: string;
   }) => {
     try {
       const response = await api.post('/projects/from-design', data);

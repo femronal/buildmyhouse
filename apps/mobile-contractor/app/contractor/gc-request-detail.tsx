@@ -446,6 +446,8 @@ export default function GCRequestDetailScreen() {
     !!req?.project?.homeownerFiles?.hasPdf || !!req?.project?.planPdfUrl;
   const homeownerPdfFileName =
     req?.project?.homeownerFiles?.pdfFileName || req?.project?.planFileName || 'plan.pdf';
+  const homeownerProjectBrief = String(aiAnalysis?.homeownerProjectDescription || '').trim();
+  const homeownerSuccessGoal = String(aiAnalysis?.successCriteria || '').trim();
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -502,6 +504,34 @@ export default function GCRequestDetailScreen() {
               </Text>
             </View>
           </View>
+
+          {(homeownerProjectBrief || homeownerSuccessGoal) && (
+            <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
+              <Text className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Homeowner Request Details
+              </Text>
+              {homeownerProjectBrief ? (
+                <View className="mb-3">
+                  <Text className="text-blue-300 text-xs mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Project Brief
+                  </Text>
+                  <Text className="text-gray-300 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {homeownerProjectBrief}
+                  </Text>
+                </View>
+              ) : null}
+              {homeownerSuccessGoal ? (
+                <View>
+                  <Text className="text-blue-300 text-xs mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Success Goal
+                  </Text>
+                  <Text className="text-gray-300 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {homeownerSuccessGoal}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+          )}
 
           {/* Plan PDF Section */}
           {homeownerHasPdf && (

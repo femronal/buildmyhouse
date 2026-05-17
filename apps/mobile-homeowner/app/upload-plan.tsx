@@ -398,7 +398,6 @@ export default function UploadPlanScreen() {
       parseFloat(budget) > 0 &&
       !!selectedProjectType &&
       !!selectedProjectFilter.trim() &&
-      selectedPlanPhotos.length > 0 &&
       !!projectDescription.trim() &&
       !!successCriteria.trim() &&
       !!address
@@ -408,7 +407,6 @@ export default function UploadPlanScreen() {
     budget,
     projectDescription,
     projectName,
-    selectedPlanPhotos.length,
     selectedProjectFilter,
     selectedProjectType,
     successCriteria,
@@ -441,11 +439,6 @@ export default function UploadPlanScreen() {
 
     if (!selectedProjectFilter.trim()) {
       Alert.alert('Project Focus Required', 'Please choose or enter a project sub-filter');
-      return;
-    }
-
-    if (selectedPlanPhotos.length === 0) {
-      Alert.alert('Photos Required', 'Please upload at least one project photo');
       return;
     }
 
@@ -489,10 +482,6 @@ export default function UploadPlanScreen() {
       for (const photo of selectedPlanPhotos) {
         const photoUrl = await uploadPlanImage(photo);
         uploadedPhotoUrls.push(photoUrl);
-      }
-
-      if (!uploadedPhotoUrls.length) {
-        throw new Error('No photo URL was returned. Please retry.');
       }
 
       const uploadData = {
@@ -544,7 +533,7 @@ export default function UploadPlanScreen() {
           projectTypeFilter: selectedProjectFilter.trim(),
           projectDescription: projectDescription.trim(),
           successCriteria: successCriteria.trim(),
-          planImageUrl: uploadedPhotoUrls[0],
+          planImageUrl: uploadedPhotoUrls[0] || '',
           planImageCount: uploadedPhotoUrls.length.toString(),
           pdfName: selectedPdf?.name || '',
         },
@@ -838,7 +827,7 @@ export default function UploadPlanScreen() {
             className="text-sm text-gray-700 mb-2"
             style={{ fontFamily: 'Poppins_500Medium' }}
           >
-            {expectsProblemPhotos ? 'Photos of Problem Areas *' : `Project Photos (${MAX_PLAN_PHOTOS} max) *`}
+            {expectsProblemPhotos ? 'Photos of Problem Areas (Optional)' : `Project Photos (${MAX_PLAN_PHOTOS} max, optional)`}
           </Text>
 
           <TouchableOpacity

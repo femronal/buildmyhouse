@@ -1,28 +1,34 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, Keyboard, Platform, TextInput, Image } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Calendar, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
+import { ArrowLeft, Home, Bed, Bath, Maximize, ChevronDown, ChevronUp, Star, HardHat, Send, CheckCircle, Clock, AlertCircle, MapPin, Search, X } from "lucide-react-native";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useQueryClient } from '@tanstack/react-query';
+import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 import { reverseGeocode, AddressDetails } from '@/services/addressService';
+import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater, useDesign, useCreateProjectFromDesign } from '@/hooks';
+import { useProjectAnalysis } from '@/hooks/usePlan';
+import { useCreatePaymentIntent } from '@/hooks/usePayment';
+import PaymentModal from '@/components/PaymentModal';
+import { getBackendAssetUrl } from '@/lib/image';
+import { api } from '@/lib/api';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
 if (Platform.OS !== 'web') {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const GPA = require('react-native-google-places-autocomplete');
     GooglePlacesAutocomplete = GPA.default || GPA.GooglePlacesAutocomplete;
   } catch (e) {
     console.warn('GooglePlacesAutocomplete not available:', e);
   }
 }
-import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater, useDesign, useCreateProjectFromDesign } from '@/hooks';
-import { useProjectAnalysis } from '@/hooks/usePlan';
-import { useCreatePaymentIntent } from '@/hooks/usePayment';
-import PaymentModal from '@/components/PaymentModal';
-import { getBackendAssetUrl } from '@/lib/image';
 
 type UiProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+const MAX_MODAL_PHOTOS = 5;
 
 function resolveUiProjectTag(params: {
   projectTypeTag?: string | null;
@@ -81,6 +87,27 @@ function toPercent(value?: number | null): string {
   return `${safe}%`;
 }
 
+function getExtensionFromName(name?: string | null) {
+  if (!name) return '';
+  const clean = name.split('?')[0];
+  const dot = clean.lastIndexOf('.');
+  if (dot < 0) return '';
+  return clean.slice(dot + 1).toLowerCase();
+}
+
+function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
+  const ext = getExtensionFromName(asset?.fileName || asset?.name || asset?.uri);
+  const mime = String(asset?.mimeType || '').toLowerCase();
+  const safeExt = ext || (mime.startsWith('image/') ? mime.replace('image/', '') : 'jpg');
+  const normalizedExt = safeExt || 'jpg';
+  const fileName =
+    asset?.fileName ||
+    asset?.name ||
+    `${fallbackBase}-${Date.now()}.${normalizedExt}`;
+  const mimeType = mime || `image/${normalizedExt === 'jpg' ? 'jpeg' : normalizedExt}`;
+  return { fileName, mimeType };
+}
+
 export default function HouseSummaryScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -99,6 +126,11 @@ export default function HouseSummaryScreen() {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
+  const [requestPhotos, setRequestPhotos] = useState<any[]>([]);
+  const [requestPdf, setRequestPdf] = useState<any | null>(null);
+  const [requestDescription, setRequestDescription] = useState("");
+  const [requestSuccessGoal, setRequestSuccessGoal] = useState("");
+  const [requestPhotoError, setRequestPhotoError] = useState<string | null>(null);
   const autocompleteRef = useRef<any>(null);
 
   // Check if this is a design selection flow (designId present) or project flow (projectId present)
@@ -136,7 +168,7 @@ export default function HouseSummaryScreen() {
       phases: (() => {
         if (!designData.constructionPhases) return [];
         
-        let phasesData = designData.constructionPhases;
+        let phasesData: any = designData.constructionPhases;
         
         // If it's a string, try to parse it
         if (typeof phasesData === 'string') {
@@ -149,8 +181,8 @@ export default function HouseSummaryScreen() {
         
         // If it's an object with construction_phases property, extract it
         if (phasesData && typeof phasesData === 'object' && !Array.isArray(phasesData)) {
-          if ('construction_phases' in phasesData && Array.isArray(phasesData.construction_phases)) {
-            phasesData = phasesData.construction_phases;
+          if ('construction_phases' in (phasesData as any) && Array.isArray((phasesData as any).construction_phases)) {
+            phasesData = (phasesData as any).construction_phases;
           } else {
             return [];
           }
@@ -175,14 +207,13 @@ export default function HouseSummaryScreen() {
   }, [designData]);
 
   // Fetch real project analysis - refetch when GC accepts (only for project flow)
-  const { data: projectAnalysisData, isLoading: loadingAnalysis, error: analysisError, isFetching: fetchingAnalysis, refetch: refetchAnalysis } = useProjectAnalysis(isDesignSelection ? null : projectId);
+  const { data: projectAnalysisData, isLoading: loadingAnalysis, refetch: refetchAnalysis } = useProjectAnalysis(isDesignSelection ? null : projectId);
   // Backend returns project with aiAnalysis nested inside
   const originalAiAnalysis = projectAnalysisData?.aiAnalysis || null;
   
   // Get accepted GC's edited analysis from project request
   // Only get requests with status 'accepted'
   const acceptedRequest = projectAnalysisData?.projectRequests?.find((req: any) => req.status === 'accepted');
-  const pendingRequests = projectAnalysisData?.projectRequests?.filter((req: any) => req.status === 'pending') || [];
   let gcEditedAnalysis: any = null;
   let acceptedGC: any = null;
   
@@ -206,7 +237,7 @@ export default function HouseSummaryScreen() {
         if (jsonString) {
           gcEditedAnalysis = JSON.parse(jsonString);
         }
-      } catch (error) {
+      } catch {
         // Silently fail - use original analysis if parsing fails
       }
     }
@@ -351,6 +382,151 @@ export default function HouseSummaryScreen() {
     setSelectedGCs(newSelected);
   };
 
+  const validateOneSentence = useCallback((value: string) => {
+    const sentenceCount = value
+      .trim()
+      .split(/[.!?]+/)
+      .map((part) => part.trim())
+      .filter(Boolean).length;
+    return sentenceCount <= 1;
+  }, []);
+
+  const uploadRequestImage = useCallback(async (asset: any) => {
+    const prepared = await ensureImageWithinUploadLimit(asset);
+    if (prepared.exceedsLimit) {
+      throw new Error('One of the selected images is still too large after optimization.');
+    }
+    const preparedAsset = prepared.asset;
+    const formData = new FormData();
+    const { fileName, mimeType } = normalizeImageAssetMeta(preparedAsset, 'design-request-photo');
+    if (Platform.OS === 'web') {
+      const res = await fetch(preparedAsset.uri);
+      const blob = await res.blob();
+      formData.append('file', blob, fileName);
+    } else {
+      formData.append('file', {
+        uri: preparedAsset.uri,
+        name: fileName,
+        type: mimeType,
+      } as any);
+    }
+    const uploadRes = await api.post('/upload/image', formData);
+    const imageUrl = String(uploadRes?.url || '').trim();
+    if (!imageUrl) {
+      throw new Error('Image upload succeeded but no URL was returned.');
+    }
+    return imageUrl;
+  }, []);
+
+  const uploadRequestPdf = useCallback(async (pdfFile: any) => {
+    if (!pdfFile) return null;
+    const formData = new FormData();
+    if (Platform.OS === 'web') {
+      const response = await fetch(pdfFile.uri);
+      const blob = await response.blob();
+      formData.append('file', blob, pdfFile.name || 'request-plan.pdf');
+    } else {
+      formData.append('file', {
+        uri: pdfFile.uri,
+        name: pdfFile.name || `request-plan-${Date.now()}.pdf`,
+        type: pdfFile.mimeType || 'application/pdf',
+      } as any);
+    }
+    const uploadRes = await api.post('/upload/document', formData);
+    const pdfUrl = String(uploadRes?.url || '').trim();
+    if (!pdfUrl) return null;
+    return {
+      url: pdfUrl,
+      name: String(pdfFile.name || uploadRes?.filename || 'request-plan.pdf').trim(),
+    };
+  }, []);
+
+  const handlePickRequestPdf = useCallback(async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/pdf',
+        copyToCacheDirectory: true,
+      });
+      if (!result.canceled && result.assets?.length) {
+        setRequestPdf(result.assets[0]);
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to select PDF file.');
+    }
+  }, []);
+
+  const handlePickRequestPhotos = useCallback(async () => {
+    try {
+      setRequestPhotoError(null);
+      const remainingSlots = MAX_MODAL_PHOTOS - requestPhotos.length;
+      if (remainingSlots <= 0) {
+        Alert.alert('Limit reached', `You can upload up to ${MAX_MODAL_PHOTOS} photos.`);
+        return;
+      }
+
+      if (Platform.OS === 'web') {
+        const result = await DocumentPicker.getDocumentAsync({
+          type: '*/*',
+          copyToCacheDirectory: true,
+          multiple: true,
+        });
+        if (result.canceled || !result.assets?.length) return;
+
+        const images = result.assets.filter((asset: any) =>
+          String(asset?.mimeType || '').toLowerCase().startsWith('image/') ||
+          ['jpg', 'jpeg', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif']
+            .includes(getExtensionFromName(asset?.name || asset?.fileName || asset?.uri)),
+        );
+        if (!images.length) {
+          Alert.alert('No images selected', 'Please choose image files.');
+          return;
+        }
+        setRequestPhotos((prev) => [...prev, ...images].slice(0, MAX_MODAL_PHOTOS));
+        return;
+      }
+
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert('Permission required', 'Please allow photo library access to upload request photos.');
+        return;
+      }
+
+      const source = await new Promise<'camera' | 'library' | null>((resolve) => {
+        Alert.alert(
+          'Add project photos',
+          'Choose photo source',
+          [
+            { text: 'Take Photo', onPress: () => resolve('camera') },
+            { text: 'Choose from Library', onPress: () => resolve('library') },
+            { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+          ],
+          { cancelable: true, onDismiss: () => resolve(null) },
+        );
+      });
+      if (!source) return;
+
+      const result =
+        source === 'camera'
+          ? await ImagePicker.launchCameraAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: false,
+              quality: 0.9,
+            })
+          : await ImagePicker.launchImageLibraryAsync({
+              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              allowsEditing: false,
+              quality: 0.9,
+              allowsMultipleSelection: true,
+              selectionLimit: remainingSlots,
+              orderedSelection: true,
+            });
+      if (result.canceled || !result.assets?.length) return;
+      setRequestPhotos((prev) => [...prev, ...result.assets].slice(0, MAX_MODAL_PHOTOS));
+    } catch {
+      Alert.alert('Error', 'Failed to select photos.');
+    }
+  }, [requestPhotos.length]);
+
   const sendGCRequestsMutation = useSendGCRequests();
 
   const handleSendRequests = async () => {
@@ -376,7 +552,7 @@ export default function HouseSummaryScreen() {
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'gc-acceptance'] });
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'analysis'] });
       }, 1000); // Wait 1 second for backend to process
-    } catch (error) {
+    } catch {
       // Error handled by mutation
     } finally {
       setIsSendingRequests(false);
@@ -465,7 +641,7 @@ export default function HouseSummaryScreen() {
         handlePaymentError(errorMessage);
       }
     }
-  }, [projectId, paymentAmount, projectAnalysisData, acceptedRequest, aiAnalysis, gcAcceptanceData, createPaymentIntentMutation, handlePaymentError]);
+  }, [projectId, paymentAmount, projectAnalysisData, acceptedRequest, aiAnalysis, gcAcceptanceData, gcEditedAnalysis, createPaymentIntentMutation, handlePaymentError]);
 
   const handlePaymentSuccess = useCallback(async () => {
     const currentProjectId = projectId;
@@ -547,7 +723,7 @@ export default function HouseSummaryScreen() {
       console.error('Error saving project for later:', error);
       // Error will be handled by mutation
     }
-  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, designGC, designData, designAnalysis, saveProjectForLaterMutation, router, queryClient]);
+  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, saveProjectForLaterMutation, router, queryClient]);
 
   const handleStartBuilding = useCallback(() => {
     // Prevent multiple calls
@@ -582,7 +758,7 @@ export default function HouseSummaryScreen() {
     setPaymentClientSecret('simulated'); // Set a dummy value so modal works
     setIsProcessingPayment(false); // Don't set to true, let modal handle it
     setShowPaymentModal(true);
-  }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis, handleCreatePaymentIntent]);
+  }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis]);
 
   // Show loading state only if we don't have analysis yet AND we're actually loading
   // Don't block rendering if we're just polling in the background
@@ -1260,64 +1436,27 @@ export default function HouseSummaryScreen() {
         {/* For design selection, create project and send request to GC */}
         {isDesignSelection && designGC && gcRequestStatus === 'none' && (
           <TouchableOpacity
-            onPress={async () => {
+            onPress={() => {
               if (!designId) {
                 console.error('❌ [house-summary] No designId found');
                 Alert.alert('Error', 'Design ID is missing. Please try again.');
                 return;
               }
-              
-              try {
-                setIsSendingRequests(true);
-                
-                // Get address from params (passed from explore/design-library)
-                const address = params.address as string;
-                
-                if (!address) {
-                  setIsSendingRequests(false);
-                  setShowAddressModal(true);
-                  return;
-                }
-                
-                const projectData = {
-                  designId,
-                  address,
-                  street: params.street as string,
-                  city: params.city as string,
-                  state: params.state as string,
-                  zipCode: params.zipCode as string,
-                  country: params.country as string,
-                  latitude: params.latitude ? parseFloat(params.latitude as string) : undefined,
-                  longitude: params.longitude ? parseFloat(params.longitude as string) : undefined,
-                };
-                
-                // Create project from design and send request to GC
-                const project = await createProjectFromDesignMutation.mutateAsync(projectData);
-                
-                // Set project ID - status will be updated by polling
-                setProjectId(project.id);
-                // Don't set status here - let the polling check determine it
-                // The status will be set to 'pending' once the checkGCAcceptance hook detects a pending request
-                // Wait a moment for backend to save the request, then invalidate and poll
-                setTimeout(() => {
-                  queryClient.invalidateQueries({ queryKey: ['projects', project.id, 'gc-acceptance'] });
-                  queryClient.invalidateQueries({ queryKey: ['projects', project.id, 'analysis'] });
-                }, 1000); // Wait 1 second for backend to process
-              } catch (error: any) {
-                console.error('❌ [house-summary] Error creating project from design:', error);
-                console.error('❌ [house-summary] Error details:', {
-                  message: error?.message,
-                  response: error?.response,
-                  stack: error?.stack,
+
+              const address = (params.address as string) || '';
+              if (address && !selectedAddress) {
+                setSelectedAddress({
+                  formattedAddress: address,
+                  street: (params.street as string) || address.split(',')[0]?.trim() || '',
+                  city: (params.city as string) || address.split(',')[1]?.trim() || '',
+                  state: (params.state as string) || address.split(',')[2]?.trim() || '',
+                  zipCode: (params.zipCode as string) || '',
+                  country: (params.country as string) || 'Nigeria',
+                  latitude: params.latitude ? parseFloat(params.latitude as string) : 0,
+                  longitude: params.longitude ? parseFloat(params.longitude as string) : 0,
                 });
-                Alert.alert(
-                  'Error',
-                  error?.message || 'Failed to send request to contractor. Please try again.',
-                  [{ text: 'OK' }]
-                );
-              } finally {
-                setIsSendingRequests(false);
               }
+              setShowAddressModal(true);
             }}
             disabled={createProjectFromDesignMutation.isPending || isSendingRequests}
             className={`bg-black rounded-full py-5 px-8 mb-4 ${(createProjectFromDesignMutation.isPending || isSendingRequests) ? 'opacity-50' : ''}`}
@@ -1469,7 +1608,7 @@ export default function HouseSummaryScreen() {
         }}
         amount={paymentAmount}
         projectBudget={projectBudget}
-        projectId={projectId}
+        projectId={projectId || undefined}
         projectName={projectAnalysisData?.name || 'Project'}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}
@@ -1490,10 +1629,10 @@ export default function HouseSummaryScreen() {
             <View className="flex-row items-center justify-between mb-6">
               <View className="flex-1">
                 <Text className="text-2xl text-black mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Enter Project Location
+                  Send Request Details
                 </Text>
                 <Text className="text-sm text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Search for an address where you want to build
+                  Share your location, photos, and project goals with the contractor.
                 </Text>
               </View>
               <TouchableOpacity
@@ -1635,6 +1774,108 @@ export default function HouseSummaryScreen() {
               </View>
             )}
 
+            <ScrollView
+              className="mb-4"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 8 }}
+            >
+              <View className="mb-4">
+                <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Photos of the problem (optional)
+                </Text>
+                <TouchableOpacity
+                  onPress={handlePickRequestPhotos}
+                  className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-300 p-4"
+                >
+                  <Text className="text-black text-sm text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Upload photos ({requestPhotos.length}/{MAX_MODAL_PHOTOS})
+                  </Text>
+                  <Text className="text-gray-500 text-xs mt-1 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    First uploaded photo will be used as project cover.
+                  </Text>
+                </TouchableOpacity>
+                {requestPhotoError ? (
+                  <Text className="text-red-600 text-xs mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {requestPhotoError}
+                  </Text>
+                ) : null}
+                {requestPhotos.length > 0 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mt-3">
+                    {requestPhotos.map((photo, index) => (
+                      <View key={`${photo.uri}-${index}`} className="mr-2">
+                        <Image source={{ uri: photo.uri }} className="w-16 h-16 rounded-lg" resizeMode="cover" />
+                        <TouchableOpacity
+                          onPress={() => {
+                            setRequestPhotos((prev) => prev.filter((_, itemIndex) => itemIndex !== index));
+                            setRequestPhotoError(null);
+                          }}
+                          className="absolute -top-1 -right-1 bg-white rounded-full p-1 border border-gray-200"
+                        >
+                          <X size={12} color="#111827" strokeWidth={2} />
+                        </TouchableOpacity>
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Architectural Plan (PDF, optional)
+                </Text>
+                <TouchableOpacity
+                  onPress={handlePickRequestPdf}
+                  className="bg-gray-50 rounded-2xl border border-gray-300 p-4"
+                >
+                  <Text className="text-black text-sm text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {requestPdf?.name ? requestPdf.name : 'Add PDF'}
+                  </Text>
+                </TouchableOpacity>
+                {requestPdf?.name && (
+                  <TouchableOpacity onPress={() => setRequestPdf(null)} className="mt-2 self-start">
+                    <Text className="text-xs text-gray-500" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      Remove PDF
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Describe your project briefly *
+                </Text>
+                <View className="bg-gray-50 rounded-2xl p-4 border border-gray-300">
+                  <TextInput
+                    value={requestDescription}
+                    onChangeText={setRequestDescription}
+                    placeholder="Example: The washing machine keeps vibrating and leaks under load."
+                    placeholderTextColor="#A3A3A3"
+                    multiline
+                    maxLength={1200}
+                    className="text-black"
+                    style={{ fontFamily: 'Poppins_400Regular', minHeight: 76, textAlignVertical: 'top' }}
+                  />
+                </View>
+              </View>
+
+              <View className="mb-4">
+                <Text className="text-sm text-gray-700 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  One-sentence success goal *
+                </Text>
+                <View className="bg-gray-50 rounded-2xl p-4 border border-gray-300">
+                  <TextInput
+                    value={requestSuccessGoal}
+                    onChangeText={setRequestSuccessGoal}
+                    placeholder="Example: I want this washing machine fixed and stable this week."
+                    placeholderTextColor="#A3A3A3"
+                    maxLength={240}
+                    className="text-black"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  />
+                </View>
+              </View>
+            </ScrollView>
+
             {/* Continue Button */}
             <TouchableOpacity
               onPress={async () => {
@@ -1642,11 +1883,40 @@ export default function HouseSummaryScreen() {
                   Alert.alert('Address Required', 'Please select an address from the search results');
                   return;
                 }
+                if (!requestDescription.trim()) {
+                  Alert.alert('Description Required', 'Please describe your project so the contractor can review it.');
+                  return;
+                }
+                if (!requestSuccessGoal.trim()) {
+                  Alert.alert('Success Goal Required', 'Please enter your one-sentence success goal.');
+                  return;
+                }
+                if (!validateOneSentence(requestSuccessGoal)) {
+                  Alert.alert('One sentence only', 'Please keep your success goal to one clear sentence.');
+                  return;
+                }
+                if (!designId) {
+                  Alert.alert('Design Missing', 'Design details are missing. Please go back and try again.');
+                  return;
+                }
 
                 try {
                   setIsSendingRequests(true);
-                  setShowAddressModal(false);
-                  
+                  setRequestPhotoError(null);
+
+                  const uploadedPhotoUrls: string[] = [];
+                  for (const photo of requestPhotos) {
+                    try {
+                      const photoUrl = await uploadRequestImage(photo);
+                      uploadedPhotoUrls.push(photoUrl);
+                    } catch (error: any) {
+                      const message = String(error?.message || 'One of the photos could not be uploaded.');
+                      setRequestPhotoError(message);
+                      throw new Error(message);
+                    }
+                  }
+                  const uploadedPdf = await uploadRequestPdf(requestPdf);
+
                   const projectData = {
                     designId,
                     address: selectedAddress.formattedAddress,
@@ -1657,15 +1927,26 @@ export default function HouseSummaryScreen() {
                     country: selectedAddress.country,
                     latitude: selectedAddress.latitude,
                     longitude: selectedAddress.longitude,
+                    planImageUrl: uploadedPhotoUrls[0],
+                    planImageUrls: uploadedPhotoUrls,
+                    planPdfUrl: uploadedPdf?.url || undefined,
+                    planFileName: uploadedPdf?.name || undefined,
+                    projectDescription: requestDescription.trim(),
+                    successCriteria: requestSuccessGoal.trim(),
                   };
-                  
+
                   // Create project from design and send request to GC
                   const project = await createProjectFromDesignMutation.mutateAsync(projectData);
-                  
+
                   // Set project ID and status to pending
                   setProjectId(project.id);
                   setGcRequestStatus('pending');
+                  setShowAddressModal(false);
                   setSelectedAddress(null);
+                  setRequestDescription('');
+                  setRequestSuccessGoal('');
+                  setRequestPhotos([]);
+                  setRequestPdf(null);
                 } catch (error: any) {
                   console.error('❌ [house-summary] Error creating project from design:', error);
                   Alert.alert(
@@ -1677,9 +1958,19 @@ export default function HouseSummaryScreen() {
                   setIsSendingRequests(false);
                 }
               }}
-              disabled={!selectedAddress || createProjectFromDesignMutation.isPending || isSendingRequests}
+              disabled={
+                !selectedAddress ||
+                !requestDescription.trim() ||
+                !requestSuccessGoal.trim() ||
+                createProjectFromDesignMutation.isPending ||
+                isSendingRequests
+              }
               className={`rounded-full py-4 px-8 ${
-                selectedAddress && !createProjectFromDesignMutation.isPending && !isSendingRequests
+                selectedAddress &&
+                !!requestDescription.trim() &&
+                !!requestSuccessGoal.trim() &&
+                !createProjectFromDesignMutation.isPending &&
+                !isSendingRequests
                   ? 'bg-black'
                   : 'bg-gray-200'
               }`}
@@ -1694,11 +1985,13 @@ export default function HouseSummaryScreen() {
               ) : (
                 <Text
                   className={`text-lg text-center ${
-                    selectedAddress ? 'text-white' : 'text-gray-400'
+                    selectedAddress && requestDescription.trim() && requestSuccessGoal.trim()
+                      ? 'text-white'
+                      : 'text-gray-400'
                   }`}
                   style={{ fontFamily: 'Poppins_700Bold' }}
                 >
-                  Continue
+                  Send Request
                 </Text>
               )}
             </TouchableOpacity>

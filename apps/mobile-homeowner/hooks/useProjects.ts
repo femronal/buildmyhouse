@@ -195,6 +195,12 @@ export function useCreateProjectFromDesign() {
       country?: string;
       latitude?: number;
       longitude?: number;
+      planImageUrl?: string;
+      planImageUrls?: string[];
+      planPdfUrl?: string;
+      planFileName?: string;
+      projectDescription?: string;
+      successCriteria?: string;
     }) => projectService.createProjectFromDesign(data),
     onSuccess: (project) => {
       // Invalidate queries to refresh UI

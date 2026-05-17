@@ -37,8 +37,18 @@ export class ProjectsService {
       return;
     }
 
+    const normalizedPhases = Array.isArray(phases) ? [...phases] : [];
+    while (normalizedPhases.length < 3) {
+      normalizedPhases.push({
+        name: `Execution Milestone ${normalizedPhases.length + 1}`,
+        description: 'Milestone added to keep project tracking practical and reviewable.',
+        estimatedDuration: '3-7 days',
+        estimatedCost: 0,
+      });
+    }
+
     // Create stages from phases
-    const stagesToCreate = phases.map((phase: any, index: number) => {
+    const stagesToCreate = normalizedPhases.map((phase: any, index: number) => {
       // Handle different phase formats
       const phaseName = phase.name || phase.phase_name || phase.phaseName || `Phase ${index + 1}`;
       const estimatedDuration = phase.estimatedDuration || phase.time_period || phase.timePeriod || '2 weeks';
@@ -1239,6 +1249,12 @@ export class ProjectsService {
     country?: string,
     latitude?: number,
     longitude?: number,
+    planImageUrl?: string,
+    planImageUrls?: string[],
+    planPdfUrl?: string,
+    planFileName?: string,
+    projectDescription?: string,
+    successCriteria?: string,
   ) {
     // Get design with creator info
     const design = await this.prisma.design.findUnique({
@@ -1249,11 +1265,37 @@ export class ProjectsService {
             id: true,
           },
         },
+        images: {
+          orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+          take: 1,
+        },
       },
     });
 
     if (!design) {
       throw new NotFoundException('Design not found');
+    }
+
+    const homeownerImageUrls = Array.from(
+      new Set(
+        [planImageUrl, ...(Array.isArray(planImageUrls) ? planImageUrls : [])]
+          .map((url) => String(url || '').trim())
+          .filter(Boolean),
+      ),
+    ).slice(0, 5);
+    const firstHomeownerImageUrl = String(planImageUrl || homeownerImageUrls[0] || '').trim() || null;
+    const designCoverImageUrl = String(design.images?.[0]?.url || '').trim() || null;
+    const normalizedPdfUrl = String(planPdfUrl || '').trim() || null;
+    const normalizedPdfName = String(planFileName || '').trim() || null;
+
+    let parsedDesignPhases: any[] = [];
+    if (Array.isArray(design.constructionPhases)) {
+      parsedDesignPhases = design.constructionPhases;
+    } else if (design.constructionPhases && typeof design.constructionPhases === 'object') {
+      const candidate = (design.constructionPhases as any).construction_phases;
+      if (Array.isArray(candidate)) {
+        parsedDesignPhases = candidate;
+      }
     }
 
     // Create project from design
@@ -1274,6 +1316,8 @@ export class ProjectsService {
         status: 'draft',
         progress: 0,
         spent: 0,
+        planPdfUrl: normalizedPdfUrl,
+        planFileName: normalizedPdfName,
         aiAnalysis: {
           bedrooms: design.bedrooms,
           bathrooms: design.bathrooms,
@@ -1282,10 +1326,18 @@ export class ProjectsService {
           projectType: design.planType || 'homebuilding',
           estimatedBudget: design.estimatedCost,
           estimatedDuration: design.estimatedDuration || '12-18 months',
-          phases: design.constructionPhases || [],
+          phases: parsedDesignPhases,
           rooms: design.rooms || [],
           materials: design.materials || [],
           features: design.features || [],
+          projectTypeTag: design.projectTypeTag || null,
+          projectTypeFilter: design.projectTypeFilter || null,
+          homeownerProjectDescription: String(projectDescription || '').trim() || null,
+          successCriteria: String(successCriteria || '').trim() || null,
+          projectImageUrl: firstHomeownerImageUrl,
+          projectImageUrls: homeownerImageUrls,
+          designPlanImageUrl: designCoverImageUrl,
+          aiStatus: 'processed',
         },
       },
       include: {

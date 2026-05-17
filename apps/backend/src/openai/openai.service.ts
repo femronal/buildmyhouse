@@ -199,6 +199,7 @@ export class OpenAIService {
           }))
           .filter((phase: { estimatedCost: number }) => phase.estimatedCost > 0)
       : [];
+    const normalizedPhases = this.ensureMinimumPhases(phases, fallback.phases);
 
     return {
       projectType:
@@ -215,7 +216,7 @@ export class OpenAIService {
       rooms: this.asStringArray(parsed?.rooms, fallback.rooms),
       materials: this.asStringArray(parsed?.materials, fallback.materials),
       features: this.asStringArray(parsed?.features, fallback.features),
-      phases: phases.length ? phases : fallback.phases,
+      phases: normalizedPhases,
       confidence: this.asPositiveNumber(parsed?.confidence, fallback.confidence),
       notes: this.asTrimmedString(parsed?.notes) || fallback.notes,
       processingDate: new Date().toISOString(),
@@ -252,6 +253,36 @@ export class OpenAIService {
       .filter(Boolean)
       .slice(0, 20);
     return sanitized.length ? sanitized : fallback;
+  }
+
+  private ensureMinimumPhases(
+    phases: Array<{ name: string; description: string; estimatedDuration: string; estimatedCost: number }>,
+    fallbackPhases: Array<{ name: string; description: string; estimatedDuration: string; estimatedCost: number }>,
+  ) {
+    const normalized = [...(phases || [])];
+    if (normalized.length >= 3) return normalized;
+
+    const existingNames = new Set(
+      normalized.map((phase) => `${phase?.name || ''}`.trim().toLowerCase()).filter(Boolean),
+    );
+    for (const fallbackPhase of fallbackPhases || []) {
+      if (normalized.length >= 3) break;
+      const normalizedName = `${fallbackPhase?.name || ''}`.trim().toLowerCase();
+      if (normalizedName && existingNames.has(normalizedName)) continue;
+      normalized.push(fallbackPhase);
+      if (normalizedName) existingNames.add(normalizedName);
+    }
+
+    while (normalized.length < 3) {
+      normalized.push({
+        name: `Execution Milestone ${normalized.length + 1}`,
+        description: 'Additional milestone to keep scope tracking practical and reviewable.',
+        estimatedDuration: '3-7 days',
+        estimatedCost: 50000,
+      });
+    }
+
+    return normalized;
   }
 
   private getHeuristicAnalysis(input: AnalyzePlanInput): PlanAnalysis {

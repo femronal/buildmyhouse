@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Upload, Home, FileText } from "lucide-react-native";
+import { ArrowLeft, Upload, Home } from "lucide-react-native";
 import { useMemo } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";

@@ -7,7 +7,7 @@ import { geocodeAddress, AddressDetails } from '@/services/addressService';
 // Simple web version without maps (maps don't work on web)
 export default function LocationScreenWeb() {
   const router = useRouter();
-  const { mode } = useLocalSearchParams();
+  useLocalSearchParams();
   const [address, setAddress] = useState("");
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);

@@ -139,6 +139,7 @@ export default function GCDashboardScreen() {
 
     const coverUrl =
       aiAnalysis?.projectImageUrl ||
+      aiAnalysis?.designPlanImageUrl ||
       aiAnalysis?.planImageUrl ||
       project?.projectImageUrl ||
       project?.planImageUrl ||

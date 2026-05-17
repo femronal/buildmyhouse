@@ -133,7 +133,7 @@ export class PlansService {
           aiAnalysis: {
             ...(aiAnalysis as any),
             projectType: uploadPlanDto.projectType || (aiAnalysis as any)?.projectType || 'homebuilding',
-            projectImageUrl: uploadPlanDto.planImageUrl,
+            projectImageUrl: uploadPlanDto.planImageUrl || null,
             projectImageUrls: submissionImageUrls,
             projectTypeTag: uploadPlanDto.projectTypeTag || null,
             projectTypeFilter: uploadPlanDto.projectTypeFilter || null,

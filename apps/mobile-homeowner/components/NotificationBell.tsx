@@ -1,7 +1,6 @@
-import { View } from "react-native";
+import { View , TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { Bell } from "lucide-react-native";
-import { TouchableOpacity } from "react-native";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 

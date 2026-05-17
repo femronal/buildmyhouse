@@ -57,8 +57,10 @@ export class UploadPlanDto {
   @IsIn(['homebuilding', 'renovation', 'interior_design'])
   projectType: 'homebuilding' | 'renovation' | 'interior_design';
 
+  @IsOptional()
   @IsString()
-  planImageUrl: string;
+  @IsUrl()
+  planImageUrl?: string;
 
   @IsOptional()
   @Transform(({ value }) => {

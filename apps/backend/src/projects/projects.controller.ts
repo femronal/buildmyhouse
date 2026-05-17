@@ -51,6 +51,12 @@ export class ProjectsController {
       country?: string;
       latitude?: number;
       longitude?: number;
+      planImageUrl?: string;
+      planImageUrls?: string[];
+      planPdfUrl?: string;
+      planFileName?: string;
+      projectDescription?: string;
+      successCriteria?: string;
     },
   ) {
     const userId = req.user.sub;
@@ -65,6 +71,12 @@ export class ProjectsController {
       body.country,
       body.latitude,
       body.longitude,
+      body.planImageUrl,
+      body.planImageUrls,
+      body.planPdfUrl,
+      body.planFileName,
+      body.projectDescription,
+      body.successCriteria,
     );
   }
 

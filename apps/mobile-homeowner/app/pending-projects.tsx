@@ -1,10 +1,9 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Alert } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Home, Trash2, Bed, Bath, Maximize, Calendar, HardHat, Star, MapPin, ChevronRight, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
+import { ArrowLeft, Home, Trash2, Bed, Bath, Maximize, HardHat, Star, MapPin, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
-import { usePendingProjects, useDeletePendingProject, useDeclareManualPayment } from '@/hooks';
+import { usePendingProjects, useDeletePendingProject, useDeclareManualPayment , useActivateProject } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
-import { useActivateProject } from '@/hooks';
 import PaymentModal from '@/components/PaymentModal';
 import * as WebBrowser from 'expo-web-browser';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -26,7 +25,7 @@ export default function PendingProjectsScreen() {
   const [projectBudget, setProjectBudget] = useState<number>(0);
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [, setIsProcessingPayment] = useState(false);
 
   // Helper function to extract project ID from various possible locations
   const getProjectId = (project: any): string | null => {
@@ -38,10 +37,6 @@ export default function PendingProjectsScreen() {
       project?.acceptedRequest?.project?.id ||
       null
     );
-  };
-
-  const handleViewProject = (project: any) => {
-    setSelectedProject(project);
   };
 
   const handlePay = async (project: any) => {

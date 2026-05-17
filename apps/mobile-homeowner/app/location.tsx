@@ -12,14 +12,14 @@ import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 // Native version (iOS/Android) with full Google Maps
 export default function LocationScreen() {
   const router = useRouter();
-  const { mode } = useLocalSearchParams();
+  useLocalSearchParams();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const mapRef = useRef<MapView>(null);
   const autocompleteRef = useRef<any>(null);
   
-  const [region, setRegion] = useState(GOOGLE_MAPS_CONFIG.defaultRegion);
+  const [region] = useState(GOOGLE_MAPS_CONFIG.defaultRegion);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
   const [markerCoordinate, setMarkerCoordinate] = useState<{latitude: number, longitude: number} | null>(null);
   const [isGeocoding, setIsGeocoding] = useState(false);

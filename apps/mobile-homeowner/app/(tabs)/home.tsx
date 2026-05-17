@@ -70,7 +70,7 @@ export default function HomeScreen() {
   const [projectBudget, setProjectBudget] = useState<number>(0);
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [, setIsProcessingPayment] = useState(false);
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any>(null);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);

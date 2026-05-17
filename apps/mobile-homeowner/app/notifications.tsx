@@ -10,7 +10,6 @@ import {
   Clock,
   Banknote,
   FileWarning,
-  Building2,
 } from "lucide-react-native";
 import { formatDistanceToNow } from "date-fns";
 import {
