@@ -24,6 +24,7 @@ const indexableRoutes = [
   '/houses-for-sale/nigeria',
   '/land-for-sale/nigeria',
   '/diaspora/build-in-nigeria-from-uk',
+  '/diaspora/us/build-in-nigeria',
   '/diaspora/build-in-nigeria-from-usa-canada',
   '/diaspora/build-in-nigeria-from-uae',
   '/mistakes-nigerians-in-diaspora-make-when-building',

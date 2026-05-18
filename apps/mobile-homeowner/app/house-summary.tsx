@@ -14,6 +14,7 @@ import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import { getBackendAssetUrl } from '@/lib/image';
 import { api } from '@/lib/api';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
@@ -110,6 +111,7 @@ function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
 
 export default function HouseSummaryScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
   
@@ -760,6 +762,17 @@ export default function HouseSummaryScreen() {
     setShowPaymentModal(true);
   }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis]);
 
+  const analysisCardShadowStyle = useMemo(
+    () => ({
+      shadowColor: '#000000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.25,
+      shadowRadius: 16,
+      elevation: 10,
+    }),
+    [],
+  );
+
   // Show loading state only if we don't have analysis yet AND we're actually loading
   // Don't block rendering if we're just polling in the background
   if (isLoading && !aiAnalysis) {
@@ -783,43 +796,43 @@ export default function HouseSummaryScreen() {
 
   return (
     <View className="flex-1 bg-white">
-      <View className="pt-16 px-6 pb-4">
-        <View className="flex-row items-center mb-4">
+      <View className="px-6 pb-2" style={{ paddingTop: Math.max(8, insets.top + 2) }}>
+        <View className="flex-row items-center mb-2">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-2"
           >
-            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            <ArrowLeft size={19} color="#000000" strokeWidth={2} />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-black rounded-full items-center justify-center"
+            className="w-9 h-9 bg-black rounded-full items-center justify-center"
           >
-            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            <Home size={17} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
         
         <Text 
-          className="text-3xl text-black mb-2"
+          className="text-2xl text-black mb-1"
           style={{ fontFamily: 'Poppins_800ExtraBold' }}
         >
           Project Summary
         </Text>
         <Text 
-          className="text-sm text-gray-500"
+          className="text-xs text-gray-500"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           {isDesignSelection 
             ? `Detailed specifications for ${params.designName || designData?.name || 'selected design'}`
             : `AI-analyzed specifications for ${params.projectName || 'your project'}`}
         </Text>
-        <View className={`self-start mt-3 border rounded-full px-3 py-1 ${summaryPlanTypeTag.container}`}>
+        <View className={`self-start mt-2 border rounded-full px-3 py-1 ${summaryPlanTypeTag.container}`}>
           <Text className={`${summaryPlanTypeTag.text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {formatPlanTypeLabel(summaryProjectTag)}
           </Text>
         </View>
         {!!summaryProjectFilter && (
-          <View className="self-start mt-2 border rounded-full px-3 py-1 bg-gray-100 border-gray-200">
+          <View className="self-start mt-1.5 border rounded-full px-3 py-1 bg-gray-100 border-gray-200">
             <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               {summaryProjectFilter}
             </Text>
@@ -830,27 +843,30 @@ export default function HouseSummaryScreen() {
       <ScrollView className="flex-1 px-6">
         {/* Analysis Badge - Show if edited by GC or original AI (hide for design selection) */}
         {!isDesignSelection && aiAnalysis ? (
-          <View className={`${gcEditedAnalysis ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-2xl p-4 mb-6 flex-row items-center`}>
+          <View
+            className="bg-black border border-black rounded-2xl p-4 mb-6 flex-row items-center"
+            style={analysisCardShadowStyle}
+          >
             {gcEditedAnalysis ? (
               <>
-                <HardHat size={24} color="#2563eb" strokeWidth={2} />
+                <HardHat size={24} color="#FFFFFF" strokeWidth={2} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Project Summary (Reviewed & Updated by GC) ✏️
                   </Text>
-                  <Text className="text-blue-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                     Your General Contractor has reviewed and updated the project analysis with their professional estimates. The details below reflect their changes.
                   </Text>
                 </View>
               </>
             ) : (
               <>
-                <CheckCircle size={24} color="#059669" strokeWidth={2} />
+                <CheckCircle size={24} color="#FFFFFF" strokeWidth={2} />
                 <View className="ml-3 flex-1">
-                  <Text className="text-green-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     AI Analysis Complete ({aiAnalysis?.confidence || 0}% confident)
                   </Text>
-                  <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {aiAnalysis?.notes || 'AI analysis complete'}
                   </Text>
                 </View>
@@ -952,24 +968,24 @@ export default function HouseSummaryScreen() {
           </View>
 
           {/* Cost & Duration */}
-          <View className="flex-row justify-between">
-            <View>
+          <View>
+            <View className="mb-3">
               <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Estimated Cost
               </Text>
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ₦{(isDesignSelection 
+                ₦{(isDesignSelection
                   ? (aiAnalysis?.estimatedBudget || designData?.estimatedCost || 0)
                   : (acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0)
                 ).toLocaleString()}
               </Text>
             </View>
-            
+
             <View>
               <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Duration
               </Text>
-              <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+              <Text className="text-xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                 {isDesignSelection
                   ? (aiAnalysis?.estimatedDuration || '12-18 months')
                   : (acceptedRequest?.estimatedDuration || aiAnalysis?.estimatedDuration || aiAnalysis?.timeline || 'N/A')}

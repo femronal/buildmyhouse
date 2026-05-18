@@ -1,27 +1,20 @@
-import SeoLandingPage from '@/components/seo/SeoLandingPage';
-import { getSeoPageContent } from '@/lib/seo-pages';
+import ConstructionLagosLandingPage from '@/components/seo/ConstructionLagosLandingPage';
+import {
+  constructionLagosLandingPageContent as content,
+  getConstructionLagosJsonLd,
+} from '@/lib/construction-lagos-landing-content';
 import { useWebSeo } from '@/lib/seo';
 
 export default function ConstructionLagosSeoPage() {
-  const content = getSeoPageContent('constructionLagos');
   useWebSeo({
-    title: content.title,
-    description: content.description,
-    canonicalPath: content.canonicalPath,
+    title: content.seo.title,
+    description: content.seo.description,
+    canonicalPath: '/construction/lagos',
     robots: 'index,follow',
-    jsonLd: content.schema,
+    ogImage: content.coverImage.src,
+    jsonLd: getConstructionLagosJsonLd(),
   });
 
-  return (
-    <SeoLandingPage
-      eyebrow={content.eyebrow}
-      title={content.heroTitle}
-      description={content.heroDescription}
-      bulletPoints={content.bullets}
-      processSteps={content.processSteps}
-      faqs={content.faqs}
-      internalLinks={content.internalLinks}
-    />
-  );
+  return <ConstructionLagosLandingPage />;
 }
 
