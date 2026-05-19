@@ -1,4 +1,4 @@
-import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -127,10 +127,11 @@ function BulletCard({
 
 export default function ConstructionLagosLandingPage() {
   const router = useRouter();
+  const showStickyMobileCta = Platform.OS === 'web';
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 120 : 40 }}>
         <View className="pt-10 pb-4 md:pt-14">
           <TouchableOpacity
             onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
@@ -161,6 +162,8 @@ export default function ConstructionLagosLandingPage() {
         </View>
 
         <Section title={content.hook.title} paragraphs={content.hook.paragraphs} />
+        <BulletCard title={content.bestFor.title} items={content.bestFor.items} />
+        <BulletCard title={content.whatYouGet.title} items={content.whatYouGet.items} />
         <BulletCard title={content.quickAnswer.title} items={content.quickAnswer.items} dark />
         <Section title={content.lagosReality.title} paragraphs={content.lagosReality.paragraphs} />
         <Section title={content.whatBuildMyHouseDoes.title} paragraphs={content.whatBuildMyHouseDoes.paragraphs} />
@@ -270,6 +273,21 @@ export default function ConstructionLagosLandingPage() {
           ))}
         </View>
 
+        <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-7">
+          <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.notReadyYet.title}
+          </SeoHeading>
+          <View className="flex-col gap-2">
+            {content.notReadyYet.links.map((link) => (
+              <TouchableOpacity key={link.href} onPress={() => openLink(link.href, router)} className="rounded-xl border border-gray-200 bg-white px-3 py-3">
+                <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {link.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <CollapsibleFaqSection title={content.faq.title} items={content.faq.items} className="mb-7" />
         <InternalLinksBlock title={content.internalLinks.title} links={[...content.internalLinks.links]} />
 
@@ -301,6 +319,28 @@ export default function ConstructionLagosLandingPage() {
           </View>
         </View>
       </ScrollView>
+
+      {showStickyMobileCta ? (
+        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-4 pt-3 bg-white border-t border-gray-200">
+          <Text className="text-gray-500 text-xs text-center mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            No commitment required - start with project intake.
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              trackWebEvent('construction_lagos_sticky_mobile_cta_click', {
+                href: content.finalCta.primaryCta.href,
+                cta_label: 'Start your Lagos project',
+              });
+              openLink(content.finalCta.primaryCta.href, router);
+            }}
+            className="bg-black rounded-full py-4 px-5"
+          >
+            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Start your Lagos project
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
     </View>
   );
 }

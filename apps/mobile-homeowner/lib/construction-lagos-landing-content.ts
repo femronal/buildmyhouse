@@ -34,6 +34,25 @@ export const constructionLagosLandingPageContent = {
       'Lagos construction is not just “buy land and call a builder.” The safer approach is to run the project with structure, stage discipline, clear updates, and payment control.',
     ],
   },
+  bestFor: {
+    title: 'Best for',
+    items: [
+      'Nigerians abroad building in Lagos',
+      'Lagos homeowners planning a new build',
+      'Families managing land or inherited property',
+      'People tired of unclear contractor updates',
+    ],
+  },
+  whatYouGet: {
+    title: 'What you get when you start',
+    items: [
+      'Project intake that captures your location, goal, and constraints',
+      'Contractor matching workflow based on project fit',
+      'A stage plan you can actually follow',
+      'Chat and update flow tied to the project, not scattered conversations',
+      'Payment discipline so money follows verified progress',
+    ],
+  },
   quickAnswer: {
     title: 'How to Build a House in Lagos With More Control',
     items: [
@@ -220,6 +239,14 @@ export const constructionLagosLandingPageContent = {
       },
     ],
   },
+  notReadyYet: {
+    title: 'Not ready yet?',
+    links: [
+      { label: 'Build a payment schedule', href: '/tools/milestone-payment-schedule' },
+      { label: 'Read Lagos permits guide', href: '/guides/lagos-building-permits-and-stage-inspections' },
+      { label: 'Read contractor vetting guide', href: '/guides/contractor-vetting-nigeria-diaspora' },
+    ],
+  },
   faq: {
     title: 'Frequently Asked Questions',
     items: [
@@ -286,15 +313,10 @@ export const constructionLagosLandingPageContent = {
   internalLinks: {
     title: 'Helpful Lagos construction resources',
     links: [
-      { label: 'Start your BuildMyHouse project', href: '/projects/new' },
       { label: 'See how project tracking works', href: '/demo/project-monitoring' },
       { label: 'Build a milestone payment schedule', href: '/tools/milestone-payment-schedule' },
       { label: 'Read the contractor vetting guide', href: '/guides/contractor-vetting-nigeria-diaspora' },
       { label: 'Understand Lagos permits and stage inspections', href: '/guides/lagos-building-permits-and-stage-inspections' },
-      { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
-      { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
-      { label: 'Build in Nigeria from the US', href: '/diaspora/us/build-in-nigeria' },
-      { label: 'Construction in Nigeria', href: '/construction/nigeria' },
     ],
   },
 } as const;
