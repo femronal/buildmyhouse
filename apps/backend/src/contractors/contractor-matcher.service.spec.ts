@@ -165,5 +165,76 @@ describe('ContractorMatcherService', () => {
     expect(result.matches).toHaveLength(2);
     expect(result.matches[0].id).toBe('b');
   });
+
+  it('maps bungalow-style sub-filters to full_builds', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-4',
+        state: 'Lagos',
+        city: 'Lekki',
+        budget: 70000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Bungalow Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'gc-1',
+          userId: 'ugc-1',
+          verified: true,
+          user: { id: 'ugc-1', role: 'general_contractor', verified: true },
+          specialtyCategory: 'general_contractor',
+          location: 'Lekki, Lagos',
+          rating: 4.9,
+          reviews: 12,
+          projects: 26,
+          experienceYears: 7,
+          specialtyTags: ['bungalow builder'],
+          certificationCount: 1,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(1);
+  });
+
+  it('uses contractor design projectTypeFilter tokens for specialty eligibility', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-5',
+        state: 'Lagos',
+        city: 'Ajah',
+        budget: 95000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Skyscraper Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'gc-eligible',
+          userId: 'u-eligible',
+          verified: true,
+          user: { id: 'u-eligible', role: 'general_contractor', verified: true },
+          specialtyCategory: 'upgrader',
+          specialtyTags: [],
+          description: 'Experienced construction specialist',
+          designProjectTypeFilters: ['Skyscraper Build'],
+          location: 'Ajah, Lagos',
+          rating: 4.6,
+          reviews: 15,
+          projects: 44,
+          experienceYears: 6,
+          certificationCount: 2,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].id).toBe('gc-eligible');
+  });
 });
 

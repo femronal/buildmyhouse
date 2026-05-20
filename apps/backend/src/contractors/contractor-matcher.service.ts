@@ -59,6 +59,7 @@ export interface ContractorMatcherCandidateInput {
   certificationCount?: number;
   requestStats?: ContractorMatcherRequestStats;
   disputeStats?: ContractorMatcherDisputeStats;
+  designProjectTypeFilters?: string[];
 }
 
 export interface MatchBreakdown {
@@ -109,6 +110,26 @@ const HARD_FILTER_REASON_KEYS = [
 
 type HardFilterReasonKey = (typeof HARD_FILTER_REASON_KEYS)[number];
 
+const FULL_BUILD_KEYWORDS = [
+  'bungalow',
+  'duplex',
+  'triplex',
+  'terrace',
+  'maisonette',
+  'highrise',
+  'high-rise',
+  'skyscraper',
+  'tower',
+  'multiplex',
+  'estate',
+  'shell',
+  'turnkey',
+  'blockwork',
+  'roofing',
+  'newbuild',
+  'new-build',
+] as const;
+
 interface EligibleCandidate {
   candidate: ContractorMatcherCandidateInput;
   projectTag: ProjectTag;
@@ -151,6 +172,12 @@ export class ContractorMatcherService {
       if (value.includes('renovat')) return 'renovation';
       if (value.includes('full_build') || value.includes('homebuilding')) return 'full_builds';
       if (value.includes('interior_design')) return 'upgrades';
+      const valueTokens = new Set(this.tokenize(value));
+      for (const keyword of FULL_BUILD_KEYWORDS) {
+        if (valueTokens.has(keyword) || value.includes(keyword)) {
+          return 'full_builds';
+        }
+      }
     }
     return 'unknown';
   }
@@ -198,7 +225,18 @@ export class ContractorMatcherService {
     for (const token of this.tokenize(candidate.description)) {
       tokenSet.add(token);
     }
+    for (const designFilter of candidate.designProjectTypeFilters || []) {
+      for (const token of this.tokenize(designFilter)) {
+        tokenSet.add(token);
+      }
+    }
     return tokenSet;
+  }
+
+  private requiredSpecialtyTokenOverlap(projectTag: ProjectTag): number {
+    if (projectTag === 'full_builds') return 1;
+    if (projectTag === 'unknown') return 1;
+    return 2;
   }
 
   private getProjectTokens(project: ContractorMatcherProjectInput): Set<string> {
@@ -256,9 +294,10 @@ export class ContractorMatcherService {
 
     const candidateTokens = this.getCandidateTokens(candidate);
     let overlap = 0;
+    const minOverlap = this.requiredSpecialtyTokenOverlap(projectTag);
     for (const token of projectTokens) {
       if (candidateTokens.has(token)) overlap += 1;
-      if (overlap >= 2) return true;
+      if (overlap >= minOverlap) return true;
     }
 
     if (projectTag === 'unknown' && candidateTokens.size > 0) {

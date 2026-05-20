@@ -443,6 +443,13 @@ export class ContractorsService {
             pictureUrl: true,
             role: true,
             verified: true,
+            createdDesigns: {
+              select: {
+                projectTypeFilter: true,
+                projectTypeTag: true,
+                planType: true,
+              },
+            },
           },
         },
         _count: {
@@ -511,6 +518,17 @@ export class ContractorsService {
 
         return {
           ...contractor,
+          designProjectTypeFilters: Array.from(
+            new Set(
+              (contractor?.user?.createdDesigns || [])
+                .flatMap((design: any) => [
+                  String(design?.projectTypeFilter || '').trim(),
+                  String(design?.projectTypeTag || '').trim(),
+                  String(design?.planType || '').trim(),
+                ])
+                .filter(Boolean),
+            ),
+          ),
           certificationCount: Number(contractor?._count?.certifications || 0),
           requestStats,
           disputeStats,
