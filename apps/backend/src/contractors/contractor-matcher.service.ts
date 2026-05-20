@@ -130,6 +130,47 @@ const FULL_BUILD_KEYWORDS = [
   'new-build',
 ] as const;
 
+const NIGERIAN_STATES = [
+  'abia',
+  'adamawa',
+  'akwa ibom',
+  'anambra',
+  'bauchi',
+  'bayelsa',
+  'benue',
+  'borno',
+  'cross river',
+  'delta',
+  'ebonyi',
+  'edo',
+  'ekiti',
+  'enugu',
+  'gombe',
+  'imo',
+  'jigawa',
+  'kaduna',
+  'kano',
+  'katsina',
+  'kebbi',
+  'kogi',
+  'kwara',
+  'lagos',
+  'nasarawa',
+  'niger',
+  'ogun',
+  'ondo',
+  'osun',
+  'oyo',
+  'plateau',
+  'rivers',
+  'sokoto',
+  'taraba',
+  'yobe',
+  'zamfara',
+  'abuja',
+  'fct',
+] as const;
+
 interface EligibleCandidate {
   candidate: ContractorMatcherCandidateInput;
   projectTag: ProjectTag;
@@ -186,7 +227,7 @@ export class ContractorMatcherService {
     state: string;
     city: string;
   } {
-    const state = this.normalize(project.state);
+    const state = this.extractStateToken(project.state);
     const city = this.normalize(project.city);
 
     if (state || city) {
@@ -199,17 +240,29 @@ export class ContractorMatcherService {
     }
 
     const addressParts = address.split(',').map((part) => part.trim()).filter(Boolean);
-    const inferredState = this.normalize(addressParts[addressParts.length - 2]);
+    const inferredState = this.extractStateToken(addressParts[addressParts.length - 2]);
     const inferredCity = this.normalize(addressParts[addressParts.length - 3]);
     return { state: inferredState, city: inferredCity };
   }
 
   private getRequiredCategories(projectTag: ProjectTag): GCSpecialtyCategory[] {
-    if (projectTag === 'repair') return ['repairer', 'general_contractor'];
-    if (projectTag === 'upgrades') return ['upgrader', 'renovator', 'general_contractor'];
-    if (projectTag === 'renovation') return ['renovator', 'upgrader', 'general_contractor'];
-    if (projectTag === 'full_builds') return ['general_contractor', 'renovator'];
+    if (projectTag === 'repair') return ['repairer'];
+    if (projectTag === 'upgrades') return ['upgrader'];
+    if (projectTag === 'renovation') return ['renovator'];
+    if (projectTag === 'full_builds') return ['general_contractor'];
     return ['general_contractor', 'renovator', 'upgrader', 'repairer'];
+  }
+
+  private extractStateToken(value?: string | null): string {
+    const normalized = this.normalize(value);
+    if (!normalized) return '';
+    const padded = ` ${normalized} `;
+    for (const state of NIGERIAN_STATES) {
+      if (padded.includes(` ${state} `)) {
+        return state === 'fct' ? 'abuja' : state;
+      }
+    }
+    return normalized.split(',')[0]?.trim() || normalized;
   }
 
   private getCandidateTokens(candidate: ContractorMatcherCandidateInput): Set<string> {
@@ -276,9 +329,9 @@ export class ContractorMatcherService {
 
   private isLocationEligible(projectState: string, contractorLocation?: string | null): boolean {
     if (!projectState) return true;
-    const location = this.normalize(contractorLocation);
-    if (!location) return false;
-    return location.includes(projectState);
+    const contractorState = this.extractStateToken(contractorLocation);
+    if (!contractorState) return false;
+    return contractorState === projectState;
   }
 
   private isSpecialtyEligible(
@@ -288,6 +341,10 @@ export class ContractorMatcherService {
   ): boolean {
     const category = this.normalize(candidate.specialtyCategory) as GCSpecialtyCategory;
     const required = new Set(this.getRequiredCategories(projectTag));
+    if (projectTag !== 'unknown') {
+      return !!category && required.has(category);
+    }
+
     if (category && required.has(category)) {
       return true;
     }

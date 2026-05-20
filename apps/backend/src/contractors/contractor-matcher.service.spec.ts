@@ -217,7 +217,7 @@ describe('ContractorMatcherService', () => {
           userId: 'u-eligible',
           verified: true,
           user: { id: 'u-eligible', role: 'general_contractor', verified: true },
-          specialtyCategory: 'upgrader',
+          specialtyCategory: 'general_contractor',
           specialtyTags: [],
           description: 'Experienced construction specialist',
           designProjectTypeFilters: ['Skyscraper Build'],
@@ -235,6 +235,77 @@ describe('ContractorMatcherService', () => {
     expect(result.diagnostics.projectTag).toBe('full_builds');
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0].id).toBe('gc-eligible');
+  });
+
+  it('never matches cross-category contractors for known project tags', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-6',
+        state: 'Lagos',
+        city: 'Lekki',
+        budget: 80000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Bungalow Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'repairer-should-fail',
+          userId: 'u-repairer',
+          verified: true,
+          user: { id: 'u-repairer', role: 'general_contractor', verified: true },
+          specialtyCategory: 'repairer',
+          specialtyTags: ['bungalow builder'],
+          description: 'Can build houses',
+          location: 'Lekki, Lagos',
+          rating: 4.9,
+          reviews: 22,
+          projects: 55,
+          experienceYears: 10,
+          certificationCount: 2,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(0);
+    expect(result.diagnostics.filteredCounts.specialtyMismatch).toBe(1);
+  });
+
+  it('matches location by state token only (e.g. Lagos, Nigeria)', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-7',
+        state: 'Lagos, Nigeria',
+        city: 'Lekki',
+        budget: 90000000,
+        aiAnalysis: {
+          projectTypeTag: 'full_builds',
+        },
+      },
+      candidates: [
+        {
+          id: 'gc-lagos',
+          userId: 'u-gc-lagos',
+          verified: true,
+          user: { id: 'u-gc-lagos', role: 'general_contractor', verified: true },
+          specialtyCategory: 'general_contractor',
+          specialtyTags: ['bungalow build'],
+          description: 'Full build contractor in Lagos',
+          location: 'Lagos Mainland, Nigeria',
+          rating: 4.8,
+          reviews: 30,
+          projects: 70,
+          experienceYears: 11,
+          certificationCount: 3,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].id).toBe('gc-lagos');
   });
 });
 
