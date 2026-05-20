@@ -22,6 +22,32 @@ export class ProjectsService {
     private readonly paymentsService: PaymentsService,
   ) {}
 
+  private extractDurationDays(durationText?: string | null): number | null {
+    if (!durationText) return null;
+    const normalized = String(durationText).toLowerCase();
+    const matches = normalized.match(/(\d+)\s*(day|days|week|weeks|month|months)/g);
+    if (!matches || matches.length === 0) return null;
+
+    let total = 0;
+    for (const match of matches) {
+      const num = Number((match.match(/\d+/) || [])[0]);
+      if (!Number.isFinite(num)) continue;
+      if (match.includes('month')) total += num * 30;
+      else if (match.includes('week')) total += num * 7;
+      else total += num;
+    }
+    return total > 0 ? total : null;
+  }
+
+  private buildNextDurationText(existing: string, additionalDays: number): string {
+    const baseDays = this.extractDurationDays(existing);
+    if (baseDays == null) {
+      return `${existing} (+${additionalDays} days approved)`;
+    }
+    const nextDays = baseDays + additionalDays;
+    return `${nextDays} days`;
+  }
+
   private async createStagesFromPhasesWithClient(prisma: any, projectId: string, phases: any[]): Promise<void> {
     if (!phases || !Array.isArray(phases) || phases.length === 0) {
       return;
@@ -848,6 +874,273 @@ export class ProjectsService {
     return updated;
   }
 
+  async createStageChangeRequest(params: {
+    projectId: string;
+    stageId: string;
+    requestedById: string;
+    actorRole: string;
+    requestTypes: Array<'additional_funding' | 'additional_timing' | 'change_of_site'>;
+    additionalAmount?: number;
+    additionalDurationDays?: number;
+    requestedSiteChange?: boolean;
+    siteChangeDetails?: string;
+    reason: string;
+    evidence: Array<{ url: string; type: string; label?: string }>;
+  }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      select: {
+        id: true,
+        name: true,
+        homeownerId: true,
+        generalContractorId: true,
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    if (
+      params.actorRole !== 'admin' &&
+      (!project.generalContractorId || project.generalContractorId !== params.requestedById)
+    ) {
+      throw new ForbiddenException('Only the assigned GC can submit stage change requests');
+    }
+
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: params.stageId },
+      select: { id: true, name: true, projectId: true },
+    });
+    if (!stage || stage.projectId !== params.projectId) {
+      throw new NotFoundException('Stage not found for this project');
+    }
+
+    const requestTypes = Array.from(new Set((params.requestTypes || []).map((type) => String(type).trim())));
+    if (requestTypes.length === 0) {
+      throw new BadRequestException('At least one stage change type is required');
+    }
+
+    if (requestTypes.includes('additional_funding') && !(Number(params.additionalAmount) > 0)) {
+      throw new BadRequestException('Additional amount is required for funding change requests');
+    }
+    if (requestTypes.includes('additional_timing') && !(Number(params.additionalDurationDays) > 0)) {
+      throw new BadRequestException('Additional days are required for timing change requests');
+    }
+    if (requestTypes.includes('change_of_site')) {
+      const siteReason = String(params.siteChangeDetails || '').trim();
+      if (!siteReason) {
+        throw new BadRequestException('Site change details are required for change of site requests');
+      }
+    }
+
+    const normalizedEvidence = (params.evidence || [])
+      .map((item) => ({
+        url: String(item?.url || '').trim(),
+        type: String(item?.type || '').trim().toLowerCase(),
+        label: item?.label ? String(item.label).trim() : undefined,
+      }))
+      .filter((item) => !!item.url && !!item.type);
+    if (normalizedEvidence.length === 0) {
+      throw new BadRequestException('At least one proof file is required');
+    }
+
+    const created = await this.prisma.stageChangeRequest.create({
+      data: {
+        projectId: params.projectId,
+        stageId: params.stageId,
+        requestedById: params.requestedById,
+        requestTypes,
+        additionalAmount: requestTypes.includes('additional_funding') ? Number(params.additionalAmount || 0) : null,
+        additionalDurationDays: requestTypes.includes('additional_timing')
+          ? Number(params.additionalDurationDays || 0)
+          : null,
+        requestedSiteChange: requestTypes.includes('change_of_site') || !!params.requestedSiteChange,
+        siteChangeDetails: requestTypes.includes('change_of_site')
+          ? String(params.siteChangeDetails || '').trim()
+          : null,
+        reason: String(params.reason || '').trim(),
+        evidence: normalizedEvidence,
+      },
+      include: {
+        project: {
+          select: { id: true, name: true, homeownerId: true, generalContractorId: true },
+        },
+        stage: {
+          select: { id: true, name: true },
+        },
+        requestedBy: {
+          select: { id: true, fullName: true, email: true },
+        },
+      },
+    });
+
+    await this.wsService.sendNotificationToRole('admin', {
+      type: 'stage_change_request_submitted',
+      title: 'New stage change request',
+      message: `${created.requestedBy.fullName} submitted a change request for "${created.stage.name}" in project "${created.project.name}".`,
+      data: {
+        stageChangeRequestId: created.id,
+        projectId: created.projectId,
+        stageId: created.stageId,
+      },
+    });
+
+    await this.wsService.sendNotification(created.requestedById, {
+      type: 'stage_change_request_submitted',
+      title: 'Stage change request submitted',
+      message: `Your change request for "${created.stage.name}" is pending admin review.`,
+      data: {
+        stageChangeRequestId: created.id,
+        projectId: created.projectId,
+        stageId: created.stageId,
+      },
+    });
+
+    return created;
+  }
+
+  async getStageChangeRequests(status?: 'pending' | 'approved' | 'rejected') {
+    const whereClause: any = {};
+    if (status) whereClause.status = status;
+
+    return this.prisma.stageChangeRequest.findMany({
+      where: whereClause,
+      include: {
+        project: {
+          select: { id: true, name: true, homeownerId: true, generalContractorId: true },
+        },
+        stage: {
+          select: { id: true, name: true, estimatedCost: true, estimatedDuration: true },
+        },
+        requestedBy: {
+          select: { id: true, fullName: true, email: true },
+        },
+        reviewedBy: {
+          select: { id: true, fullName: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async reviewStageChangeRequest(params: {
+    requestId: string;
+    reviewedById: string;
+    decision: 'approved' | 'rejected';
+    adminReviewNote?: string;
+  }) {
+    const existing = await this.prisma.stageChangeRequest.findUnique({
+      where: { id: params.requestId },
+      include: {
+        project: {
+          select: { id: true, name: true, budget: true, dueDate: true, homeownerId: true, generalContractorId: true },
+        },
+        stage: {
+          select: { id: true, name: true, estimatedCost: true, estimatedDuration: true },
+        },
+      },
+    });
+    if (!existing) {
+      throw new NotFoundException('Stage change request not found');
+    }
+    if (existing.status !== 'pending') {
+      throw new BadRequestException('This stage change request has already been reviewed');
+    }
+
+    const now = new Date();
+    const decision = params.decision;
+
+    const updated = await this.prisma.$transaction(async (tx: any) => {
+      if (decision === 'approved') {
+        const nextStageData: any = {};
+        const nextProjectData: any = {};
+
+        if (existing.requestTypes.includes('additional_funding') && Number(existing.additionalAmount || 0) > 0) {
+          nextStageData.estimatedCost = Number(existing.stage.estimatedCost || 0) + Number(existing.additionalAmount || 0);
+          nextProjectData.budget = Number(existing.project.budget || 0) + Number(existing.additionalAmount || 0);
+        }
+
+        if (existing.requestTypes.includes('additional_timing') && Number(existing.additionalDurationDays || 0) > 0) {
+          nextStageData.estimatedDuration = this.buildNextDurationText(
+            String(existing.stage.estimatedDuration || ''),
+            Number(existing.additionalDurationDays || 0),
+          );
+          if (existing.project.dueDate) {
+            const dueDate = new Date(existing.project.dueDate);
+            dueDate.setDate(dueDate.getDate() + Number(existing.additionalDurationDays || 0));
+            nextProjectData.dueDate = dueDate;
+          }
+        }
+
+        if (Object.keys(nextStageData).length > 0) {
+          await tx.stage.update({
+            where: { id: existing.stageId },
+            data: nextStageData,
+          });
+        }
+        if (Object.keys(nextProjectData).length > 0) {
+          await tx.project.update({
+            where: { id: existing.projectId },
+            data: nextProjectData,
+          });
+        }
+      }
+
+      return tx.stageChangeRequest.update({
+        where: { id: params.requestId },
+        data: {
+          status: decision,
+          reviewedById: params.reviewedById,
+          reviewedAt: now,
+          adminReviewNote: params.adminReviewNote?.trim() || null,
+        },
+        include: {
+          project: {
+            select: { id: true, name: true, homeownerId: true, generalContractorId: true, budget: true, dueDate: true },
+          },
+          stage: {
+            select: { id: true, name: true, estimatedCost: true, estimatedDuration: true },
+          },
+          requestedBy: {
+            select: { id: true, fullName: true, email: true },
+          },
+          reviewedBy: {
+            select: { id: true, fullName: true, email: true },
+          },
+        },
+      });
+    });
+
+    await this.wsService.sendNotificationToUsers(
+      [updated.project.homeownerId, updated.project.generalContractorId].filter(Boolean),
+      {
+        type: `stage_change_request_${decision}`,
+        title: decision === 'approved' ? 'Stage change approved' : 'Stage change rejected',
+        message: decision === 'approved'
+          ? `Admin approved a stage scope change for "${updated.stage.name}" in project "${updated.project.name}".`
+          : `Admin rejected a stage scope change for "${updated.stage.name}" in project "${updated.project.name}".`,
+        data: {
+          stageChangeRequestId: updated.id,
+          projectId: updated.projectId,
+          stageId: updated.stageId,
+          status: updated.status,
+        },
+      },
+    );
+
+    this.wsService.emitProjectUpdate(updated.projectId, {
+      type: 'stage_change',
+      data: {
+        event: 'stage_change_request_reviewed',
+        stageChangeRequestId: updated.id,
+        stageId: updated.stageId,
+        status: updated.status,
+      },
+    });
+
+    return updated;
+  }
+
   /**
    * Validate that a stage has required documentation before completion
    */
@@ -1153,6 +1446,9 @@ export class ProjectsService {
               orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
             },
             documents: true,
+            changeRequests: {
+              orderBy: { createdAt: 'desc' },
+            },
           },
         },
         payments: {

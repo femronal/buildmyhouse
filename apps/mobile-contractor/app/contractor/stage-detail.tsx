@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine } from "lucide-react-native";
 import { useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
 import { stageDocumentationService } from '@/services/stageDocumentationService';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { uploadFile } from '@/utils/fileUpload';
 import { useResponsivePadding } from '@/lib/responsive-layout';
 
@@ -46,6 +47,7 @@ export default function GCStageDetailScreen() {
   const [showDeleteFileModal, setShowDeleteFileModal] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string; isMedia: boolean } | null>(null);
   const [showFileTooLargeModal, setShowFileTooLargeModal] = useState(false);
+  const [showStageChangeModal, setShowStageChangeModal] = useState(false);
   
   // Mark as complete modal
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -109,6 +111,15 @@ export default function GCStageDetailScreen() {
   const [renameType, setRenameType] = useState<'photo' | 'invoice' | 'receipt' | 'file' | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [pendingFileData, setPendingFileData] = useState<{ uri: string; fileName: string; file?: File; mimeType?: string } | null>(null);
+  const [stageChangeForm, setStageChangeForm] = useState({
+    requestTypes: [] as Array<'additional_funding' | 'additional_timing' | 'change_of_site'>,
+    additionalAmount: '',
+    additionalDurationDays: '',
+    siteChangeDetails: '',
+    reason: '',
+    documentEvidence: [] as Array<{ uri: string; name: string; mimeType?: string; file?: File | null }>,
+    mediaEvidence: [] as Array<{ uri: string; name: string; mimeType?: string; file?: File | null }>,
+  });
 
   const isComplete = status === 'complete' || status === 'completed';
   const isInProgress = status === 'in-progress' || status === 'in_progress';
@@ -121,6 +132,7 @@ export default function GCStageDetailScreen() {
   const teamMembers = stage?.teamMembers || [];
   const media = stage?.media || [];
   const documents = stage?.documents || [];
+  const pendingStageChangeRequest = stage?.changeRequests?.find((request: any) => request.status === 'pending');
   const allFiles = [
     ...media.map((m: any) => ({ ...m, fileType: m.type, isMedia: true, name: m.url?.split('/').pop() || 'Media' })),
     ...documents.map((d: any) => ({ ...d, fileType: d.type, isMedia: false, name: d.name || d.url?.split('/').pop() || 'Document' })),
@@ -588,6 +600,122 @@ export default function GCStageDetailScreen() {
     addMediaMutation.mutate(fileForm);
   };
 
+  const toggleStageChangeType = (type: 'additional_funding' | 'additional_timing' | 'change_of_site') => {
+    setStageChangeForm((prev) => {
+      const hasType = prev.requestTypes.includes(type);
+      return {
+        ...prev,
+        requestTypes: hasType ? prev.requestTypes.filter((item) => item !== type) : [...prev.requestTypes, type],
+      };
+    });
+  };
+
+  const pickStageChangeEvidence = async (bucket: 'documentEvidence' | 'mediaEvidence') => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: bucket === 'documentEvidence'
+          ? ['application/pdf', 'image/*']
+          : ['video/*', 'audio/*'],
+        copyToCacheDirectory: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset?.uri) return;
+      setStageChangeForm((prev) => ({
+        ...prev,
+        [bucket]: [
+          ...prev[bucket],
+          {
+            uri: asset.uri,
+            name: asset.name || `evidence-${Date.now()}`,
+            mimeType: asset.mimeType || undefined,
+            file: Platform.OS === 'web' ? ((asset as any).file || null) : null,
+          },
+        ],
+      }));
+    } catch (error: any) {
+      Alert.alert('Upload error', error?.message || 'Failed to select evidence file');
+    }
+  };
+
+  const removeStageChangeEvidence = (bucket: 'documentEvidence' | 'mediaEvidence', index: number) => {
+    setStageChangeForm((prev) => ({
+      ...prev,
+      [bucket]: prev[bucket].filter((_, fileIndex) => fileIndex !== index),
+    }));
+  };
+
+  const submitStageChangeMutation = useMutation({
+    mutationFn: async () => {
+      if (!projectId || !stageId) throw new Error('Missing project context');
+      if (stageChangeForm.requestTypes.length === 0) {
+        throw new Error('Select at least one type of change');
+      }
+      if (!stageChangeForm.reason.trim()) {
+        throw new Error('Please describe the reason for this change');
+      }
+
+      const totalEvidence = [...stageChangeForm.documentEvidence, ...stageChangeForm.mediaEvidence];
+      if (totalEvidence.length === 0) {
+        throw new Error('At least one proof file is required');
+      }
+
+      const uploadedEvidence = [] as Array<{ url: string; type: string; label?: string }>;
+      for (const evidence of totalEvidence) {
+        const mimeType = String(evidence.mimeType || '').toLowerCase();
+        const uploadType =
+          mimeType.startsWith('image/')
+            ? 'image'
+            : mimeType.startsWith('video/') || mimeType.startsWith('audio/')
+              ? 'media'
+              : 'document';
+        const url = await uploadFile(evidence.uri, uploadType, {
+          fileName: evidence.name,
+          mimeType: evidence.mimeType,
+        });
+        uploadedEvidence.push({
+          url,
+          type: mimeType || (uploadType === 'media' ? 'video' : uploadType),
+          label: evidence.name,
+        });
+      }
+
+      return stageDocumentationService.createStageChangeRequest(projectId as string, stageId as string, {
+        requestTypes: stageChangeForm.requestTypes,
+        additionalAmount: stageChangeForm.requestTypes.includes('additional_funding')
+          ? Number(stageChangeForm.additionalAmount || 0)
+          : undefined,
+        additionalDurationDays: stageChangeForm.requestTypes.includes('additional_timing')
+          ? Number(stageChangeForm.additionalDurationDays || 0)
+          : undefined,
+        requestedSiteChange: stageChangeForm.requestTypes.includes('change_of_site'),
+        siteChangeDetails: stageChangeForm.requestTypes.includes('change_of_site')
+          ? stageChangeForm.siteChangeDetails.trim()
+          : undefined,
+        reason: stageChangeForm.reason.trim(),
+        evidence: uploadedEvidence,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gc-projects', projectId] });
+      refetchProject();
+      setShowStageChangeModal(false);
+      setStageChangeForm({
+        requestTypes: [],
+        additionalAmount: '',
+        additionalDurationDays: '',
+        siteChangeDetails: '',
+        reason: '',
+        documentEvidence: [],
+        mediaEvidence: [],
+      });
+      Alert.alert('Submitted', 'Your stage change request has been sent for admin verification.');
+    },
+    onError: (error: any) => {
+      Alert.alert('Unable to submit', error?.message || 'Failed to submit stage change request');
+    },
+  });
+
   // Delete material mutation
   const deleteMaterialMutation = useMutation({
     mutationFn: async (materialId: string) => {
@@ -736,13 +864,22 @@ export default function GCStageDetailScreen() {
           </TouchableOpacity>
         </View>
         
-        <Text
-          className="text-2xl text-white mb-2"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-          numberOfLines={3}
-        >
-          {name}
-        </Text>
+        <View className="flex-row items-start justify-between mb-2">
+          <Text
+            className="text-2xl text-white flex-1 mr-3"
+            style={{ fontFamily: 'Poppins_800ExtraBold' }}
+            numberOfLines={3}
+          >
+            {name}
+          </Text>
+          <TouchableOpacity
+            onPress={() => setShowStageChangeModal(true)}
+            className="w-10 h-10 rounded-full bg-blue-600/20 border border-blue-500 items-center justify-center"
+            accessibilityLabel="Request stage change"
+          >
+            <PenLine size={18} color="#60A5FA" strokeWidth={2.2} />
+          </TouchableOpacity>
+        </View>
         <View className={`rounded-full px-3 py-1 self-start ${isComplete ? 'bg-green-600' : 'bg-blue-600'}`}>
           <Text 
             className="text-xs text-white"
@@ -751,6 +888,11 @@ export default function GCStageDetailScreen() {
             {isComplete ? 'Complete' : 'In Progress'}
           </Text>
         </View>
+        {!!pendingStageChangeRequest && (
+          <Text className="text-amber-300 text-xs mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Stage change request pending admin review
+          </Text>
+        )}
       </View>
 
       {/* Tab Navigation */}
@@ -1242,6 +1384,179 @@ export default function GCStageDetailScreen() {
                 </Text>
               </View>
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Stage Change Request Modal */}
+      <Modal
+        visible={showStageChangeModal}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setShowStageChangeModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-[#1E3A5F] rounded-t-3xl p-6 max-h-[92%] border-t border-blue-900">
+            <View className="flex-row items-center justify-between mb-4">
+              <Text className="text-xl text-white" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Request Stage Change
+              </Text>
+              <TouchableOpacity onPress={() => setShowStageChangeModal(false)}>
+                <X size={24} color="#FFFFFF" strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Select applicable changes
+              </Text>
+              <View className="gap-2 mb-4">
+                {[
+                  { key: 'additional_funding' as const, label: 'Request additional funding' },
+                  { key: 'additional_timing' as const, label: 'Request additional timing' },
+                  { key: 'change_of_site' as const, label: 'Request change of site' },
+                ].map((option) => {
+                  const selected = stageChangeForm.requestTypes.includes(option.key);
+                  return (
+                    <TouchableOpacity
+                      key={option.key}
+                      onPress={() => toggleStageChangeType(option.key)}
+                      className={`rounded-xl px-4 py-3 border ${selected ? 'bg-blue-600 border-blue-500' : 'bg-[#0A1628] border-blue-900'}`}
+                    >
+                      <Text className={selected ? 'text-white' : 'text-gray-300'} style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {stageChangeForm.requestTypes.includes('additional_funding') && (
+                <View className="mb-4">
+                  <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Additional amount needed (NGN)
+                  </Text>
+                  <View className="bg-[#0A1628] border border-blue-900 rounded-xl p-4">
+                    <Text className="text-gray-400 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      Current stage price: ₦{(stage?.estimatedCost || 0).toLocaleString()}
+                    </Text>
+                    <TextInput
+                      value={stageChangeForm.additionalAmount}
+                      onChangeText={(text) => setStageChangeForm((prev) => ({ ...prev, additionalAmount: text }))}
+                      placeholder="e.g. 5000"
+                      placeholderTextColor="#6B7280"
+                      keyboardType="decimal-pad"
+                      className="text-white text-lg mt-1"
+                      style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {stageChangeForm.requestTypes.includes('additional_timing') && (
+                <View className="mb-4">
+                  <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Additional days needed
+                  </Text>
+                  <TextInput
+                    value={stageChangeForm.additionalDurationDays}
+                    onChangeText={(text) => setStageChangeForm((prev) => ({ ...prev, additionalDurationDays: text }))}
+                    placeholder="e.g. 3"
+                    placeholderTextColor="#6B7280"
+                    keyboardType="number-pad"
+                    className="bg-[#0A1628] rounded-xl p-4 text-white border border-blue-900"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  />
+                </View>
+              )}
+
+              {stageChangeForm.requestTypes.includes('change_of_site') && (
+                <View className="mb-4">
+                  <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Site/workshop change details
+                  </Text>
+                  <TextInput
+                    value={stageChangeForm.siteChangeDetails}
+                    onChangeText={(text) => setStageChangeForm((prev) => ({ ...prev, siteChangeDetails: text }))}
+                    placeholder="Explain where work will continue and why..."
+                    placeholderTextColor="#6B7280"
+                    multiline
+                    numberOfLines={3}
+                    className="bg-[#0A1628] rounded-xl p-4 text-white border border-blue-900"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  />
+                </View>
+              )}
+
+              <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Reason for this change *
+              </Text>
+              <TextInput
+                value={stageChangeForm.reason}
+                onChangeText={(text) => setStageChangeForm((prev) => ({ ...prev, reason: text }))}
+                placeholder="Describe the unforeseen issue and why this request is necessary"
+                placeholderTextColor="#6B7280"
+                multiline
+                numberOfLines={4}
+                className="bg-[#0A1628] rounded-xl p-4 text-white border border-blue-900 mb-4"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              />
+
+              <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Submit evidences to justify this change *
+              </Text>
+              <TouchableOpacity
+                onPress={() => pickStageChangeEvidence('documentEvidence')}
+                className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900"
+              >
+                <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Upload Photos / PDFs
+                </Text>
+              </TouchableOpacity>
+              {stageChangeForm.documentEvidence.map((file, index) => (
+                <View key={`${file.uri}-${index}`} className="flex-row items-center justify-between bg-[#0F243F] rounded-lg px-3 py-2 mb-2">
+                  <Text className="text-gray-200 text-xs flex-1 mr-2" numberOfLines={1} style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {file.name}
+                  </Text>
+                  <TouchableOpacity onPress={() => removeStageChangeEvidence('documentEvidence', index)}>
+                    <X size={14} color="#F87171" strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              <TouchableOpacity
+                onPress={() => pickStageChangeEvidence('mediaEvidence')}
+                className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900"
+              >
+                <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Upload Videos / Audio
+                </Text>
+              </TouchableOpacity>
+              {stageChangeForm.mediaEvidence.map((file, index) => (
+                <View key={`${file.uri}-${index}`} className="flex-row items-center justify-between bg-[#0F243F] rounded-lg px-3 py-2 mb-2">
+                  <Text className="text-gray-200 text-xs flex-1 mr-2" numberOfLines={1} style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {file.name}
+                  </Text>
+                  <TouchableOpacity onPress={() => removeStageChangeEvidence('mediaEvidence', index)}>
+                    <X size={14} color="#F87171" strokeWidth={2} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+
+              <TouchableOpacity
+                onPress={() => submitStageChangeMutation.mutate()}
+                disabled={submitStageChangeMutation.isPending}
+                className="bg-blue-600 rounded-full py-4 mt-4 mb-2"
+              >
+                {submitStageChangeMutation.isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Submit to BMH
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>

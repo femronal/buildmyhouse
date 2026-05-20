@@ -21,6 +21,19 @@ export default function TimelineScreen() {
 
   // Get stages from project data
   const stages = project?.stages || [];
+  const stageChangeHistory = useMemo(() => {
+    const rows = (stages || []).flatMap((stage: any) =>
+      ((stage?.changeRequests || []) as any[]).map((request: any) => ({
+        ...request,
+        stageName: stage?.name || 'Stage',
+      })),
+    );
+    return rows.sort((a: any, b: any) => {
+      const aTime = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+  }, [stages]);
 
   // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
   const projectType =
@@ -118,6 +131,34 @@ export default function TimelineScreen() {
           </View>
         );
     }
+  };
+
+  const getChangeStatusBadge = (status: string) => {
+    if (status === 'approved') {
+      return (
+        <View className="bg-green-100 rounded-full px-2 py-1">
+          <Text className="text-green-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Approved
+          </Text>
+        </View>
+      );
+    }
+    if (status === 'rejected') {
+      return (
+        <View className="bg-red-100 rounded-full px-2 py-1">
+          <Text className="text-red-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Rejected
+          </Text>
+        </View>
+      );
+    }
+    return (
+      <View className="bg-amber-100 rounded-full px-2 py-1">
+        <Text className="text-amber-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          Pending
+        </Text>
+      </View>
+    );
   };
 
   const handleStagePress = (stage: any) => {
@@ -299,6 +340,78 @@ export default function TimelineScreen() {
         contentContainerStyle={{ paddingBottom: contentBottomPadding, paddingHorizontal: horizontalPadding }}
       >
         <View className="pb-8">
+          {stageChangeHistory.length > 0 && (
+            <View className="mb-8 bg-gray-50 rounded-2xl border border-gray-200 p-4">
+              <Text className="text-black text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Stage Change History
+              </Text>
+              <Text className="text-gray-500 text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Timeline of scope changes submitted by your GC and reviewed by admin.
+              </Text>
+
+              {stageChangeHistory.map((change: any, index: number) => (
+                <View key={change.id || index} className="flex-row mb-4">
+                  <View className="items-center mr-3">
+                    <View
+                      className={`w-3 h-3 rounded-full ${
+                        change.status === 'approved'
+                          ? 'bg-green-500'
+                          : change.status === 'rejected'
+                            ? 'bg-red-500'
+                            : 'bg-amber-500'
+                      }`}
+                    />
+                    {index < stageChangeHistory.length - 1 && (
+                      <View className="w-0.5 flex-1 mt-1 bg-gray-300" style={{ minHeight: 30 }} />
+                    )}
+                  </View>
+                  <View className="flex-1 bg-white rounded-xl border border-gray-200 p-3">
+                    <View className="flex-row items-center justify-between mb-2">
+                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {change.stageName}
+                      </Text>
+                      {getChangeStatusBadge(change.status)}
+                    </View>
+
+                    <View className="flex-row flex-wrap mb-2">
+                      {(change.requestTypes || []).map((type: string) => (
+                        <View key={`${change.id}-${type}`} className="bg-gray-100 rounded-full px-2 py-1 mr-1 mb-1">
+                          <Text className="text-gray-700 text-[10px]" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            {type.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {!!change.additionalAmount && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Cost adjustment: +₦{Number(change.additionalAmount).toLocaleString()}
+                      </Text>
+                    )}
+                    {!!change.additionalDurationDays && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Duration adjustment: +{change.additionalDurationDays} day(s)
+                      </Text>
+                    )}
+                    {!!change.siteChangeDetails && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Site change: {change.siteChangeDetails}
+                      </Text>
+                    )}
+                    {!!change.adminReviewNote && (
+                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Admin note: {change.adminReviewNote}
+                      </Text>
+                    )}
+                    <Text className="text-gray-400 text-[11px] mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {change.createdAt ? new Date(change.createdAt).toLocaleString() : 'Recent'}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
           {stages.length === 0 ? (
             <View className="items-center py-10">
               <Clock size={48} color="#D4D4D4" strokeWidth={1.5} />

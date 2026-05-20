@@ -23,6 +23,18 @@ const getFileIcon = (type: string) => {
   }
 };
 
+const formatChangeStatus = (status: string) => {
+  if (status === 'approved') return 'Approved';
+  if (status === 'rejected') return 'Rejected';
+  return 'Pending Review';
+};
+
+const getChangeStatusClasses = (status: string) => {
+  if (status === 'approved') return { bg: 'bg-green-100', text: 'text-green-700' };
+  if (status === 'rejected') return { bg: 'bg-red-100', text: 'text-red-700' };
+  return { bg: 'bg-amber-100', text: 'text-amber-700' };
+};
+
 export default function StageDetailScreen() {
   const router = useRouter();
   const { id, stageId, name, status, projectId } = useLocalSearchParams();
@@ -81,6 +93,7 @@ export default function StageDetailScreen() {
   const teamMembers = stage?.teamMembers || [];
   const media = stage?.media || [];
   const documents = stage?.documents || [];
+  const stageChangeRequests = (stage?.changeRequests || []) as any[];
 
   const openReceipt = (url?: string) => {
     if (!url) return;
@@ -398,6 +411,71 @@ export default function StageDetailScreen() {
       </View>
 
       <ScrollView className="flex-1 px-6">
+        {stageChangeRequests.length > 0 && (
+          <View className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Stage Change Log
+            </Text>
+            <Text className="text-gray-600 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Admin-verified scope changes for this stage.
+            </Text>
+
+            <View className="gap-3">
+              {stageChangeRequests.slice(0, 3).map((request: any, index: number) => {
+                const statusStyles = getChangeStatusClasses(request.status);
+                return (
+                  <View
+                    key={request.id || index}
+                    className="bg-white rounded-xl border border-gray-200 p-3"
+                  >
+                    <View className="flex-row items-center justify-between mb-2">
+                      <View className={`rounded-full px-2.5 py-1 ${statusStyles.bg}`}>
+                        <Text className={`text-[11px] ${statusStyles.text}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {formatChangeStatus(request.status)}
+                        </Text>
+                      </View>
+                      <Text className="text-gray-500 text-[11px]" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'Recent'}
+                      </Text>
+                    </View>
+
+                    <View className="flex-row flex-wrap mb-2">
+                      {(request.requestTypes || []).map((type: string) => (
+                        <View key={`${request.id}-${type}`} className="bg-gray-100 rounded-full px-2 py-1 mr-1 mb-1">
+                          <Text className="text-gray-700 text-[10px]" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            {type.replace(/_/g, ' ')}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    {!!request.additionalAmount && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        +₦{Number(request.additionalAmount).toLocaleString()} approved
+                      </Text>
+                    )}
+                    {!!request.additionalDurationDays && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        +{request.additionalDurationDays} day(s) added
+                      </Text>
+                    )}
+                    {!!request.siteChangeDetails && (
+                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Site note: {request.siteChangeDetails}
+                      </Text>
+                    )}
+                    {!!request.adminReviewNote && (
+                      <Text className="text-gray-600 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Admin note: {request.adminReviewNote}
+                      </Text>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Materials Tab */}
         {activeTab === 'materials' && (
           <View className="pb-32">

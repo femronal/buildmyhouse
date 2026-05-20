@@ -106,6 +106,40 @@ export interface CreateDocumentData {
   notes?: string;
 }
 
+export interface StageChangeRequestEvidence {
+  url: string;
+  type: string;
+  label?: string;
+}
+
+export interface StageChangeRequest {
+  id: string;
+  projectId: string;
+  stageId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestTypes: Array<'additional_funding' | 'additional_timing' | 'change_of_site'>;
+  additionalAmount?: number;
+  additionalDurationDays?: number;
+  requestedSiteChange: boolean;
+  siteChangeDetails?: string;
+  reason: string;
+  evidence?: StageChangeRequestEvidence[];
+  adminReviewNote?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateStageChangeRequestData {
+  requestTypes: Array<'additional_funding' | 'additional_timing' | 'change_of_site'>;
+  additionalAmount?: number;
+  additionalDurationDays?: number;
+  requestedSiteChange?: boolean;
+  siteChangeDetails?: string;
+  reason: string;
+  evidence: StageChangeRequestEvidence[];
+}
+
 export const stageDocumentationService = {
   // Team Members
   addTeamMember: async (projectId: string, stageId: string, data: CreateTeamMemberData): Promise<StageTeamMember> => {
@@ -190,6 +224,16 @@ export const stageDocumentationService = {
 
   deleteDocument: async (documentId: string): Promise<void> => {
     await api.delete(`/projects/stages/documents/${documentId}`);
+  },
+
+  // Stage Change Requests
+  createStageChangeRequest: async (
+    projectId: string,
+    stageId: string,
+    data: CreateStageChangeRequestData,
+  ): Promise<StageChangeRequest> => {
+    const response = await api.post(`/projects/${projectId}/stages/${stageId}/change-requests`, data);
+    return response;
   },
 };
 

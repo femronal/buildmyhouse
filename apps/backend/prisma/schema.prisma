@@ -35,6 +35,12 @@ enum ProjectRiskLevel {
   high
 }
 
+enum StageChangeRequestStatus {
+  pending
+  approved
+  rejected
+}
+
 enum ArticleAudience {
   homeowner
   gc
@@ -76,6 +82,8 @@ model User {
   pushTokens            PushToken[]
   notifications         Notification[]
   passwordResetTokens   PasswordResetToken[]
+  stageChangeRequestsSubmitted StageChangeRequest[] @relation("StageChangeRequestedBy")
+  stageChangeRequestsReviewed StageChangeRequest[] @relation("StageChangeReviewedBy")
   
   @@map("users")
 }
@@ -196,6 +204,7 @@ model Project {
   projectRequests      ProjectRequest[]
   orders              Order[] @relation("ProjectOrders")
   disputes            ProjectStageDispute[]
+  stageChangeRequests StageChangeRequest[]
   
   @@map("projects")
 }
@@ -223,8 +232,38 @@ model Stage {
   media           StageMedia[]
   documents       StageDocument[]
   disputes        ProjectStageDispute[]
+  changeRequests  StageChangeRequest[]
   
   @@map("stages")
+}
+
+model StageChangeRequest {
+  id                   String   @id @default(uuid())
+  projectId            String
+  stageId              String
+  requestedById        String
+  reviewedById         String?
+  status               StageChangeRequestStatus @default(pending)
+  requestTypes         String[] @default([])
+  additionalAmount     Float?
+  additionalDurationDays Int?
+  requestedSiteChange  Boolean  @default(false)
+  siteChangeDetails    String?
+  reason               String
+  evidence             Json?
+  adminReviewNote      String?
+  reviewedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage        Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  requestedBy  User    @relation("StageChangeRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy   User?   @relation("StageChangeReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([projectId, stageId, createdAt])
+  @@index([status, createdAt])
+  @@map("stage_change_requests")
 }
 
 model ProjectStageDispute {

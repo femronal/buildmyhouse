@@ -11,6 +11,7 @@ import {
   type PendingDesignDoc,
 } from '@/hooks/useProjectDocsVerification';
 import { api } from '@/lib/api';
+import { useReviewStageChangeRequest, useStageChangeRequests } from '@/hooks/useStageChangeRequests';
 
 function formatSubmittedAt(dateStr: string) {
   const date = new Date(dateStr);
@@ -162,7 +163,7 @@ function buildEditableDesignForm(doc: PendingDesignDoc): EditableDesignForm {
 }
 
 export default function VerificationPage() {
-  const [activeTab, setActiveTab] = useState<'gcs' | 'projects'>('gcs');
+  const [activeTab, setActiveTab] = useState<'gcs' | 'projects' | 'stage_changes'>('gcs');
   const [expandedDownloads, setExpandedDownloads] = useState<Record<string, boolean>>({});
   const [feedbackModal, setFeedbackModal] = useState<{
     open: boolean;
@@ -173,10 +174,15 @@ export default function VerificationPage() {
     title: '',
     message: '',
   });
+  const [stageChangeFilter, setStageChangeFilter] = useState<'pending' | 'approved' | 'rejected' | 'all'>('pending');
+  const [stageChangeReviewNote, setStageChangeReviewNote] = useState('');
+  const [selectedStageChangeForReview, setSelectedStageChangeForReview] = useState<string | null>(null);
 
   const { data: gcs = [], isLoading } = useUnverifiedGCs();
   const verifyGC = useVerifyGC();
   const { data: pendingProjectDocs = [], isLoading: loadingProjectDocs } = usePendingProjectDocs();
+  const { data: stageChangeRequests = [], isLoading: loadingStageChanges } = useStageChangeRequests(stageChangeFilter);
+  const reviewStageChangeRequest = useReviewStageChangeRequest();
   const goLivePlan = useGoLiveDesignPlan();
   const rejectPlan = useRejectDesignPlan();
   const updatePlan = useUpdateDesignPlan();
@@ -226,8 +232,9 @@ export default function VerificationPage() {
     return {
       gcs: gcs.length,
       projects: pendingProjectDocs.length,
+      stageChanges: stageChangeRequests.length,
     };
-  }, [gcs.length, pendingProjectDocs.length]);
+  }, [gcs.length, pendingProjectDocs.length, stageChangeRequests.length]);
 
   const openSpecialtyModal = (item: (typeof gcs)[number], mode: 'approve' | 'edit') => {
     const currentCategory =
@@ -556,6 +563,38 @@ export default function VerificationPage() {
     }
   };
 
+  const handleReviewStageChangeRequest = async (
+    requestId: string,
+    decision: 'approved' | 'rejected',
+  ) => {
+    try {
+      await reviewStageChangeRequest.mutateAsync({
+        requestId,
+        decision,
+        adminReviewNote:
+          selectedStageChangeForReview === requestId && stageChangeReviewNote.trim()
+            ? stageChangeReviewNote.trim()
+            : undefined,
+      });
+      setSelectedStageChangeForReview(null);
+      setStageChangeReviewNote('');
+      setFeedbackModal({
+        open: true,
+        title: decision === 'approved' ? 'Stage Change Approved' : 'Stage Change Rejected',
+        message:
+          decision === 'approved'
+            ? 'The stage change was approved and project totals were updated.'
+            : 'The stage change request was rejected and all users were notified.',
+      });
+    } catch (e: any) {
+      setFeedbackModal({
+        open: true,
+        title: 'Review Failed',
+        message: e?.message || 'Could not review this stage change request right now.',
+      });
+    }
+  };
+
   return (
     <div className="p-8 space-y-6">
       <div>
@@ -567,10 +606,11 @@ export default function VerificationPage() {
         {[
           { key: 'gcs', label: `GCs (${counts.gcs})` },
           { key: 'projects', label: `Project Docs (${counts.projects})` },
+          { key: 'stage_changes', label: `Stage Changes (${counts.stageChanges})` },
         ].map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key as 'gcs' | 'projects')}
+            onClick={() => setActiveTab(tab.key as 'gcs' | 'projects' | 'stage_changes')}
             className={`px-4 py-2 rounded-lg text-sm ${
               activeTab === tab.key ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'
             }`}
@@ -829,6 +869,127 @@ export default function VerificationPage() {
                     >
                       Message GC
                     </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'stage_changes' && (
+        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {(['pending', 'approved', 'rejected', 'all'] as const).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setStageChangeFilter(filter)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                  stageChangeFilter === filter
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {filter === 'all' ? 'All' : filter[0].toUpperCase() + filter.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {loadingStageChanges && (
+            <div className="text-center py-12 text-gray-500">Loading stage change requests…</div>
+          )}
+          {!loadingStageChanges && stageChangeRequests.length === 0 && (
+            <div className="text-center py-12 text-gray-500">No stage change requests found.</div>
+          )}
+          {!loadingStageChanges && stageChangeRequests.length > 0 && (
+            <div className="space-y-4">
+              {stageChangeRequests.map((request) => (
+                <div key={request.id} className="border rounded-xl p-4">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500">Submitted {formatSubmittedAt(request.createdAt)}</p>
+                      <h3 className="text-lg font-semibold mt-1">{request.project.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Stage: {request.stage.name} • By {request.requestedBy.fullName}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {request.requestTypes.map((type) => (
+                          <span key={`${request.id}-${type}`} className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                            {type.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            request.status === 'pending'
+                              ? 'bg-amber-100 text-amber-700'
+                              : request.status === 'approved'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {request.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 mt-3 whitespace-pre-wrap">{request.reason}</p>
+                      <div className="mt-3 text-sm text-gray-600 space-y-1">
+                        {request.additionalAmount ? <p>Additional amount: ₦{Number(request.additionalAmount).toLocaleString()}</p> : null}
+                        {request.additionalDurationDays ? <p>Additional time: {request.additionalDurationDays} day(s)</p> : null}
+                        {request.requestedSiteChange && request.siteChangeDetails ? <p>Site change: {request.siteChangeDetails}</p> : null}
+                      </div>
+                      {!!request.evidence?.length && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {request.evidence.map((evidence, index) => (
+                            <a
+                              key={`${request.id}-evidence-${index}`}
+                              href={evidence.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center rounded-md border border-gray-300 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                              {evidence.label || `Evidence ${index + 1}`}
+                            </a>
+                          ))}
+                        </div>
+                      )}
+                      {request.adminReviewNote && (
+                        <p className="mt-3 text-sm text-gray-600">Admin note: {request.adminReviewNote}</p>
+                      )}
+                    </div>
+
+                    {request.status === 'pending' ? (
+                      <div className="w-full lg:w-80 space-y-2">
+                        <textarea
+                          value={selectedStageChangeForReview === request.id ? stageChangeReviewNote : ''}
+                          onChange={(e) => {
+                            setSelectedStageChangeForReview(request.id);
+                            setStageChangeReviewNote(e.target.value);
+                          }}
+                          placeholder="Optional admin note..."
+                          rows={4}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              void handleReviewStageChangeRequest(request.id, 'approved');
+                            }}
+                            disabled={reviewStageChangeRequest.isPending}
+                            className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg disabled:opacity-50"
+                          >
+                            Approve Change
+                          </button>
+                          <button
+                            onClick={() => {
+                              void handleReviewStageChangeRequest(request.id, 'rejected');
+                            }}
+                            disabled={reviewStageChangeRequest.isPending}
+                            className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               ))}

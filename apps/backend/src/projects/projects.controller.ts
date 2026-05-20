@@ -21,6 +21,9 @@ import { ConfirmManualPaymentDto } from './dto/confirm-manual-payment.dto';
 import { SetProjectRiskLevelDto } from './dto/set-project-risk-level.dto';
 import { CreateStageDisputeDto } from './dto/create-stage-dispute.dto';
 import { UpdateDisputeStatusDto } from './dto/update-dispute-status.dto';
+import { CreateStageChangeRequestDto } from './dto/create-stage-change-request.dto';
+import { ReviewStageChangeRequestDto } from './dto/review-stage-change-request.dto';
+import { ListStageChangeRequestsDto } from './dto/list-stage-change-requests.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 
@@ -334,6 +337,47 @@ export class ProjectsController {
   @Roles('homeowner')
   getMyInvoiceFiles(@Request() req: any) {
     return this.projectsService.getHomeownerInvoiceAndReceiptFiles(req.user.sub);
+  }
+
+  @Post(':projectId/stages/:stageId/change-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'admin')
+  createStageChangeRequest(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() dto: CreateStageChangeRequestDto,
+  ) {
+    return this.projectsService.createStageChangeRequest({
+      projectId,
+      stageId,
+      requestedById: req.user.sub,
+      actorRole: req.user.role,
+      ...dto,
+    });
+  }
+
+  @Get('stage-change-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  getStageChangeRequests(@Query() query: ListStageChangeRequestsDto) {
+    return this.projectsService.getStageChangeRequests(query.status);
+  }
+
+  @Patch('stage-change-requests/:requestId/review')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  reviewStageChangeRequest(
+    @Param('requestId') requestId: string,
+    @Request() req: any,
+    @Body() dto: ReviewStageChangeRequestDto,
+  ) {
+    return this.projectsService.reviewStageChangeRequest({
+      requestId,
+      reviewedById: req.user.sub,
+      decision: dto.decision,
+      adminReviewNote: dto.adminReviewNote,
+    });
   }
 
   @Get(':id')
