@@ -128,13 +128,34 @@ function LinkPills({ links }: { links: readonly { label: string; href: string }[
   );
 }
 
+function SectionCtaRow({
+  primaryLabel,
+  primaryHref,
+  secondaryLabel,
+  secondaryHref,
+  eventPrefix,
+}: {
+  primaryLabel: string;
+  primaryHref: string;
+  secondaryLabel: string;
+  secondaryHref: string;
+  eventPrefix: string;
+}) {
+  return (
+    <View className="flex-col md:flex-row gap-3 mt-2">
+      <CtaButton label={primaryLabel} href={primaryHref} eventName={`${eventPrefix}_primary_click`} />
+      <CtaButton label={secondaryLabel} href={secondaryHref} variant="secondary" eventName={`${eventPrefix}_secondary_click`} />
+    </View>
+  );
+}
+
 export default function RenovationNigeriaLandingPage() {
   const router = useRouter();
   const showStickyMobileCta = Platform.OS === 'web';
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 120 : 40 }}>
+      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 150 : 44 }}>
         <View className="pt-10 pb-4 md:pt-14">
           <TouchableOpacity
             onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
@@ -164,7 +185,23 @@ export default function RenovationNigeriaLandingPage() {
           </View>
         </View>
 
-        <View className="mb-7">
+        <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-6">
+          <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {content.whatBuildMyHouseDoes.title}
+          </SeoHeading>
+          {content.whatBuildMyHouseDoes.paragraphs.map((paragraph) => (
+            <BodyText key={paragraph}>{paragraph}</BodyText>
+          ))}
+          <SectionCtaRow
+            primaryLabel="Start your renovation project"
+            primaryHref={content.hero.primaryCta.href}
+            secondaryLabel="See remote monitoring demo"
+            secondaryHref="/demo/project-monitoring"
+            eventPrefix="renovation_nigeria_what_bmh"
+          />
+        </View>
+
+        <View className="mb-6">
           <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.hook.title}
           </SeoHeading>
@@ -177,15 +214,6 @@ export default function RenovationNigeriaLandingPage() {
 
         <View className="mb-7">
           <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            {content.whatBuildMyHouseDoes.title}
-          </SeoHeading>
-          {content.whatBuildMyHouseDoes.paragraphs.map((paragraph) => (
-            <BodyText key={paragraph}>{paragraph}</BodyText>
-          ))}
-        </View>
-
-        <View className="mb-7">
-          <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.renovationTypes.title}
           </SeoHeading>
           {content.renovationTypes.cards.map((card) => (
@@ -194,12 +222,12 @@ export default function RenovationNigeriaLandingPage() {
                 {card.title}
               </SeoHeading>
               <Text className="text-gray-700 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold' }}>What usually happens: </Text>
-                {card.usuallyHappens}
+                <Text style={{ fontFamily: 'Poppins_700Bold' }}>Common problem: </Text>
+                {card.commonProblem}
               </Text>
               <Text className="text-gray-700 text-sm leading-6 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                <Text style={{ fontFamily: 'Poppins_700Bold' }}>What can go wrong: </Text>
-                {card.canGoWrong}
+                <Text style={{ fontFamily: 'Poppins_700Bold' }}>What BMH helps track: </Text>
+                {card.bmhTrack}
               </Text>
               <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
                 <Text style={{ fontFamily: 'Poppins_700Bold' }}>Proof to request: </Text>
@@ -216,10 +244,12 @@ export default function RenovationNigeriaLandingPage() {
           {content.repairsVsUpgrades.paragraphs.map((paragraph) => (
             <BodyText key={paragraph}>{paragraph}</BodyText>
           ))}
-          <CtaButton
-            label={content.repairsVsUpgrades.cta.label}
-            href={content.repairsVsUpgrades.cta.href}
-            eventName="renovation_nigeria_repairs_vs_upgrades_click"
+          <SectionCtaRow
+            primaryLabel="Start your renovation project"
+            primaryHref={content.hero.primaryCta.href}
+            secondaryLabel={content.repairsVsUpgrades.cta.label}
+            secondaryHref={content.repairsVsUpgrades.cta.href}
+            eventPrefix="renovation_nigeria_repairs_vs_upgrades"
           />
         </View>
 
@@ -241,6 +271,13 @@ export default function RenovationNigeriaLandingPage() {
             <BodyText key={paragraph}>{paragraph}</BodyText>
           ))}
           <LinkPills links={content.diaspora.links} />
+          <SectionCtaRow
+            primaryLabel="Start your renovation project"
+            primaryHref={content.hero.primaryCta.href}
+            secondaryLabel="Build a milestone payment schedule"
+            secondaryHref="/tools/milestone-payment-schedule"
+            eventPrefix="renovation_nigeria_diaspora"
+          />
         </View>
 
         <View className="mb-7">
@@ -278,7 +315,13 @@ export default function RenovationNigeriaLandingPage() {
           {content.budget.paragraphs.map((paragraph) => (
             <BodyText key={paragraph}>{paragraph}</BodyText>
           ))}
-          <CtaButton label={content.budget.cta.label} href={content.budget.cta.href} eventName="renovation_nigeria_budget_tool_click" />
+          <SectionCtaRow
+            primaryLabel="Start your renovation project"
+            primaryHref={content.hero.primaryCta.href}
+            secondaryLabel={content.budget.cta.label}
+            secondaryHref={content.budget.cta.href}
+            eventPrefix="renovation_nigeria_budget"
+          />
         </View>
 
         <View style={cardShadowStyle} className="bg-gray-50 border border-gray-200 rounded-2xl p-5 mb-7">
@@ -288,10 +331,12 @@ export default function RenovationNigeriaLandingPage() {
           {content.paymentDiscipline.paragraphs.map((paragraph) => (
             <BodyText key={paragraph}>{paragraph}</BodyText>
           ))}
-          <CtaButton
-            label={content.paymentDiscipline.cta.label}
-            href={content.paymentDiscipline.cta.href}
-            eventName="renovation_nigeria_payment_schedule_click"
+          <SectionCtaRow
+            primaryLabel="Start your renovation project"
+            primaryHref={content.hero.primaryCta.href}
+            secondaryLabel={content.paymentDiscipline.cta.label}
+            secondaryHref={content.paymentDiscipline.cta.href}
+            eventPrefix="renovation_nigeria_payment"
           />
         </View>
 
@@ -488,7 +533,10 @@ export default function RenovationNigeriaLandingPage() {
       </ScrollView>
 
       {showStickyMobileCta ? (
-        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-4 pt-3 bg-white border-t border-gray-200">
+        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-5 pt-3 bg-white/95 border-t border-gray-200">
+          <Text className="text-gray-500 text-xs text-center mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Start with scope. Pay by proof.
+          </Text>
           <TouchableOpacity
             onPress={() => {
               trackWebEvent('renovation_nigeria_sticky_mobile_cta_click', {
