@@ -171,6 +171,20 @@ const NIGERIAN_STATES = [
   'fct',
 ] as const;
 
+const REPAIR_KEYWORDS = ['repair', 'fix', 'maintenance', 'troubleshoot', 'leak', 'fault'] as const;
+const UPGRADE_KEYWORDS = ['upgrade', 'remodel', 'modernize', 'fitout', 'fit-out'] as const;
+const RENOVATION_KEYWORDS = ['renovat', 'rehab', 'refurbish', 'restoration', 'retrofit'] as const;
+const GENERAL_CONTRACTOR_KEYWORDS = [
+  'general contractor',
+  'general construction',
+  'homebuilding',
+  'home building',
+  'residential building',
+  'commercial building',
+  'building contractor',
+  'construction',
+] as const;
+
 interface EligibleCandidate {
   candidate: ContractorMatcherCandidateInput;
   projectTag: ProjectTag;
@@ -292,6 +306,44 @@ export class ContractorMatcherService {
     return 2;
   }
 
+  private inferCategoryFromTokens(candidateTokens: Set<string>): GCSpecialtyCategory | null {
+    const tokenArray = Array.from(candidateTokens);
+    const hasKeyword = (keywords: readonly string[]) =>
+      keywords.some((keyword) => {
+        const keywordNorm = this.normalize(keyword);
+        const keywordTokens = this.tokenize(keywordNorm);
+        const phraseMatched = tokenArray.some(
+          (token) =>
+            token === keywordNorm ||
+            token.includes(keywordNorm) ||
+            keywordNorm.includes(token),
+        );
+        if (phraseMatched) return true;
+        return keywordTokens.some((kt) =>
+          tokenArray.some((token) => token === kt || token.includes(kt) || kt.includes(token)),
+        );
+      });
+
+    if (hasKeyword(GENERAL_CONTRACTOR_KEYWORDS)) return 'general_contractor';
+    if (hasKeyword(FULL_BUILD_KEYWORDS)) return 'general_contractor';
+    if (hasKeyword(RENOVATION_KEYWORDS)) return 'renovator';
+    if (hasKeyword(UPGRADE_KEYWORDS)) return 'upgrader';
+    if (hasKeyword(REPAIR_KEYWORDS)) return 'repairer';
+    return null;
+  }
+
+  private getResolvedCandidateCategory(candidate: ContractorMatcherCandidateInput): GCSpecialtyCategory | null {
+    const explicit = this.normalize(candidate.specialtyCategory) as GCSpecialtyCategory;
+    if (explicit && ['repairer', 'upgrader', 'renovator', 'general_contractor'].includes(explicit)) {
+      return explicit;
+    }
+    const candidateTokens = this.getCandidateTokens(candidate);
+    const inferred = this.inferCategoryFromTokens(candidateTokens);
+    if (inferred) return inferred;
+    // Legacy fallback: all candidates entering this matcher are GC profiles.
+    return this.normalize(candidate.user?.role) === 'general_contractor' ? 'general_contractor' : null;
+  }
+
   private getProjectTokens(project: ContractorMatcherProjectInput): Set<string> {
     const ai = project.aiAnalysis || {};
     const values: string[] = [
@@ -339,7 +391,7 @@ export class ContractorMatcherService {
     candidate: ContractorMatcherCandidateInput,
     projectTokens: Set<string>,
   ): boolean {
-    const category = this.normalize(candidate.specialtyCategory) as GCSpecialtyCategory;
+    const category = this.getResolvedCandidateCategory(candidate);
     const required = new Set(this.getRequiredCategories(projectTag));
     if (projectTag !== 'unknown') {
       return !!category && required.has(category);

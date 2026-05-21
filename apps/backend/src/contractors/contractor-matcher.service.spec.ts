@@ -307,5 +307,114 @@ describe('ContractorMatcherService', () => {
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0].id).toBe('gc-lagos');
   });
+
+  it('matches full_builds when category is missing but tokens imply general_contractor', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-8',
+        state: 'Lagos State, Nigeria',
+        city: 'Surulere',
+        budget: 65000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Bungalow Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'gc-inferred',
+          userId: 'u-gc-inferred',
+          verified: true,
+          user: { id: 'u-gc-inferred', role: 'general_contractor', verified: true },
+          specialtyCategory: null as any,
+          specialtyTags: ['Residential Building'],
+          description: 'Bungalow and duplex builder for family homes',
+          designProjectTypeFilters: ['Bungalow', 'Duplex Build'],
+          location: 'Lagos, Nigeria',
+          rating: 4.7,
+          reviews: 18,
+          projects: 37,
+          experienceYears: 8,
+          certificationCount: 2,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].id).toBe('gc-inferred');
+  });
+
+  it('still blocks explicit cross-category matches even with full_build keywords', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-9',
+        state: 'Lagos',
+        city: 'Yaba',
+        budget: 55000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Bungalow Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'repairer-explicit',
+          userId: 'u-repairer-explicit',
+          verified: true,
+          user: { id: 'u-repairer-explicit', role: 'general_contractor', verified: true },
+          specialtyCategory: 'repairer',
+          specialtyTags: ['Bungalow Build'],
+          description: 'Repairs and maintenance specialist',
+          location: 'Yaba, Lagos',
+          rating: 4.6,
+          reviews: 10,
+          projects: 20,
+          experienceYears: 5,
+          certificationCount: 1,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.matches).toHaveLength(0);
+    expect(result.diagnostics.filteredCounts.specialtyMismatch).toBe(1);
+  });
+
+  it('treats legacy GC profiles without specialtyCategory as general_contractor', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-10',
+        state: 'Lagos, Nigeria',
+        city: 'Surulere',
+        budget: 120000000,
+        aiAnalysis: {
+          projectTypeFilter: 'Bungalow Build',
+        },
+      },
+      candidates: [
+        {
+          id: 'legacy-gc',
+          userId: 'u-legacy-gc',
+          verified: true,
+          user: { id: 'u-legacy-gc', role: 'general_contractor', verified: true },
+          specialtyCategory: null as any,
+          specialty: 'General Contractor',
+          specialtyTags: ['Residential Building'],
+          description: 'Experienced team for residential projects',
+          location: 'Lagos State, Nigeria',
+          rating: 4.7,
+          reviews: 9,
+          projects: 30,
+          experienceYears: 6,
+          certificationCount: 1,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(1);
+    expect(result.matches[0].id).toBe('legacy-gc');
+  });
 });
 
