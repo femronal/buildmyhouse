@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   AlertTriangle,
   Banknote,
+  BarChart3,
   Building2,
   ClipboardList,
   FileWarning,
@@ -55,6 +56,7 @@ const quickActions = [
   { label: 'Review GC verifications', icon: ShieldCheck, href: '/verification' },
   { label: 'Resolve urgent disputes', icon: FileWarning, href: '/disputes' },
   { label: 'Audit stalled projects', icon: ClipboardList, href: '/projects' },
+  { label: 'Review contractor feedback trends', icon: BarChart3, href: '/review-insights' },
 ];
 
 export default function DashboardPage() {

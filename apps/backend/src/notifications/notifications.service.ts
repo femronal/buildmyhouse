@@ -149,7 +149,7 @@ export class NotificationsService {
     try {
       const user = await this.prisma.user.findUnique({
         where: { id: userId },
-        select: { email: true, fullName: true },
+        select: { email: true, fullName: true, role: true },
       });
 
       if (!user?.email) {
@@ -160,6 +160,7 @@ export class NotificationsService {
       const delivered = await this.emailService.sendNotificationEmail({
         to: user.email,
         recipientName: user.fullName || 'User',
+        recipientRole: user.role || undefined,
         notificationType: dto.type,
         title: dto.title,
         message: dto.message,

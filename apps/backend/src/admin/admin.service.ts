@@ -51,6 +51,27 @@ export type FullAdminAccessAccount = {
   hasDashboardAllowlistAccess: boolean;
 };
 
+export type ContractorReviewReasonCount = {
+  reason: string;
+  count: number;
+};
+
+export type ContractorReviewSpecialtyInsight = {
+  category: string;
+  label: string;
+  totalReviews: number;
+  averageRating: number;
+  lowReasons: ContractorReviewReasonCount[];
+  highReasons: ContractorReviewReasonCount[];
+};
+
+export type ContractorReviewInsights = {
+  generatedAt: string;
+  totalReviews: number;
+  averageRating: number;
+  specialties: ContractorReviewSpecialtyInsight[];
+};
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -69,6 +90,115 @@ export class AdminService {
     ]);
 
     return { stats, criticalAlerts, recentActivity };
+  }
+
+  async getContractorReviewInsights(): Promise<ContractorReviewInsights> {
+    const specialtyLabelMap: Record<string, string> = {
+      repairer: 'Repairer',
+      upgrader: 'Upgrader',
+      renovator: 'Renovator',
+      general_contractor: 'General Contractor',
+      unknown: 'General Contractor',
+    };
+
+    const normalizeSpecialty = (value?: string | null) => {
+      const normalized = String(value || '').trim().toLowerCase();
+      if (normalized === 'repairer') return 'repairer';
+      if (normalized === 'upgrader') return 'upgrader';
+      if (normalized === 'renovator') return 'renovator';
+      if (normalized === 'general_contractor') return 'general_contractor';
+      return 'unknown';
+    };
+
+    const reviews = await this.prisma.review.findMany({
+      where: {
+        contractorId: { not: null },
+      },
+      select: {
+        rating: true,
+        reasons: true,
+        contractor: {
+          select: {
+            specialtyCategory: true,
+          },
+        },
+      },
+    });
+
+    const totalReviews = reviews.length;
+    const averageRating =
+      totalReviews > 0
+        ? Math.round(
+            (reviews.reduce((sum: number, review: any) => sum + Number(review.rating || 0), 0) /
+              totalReviews) *
+              10,
+          ) / 10
+        : 0;
+
+    const bucketBySpecialty = new Map<
+      string,
+      {
+        ratings: number[];
+        lowReasons: Map<string, number>;
+        highReasons: Map<string, number>;
+      }
+    >();
+
+    for (const review of reviews) {
+      const category = normalizeSpecialty(review?.contractor?.specialtyCategory);
+      if (!bucketBySpecialty.has(category)) {
+        bucketBySpecialty.set(category, {
+          ratings: [],
+          lowReasons: new Map<string, number>(),
+          highReasons: new Map<string, number>(),
+        });
+      }
+      const bucket = bucketBySpecialty.get(category)!;
+      const rating = Number(review.rating || 0);
+      bucket.ratings.push(rating);
+
+      const reasons = Array.isArray(review.reasons)
+        ? review.reasons
+            .map((reason: any) => String(reason || '').trim())
+            .filter(Boolean)
+        : [];
+      const reasonMap = rating <= 3 ? bucket.lowReasons : bucket.highReasons;
+      for (const reason of reasons) {
+        reasonMap.set(reason, (reasonMap.get(reason) || 0) + 1);
+      }
+    }
+
+    const toRankedArray = (map: Map<string, number>): ContractorReviewReasonCount[] =>
+      Array.from(map.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8)
+        .map(([reason, count]) => ({ reason, count }));
+
+    const specialties: ContractorReviewSpecialtyInsight[] = Array.from(bucketBySpecialty.entries())
+      .map(([category, bucket]) => {
+        const ratingsTotal = bucket.ratings.reduce((sum, rating) => sum + rating, 0);
+        const specialtyAverage =
+          bucket.ratings.length > 0
+            ? Math.round((ratingsTotal / bucket.ratings.length) * 10) / 10
+            : 0;
+
+        return {
+          category,
+          label: specialtyLabelMap[category] || 'General Contractor',
+          totalReviews: bucket.ratings.length,
+          averageRating: specialtyAverage,
+          lowReasons: toRankedArray(bucket.lowReasons),
+          highReasons: toRankedArray(bucket.highReasons),
+        };
+      })
+      .sort((a, b) => b.totalReviews - a.totalReviews);
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totalReviews,
+      averageRating,
+      specialties,
+    };
   }
 
   async getEmailHealth(): Promise<EmailHealthReport> {

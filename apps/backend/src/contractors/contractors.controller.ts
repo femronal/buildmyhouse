@@ -21,6 +21,11 @@ import { SetGCVerificationDto } from './dto/set-gc-verification.dto';
 export class ContractorsController {
   constructor(private readonly contractorsService: ContractorsService) {}
 
+  @Get('public/:contractorId')
+  async getPublicContractorSummary(@Param('contractorId') contractorId: string) {
+    return this.contractorsService.getPublicContractorSummary(contractorId);
+  }
+
   @Get('profile')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor')

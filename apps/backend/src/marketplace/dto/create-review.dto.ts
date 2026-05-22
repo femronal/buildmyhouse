@@ -1,4 +1,13 @@
-import { IsInt, IsString, IsOptional, Min, Max } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ArrayMaxSize,
+} from 'class-validator';
 
 export class CreateReviewDto {
   @IsInt()
@@ -17,6 +26,21 @@ export class CreateReviewDto {
   @IsOptional()
   @IsString()
   contractorId?: string;
+
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  reasons?: string[];
+
+  @IsOptional()
+  @IsString()
+  otherReason?: string;
 }
 
 

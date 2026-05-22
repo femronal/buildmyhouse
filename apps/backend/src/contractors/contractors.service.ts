@@ -59,6 +59,20 @@ export class ContractorsService {
     return params.fallback || 'General Contractor';
   }
 
+  private getHomeownerAppUrl(): string {
+    return String(
+      this.configService.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app',
+    )
+      .trim()
+      .replace(/\/+$/, '');
+  }
+
+  private buildContractorReviewLink(contractorId?: string | null): string | null {
+    const id = String(contractorId || '').trim();
+    if (!id) return null;
+    return `${this.getHomeownerAppUrl()}/review-contractor?contractorId=${encodeURIComponent(id)}`;
+  }
+
   // Use `any` for model access to reduce coupling to Prisma schema changes.
   private prisma = new PrismaClient() as any;
 
@@ -549,7 +563,10 @@ export class ContractorsService {
           selectedCount: legacy.length,
         }),
       );
-      return legacy;
+      return legacy.map((contractor: any) => ({
+        ...contractor,
+        reviewLink: this.buildContractorReviewLink(contractor?.id),
+      }));
     }
 
     const result = this.contractorMatcherService.recommend({
@@ -565,7 +582,10 @@ export class ContractorsService {
       }),
     );
 
-    return result.matches;
+    return result.matches.map((contractor: any) => ({
+      ...contractor,
+      reviewLink: this.buildContractorReviewLink(contractor?.id),
+    }));
   }
 
   /**
@@ -1475,6 +1495,7 @@ export class ContractorsService {
 
     return {
       id: user.id,
+      contractorProfileId: contractor?.id || null,
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
@@ -1493,6 +1514,7 @@ export class ContractorsService {
         ? `${contractor.experienceYears} years`
         : null,
       rating: contractor?.rating ?? 5.0,
+      reviewLink: this.buildContractorReviewLink(contractor?.id),
       totalProjects: Math.max(10, contractor?.projects ?? earnings.length ?? 10),
       activeProjects: activeProjects.length,
       completedProjects: completedProjects.length,
@@ -1511,6 +1533,40 @@ export class ContractorsService {
       verificationRequiredCount: verification.totalRequiredCount,
       verificationMissingDocuments: verification.missingRequiredDocuments,
       hasUploadedAllVerificationDocuments: verification.hasUploadedAllRequiredDocuments,
+    };
+  }
+
+  async getPublicContractorSummary(contractorId: string) {
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { id: contractorId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            pictureUrl: true,
+          },
+        },
+      },
+    });
+    if (!contractor) {
+      throw new NotFoundException('Contractor not found');
+    }
+
+    return {
+      id: contractor.id,
+      userId: contractor.userId,
+      fullName: contractor.user?.fullName || contractor.name || 'General Contractor',
+      pictureUrl: contractor.user?.pictureUrl || contractor.imageUrl || null,
+      specialty: this.buildContractorSpecialtyDisplay({
+        category: contractor.specialtyCategory as GCSpecialtyCategory | null,
+        tags: contractor.specialtyTags || [],
+        fallback: contractor.specialty || 'General Contractor',
+      }),
+      specialtyCategory: (contractor.specialtyCategory as GCSpecialtyCategory | null) || null,
+      rating: contractor.rating ?? 5,
+      reviews: contractor.reviews ?? 0,
+      reviewLink: this.buildContractorReviewLink(contractor.id),
     };
   }
 
@@ -1701,6 +1757,7 @@ export class ContractorsService {
       location: c.location,
       experienceYears: c.experienceYears,
       rating: c.rating,
+      reviewLink: this.buildContractorReviewLink(c.id),
       projects: c.projects,
       verified: c.user?.verified ?? c.verified,
       imageUrl: c.imageUrl,

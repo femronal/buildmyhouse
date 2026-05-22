@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { WebSocketService } from '../websocket/websocket.service';
 import { StripeService } from '../payments/services/stripe.service';
 import { PaymentsService } from '../payments/services/payments.service';
@@ -16,10 +17,30 @@ export class ProjectsService {
   private prisma = new PrismaClient() as any;
   private readonly logger = new Logger(ProjectsService.name);
 
+  private getHomeownerAppUrl(): string {
+    return String(
+      this.configService.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app',
+    )
+      .trim()
+      .replace(/\/+$/, '');
+  }
+
+  private buildContractorReviewLink(contractorId?: string | null, projectId?: string | null): string | null {
+    const id = String(contractorId || '').trim();
+    if (!id) return null;
+    const params = new URLSearchParams();
+    params.set('contractorId', id);
+    if (projectId) {
+      params.set('projectId', String(projectId));
+    }
+    return `${this.getHomeownerAppUrl()}/review-contractor?${params.toString()}`;
+  }
+
   constructor(
     private readonly wsService: WebSocketService,
     private readonly stripeService: StripeService,
     private readonly paymentsService: PaymentsService,
+    private readonly configService: ConfigService,
   ) {}
 
   private extractDurationDays(durationText?: string | null): number | null {
@@ -1272,7 +1293,8 @@ export class ProjectsService {
     const inProgressStage = allStages.find((s) => s.status === 'in_progress');
     const currentStage = inProgressStage?.name || (completedStages.length > 0 ? completedStages[completedStages.length - 1].name : null);
 
-    await this.prisma.project.update({
+    const previousProgress = Number(stage.project?.progress || 0);
+    const updatedProject = await this.prisma.project.update({
       where: { id: projectId },
       data: { 
         progress,
@@ -1280,6 +1302,32 @@ export class ProjectsService {
         spent,
       },
     });
+
+    const isProjectNowComplete = allStages.length > 0 && completedStages.length === allStages.length;
+    const wasProjectComplete = previousProgress >= 100 || stage.project?.status === 'completed';
+    if (isProjectNowComplete && !wasProjectComplete && stage.project?.homeownerId) {
+      const contractorProfile = stage.project?.generalContractorId
+        ? await this.prisma.contractor.findUnique({
+            where: { userId: stage.project.generalContractorId },
+            select: { id: true },
+          })
+        : null;
+      const reviewLink = this.buildContractorReviewLink(contractorProfile?.id, projectId);
+
+      await this.wsService.sendNotification(stage.project.homeownerId, {
+        type: 'project_completed',
+        title: 'Project completed - congratulations!',
+        message:
+          'Congratulations! Your project has been fully completed. Kindly share a short review about your GC experience.',
+        data: {
+          projectId,
+          contractorId: contractorProfile?.id || null,
+          reviewLink: reviewLink || null,
+          ctaUrl: reviewLink || null,
+          ctaLabel: 'Leave your review',
+        },
+      });
+    }
 
     // Emit stage update notification
     this.wsService.emitStageCompletion(projectId, {
@@ -1296,6 +1344,7 @@ export class ProjectsService {
       data: {
         progress,
         currentStage,
+        projectStatus: updatedProject?.status,
         stageUpdated: {
           id: updatedStage.id,
           name: updatedStage.name,

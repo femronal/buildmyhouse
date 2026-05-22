@@ -3,6 +3,7 @@ import { api } from '@/lib/api';
 
 export type GCProfile = {
   id: string;
+  contractorProfileId?: string | null;
   fullName: string;
   email: string;
   phone?: string | null;
@@ -13,6 +14,7 @@ export type GCProfile = {
   experienceYears?: number | null;
   experience?: string | null;
   rating: number;
+  reviewLink?: string | null;
   totalProjects: number;
   activeProjects: number;
   completedProjects: number;

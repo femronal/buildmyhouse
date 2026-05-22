@@ -12,6 +12,7 @@ export interface ContractorCertification {
 
 export interface GCProfile {
   id: string;
+  contractorProfileId?: string | null;
   fullName: string;
   email: string;
   phone?: string | null;
@@ -22,6 +23,7 @@ export interface GCProfile {
   experienceYears?: number | null;
   experience?: string | null;
   rating: number;
+  reviewLink?: string | null;
   totalProjects: number;
   activeProjects: number;
   completedProjects: number;

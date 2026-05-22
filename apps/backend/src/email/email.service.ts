@@ -210,14 +210,20 @@ export class EmailService {
   async sendNotificationEmail(params: {
     to: string;
     recipientName?: string;
+    recipientRole?: string;
     notificationType?: string;
     title: string;
     message: string;
     data?: Record<string, unknown>;
   }): Promise<boolean> {
-    const { to, recipientName, notificationType, title, message } = params;
+    const { to, recipientName, recipientRole, notificationType, title, message, data } = params;
 
     const isGCWeeklyReminder = notificationType === 'gc_verification_weekly_reminder';
+    const cta = this.resolveNotificationCta({
+      notificationType,
+      recipientRole,
+      data,
+    });
     const html =
       isGCWeeklyReminder
         ? GC_WEEKLY_VERIFICATION_REMINDER_TEMPLATE
@@ -225,6 +231,8 @@ export class EmailService {
             recipientName: recipientName || 'User',
             title,
             message,
+            ctaLabel: cta.label,
+            ctaUrl: cta.url,
           });
     const subject = isGCWeeklyReminder
       ? 'You’re leaving money on the table.'
@@ -234,7 +242,7 @@ export class EmailService {
       to,
       subject,
       html,
-      text: `${title}\n\n${message}`,
+      text: `${title}\n\n${message}${cta.url ? `\n\n${cta.label}: ${cta.url}` : ''}`,
     });
   }
 
@@ -251,11 +259,15 @@ export class EmailService {
     recipientName: string;
     title: string;
     message: string;
+    ctaLabel: string;
+    ctaUrl: string;
   }): string {
-    const { recipientName, title, message } = params;
+    const { recipientName, title, message, ctaLabel, ctaUrl } = params;
     const safeTitle = this.escapeHtml(title);
     const safeMessage = this.escapeHtml(message).replace(/\n/g, '<br>');
     const safeName = this.escapeHtml(recipientName);
+    const safeCtaLabel = this.escapeHtml(ctaLabel);
+    const safeCtaUrl = this.escapeHtml(ctaUrl);
 
     return `
 <!DOCTYPE html>
@@ -281,6 +293,14 @@ export class EmailService {
         <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #3f3f46;">
           ${safeMessage}
         </p>
+        <a
+          href="${safeCtaUrl}"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="display:inline-block;margin:24px 0 0 0;padding:12px 20px;background:#111827;color:#ffffff;text-decoration:none;border-radius:999px;font-size:14px;font-weight:600;"
+        >
+          ${safeCtaLabel}
+        </a>
         <p style="margin: 24px 0 0 0; font-size: 13px; color: #71717a;">
           View this in the BuildMyHouse app for more details.
         </p>
@@ -297,5 +317,90 @@ export class EmailService {
 </body>
 </html>
     `.trim();
+  }
+
+  private normalizeAppUrl(url: string): string {
+    return String(url || '').trim().replace(/\/+$/, '');
+  }
+
+  private getHomeownerAppUrl(): string {
+    return this.normalizeAppUrl(
+      this.config.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app',
+    );
+  }
+
+  private getContractorAppUrl(): string {
+    return this.normalizeAppUrl(
+      this.config.get<string>('CONTRACTOR_APP_URL') || 'https://gc.buildmyhouse.app',
+    );
+  }
+
+  private getAdminAppUrl(): string {
+    return this.normalizeAppUrl(
+      this.config.get<string>('ADMIN_DASHBOARD_URL') || 'https://admin.buildmyhouse.app',
+    );
+  }
+
+  private resolveNotificationCta(params: {
+    notificationType?: string;
+    recipientRole?: string;
+    data?: Record<string, unknown>;
+  }): { label: string; url: string } {
+    const type = String(params.notificationType || '').trim();
+    const role = String(params.recipientRole || '').trim();
+    const data = params.data || {};
+    const projectId = String((data.projectId as string) || '').trim();
+    const reviewLink = String((data.reviewLink as string) || '').trim();
+    const explicitCtaUrl = String((data.ctaUrl as string) || '').trim();
+    const explicitCtaLabel = String((data.ctaLabel as string) || '').trim();
+
+    if (explicitCtaUrl) {
+      return {
+        label: explicitCtaLabel || 'Open in app',
+        url: explicitCtaUrl,
+      };
+    }
+
+    if (reviewLink) {
+      return {
+        label: explicitCtaLabel || 'Leave your review',
+        url: reviewLink,
+      };
+    }
+
+    if (role === 'admin') {
+      if (type.includes('verification') || type.includes('account_verified') || type.includes('account_unverified')) {
+        return { label: 'Open Verification', url: `${this.getAdminAppUrl()}/verification` };
+      }
+      if (projectId) {
+        return { label: 'Open Project Queue', url: `${this.getAdminAppUrl()}/projects` };
+      }
+      return { label: 'Open Admin Dashboard', url: `${this.getAdminAppUrl()}/dashboard` };
+    }
+
+    if (role === 'general_contractor') {
+      if (projectId) {
+        return {
+          label: 'Open Project',
+          url: `${this.getContractorAppUrl()}/contractor/gc-project-detail?id=${encodeURIComponent(projectId)}`,
+        };
+      }
+      return {
+        label: 'Open Contractor App',
+        url: `${this.getContractorAppUrl()}/contractor/gc-dashboard`,
+      };
+    }
+
+    if (projectId) {
+      return {
+        label: 'Open Project Dashboard',
+        url: `${this.getHomeownerAppUrl()}/dashboard?projectId=${encodeURIComponent(projectId)}`,
+      };
+    }
+
+    return {
+      label: 'Open BuildMyHouse',
+      url: this.getHomeownerAppUrl(),
+    };
   }
 }

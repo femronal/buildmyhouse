@@ -20,6 +20,11 @@ export class AdminController {
     return this.adminService.getDashboard(userId);
   }
 
+  @Get('contractor-review-insights')
+  getContractorReviewInsights() {
+    return this.adminService.getContractorReviewInsights();
+  }
+
   @Get('email-health')
   getEmailHealth() {
     return this.adminService.getEmailHealth();

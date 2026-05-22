@@ -173,6 +173,10 @@ export default function DashboardScreen() {
   const totalStages = stages.length || phases.length;
   const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : project.progress || 0;
   const isProjectComplete = totalStages > 0 && completedStages === totalStages;
+  const contractorProfileId = (project as any)?.generalContractor?.contractorProfile?.id as string | undefined;
+  const reviewDeepLink = contractorProfileId
+    ? `/review-contractor?contractorId=${encodeURIComponent(contractorProfileId)}&projectId=${encodeURIComponent(projectId)}`
+    : null;
   
   // Calculate spent from completed stages' estimatedCost
   const calculatedSpent = stages
@@ -733,7 +737,24 @@ export default function DashboardScreen() {
               </Text>
             </View>
 
-            {/* Ratings removed for MVP */}
+            {reviewDeepLink && (
+              <View style={cardShadowStyle} className="bg-white rounded-2xl p-4 border border-green-200">
+                <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Review your GC
+                </Text>
+                <Text className="text-gray-600 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Rate the completed experience and select reasons that match your feedback.
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push(reviewDeepLink as any)}
+                  className="bg-black rounded-xl py-3 items-center"
+                >
+                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Open review form
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         )}
       </ScrollView>

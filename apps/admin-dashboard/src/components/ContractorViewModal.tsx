@@ -1,6 +1,7 @@
 'use client';
 
-import { Award, ShieldCheck, ShieldX, X } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { Award, Check, Copy, ShieldCheck, ShieldX, X } from 'lucide-react';
 import { useGCProfile } from '@/hooks/useGCProfile';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useSetUserVerified } from '@/hooks/useUsers';
@@ -10,7 +11,7 @@ type Props = {
   onClose: () => void;
 };
 
-function InfoRow({ label, value }: { label: string; value?: string | null }) {
+function InfoRow({ label, value }: { label: string; value?: ReactNode }) {
   return (
     <div>
       <p className="text-xs text-gray-500">{label}</p>
@@ -22,6 +23,7 @@ function InfoRow({ label, value }: { label: string; value?: string | null }) {
 export function ContractorViewModal({ userId, onClose }: Props) {
   const { data: profile, isLoading, error } = useGCProfile(userId ?? null);
   const setUserVerified = useSetUserVerified();
+  const [copiedReviewLink, setCopiedReviewLink] = useState(false);
 
   if (!userId) return null;
 
@@ -119,7 +121,41 @@ export function ContractorViewModal({ userId, onClose }: Props) {
                 <div className="grid gap-3">
                   <InfoRow label="Specialty" value={profile.specialty} />
                   <InfoRow label="Years of experience" value={profile.experience} />
-                  <InfoRow label="Rating" value={profile.rating ? `⭐ ${profile.rating.toFixed(1)}` : '—'} />
+                  <InfoRow
+                    label="Rating"
+                    value={
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>{profile.rating ? `⭐ ${profile.rating.toFixed(1)}` : '—'}</span>
+                        {profile.reviewLink && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await navigator.clipboard.writeText(profile.reviewLink || '');
+                                setCopiedReviewLink(true);
+                                window.setTimeout(() => setCopiedReviewLink(false), 2000);
+                              } catch {
+                                window.prompt('Copy GC review link', profile.reviewLink || '');
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 rounded-full border border-gray-300 px-2 py-0.5 text-xs text-gray-700 hover:bg-gray-100"
+                          >
+                            {copiedReviewLink ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Copy review link
+                              </>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    }
+                  />
                 </div>
               </div>
 

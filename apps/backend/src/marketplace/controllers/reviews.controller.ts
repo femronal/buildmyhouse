@@ -42,8 +42,17 @@ export class ReviewsController {
     @Param('contractorId') contractorId: string,
     @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
     @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 20,
+    @Query('projectId') projectId?: string,
   ) {
-    return this.reviewsService.getContractorReviews(contractorId, page, limit);
+    return this.reviewsService.getContractorReviews(contractorId, page, limit, projectId);
+  }
+
+  @Get('contractor/:contractorId/reason-options')
+  getContractorReviewReasonOptions(
+    @Param('contractorId') contractorId: string,
+    @Query('rating', new ParseIntPipe({ optional: true })) rating: number = 5,
+  ) {
+    return this.reviewsService.getContractorReviewReasonOptions(contractorId, rating);
   }
 
   @Patch(':id')
@@ -52,10 +61,21 @@ export class ReviewsController {
   update(
     @Param('id') id: string,
     @Request() req: any,
-    @Body() data: { rating?: number; comment?: string },
+    @Body()
+    data: {
+      rating?: number;
+      comment?: string;
+      reasons?: string[];
+      otherReason?: string | null;
+    },
   ) {
     const userId = req.user?.sub;
-    return this.reviewsService.update(id, userId, data.rating, data.comment);
+    return this.reviewsService.update(id, userId, {
+      rating: data.rating,
+      comment: data.comment,
+      reasons: data.reasons,
+      otherReason: data.otherReason,
+    });
   }
 
   @Delete(':id')

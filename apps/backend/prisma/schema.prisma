@@ -205,6 +205,7 @@ model Project {
   orders              Order[] @relation("ProjectOrders")
   disputes            ProjectStageDispute[]
   stageChangeRequests StageChangeRequest[]
+  reviews             Review[]
   
   @@map("projects")
 }
@@ -473,8 +474,11 @@ model Review {
   userId      String
   materialId  String?
   contractorId String?
+  projectId   String?
   rating      Int      // 1-5
   comment     String?
+  reasons     String[] @default([])
+  otherReason String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -482,7 +486,10 @@ model Review {
   user        User     @relation("UserReviews", fields: [userId], references: [id])
   material    Material? @relation("MaterialReviews", fields: [materialId], references: [id], onDelete: Cascade)
   contractor  Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
   
+  @@unique([userId, contractorId, projectId])
+  @@index([projectId])
   @@map("reviews")
 }
 

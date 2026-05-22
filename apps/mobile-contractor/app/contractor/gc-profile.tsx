@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform, Share } from "react-native";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2 } from "lucide-react-native";
 import { useState, useEffect, useRef, useCallback } from "react";
@@ -68,6 +68,7 @@ export default function GCProfileScreen() {
   const [logoutModalVisible, setLogoutModalVisible] = useState(false);
   const [passwordModalVisible, setPasswordModalVisible] = useState(false);
   const [profileImageFailed, setProfileImageFailed] = useState(false);
+  const [reviewLinkCopied, setReviewLinkCopied] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
@@ -122,6 +123,30 @@ export default function GCProfileScreen() {
       Alert.alert('Upload failed', e?.message || 'Please try again.');
     }
   }, [uploadProfilePicture]);
+
+  const handleCopyReviewLink = useCallback(async () => {
+    const reviewLink = String(profileData?.reviewLink || '').trim();
+    if (!reviewLink) {
+      Alert.alert('Unavailable', 'Review link is not available yet.');
+      return;
+    }
+    if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(reviewLink);
+        setReviewLinkCopied(true);
+        setTimeout(() => setReviewLinkCopied(false), 1800);
+        Alert.alert('Copied', 'Your review link is copied. Share it with homeowners.');
+        return;
+      } catch {
+        // Fallback to native share sheet below.
+      }
+    }
+    await Share.share({
+      message: reviewLink,
+      url: reviewLink,
+      title: 'Share your BuildMyHouse review link',
+    });
+  }, [profileData?.reviewLink]);
 
   const openEditModal = (field: 'company' | 'email' | 'phone' | 'location' | 'experience') => {
     setEditModal(field);
@@ -455,6 +480,14 @@ export default function GCProfileScreen() {
                       ⭐ {profileData.rating?.toFixed(1) || '0'}
                     </Text>
                   </View>
+                  <TouchableOpacity
+                    onPress={handleCopyReviewLink}
+                    className="bg-blue-600/20 border border-blue-500 rounded-full px-2 py-1 mr-2"
+                  >
+                    <Text className="text-blue-300 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {reviewLinkCopied ? 'Copied' : 'Copy review link'}
+                    </Text>
+                  </TouchableOpacity>
                   <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {profileData.totalProjects} projects
                   </Text>
