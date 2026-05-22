@@ -6,10 +6,6 @@ import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import StageEvidenceGallery from '@/components/seo/StageEvidenceGallery';
-import ContractorVerificationSummary from '@/components/seo/ContractorVerificationSummary';
-import DocumentationSampleBlock from '@/components/seo/DocumentationSampleBlock';
-import ChatUpdateTimelineDemo from '@/components/seo/ChatUpdateTimelineDemo';
-import MilestonePaymentBreakdown from '@/components/seo/MilestonePaymentBreakdown';
 import ProjectOverviewCard from '@/components/seo/ProjectOverviewCard';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -437,69 +433,6 @@ export default function InteriorDesignNigeriaLandingPage() {
                 date: 'May 2026',
                 explanation: 'Cabinet alignment and countertop finishing confirmation.',
                 imageUrl: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80',
-              },
-            ]}
-          />
-          <ContractorVerificationSummary
-            data={{
-              contractorLabel: 'Interior professional workflow summary',
-              checks: [
-                { label: 'Professional identity and references', status: 'verified' },
-                { label: 'Supplier documentation and pricing trail', status: 'in_review', note: 'Awaiting final invoice upload.' },
-                { label: 'Stage update consistency', status: 'verified' },
-              ],
-              note: 'Demo content showing how interior workflow checks may appear.',
-            }}
-          />
-          <DocumentationSampleBlock
-            items={[
-              {
-                title: 'Supplier invoice pack',
-                caption: 'Curtains and soft furnishing',
-                description: 'Fabric invoice, stitching labour note, and installation record.',
-              },
-              {
-                title: 'Design direction sheet',
-                caption: 'Moodboard summary',
-                description: 'Agreed colour direction, finish level, and room-by-room styling notes.',
-              },
-            ]}
-          />
-          <MilestonePaymentBreakdown
-            items={[
-              {
-                stageName: 'Furniture production',
-                completionDefinition: 'Core furniture pieces completed and quality-checked',
-                requiredEvidence: ['Workshop progress videos', 'Material spec confirmation', 'Quality inspection photos'],
-                paymentTrigger: 'Client review of production proof',
-              },
-              {
-                stageName: 'Delivery and installation',
-                completionDefinition: 'Room-by-room placement and fitting completed',
-                requiredEvidence: ['Delivery photos', 'Installation videos', 'Final room check photos'],
-                paymentTrigger: 'Final pre-handover approval',
-              },
-            ]}
-          />
-          <ChatUpdateTimelineDemo
-            items={[
-              {
-                at: 'Tue 10:16 AM',
-                actor: 'contractor',
-                message: 'Uploaded latest curtain installation photos and fitting invoice.',
-                type: 'evidence',
-              },
-              {
-                at: 'Tue 11:02 AM',
-                actor: 'homeowner',
-                message: 'Please confirm if the living room wall panel colour matches the agreed moodboard.',
-                type: 'question',
-              },
-              {
-                at: 'Tue 12:27 PM',
-                actor: 'buildmyhouse',
-                message: 'Panel colour discrepancy flagged and linked to current stage for correction.',
-                type: 'update',
               },
             ]}
           />

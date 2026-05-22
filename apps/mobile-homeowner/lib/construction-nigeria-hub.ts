@@ -1,313 +1,451 @@
 import type { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
-import type { SeoContentSection } from '@/lib/seo-pages';
+import { buildSeoJsonLd } from '@/lib/seo-schema';
 
-const WEB = 'https://buildmyhouse.app';
-
-const organizationNode = {
-  '@type': 'Organization',
-  '@id': `${WEB}/#organization`,
-  name: 'BuildMyHouse',
-  url: WEB,
+type SimpleSection = {
+  title: string;
+  paragraphs: string[];
+  bullets?: string[];
+  links?: InternalLinkItem[];
 };
 
-/**
- * JSON-LD @graph nodes for /construction/nigeria (Article + WebPage + FAQPage + Organization).
- */
-export function getConstructionNigeriaJsonLd(
-  faqs: Array<{ question: string; answer: string }>,
-  pageTitle: string,
-  pageDescription: string,
-) {
-  const canonicalUrl = `${WEB}/construction/nigeria`;
+type ServiceCard = {
+  title: string;
+  points: string[];
+};
 
-  return [
-    organizationNode,
-    {
-      '@type': 'WebPage',
-      '@id': `${canonicalUrl}#webpage`,
-      url: canonicalUrl,
-      name: pageTitle,
-      description: pageDescription,
-      isPartOf: { '@id': `${WEB}/#organization` },
-      about: { '@id': `${canonicalUrl}#article` },
-    },
-    {
-      '@type': 'Article',
-      '@id': `${canonicalUrl}#article`,
-      headline: 'Building in Nigeria from Abroad (2026 Guide)',
-      description:
-        'Learn how to build your house in Nigeria from the UK, US, or Canada without getting scammed or overpaying.',
-      author: { '@type': 'Organization', name: 'BuildMyHouse' },
-      publisher: {
-        '@type': 'Organization',
-        name: 'BuildMyHouse',
-        logo: {
-          '@type': 'ImageObject',
-          url: `${WEB}/assets/images/icon.png`,
-        },
-      },
-      mainEntityOfPage: { '@id': `${canonicalUrl}#webpage` },
-      url: canonicalUrl,
-    },
-    {
-      '@type': 'FAQPage',
-      '@id': `${canonicalUrl}#faq`,
-      mainEntity: faqs.map((item) => ({
-        '@type': 'Question',
-        name: item.question,
-        acceptedAnswer: {
-          '@type': 'Answer',
-          text: item.answer,
-        },
-      })),
-    },
-  ];
-}
-
-/** Hub → spoke cluster (authority links) */
-export const constructionNigeriaHubClusterLinks: InternalLinkItem[] = [
-  {
-    label: 'Cost of Building a House in Nigeria (2026)',
-    href: '/articles/cost-to-build-house-in-nigeria-2026',
-  },
-  {
-    label: 'Common Mistakes Diaspora Nigerians Make When Building',
-    href: '/mistakes-nigerians-in-diaspora-make-when-building',
-  },
-  {
-    label: 'How to Choose a General Contractor in Nigeria',
-    href: '/how-to-choose-a-general-contractor-in-nigeria',
-  },
-  {
-    label: 'Land Verification in Nigeria — Guide',
-    href: '/land-verification-in-nigeria-guide',
-  },
-  {
-    label: 'Building Permit in Lagos, Nigeria — Guide',
-    href: '/building-permit-in-lagos-nigeria-guide',
-  },
-];
+type PopularSearchCard = {
+  title: string;
+  href: string;
+  description: string;
+};
 
 export type ConstructionNigeriaHubContent = {
-  title: string;
-  description: string;
+  seoTitle: string;
+  seoDescription: string;
   canonicalPath: string;
   eyebrow: string;
   heroTitle: string;
   heroDescription: string;
-  /** Quick answer (featured snippet) */
-  quickAnswer: SeoContentSection;
-  /** Problem / context */
-  problemGuide: SeoContentSection;
-  /** Numbered steps */
-  stepByStep: { heading: string; steps: string[] };
-  whyFail: SeoContentSection;
-  costSection: SeoContentSection;
-  lagosSection: SeoContentSection;
-  ukRemoteSection: SeoContentSection;
-  whySectionTitle: string;
-  whyBullets: string[];
-  whatMakesDifferent: SeoContentSection;
-  processTitle: string;
-  processSteps: string[];
-  trustSection: SeoContentSection;
-  conversionSection: {
-    heading: string;
-    intro: string;
-    lead: string;
-    bullets: string[];
-    primaryCtaLabel: string;
-    primaryCtaHref: string;
-    secondaryCtaLabel: string;
-    secondaryCtaHref: string;
+  heroPrimaryCta: { label: string; href: string };
+  heroSecondaryCta: { label: string; href: string };
+  coverImage: { src: string; alt: string };
+  bestForSection: { title: string; bullets: string[] };
+  whatItIsNotSection: { title: string; bullets: string[] };
+  whatItGivesYouSection: { title: string; bullets: string[] };
+  brandClarity: SimpleSection;
+  strongHook: SimpleSection;
+  quickAnswer: { title: string; bullets: string[] };
+  productLadder: { title: string; intro: string; cards: ServiceCard[]; outro: string };
+  diasporaSection: SimpleSection;
+  howItWorks: { title: string; steps: string[] };
+  trustBlackSection: { title: string; bullets: string[] };
+  visibilitySection: SimpleSection;
+  constructionServicesSection: SimpleSection;
+  renovationServicesSection: SimpleSection;
+  interiorDesignSection: SimpleSection;
+  contractorTrustSection: SimpleSection;
+  paymentDisciplineSection: {
+    title: string;
+    paragraphs: string[];
+    cta: { label: string; href: string };
   };
+  popularSearchesSection: { title: string; cards: PopularSearchCard[] };
   faqs: Array<{ question: string; answer: string }>;
-  internalLinks: InternalLinkItem[];
+  finalCta: {
+    title: string;
+    description: string;
+    primaryCta: { label: string; href: string };
+    secondaryCta: { label: string; href: string };
+  };
 };
 
 export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubContent {
   return {
-    title: 'Building in Nigeria from Abroad | Verified Contractors & Tracking | BuildMyHouse',
-    description:
-      'Authoritative guide: building in Nigeria from abroad with structure, verified contractors, permits in Lagos, costs, and milestone-based project control — without getting burnt.',
+    seoTitle:
+      'BuildMyHouse Nigeria | Construction Services in Nigeria for Diaspora Homeowners',
+    seoDescription:
+      'BuildMyHouse Nigeria is a property project management platform for homeowners and diaspora users planning house construction in Nigeria, renovation, repairs, and interior upgrades with stage tracking and milestone payment discipline.',
     canonicalPath: '/construction/nigeria',
-    eyebrow: 'Construction in Nigeria',
-    heroTitle: 'Build Your House in Nigeria from Abroad — Without Getting Burnt',
+    eyebrow: 'BUILDMYHOUSE NIGERIA',
+    heroTitle: 'Construction Services in Nigeria for Diaspora Homeowners',
     heroDescription:
-      'Building in Nigeria from abroad works when you combine trustworthy guidance, Nigeria-specific knowledge, and a structured system. Build confidently from the UK, US, Canada, or anywhere with verified contractors, milestone-based payments, and full visibility into your construction.',
+      'BuildMyHouse Nigeria is a project management platform for homeowners. It is built for Nigerians abroad and local families who want to run construction, renovation, repairs, and interior work with clearer scope, stage tracking, proof, and payment discipline.',
+    heroPrimaryCta: { label: 'Start Your Project', href: '/location?mode=explore' },
+    heroSecondaryCta: { label: 'See How Project Tracking Works', href: '/demo/project-monitoring' },
+    coverImage: {
+      src: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&w=1400&q=80',
+      alt: 'Construction project planning and site coordination in Nigeria',
+    },
+    bestForSection: {
+      title: 'Best for',
+      bullets: [
+        'Nigerians abroad managing property work in Nigeria',
+        'Homeowners planning construction',
+        "Families renovating parents' homes",
+        'People managing repairs, upgrades, interiors, or full builds',
+      ],
+    },
+    whatItIsNotSection: {
+      title: 'What BuildMyHouse Is Not',
+      bullets: [
+        'not just a contractor directory',
+        'not random artisan listing',
+        'not a WhatsApp group',
+        'not a passive marketplace',
+      ],
+    },
+    whatItGivesYouSection: {
+      title: 'What BuildMyHouse Gives You',
+      bullets: [
+        'project setup',
+        'contractor workflow',
+        'stages',
+        'chat and updates',
+        'files/proof',
+        'payment discipline',
+        'admin oversight',
+      ],
+    },
+    brandClarity: {
+      title: 'What Is BuildMyHouse?',
+      paragraphs: [
+        'BuildMyHouse is a remote property project management platform for Nigerians who want to manage property work in Nigeria with more control.',
+        'It is not just a contractor directory. It is not just a construction company. It is not "Uber for artisans."',
+        'BuildMyHouse sits between the homeowner, contractor, project scope, stage progress, communication, and payment decisions — so property work can feel more structured and visible.',
+        'You can use BuildMyHouse for construction, renovation, repairs, interior design, and diaspora project management.',
+      ],
+    },
+    strongHook: {
+      title: 'The Problem Is Not Just Finding a Contractor. It Is Controlling the Work.',
+      paragraphs: [
+        'Most people can find "someone who knows someone." The real wahala starts after that.',
+        '"Work is going on" is not the same as "this stage is complete."',
+      ],
+      bullets: [
+        'unclear scope',
+        'vague updates',
+        'money requests',
+        'family pressure',
+        'weak documentation',
+        'no clear stage completion',
+        'no proper visibility from abroad',
+      ],
+    },
     quickAnswer: {
-      heading: 'How to Build in Nigeria from Abroad Safely',
-      variant: 'snippet',
+      title: 'How BuildMyHouse Helps Homeowners in Nigeria',
       bullets: [
-        'Verify your land and title properly',
-        'Avoid giving one person total control',
-        'Define your building plan clearly',
-        'Use milestone-based payments',
-        'Track progress with structured updates',
-        'Get proper permits (especially in Lagos)',
-        'Use a system like BuildMyHouse',
+        'Create a clearer project request',
+        'Define scope before money starts moving',
+        'Match the project with relevant contractor workflows',
+        'Track project stages',
+        'Keep chat and updates tied to the project',
+        'Support proof-based payment decisions',
+        'Give diaspora homeowners better visibility from abroad',
       ],
     },
-    problemGuide: {
-      heading: 'Building in Nigeria from Abroad (2026 Guide)',
+    productLadder: {
+      title: 'What You Can Use BuildMyHouse For',
+      intro:
+        'BuildMyHouse Nigeria supports practical project categories that homeowners actually run into.',
+      cards: [
+        {
+          title: 'Repairs',
+          points: [
+            'plumbing',
+            'electrical',
+            'roof leaks',
+            'drainage',
+            'gates',
+            'painting',
+            'compound works',
+          ],
+        },
+        {
+          title: 'Upgrades',
+          points: [
+            'room refresh',
+            'bathroom upgrade',
+            'kitchen upgrade',
+            'ceiling and surface improvements',
+          ],
+        },
+        {
+          title: 'Renovations',
+          points: [
+            'stage-based home renovation',
+            "parents' homes",
+            'inherited properties',
+            'rental prep',
+          ],
+        },
+        {
+          title: 'Interior design',
+          points: [
+            'furnishing',
+            'styling',
+            'wall panels',
+            'curtains',
+            'lighting',
+            'cosmetic improvements',
+          ],
+        },
+        {
+          title: 'Full builds',
+          points: ['house construction projects with stage-by-stage visibility'],
+        },
+      ],
+      outro:
+        'BuildMyHouse earns trust through smaller scoped jobs and can support larger renovation and construction projects as the relationship grows.',
+    },
+    diasporaSection: {
+      title: 'Built for Nigerians Abroad Managing Property Work in Nigeria',
       paragraphs: [
-        "If you're living abroad and planning to build in Nigeria, you're not alone.",
-        'Thousands of Nigerians in the UK, US, Canada, and Europe are trying to build homes back home — but many run into the same problems:',
+        'Nigerians in the UK, US, Canada, UAE, Europe, and other countries often send money home for building, repairs, renovation, or family property upgrades.',
+        'The issue is not love for Nigeria. The issue is control from a distance.',
       ],
       bullets: [
-        'Money disappears without clear results',
-        'Projects take years longer than expected',
-        'Contractors keep requesting “extra funds”',
-        'Family supervision fails due to lack of structure',
+        'time zones',
+        'family supervision',
+        'WhatsApp updates',
+        'payment pressure',
+        'inability to visit often',
+        'need for structured project visibility',
       ],
-      paragraphsAfterBullets: [
-        'The truth is simple:',
-        'Building in Nigeria from abroad is not the problem.',
-        'Lack of structure is the problem.',
+      links: [
+        { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
+        { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
+        { label: 'Build in Nigeria from the US', href: '/diaspora/us/build-in-nigeria' },
+        { label: 'Renovate in Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
       ],
     },
-    stepByStep: {
-      heading: 'Step-by-step: plan your build from abroad',
+    howItWorks: {
+      title: 'How BuildMyHouse Works',
       steps: [
-        'Verify land, title, and encumbrances before you fund major work',
-        'Define scope, budget, and timeline in writing — not WhatsApp voice notes',
-        'Avoid lump-sum payments to a single informal “fixer”',
-        'Use milestone-based payments tied to documented progress',
-        'Track materials, stages, and approvals with structured updates',
-        'Secure planning and construction permits early (especially in Lagos)',
+        'Tell us what you want to do',
+        'Share location, project type, photos, and budget direction',
+        'Get your project structured into stages',
+        'Work with relevant contractor workflows',
+        'Track updates, communication, and progress',
+        'Approve next steps with more clarity',
       ],
     },
-    whyFail: {
-      heading: 'Why Most Diaspora Building Projects Fail',
-      paragraphs: ['Most projects fail because they rely on:'],
+    trustBlackSection: {
+      title: 'Why People Choose BuildMyHouse Nigeria',
       bullets: [
-        'One person handling everything',
-        'Informal agreements',
-        'Lump-sum payments',
-        'No stage tracking',
-        'No accountability',
-      ],
-      paragraphsAfterBullets: [
-        'This creates confusion, delays, and uncontrolled spending.',
+        'Not just contractor discovery — project control',
+        'Stage-based project visibility',
+        'Verified contractor workflows',
+        'Chat, updates, and files tied to the project',
+        'Payment thinking based on proof, not pressure',
+        'Useful for diaspora homeowners and local homeowners',
+        'Admin-side monitoring and operational support',
       ],
     },
-    costSection: {
-      heading: 'Cost of Building in Nigeria (Quick Context)',
-      paragraphs: ['Building costs vary, but generally:'],
-      bullets: [
-        '2-bedroom bungalow: ₦18M – ₦28M',
-        '3-bedroom bungalow: ₦25M – ₦40M',
-        'Duplex: ₦55M+',
-      ],
-      paragraphsAfterBullets: ['Costs depend on location, finishing, and management.'],
-    },
-    lagosSection: {
-      heading: 'Permits and Legal Requirements in Nigeria (Especially Lagos)',
+    visibilitySection: {
+      title: 'What "Visibility" Means on BuildMyHouse',
       paragraphs: [
-        "If you're building in Lagos, you typically need planning permit approval, approval to commence construction, stage inspections, and completion certification.",
-        'Skipping this can lead to fines, project shutdown, or demolition risk.',
+        'Visibility means the homeowner should be able to understand what stage the project is in and whether the next payment makes sense.',
       ],
-    },
-    ukRemoteSection: {
-      heading: 'Building in Nigeria from the UK, US, or Canada: What You Must Know',
-      paragraphs: ['Building remotely comes with unique challenges:'],
       bullets: [
-        'Time zone differences',
-        'Limited physical supervision',
-        'Higher risk of miscommunication',
-        'Increased financial risk',
-      ],
-      paragraphsAfterBullets: [
-        "That's why successful diaspora projects are built on structure, visibility, and accountability.",
+        'photos/videos',
+        'material lists',
+        'receipts/invoices',
+        'stage explanations',
+        'chat updates',
+        'project files',
+        'contractor verification details',
       ],
     },
-    whySectionTitle: 'Why Diaspora Nigerians Choose BuildMyHouse',
-    whyBullets: [
-      'Verified general contractors with accountability',
-      'Milestone-based construction (no blind payments)',
-      'Real-time stage tracking (materials, progress, documentation)',
-      'Designed for Nigerians building from UK, US, Canada, and abroad',
-      'Dispute resolution and structured project control',
-    ],
-    whatMakesDifferent: {
-      heading: 'What Makes BuildMyHouse Different',
-      paragraphs: ['Instead of relying on:'],
-      bullets: ['WhatsApp updates', 'Verbal agreements', 'Family supervision'],
-      paragraphsAfterBullets: ['BuildMyHouse gives you:'],
-      secondaryBullets: [
-        'Structured project setup',
-        'Verified contractor matching',
-        'Stage-by-stage tracking',
-        'Payment tied to actual progress',
-        'Clear communication and documentation',
-      ],
-      closingParagraph: "You don't guess what's happening — you see it.",
-    },
-    processTitle: 'How BuildMyHouse helps',
-    processSteps: [
-      'Share your project location, budget, and design',
-      'Get matched with verified contractors',
-      'Track your project stage-by-stage with full transparency',
-    ],
-    trustSection: {
-      heading: 'Trust, authority, and real project control',
+    constructionServicesSection: {
+      title: 'Construction Services in Nigeria',
       paragraphs: [
-        'BuildMyHouse is built for E‑E‑A‑T: experience from real Nigerian construction workflows, expertise in contractor verification, authoritativeness as a platform (not a random blog), and trust through documentation and stage visibility.',
-        'You reduce scam risk, loss of control, and “extra billing” chaos by replacing informal systems with structured delivery.',
+        'BuildMyHouse can support homeowners planning new construction projects in Nigeria by helping them think through stage-based execution, contractor workflows, project communication, and payment control.',
+        'If you want to build a house in Nigeria with better structure, this page is your practical starting point.',
       ],
-      bullets: [
-        'Clear accountability instead of one opaque contact',
-        'Visibility into stages — not vague updates',
-        'Documentation-friendly flow for diaspora homeowners',
+      links: [
+        { label: 'Construction in Lagos', href: '/construction/lagos' },
+        {
+          label: 'Lagos building permits and stage inspections',
+          href: '/guides/lagos-building-permits-and-stage-inspections',
+        },
+        {
+          label: 'Build a milestone payment schedule',
+          href: '/tools/milestone-payment-schedule',
+        },
       ],
     },
-    conversionSection: {
-      heading: 'Start Your Building Project in Nigeria Today',
-      intro: 'Instead of guessing or relying on informal systems:',
-      lead: 'Use BuildMyHouse to:',
-      bullets: [
-        'Plan your project',
-        'Get matched with verified contractors',
-        'Track every stage',
-        'Control your spending',
-        'Build from anywhere in the world',
+    renovationServicesSection: {
+      title: 'Renovation Services in Nigeria',
+      paragraphs: [
+        'Many Nigerian property projects are not full builds. They are parents’ home upgrades, inherited home repairs, rental prep, bathroom renovation, kitchen renovation, roof repair, electrical rewiring, plumbing correction, painting, tiling, ceiling repair, and full house renovation.',
       ],
-      primaryCtaLabel: 'Start your project',
-      primaryCtaHref: '/location?mode=explore',
-      secondaryCtaLabel: 'Explore verified contractors',
-      secondaryCtaHref: '/explore',
+      links: [
+        { label: 'Renovation services in Nigeria', href: '/renovation/nigeria' },
+        {
+          label: 'Remote renovation scope worksheet',
+          href: '/downloads/remote-renovation-scope-worksheet',
+        },
+        { label: 'Renovation budget planner', href: '/tools/renovation-budget-planner' },
+      ],
+    },
+    interiorDesignSection: {
+      title: 'Interior Design and Cosmetic Upgrade Projects',
+      paragraphs: [
+        'Some users need furnishing, styling, lighting, curtains, wall panels, furniture sourcing, short-let design, parents’ home refresh, or cosmetic renovation. BuildMyHouse can help users turn interior ideas into structured tracked projects.',
+      ],
+      links: [{ label: 'Interior design in Nigeria', href: '/interior-design/nigeria' }],
+    },
+    contractorTrustSection: {
+      title: 'How BuildMyHouse Thinks About Contractor Trust',
+      paragraphs: [
+        'BuildMyHouse does not claim every contractor is perfect. The goal is to make contractor trust more structured through onboarding, verification, project workflows, communication, and admin visibility.',
+        'Depending on context, documentation may include CAC registration certificate, TIN, tax clearance certificate, government-issued ID, proof of business address, professional license or council registration where applicable, insurance certificate, and director/proprietor ID.',
+      ],
+      links: [
+        {
+          label: 'Contractor vetting guide for diaspora homeowners',
+          href: '/guides/contractor-vetting-nigeria-diaspora',
+        },
+      ],
+    },
+    paymentDisciplineSection: {
+      title: 'Do Not Send Money Just Because the Site Looks Busy',
+      paragraphs: [
+        'A busy site is not always a completed stage. The safest project is one where money follows stage progress, proof, and homeowner satisfaction.',
+      ],
+      cta: {
+        label: 'Build a Milestone Payment Schedule',
+        href: '/tools/milestone-payment-schedule',
+      },
+    },
+    popularSearchesSection: {
+      title: 'Popular BuildMyHouse Nigeria Searches',
+      cards: [
+        {
+          title: 'Build in Nigeria from abroad',
+          href: '/diaspora/build-in-nigeria-from-abroad',
+          description: 'Practical guide for remote property project management and execution clarity.',
+        },
+        {
+          title: 'House construction in Lagos',
+          href: '/construction/lagos',
+          description: 'Construction context for Lagos-based projects and stage planning.',
+        },
+        {
+          title: 'Renovation services in Nigeria',
+          href: '/renovation/nigeria',
+          description: 'Renovation pathways for family homes, rentals, and inherited properties.',
+        },
+        {
+          title: 'Interior design in Nigeria',
+          href: '/interior-design/nigeria',
+          description: 'Structured interior design and cosmetic upgrade workflow support.',
+        },
+        {
+          title: 'Contractor verification in Nigeria',
+          href: '/guides/contractor-vetting-nigeria-diaspora',
+          description: 'How BuildMyHouse approaches contractor trust with structured checks.',
+        },
+        {
+          title: 'Milestone payment schedule for construction',
+          href: '/tools/milestone-payment-schedule',
+          description: 'Plan stage-based disbursement to reduce pressure-led payments.',
+        },
+        {
+          title: 'Lagos building permits and stage inspections',
+          href: '/guides/lagos-building-permits-and-stage-inspections',
+          description: 'Permit and stage inspection guidance for Lagos projects.',
+        },
+        {
+          title: "Renovate parents' house from the UK",
+          href: '/diaspora/uk/renovate-parents-house',
+          description: 'Country-specific flow for UK-based diaspora renovation use cases.',
+        },
+      ],
     },
     faqs: [
       {
-        question: 'Can I build a house in Nigeria while living abroad?',
+        question: 'What is BuildMyHouse Nigeria?',
         answer:
-          'Yes, but only if you use proper structure, verified contractors, and stage-based project tracking.',
+          'BuildMyHouse Nigeria is a property project management platform that helps homeowners structure construction, renovation, repair, and interior projects with clearer tracking and workflow visibility.',
       },
       {
-        question: 'How do I avoid getting scammed when building in Nigeria?',
+        question: 'Is BuildMyHouse a construction company?',
         answer:
-          'Avoid lump-sum payments, verify land properly, and use structured platforms like BuildMyHouse that track progress and payments.',
+          'BuildMyHouse is a platform focused on project structure, visibility, and homeowner control. It is not just a traditional construction company website.',
       },
       {
-        question: 'Is Lagos more expensive to build in?',
+        question: 'Can Nigerians abroad use BuildMyHouse?',
         answer:
-          'Yes. Labour, materials, and logistics are more expensive in Lagos than most other states.',
+          'Yes. The platform is designed for diaspora users who need remote property project management and clearer stage-by-stage updates from Nigeria.',
       },
       {
-        question: 'Can my family supervise my building project?',
+        question: 'What kinds of projects can I start on BuildMyHouse?',
         answer:
-          'They can help, but should not be your only system due to lack of technical control.',
+          'You can start repairs, upgrades, renovations, interior design projects, and full house construction in Nigeria.',
+      },
+      {
+        question: 'Can BuildMyHouse help with repairs and renovation?',
+        answer:
+          'Yes. Property repairs in Nigeria and home renovation in Nigeria are key use cases, especially when the homeowner wants better control over scope and updates.',
+      },
+      {
+        question: 'Can BuildMyHouse help with full house construction?',
+        answer:
+          'Yes. BuildMyHouse can support house construction in Nigeria with project stage tracking and milestone payment discipline.',
+      },
+      {
+        question: 'How does BuildMyHouse verify contractors?',
+        answer:
+          'Contractor trust is handled through structured onboarding and verification workflows with documentation checks and project-level visibility.',
+      },
+      {
+        question: 'Can I track my project from abroad?',
+        answer:
+          'Yes. Construction project tracking in Nigeria is one of the core reasons diaspora homeowners use BuildMyHouse.',
+      },
+      {
+        question: 'Does BuildMyHouse support milestone payments?',
+        answer:
+          'BuildMyHouse promotes milestone payment construction in Nigeria by tying payment decisions to stage progress and proof.',
+      },
+      {
+        question: 'How do I start a project on BuildMyHouse?',
+        answer:
+          'Start your project request, share location and project details, then proceed with stage-structured execution.',
+      },
+      {
+        question: 'Is BuildMyHouse available in Lagos?',
+        answer:
+          'Yes. Lagos is one of the active locations where homeowners use BuildMyHouse workflows.',
+      },
+      {
+        question: 'Can I use BuildMyHouse for interior design?',
+        answer:
+          'Yes. You can use BuildMyHouse for interior design and cosmetic upgrade projects in Nigeria.',
       },
     ],
-    internalLinks: [
-      { label: 'Construction in Nigeria', href: '/construction/nigeria' },
-      { label: 'Renovation Services', href: '/renovation/nigeria' },
-      { label: 'Interior Design Services', href: '/interior-design/nigeria' },
-      { label: 'Homes for Rent', href: '/homes-for-rent/nigeria' },
-      { label: 'Houses for Sale', href: '/houses-for-sale/nigeria' },
-      { label: 'Land for Sale', href: '/land-for-sale/nigeria' },
-      { label: 'Construction in Lagos', href: '/construction/lagos' },
-      { label: 'Construction in Abuja', href: '/construction/abuja' },
-    ],
+    finalCta: {
+      title: 'Ready to Manage Property Work in Nigeria With More Control?',
+      description:
+        'Start your project on BuildMyHouse and move from scattered updates, pressure, and guesswork to a clearer workflow with stages, communication, and better visibility.',
+      primaryCta: { label: 'Start Your Project', href: '/location?mode=explore' },
+      secondaryCta: { label: 'See How Project Tracking Works', href: '/demo/project-monitoring' },
+    },
   };
+}
+
+export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubContent) {
+  return buildSeoJsonLd({
+    path: content.canonicalPath,
+    title: content.seoTitle,
+    description: content.seoDescription,
+    schemaType: 'Service',
+    faqs: content.faqs,
+    breadcrumbs: [
+      { name: 'Home', path: '/' },
+      { name: 'Construction', path: '/construction/nigeria' },
+      { name: 'Construction Services in Nigeria', path: '/construction/nigeria' },
+    ],
+  });
 }

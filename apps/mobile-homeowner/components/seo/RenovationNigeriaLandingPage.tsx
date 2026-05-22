@@ -6,10 +6,6 @@ import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import StageEvidenceGallery from '@/components/seo/StageEvidenceGallery';
-import ContractorVerificationSummary from '@/components/seo/ContractorVerificationSummary';
-import DocumentationSampleBlock from '@/components/seo/DocumentationSampleBlock';
-import ChatUpdateTimelineDemo from '@/components/seo/ChatUpdateTimelineDemo';
-import MilestonePaymentBreakdown from '@/components/seo/MilestonePaymentBreakdown';
 import ProjectOverviewCard from '@/components/seo/ProjectOverviewCard';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -390,69 +386,6 @@ export default function RenovationNigeriaLandingPage() {
                 date: 'May 2026',
                 explanation: 'Cabinet installation and plumbing point alignment checks.',
                 imageUrl: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=80',
-              },
-            ]}
-          />
-          <ContractorVerificationSummary
-            data={{
-              contractorLabel: 'Renovation contractor workflow check',
-              checks: [
-                { label: 'Identity and business details', status: 'verified', note: 'Matched with submitted records.' },
-                { label: 'Scope understanding and stage reporting standard', status: 'verified' },
-                { label: 'Latest extra request (plumbing reroute)', status: 'in_review', note: 'Evidence under admin review.' },
-              ],
-              note: 'This section is demo content showing how operational oversight can appear.',
-            }}
-          />
-          <DocumentationSampleBlock
-            items={[
-              {
-                title: 'Material list sample',
-                caption: 'Plumbing and bathroom scope',
-                description: 'PVC pipes, connectors, waterproofing compound, adhesive, and tile quantities.',
-              },
-              {
-                title: 'Issue report sample',
-                caption: 'Unplanned defect found',
-                description: 'Original pipe route failed pressure test; scope updated with proof before next payment.',
-              },
-            ]}
-          />
-          <MilestonePaymentBreakdown
-            items={[
-              {
-                stageName: 'Bathroom correction',
-                completionDefinition: 'Waterproofing completed and tile layout confirmed',
-                requiredEvidence: ['Before and after photos', 'Water test video', 'Material receipts'],
-                paymentTrigger: 'Homeowner confirms stage proof',
-              },
-              {
-                stageName: 'Kitchen upgrade',
-                completionDefinition: 'Cabinet install and plumbing fit-outs complete',
-                requiredEvidence: ['Material list', 'Install photos', 'Snag closure note'],
-                paymentTrigger: 'Admin + homeowner proof review complete',
-              },
-            ]}
-          />
-          <ChatUpdateTimelineDemo
-            items={[
-              {
-                at: 'Mon 9:14 AM',
-                actor: 'contractor',
-                message: 'Uploaded bathroom waterproofing video and today’s material receipts.',
-                type: 'evidence',
-              },
-              {
-                at: 'Mon 10:02 AM',
-                actor: 'homeowner',
-                message: 'Seen. Please confirm if this includes the second bathroom wall crack repair.',
-                type: 'question',
-              },
-              {
-                at: 'Mon 11:20 AM',
-                actor: 'buildmyhouse',
-                message: 'Issue logged and linked to current stage. Contractor response requested before next payment.',
-                type: 'update',
               },
             ]}
           />
