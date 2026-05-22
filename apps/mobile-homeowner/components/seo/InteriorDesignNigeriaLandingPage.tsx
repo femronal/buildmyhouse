@@ -1,12 +1,10 @@
-import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, ChevronRight, MapPin } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
-import StageEvidenceGallery from '@/components/seo/StageEvidenceGallery';
-import ProjectOverviewCard from '@/components/seo/ProjectOverviewCard';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
 import { interiorDesignNigeriaLandingPageContent as content } from '@/lib/interior-design-nigeria-landing-content';
@@ -398,44 +396,84 @@ export default function InteriorDesignNigeriaLandingPage() {
 
         <View className="mb-7">
           <SeoHeading level={2} className="text-black text-2xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            See How Tracked Interior Projects Can Work
+            Project Monitoring Demo
           </SeoHeading>
-          <ProjectOverviewCard
-            overview={{
-              projectName: 'Lekki Duplex Interior Refresh',
-              location: 'Lekki, Lagos',
-              type: 'Interior design project management Nigeria',
-              currentStage: 'Furniture production and soft furnishing',
-              completion: 58,
-              budgetBand: 'Structured milestone disbursement in progress',
-              lastUpdate: 'Last update: 1 day ago',
-            }}
-          />
-          <StageEvidenceGallery
-            items={[
-              {
-                id: 'interior-demo-1',
-                stageLabel: 'Living room styling',
-                date: 'May 2026',
-                explanation: 'TV wall finish, sofa placement, and curtain fit check.',
-                imageUrl: 'https://images.unsplash.com/photo-1615874959474-d609969a20ed?auto=format&fit=crop&w=900&q=80',
-              },
-              {
-                id: 'interior-demo-2',
-                stageLabel: 'Bedroom furnishing',
-                date: 'May 2026',
-                explanation: 'Wardrobe install and bedside lighting ambience update.',
-                imageUrl: 'https://images.unsplash.com/photo-1616594039964-3cb4f6d8f3f2?auto=format&fit=crop&w=900&q=80',
-              },
-              {
-                id: 'interior-demo-3',
-                stageLabel: 'Kitchen upgrade',
-                date: 'May 2026',
-                explanation: 'Cabinet alignment and countertop finishing confirmation.',
-                imageUrl: 'https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80',
-              },
-            ]}
-          />
+          <View style={cardShadowStyle} className="bg-black rounded-[30px] p-2.5">
+            <View className="bg-white rounded-[24px] overflow-hidden">
+              <View className="items-center pt-3 pb-1">
+                <View className="w-24 h-1.5 rounded-full bg-gray-300" />
+              </View>
+              <View className="px-4 pb-4">
+                <Text className="text-black text-[34px] leading-[40px] mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Your Projects
+                </Text>
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl border border-gray-200 overflow-hidden">
+                  <Image
+                    source={{ uri: 'https://images.unsplash.com/photo-1541976590-713941681591?auto=format&fit=crop&w=1200&q=80' }}
+                    className="w-full h-36"
+                    resizeMode="cover"
+                  />
+                  <View className="p-4">
+                    <View className="flex-row justify-between items-start mb-2">
+                      <View className="flex-1 min-w-0 mr-2">
+                        <Text className="text-black text-xl mb-1" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
+                          Daddy Obinna ...
+                        </Text>
+                        <View className="flex-row items-center">
+                          <MapPin size={14} color="#737373" strokeWidth={2} />
+                          <Text className="text-gray-500 text-sm ml-1 flex-1" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={2}>
+                            University of Lagos Cricket Oval, Ransome Kuti Road, ...
+                          </Text>
+                        </View>
+                      </View>
+                      <View className="flex-row items-center">
+                        <View className="rounded-full px-2.5 py-1 bg-blue-100 mr-1">
+                          <Text className="text-xs text-blue-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            Active
+                          </Text>
+                        </View>
+                        <ChevronRight size={20} color="#000000" strokeWidth={2} />
+                      </View>
+                    </View>
+                    <View className="mb-3">
+                      <View className="flex-row justify-between mb-2">
+                        <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Site Preparation & Foundation
+                        </Text>
+                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                          17%
+                        </Text>
+                      </View>
+                      <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <View className="h-full bg-black rounded-full" style={{ width: '17%' }} />
+                      </View>
+                    </View>
+                    <View className="flex-row justify-between pt-3 border-t border-gray-200">
+                      <View>
+                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          Budget
+                        </Text>
+                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                          ₦2,240,000
+                        </Text>
+                      </View>
+                      <View>
+                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          Spent
+                        </Text>
+                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                          ₦330,000
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+                <Text className="text-xs text-gray-500 mt-3 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Demo only — tap the project to explore the in-app layout.
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
 
         <CollapsibleFaqSection title={content.faq.title} items={content.faq.items} className="mb-7" />
