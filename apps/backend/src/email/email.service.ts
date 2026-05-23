@@ -8,6 +8,11 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 }
 
 export type EmailHealthReport = {
@@ -79,6 +84,14 @@ export class EmailService {
         subject: options.subject,
         html: options.html,
         text: options.text,
+        attachments: (options.attachments || []).map((attachment) => ({
+          filename: attachment.filename,
+          content:
+            typeof attachment.content === 'string'
+              ? attachment.content
+              : attachment.content.toString('base64'),
+          contentType: attachment.contentType || 'application/octet-stream',
+        })),
       });
 
       if (error) {
@@ -98,6 +111,134 @@ export class EmailService {
       );
       return false;
     }
+  }
+
+  private formatNaira(value: number): string {
+    return `₦${Number(value || 0).toLocaleString('en-NG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  async sendHomeownerQuoteEmail(params: {
+    to: string;
+    homeownerName: string;
+    projectName: string;
+    projectAddress?: string | null;
+    contractorName: string;
+    estimatedDuration?: string | null;
+    baseQuoteAmount: number;
+    monitoringFeeAmount: number;
+    coordinationFeeAmount: number;
+    contingencyFeeAmount: number;
+    totalQuoteAmount: number;
+    quotePdfBuffer: Buffer;
+    quotePdfFileName: string;
+  }): Promise<boolean> {
+    const safeHomeowner = this.escapeHtml(params.homeownerName || 'Homeowner');
+    const safeProjectName = this.escapeHtml(params.projectName || 'Project');
+    const safeProjectAddress = this.escapeHtml(params.projectAddress || 'Address not provided');
+    const safeContractorName = this.escapeHtml(params.contractorName || 'General Contractor');
+    const safeDuration = this.escapeHtml(params.estimatedDuration || 'To be confirmed');
+    const baseAmount = this.formatNaira(params.baseQuoteAmount);
+    const monitoringFee = this.formatNaira(params.monitoringFeeAmount);
+    const coordinationFee = this.formatNaira(params.coordinationFeeAmount);
+    const contingencyFee = this.formatNaira(params.contingencyFeeAmount);
+    const totalAmount = this.formatNaira(params.totalQuoteAmount);
+    const safePdfFileName = String(params.quotePdfFileName || 'buildmyhouse-quote.pdf').trim();
+
+    const subject = `BuildMyHouse Quote Ready: ${params.projectName}`;
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${this.escapeHtml(subject)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;margin:0 auto;padding:24px;">
+    <tr>
+      <td style="background:#ffffff;border-radius:12px;padding:28px;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+        <h1 style="margin:0 0 10px 0;font-size:20px;color:#111827;">Your BuildMyHouse Quote Is Ready</h1>
+        <p style="margin:0 0 20px 0;font-size:14px;color:#4b5563;">Hi ${safeHomeowner}, your contractor has accepted your project after physical inspection.</p>
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin-bottom:18px;">
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:13px;">Project</td><td style="padding:8px 0;color:#111827;font-size:13px;text-align:right;">${safeProjectName}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:13px;">Address</td><td style="padding:8px 0;color:#111827;font-size:13px;text-align:right;">${safeProjectAddress}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:13px;">Contractor</td><td style="padding:8px 0;color:#111827;font-size:13px;text-align:right;">${safeContractorName}</td></tr>
+          <tr><td style="padding:8px 0;color:#6b7280;font-size:13px;">Estimated Duration</td><td style="padding:8px 0;color:#111827;font-size:13px;text-align:right;">${safeDuration}</td></tr>
+        </table>
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:18px;">
+          <tr><td style="padding:8px 0;color:#111827;font-size:14px;">Engineer Quote</td><td style="padding:8px 0;color:#111827;font-size:14px;text-align:right;">${baseAmount}</td></tr>
+          <tr><td style="padding:8px 0;color:#374151;font-size:13px;">BuildMyHouse Monitoring Fee (5%)</td><td style="padding:8px 0;color:#374151;font-size:13px;text-align:right;">${monitoringFee}</td></tr>
+          <tr><td style="padding:8px 0;color:#374151;font-size:13px;">BuildMyHouse Coordination Fee (5%)</td><td style="padding:8px 0;color:#374151;font-size:13px;text-align:right;">${coordinationFee}</td></tr>
+          <tr><td style="padding:8px 0;color:#374151;font-size:13px;">BuildMyHouse Contingency Fee (20%)</td><td style="padding:8px 0;color:#374151;font-size:13px;text-align:right;">${contingencyFee}</td></tr>
+          <tr><td colspan="2" style="border-top:1px solid #e5e7eb;padding-top:10px;"></td></tr>
+          <tr><td style="padding:8px 0;color:#111827;font-size:16px;font-weight:700;">Total Amount Payable</td><td style="padding:8px 0;color:#111827;font-size:16px;font-weight:700;text-align:right;">${totalAmount}</td></tr>
+        </table>
+
+        <div style="background:#111827;color:#ffffff;border-radius:10px;padding:14px;margin-bottom:16px;">
+          <p style="margin:0 0 8px 0;font-size:13px;font-weight:600;">Pay to BuildMyHouse Verified Account</p>
+          <p style="margin:0;font-size:13px;line-height:1.7;">
+            Monipoint MFB<br>
+            8139036559<br>
+            Amala Class Concepts (or Godswill Oluwafemi Okunola)
+          </p>
+        </div>
+
+        <p style="margin:0 0 8px 0;font-size:13px;color:#111827;">
+          After payment, send your payment receipt together with the attached quote PDF to BuildMyHouse WhatsApp for approval to begin:
+        </p>
+        <p style="margin:0 0 18px 0;font-size:14px;font-weight:700;color:#111827;">+2348105475652</p>
+
+        <p style="margin:0;font-size:12px;color:#6b7280;">
+          Attached file: ${this.escapeHtml(safePdfFileName)}
+        </p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+    `.trim();
+
+    const text = `Hi ${params.homeownerName},
+
+Your BuildMyHouse quote is ready for ${params.projectName}.
+
+Project: ${params.projectName}
+Address: ${params.projectAddress || 'Address not provided'}
+Contractor: ${params.contractorName}
+Estimated Duration: ${params.estimatedDuration || 'To be confirmed'}
+
+Engineer Quote: ${baseAmount}
+BuildMyHouse Monitoring Fee (5%): ${monitoringFee}
+BuildMyHouse Coordination Fee (5%): ${coordinationFee}
+BuildMyHouse Contingency Fee (20%): ${contingencyFee}
+Total Amount Payable: ${totalAmount}
+
+Pay to BuildMyHouse Verified Account:
+Monipoint MFB
+8139036559
+Amala Class Concepts (or Godswill Oluwafemi Okunola)
+
+After payment, send your receipt and the attached quote PDF to BuildMyHouse WhatsApp for approval to begin:
++2348105475652`;
+
+    return this.send({
+      to: params.to,
+      subject,
+      html,
+      text,
+      attachments: [
+        {
+          filename: safePdfFileName,
+          content: params.quotePdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    });
   }
 
   async getHealthReport(): Promise<EmailHealthReport> {

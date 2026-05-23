@@ -3,7 +3,14 @@ import { ContractorMatcherService } from './contractor-matcher.service';
 import { ContractorsService } from './contractors.service';
 
 describe('ContractorsService.recommendGCs', () => {
-  const buildService = (matchingVersion: string = 'v1') => {
+  const buildService = (options?: {
+    matchingVersion?: string;
+    aiRerankEnabled?: boolean;
+    projectOverrides?: Record<string, any>;
+    candidates?: any[];
+    aiRerankResponse?: { orderedContractorIds: string[]; reasonsById: Record<string, string[]> } | null;
+  }) => {
+    const matchingVersion = options?.matchingVersion || 'v1';
     const wsService = {
       sendNotification: jest.fn(),
       emitProjectUpdate: jest.fn(),
@@ -12,11 +19,31 @@ describe('ContractorsService.recommendGCs', () => {
     const configService = {
       get: jest.fn().mockImplementation((key: string) => {
         if (key === 'MATCHING_ALGO_VERSION') return matchingVersion;
+        if (key === 'GC_MATCHING_AI_RERANK_ENABLED')
+          return options?.aiRerankEnabled ? 'true' : 'false';
+        if (key === 'GC_MATCHING_AI_POOL_LIMIT') return '20';
+        if (key === 'GC_MATCHING_AI_MODEL') return 'gpt-4o-mini';
         return undefined;
       }),
     } as unknown as ConfigService;
     const matcher = new ContractorMatcherService();
-    const service = new ContractorsService(wsService, stripeService, configService, matcher);
+    const emailService = {
+      sendHomeownerQuoteEmail: jest.fn(),
+    } as any;
+    const openAIService = {
+      isConfigured: jest.fn().mockReturnValue(!!options?.aiRerankEnabled),
+      rerankContractorMatches: jest
+        .fn()
+        .mockResolvedValue(options?.aiRerankResponse ?? null),
+    } as any;
+    const service = new ContractorsService(
+      wsService,
+      stripeService,
+      configService,
+      matcher,
+      emailService,
+      openAIService,
+    );
 
     const prismaMock = {
       project: {
@@ -29,40 +56,43 @@ describe('ContractorsService.recommendGCs', () => {
           budget: 15000000,
           projectType: 'renovation',
           aiAnalysis: { projectTypeTag: 'renovation' },
+          ...(options?.projectOverrides || {}),
         }),
       },
       contractor: {
-        findMany: jest.fn().mockResolvedValue([
-          {
-            id: 'contractor-1',
-            userId: 'gc-user-1',
-            name: 'Build Co',
-            specialtyCategory: 'renovator',
-            specialtyTags: ['kitchen', 'interior'],
-            specialty: 'Renovation',
-            description: 'Experienced renovation GC.',
-            location: 'Lekki, Lagos',
-            experienceYears: 10,
-            rating: 4.8,
-            reviews: 24,
-            projects: 60,
-            verified: true,
-            hiringFee: 300000,
-            type: 'general_contractor',
-            user: {
-              id: 'gc-user-1',
-              fullName: 'Build Co',
-              email: 'gc1@example.com',
-              phone: '000',
-              pictureUrl: null,
-              role: 'general_contractor',
+        findMany: jest.fn().mockResolvedValue(
+          options?.candidates || [
+            {
+              id: 'contractor-1',
+              userId: 'gc-user-1',
+              name: 'Build Co',
+              specialtyCategory: 'renovator',
+              specialtyTags: ['kitchen', 'interior'],
+              specialty: 'Renovation',
+              description: 'Experienced renovation GC.',
+              location: 'Lekki, Lagos',
+              experienceYears: 10,
+              rating: 4.8,
+              reviews: 24,
+              projects: 60,
               verified: true,
+              hiringFee: 300000,
+              type: 'general_contractor',
+              user: {
+                id: 'gc-user-1',
+                fullName: 'Build Co',
+                email: 'gc1@example.com',
+                phone: '000',
+                pictureUrl: null,
+                role: 'general_contractor',
+                verified: true,
+              },
+              _count: {
+                certifications: 2,
+              },
             },
-            _count: {
-              certifications: 2,
-            },
-          },
-        ]),
+          ],
+        ),
       },
       projectRequest: {
         findMany: jest.fn().mockResolvedValue([
@@ -80,11 +110,11 @@ describe('ContractorsService.recommendGCs', () => {
     };
 
     (service as any).prisma = prismaMock;
-    return { service };
+    return { service, openAIService };
   };
 
   it('returns enriched scoring payload when v1 is active', async () => {
-    const { service } = buildService('v1');
+    const { service } = buildService({ matchingVersion: 'v1' });
     const matches = await service.recommendGCs('project-1', 3);
 
     expect(matches).toHaveLength(1);
@@ -94,12 +124,131 @@ describe('ContractorsService.recommendGCs', () => {
   });
 
   it('supports legacy fallback when configured', async () => {
-    const { service } = buildService('legacy');
+    const { service } = buildService({ matchingVersion: 'legacy' });
     const matches = await service.recommendGCs('project-1', 3);
 
     expect(matches).toHaveLength(1);
     expect(matches[0].matchScore).toBeGreaterThan(0);
     expect(matches[0].matchBreakdown).toBeUndefined();
+  });
+
+  it('falls back to legacy ranking when strict matcher returns empty', async () => {
+    const { service } = buildService({
+      matchingVersion: 'v1',
+      projectOverrides: {
+        city: 'Lekki',
+        state: 'Lagos',
+        aiAnalysis: { projectTypeTag: 'repair' },
+      },
+      candidates: [
+        {
+          id: 'contractor-recovery',
+          userId: 'gc-user-recovery',
+          name: 'Recovery GC',
+          specialtyCategory: 'upgrader',
+          specialtyTags: ['modernization'],
+          specialty: 'Upgrades',
+          description: 'Reliable contractor with strong execution history and complete profile.',
+          location: 'Lekki, Lagos',
+          experienceYears: 8,
+          rating: 4.9,
+          reviews: 18,
+          projects: 42,
+          verified: true,
+          hiringFee: 250000,
+          type: 'general_contractor',
+          user: {
+            id: 'gc-user-recovery',
+            fullName: 'Recovery GC',
+            email: 'recover@example.com',
+            phone: '000',
+            pictureUrl: null,
+            role: 'general_contractor',
+            verified: true,
+          },
+          _count: {
+            certifications: 2,
+          },
+        },
+      ],
+    });
+
+    const matches = await service.recommendGCs('project-1', 3);
+    expect(matches).toHaveLength(1);
+    expect(matches[0].id).toBe('contractor-recovery');
+  });
+
+  it('applies AI reranker ordering when feature flag is enabled', async () => {
+    const { service, openAIService } = buildService({
+      matchingVersion: 'v1',
+      aiRerankEnabled: true,
+      aiRerankResponse: {
+        orderedContractorIds: ['contractor-2', 'contractor-1'],
+        reasonsById: {
+          'contractor-2': ['Closer to project location', 'Better reliability signal'],
+        },
+      },
+      candidates: [
+        {
+          id: 'contractor-1',
+          userId: 'gc-user-1',
+          name: 'Build Co',
+          specialtyCategory: 'renovator',
+          specialtyTags: ['kitchen', 'interior'],
+          specialty: 'Renovation',
+          description: 'Experienced renovation GC.',
+          location: 'Lekki, Lagos',
+          experienceYears: 10,
+          rating: 4.8,
+          reviews: 24,
+          projects: 60,
+          verified: true,
+          hiringFee: 300000,
+          type: 'general_contractor',
+          user: {
+            id: 'gc-user-1',
+            fullName: 'Build Co',
+            email: 'gc1@example.com',
+            phone: '000',
+            pictureUrl: null,
+            role: 'general_contractor',
+            verified: true,
+          },
+          _count: { certifications: 2 },
+        },
+        {
+          id: 'contractor-2',
+          userId: 'gc-user-2',
+          name: 'Prime GC',
+          specialtyCategory: 'renovator',
+          specialtyTags: ['kitchen', 'interior'],
+          specialty: 'Renovation',
+          description: 'High-performing renovation GC with strong response metrics.',
+          location: 'Lekki, Lagos',
+          experienceYears: 12,
+          rating: 4.7,
+          reviews: 20,
+          projects: 55,
+          verified: true,
+          hiringFee: 290000,
+          type: 'general_contractor',
+          user: {
+            id: 'gc-user-2',
+            fullName: 'Prime GC',
+            email: 'gc2@example.com',
+            phone: '000',
+            pictureUrl: null,
+            role: 'general_contractor',
+            verified: true,
+          },
+          _count: { certifications: 2 },
+        },
+      ],
+    });
+
+    const matches = await service.recommendGCs('project-1', 2);
+    expect(openAIService.rerankContractorMatches).toHaveBeenCalled();
+    expect(matches[0].id).toBe('contractor-2');
   });
 });
 

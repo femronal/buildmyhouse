@@ -11,6 +11,9 @@ import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
 import { StripeService } from '../payments/services/stripe.service';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
+import PDFDocument from 'pdfkit';
+import { OpenAIService, RerankContractorInput } from '../openai/openai.service';
 import {
   GC_VERIFICATION_REQUIRED_DOCUMENTS,
   GCVerificationDocumentType,
@@ -30,6 +33,10 @@ const GC_SPECIALTY_LABELS: Record<GCSpecialtyCategory, string> = {
   renovator: 'Renovator',
   general_contractor: 'General Contractor',
 };
+
+const BMH_MONITORING_FEE_RATE = 0.05;
+const BMH_COORDINATION_FEE_RATE = 0.05;
+const BMH_CONTINGENCY_FEE_RATE = 0.2;
 
 @Injectable()
 export class ContractorsService {
@@ -118,6 +125,119 @@ export class ContractorsService {
     return Math.round(n * 100);
   }
 
+  private centsToMoney(value: number): number {
+    if (!Number.isFinite(value)) return 0;
+    return Math.round(value) / 100;
+  }
+
+  private calculateBmhQuoteBreakdown(baseBudgetAmount: number) {
+    const baseBudgetCents = this.moneyToCents(baseBudgetAmount);
+    if (!Number.isFinite(baseBudgetCents) || baseBudgetCents <= 0) {
+      throw new BadRequestException('estimatedBudget is required and must be greater than 0');
+    }
+
+    const monitoringFeeCents = Math.round(baseBudgetCents * BMH_MONITORING_FEE_RATE);
+    const coordinationFeeCents = Math.round(baseBudgetCents * BMH_COORDINATION_FEE_RATE);
+    const contingencyFeeCents = Math.round(baseBudgetCents * BMH_CONTINGENCY_FEE_RATE);
+    const totalQuoteCents =
+      baseBudgetCents + monitoringFeeCents + coordinationFeeCents + contingencyFeeCents;
+
+    return {
+      baseBudgetAmount: this.centsToMoney(baseBudgetCents),
+      monitoringFeeAmount: this.centsToMoney(monitoringFeeCents),
+      coordinationFeeAmount: this.centsToMoney(coordinationFeeCents),
+      contingencyFeeAmount: this.centsToMoney(contingencyFeeCents),
+      totalQuoteAmount: this.centsToMoney(totalQuoteCents),
+    };
+  }
+
+  private formatNaira(amount: number): string {
+    return `₦${Number(amount || 0).toLocaleString('en-NG', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  private sanitizeFileNameSegment(input: string): string {
+    const normalized = String(input || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return normalized || 'project';
+  }
+
+  private generateHomeownerQuotePdfBuffer(params: {
+    quoteReference: string;
+    generatedAt: Date;
+    projectName: string;
+    projectAddress?: string | null;
+    homeownerName: string;
+    contractorName: string;
+    estimatedDuration?: string | null;
+    baseQuoteAmount: number;
+    monitoringFeeAmount: number;
+    coordinationFeeAmount: number;
+    contingencyFeeAmount: number;
+    totalQuoteAmount: number;
+  }): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      doc.fontSize(20).text('BuildMyHouse Quote', { align: 'left' });
+      doc.moveDown(0.25);
+      doc.fontSize(10).fillColor('#6b7280').text(`Reference: ${params.quoteReference}`);
+      doc.text(`Generated: ${params.generatedAt.toISOString()}`);
+      doc.fillColor('#111827');
+      doc.moveDown(1.2);
+
+      doc.fontSize(13).text('Project Details', { underline: true });
+      doc.moveDown(0.4);
+      doc.fontSize(11).text(`Project: ${params.projectName}`);
+      doc.text(`Address: ${params.projectAddress || 'Address not provided'}`);
+      doc.text(`Homeowner: ${params.homeownerName}`);
+      doc.text(`Contractor: ${params.contractorName}`);
+      doc.text(`Estimated Duration: ${params.estimatedDuration || 'To be confirmed'}`);
+      doc.moveDown(1.2);
+
+      doc.fontSize(13).text('Quote Breakdown', { underline: true });
+      doc.moveDown(0.4);
+      doc.fontSize(11).text(`Engineer Quote: ${this.formatNaira(params.baseQuoteAmount)}`);
+      doc.text(
+        `BuildMyHouse Monitoring Fee (5%): ${this.formatNaira(params.monitoringFeeAmount)}`,
+      );
+      doc.text(
+        `BuildMyHouse Coordination Fee (5%): ${this.formatNaira(params.coordinationFeeAmount)}`,
+      );
+      doc.text(
+        `BuildMyHouse Contingency Fee (20%): ${this.formatNaira(params.contingencyFeeAmount)}`,
+      );
+      doc.moveDown(0.4);
+      doc.font('Helvetica-Bold').text(`Total Amount Payable: ${this.formatNaira(params.totalQuoteAmount)}`);
+      doc.font('Helvetica');
+      doc.moveDown(1.2);
+
+      doc.fontSize(13).text('Payment Instructions', { underline: true });
+      doc.moveDown(0.4);
+      doc.fontSize(11).text('Pay to BuildMyHouse Verified Account:');
+      doc.text('Monipoint MFB');
+      doc.text('8139036559');
+      doc.text('Amala Class Concepts (or Godswill Oluwafemi Okunola)');
+      doc.moveDown(0.8);
+      doc.text(
+        'After payment, send the receipt together with this quote PDF to BuildMyHouse WhatsApp for approval to begin:',
+      );
+      doc.font('Helvetica-Bold').text('+2348105475652');
+      doc.font('Helvetica');
+
+      doc.end();
+    });
+  }
+
   private extractEditedAnalysisFromNotes(gcNotes?: string): any | null {
     if (!gcNotes) return null;
     const marker = '[Edited AI Analysis]';
@@ -184,6 +304,8 @@ export class ContractorsService {
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
     private readonly contractorMatcherService: ContractorMatcherService,
+    private readonly emailService: EmailService,
+    private readonly openAIService: OpenAIService,
   ) {}
 
   private async getContractorProfileOrThrow(userId: string) {
@@ -327,6 +449,58 @@ export class ContractorsService {
     return String(this.configService.get<string>('MATCHING_ALGO_VERSION') || 'v1')
       .trim()
       .toLowerCase();
+  }
+
+  private isAiRerankEnabled(): boolean {
+    const raw = String(this.configService.get<string>('GC_MATCHING_AI_RERANK_ENABLED') || '')
+      .trim()
+      .toLowerCase();
+    return raw === '1' || raw === 'true' || raw === 'yes' || raw === 'on';
+  }
+
+  private getAiRerankPoolLimit(requestedLimit: number): number {
+    const configured = Number(this.configService.get<string>('GC_MATCHING_AI_POOL_LIMIT') || 20);
+    const safeConfigured = Number.isFinite(configured) ? configured : 20;
+    const minByLimit = Math.max(requestedLimit * 4, requestedLimit + 2);
+    return Math.max(3, Math.min(40, Math.max(minByLimit, Math.round(safeConfigured))));
+  }
+
+  private buildAiRerankCandidatePool(params: {
+    project: any;
+    deterministicMatches: any[];
+    enrichedCandidates: ContractorMatcherCandidateInput[];
+    limit: number;
+  }): any[] {
+    const poolLimit = this.getAiRerankPoolLimit(params.limit);
+    const legacyPool = this.legacyRecommendGCs(params.project, params.enrichedCandidates, poolLimit);
+    const merged = [...(params.deterministicMatches || []), ...(legacyPool || [])];
+    const unique = new Map<string, any>();
+    for (const candidate of merged) {
+      const id = String(candidate?.id || '').trim();
+      if (!id || unique.has(id)) continue;
+      unique.set(id, candidate);
+    }
+    return Array.from(unique.values()).slice(0, poolLimit);
+  }
+
+  private mapToAiRerankInput(candidates: any[]): RerankContractorInput[] {
+    return (candidates || []).map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name || candidate.user?.fullName || null,
+      specialty: candidate.specialty || null,
+      specialtyCategory: candidate.specialtyCategory || null,
+      specialtyTags: candidate.specialtyTags || [],
+      location: candidate.location || null,
+      rating: candidate.rating ?? null,
+      reviews: candidate.reviews ?? null,
+      projects: candidate.projects ?? null,
+      experienceYears: candidate.experienceYears ?? null,
+      verified: candidate.verified ?? candidate.user?.verified ?? null,
+      matchScore: candidate.matchScore ?? null,
+      matchReasons: candidate.matchReasons || [],
+      requestStats: candidate.requestStats || null,
+      disputeStats: candidate.disputeStats || null,
+    }));
   }
 
   private buildRequestStats(requestRows: any[]): ContractorMatcherRequestStats {
@@ -575,14 +749,74 @@ export class ContractorsService {
       limit,
     });
 
+    // Immediate empty-result protection: if strict gates eliminate all matches,
+    // fall back to legacy ranking so homeowners still see viable options.
+    let selectedMatches: any[] = result.matches;
+    let fallbackApplied = false;
+    if (selectedMatches.length === 0 && enrichedCandidates.length > 0) {
+      selectedMatches = this.legacyRecommendGCs(project, enrichedCandidates, limit);
+      fallbackApplied = true;
+    }
+
+    // Optional AI rerank behind feature flag. This reorders a constrained pool and never blocks
+    // response if AI is unavailable/fails.
+    let aiRerankApplied = false;
+    if (
+      this.isAiRerankEnabled() &&
+      this.openAIService.isConfigured() &&
+      enrichedCandidates.length > 0
+    ) {
+      const pool = this.buildAiRerankCandidatePool({
+        project,
+        deterministicMatches: selectedMatches,
+        enrichedCandidates,
+        limit,
+      });
+      if (pool.length > 0) {
+        const aiResult = await this.openAIService.rerankContractorMatches({
+          project,
+          candidates: this.mapToAiRerankInput(pool),
+          limit,
+        });
+        if (aiResult?.orderedContractorIds?.length) {
+          const byId = new Map<string, any>(pool.map((candidate) => [candidate.id, candidate]));
+          const reranked = aiResult.orderedContractorIds
+            .map((id) => byId.get(id))
+            .filter(Boolean)
+            .slice(0, limit)
+            .map((candidate: any) => {
+              const aiReasons = aiResult.reasonsById?.[candidate.id] || [];
+              return {
+                ...candidate,
+                matchReasons:
+                  aiReasons.length > 0
+                    ? aiReasons
+                    : Array.isArray(candidate.matchReasons)
+                      ? candidate.matchReasons
+                      : [],
+                aiReranked: true,
+              };
+            });
+
+          if (reranked.length > 0) {
+            selectedMatches = reranked;
+            aiRerankApplied = true;
+          }
+        }
+      }
+    }
+
     this.logger.log(
       JSON.stringify({
         event: 'gc_matching_completed',
         ...result.diagnostics,
+        fallbackApplied,
+        aiRerankApplied,
+        finalSelectedCount: selectedMatches.length,
       }),
     );
 
-    return result.matches.map((contractor: any) => ({
+    return selectedMatches.map((contractor: any) => ({
       ...contractor,
       reviewLink: this.buildContractorReviewLink(contractor?.id),
     }));
@@ -814,7 +1048,15 @@ export class ContractorsService {
             select: {
               id: true,
               name: true,
+              address: true,
               homeownerId: true,
+              homeowner: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  email: true,
+                },
+              },
             },
           },
         },
@@ -847,6 +1089,12 @@ export class ContractorsService {
         this.validateEditedProjectAnalysisOrThrow(editedAnalysis, estimatedBudget);
       }
 
+      const quoteGeneratedAt = new Date();
+      const quoteBreakdown =
+        contractor?.role === 'general_contractor' && !request.stageId && Number(estimatedBudget || 0) > 0
+          ? this.calculateBmhQuoteBreakdown(Number(estimatedBudget || 0))
+          : null;
+
       // Update request
       const updatedRequest = await this.prisma.projectRequest.update({
         where: { id: requestId },
@@ -854,6 +1102,11 @@ export class ContractorsService {
           status: 'accepted',
           respondedAt: new Date(),
           estimatedBudget,
+          monitoringFeeAmount: quoteBreakdown?.monitoringFeeAmount,
+          coordinationFeeAmount: quoteBreakdown?.coordinationFeeAmount,
+          contingencyFeeAmount: quoteBreakdown?.contingencyFeeAmount,
+          totalQuoteAmount: quoteBreakdown?.totalQuoteAmount,
+          quoteGeneratedAt: quoteBreakdown ? quoteGeneratedAt : null,
           estimatedDuration,
           gcNotes,
         },
@@ -923,15 +1176,78 @@ export class ContractorsService {
         
         // Also send notification to homeowner
         if (request.project?.homeownerId) {
+          const quoteTotalText = quoteBreakdown
+            ? ` Total payable: ${this.formatNaira(quoteBreakdown.totalQuoteAmount)}.`
+            : '';
           this.wsService.sendNotification(request.project.homeownerId, {
             type: 'gc_accepted',
             title: 'Project Request Accepted!',
-            message: `A contractor has accepted your project: ${request.project.name}`,
+            message: `A contractor has accepted your project: ${request.project.name}.${quoteTotalText}`,
             data: {
               projectId: request.projectId,
               requestId: updatedRequest.id,
+              quoteBreakdown: quoteBreakdown || undefined,
             },
           });
+        }
+
+        if (
+          quoteBreakdown &&
+          request.project?.homeowner?.email &&
+          request.project?.homeowner?.fullName
+        ) {
+          const quoteReference = `BMH-${request.projectId.slice(0, 8).toUpperCase()}-${updatedRequest.id
+            .slice(0, 6)
+            .toUpperCase()}`;
+          const projectNameForFile = this.sanitizeFileNameSegment(request.project.name);
+          const quotePdfFileName = `buildmyhouse-quote-${projectNameForFile}-${quoteReference
+            .toLowerCase()
+            .replace(/[^a-z0-9-]/g, '')}.pdf`;
+
+          try {
+            const quotePdfBuffer = await this.generateHomeownerQuotePdfBuffer({
+              quoteReference,
+              generatedAt: quoteGeneratedAt,
+              projectName: request.project.name,
+              projectAddress: request.project.address,
+              homeownerName: request.project.homeowner.fullName,
+              contractorName:
+                updatedRequest.contractor?.contractorProfile?.name ||
+                updatedRequest.contractor?.fullName ||
+                'General Contractor',
+              estimatedDuration: estimatedDuration || null,
+              baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
+              monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
+              coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
+              contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
+              totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
+            });
+
+            await this.emailService.sendHomeownerQuoteEmail({
+              to: request.project.homeowner.email,
+              homeownerName: request.project.homeowner.fullName,
+              projectName: request.project.name,
+              projectAddress: request.project.address,
+              contractorName:
+                updatedRequest.contractor?.contractorProfile?.name ||
+                updatedRequest.contractor?.fullName ||
+                'General Contractor',
+              estimatedDuration: estimatedDuration || null,
+              baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
+              monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
+              coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
+              contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
+              totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
+              quotePdfBuffer,
+              quotePdfFileName,
+            });
+          } catch (emailError: any) {
+            this.logger.warn(
+              `Failed to send homeowner quote email for request ${requestId}: ${
+                emailError?.message || 'unknown error'
+              }`,
+            );
+          }
         }
       } else {
         // Non-GC accept: do not modify project generalContractorId.

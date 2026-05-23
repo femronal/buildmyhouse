@@ -11,6 +11,11 @@ interface PaymentModalProps {
   onClose: () => void;
   amount: number;
   projectBudget: number;
+  baseQuoteAmount?: number;
+  monitoringFeeAmount?: number;
+  coordinationFeeAmount?: number;
+  contingencyFeeAmount?: number;
+  totalQuoteAmount?: number;
   projectId?: string;
   projectName?: string;
   onPaymentSuccess: () => void;
@@ -24,6 +29,11 @@ export default function PaymentModal({
   onClose,
   amount,
   projectBudget,
+  baseQuoteAmount = 0,
+  monitoringFeeAmount = 0,
+  coordinationFeeAmount = 0,
+  contingencyFeeAmount = 0,
+  totalQuoteAmount = 0,
   projectId,
   projectName = 'Project',
   // These callbacks/fields are kept for compatibility with the existing call sites.
@@ -36,7 +46,12 @@ export default function PaymentModal({
   const { data: currentUser } = useCurrentUser();
   const firstName = (currentUser?.fullName || currentUser?.email || 'there').split(' ')[0];
   // Use the most reliable budget value available.
-  const effectiveBudget = Math.max(Number(projectBudget || 0), Number(amount || 0), 0);
+  const effectiveBudget = Math.max(
+    Number(totalQuoteAmount || 0),
+    Number(projectBudget || 0),
+    Number(amount || 0),
+    0,
+  );
   const minDeposit = Math.max(effectiveBudget * 0.5, 0);
 
   return (
@@ -116,6 +131,57 @@ export default function PaymentModal({
               </View>
             </View>
 
+            {(baseQuoteAmount > 0 ||
+              monitoringFeeAmount > 0 ||
+              coordinationFeeAmount > 0 ||
+              contingencyFeeAmount > 0) && (
+              <View style={cardShadowStyle} className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
+                <Text className="text-gray-900 text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  BuildMyHouse quote breakdown
+                </Text>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Engineer quote
+                  </Text>
+                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ₦{baseQuoteAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Monitoring fee (5%)
+                  </Text>
+                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ₦{monitoringFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Coordination fee (5%)
+                  </Text>
+                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ₦{coordinationFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-2">
+                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Contingency fee (20%)
+                  </Text>
+                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ₦{contingencyFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+                <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between">
+                  <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Total quote payable
+                  </Text>
+                  <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    ₦{effectiveBudget.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Project summary / timeline quick access */}
             <View className="bg-black rounded-2xl p-5 mb-6">
               <View className="flex-row items-center mb-2">
@@ -157,10 +223,10 @@ export default function PaymentModal({
                 </Text>
               </View>
               {[
-                'Admin contacts the GC by email to confirm readiness and project details.',
-                `After the GC confirms, admin emails you (${firstName}) with payment instructions.`,
-                'You deposit at least 50% (100% recommended) to BuildMyHouse to start.',
-                'BuildMyHouse holds the funds and releases them only after you approve each stage.',
+                `You (${firstName}) pay BuildMyHouse using the verified account details below.`,
+                'Use your project quote PDF from email as payment reference.',
+                'Send receipt + quote PDF to BuildMyHouse WhatsApp: +2348105475652.',
+                'BuildMyHouse confirms approval before project commencement.',
               ].map((step) => (
                 <View key={step} className="flex-row items-start mb-2">
                   <View className="w-2 h-2 bg-black rounded-full mt-2 mr-2" />
@@ -214,8 +280,22 @@ export default function PaymentModal({
                 </View>
               ))}
 
-              <Text className="text-gray-600 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Payment instructions are sent by email after the GC confirms readiness.
+              <View className="mt-3 bg-black rounded-xl p-4">
+                <Text className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  BuildMyHouse Verified Account
+                </Text>
+                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Monipoint MFB
+                </Text>
+                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  8139036559
+                </Text>
+                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  Amala Class Concepts (or Godswill Oluwafemi Okunola)
+                </Text>
+              </View>
+              <Text className="text-gray-600 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                After payment, send receipt + quote PDF to WhatsApp: +2348105475652 for approval.
               </Text>
             </View>
 

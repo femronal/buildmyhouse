@@ -790,9 +790,14 @@ model ProjectRequest {
   stageId          String?
   status           String   @default("pending") // 'pending' | 'accepted' | 'rejected'
   estimatedBudget  Float?
+  monitoringFeeAmount Float?
+  coordinationFeeAmount Float?
+  contingencyFeeAmount Float?
+  totalQuoteAmount Float?
   estimatedDuration String?
   estimatedStartDate DateTime?
   gcNotes          String?
+  quoteGeneratedAt DateTime?
   sentAt           DateTime @default(now())
   respondedAt      DateTime?
   createdAt        DateTime @default(now())

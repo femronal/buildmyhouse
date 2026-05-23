@@ -42,6 +42,48 @@ export interface AnalyzePlanInput {
   hasPdf?: boolean;
 }
 
+export interface RerankContractorInput {
+  id: string;
+  name?: string | null;
+  specialty?: string | null;
+  specialtyCategory?: string | null;
+  specialtyTags?: string[];
+  location?: string | null;
+  rating?: number | null;
+  reviews?: number | null;
+  projects?: number | null;
+  experienceYears?: number | null;
+  verified?: boolean | null;
+  matchScore?: number | null;
+  matchReasons?: string[];
+  requestStats?: {
+    responseRate?: number;
+    acceptanceRate?: number;
+    avgResponseHours?: number | null;
+  } | null;
+  disputeStats?: {
+    open?: number;
+    inReview?: number;
+    resolved?: number;
+  } | null;
+}
+
+export interface RerankProjectInput {
+  id: string;
+  name?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  budget?: number | null;
+  projectType?: string | null;
+  aiAnalysis?: any;
+}
+
+export interface RerankContractorMatchesResult {
+  orderedContractorIds: string[];
+  reasonsById: Record<string, string[]>;
+}
+
 @Injectable()
 export class OpenAIService {
   private openai: OpenAI;
@@ -61,6 +103,174 @@ export class OpenAIService {
     this.openai = new OpenAI({
       apiKey: apiKey || 'sk-mock-key',
     });
+  }
+
+  isConfigured(): boolean {
+    return this.hasApiKey;
+  }
+
+  async rerankContractorMatches(params: {
+    project: RerankProjectInput;
+    candidates: RerankContractorInput[];
+    limit: number;
+    model?: string;
+  }): Promise<RerankContractorMatchesResult | null> {
+    if (!this.hasApiKey) {
+      return null;
+    }
+
+    const candidates = (params.candidates || []).filter((candidate) => !!candidate?.id);
+    const limit = Math.max(1, Math.min(Number(params.limit || 3), candidates.length));
+    if (candidates.length === 0 || limit <= 0) {
+      return null;
+    }
+
+    const compactProject = {
+      id: params.project.id,
+      name: params.project.name || '',
+      city: params.project.city || '',
+      state: params.project.state || '',
+      address: params.project.address || '',
+      budget: Number(params.project.budget || 0),
+      projectType: params.project.projectType || '',
+      aiSummary: String(params.project.aiAnalysis?.summary || '').slice(0, 400),
+      aiProjectTypeTag: String(params.project.aiAnalysis?.projectTypeTag || ''),
+      aiProjectTypeFilter: String(params.project.aiAnalysis?.projectTypeFilter || ''),
+      aiRooms: Array.isArray(params.project.aiAnalysis?.rooms)
+        ? params.project.aiAnalysis.rooms.slice(0, 12)
+        : [],
+      aiMaterials: Array.isArray(params.project.aiAnalysis?.materials)
+        ? params.project.aiAnalysis.materials.slice(0, 12)
+        : [],
+      aiFeatures: Array.isArray(params.project.aiAnalysis?.features)
+        ? params.project.aiAnalysis.features.slice(0, 12)
+        : [],
+    };
+
+    const compactCandidates = candidates.map((candidate) => ({
+      id: candidate.id,
+      name: candidate.name || '',
+      specialty: candidate.specialty || '',
+      specialtyCategory: candidate.specialtyCategory || '',
+      specialtyTags: (candidate.specialtyTags || []).slice(0, 8),
+      location: candidate.location || '',
+      rating: Number(candidate.rating || 0),
+      reviews: Number(candidate.reviews || 0),
+      projects: Number(candidate.projects || 0),
+      experienceYears: Number(candidate.experienceYears || 0),
+      verified: !!candidate.verified,
+      matchScore: Number(candidate.matchScore || 0),
+      matchReasons: (candidate.matchReasons || []).slice(0, 4),
+      responseRate: Number(candidate.requestStats?.responseRate || 0),
+      acceptanceRate: Number(candidate.requestStats?.acceptanceRate || 0),
+      avgResponseHours:
+        candidate.requestStats?.avgResponseHours == null
+          ? null
+          : Number(candidate.requestStats.avgResponseHours),
+      openDisputes: Number(candidate.disputeStats?.open || 0),
+      inReviewDisputes: Number(candidate.disputeStats?.inReview || 0),
+      resolvedDisputes: Number(candidate.disputeStats?.resolved || 0),
+    }));
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: params.model || process.env.GC_MATCHING_AI_MODEL?.trim() || 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You rank verified contractors for a Nigerian property project.',
+              'Prioritize relevance to project scope, location practicality, reliability, and realistic execution confidence.',
+              'Never invent contractor IDs. Choose only from provided candidates.',
+              'Return strict JSON only.',
+            ].join(' '),
+          },
+          {
+            role: 'user',
+            content: JSON.stringify(
+              {
+                instructions: [
+                  'Rank the best contractors for this project.',
+                  `Return exactly top ${limit} IDs in order.`,
+                  'For each selected contractor, include up to 2 short reasons.',
+                ],
+                project: compactProject,
+                candidates: compactCandidates,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 900,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'contractor_rerank',
+            strict: true,
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                orderedContractorIds: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  minItems: 1,
+                },
+                reasonsById: {
+                  type: 'object',
+                  additionalProperties: {
+                    type: 'array',
+                    items: { type: 'string' },
+                  },
+                },
+              },
+              required: ['orderedContractorIds', 'reasonsById'],
+            },
+          },
+        },
+      });
+
+      const raw = completion.choices?.[0]?.message?.content || '{}';
+      const parsed = this.safeJsonParse(raw);
+      const allowedIds = new Set(compactCandidates.map((candidate) => candidate.id));
+      const orderedIds = Array.isArray(parsed?.orderedContractorIds)
+        ? parsed.orderedContractorIds
+            .map((id: any) => String(id || '').trim())
+            .filter((id: string) => !!id && allowedIds.has(id))
+        : [];
+      if (orderedIds.length === 0) {
+        return null;
+      }
+
+      const uniqueOrderedIds = Array.from(new Set(orderedIds)).slice(0, limit);
+      const reasonsRaw =
+        parsed?.reasonsById && typeof parsed.reasonsById === 'object' ? parsed.reasonsById : {};
+      const reasonsById: Record<string, string[]> = {};
+
+      for (const id of uniqueOrderedIds) {
+        const reasons = Array.isArray(reasonsRaw[id])
+          ? reasonsRaw[id]
+              .map((reason: any) => this.asTrimmedString(reason))
+              .filter(Boolean)
+              .slice(0, 2)
+          : [];
+        reasonsById[id] = reasons;
+      }
+
+      return {
+        orderedContractorIds: uniqueOrderedIds,
+        reasonsById,
+      };
+    } catch (error) {
+      this.logger.warn(
+        `AI rerank failed, falling back to deterministic ranking: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      return null;
+    }
   }
 
   async analyzePlan(input: AnalyzePlanInput): Promise<PlanAnalysis> {

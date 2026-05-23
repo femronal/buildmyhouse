@@ -310,6 +310,13 @@ export default function HouseSummaryScreen() {
     acceptedGC?.imageUrl || acceptedRequest?.contractor?.pictureUrl || undefined
   );
   const acceptedContractorInitial = acceptedContractorName.trim().charAt(0).toUpperCase();
+  const acceptedBaseQuoteAmount = Number(acceptedRequest?.estimatedBudget || 0);
+  const acceptedMonitoringFeeAmount = Number((acceptedRequest as any)?.monitoringFeeAmount || 0);
+  const acceptedCoordinationFeeAmount = Number((acceptedRequest as any)?.coordinationFeeAmount || 0);
+  const acceptedContingencyFeeAmount = Number((acceptedRequest as any)?.contingencyFeeAmount || 0);
+  const acceptedTotalQuoteAmount = Number(
+    (acceptedRequest as any)?.totalQuoteAmount || acceptedBaseQuoteAmount || 0,
+  );
 
   // Check GC acceptance status - poll every 5 seconds if we haven't detected acceptance yet
   // Keep polling until we detect acceptance OR we're already in 'accepted' state
@@ -586,7 +593,7 @@ export default function HouseSummaryScreen() {
       // Try to recalculate budget from available sources
       // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
       const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
-      const recalculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
+      const recalculatedBudget = gcEditedBudget || acceptedTotalQuoteAmount || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
       const recalculatedAmount = recalculatedBudget * 1.0;
       
       if (recalculatedAmount > 0) {
@@ -643,7 +650,7 @@ export default function HouseSummaryScreen() {
         handlePaymentError(errorMessage);
       }
     }
-  }, [projectId, paymentAmount, projectAnalysisData, acceptedRequest, aiAnalysis, gcAcceptanceData, gcEditedAnalysis, createPaymentIntentMutation, handlePaymentError]);
+  }, [projectId, paymentAmount, projectAnalysisData, acceptedRequest, acceptedTotalQuoteAmount, aiAnalysis, gcAcceptanceData, gcEditedAnalysis, createPaymentIntentMutation, handlePaymentError]);
 
   const handlePaymentSuccess = useCallback(async () => {
     const currentProjectId = projectId;
@@ -699,12 +706,12 @@ export default function HouseSummaryScreen() {
         address: params.address || projectAnalysisData?.address,
         gcEditedAnalysis: gcEditedAnalysis || aiAnalysis,
         acceptedRequest: {
-          estimatedBudget: acceptedRequest?.estimatedBudget,
+          estimatedBudget: acceptedTotalQuoteAmount,
           estimatedDuration: acceptedRequest?.estimatedDuration,
           contractor: acceptedGC,
         },
-        budget: acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0,
-        paymentAmount: (acceptedRequest?.estimatedBudget || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 1.0,
+        budget: acceptedTotalQuoteAmount || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0,
+        paymentAmount: (acceptedTotalQuoteAmount || gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget || aiAnalysis?.estimatedBudget || 0) * 1.0,
       };
 
       await saveProjectForLaterMutation.mutateAsync({
@@ -725,7 +732,7 @@ export default function HouseSummaryScreen() {
       console.error('Error saving project for later:', error);
       // Error will be handled by mutation
     }
-  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, saveProjectForLaterMutation, router, queryClient]);
+  }, [projectId, gcRequestStatus, params, projectAnalysisData, gcEditedAnalysis, aiAnalysis, acceptedRequest, acceptedGC, acceptedTotalQuoteAmount, saveProjectForLaterMutation, router, queryClient]);
 
   const handleStartBuilding = useCallback(() => {
     // Prevent multiple calls
@@ -744,7 +751,7 @@ export default function HouseSummaryScreen() {
     // Calculate payment amount - 100% of GC's estimated budget
     // Priority: GC's edited analysis > acceptedRequest.estimatedBudget > AI analysis > project data
     const gcEditedBudget = gcEditedAnalysis?.budget || gcEditedAnalysis?.estimatedBudget;
-    const calculatedBudget = gcEditedBudget || acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
+    const calculatedBudget = gcEditedBudget || acceptedTotalQuoteAmount || aiAnalysis?.estimatedBudget || aiAnalysis?.budget || projectAnalysisData?.budget || gcAcceptanceData?.project?.budget || 0;
     const calculatedAmount = calculatedBudget * 1.0; // 100% full payment
 
     if (calculatedAmount <= 0 || calculatedBudget <= 0) {
@@ -760,7 +767,7 @@ export default function HouseSummaryScreen() {
     setPaymentClientSecret('simulated'); // Set a dummy value so modal works
     setIsProcessingPayment(false); // Don't set to true, let modal handle it
     setShowPaymentModal(true);
-  }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis]);
+  }, [isProcessingPayment, gcRequestStatus, projectId, acceptedRequest, acceptedTotalQuoteAmount, aiAnalysis, projectAnalysisData, gcAcceptanceData, gcEditedAnalysis]);
 
   const analysisCardShadowStyle = useMemo(
     () => ({
@@ -976,7 +983,7 @@ export default function HouseSummaryScreen() {
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                 ₦{(isDesignSelection
                   ? (aiAnalysis?.estimatedBudget || designData?.estimatedCost || 0)
-                  : (acceptedRequest?.estimatedBudget || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0)
+                  : (acceptedTotalQuoteAmount || aiAnalysis?.estimatedBudget || projectAnalysisData?.budget || 0)
                 ).toLocaleString()}
               </Text>
             </View>
@@ -1242,8 +1249,28 @@ export default function HouseSummaryScreen() {
 
               <View className="mt-3 pt-3 border-t border-green-200">
                 <Text className="text-green-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  GC’s Estimated Budget: ₦{(acceptedRequest.estimatedBudget || projectAnalysisData?.budget || 0).toLocaleString()}
+                  Total Quote Payable: ₦{(acceptedTotalQuoteAmount || projectAnalysisData?.budget || 0).toLocaleString()}
                 </Text>
+                {acceptedBaseQuoteAmount > 0 ? (
+                  <Text className="text-green-700 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Engineer quote: ₦{acceptedBaseQuoteAmount.toLocaleString()}
+                  </Text>
+                ) : null}
+                {(acceptedMonitoringFeeAmount > 0 ||
+                  acceptedCoordinationFeeAmount > 0 ||
+                  acceptedContingencyFeeAmount > 0) && (
+                  <View className="mb-1">
+                    <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      BMH monitoring (5%): ₦{acceptedMonitoringFeeAmount.toLocaleString()}
+                    </Text>
+                    <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      BMH coordination (5%): ₦{acceptedCoordinationFeeAmount.toLocaleString()}
+                    </Text>
+                    <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      BMH contingency (20%): ₦{acceptedContingencyFeeAmount.toLocaleString()}
+                    </Text>
+                  </View>
+                )}
                 {acceptedRequest.estimatedDuration && (
                   <Text className="text-green-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                     Estimated Duration: {acceptedRequest.estimatedDuration}
@@ -1628,6 +1655,11 @@ export default function HouseSummaryScreen() {
         }}
         amount={paymentAmount}
         projectBudget={projectBudget}
+        baseQuoteAmount={acceptedBaseQuoteAmount}
+        monitoringFeeAmount={acceptedMonitoringFeeAmount}
+        coordinationFeeAmount={acceptedCoordinationFeeAmount}
+        contingencyFeeAmount={acceptedContingencyFeeAmount}
+        totalQuoteAmount={acceptedTotalQuoteAmount}
         projectId={projectId || undefined}
         projectName={projectAnalysisData?.name || 'Project'}
         onPaymentSuccess={handlePaymentSuccess}
