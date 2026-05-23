@@ -265,15 +265,32 @@ export default function HomeScreen() {
       : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80';
   };
 
+  const getAcceptedRequest = (project: any) => {
+    if (project?.acceptedRequest && project.acceptedRequest.status === 'accepted') {
+      return project.acceptedRequest;
+    }
+    if (!Array.isArray(project?.projectRequests)) {
+      return null;
+    }
+    return project.projectRequests.find((req: any) => req?.status === 'accepted') || null;
+  };
+
   const getProjectBudget = (project: any) => {
     const aiBudget =
       project?.gcEditedAnalysis?.budget ||
       project?.gcEditedAnalysis?.estimatedBudget ||
       project?.aiAnalysis?.budget ||
       project?.aiAnalysis?.estimatedBudget;
-    const acceptedBudget = project?.acceptedRequest?.estimatedBudget;
+    const acceptedRequest = getAcceptedRequest(project);
+    const acceptedBudget = Number(acceptedRequest?.estimatedBudget || 0);
+    const acceptedTotalQuote =
+      Number(acceptedRequest?.totalQuoteAmount || 0) ||
+      acceptedBudget +
+        Number(acceptedRequest?.monitoringFeeAmount || 0) +
+        Number(acceptedRequest?.coordinationFeeAmount || 0) +
+        Number(acceptedRequest?.contingencyFeeAmount || 0);
     const baseBudget = project?.budget;
-    return Number(baseBudget || acceptedBudget || aiBudget || 0);
+    return Number(acceptedTotalQuote || baseBudget || acceptedBudget || aiBudget || 0);
   };
 
   const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
@@ -1026,7 +1043,7 @@ export default function HomeScreen() {
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(loadingHouses ? [] : housesForSale).map((home) => (
+            {(loadingHouses ? [] : housesForSale).map((home: any) => (
               <TouchableOpacity
                 key={home.id}
                 onPress={() => handleBuyHome(home)}
@@ -1123,7 +1140,7 @@ export default function HomeScreen() {
           </Text>
 
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(loadingLands ? [] : landsForSale).map((land) => (
+            {(loadingLands ? [] : landsForSale).map((land: any) => (
               <TouchableOpacity
                 key={land.id}
                 onPress={() => handleLandPurchase(land)}
@@ -1292,7 +1309,7 @@ export default function HomeScreen() {
                       Documents Available
                     </Text>
                     <View className="flex-row flex-wrap">
-                      {selectedHome.documents.map((doc, i) => (
+                      {selectedHome.documents.map((doc: any, i: number) => (
                         <View key={i} className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
                           <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>{doc}</Text>
                         </View>
@@ -1308,7 +1325,7 @@ export default function HomeScreen() {
                       Amenities
                     </Text>
                     <View className="flex-row flex-wrap">
-                      {selectedHome.amenities.map((amenity, i) => (
+                      {selectedHome.amenities.map((amenity: any, i: number) => (
                         <View key={i} className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
                           <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>{amenity}</Text>
                         </View>
@@ -1323,7 +1340,7 @@ export default function HomeScreen() {
                     <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       Nearby Facilities
                     </Text>
-                    {selectedHome.nearbyFacilities.map((facility, i) => (
+                    {selectedHome.nearbyFacilities.map((facility: any, i: number) => (
                       <Text key={i} className="text-gray-600 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         • {facility}
                       </Text>

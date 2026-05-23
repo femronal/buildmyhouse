@@ -1544,6 +1544,11 @@ export class ProjectsService {
             updatedAt: true,
             gcNotes: true,
             estimatedBudget: true,
+            monitoringFeeAmount: true,
+            coordinationFeeAmount: true,
+            contingencyFeeAmount: true,
+            totalQuoteAmount: true,
+            quoteGeneratedAt: true,
           },
         },
         homeowner: {

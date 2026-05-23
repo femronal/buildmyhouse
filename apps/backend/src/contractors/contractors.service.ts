@@ -1191,11 +1191,8 @@ export class ContractorsService {
           });
         }
 
-        if (
-          quoteBreakdown &&
-          request.project?.homeowner?.email &&
-          request.project?.homeowner?.fullName
-        ) {
+        if (quoteBreakdown && request.project?.homeowner?.email) {
+          const homeownerName = request.project?.homeowner?.fullName || 'Homeowner';
           const quoteReference = `BMH-${request.projectId.slice(0, 8).toUpperCase()}-${updatedRequest.id
             .slice(0, 6)
             .toUpperCase()}`;
@@ -1210,7 +1207,7 @@ export class ContractorsService {
               generatedAt: quoteGeneratedAt,
               projectName: request.project.name,
               projectAddress: request.project.address,
-              homeownerName: request.project.homeowner.fullName,
+              homeownerName,
               contractorName:
                 updatedRequest.contractor?.contractorProfile?.name ||
                 updatedRequest.contractor?.fullName ||
@@ -1223,9 +1220,9 @@ export class ContractorsService {
               totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
             });
 
-            await this.emailService.sendHomeownerQuoteEmail({
+            const quoteEmailSent = await this.emailService.sendHomeownerQuoteEmail({
               to: request.project.homeowner.email,
-              homeownerName: request.project.homeowner.fullName,
+              homeownerName,
               projectName: request.project.name,
               projectAddress: request.project.address,
               contractorName:
@@ -1241,6 +1238,11 @@ export class ContractorsService {
               quotePdfBuffer,
               quotePdfFileName,
             });
+            if (!quoteEmailSent) {
+              this.logger.warn(
+                `Homeowner quote email not delivered for request ${requestId}. Check Resend configuration/domain verification.`,
+              );
+            }
           } catch (emailError: any) {
             this.logger.warn(
               `Failed to send homeowner quote email for request ${requestId}: ${
