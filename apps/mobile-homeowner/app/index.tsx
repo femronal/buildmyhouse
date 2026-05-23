@@ -2,6 +2,7 @@ import { View, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { needsHomeownerIntroOnboarding } from "@/lib/onboarding";
 
 export default function StartScreen() {
   const router = useRouter();
@@ -12,6 +13,10 @@ export default function StartScreen() {
   useEffect(() => {
     if (isLoading) return;
     if (currentUser) {
+      if (needsHomeownerIntroOnboarding(currentUser)) {
+        router.replace('/onboarding-intro');
+        return;
+      }
       router.replace('/(tabs)/home');
       return;
     }

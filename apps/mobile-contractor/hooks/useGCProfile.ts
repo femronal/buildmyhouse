@@ -18,6 +18,7 @@ export interface GCProfile {
   phone?: string | null;
   pictureUrl?: string | null;
   verified: boolean;
+  profileSetupCompleted?: boolean;
   location?: string | null;
   specialty: string;
   experienceYears?: number | null;
@@ -43,6 +44,8 @@ export interface GCProfile {
   verificationRequiredCount?: number;
   verificationMissingDocuments?: string[];
   hasUploadedAllVerificationDocuments?: boolean;
+  professionalOnboardingCompleted?: boolean;
+  professionalOnboardingSkipped?: boolean;
 }
 
 export function useGCProfile() {
@@ -56,7 +59,12 @@ export function useGCProfile() {
 export function useUpdateGCProfile() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { experienceYears?: number; location?: string }) =>
+    mutationFn: (data: {
+      experienceYears?: number;
+      location?: string;
+      professionalOnboardingCompleted?: boolean;
+      professionalOnboardingSkipped?: boolean;
+    }) =>
       api.patch('/contractors/profile', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gc-profile'] });

@@ -5,6 +5,13 @@ type UpdateCurrentUserInput = {
   fullName?: string;
   email?: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  acceptHomeownerTerms?: boolean;
+  acceptGCTerms?: boolean;
+  completeProfileSetup?: boolean;
 };
 
 type CurrentUser = {
@@ -14,7 +21,14 @@ type CurrentUser = {
   pictureUrl?: string | null;
   role: string;
   verified: boolean;
+  profileSetupCompleted?: boolean;
   phone?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  homeownerTermsAcceptedAt?: string | null;
+  gcTermsAcceptedAt?: string | null;
   createdAt: string;
 };
 

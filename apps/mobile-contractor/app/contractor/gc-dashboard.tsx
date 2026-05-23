@@ -11,6 +11,7 @@ import { useGCProfile } from "@/hooks/useGCProfile";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 
 export default function GCDashboardScreen() {
   const router = useRouter();
@@ -38,6 +39,13 @@ export default function GCDashboardScreen() {
   useEffect(() => {
     setProfileImageFailed(false);
   }, [profileData?.pictureUrl]);
+
+  useEffect(() => {
+    if (loadingCurrentUser) return;
+    if (needsContractorIntroOnboarding(currentUser)) {
+      router.replace('/contractor/onboarding');
+    }
+  }, [currentUser, loadingCurrentUser, router]);
   
   // Fetch real pending requests
   const { data: pendingRequests = [] } = usePendingRequests();

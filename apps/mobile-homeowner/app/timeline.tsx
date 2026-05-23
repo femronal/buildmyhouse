@@ -1,9 +1,9 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle, ExternalLink, CreditCard } from "lucide-react-native";
+import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle, ExternalLink, CreditCard, ChevronDown, ChevronUp } from "lucide-react-native";
 import { useProject } from "@/hooks/useProject";
 import * as WebBrowser from 'expo-web-browser';
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
@@ -16,6 +16,7 @@ export default function TimelineScreen() {
   const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const projectId = params.projectId as string;
+  const [isStageHistoryExpanded, setIsStageHistoryExpanded] = useState(false);
 
   const { data: project, isLoading, error } = useProject(projectId || '');
 
@@ -342,73 +343,97 @@ export default function TimelineScreen() {
         <View className="pb-8">
           {stageChangeHistory.length > 0 && (
             <View className="mb-8 bg-gray-50 rounded-2xl border border-gray-200 p-4">
-              <Text className="text-black text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Stage Change History
-              </Text>
-              <Text className="text-gray-500 text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Timeline of scope changes submitted by your GC and reviewed by admin.
-              </Text>
-
-              {stageChangeHistory.map((change: any, index: number) => (
-                <View key={change.id || index} className="flex-row mb-4">
-                  <View className="items-center mr-3">
-                    <View
-                      className={`w-3 h-3 rounded-full ${
-                        change.status === 'approved'
-                          ? 'bg-green-500'
-                          : change.status === 'rejected'
-                            ? 'bg-red-500'
-                            : 'bg-amber-500'
-                      }`}
-                    />
-                    {index < stageChangeHistory.length - 1 && (
-                      <View className="w-0.5 flex-1 mt-1 bg-gray-300" style={{ minHeight: 30 }} />
-                    )}
-                  </View>
-                  <View className="flex-1 bg-white rounded-xl border border-gray-200 p-3">
-                    <View className="flex-row items-center justify-between mb-2">
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {change.stageName}
-                      </Text>
-                      {getChangeStatusBadge(change.status)}
-                    </View>
-
-                    <View className="flex-row flex-wrap mb-2">
-                      {(change.requestTypes || []).map((type: string) => (
-                        <View key={`${change.id}-${type}`} className="bg-gray-100 rounded-full px-2 py-1 mr-1 mb-1">
-                          <Text className="text-gray-700 text-[10px]" style={{ fontFamily: 'Poppins_500Medium' }}>
-                            {type.replace(/_/g, ' ')}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    {!!change.additionalAmount && (
-                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Cost adjustment: +₦{Number(change.additionalAmount).toLocaleString()}
-                      </Text>
-                    )}
-                    {!!change.additionalDurationDays && (
-                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Duration adjustment: +{change.additionalDurationDays} day(s)
-                      </Text>
-                    )}
-                    {!!change.siteChangeDetails && (
-                      <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Site change: {change.siteChangeDetails}
-                      </Text>
-                    )}
-                    {!!change.adminReviewNote && (
-                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        Admin note: {change.adminReviewNote}
-                      </Text>
-                    )}
-                    <Text className="text-gray-400 text-[11px] mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {change.createdAt ? new Date(change.createdAt).toLocaleString() : 'Recent'}
+              <TouchableOpacity
+                onPress={() => setIsStageHistoryExpanded((prev) => !prev)}
+                className="flex-row items-start justify-between"
+                activeOpacity={0.8}
+              >
+                <View className="flex-1 pr-3">
+                  <Text className="text-black text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Stage Change History
+                  </Text>
+                  <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Timeline of scope changes submitted by your GC and reviewed by admin.
+                  </Text>
+                  {!isStageHistoryExpanded && (
+                    <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {stageChangeHistory.length} update{stageChangeHistory.length === 1 ? '' : 's'} hidden
                     </Text>
-                  </View>
+                  )}
                 </View>
-              ))}
+                <View className="w-8 h-8 rounded-full bg-white border border-gray-200 items-center justify-center">
+                  {isStageHistoryExpanded ? (
+                    <ChevronUp size={16} color="#171717" strokeWidth={2.5} />
+                  ) : (
+                    <ChevronDown size={16} color="#171717" strokeWidth={2.5} />
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {isStageHistoryExpanded && (
+                <View className="mt-4">
+                  {stageChangeHistory.map((change: any, index: number) => (
+                    <View key={change.id || index} className="flex-row mb-4">
+                      <View className="items-center mr-3">
+                        <View
+                          className={`w-3 h-3 rounded-full ${
+                            change.status === 'approved'
+                              ? 'bg-green-500'
+                              : change.status === 'rejected'
+                                ? 'bg-red-500'
+                                : 'bg-amber-500'
+                          }`}
+                        />
+                        {index < stageChangeHistory.length - 1 && (
+                          <View className="w-0.5 flex-1 mt-1 bg-gray-300" style={{ minHeight: 30 }} />
+                        )}
+                      </View>
+                      <View className="flex-1 bg-white rounded-xl border border-gray-200 p-3">
+                        <View className="flex-row items-center justify-between mb-2">
+                          <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            {change.stageName}
+                          </Text>
+                          {getChangeStatusBadge(change.status)}
+                        </View>
+
+                        <View className="flex-row flex-wrap mb-2">
+                          {(change.requestTypes || []).map((type: string) => (
+                            <View key={`${change.id}-${type}`} className="bg-gray-100 rounded-full px-2 py-1 mr-1 mb-1">
+                              <Text className="text-gray-700 text-[10px]" style={{ fontFamily: 'Poppins_500Medium' }}>
+                                {type.replace(/_/g, ' ')}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+
+                        {!!change.additionalAmount && (
+                          <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            Cost adjustment: +₦{Number(change.additionalAmount).toLocaleString()}
+                          </Text>
+                        )}
+                        {!!change.additionalDurationDays && (
+                          <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            Duration adjustment: +{change.additionalDurationDays} day(s)
+                          </Text>
+                        )}
+                        {!!change.siteChangeDetails && (
+                          <Text className="text-gray-700 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            Site change: {change.siteChangeDetails}
+                          </Text>
+                        )}
+                        {!!change.adminReviewNote && (
+                          <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                            Admin note: {change.adminReviewNote}
+                          </Text>
+                        )}
+                        <Text className="text-gray-400 text-[11px] mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {change.createdAt ? new Date(change.createdAt).toLocaleString() : 'Recent'}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           )}
 

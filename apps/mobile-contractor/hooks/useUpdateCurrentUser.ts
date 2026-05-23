@@ -5,6 +5,13 @@ type UpdateCurrentUserInput = {
   fullName?: string;
   email?: string;
   phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  acceptHomeownerTerms?: boolean;
+  acceptGCTerms?: boolean;
+  completeProfileSetup?: boolean;
 };
 
 export function useUpdateCurrentUser() {

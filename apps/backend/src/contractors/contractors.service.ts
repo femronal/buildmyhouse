@@ -1474,6 +1474,7 @@ export class ContractorsService {
           phone: true,
           pictureUrl: true,
           verified: true,
+          profileSetupCompleted: true,
         },
       }),
       this.prisma.contractor.findUnique({
@@ -1501,6 +1502,7 @@ export class ContractorsService {
       phone: user.phone,
       pictureUrl: user.pictureUrl,
       verified: user.verified,
+      profileSetupCompleted: user.profileSetupCompleted,
       location: contractor?.location || null,
       specialty: this.buildContractorSpecialtyDisplay({
         category: contractor?.specialtyCategory as GCSpecialtyCategory | null,
@@ -1533,6 +1535,8 @@ export class ContractorsService {
       verificationRequiredCount: verification.totalRequiredCount,
       verificationMissingDocuments: verification.missingRequiredDocuments,
       hasUploadedAllVerificationDocuments: verification.hasUploadedAllRequiredDocuments,
+      professionalOnboardingCompleted: contractor?.professionalOnboardingCompleted ?? false,
+      professionalOnboardingSkipped: contractor?.professionalOnboardingSkipped ?? false,
     };
   }
 
@@ -1588,7 +1592,15 @@ export class ContractorsService {
     }
   }
 
-  async updateGCProfile(userId: string, data: { experienceYears?: number; location?: string }) {
+  async updateGCProfile(
+    userId: string,
+    data: {
+      experienceYears?: number;
+      location?: string;
+      professionalOnboardingCompleted?: boolean;
+      professionalOnboardingSkipped?: boolean;
+    },
+  ) {
     const contractor = await this.getContractorByUserIdOrThrow(userId);
     const updateData: any = {};
     if (typeof data.experienceYears === 'number' && data.experienceYears >= 0) {
@@ -1597,6 +1609,12 @@ export class ContractorsService {
     if (typeof data.location === 'string') {
       const location = data.location.trim();
       updateData.location = location || null;
+    }
+    if (typeof data.professionalOnboardingCompleted === 'boolean') {
+      updateData.professionalOnboardingCompleted = data.professionalOnboardingCompleted;
+    }
+    if (typeof data.professionalOnboardingSkipped === 'boolean') {
+      updateData.professionalOnboardingSkipped = data.professionalOnboardingSkipped;
     }
     if (Object.keys(updateData).length === 0) {
       return this.getGCProfile(userId);

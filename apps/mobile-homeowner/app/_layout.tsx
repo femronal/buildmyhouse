@@ -124,6 +124,7 @@ export default function RootLayout() {
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="location" options={{ headerShown: false }} />
+          <Stack.Screen name="onboarding-intro" options={{ headerShown: false }} />
           <Stack.Screen name="design-library" options={{ headerShown: false }} />
           <Stack.Screen name="upload-plan" options={{ headerShown: false }} />
           <Stack.Screen name="house-summary" options={{ headerShown: false }} />

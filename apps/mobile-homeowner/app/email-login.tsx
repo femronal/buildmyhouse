@@ -53,7 +53,7 @@ export default function EmailLoginScreen() {
       }
       
       await storeAuthToken(data.token);
-      router.replace('/(tabs)/home');
+      router.replace('/');
     } catch (error: any) {
       const message = error?.data?.message ?? error?.message ?? 'Something went wrong. Please try again.';
       setFormError(message);

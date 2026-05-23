@@ -35,7 +35,7 @@ export default function GoogleCallbackScreen() {
         }
 
         await storeAuthToken(result.token);
-        router.replace("/(tabs)/home");
+        router.replace("/");
       } catch (error: any) {
         setMessage(error?.message || "Login failed. Please try again.");
       }

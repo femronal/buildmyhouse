@@ -51,10 +51,17 @@ model User {
   email     String   @unique
   password  String   // Hashed password
   phone     String?
+  address   String?
+  city      String?
+  state     String?
+  country   String?
   pictureUrl String?
   fullName  String
   role      String   // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
   verified  Boolean  @default(false)
+  homeownerTermsAcceptedAt DateTime?
+  gcTermsAcceptedAt DateTime?
+  profileSetupCompleted Boolean @default(false)
   adminDashboardAccess Boolean @default(false)
   stripeCustomerId String? @unique
   createdAt DateTime @default(now())
@@ -386,6 +393,8 @@ model Contractor {
   hiringFee       Float
   type            String   // 'general_contractor' | 'subcontractor'
   connectAccountId String?
+  professionalOnboardingCompleted Boolean @default(false)
+  professionalOnboardingSkipped Boolean @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

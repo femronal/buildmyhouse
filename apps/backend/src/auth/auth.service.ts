@@ -78,6 +78,7 @@ export class AuthService {
         role: normalizedRole,
         phone,
         verified: false,
+        profileSetupCompleted: false,
       },
     });
 
@@ -114,6 +115,7 @@ export class AuthService {
         pictureUrl: user.pictureUrl,
         role: user.role,
         verified: user.verified,
+        profileSetupCompleted: user.profileSetupCompleted,
       },
     };
   }
@@ -273,6 +275,7 @@ export class AuthService {
     pictureUrl: string | null;
     role: string;
     verified: boolean;
+    profileSetupCompleted?: boolean;
   }) {
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
@@ -286,6 +289,7 @@ export class AuthService {
         pictureUrl: user.pictureUrl,
         role: user.role,
         verified: user.verified,
+        profileSetupCompleted: !!user.profileSetupCompleted,
       },
     };
   }
@@ -344,7 +348,14 @@ export class AuthService {
         pictureUrl: true,
         role: true,
         verified: true,
+        profileSetupCompleted: true,
         phone: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        homeownerTermsAcceptedAt: true,
+        gcTermsAcceptedAt: true,
         createdAt: true,
       },
     });
@@ -357,6 +368,27 @@ export class AuthService {
   }
 
   async updateCurrentUser(userId: string, updateMeDto: UpdateMeDto) {
+    const currentUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        role: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        pictureUrl: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        homeownerTermsAcceptedAt: true,
+        gcTermsAcceptedAt: true,
+      },
+    });
+    if (!currentUser) {
+      throw new UnauthorizedException('User not found');
+    }
+
     const data: any = {};
     if (typeof updateMeDto.fullName === 'string') {
       data.fullName = updateMeDto.fullName.trim();
@@ -374,6 +406,78 @@ export class AuthService {
     if (typeof updateMeDto.phone === 'string') {
       data.phone = updateMeDto.phone.trim();
     }
+    if (typeof updateMeDto.address === 'string') {
+      const value = updateMeDto.address.trim();
+      data.address = value || null;
+    }
+    if (typeof updateMeDto.city === 'string') {
+      const value = updateMeDto.city.trim();
+      data.city = value || null;
+    }
+    if (typeof updateMeDto.state === 'string') {
+      const value = updateMeDto.state.trim();
+      data.state = value || null;
+    }
+    if (typeof updateMeDto.country === 'string') {
+      const value = updateMeDto.country.trim();
+      data.country = value || null;
+    }
+
+    if (updateMeDto.acceptHomeownerTerms) {
+      if (currentUser.role !== 'homeowner') {
+        throw new BadRequestException('Homeowner terms acceptance is only available for homeowners.');
+      }
+      data.homeownerTermsAcceptedAt = new Date();
+    }
+
+    if (updateMeDto.acceptGCTerms) {
+      if (currentUser.role !== 'general_contractor') {
+        throw new BadRequestException('GC terms acceptance is only available for general contractors.');
+      }
+      data.gcTermsAcceptedAt = new Date();
+    }
+
+    if (updateMeDto.completeProfileSetup) {
+      if (currentUser.role === 'homeowner') {
+        const effective = {
+          fullName: data.fullName ?? currentUser.fullName,
+          email: data.email ?? currentUser.email,
+          phone: data.phone ?? currentUser.phone,
+          pictureUrl: currentUser.pictureUrl,
+          address: data.address ?? currentUser.address,
+          city: data.city ?? currentUser.city,
+          state: data.state ?? currentUser.state,
+          country: data.country ?? currentUser.country,
+          homeownerTermsAcceptedAt:
+            data.homeownerTermsAcceptedAt ?? currentUser.homeownerTermsAcceptedAt,
+        };
+        this.assertHomeownerIntroComplete(effective);
+        data.profileSetupCompleted = true;
+        data.verified = true;
+      } else if (currentUser.role === 'general_contractor') {
+        const contractor = await this.prisma.contractor.findUnique({
+          where: { userId },
+          select: { id: true, location: true },
+        });
+        if (!contractor) {
+          throw new BadRequestException('Contractor profile not found. Please complete signup again.');
+        }
+        const bankAccountsCount = await this.prisma.bankAccount.count({
+          where: { contractorId: contractor.id },
+        });
+        const effective = {
+          fullName: data.fullName ?? currentUser.fullName,
+          email: data.email ?? currentUser.email,
+          phone: data.phone ?? currentUser.phone,
+          pictureUrl: currentUser.pictureUrl,
+          location: contractor.location,
+          gcTermsAcceptedAt: data.gcTermsAcceptedAt ?? currentUser.gcTermsAcceptedAt,
+          bankAccountsCount,
+        };
+        this.assertGCMandatoryOnboardingComplete(effective);
+        data.profileSetupCompleted = true;
+      }
+    }
 
     // If nothing to update, return current state
     if (Object.keys(data).length === 0) {
@@ -390,7 +494,14 @@ export class AuthService {
         pictureUrl: true,
         role: true,
         verified: true,
+        profileSetupCompleted: true,
         phone: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        homeownerTermsAcceptedAt: true,
+        gcTermsAcceptedAt: true,
         createdAt: true,
       },
     });
@@ -411,7 +522,14 @@ export class AuthService {
         pictureUrl: true,
         role: true,
         verified: true,
+        profileSetupCompleted: true,
         phone: true,
+        address: true,
+        city: true,
+        state: true,
+        country: true,
+        homeownerTermsAcceptedAt: true,
+        gcTermsAcceptedAt: true,
         createdAt: true,
       },
     });
@@ -488,7 +606,8 @@ export class AuthService {
           fullName,
           pictureUrl,
           role: roleToCreate,
-          verified: true, // OAuth providers verify emails
+          verified: false,
+          profileSetupCompleted: false,
         },
       });
 
@@ -571,8 +690,81 @@ export class AuthService {
         pictureUrl: user.pictureUrl,
         role: user.role,
         verified: user.verified,
+        profileSetupCompleted: user.profileSetupCompleted,
       },
     };
+  }
+
+  private assertHomeownerIntroComplete(data: {
+    fullName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    pictureUrl?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    homeownerTermsAcceptedAt?: Date | null;
+  }) {
+    if (!String(data.fullName || '').trim()) {
+      throw new BadRequestException('Full name is required.');
+    }
+    if (!String(data.email || '').trim()) {
+      throw new BadRequestException('Email is required.');
+    }
+    if (!String(data.phone || '').trim()) {
+      throw new BadRequestException('Phone number is required.');
+    }
+    if (!String(data.pictureUrl || '').trim()) {
+      throw new BadRequestException('Profile photo is required.');
+    }
+    if (!String(data.address || '').trim()) {
+      throw new BadRequestException('Address is required.');
+    }
+    if (!String(data.city || '').trim()) {
+      throw new BadRequestException('City is required.');
+    }
+    if (!String(data.state || '').trim()) {
+      throw new BadRequestException('State is required.');
+    }
+    if (!String(data.country || '').trim()) {
+      throw new BadRequestException('Country is required.');
+    }
+    if (!data.homeownerTermsAcceptedAt) {
+      throw new BadRequestException('You must accept the homeowner terms and policies.');
+    }
+  }
+
+  private assertGCMandatoryOnboardingComplete(data: {
+    fullName?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    pictureUrl?: string | null;
+    location?: string | null;
+    gcTermsAcceptedAt?: Date | null;
+    bankAccountsCount: number;
+  }) {
+    if (!String(data.fullName || '').trim()) {
+      throw new BadRequestException('Full name is required.');
+    }
+    if (!String(data.email || '').trim()) {
+      throw new BadRequestException('Email is required.');
+    }
+    if (!String(data.phone || '').trim()) {
+      throw new BadRequestException('Phone number is required.');
+    }
+    if (!String(data.pictureUrl || '').trim()) {
+      throw new BadRequestException('Profile photo/logo is required.');
+    }
+    if (!String(data.location || '').trim()) {
+      throw new BadRequestException('Business location is required.');
+    }
+    if (!data.gcTermsAcceptedAt) {
+      throw new BadRequestException('You must accept the GC terms and policies.');
+    }
+    if (data.bankAccountsCount < 1) {
+      throw new BadRequestException('Add at least one bank account to continue.');
+    }
   }
 
   private async notifyAdminNewSignup(fullName: string, email: string, role: string) {

@@ -39,7 +39,13 @@ export class ContractorsController {
   @Roles('general_contractor')
   async updateGCProfile(
     @Request() req: any,
-    @Body() body: { experienceYears?: number; location?: string },
+    @Body()
+    body: {
+      experienceYears?: number;
+      location?: string;
+      professionalOnboardingCompleted?: boolean;
+      professionalOnboardingSkipped?: boolean;
+    },
   ) {
     const userId = req.user.sub;
     return this.contractorsService.updateGCProfile(userId, body);

@@ -45,7 +45,7 @@ export default function LoginScreen() {
         queryClient.setQueryData(['current-user'], result.user);
         await queryClient.invalidateQueries({ queryKey: ['current-user'] });
         
-        router.replace('/contractor/gc-dashboard');
+        router.replace('/');
       } else {
         showAlert('Login Failed', 'Please try again.');
       }

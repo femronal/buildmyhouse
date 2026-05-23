@@ -227,6 +227,12 @@ export default function LocationScreen() {
           />
         </View>
 
+        <View className="mb-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
+          <Text className="text-[11px] text-gray-600 leading-4" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Your address is encrypted and only visible to your assigned GC and BuildMyHouse admin for dispute resolution.
+          </Text>
+        </View>
+
         {locationLookupMessage ? (
           <View className="mb-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
             <Text className="text-red-700 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>

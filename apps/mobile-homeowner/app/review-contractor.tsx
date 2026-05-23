@@ -33,6 +33,10 @@ export default function ReviewContractorScreen() {
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
   const [otherReason, setOtherReason] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [submitFeedback, setSubmitFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const didHydrateFromExisting = useRef(false);
 
   const { data: contractorSummary } = useQuery({
@@ -101,6 +105,9 @@ export default function ReviewContractorScreen() {
   }, [isOtherSelected, otherWordCount, selectedRating, selectedReasons.length]);
 
   const toggleReason = useCallback((reason: string) => {
+    if (submitFeedback) {
+      setSubmitFeedback(null);
+    }
     setSelectedReasons((prev) => {
       const exists = prev.some((item) => item === reason);
       if (exists) {
@@ -108,7 +115,7 @@ export default function ReviewContractorScreen() {
       }
       return [...prev, reason];
     });
-  }, []);
+  }, [submitFeedback]);
 
   const handleSubmit = useCallback(async () => {
     if (!currentUser?.id) {
@@ -130,6 +137,7 @@ export default function ReviewContractorScreen() {
     }
 
     setIsSaving(true);
+    setSubmitFeedback(null);
     try {
       const normalizedOther = String(otherReason || '').trim();
       const payload = {
@@ -143,15 +151,42 @@ export default function ReviewContractorScreen() {
 
       if (existingReview?.id) {
         await api.patch(`/marketplace/reviews/${existingReview.id}`, payload);
-        Alert.alert('Updated', 'Your review has been updated.');
+        setSubmitFeedback({
+          type: 'success',
+          message: 'Review recorded. Thank you for sharing your feedback.',
+        });
+        Alert.alert('Review updated', 'Thank you for dropping a review.', [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (projectId) {
+                router.push(`/dashboard?projectId=${encodeURIComponent(projectId)}` as any);
+              }
+            },
+          },
+        ]);
       } else {
         await api.post('/marketplace/reviews', payload);
-        Alert.alert('Submitted', 'Thank you for your feedback.');
-      }
-      if (projectId) {
-        router.push(`/dashboard?projectId=${encodeURIComponent(projectId)}` as any);
+        setSubmitFeedback({
+          type: 'success',
+          message: 'Review recorded. Thank you for sharing your feedback.',
+        });
+        Alert.alert('Review recorded', 'Thank you for dropping a review.', [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (projectId) {
+                router.push(`/dashboard?projectId=${encodeURIComponent(projectId)}` as any);
+              }
+            },
+          },
+        ]);
       }
     } catch (error: any) {
+      setSubmitFeedback({
+        type: 'error',
+        message: error?.message || 'Could not save your review. Please try again.',
+      });
       Alert.alert('Could not submit', error?.message || 'Please try again.');
     } finally {
       setIsSaving(false);
@@ -234,6 +269,9 @@ export default function ReviewContractorScreen() {
               <TouchableOpacity
                 key={value}
                 onPress={() => {
+                  if (submitFeedback) {
+                    setSubmitFeedback(null);
+                  }
                   setSelectedRating(value);
                   setSelectedReasons([]);
                   setOtherReason('');
@@ -279,7 +317,7 @@ export default function ReviewContractorScreen() {
                       key={reason}
                       onPress={() => toggleReason(reason)}
                       className={`rounded-xl border px-4 py-4 mb-3 ${
-                        selected ? 'border-orange-400 bg-orange-50' : 'border-gray-200 bg-white'
+                        selected ? 'border-black bg-gray-100' : 'border-gray-200 bg-white'
                       }`}
                     >
                       <Text
@@ -296,7 +334,12 @@ export default function ReviewContractorScreen() {
                 <View className="mb-3">
                   <TextInput
                     value={otherReason}
-                    onChangeText={setOtherReason}
+                    onChangeText={(value) => {
+                      if (submitFeedback) {
+                        setSubmitFeedback(null);
+                      }
+                      setOtherReason(value);
+                    }}
                     placeholder="Tell us more..."
                     placeholderTextColor="#9CA3AF"
                     multiline
@@ -314,11 +357,28 @@ export default function ReviewContractorScreen() {
                 </View>
               )}
 
+              {submitFeedback && (
+                <View
+                  className={`rounded-xl px-4 py-3 mt-2 mb-1 ${
+                    submitFeedback.type === 'success'
+                      ? 'bg-gray-900 border border-black'
+                      : 'bg-red-50 border border-red-200'
+                  }`}
+                >
+                  <Text
+                    className={`${submitFeedback.type === 'success' ? 'text-white' : 'text-red-700'} text-sm`}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {submitFeedback.message}
+                  </Text>
+                </View>
+              )}
+
               <TouchableOpacity
                 onPress={handleSubmit}
                 disabled={isSaving || !canSubmit}
                 className={`rounded-xl py-4 items-center mt-3 ${
-                  isSaving || !canSubmit ? 'bg-gray-200' : 'bg-[#f76b1c]'
+                  isSaving || !canSubmit ? 'bg-gray-200' : 'bg-black'
                 }`}
               >
                 <Text

@@ -41,7 +41,7 @@ export default function GoogleCallbackScreen() {
         await storeAuthToken(result.token);
         queryClient.setQueryData(["current-user"], result.user);
         await queryClient.invalidateQueries({ queryKey: ["current-user"] });
-        router.replace("/contractor/gc-dashboard");
+        router.replace("/");
       } catch (error: any) {
         setMessage(error?.message || "Login failed. Please try again.");
       }

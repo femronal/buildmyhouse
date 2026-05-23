@@ -63,6 +63,10 @@ export default function PersonalInformationScreen() {
     setFullName(currentUser.fullName || "");
     setEmail(currentUser.email || "");
     setPhone(currentUser.phone || "");
+    setAddress(currentUser.address || "");
+    setCity(currentUser.city || "");
+    setState(currentUser.state || "");
+    setCountry(currentUser.country || "");
   }, [currentUser]);
 
   const completedProjects = useMemo(
@@ -91,12 +95,13 @@ export default function PersonalInformationScreen() {
   useEffect(() => {
     // Prefill address fields from the most recent project address, if available.
     // This is a "best effort" parse; users can edit the fields.
+    if (currentUser?.address) return;
     if (!primaryBuildAddress) return;
     setAddress(primaryBuildAddress);
     const parts = primaryBuildAddress.split(",").map((p) => p.trim()).filter(Boolean);
     if (parts.length >= 2) setCity(parts[parts.length - 2] || "");
     if (parts.length >= 1) setCountry(parts[parts.length - 1] || "");
-  }, [primaryBuildAddress]);
+  }, [currentUser?.address, primaryBuildAddress]);
 
   const handleSave = async () => {
     try {

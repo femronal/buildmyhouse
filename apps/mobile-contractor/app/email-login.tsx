@@ -73,7 +73,7 @@ export default function EmailLoginScreen() {
       await storeAuthToken(data.token);
       queryClient.setQueryData(['current-user'], data.user);
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
-      router.replace('/contractor/gc-dashboard');
+      router.replace('/');
     } catch (error: any) {
       const message = error?.data?.message ?? error?.message ?? 'Something went wrong. Please try again.';
       setFormError(message);

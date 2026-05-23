@@ -4,21 +4,29 @@ import { useRouter } from "expo-router";
 import { HardHat, ChevronRight, Shield } from "lucide-react-native";
 import { getAuthToken } from "@/lib/auth";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 
 export default function ContractorLandingScreen() {
   const router = useRouter();
+  const { data: currentUser, isLoading } = useCurrentUser();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding, insets } =
     useResponsivePadding("stack");
 
   useEffect(() => {
     const check = async () => {
+      if (isLoading) return;
       const token = await getAuthToken();
       if (token) {
+        if (needsContractorIntroOnboarding(currentUser)) {
+          router.replace('/contractor/onboarding');
+          return;
+        }
         router.replace('/contractor/gc-dashboard');
       }
     };
-    check();
-  }, [router]);
+    void check();
+  }, [currentUser, isLoading, router]);
 
   return (
     <View className="flex-1 bg-[#0A1628]">

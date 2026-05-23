@@ -23,6 +23,7 @@ import {
   getTabContentBottomPadding,
 } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
+import { needsHomeownerIntroOnboarding } from "@/lib/onboarding";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -78,6 +79,13 @@ export default function HomeScreen() {
   
   const userName = currentUser?.fullName || 'User';
   const userPicture = currentUser?.pictureUrl;
+
+  useEffect(() => {
+    if (userLoading) return;
+    if (needsHomeownerIntroOnboarding(currentUser)) {
+      router.replace('/onboarding-intro');
+    }
+  }, [currentUser, router, userLoading]);
 
   useEffect(() => {
     setHeaderImageFailed(false);

@@ -52,7 +52,7 @@ export default function LoginScreen() {
         }
         
         await storeAuthToken(result.token);
-        router.replace('/(tabs)/home');
+        router.replace('/');
       } else {
         alert('Login failed. Please try again.');
       }
