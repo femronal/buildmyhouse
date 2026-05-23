@@ -173,8 +173,8 @@ export default function TermsConditionsScreen() {
             Full platform terms for homeowners and contractors.
           </Text>
         </View>
-        {sections.map(([title, text]) => (
-          <View key={title} className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-3">
+        {sections.map(([title, text], index) => (
+          <View key={`${index}-${title}`} className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-3">
             <Text className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               {title}
             </Text>

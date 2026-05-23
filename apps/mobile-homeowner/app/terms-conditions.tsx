@@ -177,8 +177,8 @@ export default function TermsConditionsScreen() {
           </Text>
         </View>
 
-        {sections.map((section) => (
-          <Section key={section.title} title={section.title}>
+        {sections.map((section, index) => (
+          <Section key={`${index}-${section.title}`} title={section.title}>
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               {section.body || " "}
             </Text>
