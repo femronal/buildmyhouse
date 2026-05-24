@@ -9,6 +9,7 @@ export {
   usePendingProjects,
   usePausedProjects,
   useActiveProjects,
+  useAllProjects,
   useMyInvoiceFiles,
   useDeletePendingProject,
   useCreateProjectFromDesign,

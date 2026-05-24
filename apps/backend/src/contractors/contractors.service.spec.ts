@@ -132,24 +132,24 @@ describe('ContractorsService.recommendGCs', () => {
     expect(matches[0].matchBreakdown).toBeUndefined();
   });
 
-  it('falls back to legacy ranking when strict matcher returns empty', async () => {
+  it('uses capability-safe fallback when strict matcher returns empty', async () => {
     const { service } = buildService({
       matchingVersion: 'v1',
       projectOverrides: {
         city: 'Lekki',
         state: 'Lagos',
-        aiAnalysis: { projectTypeTag: 'repair' },
+        aiAnalysis: { projectTypeTag: 'full_builds' },
       },
       candidates: [
         {
           id: 'contractor-recovery',
           userId: 'gc-user-recovery',
           name: 'Recovery GC',
-          specialtyCategory: 'upgrader',
-          specialtyTags: ['modernization'],
-          specialty: 'Upgrades',
-          description: 'Reliable contractor with strong execution history and complete profile.',
-          location: 'Lekki, Lagos',
+          specialtyCategory: 'general_contractor',
+          specialtyTags: ['bungalow build', 'new construction'],
+          specialty: 'General Contractor',
+          description: 'Reliable contractor for full home builds and structural works.',
+          location: 'Wuse, Abuja',
           experienceYears: 8,
           rating: 4.9,
           reviews: 18,
@@ -176,6 +176,51 @@ describe('ContractorsService.recommendGCs', () => {
     const matches = await service.recommendGCs('project-1', 3);
     expect(matches).toHaveLength(1);
     expect(matches[0].id).toBe('contractor-recovery');
+  });
+
+  it('capability-safe fallback blocks repair-only GC for full builds', async () => {
+    const { service } = buildService({
+      matchingVersion: 'v1',
+      projectOverrides: {
+        city: 'Lekki',
+        state: 'Lagos',
+        aiAnalysis: { projectTypeTag: 'full_builds' },
+      },
+      candidates: [
+        {
+          id: 'repairer-1',
+          userId: 'gc-user-repairer',
+          name: 'Repair Pro',
+          specialtyCategory: 'general_contractor',
+          specialtyTags: ['repairs', 'maintenance'],
+          specialty: 'Repairer',
+          description: 'Fixes household faults and maintenance jobs only.',
+          location: 'Wuse, Abuja',
+          experienceYears: 9,
+          rating: 4.9,
+          reviews: 18,
+          projects: 42,
+          verified: true,
+          hiringFee: 250000,
+          type: 'general_contractor',
+          user: {
+            id: 'gc-user-repairer',
+            fullName: 'Repair Pro',
+            email: 'repair@example.com',
+            phone: '000',
+            pictureUrl: null,
+            role: 'general_contractor',
+            verified: true,
+          },
+          _count: {
+            certifications: 2,
+          },
+        },
+      ],
+    });
+
+    const matches = await service.recommendGCs('project-1', 3);
+    expect(matches).toHaveLength(0);
   });
 
   it('applies AI reranker ordering when feature flag is enabled', async () => {

@@ -472,8 +472,12 @@ export class ContractorsService {
     limit: number;
   }): any[] {
     const poolLimit = this.getAiRerankPoolLimit(params.limit);
-    const legacyPool = this.legacyRecommendGCs(params.project, params.enrichedCandidates, poolLimit);
-    const merged = [...(params.deterministicMatches || []), ...(legacyPool || [])];
+    const safeFallbackPool = this.capabilitySafeFallbackRecommendGCs(
+      params.project,
+      params.enrichedCandidates,
+      poolLimit,
+    );
+    const merged = [...(params.deterministicMatches || []), ...(safeFallbackPool || [])];
     const unique = new Map<string, any>();
     for (const candidate of merged) {
       const id = String(candidate?.id || '').trim();
@@ -481,6 +485,136 @@ export class ContractorsService {
       unique.set(id, candidate);
     }
     return Array.from(unique.values()).slice(0, poolLimit);
+  }
+
+  private normalizeText(value?: string | null): string {
+    return String(value || '')
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, ' ');
+  }
+
+  private inferProjectCapabilityTag(project: any): 'repair' | 'upgrades' | 'renovation' | 'full_builds' | 'unknown' {
+    const rawAi = project?.aiAnalysis;
+    const ai =
+      typeof rawAi === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(rawAi);
+            } catch {
+              return {};
+            }
+          })()
+        : rawAi || {};
+    const inputs = [
+      ai?.projectTypeTag,
+      ai?.projectTypeFilter,
+      ai?.projectType,
+      ai?.planType,
+      ai?.summary,
+      project?.projectType,
+      project?.name,
+    ]
+      .map((value: any) => this.normalizeText(String(value || '')))
+      .filter(Boolean);
+
+    for (const value of inputs) {
+      if (value.includes('full_build') || value.includes('homebuilding')) return 'full_builds';
+      if (
+        value.includes('build from scratch') ||
+        value.includes('ground up') ||
+        value.includes('new build') ||
+        value.includes('full build') ||
+        value.includes('bungalow') ||
+        value.includes('duplex') ||
+        value.includes('triplex')
+      ) {
+        return 'full_builds';
+      }
+      if (value.includes('renovat')) return 'renovation';
+      if (value.includes('upgrade') || value.includes('fitout') || value.includes('fit-out')) {
+        return 'upgrades';
+      }
+      if (value.includes('repair') || value.includes('maintenance') || value.includes('fix')) {
+        return 'repair';
+      }
+    }
+
+    return 'unknown';
+  }
+
+  private capabilitySafeFallbackRecommendGCs(project: any, contractors: any[], limit: number) {
+    const projectTag = this.inferProjectCapabilityTag(project);
+    const requiredByTag: Record<string, string[]> = {
+      repair: ['repairer'],
+      upgrades: ['upgrader', 'renovator'],
+      renovation: ['renovator', 'general_contractor'],
+      full_builds: ['general_contractor'],
+      unknown: ['general_contractor', 'renovator', 'upgrader'],
+    };
+    const required = new Set(requiredByTag[projectTag] || requiredByTag.unknown);
+    const city = this.normalizeText(project?.city || '');
+    const state = this.normalizeText(project?.state || '');
+
+    const filtered = (contractors || []).filter((contractor: any) => {
+      if (!contractor?.verified || !contractor?.user?.verified) return false;
+      if (this.normalizeText(contractor?.user?.role) !== 'general_contractor') return false;
+
+      const category = this.normalizeText(contractor?.specialtyCategory || '');
+      const tokens = this.normalizeText(
+        [
+          contractor?.specialty,
+          ...(Array.isArray(contractor?.specialtyTags) ? contractor.specialtyTags : []),
+          contractor?.description,
+          ...(Array.isArray(contractor?.designProjectTypeFilters)
+            ? contractor.designProjectTypeFilters
+            : []),
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
+
+      const hasRepairSignals =
+        tokens.includes('repair') || tokens.includes('maintenance') || tokens.includes('fix');
+      const hasFullBuildSignals =
+        tokens.includes('full build') ||
+        tokens.includes('new build') ||
+        tokens.includes('bungalow') ||
+        tokens.includes('duplex') ||
+        tokens.includes('general contractor') ||
+        tokens.includes('construction');
+
+      if (projectTag === 'full_builds') {
+        if (category !== 'general_contractor') return false;
+        if (hasRepairSignals && !hasFullBuildSignals) return false;
+        const projects = Number(contractor?.projects || 0);
+        const years = Number(contractor?.experienceYears || 0);
+        if (!hasFullBuildSignals && projects < 20 && years < 6) return false;
+      } else if (projectTag !== 'unknown') {
+        if (!required.has(category)) return false;
+      } else if (!required.has(category)) {
+        return false;
+      }
+
+      return true;
+    });
+
+    const scored = filtered.map((contractor: any) => {
+      let score = 60;
+      const location = this.normalizeText(contractor?.location || '');
+      if (city && location.includes(city)) score += 18;
+      if (state && location.includes(state)) score += 10;
+      score += Math.min(12, Number(contractor?.rating || 0) * 2);
+      score += Math.min(8, Math.log10(Number(contractor?.reviews || 0) + 1) * 4);
+      score += Math.min(8, Math.log10(Number(contractor?.projects || 0) + 1) * 4);
+      return {
+        ...contractor,
+        matchScore: Math.min(100, Math.round(score)),
+      };
+    });
+
+    scored.sort((a: any, b: any) => b.matchScore - a.matchScore);
+    return scored.slice(0, limit);
   }
 
   private mapToAiRerankInput(candidates: any[]): RerankContractorInput[] {
@@ -749,12 +883,12 @@ export class ContractorsService {
       limit,
     });
 
-    // Immediate empty-result protection: if strict gates eliminate all matches,
-    // fall back to legacy ranking so homeowners still see viable options.
+    // Empty-result protection with capability-safe fallback.
+    // This fallback keeps category safety and never returns cross-category matches.
     let selectedMatches: any[] = result.matches;
     let fallbackApplied = false;
     if (selectedMatches.length === 0 && enrichedCandidates.length > 0) {
-      selectedMatches = this.legacyRecommendGCs(project, enrichedCandidates, limit);
+      selectedMatches = this.capabilitySafeFallbackRecommendGCs(project, enrichedCandidates, limit);
       fallbackApplied = true;
     }
 

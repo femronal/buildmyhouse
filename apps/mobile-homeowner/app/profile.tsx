@@ -4,7 +4,7 @@ import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight
 import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
-import { useActiveProjects, usePendingProjects } from '@/hooks';
+import { useAllProjects } from '@/hooks';
 import { clearAuthToken } from '@/lib/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { getBackendAssetUrl } from '@/lib/image';
@@ -58,8 +58,7 @@ export default function ProfileScreen() {
   const contentBottomPadding = Math.max(24, insets.bottom + 16);
   const { data: currentUser, isLoading } = useCurrentUser();
   const uploadProfilePicture = useUploadProfilePicture();
-  const { data: activeProjects = [] } = useActiveProjects();
-  const { data: pendingProjects = [] } = usePendingProjects();
+  const { data: allProjects = [] } = useAllProjects();
   const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending'>('active');
   const [profileImageFailed, setProfileImageFailed] = useState(false);
 
@@ -134,8 +133,14 @@ export default function ProfileScreen() {
   };
   
   // Completed = explicit completed status OR 100% progress.
-  const completedProjects = activeProjects.filter((p: any) => isCompletedProject(p));
-  const trulyActiveProjects = activeProjects.filter((p: any) => !isCompletedProject(p));
+  const pendingProjects = allProjects.filter((p: any) => p?.status === 'pending_payment');
+  const trulyActiveProjects = allProjects.filter((p: any) => {
+    if (!p) return false;
+    if (isCompletedProject(p)) return false;
+    if (p.status === 'pending_payment' || p.status === 'paused' || p.status === 'cancelled') return false;
+    return true;
+  });
+  const completedProjectsAllTime = allProjects.filter((p: any) => isCompletedProject(p));
 
   return (
     <View className="flex-1 bg-white">
@@ -253,7 +258,7 @@ export default function ProfileScreen() {
               className="text-3xl text-black"
               style={{ fontFamily: 'Poppins_600SemiBold' }}
             >
-              {completedProjects.length}
+              {completedProjectsAllTime.length}
             </Text>
             <Text 
               className="text-gray-500 text-sm"
@@ -294,7 +299,7 @@ export default function ProfileScreen() {
                 className={`text-center text-sm ${activeTab === 'completed' ? 'text-white' : 'text-gray-600'}`}
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                Completed ({completedProjects.length})
+                Completed ({completedProjectsAllTime.length})
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -359,14 +364,14 @@ export default function ProfileScreen() {
 
           {activeTab === 'completed' && (
             <View>
-              {completedProjects.length === 0 ? (
+              {completedProjectsAllTime.length === 0 ? (
                 <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
                   <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No completed projects
                   </Text>
                 </View>
               ) : (
-                completedProjects.slice(0, 3).map((project: any) => (
+                completedProjectsAllTime.slice(0, 3).map((project: any) => (
                   <TouchableOpacity
                     key={project.id}
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}

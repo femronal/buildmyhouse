@@ -206,6 +206,14 @@ export const projectService = {
   },
 
   /**
+   * Get all projects for the current homeowner
+   */
+  getUserProjects: async () => {
+    const response = await api.get('/projects');
+    return Array.isArray(response) ? response : (response.data || []);
+  },
+
+  /**
    * Delete pending project
    */
   deletePendingProject: async (projectId: string) => {

@@ -15,6 +15,7 @@ import {
 import { useUpdateCurrentUser } from "@/hooks/useUpdateCurrentUser";
 import { useChangePassword } from "@/hooks/useChangePassword";
 import { useUploadProfilePicture } from "@/hooks/useUploadProfilePicture";
+import { useMyProjects } from "@/hooks/useProjects";
 import { useBankAccounts, useBankAccount, useCreateBankAccount, useUpdateBankAccount, useDeleteBankAccount } from "@/hooks/useBankAccounts";
 import { getBackendAssetUrl } from "@/lib/image";
 import { uploadFile } from "@/utils/fileUpload";
@@ -47,6 +48,7 @@ export default function GCProfileScreen() {
   const hasTriggeredLogoUpload = useRef(false);
   const queryClient = useQueryClient();
   const { data: profileData, isLoading, error } = useGCProfile();
+  const { data: allProjects = [], isLoading: loadingProjects } = useMyProjects();
   const updateUser = useUpdateCurrentUser();
   const changePassword = useChangePassword();
   const uploadProfilePicture = useUploadProfilePicture();
@@ -412,6 +414,13 @@ export default function GCProfileScreen() {
       ? getBackendAssetUrl(profileData.pictureUrl)
       : null;
 
+  const isCompletedProject = (project: any) =>
+    project?.status === 'completed' || Number(project?.progress || 0) >= 100;
+
+  const completedProjectsAllTime = allProjects.filter((project: any) =>
+    isCompletedProject(project),
+  );
+
   return (
     <View className="flex-1 bg-[#0A1628]">
       <View
@@ -612,6 +621,62 @@ export default function GCProfileScreen() {
                   </Text>
                 </View>
               </View>
+            </View>
+
+            <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mt-4">
+              <View className="flex-row items-center justify-between mb-3">
+                <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Completed Projects
+                </Text>
+                <View className="bg-emerald-600/20 rounded-full px-3 py-1">
+                  <Text className="text-emerald-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {completedProjectsAllTime.length}
+                  </Text>
+                </View>
+              </View>
+
+              {loadingProjects ? (
+                <View className="py-4 items-center">
+                  <ActivityIndicator size="small" color="#3B82F6" />
+                  <Text className="text-gray-400 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Loading completed projects...
+                  </Text>
+                </View>
+              ) : completedProjectsAllTime.length === 0 ? (
+                <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  No completed projects yet. Completed jobs will stay here permanently for easy reference.
+                </Text>
+              ) : (
+                completedProjectsAllTime.map((project: any) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
+                    className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900"
+                  >
+                    <View className="flex-row items-start justify-between">
+                      <View className="flex-1 pr-3">
+                        <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {project?.name || 'Untitled project'}
+                        </Text>
+                        <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {project?.homeowner?.fullName || 'Unknown homeowner'}
+                        </Text>
+                      </View>
+                      <View className="bg-emerald-600/20 rounded-full px-2 py-1">
+                        <Text className="text-emerald-300 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Completed
+                        </Text>
+                      </View>
+                    </View>
+                    <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-blue-900">
+                      <Text className="text-gray-500 text-[11px]" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {project?.updatedAt ? `Updated ${new Date(project.updatedAt).toLocaleDateString()}` : 'Date unavailable'}
+                      </Text>
+                      <ChevronRight size={16} color="#6B7280" strokeWidth={2} />
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           </View>
         )}

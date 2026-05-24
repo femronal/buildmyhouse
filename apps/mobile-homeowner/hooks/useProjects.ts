@@ -151,6 +151,19 @@ export function useActiveProjects() {
 }
 
 /**
+ * Get all projects for the current homeowner
+ */
+export function useAllProjects() {
+  return useQuery({
+    queryKey: ['projects', 'all'],
+    queryFn: () => projectService.getUserProjects(),
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 30000,
+  });
+}
+
+/**
  * Get homeowner invoice/receipt files uploaded by GC
  */
 export function useMyInvoiceFiles() {

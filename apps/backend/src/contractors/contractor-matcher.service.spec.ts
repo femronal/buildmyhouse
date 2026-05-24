@@ -416,5 +416,76 @@ describe('ContractorMatcherService', () => {
     expect(result.matches).toHaveLength(1);
     expect(result.matches[0].id).toBe('legacy-gc');
   });
+
+  it('parses aiAnalysis JSON string when inferring project tag', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-11',
+        state: 'Lagos',
+        city: 'Lekki',
+        budget: 85000000,
+        aiAnalysis: JSON.stringify({
+          projectTypeFilter: 'Bungalow Build',
+        }),
+      },
+      candidates: [
+        {
+          id: 'gc-string-ai',
+          userId: 'u-gc-string-ai',
+          verified: true,
+          user: { id: 'u-gc-string-ai', role: 'general_contractor', verified: true },
+          specialtyCategory: 'general_contractor',
+          specialtyTags: ['bungalow build'],
+          description: 'Builds houses from foundation to handover',
+          location: 'Lekki, Lagos',
+          rating: 4.7,
+          reviews: 14,
+          projects: 28,
+          experienceYears: 7,
+          certificationCount: 1,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.diagnostics.projectTag).toBe('full_builds');
+    expect(result.matches).toHaveLength(1);
+  });
+
+  it('blocks repair-only profile from matching full_builds even with GC role', () => {
+    const result = service.recommend({
+      project: {
+        id: 'project-12',
+        state: 'Lagos',
+        city: 'Lekki',
+        budget: 90000000,
+        aiAnalysis: {
+          projectTypeTag: 'full_builds',
+        },
+      },
+      candidates: [
+        {
+          id: 'repair-only-gc',
+          userId: 'u-repair-only-gc',
+          verified: true,
+          user: { id: 'u-repair-only-gc', role: 'general_contractor', verified: true },
+          specialtyCategory: 'general_contractor',
+          specialty: 'Repairer',
+          specialtyTags: ['repairs', 'maintenance'],
+          description: 'Handles repairs and maintenance only',
+          location: 'Lekki, Lagos',
+          rating: 4.8,
+          reviews: 16,
+          projects: 45,
+          experienceYears: 10,
+          certificationCount: 1,
+        },
+      ],
+      limit: 3,
+    });
+
+    expect(result.matches).toHaveLength(0);
+    expect(result.diagnostics.filteredCounts.specialtyMismatch).toBe(1);
+  });
 });
 

@@ -26,6 +26,7 @@ import { cardShadowStyle } from "@/lib/card-styles";
 import { needsHomeownerIntroOnboarding } from "@/lib/onboarding";
 
 export default function HomeScreen() {
+  const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -136,6 +137,23 @@ export default function HomeScreen() {
       isPaid: project.status === 'active' || project.status === 'completed' || Number(project.progress || 0) >= 100,
     };
   });
+
+  const isCompletedProject = (project: any) =>
+    project?.status === 'completed' || Number(project?.progress || 0) >= 100;
+
+  const isWithinCompletedDashboardWindow = (project: any) => {
+    if (!isCompletedProject(project)) return true;
+    const referenceDate = project?.completionDate || project?.updatedAt || project?.respondedAt;
+    if (!referenceDate) return false;
+    const completedAt = new Date(referenceDate).getTime();
+    if (!Number.isFinite(completedAt) || completedAt <= 0) return false;
+    const elapsedMs = Date.now() - completedAt;
+    return elapsedMs <= DASHBOARD_COMPLETED_VISIBILITY_HOURS * 60 * 60 * 1000;
+  };
+
+  const dashboardProjects = allProjects.filter((project: any) =>
+    isWithinCompletedDashboardWindow(project),
+  );
 
   const handleProjectPress = async (project: any) => {
     if (project.status === 'paused') {
@@ -522,7 +540,7 @@ export default function HomeScreen() {
                 Loading projects...
               </Text>
             </View>
-          ) : allProjects.length === 0 ? (
+          ) : dashboardProjects.length === 0 ? (
             <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
               {!currentUser && !userLoading ? (
                 <>
@@ -545,7 +563,7 @@ export default function HomeScreen() {
               )}
             </View>
           ) : (
-            allProjects.map((project: any, index: number) => {
+            dashboardProjects.map((project: any, index: number) => {
               const projectId = project.id || project.projectId || `project-${index}`;
               const uniqueKey = project.uniqueKey || `${project.isPaid ? 'active' : 'pending'}-${projectId}`;
               const isPaid = project.isPaid;

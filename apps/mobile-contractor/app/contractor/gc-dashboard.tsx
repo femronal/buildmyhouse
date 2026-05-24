@@ -14,6 +14,7 @@ import { useResponsivePadding } from "@/lib/responsive-layout";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 
 export default function GCDashboardScreen() {
+  const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
   const router = useRouter();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stackBottomNav");
@@ -194,6 +195,26 @@ export default function GCDashboardScreen() {
     return { photoCount, hasPdf };
   };
 
+  const isCompletedProject = (project: any) =>
+    project?.status === 'completed' || Number(project?.progress || 0) >= 100;
+
+  const isWithinCompletedDashboardWindow = (project: any) => {
+    if (!isCompletedProject(project)) return true;
+    const referenceDate =
+      project?.completionDate || project?.updatedAt || project?.respondedAt;
+    if (!referenceDate) return false;
+    const completedAt = new Date(referenceDate).getTime();
+    if (!Number.isFinite(completedAt) || completedAt <= 0) return false;
+    const elapsedMs = Date.now() - completedAt;
+    return (
+      elapsedMs <= DASHBOARD_COMPLETED_VISIBILITY_HOURS * 60 * 60 * 1000
+    );
+  };
+
+  const dashboardProjects = activeProjects.filter((project: any) =>
+    isWithinCompletedDashboardWindow(project),
+  );
+
   return (
     <View className="flex-1 bg-[#0A1628]">
       {/* Header */}
@@ -312,7 +333,7 @@ export default function GCDashboardScreen() {
                 <Briefcase size={18} color="#FFFFFF" strokeWidth={2} />
                 <Text className="text-white/70 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
               </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{activeProjects.length}</Text>
+              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{dashboardProjects.length}</Text>
             </View>
             <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 ml-2 border border-blue-900">
               <View className="flex-row items-center mb-2">
@@ -371,7 +392,7 @@ export default function GCDashboardScreen() {
                   Loading active projects...
                 </Text>
               </View>
-            ) : activeProjects.length === 0 ? (
+            ) : dashboardProjects.length === 0 ? (
               <View className="items-center py-10">
                 <Briefcase size={48} color="#6B7280" strokeWidth={1.5} />
                 <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -382,7 +403,7 @@ export default function GCDashboardScreen() {
                 </Text>
               </View>
             ) : (
-            activeProjects.map((project) => (
+            dashboardProjects.map((project) => (
               (() => {
                 const fileSummary = getHomeownerFileSummary(project);
                 return (

@@ -111,6 +111,17 @@ const HARD_FILTER_REASON_KEYS = [
 type HardFilterReasonKey = (typeof HARD_FILTER_REASON_KEYS)[number];
 
 const FULL_BUILD_KEYWORDS = [
+  'full build',
+  'full builds',
+  'home build',
+  'new build',
+  'new construction',
+  'construction from scratch',
+  'build from scratch',
+  'ground up',
+  'ground-up',
+  'foundation',
+  'structural',
   'bungalow',
   'duplex',
   'triplex',
@@ -193,8 +204,29 @@ interface EligibleCandidate {
   profileCompletenessScore: number;
 }
 
+interface CandidateSignals {
+  tokens: Set<string>;
+  hasRepairSignals: boolean;
+  hasUpgradeSignals: boolean;
+  hasRenovationSignals: boolean;
+  hasFullBuildSignals: boolean;
+}
+
 @Injectable()
 export class ContractorMatcherService {
+  private parseAiAnalysis(raw: any): any {
+    if (!raw) return {};
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch {
+        return {};
+      }
+    }
+    return typeof raw === 'object' ? raw : {};
+  }
+
   private normalize(text?: string | null): string {
     return String(text || '')
       .toLowerCase()
@@ -210,13 +242,16 @@ export class ContractorMatcherService {
   }
 
   private inferProjectTag(project: ContractorMatcherProjectInput): ProjectTag {
-    const ai = project.aiAnalysis || {};
+    const ai = this.parseAiAnalysis(project.aiAnalysis);
     const candidates = [
       ai.projectTypeTag,
       ai.projectTypeFilter,
       ai.projectType,
       project.projectType,
       ai.planType,
+      project.name,
+      ai.summary,
+      ai.successCriteria,
     ]
       .map((value) => this.normalize(String(value || '')))
       .filter(Boolean);
@@ -261,10 +296,10 @@ export class ContractorMatcherService {
 
   private getRequiredCategories(projectTag: ProjectTag): GCSpecialtyCategory[] {
     if (projectTag === 'repair') return ['repairer'];
-    if (projectTag === 'upgrades') return ['upgrader'];
-    if (projectTag === 'renovation') return ['renovator'];
+    if (projectTag === 'upgrades') return ['upgrader', 'renovator'];
+    if (projectTag === 'renovation') return ['renovator', 'general_contractor'];
     if (projectTag === 'full_builds') return ['general_contractor'];
-    return ['general_contractor', 'renovator', 'upgrader', 'repairer'];
+    return ['general_contractor', 'renovator', 'upgrader'];
   }
 
   private extractStateToken(value?: string | null): string {
@@ -298,6 +333,39 @@ export class ContractorMatcherService {
       }
     }
     return tokenSet;
+  }
+
+  private hasKeywordTokenOverlap(
+    tokens: Set<string>,
+    keywords: readonly string[],
+  ): boolean {
+    const tokenArray = Array.from(tokens);
+    return keywords.some((keyword) => {
+      const keywordNorm = this.normalize(keyword);
+      if (!keywordNorm) return false;
+      if (tokenArray.some((token) => token === keywordNorm || token.includes(keywordNorm))) {
+        return true;
+      }
+      const keywordTokens = this.tokenize(keywordNorm);
+      return keywordTokens.some((kt) =>
+        tokenArray.some((token) => token === kt || token.includes(kt) || kt.includes(token)),
+      );
+    });
+  }
+
+  private getCandidateSignals(
+    candidate: ContractorMatcherCandidateInput,
+  ): CandidateSignals {
+    const tokens = this.getCandidateTokens(candidate);
+    return {
+      tokens,
+      hasRepairSignals: this.hasKeywordTokenOverlap(tokens, REPAIR_KEYWORDS),
+      hasUpgradeSignals: this.hasKeywordTokenOverlap(tokens, UPGRADE_KEYWORDS),
+      hasRenovationSignals: this.hasKeywordTokenOverlap(tokens, RENOVATION_KEYWORDS),
+      hasFullBuildSignals:
+        this.hasKeywordTokenOverlap(tokens, FULL_BUILD_KEYWORDS) ||
+        this.hasKeywordTokenOverlap(tokens, GENERAL_CONTRACTOR_KEYWORDS),
+    };
   }
 
   private requiredSpecialtyTokenOverlap(projectTag: ProjectTag): number {
@@ -337,15 +405,22 @@ export class ContractorMatcherService {
     if (explicit && ['repairer', 'upgrader', 'renovator', 'general_contractor'].includes(explicit)) {
       return explicit;
     }
-    const candidateTokens = this.getCandidateTokens(candidate);
+    const candidateTokens = this.getCandidateSignals(candidate).tokens;
     const inferred = this.inferCategoryFromTokens(candidateTokens);
     if (inferred) return inferred;
-    // Legacy fallback: all candidates entering this matcher are GC profiles.
-    return this.normalize(candidate.user?.role) === 'general_contractor' ? 'general_contractor' : null;
+    // Legacy fallback: only infer GC if profile has concrete full-build signals.
+    if (this.normalize(candidate.user?.role) === 'general_contractor') {
+      const projects = Number(candidate.projects || 0);
+      const years = Number(candidate.experienceYears || 0);
+      const hasEvidence =
+        this.getCandidateSignals(candidate).hasFullBuildSignals || projects >= 20 || years >= 6;
+      if (hasEvidence) return 'general_contractor';
+    }
+    return null;
   }
 
   private getProjectTokens(project: ContractorMatcherProjectInput): Set<string> {
-    const ai = project.aiAnalysis || {};
+    const ai = this.parseAiAnalysis(project.aiAnalysis);
     const values: string[] = [
       String(ai.summary || ''),
       String(ai.successCriteria || ''),
@@ -354,6 +429,8 @@ export class ContractorMatcherService {
       ...(Array.isArray(ai.rooms) ? ai.rooms.map((item: any) => String(item || '')) : []),
       ...(Array.isArray(ai.materials) ? ai.materials.map((item: any) => String(item || '')) : []),
       ...(Array.isArray(ai.features) ? ai.features.map((item: any) => String(item || '')) : []),
+      String(project.name || ''),
+      String(project.projectType || ''),
     ];
 
     const tokenSet = new Set<string>();
@@ -386,22 +463,55 @@ export class ContractorMatcherService {
     return contractorState === projectState;
   }
 
+  private hasStrongFullBuildCapability(
+    candidate: ContractorMatcherCandidateInput,
+    category: GCSpecialtyCategory | null,
+    signals: CandidateSignals,
+  ): boolean {
+    if (category !== 'general_contractor') return false;
+    if (signals.hasRepairSignals && !signals.hasFullBuildSignals) {
+      return false;
+    }
+    const projects = Number(candidate.projects || 0);
+    const years = Number(candidate.experienceYears || 0);
+    const certs = Number(candidate.certificationCount || 0);
+    return signals.hasFullBuildSignals || projects >= 20 || years >= 6 || certs >= 1;
+  }
+
   private isSpecialtyEligible(
     projectTag: ProjectTag,
     candidate: ContractorMatcherCandidateInput,
     projectTokens: Set<string>,
   ): boolean {
     const category = this.getResolvedCandidateCategory(candidate);
+    const signals = this.getCandidateSignals(candidate);
     const required = new Set(this.getRequiredCategories(projectTag));
-    if (projectTag !== 'unknown') {
-      return !!category && required.has(category);
+    if (projectTag === 'full_builds') {
+      return this.hasStrongFullBuildCapability(candidate, category, signals);
     }
 
-    if (category && required.has(category)) {
+    if (projectTag !== 'unknown') {
+      if (!category || !required.has(category)) return false;
+      // Prevent obviously mismatched profiles from leaking through multi-category allowances.
+      if (projectTag === 'upgrades' && signals.hasRepairSignals && !signals.hasUpgradeSignals) {
+        return false;
+      }
+      if (
+        projectTag === 'renovation' &&
+        signals.hasRepairSignals &&
+        !signals.hasRenovationSignals &&
+        category !== 'general_contractor'
+      ) {
+        return false;
+      }
       return true;
     }
 
-    const candidateTokens = this.getCandidateTokens(candidate);
+    if (category && required.has(category) && !signals.hasRepairSignals) {
+      return true;
+    }
+
+    const candidateTokens = signals.tokens;
     let overlap = 0;
     const minOverlap = this.requiredSpecialtyTokenOverlap(projectTag);
     for (const token of projectTokens) {
@@ -409,7 +519,7 @@ export class ContractorMatcherService {
       if (overlap >= minOverlap) return true;
     }
 
-    if (projectTag === 'unknown' && candidateTokens.size > 0) {
+    if (projectTag === 'unknown' && category === 'general_contractor' && candidateTokens.size > 0) {
       return true;
     }
     return false;
@@ -421,8 +531,8 @@ export class ContractorMatcherService {
     projectTokens: Set<string>,
   ): number {
     const requiredCategories = this.getRequiredCategories(projectTag);
-    const category = this.normalize(candidate.specialtyCategory) as GCSpecialtyCategory;
-    const candidateTokens = this.getCandidateTokens(candidate);
+    const category = this.getResolvedCandidateCategory(candidate);
+    const candidateTokens = this.getCandidateSignals(candidate).tokens;
 
     let score = 0;
     if (requiredCategories[0] === category) score += 18;
