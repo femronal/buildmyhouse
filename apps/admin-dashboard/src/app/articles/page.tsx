@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { FilePenLine, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, FilePenLine, Plus, Trash2 } from 'lucide-react';
 import {
   useCmsArticles,
   type CmsArticle,
@@ -14,8 +14,39 @@ const AUDIENCE_OPTIONS: { value: CmsArticleAudience; label: string; hint: string
   { value: 'gc', label: 'General Contractor', hint: 'gc.buildmyhouse.app/articles' },
 ];
 
+const HOMEOWNER_WEB_URL = 'https://buildmyhouse.app';
+const GC_WEB_URL = 'https://gc.buildmyhouse.app';
+
+function getPublicArticleUrl(article: CmsArticle) {
+  const baseUrl = article.audience === 'gc' ? GC_WEB_URL : HOMEOWNER_WEB_URL;
+  const cleanPath = article.canonicalPath.startsWith('/')
+    ? article.canonicalPath
+    : `/${article.canonicalPath}`;
+  return `${baseUrl}${cleanPath}`;
+}
+
+async function copyToClipboard(text: string) {
+  if (typeof window === 'undefined') return;
+
+  if (navigator?.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+
 export default function ArticlesAdminPage() {
   const [audience, setAudience] = useState<CmsArticleAudience>('homeowner');
+  const [copiedArticleId, setCopiedArticleId] = useState<string | null>(null);
   const {
     articles,
     isLoading,
@@ -89,7 +120,7 @@ export default function ArticlesAdminPage() {
           <div className="divide-y">
             {sortedArticles.map((article: CmsArticle) => (
               <div key={article.id} className="p-4 flex items-start justify-between gap-4">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900 truncate">{article.title}</h3>
                     <span
@@ -102,7 +133,45 @@ export default function ArticlesAdminPage() {
                       {article.isPublished ? 'Published' : 'Draft'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 mb-1">{article.canonicalPath}</p>
+                  <div className="flex flex-wrap items-center gap-2 mb-1">
+                    <a
+                      href={getPublicArticleUrl(article)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-gray-500 hover:text-gray-700 hover:underline break-all"
+                    >
+                      {article.canonicalPath}
+                    </a>
+                    {article.isPublished ? (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await copyToClipboard(getPublicArticleUrl(article));
+                          setCopiedArticleId(article.id);
+                          window.setTimeout(() => {
+                            setCopiedArticleId((prev) => (prev === article.id ? null : prev));
+                          }, 1800);
+                        }}
+                        className={`inline-flex items-center gap-1 px-2 py-1 text-[11px] rounded-md border ${
+                          copiedArticleId === article.id
+                            ? 'border-green-300 text-green-700 bg-green-50'
+                            : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {copiedArticleId === article.id ? (
+                          <>
+                            <Check className="w-3 h-3" />
+                            Copied
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            Copy link
+                          </>
+                        )}
+                      </button>
+                    ) : null}
+                  </div>
                   <p className="text-sm text-gray-600 line-clamp-2">{article.excerpt}</p>
                   <p className="text-xs text-gray-400 mt-2">
                     Updated {new Date(article.updatedAt).toLocaleString()}
