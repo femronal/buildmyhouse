@@ -60,6 +60,7 @@ hr { border: none; border-top: 1px solid #e5e7eb; margin: 2rem 0; }
 img.bmx-article-image { width: 100%; max-width: 100%; height: auto; border-radius: 0.75rem; margin: 1.5rem 0; display: block; }
 .bmx-youtube-embed { margin: 1.5rem 0; border-radius: 0.75rem; overflow: hidden; aspect-ratio: 16/9; }
 .bmx-youtube-embed iframe { width: 100%; height: 100%; border: 0; }
+iframe.bmx-youtube-embed { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; aspect-ratio: 16/9; border: 0; border-radius: 0.75rem; margin: 1.5rem 0; }
 aside.bmx-callout { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1rem 1.25rem; margin: 1.5rem 0; }
 .bmx-article-link { color: #2563eb; }
 `;

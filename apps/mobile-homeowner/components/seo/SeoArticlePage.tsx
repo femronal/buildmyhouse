@@ -68,11 +68,17 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
               </Text>
             </View>
             {article.tags.length > 0 ? (
-              <View className="flex-row items-center">
+              <View className="flex-row items-start flex-1 min-w-[220px]">
                 <Tag size={14} color="#6b7280" />
-                <Text className="text-gray-500 text-sm ml-1.5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {article.tags.join(' | ')}
-                </Text>
+                <View className="ml-1.5 flex-row flex-wrap gap-1.5 flex-1">
+                  {article.tags.map((tag) => (
+                    <View key={tag} className="px-2 py-1 rounded-full bg-gray-100 border border-gray-200">
+                      <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {tag}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             ) : null}
             <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
