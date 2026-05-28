@@ -417,9 +417,26 @@ export default function GCProfileScreen() {
   const isCompletedProject = (project: any) =>
     project?.status === 'completed' || Number(project?.progress || 0) >= 100;
 
+  const isActiveProject = (project: any) =>
+    (project?.status === 'active' || project?.status === 'paused') &&
+    !isCompletedProject(project);
+
   const completedProjectsAllTime = allProjects.filter((project: any) =>
     isCompletedProject(project),
   );
+  const activeProjectsAllTime = allProjects.filter((project: any) =>
+    isActiveProject(project),
+  );
+
+  const activeProjectsCount = loadingProjects
+    ? profileData.activeProjects
+    : activeProjectsAllTime.length;
+  const completedProjectsCount = loadingProjects
+    ? profileData.completedProjects
+    : completedProjectsAllTime.length;
+  const totalProjectsCount = loadingProjects
+    ? profileData.totalProjects
+    : allProjects.length;
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -498,7 +515,7 @@ export default function GCProfileScreen() {
                     </Text>
                   </TouchableOpacity>
                   <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {profileData.totalProjects} projects
+                    {totalProjectsCount} projects
                   </Text>
                 </View>
               </View>
@@ -507,14 +524,14 @@ export default function GCProfileScreen() {
             <View className="flex-row pt-4 border-t border-blue-900">
               <View className="flex-1 items-center">
                 <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {profileData.activeProjects}
+                  {activeProjectsCount}
                 </Text>
                 <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Active</Text>
               </View>
               <View className="w-px bg-blue-900" />
               <View className="flex-1 items-center">
                 <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {profileData.completedProjects}
+                  {completedProjectsCount}
                 </Text>
                 <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Completed</Text>
               </View>
