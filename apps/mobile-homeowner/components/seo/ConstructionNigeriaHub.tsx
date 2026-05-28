@@ -122,7 +122,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
             {content.heroDescription}
           </Text>
           <SeoCoverImage
-            source={{ uri: content.coverImage.src }}
+            source={require('@/assets/images/blog-1 image.png')}
             alt={content.coverImage.alt}
             aspectRatio={16 / 9}
             className="my-4"

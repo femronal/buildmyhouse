@@ -1,28 +1,20 @@
-import SeoLandingPage from '@/components/seo/SeoLandingPage';
-import { getSeoPageContent } from '@/lib/seo-pages';
+import DiasporaUsaCanadaLandingPage from '@/components/seo/DiasporaUsaCanadaLandingPage';
+import {
+  diasporaUsaCanadaLandingPageContent as content,
+  getDiasporaUsaCanadaLandingJsonLd,
+} from '@/lib/diaspora-usa-canada-landing-content';
 import { useWebSeo } from '@/lib/seo';
 
 export default function BuildInNigeriaFromUsCanadaSeoPage() {
-  const content = getSeoPageContent('diasporaUsCanada');
   useWebSeo({
-    title: content.title,
-    description: content.description,
-    canonicalPath: content.canonicalPath,
+    title: content.seo.title,
+    description: content.seo.description,
+    canonicalPath: '/diaspora/build-in-nigeria-from-usa-canada',
     robots: 'index,follow',
-    jsonLd: content.schema,
+    ogImage: content.coverImage.src,
+    jsonLd: getDiasporaUsaCanadaLandingJsonLd(),
   });
 
-  return (
-    <SeoLandingPage
-      eyebrow={content.eyebrow}
-      title={content.heroTitle}
-      description={content.heroDescription}
-      bulletPoints={content.bullets}
-      processSteps={content.processSteps}
-      faqs={content.faqs}
-      internalLinks={content.internalLinks}
-      ctaLabel="Start your Nigeria project"
-    />
-  );
+  return <DiasporaUsaCanadaLandingPage />;
 }
 
