@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, Edit, Trash2, Plus, Info, Calendar, Edit3, Upload } from "lucide-react-native";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import { designService } from '@/services/designService';
 import { useMyDesigns, useDeleteDesign, useUpdateDesign } from '@/hooks/useDesigns';
@@ -10,6 +10,7 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from '@/hooks/useGCProfile';
 import { useResponsivePadding } from '@/lib/responsive-layout';
 import { uploadFile } from '@/utils/fileUpload';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface ImageWithLabel {
   uri: string;
@@ -30,6 +31,33 @@ const PLAN_TYPE_OPTIONS: { value: PlanType; label: string }[] = [
 ];
 
 const CUSTOM_FILTER_VALUE = '__custom__';
+const UPLOAD_FORM_DRAFT_STORAGE_KEY = 'gcPlans:uploadFormDraft:v1';
+
+type ConstructionPhaseDraft = {
+  name: string;
+  description: string;
+  estimatedDuration: string;
+  estimatedCost: number;
+};
+
+type UploadFormDraft = {
+  name: string;
+  description: string;
+  planType: PlanType;
+  selectedPlanFilter: string;
+  customPlanFilter: string;
+  bedrooms: string;
+  bathrooms: string;
+  squareFootage: string;
+  estimatedCost: string;
+  floors: string;
+  estimatedDuration: string;
+  rooms: string[];
+  materials: string[];
+  features: string[];
+  constructionPhases: ConstructionPhaseDraft[];
+  images: ImageWithLabel[];
+};
 
 const PLAN_TYPE_FILTER_OPTIONS: Record<PlanType, string[]> = {
   repair: [
@@ -190,6 +218,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   }[]>([]);
   const [images, setImages] = useState<ImageWithLabel[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
   const queryClient = useQueryClient();
   const availablePlanFilters = PLAN_TYPE_FILTER_OPTIONS[planType] || [];
   const resolvedPlanFilter =
@@ -203,9 +232,162 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['designs', 'my-designs'] });
       queryClient.invalidateQueries({ queryKey: ['designs'] });
+      void AsyncStorage.removeItem(UPLOAD_FORM_DRAFT_STORAGE_KEY);
       onSuccess();
     },
   });
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadDraft = async () => {
+      try {
+        const rawDraft = await AsyncStorage.getItem(UPLOAD_FORM_DRAFT_STORAGE_KEY);
+        if (!rawDraft) return;
+        const parsedDraft = JSON.parse(rawDraft) as Partial<UploadFormDraft>;
+
+        if (!isMounted) return;
+        const nextPlanType: PlanType = PLAN_TYPE_OPTIONS.some(
+          (option) => option.value === parsedDraft.planType,
+        )
+          ? (parsedDraft.planType as PlanType)
+          : 'repair';
+
+        setName(typeof parsedDraft.name === 'string' ? parsedDraft.name : '');
+        setDescription(typeof parsedDraft.description === 'string' ? parsedDraft.description : '');
+        setPlanType(nextPlanType);
+        setSelectedPlanFilter(
+          typeof parsedDraft.selectedPlanFilter === 'string' && parsedDraft.selectedPlanFilter.trim()
+            ? parsedDraft.selectedPlanFilter
+            : PLAN_TYPE_FILTER_OPTIONS[nextPlanType][0],
+        );
+        setCustomPlanFilter(
+          typeof parsedDraft.customPlanFilter === 'string' ? parsedDraft.customPlanFilter : '',
+        );
+        setBedrooms(typeof parsedDraft.bedrooms === 'string' ? parsedDraft.bedrooms : '');
+        setBathrooms(typeof parsedDraft.bathrooms === 'string' ? parsedDraft.bathrooms : '');
+        setSquareFootage(typeof parsedDraft.squareFootage === 'string' ? parsedDraft.squareFootage : '');
+        setEstimatedCost(typeof parsedDraft.estimatedCost === 'string' ? parsedDraft.estimatedCost : '');
+        setFloors(typeof parsedDraft.floors === 'string' ? parsedDraft.floors : '');
+        setEstimatedDuration(
+          typeof parsedDraft.estimatedDuration === 'string' ? parsedDraft.estimatedDuration : '',
+        );
+        setRooms(Array.isArray(parsedDraft.rooms) ? parsedDraft.rooms.filter((r): r is string => typeof r === 'string') : []);
+        setMaterials(
+          Array.isArray(parsedDraft.materials)
+            ? parsedDraft.materials.filter((m): m is string => typeof m === 'string')
+            : [],
+        );
+        setFeatures(
+          Array.isArray(parsedDraft.features)
+            ? parsedDraft.features.filter((f): f is string => typeof f === 'string')
+            : [],
+        );
+        setConstructionPhases(
+          Array.isArray(parsedDraft.constructionPhases)
+            ? parsedDraft.constructionPhases.map((phase) => ({
+                name: typeof phase?.name === 'string' ? phase.name : '',
+                description: typeof phase?.description === 'string' ? phase.description : '',
+                estimatedDuration:
+                  typeof phase?.estimatedDuration === 'string' ? phase.estimatedDuration : '',
+                estimatedCost:
+                  typeof phase?.estimatedCost === 'number' && Number.isFinite(phase.estimatedCost)
+                    ? phase.estimatedCost
+                    : 0,
+              }))
+            : [],
+        );
+        setImages(
+          Array.isArray(parsedDraft.images)
+            ? parsedDraft.images
+                .filter((image) => image && typeof image.uri === 'string' && image.uri.trim())
+                .map((image, index) => ({
+                  uri: image.uri,
+                  label:
+                    typeof image.label === 'string' && image.label.trim()
+                      ? image.label
+                      : `Image ${index + 1}`,
+                  existingUrl: image.existingUrl,
+                  fileName: image.fileName,
+                  mimeType: image.mimeType,
+                }))
+            : [],
+        );
+      } catch {
+        // Ignore corrupted drafts and continue with a clean form.
+      } finally {
+        if (isMounted) setDraftLoaded(true);
+      }
+    };
+    void loadDraft();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    const draft: UploadFormDraft = {
+      name,
+      description,
+      planType,
+      selectedPlanFilter,
+      customPlanFilter,
+      bedrooms,
+      bathrooms,
+      squareFootage,
+      estimatedCost,
+      floors,
+      estimatedDuration,
+      rooms,
+      materials,
+      features,
+      constructionPhases,
+      images,
+    };
+
+    const isEffectivelyEmpty =
+      !name.trim() &&
+      !description.trim() &&
+      planType === 'repair' &&
+      selectedPlanFilter === PLAN_TYPE_FILTER_OPTIONS.repair[0] &&
+      !customPlanFilter.trim() &&
+      !bedrooms.trim() &&
+      !bathrooms.trim() &&
+      !squareFootage.trim() &&
+      !estimatedCost.trim() &&
+      !floors.trim() &&
+      !estimatedDuration.trim() &&
+      rooms.length === 0 &&
+      materials.length === 0 &&
+      features.length === 0 &&
+      constructionPhases.length === 0 &&
+      images.length === 0;
+
+    if (isEffectivelyEmpty) {
+      void AsyncStorage.removeItem(UPLOAD_FORM_DRAFT_STORAGE_KEY);
+      return;
+    }
+
+    void AsyncStorage.setItem(UPLOAD_FORM_DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  }, [
+    draftLoaded,
+    name,
+    description,
+    planType,
+    selectedPlanFilter,
+    customPlanFilter,
+    bedrooms,
+    bathrooms,
+    squareFootage,
+    estimatedCost,
+    floors,
+    estimatedDuration,
+    rooms,
+    materials,
+    features,
+    constructionPhases,
+    images,
+  ]);
 
   // Note: We create the file input synchronously in handlePickImage
   // to ensure it's part of the trusted user event
