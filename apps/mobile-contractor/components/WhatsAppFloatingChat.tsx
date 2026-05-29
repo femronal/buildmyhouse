@@ -39,7 +39,7 @@ export default function WhatsAppFloatingChat() {
     [width, insets.bottom],
   );
   const floatingBottom = hasGcBottomNav
-    ? Math.max(insets.bottom + 92, 96)
+    ? Math.max(insets.bottom + 106, 110)
     : isTabScreen
       ? tabMetrics.height + tabMetrics.bottomInset + 14
       : Math.max(insets.bottom + 20, 24);
