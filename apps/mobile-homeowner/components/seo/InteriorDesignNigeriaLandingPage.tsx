@@ -168,7 +168,7 @@ export default function InteriorDesignNigeriaLandingPage() {
             {content.hero.description}
           </Text>
           <SeoCoverImage
-            source={{ uri: content.coverImage.src }}
+            source={require('@/assets/images/blog-3.png')}
             alt={content.coverImage.alt}
             aspectRatio={16 / 9}
             className="mb-5"

@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Compass, Wallet, Building2 } from "lucide-react-native";
+import { Home, Compass, Wallet, Hammer } from "lucide-react-native";
 import { View, Platform, useWindowDimensions } from "react-native";
 import { BlurView } from "expo-blur";
 import { useMemo } from "react";
@@ -107,7 +107,7 @@ export default function TabsLayout() {
               className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
               style={{ paddingVertical: 6, paddingHorizontal: 8 }}
             >
-              <Building2 size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
+              <Hammer size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
             </View>
           ),
         }}
