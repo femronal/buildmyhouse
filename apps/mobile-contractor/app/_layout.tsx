@@ -26,6 +26,7 @@ import { AppAlertProvider } from "../components/AppAlertProvider";
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -74,6 +75,7 @@ export default function RootLayout() {
                 <Stack.Screen name="chat" options={{ headerShown: false }} />
               </Stack>
               <StatusBar style="auto" />
+              <WhatsAppFloatingChat />
             </AppAlertProvider>
           </ThemeProvider>
         </QueryClientProvider>

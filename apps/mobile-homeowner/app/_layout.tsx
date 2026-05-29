@@ -26,6 +26,7 @@ import { InvestmentProvider } from '@/contexts/InvestmentContext';
 import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
+import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 import {
   initialWindowMetrics,
@@ -175,6 +176,7 @@ export default function RootLayout() {
           <Stack.Screen name="chat" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
+          <WhatsAppFloatingChat />
         </ThemeProvider>
       </InvestmentProvider>
     </SafeAreaProvider>
