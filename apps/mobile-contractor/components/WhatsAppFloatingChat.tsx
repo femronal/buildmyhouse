@@ -30,13 +30,19 @@ export default function WhatsAppFloatingChat() {
 
   const tabRoutes = useMemo(() => new Set(['/home', '/finance']), []);
   const isTabScreen = tabRoutes.has(pathname ?? '');
+  const hasGcBottomNav =
+    /^\/contractor\/gc-(dashboard|requests|notifications|plans|earnings|profile)(\/|$)/.test(
+      currentPath,
+    );
   const tabMetrics = useMemo(
     () => getFloatingTabBarMetrics(width, insets.bottom),
     [width, insets.bottom],
   );
-  const floatingBottom = isTabScreen
-    ? tabMetrics.height + tabMetrics.bottomInset + 14
-    : Math.max(insets.bottom + 20, 24);
+  const floatingBottom = hasGcBottomNav
+    ? Math.max(insets.bottom + 92, 96)
+    : isTabScreen
+      ? tabMetrics.height + tabMetrics.bottomInset + 14
+      : Math.max(insets.bottom + 20, 24);
   const modalWidth = Math.min(280, Math.max(232, width - 24));
 
   if (shouldHide) {
