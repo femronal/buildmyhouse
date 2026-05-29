@@ -110,6 +110,20 @@ export async function uploadFile(
       try {
         const response = await fetch(uploadUri);
         const blob = await response.blob();
+        const blobType = (blob.type || '').toLowerCase();
+        if (
+          type === 'image' &&
+          (!mimeType || mimeType === 'application/octet-stream') &&
+          blobType.startsWith('image/')
+        ) {
+          mimeType = blobType;
+          if (!/\.[A-Za-z0-9]+$/.test(filename)) {
+            const inferredExt = inferExtensionFromMime(mimeType);
+            if (inferredExt) {
+              filename = `${filename}.${inferredExt}`;
+            }
+          }
+        }
         const file = new File([blob], filename, { type: mimeType });
         
         formData.append('file', file);

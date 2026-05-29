@@ -217,6 +217,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
     estimatedCost: number;
   }[]>([]);
   const [images, setImages] = useState<ImageWithLabel[]>([]);
+  const [skippedDraftImageCount, setSkippedDraftImageCount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
   const queryClient = useQueryClient();
@@ -296,21 +297,30 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               }))
             : [],
         );
+        const restoredDraftImages = Array.isArray(parsedDraft.images)
+          ? parsedDraft.images.filter(
+              (image): image is ImageWithLabel =>
+                !!image && typeof image.uri === 'string' && image.uri.trim().length > 0,
+            )
+          : [];
+        const usableDraftImages =
+          Platform.OS === 'web'
+            ? restoredDraftImages.filter((image) => !image.uri.startsWith('blob:'))
+            : restoredDraftImages;
+        setSkippedDraftImageCount(
+          Math.max(0, restoredDraftImages.length - usableDraftImages.length),
+        );
         setImages(
-          Array.isArray(parsedDraft.images)
-            ? parsedDraft.images
-                .filter((image) => image && typeof image.uri === 'string' && image.uri.trim())
-                .map((image, index) => ({
-                  uri: image.uri,
-                  label:
-                    typeof image.label === 'string' && image.label.trim()
-                      ? image.label
-                      : `Image ${index + 1}`,
-                  existingUrl: image.existingUrl,
-                  fileName: image.fileName,
-                  mimeType: image.mimeType,
-                }))
-            : [],
+          usableDraftImages.map((image, index) => ({
+            uri: image.uri,
+            label:
+              typeof image.label === 'string' && image.label.trim()
+                ? image.label
+                : `Image ${index + 1}`,
+            existingUrl: image.existingUrl,
+            fileName: image.fileName,
+            mimeType: image.mimeType,
+          })),
         );
       } catch {
         // Ignore corrupted drafts and continue with a clean form.
@@ -432,6 +442,8 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
           const newImages = selectedAssets.map((asset, index) => ({
             uri: asset.uri,
             label: `Image ${images.length + index + 1}`,
+            fileName: asset.fileName,
+            mimeType: asset.mimeType,
           }));
           setImages([...images, ...newImages]);
         }
@@ -580,7 +592,9 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
 
       const imageUris = images.map((img) => ({ 
         uri: img.uri, 
-        label: img.label || 'Image' 
+        label: img.label || 'Image',
+        fileName: img.fileName,
+        mimeType: img.mimeType,
       }));
 
       // Use mutate with promise wrapper to avoid React development mode issues
@@ -1068,6 +1082,14 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
           Design Photos * (Kitchen, Bathroom, Exterior, etc.)
         </Text>
+        {skippedDraftImageCount > 0 && (
+          <View className="bg-amber-900/30 border border-amber-700 rounded-xl p-3 mb-3">
+            <Text className="text-amber-200 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Please reselect photos after browser refresh. {skippedDraftImageCount} saved draft photo
+              {skippedDraftImageCount > 1 ? 's were' : ' was'} not restorable.
+            </Text>
+          </View>
+        )}
         
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
           {images.map((image, index) => (
@@ -1131,6 +1153,8 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                         return {
                           uri,
                           label: `Image ${prev.length + index + 1}`,
+                          fileName: file.name,
+                          mimeType: file.type,
                         };
                       });
                       return [...prev, ...newImages];

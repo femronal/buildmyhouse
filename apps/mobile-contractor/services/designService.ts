@@ -31,12 +31,18 @@ export const designService = {
    * Create a new design with images.
    * Uploads images first, then sends JSON to backend (which expects proper types).
    */
-  createDesign: async (designData: CreateDesignData, imageUris: Array<{ uri: string; label?: string }>) => {
+  createDesign: async (
+    designData: CreateDesignData,
+    imageUris: Array<{ uri: string; label?: string; fileName?: string; mimeType?: string }>,
+  ) => {
     // 1. Upload each image to /upload/image and collect URLs
     const imageResults: Array<{ url: string; label?: string; order: number }> = [];
     for (let i = 0; i < imageUris.length; i++) {
       const img = imageUris[i];
-      const uploadedUrl = await uploadFile(img.uri, 'image');
+      const uploadedUrl = await uploadFile(img.uri, 'image', {
+        fileName: img.fileName,
+        mimeType: img.mimeType,
+      });
       // Backend returns full URL; store path for portability (backend serves from /uploads)
       const urlPath = uploadedUrl.startsWith('http') ? new URL(uploadedUrl).pathname : uploadedUrl;
       imageResults.push({
