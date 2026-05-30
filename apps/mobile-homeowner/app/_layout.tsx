@@ -27,6 +27,7 @@ import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
+import InstallAppPrompt from '@/components/InstallAppPrompt';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 import {
   initialWindowMetrics,
@@ -185,6 +186,7 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <NotificationListener />
+      <InstallAppPrompt />
       {STRIPE_PUBLISHABLE_KEY ? (
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="buildmyhouse">
           {app}
