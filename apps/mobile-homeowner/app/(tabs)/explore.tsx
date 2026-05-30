@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { User, Filter, Search, Heart, Bed, Bath, Maximize, Star, ChevronDown, ChevronUp, Info } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
@@ -116,7 +116,28 @@ export default function ExploreScreen() {
     outputRange: [0, 1],
   });
 
-  const cardWidth = getTwoColumnCardWidth(screenWidth);
+  const isDesktopThreeColumn = screenWidth >= 1200;
+  const cardWidth = useMemo(() => {
+    if (!isDesktopThreeColumn) {
+      return getTwoColumnCardWidth(screenWidth);
+    }
+    const columnGap = 12;
+    return (screenWidth - horizontalPadding * 2 - columnGap * 2) / 3;
+  }, [horizontalPadding, isDesktopThreeColumn, screenWidth]);
+  const listingCardShadow = useMemo(
+    () => [
+      cardShadowStyle,
+      Platform.OS === 'web'
+        ? ({ boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)' } as const)
+        : ({
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 10,
+            elevation: 5,
+          } as const),
+    ],
+    [],
+  );
 
   const normalizeDesignTab = useCallback((design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' => {
     const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
@@ -489,7 +510,7 @@ export default function ExploreScreen() {
                 <TouchableOpacity
                   key={design.id}
                   onPress={() => router.push(`/house-summary?designId=${design.id}&designName=${design.name}`)}
-                  style={[cardShadowStyle, { width: cardWidth }]}
+                  style={[listingCardShadow, { width: cardWidth }]}
                   className="mb-5 bg-white rounded-3xl border border-gray-200"
                 >
                   <View className="overflow-hidden rounded-3xl">
