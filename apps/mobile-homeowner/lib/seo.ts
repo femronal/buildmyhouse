@@ -19,7 +19,7 @@ const WEB_URL = (
 ).replace(/\/+$/, '');
 const BRAND_NAME = 'BuildMyHouse Technologies';
 
-const DEFAULT_OG_IMAGE = `${WEB_URL}/assets/images/engineer%20at%20BuildMyHouse.png`;
+const DEFAULT_OG_IMAGE = `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
 function upsertMetaByName(name: string, content: string) {
   if (typeof document === 'undefined') return;

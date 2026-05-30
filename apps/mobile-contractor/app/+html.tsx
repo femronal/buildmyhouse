@@ -8,7 +8,7 @@ const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://gc.buildmyhouse.app
 const DEFAULT_PAGE_TITLE = 'BuildMyHouse Technologies for General Contractors';
 const DEFAULT_PAGE_DESCRIPTION =
   'BuildMyHouse Technologies helps general contractors receive vetted project opportunities, share stage updates, upload evidence, and manage homeowners with clearer workflows.';
-const DEFAULT_OG_IMAGE = 'https://buildmyhouse.app/assets/images/engineer%20at%20BuildMyHouse.png';
+const DEFAULT_OG_IMAGE = `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
 export default function Root({ children }: RootProps) {
   return (

@@ -10,7 +10,7 @@ const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').
 const DEFAULT_PAGE_TITLE = 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design';
 const DEFAULT_PAGE_DESCRIPTION =
   'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.';
-const DEFAULT_OG_IMAGE = `${WEB_URL}/assets/images/engineer%20at%20BuildMyHouse.png`;
+const DEFAULT_OG_IMAGE = `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
 export default function Root({ children }: RootProps) {
   const gscVerification =
