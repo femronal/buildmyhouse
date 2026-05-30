@@ -17,8 +17,9 @@ const WEB_URL = (
   process.env.EXPO_PUBLIC_WEB_URL ||
   'https://buildmyhouse.app'
 ).replace(/\/+$/, '');
+const BRAND_NAME = 'BuildMyHouse Technologies';
 
-const DEFAULT_OG_IMAGE = `${WEB_URL}/assets/og/buildmyhouse-default.png`;
+const DEFAULT_OG_IMAGE = `${WEB_URL}/assets/images/engineer%20at%20BuildMyHouse.png`;
 
 function upsertMetaByName(name: string, content: string) {
   if (typeof document === 'undefined') return;
@@ -169,7 +170,7 @@ export function useWebSeo(options: SeoOptions) {
     upsertCanonical(canonicalUrl);
 
     upsertMetaByProperty('og:type', 'website');
-    upsertMetaByProperty('og:site_name', 'BuildMyHouse');
+    upsertMetaByProperty('og:site_name', BRAND_NAME);
     upsertMetaByProperty('og:title', options.title);
     upsertMetaByProperty('og:description', options.description);
     upsertMetaByProperty('og:url', canonicalUrl);
@@ -207,7 +208,7 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/explore') {
     return {
-      title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse',
+      title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
       description:
         'Discover house designs, homes for sale, and land opportunities in Nigeria. Start your construction, renovation, or interior design project with verified professionals.',
       canonicalPath,
@@ -217,7 +218,7 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/rent') {
     return {
-      title: 'Homes for Rent in Nigeria (Owner-Listed) | BuildMyHouse',
+      title: 'Homes for Rent in Nigeria (Owner-Listed) | BuildMyHouse Technologies',
       description:
         'Find owner-listed rental homes in Nigeria with transparent fees and verified listings. Browse options in Lagos, Abuja, and other key cities.',
       canonicalPath,
@@ -227,9 +228,9 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/login' || normalized === '/') {
     return {
-      title: 'BuildMyHouse Nigeria | Construction, Renovation, Interior Design',
+      title: 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design',
       description:
-        'Build, renovate, or redesign your home in Nigeria with vetted general contractors and milestone tracking. Also discover homes and land opportunities.',
+        'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
       canonicalPath,
       robots: 'index,follow',
     };
@@ -237,7 +238,7 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/articles' || normalized.startsWith('/articles/')) {
     return {
-      title: 'BuildMyHouse Articles | Construction, Renovation, Diaspora Guides',
+      title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',
       description:
         'Practical BuildMyHouse articles for homeowners in Nigeria and diaspora clients planning construction, renovation, or interior projects.',
       canonicalPath,
@@ -246,9 +247,9 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
   }
 
   return {
-    title: 'BuildMyHouse',
+    title: 'BuildMyHouse Technologies',
     description:
-      'BuildMyHouse helps homeowners in Nigeria plan construction, renovation, interior design, and property decisions with verified experts.',
+      'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.',
     canonicalPath,
     robots: indexable ? 'index,follow' : 'noindex,nofollow',
   };

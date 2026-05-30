@@ -99,7 +99,7 @@ export default function RootLayout() {
         ? {
             '@context': 'https://schema.org',
             '@type': 'Organization',
-            name: 'BuildMyHouse',
+            name: 'BuildMyHouse Technologies',
             url: process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app',
             logo: `${(process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '')}/assets/images/icon.png`,
             sameAs: ['https://buildmyhouse.app'],

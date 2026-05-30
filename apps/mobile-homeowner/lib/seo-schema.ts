@@ -12,7 +12,7 @@ function organizationNode() {
   return {
     '@type': 'Organization',
     '@id': `${WEB}/#organization`,
-    name: 'BuildMyHouse',
+    name: 'BuildMyHouse Technologies',
     url: WEB,
   };
 }

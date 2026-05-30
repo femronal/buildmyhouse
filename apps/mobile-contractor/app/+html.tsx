@@ -4,18 +4,13 @@ type RootProps = {
   children: React.ReactNode;
 };
 
-const DEFAULT_GSC_VERIFICATION = 'oXMp0QHWTK-YkDQ5L8sNre1YHVZR_6Tt7VBUP8DQ5X8';
-
-const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
-const DEFAULT_PAGE_TITLE = 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design';
+const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://gc.buildmyhouse.app').replace(/\/+$/, '');
+const DEFAULT_PAGE_TITLE = 'BuildMyHouse Technologies for General Contractors';
 const DEFAULT_PAGE_DESCRIPTION =
-  'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.';
-const DEFAULT_OG_IMAGE = `${WEB_URL}/assets/images/engineer%20at%20BuildMyHouse.png`;
+  'BuildMyHouse Technologies helps general contractors receive vetted project opportunities, share stage updates, upload evidence, and manage homeowners with clearer workflows.';
+const DEFAULT_OG_IMAGE = 'https://buildmyhouse.app/assets/images/engineer%20at%20BuildMyHouse.png';
 
 export default function Root({ children }: RootProps) {
-  const gscVerification =
-    process.env.EXPO_PUBLIC_GSC_VERIFICATION || DEFAULT_GSC_VERIFICATION;
-
   return (
     <html lang="en">
       <head>
@@ -39,9 +34,8 @@ export default function Root({ children }: RootProps) {
         <meta name="twitter:title" content={DEFAULT_PAGE_TITLE} />
         <meta name="twitter:description" content={DEFAULT_PAGE_DESCRIPTION} />
         <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
-        <meta name="google-site-verification" content={gscVerification} />
-        <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+        <link rel="icon" href="https://buildmyhouse.app/favicon.png" type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="https://buildmyhouse.app/apple-touch-icon.png" sizes="180x180" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
