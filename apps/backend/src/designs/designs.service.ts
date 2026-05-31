@@ -262,6 +262,45 @@ export class DesignsService {
     });
   }
 
+  async getAdminDesignsByContractor(params: {
+    actorRole: string;
+    contractorUserId: string;
+  }) {
+    if (params.actorRole !== 'admin') {
+      throw new ForbiddenException('Only admins can view contractor design plans');
+    }
+
+    const contractorUserId = String(params.contractorUserId || '').trim();
+    if (!contractorUserId) {
+      throw new BadRequestException('Contractor user ID is required');
+    }
+
+    return this.prisma.design.findMany({
+      where: { createdById: contractorUserId },
+      include: {
+        images: { orderBy: { order: 'asc' } },
+        createdBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                specialtyCategory: true,
+                specialtyTags: true,
+                verified: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async approveDesignGoLive(params: {
     designId: string;
     adminUserId: string;

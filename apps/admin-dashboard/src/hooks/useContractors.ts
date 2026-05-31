@@ -6,6 +6,8 @@ export type ContractorListItem = {
   userId: string;
   name: string;
   specialty: string;
+  specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor' | null;
+  specialtyTags?: string[];
   location?: string | null;
   experienceYears?: number | null;
   rating: number;

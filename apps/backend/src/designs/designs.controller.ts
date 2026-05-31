@@ -52,6 +52,23 @@ export class DesignsController {
   }
 
   /**
+   * Admin: list all scope plans uploaded by one GC.
+   */
+  @Get('admin/contractor/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  getAdminDesignsByContractor(
+    @Param('userId') userId: string,
+    @Request() req: any,
+  ) {
+    const role = req.user?.role;
+    return this.designsService.getAdminDesignsByContractor({
+      actorRole: role,
+      contractorUserId: userId,
+    });
+  }
+
+  /**
    * Admin: approve a design and make it live for homeowners.
    */
   @Patch('admin/:id/go-live')
