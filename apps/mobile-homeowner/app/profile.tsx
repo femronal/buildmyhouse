@@ -331,7 +331,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               ) : (
-                trulyActiveProjects.slice(0, 3).map((project: any) => (
+                trulyActiveProjects.map((project: any) => (
                   <TouchableOpacity
                     key={project.id}
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
@@ -371,7 +371,7 @@ export default function ProfileScreen() {
                   </Text>
                 </View>
               ) : (
-                completedProjectsAllTime.slice(0, 3).map((project: any) => (
+                completedProjectsAllTime.map((project: any) => (
                   <TouchableOpacity
                     key={project.id}
                     onPress={() => router.push(`/dashboard?projectId=${project.id}`)}
