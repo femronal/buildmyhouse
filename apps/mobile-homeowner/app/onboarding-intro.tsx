@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Modal,
   ScrollView,
   Text,
   TextInput,
@@ -21,13 +22,34 @@ import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { getBackendAssetUrl } from '@/lib/image';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
 
-function InfoLabel(props: { label: string; info: string }) {
+type MissingFieldKey =
+  | 'profilePhoto'
+  | 'fullName'
+  | 'email'
+  | 'phone'
+  | 'address'
+  | 'city'
+  | 'state'
+  | 'country'
+  | 'agreedTerms';
+
+type InfoLabelProps = {
+  label: string;
+  info: string;
+  onPressInfo: (payload: { label: string; info: string }) => void;
+};
+
+function InfoLabel(props: InfoLabelProps) {
   return (
     <View className="flex-row items-center mb-2">
       <Text className="text-sm text-gray-700" style={{ fontFamily: 'Poppins_500Medium' }}>
         {props.label}
       </Text>
-      <TouchableOpacity onPress={() => Alert.alert(props.label, props.info)} className="ml-2">
+      <TouchableOpacity
+        onPress={() => props.onPressInfo({ label: props.label, info: props.info })}
+        className="ml-2"
+        hitSlop={{ top: 8, right: 8, bottom: 8, left: 8 }}
+      >
         <Info size={15} color="#6B7280" strokeWidth={2.2} />
       </TouchableOpacity>
     </View>
@@ -52,6 +74,8 @@ export default function HomeownerOnboardingIntroScreen() {
   const [stateValue, setStateValue] = useState('');
   const [country, setCountry] = useState('');
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [missingFields, setMissingFields] = useState<Partial<Record<MissingFieldKey, string>>>({});
+  const [activeInfo, setActiveInfo] = useState<{ label: string; info: string } | null>(null);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -75,17 +99,40 @@ export default function HomeownerOnboardingIntroScreen() {
   const hasProfilePhoto = !!String(currentUser?.pictureUrl || '').trim();
 
   const isSubmitting = updateMe.isPending || uploadProfilePicture.isPending;
-  const canSubmit =
-    !isSubmitting &&
-    !!fullName.trim() &&
-    !!email.trim() &&
-    !!phone.trim() &&
-    !!address.trim() &&
-    !!city.trim() &&
-    !!stateValue.trim() &&
-    !!country.trim() &&
-    hasProfilePhoto &&
-    agreedTerms;
+  const validateRequiredFields = (): Partial<Record<MissingFieldKey, string>> => {
+    const errors: Partial<Record<MissingFieldKey, string>> = {};
+
+    if (!hasProfilePhoto) {
+      errors.profilePhoto =
+        'You forgot your profile photo. We use this to verify your identity before project work starts.';
+    }
+    if (!fullName.trim()) {
+      errors.fullName = 'You forgot your full name. We need it to keep your account accountable and secure.';
+    }
+    if (!email.trim()) {
+      errors.email = 'You forgot your email. We need it for receipts, alerts, and important account updates.';
+    }
+    if (!phone.trim()) {
+      errors.phone = 'You forgot your phone number. We need it for urgent project coordination.';
+    }
+    if (!address.trim()) {
+      errors.address = 'You forgot your address. We need this to match you with general contractors in your area.';
+    }
+    if (!city.trim()) {
+      errors.city = 'You forgot your city. This helps us route your project to nearby professionals.';
+    }
+    if (!stateValue.trim()) {
+      errors.state = 'You forgot your state. This helps us apply the right local workflow for your project.';
+    }
+    if (!country.trim()) {
+      errors.country = 'You forgot your country. We need this for location context and support compliance.';
+    }
+    if (!agreedTerms) {
+      errors.agreedTerms = 'Please accept the homeowner terms so we can proceed with your account setup.';
+    }
+
+    return errors;
+  };
 
   const handlePickProfilePhoto = async () => {
     try {
@@ -106,6 +153,12 @@ export default function HomeownerOnboardingIntroScreen() {
       const fileName = asset.fileName || `homeowner-profile-${Date.now()}.jpg`;
       const mimeType = asset.mimeType || 'image/jpeg';
       await uploadProfilePicture.mutateAsync({ uri: asset.uri, name: fileName, type: mimeType });
+      setMissingFields((prev) => {
+        if (!prev.profilePhoto) return prev;
+        const next = { ...prev };
+        delete next.profilePhoto;
+        return next;
+      });
       Alert.alert('Uploaded', 'Profile photo uploaded successfully.');
     } catch (error: any) {
       Alert.alert('Upload failed', error?.message || 'Please try again.');
@@ -118,8 +171,10 @@ export default function HomeownerOnboardingIntroScreen() {
       router.replace('/login');
       return;
     }
-    if (!canSubmit) {
-      Alert.alert('Complete required details', 'Fill all required fields, upload a photo, and accept the terms.');
+
+    const errors = validateRequiredFields();
+    if (Object.keys(errors).length > 0) {
+      setMissingFields(errors);
       return;
     }
 
@@ -141,6 +196,15 @@ export default function HomeownerOnboardingIntroScreen() {
     } catch (error: any) {
       Alert.alert('Could not submit', error?.message || 'Please try again.');
     }
+  };
+
+  const clearFieldError = (field: MissingFieldKey) => {
+    setMissingFields((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
   };
 
   if (isLoading) {
@@ -188,6 +252,7 @@ export default function HomeownerOnboardingIntroScreen() {
           <InfoLabel
             label="Profile photo"
             info="We use your profile photo to help contractors and support teams verify who is requesting work."
+            onPressInfo={setActiveInfo}
           />
           <TouchableOpacity
             onPress={handlePickProfilePhoto}
@@ -207,99 +272,185 @@ export default function HomeownerOnboardingIntroScreen() {
               {hasProfilePhoto ? 'Profile photo uploaded' : 'Upload profile photo'}
             </Text>
           </TouchableOpacity>
+          {missingFields.profilePhoto ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.profilePhoto}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
-          <InfoLabel label="Full name" info="Your legal/full name helps us prevent fake accounts and resolve disputes quickly." />
+          <InfoLabel
+            label="Full name"
+            info="Your legal/full name helps us prevent fake accounts and resolve disputes quickly."
+            onPressInfo={setActiveInfo}
+          />
           <TextInput
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={(value) => {
+              setFullName(value);
+              if (value.trim()) clearFieldError('fullName');
+            }}
             placeholder="Enter your full name"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.fullName ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.fullName}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
           <InfoLabel
             label="Email"
             info="We use your email for project alerts, payment receipts, and important security notices."
+            onPressInfo={setActiveInfo}
           />
           <TextInput
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(value) => {
+              setEmail(value);
+              if (value.trim()) clearFieldError('email');
+            }}
             placeholder="email@example.com"
             keyboardType="email-address"
             autoCapitalize="none"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.email ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.email}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
           <InfoLabel
             label="Phone number"
             info="Your phone helps your assigned GC and BuildMyHouse support reach you for urgent project coordination."
+            onPressInfo={setActiveInfo}
           />
           <TextInput
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={(value) => {
+              setPhone(value);
+              if (value.trim()) clearFieldError('phone');
+            }}
             placeholder="+234..."
             keyboardType="phone-pad"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.phone ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.phone}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
           <InfoLabel
             label="Address"
             info="Your address is encrypted and shown only to your assigned GC and BuildMyHouse admin when dispute handling is necessary."
+            onPressInfo={setActiveInfo}
           />
           <TextInput
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(value) => {
+              setAddress(value);
+              if (value.trim()) clearFieldError('address');
+            }}
             placeholder="House number, street, area"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.address ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.address}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
-          <InfoLabel label="City" info="City helps us match you with nearby professionals and coordinate site logistics." />
+          <InfoLabel
+            label="City"
+            info="City helps us match you with nearby professionals and coordinate site logistics."
+            onPressInfo={setActiveInfo}
+          />
           <TextInput
             value={city}
-            onChangeText={setCity}
+            onChangeText={(value) => {
+              setCity(value);
+              if (value.trim()) clearFieldError('city');
+            }}
             placeholder="e.g. Lagos"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.city ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.city}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
-          <InfoLabel label="State" info="State information improves matching accuracy and helps apply the right local workflows." />
+          <InfoLabel
+            label="State"
+            info="State information improves matching accuracy and helps apply the right local workflows."
+            onPressInfo={setActiveInfo}
+          />
           <TextInput
             value={stateValue}
-            onChangeText={setStateValue}
+            onChangeText={(value) => {
+              setStateValue(value);
+              if (value.trim()) clearFieldError('state');
+            }}
             placeholder="e.g. Lagos State"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.state ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.state}
+            </Text>
+          ) : null}
         </View>
 
         <View className="mb-4">
-          <InfoLabel label="Country" info="Country is used for compliance, notifications, and cross-border support context." />
+          <InfoLabel
+            label="Country"
+            info="Country is used for compliance, notifications, and cross-border support context."
+            onPressInfo={setActiveInfo}
+          />
           <TextInput
             value={country}
-            onChangeText={setCountry}
+            onChangeText={(value) => {
+              setCountry(value);
+              if (value.trim()) clearFieldError('country');
+            }}
             placeholder="e.g. Nigeria"
             className="rounded-2xl border border-gray-200 bg-white px-4 py-4 text-black"
             style={{ fontFamily: 'Poppins_400Regular' }}
           />
+          {missingFields.country ? (
+            <Text className="text-[11px] text-red-600 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {missingFields.country}
+            </Text>
+          ) : null}
         </View>
 
         <TouchableOpacity
-          onPress={() => setAgreedTerms((prev) => !prev)}
+          onPress={() => {
+            setAgreedTerms((prev) => {
+              const next = !prev;
+              if (next) clearFieldError('agreedTerms');
+              return next;
+            });
+          }}
           className="flex-row items-start rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 mb-3"
         >
           <View
@@ -313,6 +464,11 @@ export default function HomeownerOnboardingIntroScreen() {
             I agree to BuildMyHouse Homeowner Terms & Policies.
           </Text>
         </TouchableOpacity>
+        {missingFields.agreedTerms ? (
+          <Text className="text-[11px] text-red-600 mb-3 -mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {missingFields.agreedTerms}
+          </Text>
+        ) : null}
 
         <TouchableOpacity onPress={() => router.push('/terms-conditions')} className="mb-6">
           <Text className="text-xs text-black underline" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -322,21 +478,39 @@ export default function HomeownerOnboardingIntroScreen() {
 
         <TouchableOpacity
           onPress={handleSubmit}
-          disabled={!canSubmit}
-          className={`rounded-full py-4 items-center ${canSubmit ? 'bg-black' : 'bg-gray-200'}`}
+          disabled={isSubmitting}
+          className={`rounded-full py-4 items-center ${isSubmitting ? 'bg-gray-300' : 'bg-black'}`}
         >
           {isSubmitting ? (
-            <ActivityIndicator size="small" color={canSubmit ? '#FFFFFF' : '#6B7280'} />
+            <ActivityIndicator size="small" color="#6B7280" />
           ) : (
-            <Text
-              className={`${canSubmit ? 'text-white' : 'text-gray-500'} text-base`}
-              style={{ fontFamily: 'Poppins_700Bold' }}
-            >
+            <Text className="text-white text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
               Save and continue
             </Text>
           )}
         </TouchableOpacity>
       </ScrollView>
+
+      <Modal visible={!!activeInfo} transparent animationType="fade" onRequestClose={() => setActiveInfo(null)}>
+        <View className="flex-1 bg-black/45 justify-center px-6">
+          <View className="rounded-2xl bg-white p-5 border border-gray-200">
+            <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {activeInfo?.label}
+            </Text>
+            <Text className="text-sm text-gray-700 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {activeInfo?.info}
+            </Text>
+            <TouchableOpacity
+              onPress={() => setActiveInfo(null)}
+              className="self-end mt-4 rounded-full bg-black px-4 py-2"
+            >
+              <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Close
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
