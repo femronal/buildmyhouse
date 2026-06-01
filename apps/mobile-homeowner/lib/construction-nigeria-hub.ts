@@ -40,6 +40,12 @@ export type ConstructionNigeriaHubContent = {
   howItWorks: { title: string; steps: string[] };
   trustBlackSection: { title: string; bullets: string[] };
   visibilitySection: SimpleSection;
+  monitoringVideoSection: {
+    title: string;
+    description: string;
+    youtubeUrl: string;
+    youtubeEmbedUrl: string;
+  };
   constructionServicesSection: SimpleSection;
   renovationServicesSection: SimpleSection;
   interiorDesignSection: SimpleSection;
@@ -256,6 +262,13 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
         'contractor verification details',
       ],
     },
+    monitoringVideoSection: {
+      title: 'See How Project Monitoring Works',
+      description:
+        'Watch this quick walkthrough to understand how project tracking and updates look on BuildMyHouse.',
+      youtubeUrl: 'https://youtu.be/LuIZYt1DNzw?si=n3b9RvIPkMyY10NS',
+      youtubeEmbedUrl: 'https://www.youtube.com/embed/LuIZYt1DNzw',
+    },
     constructionServicesSection: {
       title: 'Construction Services in Nigeria',
       paragraphs: [
@@ -436,7 +449,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
 }
 
 export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubContent) {
-  return buildSeoJsonLd({
+  const graph = buildSeoJsonLd({
     path: content.canonicalPath,
     title: content.seoTitle,
     description: content.seoDescription,
@@ -448,4 +461,27 @@ export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubCont
       { name: 'Construction Services in Nigeria', path: '/construction/nigeria' },
     ],
   });
+
+  const canonicalUrl = `https://buildmyhouse.app${content.canonicalPath}`;
+  const videoId = content.monitoringVideoSection.youtubeEmbedUrl.split('/embed/')[1]?.split('?')[0] || '';
+
+  if (videoId) {
+    graph.push({
+      '@type': 'VideoObject',
+      '@id': `${canonicalUrl}#project-monitoring-video`,
+      name: content.monitoringVideoSection.title,
+      description: content.monitoringVideoSection.description,
+      embedUrl: content.monitoringVideoSection.youtubeEmbedUrl,
+      contentUrl: content.monitoringVideoSection.youtubeUrl,
+      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+      publisher: {
+        '@type': 'Organization',
+        '@id': 'https://buildmyhouse.app/#organization',
+        name: 'BuildMyHouse Technologies',
+      },
+      mainEntityOfPage: canonicalUrl,
+    });
+  }
+
+  return graph;
 }

@@ -45,7 +45,7 @@ const relatedServices: InternalLinkItem[] = [
 ];
 
 const relatedCountries: InternalLinkItem[] = [
-  { label: 'Build in Nigeria from the UK', href: '/diaspora/uk/build-in-nigeria' },
+  { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
   { label: "Renovate Parents' House from the UK", href: '/diaspora/uk/renovate-parents-house' },
 ];
 
@@ -317,7 +317,7 @@ const pages: Record<string, SeoPageArchitecture> = {
     ],
   },
   ukBuildCountry: {
-    path: '/diaspora/uk/build-in-nigeria',
+    path: '/diaspora/build-in-nigeria-from-uk',
     kind: 'country',
     schemaType: 'Article',
     title: 'Build in Nigeria from the UK | Country-Specific Diaspora Page | BuildMyHouse',

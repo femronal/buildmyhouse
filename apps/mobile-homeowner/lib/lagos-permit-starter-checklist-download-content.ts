@@ -158,7 +158,7 @@ export const lagosPermitStarterChecklistDownloadPageContent = {
       },
       {
         label: "Build in Nigeria from the UK",
-        href: "/diaspora/uk/build-in-nigeria",
+        href: "/diaspora/build-in-nigeria-from-uk",
       },
       {
         label: "See how remote monitoring works",

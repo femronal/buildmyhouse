@@ -298,83 +298,38 @@ export default function ConstructionNigeriaHub({ content }: Props) {
 
         <View className="mb-6">
           <SeoHeading level={2} className="text-black text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            See How Project Monitoring Works
+            {content.monitoringVideoSection.title}
           </SeoHeading>
-          <View style={cardShadowStyle} className="bg-black rounded-[30px] p-2.5">
-            <View className="bg-white rounded-[24px] overflow-hidden">
-              <View className="items-center pt-3 pb-1">
-                <View className="w-24 h-1.5 rounded-full bg-gray-300" />
+          <Text className="text-gray-700 text-sm leading-7 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {content.monitoringVideoSection.description}
+          </Text>
+          <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-3">
+            {Platform.OS === 'web' ? (
+              <View style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14, overflow: 'hidden' }}>
+                {(() => {
+                  const Iframe = 'iframe' as any;
+                  return (
+                    <Iframe
+                      title="BuildMyHouse project monitoring video"
+                      src={content.monitoringVideoSection.youtubeEmbedUrl}
+                      width="100%"
+                      height="100%"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                    />
+                  );
+                })()}
               </View>
-              <View className="px-4 pb-4">
-                <Text className="text-black text-[34px] leading-[40px] mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Your Projects
+            ) : (
+              <TouchableOpacity
+                onPress={() => openLink(content.monitoringVideoSection.youtubeUrl)}
+                className="bg-black rounded-xl px-4 py-4"
+              >
+                <Text className="text-white text-center text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Watch project monitoring video
                 </Text>
-                <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl border border-gray-200 overflow-hidden">
-                  <Image
-                    source={{ uri: 'https://images.unsplash.com/photo-1541976590-713941681591?auto=format&fit=crop&w=1200&q=80' }}
-                    className="w-full h-36"
-                    resizeMode="cover"
-                  />
-                  <View className="p-4">
-                    <View className="flex-row justify-between items-start mb-2">
-                      <View className="flex-1 min-w-0 mr-2">
-                        <Text className="text-black text-xl mb-1" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
-                          Daddy Obinna ...
-                        </Text>
-                        <View className="flex-row items-center">
-                          <MapPin size={14} color="#737373" strokeWidth={2} />
-                          <Text className="text-gray-500 text-sm ml-1 flex-1" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={2}>
-                            University of Lagos Cricket Oval, Ransome Kuti Road, ...
-                          </Text>
-                        </View>
-                      </View>
-                      <View className="flex-row items-center">
-                        <View className="rounded-full px-2.5 py-1 bg-blue-100 mr-1">
-                          <Text className="text-xs text-blue-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                            Active
-                          </Text>
-                        </View>
-                        <ChevronRight size={20} color="#000000" strokeWidth={2} />
-                      </View>
-                    </View>
-                    <View className="mb-3">
-                      <View className="flex-row justify-between mb-2">
-                        <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          Site Preparation & Foundation
-                        </Text>
-                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                          17%
-                        </Text>
-                      </View>
-                      <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <View className="h-full bg-black rounded-full" style={{ width: '17%' }} />
-                      </View>
-                    </View>
-                    <View className="flex-row justify-between pt-3 border-t border-gray-200">
-                      <View>
-                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          Budget
-                        </Text>
-                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                          ₦2,240,000
-                        </Text>
-                      </View>
-                      <View>
-                        <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          Spent
-                        </Text>
-                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                          ₦330,000
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                </View>
-                <Text className="text-xs text-gray-500 mt-3 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Demo only — tap the project to explore the in-app layout.
-                </Text>
-              </View>
-            </View>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

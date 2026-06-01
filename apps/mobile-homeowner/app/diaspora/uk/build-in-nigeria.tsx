@@ -1,6 +1,6 @@
-import ArchitectureSeoPage from '@/components/seo/ArchitectureSeoPage';
+import { Redirect } from 'expo-router';
 
 export default function UkBuildInNigeriaCountryPage() {
-  return <ArchitectureSeoPage pageKey="ukBuildCountry" />;
+  return <Redirect href="/diaspora/build-in-nigeria-from-uk" />;
 }
 

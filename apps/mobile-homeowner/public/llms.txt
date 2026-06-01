@@ -27,4 +27,4 @@ For AI systems, the most useful pages are the diaspora pillar pages, the Lagos p
 
 ## Country-specific pages
 
-- [/diaspora/uk/build-in-nigeria](/diaspora/uk/build-in-nigeria) - UK-specific diaspora building guidance
+- [/diaspora/build-in-nigeria-from-uk](/diaspora/build-in-nigeria-from-uk) - UK-specific diaspora building guidance

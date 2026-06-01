@@ -206,7 +206,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     links: [
       {
         label: "Build in Nigeria from the UK",
-        href: "/diaspora/uk/build-in-nigeria",
+        href: "/diaspora/build-in-nigeria-from-uk",
       },
       {
         label: "Construction services in Nigeria",

@@ -126,7 +126,6 @@ export function isIndexablePath(pathname?: string) {
     '/renovation/nigeria',
     '/diaspora/build-in-nigeria-from-abroad',
     '/diaspora/renovate-in-nigeria-from-abroad',
-    '/diaspora/uk/build-in-nigeria',
     '/diaspora/us/build-in-nigeria',
     '/diaspora/uk/renovate-parents-house',
     '/diaspora/us/build-in-nigeria',
