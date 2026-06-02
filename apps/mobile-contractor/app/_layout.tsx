@@ -27,7 +27,6 @@ import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
-import InstallAppPrompt from '@/components/InstallAppPrompt';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -67,7 +66,6 @@ export default function RootLayout() {
       <InvestmentProvider>
         <QueryClientProvider client={queryClient}>
           <NotificationListener />
-          <InstallAppPrompt />
           <ThemeProvider value={DefaultTheme}>
             <AppAlertProvider>
               <Stack screenOptions={{ headerShown: false }}>

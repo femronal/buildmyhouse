@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Briefcase, Clock } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Briefcase, Clock, Smartphone } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
@@ -47,6 +47,7 @@ const menuItems: MenuItem[] = [
   { icon: Shield, label: "Privacy & Security", route: "/privacy-security" },
   { icon: FileText, label: "Terms & Conditions", route: "/terms-conditions" },
   { icon: HelpCircle, label: "Help & Support", route: "/help-support" },
+  { icon: Smartphone, label: "Install App", route: "/install-app" },
   { icon: Settings, label: "App Settings", route: "/app-settings" },
 ];
 

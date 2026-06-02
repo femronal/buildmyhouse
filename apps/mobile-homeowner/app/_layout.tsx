@@ -27,7 +27,6 @@ import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
-import InstallAppPrompt from '@/components/InstallAppPrompt';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 import {
   initialWindowMetrics,
@@ -166,6 +165,7 @@ export default function RootLayout() {
           <Stack.Screen name="land-verification-in-nigeria-guide" options={{ headerShown: false }} />
           <Stack.Screen name="building-permit-in-lagos-nigeria-guide" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
+          <Stack.Screen name="install-app" options={{ headerShown: false }} />
           <Stack.Screen name="personal-information" options={{ headerShown: false }} />
           <Stack.Screen name="notification-settings" options={{ headerShown: false }} />
           <Stack.Screen name="billing-payments" options={{ headerShown: false }} />
@@ -186,7 +186,6 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <NotificationListener />
-      <InstallAppPrompt />
       {STRIPE_PUBLISHABLE_KEY ? (
         <StripeProvider publishableKey={STRIPE_PUBLISHABLE_KEY} urlScheme="buildmyhouse">
           {app}

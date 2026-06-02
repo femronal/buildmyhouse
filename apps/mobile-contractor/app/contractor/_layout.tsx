@@ -19,6 +19,7 @@ export default function ContractorLayout() {
       <Stack.Screen name="terms-conditions" />
       <Stack.Screen name="help-support" />
       <Stack.Screen name="about" />
+      <Stack.Screen name="install-app" />
     </Stack>
   );
 }

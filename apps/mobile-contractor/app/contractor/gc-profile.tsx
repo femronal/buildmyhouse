@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform, Share } from "react-native";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2 } from "lucide-react-native";
+import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2, Smartphone } from "lucide-react-native";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { clearAuthToken } from "@/lib/auth";
 import { useQueryClient } from '@tanstack/react-query';
@@ -957,6 +957,16 @@ export default function GCProfileScreen() {
                 <View className="flex-row items-center">
                   <HelpCircle size={18} color="#6B7280" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Help & Support</Text>
+                </View>
+                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/contractor/install-app')}
+                className="flex-row items-center justify-between py-3 border-b border-blue-900"
+              >
+                <View className="flex-row items-center">
+                  <Smartphone size={18} color="#6B7280" strokeWidth={2} />
+                  <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Install App</Text>
                 </View>
                 <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
               </TouchableOpacity>
