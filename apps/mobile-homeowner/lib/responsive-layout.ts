@@ -1,4 +1,6 @@
-import { Platform } from 'react-native';
+import { useMemo } from "react";
+import { Platform, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export type FloatingTabBarMetrics = {
   height: number;
@@ -82,4 +84,49 @@ export function getTwoColumnCardWidth(width: number) {
   const gutter = getScreenHorizontalPadding(width);
   const interCardGap = width <= 390 ? 10 : 12;
   return (width - gutter * 2 - interCardGap) / 2;
+}
+
+/** Tab screens (floating tab bar), stack screens, or stack screens with a fixed bottom nav bar. */
+export function useResponsivePadding(
+  variant: "tab" | "stack" | "stackBottomNav",
+) {
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const horizontalPad = useMemo(
+    () => getScreenHorizontalPadding(width),
+    [width],
+  );
+  const tabMetrics = useMemo(
+    () => getFloatingTabBarMetrics(width, insets.bottom),
+    [width, insets.bottom],
+  );
+  const listingChrome = useMemo(
+    () => getTabListingChrome(width, insets.top),
+    [width, insets.top],
+  );
+  const headerPaddingTop =
+    variant === "tab" ? listingChrome.headerPaddingTop : Math.max(12, insets.top + 8);
+  const headerPaddingBottom = variant === "tab" ? listingChrome.headerPaddingBottom : 8;
+  const scrollBottomPadding = useMemo(() => {
+    if (variant === "tab") {
+      return getTabContentBottomPadding(tabMetrics, {
+        webCompact: listingChrome.mobileWeb,
+      });
+    }
+    if (variant === "stackBottomNav") {
+      return Math.max(insets.bottom + 100, 120);
+    }
+    return Math.max(insets.bottom + 24, 32);
+  }, [variant, tabMetrics, insets.bottom, listingChrome.mobileWeb]);
+
+  return {
+    width,
+    horizontalPad,
+    headerPaddingTop,
+    headerPaddingBottom,
+    scrollBottomPadding,
+    insets,
+    tabMetrics,
+    listingChrome,
+  };
 }
