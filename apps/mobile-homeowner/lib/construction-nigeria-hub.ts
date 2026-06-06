@@ -1,5 +1,5 @@
 import type { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
+import { buildSeoJsonLd, buildVideoObjectNode } from '@/lib/seo-schema';
 
 type SimpleSection = {
   title: string;
@@ -45,6 +45,8 @@ export type ConstructionNigeriaHubContent = {
     description: string;
     youtubeUrl: string;
     youtubeEmbedUrl: string;
+    /** YouTube publish date for VideoObject.uploadDate (ISO 8601 date). */
+    youtubeUploadDate: string;
   };
   constructionServicesSection: SimpleSection;
   renovationServicesSection: SimpleSection;
@@ -220,7 +222,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       links: [
         { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
         { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
-        { label: 'Build in Nigeria from the US', href: '/diaspora/us/build-in-nigeria' },
+        { label: 'Build in Nigeria from the US', href: '/diaspora/build-in-nigeria-from-usa-canada' },
         { label: 'Renovate in Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
       ],
     },
@@ -268,6 +270,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
         'Watch this quick walkthrough to understand how project tracking and updates look on BuildMyHouse.',
       youtubeUrl: 'https://youtu.be/LuIZYt1DNzw?si=n3b9RvIPkMyY10NS',
       youtubeEmbedUrl: 'https://www.youtube.com/embed/LuIZYt1DNzw',
+      youtubeUploadDate: '2026-05-26',
     },
     constructionServicesSection: {
       title: 'Construction Services in Nigeria',
@@ -466,21 +469,23 @@ export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubCont
   const videoId = content.monitoringVideoSection.youtubeEmbedUrl.split('/embed/')[1]?.split('?')[0] || '';
 
   if (videoId) {
-    graph.push({
-      '@type': 'VideoObject',
-      '@id': `${canonicalUrl}#project-monitoring-video`,
-      name: content.monitoringVideoSection.title,
-      description: content.monitoringVideoSection.description,
-      embedUrl: content.monitoringVideoSection.youtubeEmbedUrl,
-      contentUrl: content.monitoringVideoSection.youtubeUrl,
-      thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-      publisher: {
-        '@type': 'Organization',
-        '@id': 'https://buildmyhouse.app/#organization',
-        name: 'BuildMyHouse Technologies',
-      },
-      mainEntityOfPage: canonicalUrl,
-    });
+    graph.push(
+      buildVideoObjectNode({
+        id: `${canonicalUrl}#project-monitoring-video`,
+        name: content.monitoringVideoSection.title,
+        description: content.monitoringVideoSection.description,
+        embedUrl: content.monitoringVideoSection.youtubeEmbedUrl,
+        contentUrl: content.monitoringVideoSection.youtubeUrl,
+        uploadDate: content.monitoringVideoSection.youtubeUploadDate,
+        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        publisher: {
+          '@type': 'Organization',
+          '@id': 'https://buildmyhouse.app/#organization',
+          name: 'BuildMyHouse Technologies',
+        },
+        mainEntityOfPage: canonicalUrl,
+      }),
+    );
   }
 
   return graph;

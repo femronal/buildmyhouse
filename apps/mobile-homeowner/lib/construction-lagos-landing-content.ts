@@ -200,7 +200,7 @@ export const constructionLagosLandingPageContent = {
     links: [
       { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
       { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
-      { label: 'Build in Nigeria from the US', href: '/diaspora/us/build-in-nigeria' },
+      { label: 'Build in Nigeria from the US', href: '/diaspora/build-in-nigeria-from-usa-canada' },
     ],
   },
   permits: {

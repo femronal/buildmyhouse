@@ -15,15 +15,16 @@ Purpose: keep one canonical URL per page intent and avoid duplicate path variant
 
 - Canonical: `/diaspora/build-in-nigeria-from-abroad`
 - Canonical: `/diaspora/build-in-nigeria-from-uk`
-- Canonical: `/diaspora/us/build-in-nigeria`
 - Canonical: `/diaspora/build-in-nigeria-from-usa-canada`
 - Canonical: `/diaspora/build-in-nigeria-from-uae`
 
-### UK build legacy alias
+### Diaspora build legacy aliases
 
 - Legacy alias: `/diaspora/uk/build-in-nigeria`
 - Status: redirect to `/diaspora/build-in-nigeria-from-uk`
-- Do not use legacy alias in new internal links.
+- Legacy alias: `/diaspora/us/build-in-nigeria`
+- Status: redirect to `/diaspora/build-in-nigeria-from-usa-canada`
+- Do not use legacy aliases in new internal links or sitemap entries.
 
 ## Pre-merge Canonical Checklist
 

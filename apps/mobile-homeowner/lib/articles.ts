@@ -4,6 +4,7 @@ import {
   extractYoutubeVideoIdsFromContent,
   normalizeStoredArticleContent,
 } from '@/lib/article-content-normalize';
+import { buildVideoObjectNode } from '@/lib/seo-schema';
 
 export type ArticleAudience = 'homeowner' | 'gc';
 
@@ -420,12 +421,13 @@ export function getArticleSchema(article: Article) {
   for (const block of videoBlocks) {
     schema.push({
       '@context': 'https://schema.org',
-      '@type': 'VideoObject',
-      name: block.title,
-      description: article.description,
-      embedUrl: `https://www.youtube.com/embed/${block.videoId}`,
-      uploadDate: article.updatedAt,
-      thumbnailUrl: `https://i.ytimg.com/vi/${block.videoId}/hqdefault.jpg`,
+      ...buildVideoObjectNode({
+        name: block.title,
+        description: article.description,
+        embedUrl: `https://www.youtube.com/embed/${block.videoId}`,
+        uploadDate: article.publishedAt || article.updatedAt,
+        thumbnailUrl: `https://i.ytimg.com/vi/${block.videoId}/hqdefault.jpg`,
+      }),
     });
   }
 

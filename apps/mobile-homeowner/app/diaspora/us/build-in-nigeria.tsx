@@ -1,6 +1,7 @@
-import BuildInNigeriaFromUsPage from '@/components/seo/BuildInNigeriaFromUsPage';
+import { Redirect } from 'expo-router';
 
+/** Legacy alias — canonical page is /diaspora/build-in-nigeria-from-usa-canada */
 export default function DiasporaUsBuildInNigeriaPage() {
-  return <BuildInNigeriaFromUsPage />;
+  return <Redirect href="/diaspora/build-in-nigeria-from-usa-canada" />;
 }
 
