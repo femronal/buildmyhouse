@@ -1,0 +1,145 @@
+import { View, Text, TouchableOpacity, Image, ActivityIndicator, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import { signInWithGoogle, storeAuthToken } from '@/lib/auth';
+import { LogIn, ArrowRight } from 'lucide-react-native';
+import Logo from '@/components/Logo';
+
+const SHOW_GOOGLE_LOGIN = false;
+
+export default function HomeLandingScreen() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithGoogle();
+
+      if (Platform.OS === 'web' && !result) {
+        return;
+      }
+
+      if (result?.token && result?.user) {
+        const userRole = result.user.role;
+        if (!userRole || userRole !== 'homeowner') {
+          alert(
+            `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app to sign in.`,
+          );
+          return;
+        }
+
+        await storeAuthToken(result.token);
+        router.replace('/');
+      } else {
+        alert('Login failed. Please try again.');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      alert(error?.message || 'Login failed. Please check your Google Cloud Console redirect URIs.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View
+      className="flex-1 bg-white"
+      style={{
+        overflow: 'hidden',
+        ...(Platform.OS === 'web' ? { height: '100vh', maxHeight: '100vh' } : {}),
+      }}
+    >
+      <View className="pt-14 px-6 pb-6">
+        <View className="items-center mb-4">
+          <Logo size="xxl" />
+        </View>
+        <Text className="text-4xl text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          Welcome Back
+        </Text>
+        <Text className="text-base text-gray-600 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+          Sign in or create an account to continue your home building journey
+        </Text>
+      </View>
+
+      <View className="flex-1 justify-center px-6">
+        {SHOW_GOOGLE_LOGIN && (
+          <TouchableOpacity
+            onPress={handleGoogleSignIn}
+            disabled={loading}
+            className="bg-white border border-gray-300 rounded-xl py-3.5 px-4 mb-3 flex-row items-center justify-center shadow-sm"
+            style={{
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+            }}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#4285F4" />
+            ) : (
+              <>
+                <Image
+                  source={{ uri: 'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg' }}
+                  style={{ width: 20, height: 20, marginRight: 10 }}
+                />
+                <Text
+                  className="text-black text-base flex-1 text-center"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Continue with Google
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {SHOW_GOOGLE_LOGIN && (
+          <View className="flex-row items-center my-4">
+            <View className="flex-1 h-px bg-gray-300" />
+            <Text className="mx-3 text-gray-500 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              OR
+            </Text>
+            <View className="flex-1 h-px bg-gray-300" />
+          </View>
+        )}
+
+        <TouchableOpacity
+          onPress={() => router.push('/email-login')}
+          className="bg-black rounded-xl py-3.5 px-4 flex-row items-center justify-center"
+        >
+          <LogIn size={18} color="#FFFFFF" strokeWidth={2.3} />
+          <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Continue with Email
+          </Text>
+          <ArrowRight size={16} color="#FFFFFF" strokeWidth={2.4} className="ml-1.5" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="pb-6 px-6">
+        <View className="flex-row flex-wrap justify-center mb-3">
+          {[
+            { label: 'Construction in Nigeria', href: '/construction/nigeria' },
+            { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+            { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+            { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+          ].map((link) => (
+            <TouchableOpacity
+              key={link.href}
+              onPress={() => router.push(link.href as any)}
+              className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2"
+            >
+              <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {link.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <Text className="text-gray-500 text-center text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+          By continuing, you agree to our Terms of Service and Privacy Policy
+        </Text>
+      </View>
+    </View>
+  );
+}

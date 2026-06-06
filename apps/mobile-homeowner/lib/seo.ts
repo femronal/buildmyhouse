@@ -224,8 +224,9 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/login') {
     return {
-      title: 'Login | BuildMyHouse Technologies',
-      description: 'Sign in to BuildMyHouse to manage construction, renovation, and interior projects in Nigeria.',
+      title: 'BuildMyHouse Technologies',
+      description:
+        'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
       canonicalPath: '/',
       robots: 'noindex,follow',
     };

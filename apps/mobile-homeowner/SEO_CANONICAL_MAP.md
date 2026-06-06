@@ -13,8 +13,9 @@ Purpose: keep one canonical URL per page intent and avoid duplicate path variant
 
 ### Diaspora build pages
 
-- Canonical: `/` (homepage / marketing entry)
-- Login route `/login` is **not** indexed; it uses `noindex,follow` and canonical `/`
+- Canonical landing page: `/` (homepage + sign-in entry)
+- Legacy alias `/login` redirects to `/`
+- UTM/query variants (e.g. `/?utm_medium=...`) should canonicalize to `/` without redirecting
 - Canonical: `/diaspora/build-in-nigeria-from-uk`
 - Canonical: `/diaspora/build-in-nigeria-from-usa-canada`
 - Canonical: `/diaspora/build-in-nigeria-from-uae`
