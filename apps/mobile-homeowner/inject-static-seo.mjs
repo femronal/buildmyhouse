@@ -4,6 +4,11 @@ import path from 'node:path';
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
 const distDir = path.resolve(process.cwd(), 'dist');
 
+/** Routes that should not be indexed; canonical points to the public landing URL. */
+const NOINDEX_CANONICAL_ALIASES = {
+  '/login': '/',
+};
+
 /** Legacy paths that must not compete in Search; point crawlers to canonical URLs. */
 const REDIRECTS = {
   '/diaspora/us/build-in-nigeria': '/diaspora/build-in-nigeria-from-usa-canada',
@@ -36,6 +41,8 @@ const SEO_PAGES = {
   '/login': {
     title: 'Login | BuildMyHouse Technologies',
     description: 'Sign in to BuildMyHouse to manage construction, renovation, and interior projects in Nigeria.',
+    canonicalPath: '/',
+    robots: 'noindex,follow',
   },
   '/explore': {
     title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
@@ -168,10 +175,8 @@ function upsertLink(html, rel, href) {
 }
 
 function upsertTitle(html, title) {
-  const pattern = /<title[^>]*>[\s\S]*?<\/title>/i;
-  const tag = `<title>${escapeHtml(title)}</title>`;
-  if (pattern.test(html)) return html.replace(pattern, tag);
-  return html.replace('</head>', `  ${tag}\n</head>`);
+  const withoutTitles = html.replace(/<title[^>]*>[\s\S]*?<\/title>/gi, '');
+  return withoutTitles.replace('</head>', `  <title>${escapeHtml(title)}</title>\n</head>`);
 }
 
 function patchHtmlForRoute(html, route) {
@@ -181,9 +186,17 @@ function patchHtmlForRoute(html, route) {
     return null;
   }
 
-  const canonicalUrl = route === '/' ? `${WEB_URL}/` : `${WEB_URL}${route}`;
+  const aliasCanonical = NOINDEX_CANONICAL_ALIASES[route];
   const pageMeta = SEO_PAGES[route];
-  const robots = isPrivateRoute(route) ? 'noindex,nofollow' : 'index,follow';
+  const canonicalRoute = aliasCanonical || pageMeta?.canonicalPath || route;
+  const canonicalUrl =
+    canonicalRoute === '/' ? `${WEB_URL}/` : `${WEB_URL}${canonicalRoute}`;
+  const robots =
+    aliasCanonical || pageMeta?.robots
+      ? pageMeta?.robots || 'noindex,follow'
+      : isPrivateRoute(route)
+        ? 'noindex,nofollow'
+        : 'index,follow';
   const title = pageMeta?.title || 'BuildMyHouse Technologies';
   const description =
     pageMeta?.description ||

@@ -116,7 +116,6 @@ export function isIndexablePath(pathname?: string) {
 
   const exactIndexable = new Set([
     '/',
-    '/login',
     '/explore',
     '/rent',
     '/construction/nigeria',
@@ -223,7 +222,16 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
-  if (normalized === '/login' || normalized === '/') {
+  if (normalized === '/login') {
+    return {
+      title: 'Login | BuildMyHouse Technologies',
+      description: 'Sign in to BuildMyHouse to manage construction, renovation, and interior projects in Nigeria.',
+      canonicalPath: '/',
+      robots: 'noindex,follow',
+    };
+  }
+
+  if (normalized === '/') {
     return {
       title: 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design',
       description:

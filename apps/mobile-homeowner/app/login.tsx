@@ -12,22 +12,10 @@ export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   useWebSeo({
-    title: 'BuildMyHouse Nigeria | Construction, Renovation, Interior Design',
-    description:
-      'Build, renovate, or redesign your home in Nigeria with verified professionals. BuildMyHouse supports local and diaspora homeowners.',
-    canonicalPath: '/login',
-    robots: 'index,follow',
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'WebSite',
-      name: 'BuildMyHouse',
-      url: 'https://buildmyhouse.app',
-      potentialAction: {
-        '@type': 'SearchAction',
-        target: 'https://buildmyhouse.app/explore',
-        query: 'construction in nigeria',
-      },
-    },
+    title: 'Login | BuildMyHouse Technologies',
+    description: 'Sign in to BuildMyHouse to manage construction, renovation, and interior projects in Nigeria.',
+    canonicalPath: '/',
+    robots: 'noindex,follow',
   });
 
   const handleGoogleSignIn = async () => {

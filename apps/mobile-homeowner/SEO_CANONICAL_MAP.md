@@ -13,7 +13,8 @@ Purpose: keep one canonical URL per page intent and avoid duplicate path variant
 
 ### Diaspora build pages
 
-- Canonical: `/diaspora/build-in-nigeria-from-abroad`
+- Canonical: `/` (homepage / marketing entry)
+- Login route `/login` is **not** indexed; it uses `noindex,follow` and canonical `/`
 - Canonical: `/diaspora/build-in-nigeria-from-uk`
 - Canonical: `/diaspora/build-in-nigeria-from-usa-canada`
 - Canonical: `/diaspora/build-in-nigeria-from-uae`
