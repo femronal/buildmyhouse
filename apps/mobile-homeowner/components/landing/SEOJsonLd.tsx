@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { FAQ_ITEMS, HOMEPAGE_META, BUILDMYHOUSE_CONTACT } from '@/lib/home-landing-content';
+import { FAQ_ITEMS, HOMEPAGE_META, BUILDMYHOUSE_CONTACT, BUILDMYHOUSE_SOCIALS } from '@/lib/home-landing-content';
 import { useWebSeo } from '@/lib/seo';
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -32,7 +32,7 @@ export default function SEOJsonLd() {
           addressRegion: 'Lagos',
           addressCountry: 'NG',
         },
-        sameAs: [],
+        sameAs: BUILDMYHOUSE_SOCIALS.map((social) => social.href),
       },
       {
         '@context': 'https://schema.org',

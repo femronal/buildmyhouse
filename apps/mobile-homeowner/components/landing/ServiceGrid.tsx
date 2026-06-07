@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
-import { ArrowRight } from 'lucide-react-native';
+import { ArrowRight } from 'phosphor-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { cardShadowStyle } from '@/lib/card-styles';
 import {
@@ -63,7 +63,7 @@ export default function ServiceGrid({ searchQuery }: ServiceGridProps) {
                 <Text className="text-xs mr-1" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
                   Explore
                 </Text>
-                <ArrowRight size={14} color={LANDING_INK} />
+                <ArrowRight size={14} color={LANDING_INK} weight="bold" />
               </View>
             </Pressable>
           </Link>

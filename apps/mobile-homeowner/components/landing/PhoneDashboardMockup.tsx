@@ -1,14 +1,17 @@
-import { Text, View } from 'react-native';
-import { BatteryFull, Signal, Wifi } from 'lucide-react-native';
+import { Text, View, useWindowDimensions } from 'react-native';
+import { BatteryFull, CellSignalFull, WifiHigh } from 'phosphor-react-native';
 import ProjectMonitoringDemoPhone from '@/components/demo/ProjectMonitoringDemoPhone';
 
 const PHONE_INNER_HEIGHT = 620;
 
 export default function PhoneDashboardMockup() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 1024;
+
   return (
     <View className="w-full max-w-[340px] self-center lg:self-end">
       <View
-        className="bg-[#1a1a1a] rounded-[55px] p-2 shadow-2xl border border-slate-800/50"
+        className="bg-black rounded-[55px] p-2 shadow-2xl border border-white/10"
         style={{
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 25 },
@@ -23,9 +26,9 @@ export default function PhoneDashboardMockup() {
               9:41
             </Text>
             <View className="flex-row items-center gap-2 mt-1">
-              <Signal size={16} color="#000" />
-              <Wifi size={16} color="#000" />
-              <BatteryFull size={20} color="#000" />
+              <CellSignalFull size={16} color="#000" weight="fill" />
+              <WifiHigh size={16} color="#000" weight="fill" />
+              <BatteryFull size={20} color="#000" weight="fill" />
             </View>
           </View>
 
@@ -37,12 +40,12 @@ export default function PhoneDashboardMockup() {
             <ProjectMonitoringDemoPhone
               initialRoute={{ name: 'dashboard' }}
               homeRoute={{ name: 'dashboard' }}
-              autoplay
+              autoplay={isDesktop}
               innerHeight={PHONE_INNER_HEIGHT}
             />
           </View>
 
-          <View className="absolute bottom-2 left-1/2 w-[120px] h-[5px] bg-slate-900 rounded-full -ml-[60px] z-20" />
+          <View className="absolute bottom-2 left-1/2 w-[120px] h-[5px] bg-black rounded-full -ml-[60px] z-20" />
         </View>
       </View>
 

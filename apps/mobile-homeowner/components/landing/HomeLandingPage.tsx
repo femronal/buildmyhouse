@@ -2,53 +2,117 @@ import { createElement, useRef, useState, type ReactNode } from 'react';
 import { Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import {
+  Airplane,
   ArrowRight,
-  Building2,
   Camera,
+  CaretDown,
   CheckCircle,
-  ChevronDown,
-  ClipboardList,
+  ClipboardText,
   Hammer,
-  Home,
+  Lifebuoy,
+  MagnifyingGlass,
   MapPin,
   Phone,
-  Plane,
-  Search,
   ShieldCheck,
-  Sofa,
-  Sparkles,
-  LifeBuoy,
-  Wrench,
   XCircle,
-} from 'lucide-react-native';
+} from 'phosphor-react-native';
 import Logo from '@/components/Logo';
 import PhoneDashboardMockup from '@/components/landing/PhoneDashboardMockup';
 import LandingMobileNav from '@/components/landing/LandingMobileNav';
 import SEOJsonLd from '@/components/landing/SEOJsonLd';
+import SocialLinksStrip from '@/components/landing/SocialLinksStrip';
+import HowItWorksSection from '@/components/landing/HowItWorksSection';
+import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
+import RotatingKeyword from '@/components/landing/RotatingKeyword';
 import {
   AUDIENCE_TABS,
   COMPARISON_ROWS,
   FAQ_ITEMS,
-  HERO_KEYWORDS,
-  HERO_SUBHEADLINE,
-  HOW_IT_WORKS_STEPS,
+  HERO_AUDIENCE_CONTENT,
   NAV_ITEMS,
-  PLATFORM_LADDER,
   POPULAR_CHIPS,
   POPULAR_SERVICE_LINKS,
   BUILDMYHOUSE_CONTACT,
   type AudienceTab,
 } from '@/lib/home-landing-content';
 
-function WebWordSlider() {
+function WebWordSlider({
+  words,
+  emphasized = false,
+}: {
+  words: readonly string[];
+  emphasized?: boolean;
+}) {
+  const innerClass =
+    words.length >= 6 ? 'bmh-word-slider-inner bmh-word-slider-inner-6' : 'bmh-word-slider-inner';
+  const wordClass = emphasized ? 'bmh-hero-rotate-emphasis' : undefined;
+
   return createElement(
     'span',
-    { className: 'bmh-word-slider text-slate-950' },
+    { className: 'bmh-word-slider text-black' },
     createElement(
       'span',
-      { className: 'bmh-word-slider-inner' },
-      ...HERO_KEYWORDS.map((word) => createElement('span', { key: word }, word)),
+      { className: innerClass },
+      ...words.map((word) => createElement('span', { key: word, className: wordClass }, word)),
     ),
+  );
+}
+
+function HeroHeadlineBlock({ audience }: { audience: AudienceTab['key'] }) {
+  const hero = HERO_AUDIENCE_CONTENT[audience];
+  const emphasizeRotate = audience !== 'need-worker';
+
+  if (Platform.OS === 'web') {
+    const children: ReactNode[] = [];
+
+    if (hero.headlineLead) {
+      children.push(`${hero.headlineLead}`);
+      children.push(createElement('br', { key: 'br1' }));
+      children.push(createElement(WebWordSlider, { key: 'slider', words: hero.rotatingKeywords }));
+      children.push(createElement('br', { key: 'br2' }));
+      children.push(hero.headlineSuffix);
+    } else {
+      children.push(createElement(WebWordSlider, { key: 'slider', words: hero.rotatingKeywords, emphasized: emphasizeRotate }));
+      children.push(createElement('br', { key: 'br' }));
+      children.push(hero.headlineSuffix);
+    }
+
+    return createElement(
+      'h1',
+      {
+        className:
+          'text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-black leading-[1.1]',
+        style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
+      },
+      ...children,
+    );
+  }
+
+  if (hero.headlineLead) {
+    return (
+      <Text
+        accessibilityRole="header"
+        className="text-4xl text-black leading-tight"
+        style={{ fontFamily: 'Poppins_600SemiBold' }}
+      >
+        {hero.headlineLead}{' '}
+        <RotatingKeyword words={hero.rotatingKeywords} />
+        {' '}
+        {hero.headlineSuffix}
+      </Text>
+    );
+  }
+
+  return (
+    <Text
+      accessibilityRole="header"
+      className="text-4xl text-black leading-tight"
+      style={{ fontFamily: 'Poppins_600SemiBold' }}
+    >
+      <RotatingKeyword words={hero.rotatingKeywords} />
+      {'\n'}
+      {hero.headlineSuffix}
+    </Text>
   );
 }
 
@@ -76,7 +140,7 @@ function AudienceTabBar({
         className={`px-3 py-1.5 rounded-md ${active ? 'bg-white border border-slate-200' : ''}`}
       >
         <Text
-          className={`text-xs text-center ${active ? 'text-slate-900' : 'text-slate-500'}`}
+          className={`text-xs text-center ${active ? 'text-black' : 'text-slate-500'}`}
           style={{ fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_500Medium' }}
         >
           {compact ? mobileLabels[tab.key] : tab.label}
@@ -152,6 +216,7 @@ export default function HomeLandingPage() {
   const [audience, setAudience] = useState<AudienceTab['key']>('need-worker');
   const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ_ITEMS[0]?.question ?? null);
+  const heroContent = HERO_AUDIENCE_CONTENT[audience];
 
   const recordSectionOffset = (key: string, y: number) => {
     sectionOffsets.current[key] = y;
@@ -164,8 +229,6 @@ export default function HomeLandingPage() {
       scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
     }
   };
-
-  const ladderIcons = [Wrench, Sparkles, Home, Sofa, Building2];
 
   return (
     <View className="flex-1 bg-white bmh-landing-root">
@@ -209,7 +272,7 @@ export default function HomeLandingPage() {
                 </Pressable>
               </Link>
               <Link href={'/location?mode=explore' as any} asChild>
-                <Pressable className="bg-slate-900 px-4 py-2 rounded-lg" accessibilityRole="link">
+                <Pressable className="bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Get Started
                   </Text>
@@ -234,51 +297,32 @@ export default function HomeLandingPage() {
               <AudienceTabBar audience={audience} onSelect={setAudience} isDesktop={isDesktop} />
 
               <View className="gap-6 mt-6">
-                {Platform.OS === 'web' ? (
-                  createElement(
-                    'h1',
-                    {
-                      className:
-                        'text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-slate-950 leading-[1.1]',
-                      style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
-                    },
-                    'Find verified',
-                    createElement('br'),
-                    createElement(WebWordSlider),
-                    createElement('br'),
-                    'in Nigeria.',
-                  )
-                ) : (
-                  <Text
-                    accessibilityRole="header"
-                    className="text-4xl text-slate-950 leading-tight"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    Find verified {HERO_KEYWORDS[0]} in Nigeria.
-                  </Text>
-                )}
+                <HeroHeadlineBlock audience={audience} />
 
                 <Text className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  {HERO_SUBHEADLINE}
+                  {heroContent.subheadline}
                 </Text>
               </View>
 
               <View className="gap-4 w-full max-w-lg mt-6">
-                <View className="flex-row items-center w-full bg-white rounded-xl border border-slate-200 px-2">
+                <View className="flex-row items-center w-full bg-white rounded-xl border border-slate-200 px-2 bmh-hero-search-bar">
                   <View className="pl-2 pr-1">
-                    <Search size={20} color="#94a3b8" />
+                    <MagnifyingGlass size={20} color="#94a3b8" weight="regular" />
                   </View>
                   <TextInput
                     value={searchQuery}
                     onChangeText={setSearchQuery}
-                    placeholder="What do you need fixed, upgraded, or built?"
+                    placeholder={heroContent.searchPlaceholder}
                     placeholderTextColor="#94a3b8"
-                    className="flex-1 py-3.5 px-2 text-sm text-slate-900"
-                    style={{ fontFamily: 'Poppins_500Medium' }}
+                    cursorColor="#000000"
+                    selectionColor="#e2e8f0"
+                    underlineColorAndroid="transparent"
+                    className="flex-1 py-3.5 px-2 text-sm text-black bmh-hero-search-input"
+                    style={{ fontFamily: 'Poppins_500Medium', outlineStyle: 'none' } as any}
                   />
                   <Link href={'/location?mode=explore' as any} asChild>
-                    <Pressable className="bg-slate-900 p-2 rounded-lg m-1" accessibilityRole="link">
-                      <ArrowRight size={18} color="#fff" />
+                    <Pressable className="bg-black p-2 rounded-lg m-1" accessibilityRole="link">
+                      <ArrowRight size={18} color="#fff" weight="bold" />
                     </Pressable>
                   </Link>
                 </View>
@@ -297,30 +341,44 @@ export default function HomeLandingPage() {
               </View>
 
               <View className="flex-col sm:flex-row gap-4 pt-4">
-                <Link href={'/location?mode=explore' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-slate-900 items-center justify-center" accessibilityRole="link">
+                <Link href={heroContent.primaryCta.href as any} asChild>
+                  <Pressable className="h-12 px-6 rounded-lg bg-black items-center justify-center" accessibilityRole="link">
                     <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Hire a Verified Worker
+                      {heroContent.primaryCta.label}
                     </Text>
                   </Pressable>
                 </Link>
-                <Link href={'/for-contractors' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center" accessibilityRole="link">
-                    <Text className="text-sm text-slate-900" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Get Hired on BuildMyHouse
+                {heroContent.secondaryCta.href.startsWith('#') ? (
+                  <Pressable
+                    onPress={() => navPress(heroContent.secondaryCta.href)}
+                    className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center"
+                    accessibilityRole="button"
+                  >
+                    <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {heroContent.secondaryCta.label}
                     </Text>
                   </Pressable>
-                </Link>
+                ) : (
+                  <Link href={heroContent.secondaryCta.href as any} asChild>
+                    <Pressable className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center" accessibilityRole="link">
+                      <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {heroContent.secondaryCta.label}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                )}
               </View>
 
-              <Link href={'/diaspora/build-in-nigeria-from-abroad' as any} asChild>
-                <Pressable className="flex-row items-center gap-1 mt-2" accessibilityRole="link">
-                  <Text className="text-xs text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Managing from abroad? Start a tracked project
-                  </Text>
-                  <ArrowRight size={14} color="#64748b" />
-                </Pressable>
-              </Link>
+              {heroContent.tertiaryLink ? (
+                <Link href={heroContent.tertiaryLink.href as any} asChild>
+                  <Pressable className="flex-row items-center gap-1 mt-2" accessibilityRole="link">
+                    <Text className="text-xs text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {heroContent.tertiaryLink.label}
+                    </Text>
+                    <ArrowRight size={14} color="#64748b" weight="regular" />
+                  </Pressable>
+                </Link>
+              ) : null}
             </View>
 
             <View
@@ -346,12 +404,12 @@ export default function HomeLandingPage() {
             <View className="flex-row flex-wrap justify-center gap-6 md:gap-12">
               {[
                 { icon: ShieldCheck, label: 'Verified Workers' },
-                { icon: ClipboardList, label: 'Scope Before Work' },
+                { icon: ClipboardText, label: 'Scope Before Work' },
                 { icon: Camera, label: 'Evidence Before Payment' },
-                { icon: LifeBuoy, label: 'Dispute Support' },
+                { icon: Lifebuoy, label: 'Dispute Support' },
               ].map(({ icon: Icon, label }) => (
                 <View key={label} className="flex-row items-center gap-2">
-                  <Icon size={20} color="#94a3b8" />
+                  <Icon size={20} color="#94a3b8" weight="regular" />
                   <Text className="text-sm text-slate-400" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {label}
                   </Text>
@@ -361,45 +419,14 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* Service ladder */}
-        <View className="py-24" onLayout={(e) => recordSectionOffset('services', e.nativeEvent.layout.y)}>
-          <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="max-w-2xl mb-16">
-              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-950 mb-4">
-                What can you do on BuildMyHouse?
-              </SectionHeading>
-              <Text className="text-base text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                From urgent Friday evening plumbing disasters to full ground-up builds. Start small, build trust, scale up.
-              </Text>
-            </View>
-            <View className="flex-row flex-wrap gap-6">
-              {PLATFORM_LADDER.map((item, idx) => {
-                const Icon = ladderIcons[idx] ?? Wrench;
-                return (
-                  <Link key={item.href} href={item.href as any} asChild>
-                    <Pressable className="w-full md:w-[48%] lg:w-[31%] p-8 rounded-2xl border border-slate-200 bg-white" accessibilityRole="link">
-                      <View className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 items-center justify-center mb-6">
-                        <Icon size={24} color="#0f172a" />
-                      </View>
-                      <Text className="text-lg text-slate-950 mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {item.title}
-                      </Text>
-                      <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        {item.description}
-                      </Text>
-                    </Pressable>
-                  </Link>
-                );
-              })}
-            </View>
-          </View>
-        </View>
+        {/* Service ladder gallery */}
+        <PlatformGallerySection onLayout={(e) => recordSectionOffset('services', e.nativeEvent.layout.y)} />
 
         {/* WhatsApp comparison */}
         <View className="py-24 bg-slate-50 border-y border-slate-100">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="max-w-3xl self-center mb-16">
-              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-950 mb-4 text-center">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
                 Stop managing property work with scattered WhatsApp messages.
               </SectionHeading>
               <Text className="text-base text-slate-500 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -410,25 +437,25 @@ export default function HomeLandingPage() {
               <View className="w-full md:w-[47%] bg-white rounded-2xl p-8 border border-slate-200">
                 <View className="flex-row items-center gap-3 mb-6 pb-6 border-b border-slate-100">
                   <View className="w-10 h-10 rounded-full bg-red-50 items-center justify-center">
-                    <XCircle size={20} color="#ef4444" />
+                    <XCircle size={20} color="#ef4444" weight="fill" />
                   </View>
-                  <Text className="text-xl text-slate-900" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     The Old Way
                   </Text>
                 </View>
                 {COMPARISON_ROWS.slice(0, 5).map((row) => (
                   <View key={row.oldWay} className="flex-row items-start gap-3 mb-4">
-                    <XCircle size={18} color="#f87171" style={{ marginTop: 2 }} />
+                    <XCircle size={18} color="#f87171" weight="fill" style={{ marginTop: 2 }} />
                     <Text className="text-sm text-slate-600 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
                       {row.oldWay}
                     </Text>
                   </View>
                 ))}
               </View>
-              <View className="w-full md:w-[47%] bg-slate-900 rounded-2xl p-8 border border-slate-800">
-                <View className="flex-row items-center gap-3 mb-6 pb-6 border-b border-slate-800">
+              <View className="w-full md:w-[47%] bg-black rounded-2xl p-8 border border-white/10">
+                <View className="flex-row items-center gap-3 mb-6 pb-6 border-b border-white/10">
                   <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
-                    <CheckCircle size={20} color="#fff" />
+                    <CheckCircle size={20} color="#fff" weight="fill" />
                   </View>
                   <Text className="text-xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     The BuildMyHouse Way
@@ -436,7 +463,7 @@ export default function HomeLandingPage() {
                 </View>
                 {COMPARISON_ROWS.map((row) => (
                   <View key={row.platformWay} className="flex-row items-start gap-3 mb-4">
-                    <CheckCircle size={18} color="#4ade80" style={{ marginTop: 2 }} />
+                    <CheckCircle size={18} color="#4ade80" weight="fill" style={{ marginTop: 2 }} />
                     <Text className="text-sm text-slate-300 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
                       {row.platformWay}
                     </Text>
@@ -448,41 +475,18 @@ export default function HomeLandingPage() {
         </View>
 
         {/* How it works */}
-        <View className="py-24" onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)}>
-          <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-950 mb-16 text-center">
-              How BuildMyHouse works
-            </SectionHeading>
-            <View className="flex-row flex-wrap gap-8">
-              {HOW_IT_WORKS_STEPS.map((step, idx) => (
-                <View key={step.title} className="w-full md:w-[22%] items-center">
-                  <View className="w-16 h-16 rounded-full bg-white border border-slate-200 items-center justify-center mb-6">
-                    <Text className="text-xl text-slate-900" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {idx + 1}
-                    </Text>
-                  </View>
-                  <Text className="text-lg text-slate-900 mb-2 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {step.title.replace(/^Step \d+: /, '')}
-                  </Text>
-                  <Text className="text-sm text-slate-500 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {step.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
+        <HowItWorksSection onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)} />
 
         {/* Dual audience */}
-        <View className="py-24 bg-slate-950 border-y border-slate-900">
+        <View className="py-24 bg-black border-y border-white/10">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-16 text-center">
               Built for Nigerians at home and abroad
             </SectionHeading>
             <View className="flex-row flex-wrap gap-6">
-              <View className="w-full md:w-[48%] bg-slate-900 rounded-2xl p-10 border border-slate-800">
-                <View className="w-12 h-12 rounded-xl bg-slate-800 items-center justify-center mb-6">
-                  <MapPin size={24} color="#fff" />
+              <View className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10">
+                <View className="w-12 h-12 rounded-xl bg-white/10 items-center justify-center mb-6">
+                  <MapPin size={24} color="#fff" weight="regular" />
                 </View>
                 <Text className="text-2xl text-white mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Need a reliable repairer without stories?
@@ -492,18 +496,18 @@ export default function HomeLandingPage() {
                 </Text>
                 <Link href={'/location?mode=explore' as any} asChild>
                   <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center" accessibilityRole="link">
-                    <Text className="text-sm text-slate-950" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                       Find a Verified Worker
                     </Text>
                   </Pressable>
                 </Link>
               </View>
               <View
-                className="w-full md:w-[48%] bg-slate-900 rounded-2xl p-10 border border-slate-800"
+                className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10"
                 onLayout={(e) => recordSectionOffset('diaspora', e.nativeEvent.layout.y)}
               >
-                <View className="w-12 h-12 rounded-xl bg-slate-800 items-center justify-center mb-6">
-                  <Plane size={24} color="#fff" />
+                <View className="w-12 h-12 rounded-xl bg-white/10 items-center justify-center mb-6">
+                  <Airplane size={24} color="#fff" weight="regular" />
                 </View>
                 <Text className="text-2xl text-white mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Managing property work from abroad?
@@ -513,7 +517,7 @@ export default function HomeLandingPage() {
                 </Text>
                 <Link href={'/diaspora/build-in-nigeria-from-abroad' as any} asChild>
                   <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center" accessibilityRole="link">
-                    <Text className="text-sm text-slate-950" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                       Start a Tracked Project
                     </Text>
                   </Pressable>
@@ -528,16 +532,16 @@ export default function HomeLandingPage() {
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="bg-slate-50 rounded-3xl p-8 md:p-16 border border-slate-200 max-w-4xl self-center items-center">
               <View className="w-16 h-16 rounded-2xl bg-white border border-slate-200 items-center justify-center mb-6">
-                <Hammer size={28} color="#0f172a" />
+                <Hammer size={28} color="#000000" weight="regular" />
               </View>
-              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-950 mb-4 text-center">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
                 Are you a skilled artisan, repairer, renovator, or contractor?
               </SectionHeading>
               <Text className="text-base text-slate-500 max-w-2xl mb-8 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
                 Join BuildMyHouse, get verified, receive better project requests, and build trust with homeowners who value documented work.
               </Text>
               <Link href={'/for-contractors' as any} asChild>
-                <Pressable className="h-12 px-8 rounded-lg bg-slate-900 justify-center" accessibilityRole="link">
+                <Pressable className="h-12 px-8 rounded-lg bg-black justify-center" accessibilityRole="link">
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Get Hired on BuildMyHouse
                   </Text>
@@ -550,7 +554,7 @@ export default function HomeLandingPage() {
         {/* Popular services */}
         <View className="py-16 border-t border-slate-100 bg-white">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <Text className="text-sm text-slate-900 mb-6 uppercase tracking-wide" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            <Text className="text-sm text-black mb-6 uppercase tracking-wide" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Popular Services in Nigeria
             </Text>
             <View className="flex-row flex-wrap gap-y-4 gap-x-8">
@@ -570,7 +574,7 @@ export default function HomeLandingPage() {
         {/* FAQ */}
         <View className="py-24 bg-slate-50 border-t border-slate-100">
           <View className="max-w-3xl w-full self-center px-6 md:px-12">
-            <SectionHeading className="text-3xl font-semibold tracking-tight text-slate-950 mb-10 text-center">
+            <SectionHeading className="text-3xl font-semibold tracking-tight text-black mb-10 text-center">
               Frequently Asked Questions
             </SectionHeading>
             <View className="gap-4">
@@ -584,10 +588,10 @@ export default function HomeLandingPage() {
                       accessibilityRole="button"
                       accessibilityState={{ expanded: open }}
                     >
-                      <Text className="text-slate-900 flex-1 pr-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      <Text className="text-black flex-1 pr-3" style={{ fontFamily: 'Poppins_500Medium' }}>
                         {item.question}
                       </Text>
-                      <ChevronDown size={18} color="#64748b" style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }} />
+                      <CaretDown size={18} color="#64748b" weight="bold" style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }} />
                     </Pressable>
                     {open ? (
                       <Text className="text-slate-500 text-sm px-5 pb-5 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -603,20 +607,22 @@ export default function HomeLandingPage() {
 
         {/* Final CTA */}
         <View className="py-24 bg-white border-t border-slate-100 items-center px-6 md:px-12">
-          <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-slate-950 mb-6 text-center">
+          <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-6 text-center">
             Ready to fix, upgrade, renovate, or build in Nigeria?
           </SectionHeading>
           <Text className="text-base text-slate-500 mb-8 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
             Start with BuildMyHouse.
           </Text>
           <Link href={'/location?mode=explore' as any} asChild>
-            <Pressable className="h-12 px-8 rounded-lg bg-slate-900 justify-center" accessibilityRole="link">
+            <Pressable className="h-12 px-8 rounded-lg bg-black justify-center" accessibilityRole="link">
               <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                 Start Your Project
               </Text>
             </Pressable>
           </Link>
         </View>
+
+        <SocialLinksStrip />
 
         {/* Footer */}
         <View className="bg-white border-t border-slate-100 py-12 px-6 md:px-12">
@@ -647,7 +653,7 @@ export default function HomeLandingPage() {
                 asChild
               >
                 <Pressable className="flex-row items-start gap-2.5 max-w-lg" accessibilityRole="link">
-                  <MapPin size={16} color="#64748b" style={{ marginTop: 2 }} />
+                  <MapPin size={16} color="#64748b" weight="regular" style={{ marginTop: 2 }} />
                   <Text className="text-sm text-slate-500 flex-1 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {BUILDMYHOUSE_CONTACT.address}
                   </Text>
@@ -655,7 +661,7 @@ export default function HomeLandingPage() {
               </Link>
               <Link href={`tel:${BUILDMYHOUSE_CONTACT.phoneTel}` as any} asChild>
                 <Pressable className="flex-row items-center gap-2.5 self-start" accessibilityRole="link">
-                  <Phone size={16} color="#64748b" />
+                  <Phone size={16} color="#64748b" weight="regular" />
                   <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {BUILDMYHOUSE_CONTACT.phoneDisplay}
                   </Text>

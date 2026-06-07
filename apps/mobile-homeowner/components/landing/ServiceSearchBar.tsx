@@ -1,6 +1,6 @@
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Link } from 'expo-router';
-import { Search } from 'lucide-react-native';
+import { MagnifyingGlass } from 'phosphor-react-native';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, POPULAR_CHIPS } from '@/lib/home-landing-content';
 
 type ServiceSearchBarProps = {
@@ -23,7 +23,7 @@ export default function ServiceSearchBar({ value, onChange }: ServiceSearchBarPr
         />
         <Link href={'/location?mode=explore' as any} asChild>
           <Pressable className="w-10 h-10 rounded-full items-center justify-center bg-black" accessibilityRole="link">
-            <Search size={18} color="#FFFFFF" strokeWidth={2.4} />
+            <MagnifyingGlass size={18} color="#FFFFFF" weight="bold" />
           </Pressable>
         </Link>
       </View>

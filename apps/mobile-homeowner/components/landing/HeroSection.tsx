@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { ArrowRight, ShieldCheck } from 'lucide-react-native';
+import { ArrowRight, ShieldCheck } from 'phosphor-react-native';
 import AudienceTabs from '@/components/landing/AudienceTabs';
 import HeroHeadline from '@/components/landing/HeroHeadline';
 import {
@@ -105,11 +105,11 @@ export default function HeroSection({ selectedAudience, onSelectAudience, isDesk
 
         <Link href={'/diaspora/build-in-nigeria-from-abroad' as any} asChild>
           <Pressable className="flex-row items-center mb-2" accessibilityRole="link">
-            <ShieldCheck size={16} color={LANDING_INK} strokeWidth={2.1} />
+            <ShieldCheck size={16} color={LANDING_INK} weight="fill" />
             <Text className="text-sm mx-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
               Managing from abroad? Start a tracked project
             </Text>
-            <ArrowRight size={15} color={LANDING_INK} strokeWidth={2.1} />
+            <ArrowRight size={15} color={LANDING_INK} weight="bold" />
           </Pressable>
         </Link>
 

@@ -1,17 +1,19 @@
 /**
  * Public project-monitoring demo: mock payloads only.
- * Images use Unsplash (construction-related); GC and team use portraits of Black professionals.
+ * Material photos use local assets; GC and team use Unsplash portraits.
  */
+import type { ImageSourcePropType } from 'react-native';
+
 const unsplash = (photoId: string, width = 800) =>
   `https://images.unsplash.com/${photoId}?auto=format&fit=crop&w=${width}&q=80`;
 
 const DEMO_IMAGES = {
   /** Construction site / structural work */
   projectCover: unsplash('photo-1541888946425-d81bb19240f5', 1200),
-  /** Stacked cement bags */
-  cement: unsplash('photo-1590247813693-5541d1c609fd', 800),
-  /** Highway logistics / heavy transport */
-  transportation: unsplash('photo-1519003722824-194d4455a60c', 800),
+  /** Dangote cement bags */
+  cement: require('@/assets/images/dangotecement.jpg'),
+  /** GIG logistics / transportation */
+  transportation: require('@/assets/images/transportation.webp'),
   /** GC chat avatar — Black man, professional portrait */
   gcAvatar: unsplash('photo-1519085360753-af0119f7cbe7', 400),
   /** Team member — Black man, portrait (site / trades context) */
@@ -27,7 +29,7 @@ export type DemoMaterial = {
   unit: string;
   brand: string;
   totalPrice: number;
-  photoUrl: string;
+  photoUrl: ImageSourcePropType;
 };
 
 export type DemoTeamMember = {

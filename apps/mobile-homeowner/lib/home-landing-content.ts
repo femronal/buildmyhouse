@@ -1,10 +1,10 @@
 import type { ImageSourcePropType } from 'react-native';
 
-export const LANDING_INK = '#0A0A0A';
+export const LANDING_INK = '#000000';
 export const LANDING_MUTED = '#4B5563';
 export const LANDING_BORDER = '#E5E7EB';
-export const LANDING_SURFACE = '#F8FAFC';
-export const LANDING_ACCENT = '#111827';
+export const LANDING_SURFACE = '#F5F5F5';
+export const LANDING_ACCENT = '#000000';
 
 export const HOMEPAGE_META = {
   title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
@@ -24,6 +24,31 @@ export const HERO_KEYWORDS = [
 export const HERO_SUBHEADLINE =
   'From leaking roofs and plumbing faults to room upgrades, renovations, and full builds, BuildMyHouse helps you find verified workers and manage property work with clearer scope, evidence, and progress updates.';
 
+/** Rotating hero verbs for the contractor / get-hired audience tab. */
+export const CONTRACTOR_HERO_KEYWORDS = [
+  'Upload your plan',
+  'Share your scope',
+  'Bring your client in',
+  'Submit stage evidence',
+  'Get verified',
+  'Win project requests',
+] as const;
+
+export const CONTRACTOR_HERO_SUBHEADLINE =
+  'BuildMyHouse helps general contractors and skilled artisans win clearer briefs, run jobs with documented stages, keep clients updated in one place, and get paid through milestones — so you build trust, not just chase WhatsApp updates.';
+
+/** Rotating hero phrases for the diaspora audience tab. */
+export const DIASPORA_HERO_KEYWORDS = [
+  'Track stage updates',
+  'Review site evidence',
+  'Approve milestone pay',
+  'Follow scope changes',
+  'Stay in control',
+] as const;
+
+export const DIASPORA_HERO_SUBHEADLINE =
+  'Whether you are in the UK, US, Canada, UAE, or Europe, BuildMyHouse gives you one workflow for scope, evidence, communication, and payment decisions — so distance does not mean losing visibility on property work in Nigeria.';
+
 export type AudienceTab = {
   key: 'need-worker' | 'get-hired' | 'diaspora';
   label: string;
@@ -31,6 +56,50 @@ export type AudienceTab = {
   description: string;
   ctaLabel: string;
   ctaHref: string;
+};
+
+export type HeroAudienceContent = {
+  rotatingKeywords: readonly string[];
+  /** Shown before the slider on the homeowner tab only. */
+  headlineLead?: string;
+  headlineSuffix: string;
+  subheadline: string;
+  searchPlaceholder: string;
+  primaryCta: { label: string; href: string };
+  secondaryCta: { label: string; href: string };
+  tertiaryLink?: { label: string; href: string };
+};
+
+export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceContent> = {
+  'need-worker': {
+    rotatingKeywords: HERO_KEYWORDS,
+    headlineLead: 'Find verified',
+    headlineSuffix: 'in Nigeria.',
+    subheadline: HERO_SUBHEADLINE,
+    searchPlaceholder: 'What do you need fixed, upgraded, or built?',
+    primaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
+    secondaryCta: { label: 'Get Hired on BuildMyHouse', href: '/for-contractors' },
+    tertiaryLink: {
+      label: 'Managing from abroad? Start a tracked project',
+      href: '/diaspora/build-in-nigeria-from-abroad',
+    },
+  },
+  'get-hired': {
+    rotatingKeywords: CONTRACTOR_HERO_KEYWORDS,
+    headlineSuffix: 'and get hired on BuildMyHouse.',
+    subheadline: CONTRACTOR_HERO_SUBHEADLINE,
+    searchPlaceholder: 'What kind of projects do you take on?',
+    primaryCta: { label: 'Get Hired on BuildMyHouse', href: '/for-contractors' },
+    secondaryCta: { label: 'See How Verification Works', href: '#how-it-works' },
+  },
+  diaspora: {
+    rotatingKeywords: DIASPORA_HERO_KEYWORDS,
+    headlineSuffix: 'from abroad.',
+    subheadline: DIASPORA_HERO_SUBHEADLINE,
+    searchPlaceholder: 'What property work are you managing remotely?',
+    primaryCta: { label: 'Start a Tracked Project', href: '/diaspora/build-in-nigeria-from-abroad' },
+    secondaryCta: { label: 'Find a Verified Worker', href: '/location?mode=explore' },
+  },
 };
 
 export const AUDIENCE_TABS: AudienceTab[] = [
@@ -96,6 +165,16 @@ export type PlatformPillar = {
   href: string;
 };
 
+export type PlatformGalleryItem = PlatformPillar & {
+  image: ImageSourcePropType;
+  layout: {
+    rotate: number;
+    translateY: number;
+  };
+  /** Fine-tunes cover crop so the main subject stays visible in portrait cards. */
+  imageFocus?: string;
+};
+
 export const PLATFORM_LADDER: PlatformPillar[] = [
   {
     title: 'Repairs',
@@ -126,6 +205,55 @@ export const PLATFORM_LADDER: PlatformPillar[] = [
     description:
       'For bigger projects, work with verified professionals through structured project stages.',
     href: '/construction/nigeria',
+  },
+];
+
+/** Landing gallery cards — service photography for the homepage fan layout. */
+export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
+  {
+    title: 'Repairs',
+    description:
+      'Fix urgent property problems like plumbing, electrical faults, roof leaks, drainage, windows, AC, and bathrooms.',
+    href: '/services/plumbing-repair-nigeria',
+    image: require('@/assets/images/repair.jpg'),
+    layout: { rotate: -8, translateY: 12 },
+    imageFocus: '50% 38%',
+  },
+  {
+    title: 'Upgrades',
+    description:
+      'Improve rooms, kitchens, bathrooms, compounds, gates, and finishes without losing control of scope.',
+    href: '/services/kitchen-renovation-nigeria',
+    image: require('@/assets/images/upgrade.jpg'),
+    layout: { rotate: -3, translateY: 20 },
+    imageFocus: '50% 35%',
+  },
+  {
+    title: 'Renovations',
+    description:
+      'Break bigger work into stages, evidence, approvals, and clearer communication.',
+    href: '/services/home-renovation-nigeria',
+    image: require('@/assets/images/renovations.jpg'),
+    layout: { rotate: 2, translateY: 8 },
+    imageFocus: '50% 28%',
+  },
+  {
+    title: 'Interiors',
+    description:
+      'Manage finish selection, procurement, installation, and reporting.',
+    href: '/interior-design/nigeria',
+    image: require('@/assets/images/interiorDesign.jpg'),
+    layout: { rotate: -2, translateY: 14 },
+    imageFocus: '50% 42%',
+  },
+  {
+    title: 'Full Builds',
+    description:
+      'For bigger projects, work with verified professionals through structured project stages.',
+    href: '/construction/nigeria',
+    image: require('@/assets/images/fullbuilds.jpg'),
+    layout: { rotate: 6, translateY: 18 },
+    imageFocus: '50% 40%',
   },
 ];
 
@@ -188,22 +316,22 @@ export type HowStep = {
 
 export const HOW_IT_WORKS_STEPS: HowStep[] = [
   {
-    title: 'Step 1: Tell us what you need',
+    title: 'Tell us what you need',
     description:
       'Upload photos, describe the issue, location, urgency, and expected outcome.',
   },
   {
-    title: 'Step 2: Get matched with verified supply',
+    title: 'Get matched',
     description:
-      'BuildMyHouse connects you with suitable verified repairers, artisans, renovators, or contractors.',
+      'BuildMyHouse connects you with suitable verified repairers, artisans, or contractors.',
   },
   {
-    title: 'Step 3: Track the work',
+    title: 'Track the work',
     description:
       'Follow progress through scope, stages, updates, photos, videos, and messages.',
   },
   {
-    title: 'Step 4: Approve with evidence',
+    title: 'Approve with evidence',
     description:
       'Move forward when the stage is clear, not because someone is pressuring you.',
   },
@@ -329,6 +457,34 @@ export const BUILDMYHOUSE_CONTACT = {
   phoneTel: '+2347030282417',
   mapsQuery: '7 Ransome Kuti Rd, Akoka, Lagos 100001, Lagos, Nigeria',
 } as const;
+
+export const BUILDMYHOUSE_SOCIALS = [
+  {
+    id: 'x',
+    label: 'X',
+    href: 'https://x.com/buildmyhouseapp',
+  },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    href: 'https://instagram.com/buildmyhouseapp',
+  },
+  {
+    id: 'linkedin',
+    label: 'LinkedIn',
+    href: 'https://linkedin.com/company/buildmyhouse',
+  },
+  {
+    id: 'youtube',
+    label: 'YouTube',
+    href: 'https://www.youtube.com/@BuildMyHouse',
+  },
+  {
+    id: 'medium',
+    label: 'Medium',
+    href: 'https://medium.com/@buildmyhouse',
+  },
+] as const;
 
 export const SERVICE_SEO_PAGES = {
   'plumbing-repair-nigeria': {

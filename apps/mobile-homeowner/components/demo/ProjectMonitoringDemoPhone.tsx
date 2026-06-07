@@ -125,18 +125,26 @@ function DemoNavRow(props: {
   onBack: () => void;
   onHome: () => void;
   onAlert?: () => void;
+  onInteract?: () => void;
 }) {
+  const wrap = (fn: () => void) => () => {
+    props.onInteract?.();
+    fn();
+  };
+
   return (
     <View className="flex-row items-center justify-between mb-3">
       <View className="flex-row items-center">
         <TouchableOpacity
-          onPress={props.onBack}
+          activeOpacity={0.72}
+          onPress={wrap(props.onBack)}
           className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
         >
           <ArrowLeft size={22} color="#000000" strokeWidth={2} />
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={props.onHome}
+          activeOpacity={0.72}
+          onPress={wrap(props.onHome)}
           className="w-10 h-10 bg-black rounded-full items-center justify-center"
         >
           <Home size={20} color="#FFFFFF" strokeWidth={2} />
@@ -144,7 +152,8 @@ function DemoNavRow(props: {
       </View>
       {props.showAlert ? (
         <TouchableOpacity
-          onPress={props.onAlert}
+          activeOpacity={0.72}
+          onPress={wrap(props.onAlert ?? (() => {}))}
           className="w-9 h-9 rounded-full border border-red-200 bg-red-50 items-center justify-center"
         >
           <AlertTriangle size={16} color="#DC2626" strokeWidth={2.2} />
@@ -189,6 +198,8 @@ export default function ProjectMonitoringDemoPhone({
   const [disputeSelected, setDisputeSelected] = useState<string[]>([]);
   const [autoplayPaused, setAutoplayPaused] = useState(false);
   const dashboardScrollRef = useRef<ScrollView>(null);
+  const dashboardScrollMax = useRef(0);
+  const dashboardViewportHeight = useRef(innerHeight);
 
   const goHome = useCallback(() => {
     setRoute(homeRoute);
@@ -215,73 +226,46 @@ export default function ProjectMonitoringDemoPhone({
 
   useEffect(() => {
     if (!autoplay || autoplayPaused) return;
+    if (route.name !== 'dashboard') return;
 
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
+    let raf = 0;
+    let scrollY = 0;
+    let direction = 1;
+    const speed = 0.55;
 
-    const steps: Array<{ run: () => void; delay: number }> = [
-      {
-        run: () => {
-          setRoute({ name: 'dashboard' });
-          dashboardScrollRef.current?.scrollTo({ y: 0, animated: true });
-        },
-        delay: 2200,
-      },
-      {
-        run: () => dashboardScrollRef.current?.scrollTo({ y: 240, animated: true }),
-        delay: 1800,
-      },
-      {
-        run: () => dashboardScrollRef.current?.scrollTo({ y: 480, animated: true }),
-        delay: 1800,
-      },
-      {
-        run: () => setRoute({ name: 'timeline' }),
-        delay: 2200,
-      },
-      {
-        run: () => {
-          setStageTab('materials');
-          setRoute({ name: 'stage', stageId: 'demo-stage-1' });
-        },
-        delay: 2600,
-      },
-      { run: () => setStageTab('team'), delay: 1800 },
-      { run: () => setStageTab('files'), delay: 1800 },
-      { run: () => setRoute({ name: 'chat' }), delay: 2400 },
-      {
-        run: () => {
-          setRoute({ name: 'dashboard' });
-          setStageTab('materials');
-          dashboardScrollRef.current?.scrollTo({ y: 0, animated: true });
-        },
-        delay: 2400,
-      },
-    ];
-
-    let index = 0;
     const tick = () => {
-      if (cancelled || autoplayPaused) return;
-      steps[index].run();
-      index = (index + 1) % steps.length;
-      timer = setTimeout(tick, steps[index].delay);
+      const maxScroll = dashboardScrollMax.current;
+      if (maxScroll > 0) {
+        scrollY += direction * speed;
+        if (scrollY >= maxScroll) {
+          scrollY = maxScroll;
+          direction = -1;
+        } else if (scrollY <= 0) {
+          scrollY = 0;
+          direction = 1;
+        }
+        dashboardScrollRef.current?.scrollTo({ y: scrollY, animated: false });
+      }
+      raf = requestAnimationFrame(tick);
     };
 
-    timer = setTimeout(tick, steps[0].delay);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [autoplay, autoplayPaused]);
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [autoplay, autoplayPaused, route.name]);
 
   const pauseAutoplay = useCallback(() => {
     if (autoplay) setAutoplayPaused(true);
   }, [autoplay]);
 
+  const flashDemoPress = useCallback(() => {
+    pauseAutoplay();
+  }, [pauseAutoplay]);
+
   const renderFloatingChat = () => (
     <TouchableOpacity
+      activeOpacity={0.7}
       onPress={() => {
-        pauseAutoplay();
+        flashDemoPress();
         setRoute({ name: 'chat' });
       }}
       className="absolute right-3 bg-black rounded-full p-4 shadow-lg"
@@ -412,6 +396,12 @@ export default function ProjectMonitoringDemoPhone({
         <ScrollView
           ref={dashboardScrollRef}
           showsVerticalScrollIndicator={false}
+          onLayout={(event) => {
+            dashboardViewportHeight.current = event.nativeEvent.layout.height;
+          }}
+          onContentSizeChange={(_width, height) => {
+            dashboardScrollMax.current = Math.max(0, height - dashboardViewportHeight.current);
+          }}
           contentContainerStyle={{
             paddingHorizontal: DEMO_HORIZONTAL_PAD,
             paddingBottom: 88,
@@ -420,6 +410,7 @@ export default function ProjectMonitoringDemoPhone({
           <DemoNavRow
             onBack={homeRoute.name === 'dashboard' ? () => setRoute({ name: 'dashboard' }) : goHome}
             onHome={goHome}
+            onInteract={flashDemoPress}
           />
           <Text className="text-3xl text-black mb-1" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
             {p.name}
@@ -466,7 +457,11 @@ export default function ProjectMonitoringDemoPhone({
               </Text>
             </View>
             <TouchableOpacity
-              onPress={() => setRoute({ name: 'timeline' })}
+              activeOpacity={0.72}
+              onPress={() => {
+                flashDemoPress();
+                setRoute({ name: 'timeline' });
+              }}
               className="rounded-full py-4 px-6 flex-row items-center justify-center bg-white"
             >
               <Text className="text-black text-base mr-2" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -566,9 +561,10 @@ export default function ProjectMonitoringDemoPhone({
             {stages.map((stage, index) => (
               <TouchableOpacity
                 key={stage.id}
-                activeOpacity={stage.uiStatus === 'not_started' ? 1 : 0.88}
+                activeOpacity={stage.uiStatus === 'not_started' ? 1 : 0.72}
                 onPress={() => {
                   if (stage.uiStatus === 'completed' || stage.uiStatus === 'in_progress') {
+                    flashDemoPress();
                     openStage(stage.id);
                   }
                 }}
@@ -637,6 +633,7 @@ export default function ProjectMonitoringDemoPhone({
         <DemoNavRow
           onBack={() => setRoute({ name: 'dashboard' })}
           onHome={goHome}
+          onInteract={flashDemoPress}
         />
         <Text className="text-3xl text-black mb-1" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
           Build Timeline
@@ -658,8 +655,14 @@ export default function ProjectMonitoringDemoPhone({
                 ) : null}
               </View>
               <TouchableOpacity
-                onPress={() => clickable && openStage(stage.id)}
+                onPress={() => {
+                  if (clickable) {
+                    flashDemoPress();
+                    openStage(stage.id);
+                  }
+                }}
                 disabled={!clickable}
+                activeOpacity={clickable ? 0.72 : 1}
                 className={`flex-1 rounded-2xl p-4 border ${
                   clickable ? 'bg-white border-gray-200' : 'bg-gray-50 border-gray-100'
                 }`}
@@ -724,6 +727,7 @@ export default function ProjectMonitoringDemoPhone({
             showAlert={isComplete}
             onBack={() => setRoute({ name: 'timeline' })}
             onHome={goHome}
+            onInteract={flashDemoPress}
             onAlert={() => {
               setDisputeSelected([]);
               setDisputeOpen(true);
@@ -750,7 +754,11 @@ export default function ProjectMonitoringDemoPhone({
           {(['materials', 'team', 'files'] as const).map((tab) => (
             <TouchableOpacity
               key={tab}
-              onPress={() => setStageTab(tab)}
+              activeOpacity={0.72}
+              onPress={() => {
+                flashDemoPress();
+                setStageTab(tab);
+              }}
               className={`flex-1 py-3 border-b-2 ${stageTab === tab ? 'border-black' : 'border-gray-200'}`}
             >
               <View className="flex-row items-center justify-center">
@@ -802,7 +810,12 @@ export default function ProjectMonitoringDemoPhone({
                 >
                   <View className="flex-row items-center pt-3">
                     <View className="w-24 h-24 ml-3 rounded-xl overflow-hidden bg-gray-100">
-                      <Image source={{ uri: m.photoUrl }} className="w-full h-full" resizeMode="cover" />
+                      <Image
+                        source={m.photoUrl}
+                        resizeMode="cover"
+                        style={{ width: 96, height: 96 }}
+                        accessibilityLabel={`${m.name} photo`}
+                      />
                     </View>
                     <View className="flex-1 p-3 justify-center">
                       <Text className="text-base text-black mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -1001,6 +1014,7 @@ export default function ProjectMonitoringDemoPhone({
           <DemoNavRow
             onBack={() => setRoute({ name: 'dashboard' })}
             onHome={goHome}
+            onInteract={flashDemoPress}
           />
           <View className="flex-row items-center mt-1">
             <Image
@@ -1108,7 +1122,11 @@ export default function ProjectMonitoringDemoPhone({
   };
 
   return (
-    <View style={{ flex: 1, minHeight: 0, position: 'relative' }} onTouchStart={pauseAutoplay}>
+    <View
+      className="bmh-demo-phone"
+      style={{ flex: 1, minHeight: 0, position: 'relative' }}
+      onTouchStart={pauseAutoplay}
+    >
       <View style={{ flex: 1, minHeight: 0, height: innerHeight }}>{renderPhoneScreen()}</View>
 
       {hintText ? (
