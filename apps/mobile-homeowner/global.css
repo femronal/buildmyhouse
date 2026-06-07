@@ -129,3 +129,114 @@ body * {
   color: #2563eb;
   text-decoration: underline;
 }
+
+/* BuildMyHouse landing page */
+.bmh-landing-root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+.bmh-word-slider {
+  display: inline-block;
+  vertical-align: bottom;
+  height: 1.15em;
+  overflow: hidden;
+  position: relative;
+}
+
+.bmh-word-slider-inner {
+  display: flex;
+  flex-direction: column;
+  animation: bmhWordSlide 28s infinite;
+}
+
+.bmh-word-slider-inner span {
+  display: block;
+  height: 1.15em;
+  line-height: 1.15em;
+  white-space: nowrap;
+}
+
+@keyframes bmhWordSlide {
+  0%,
+  16% {
+    transform: translateY(0);
+  }
+  20%,
+  36% {
+    transform: translateY(-1.15em);
+  }
+  40%,
+  56% {
+    transform: translateY(-2.3em);
+  }
+  60%,
+  76% {
+    transform: translateY(-3.45em);
+  }
+  80%,
+  96% {
+    transform: translateY(-4.6em);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.bmh-no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.bmh-no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.bmh-landing-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .bmh-mobile-nav-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    justify-items: center !important;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .bmh-audience-tabs-wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    align-self: stretch !important;
+  }
+
+  .bmh-audience-tabs-wrap > div,
+  .bmh-audience-tabs-wrap > *:first-child {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bmh-hero-grid {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+  .bmh-hero-left {
+    width: 42% !important;
+    max-width: 42% !important;
+    flex-shrink: 0 !important;
+  }
+  .bmh-hero-right {
+    width: 58% !important;
+    max-width: 58% !important;
+    flex-shrink: 0 !important;
+  }
+}

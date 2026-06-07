@@ -1,22 +1,13 @@
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
 import HomeLandingScreen from '@/components/HomeLandingScreen';
-import { useWebSeo } from '@/lib/seo';
 
 export default function StartScreen() {
   const router = useRouter();
   const { data: currentUser, isLoading } = useCurrentUser();
-
-  useWebSeo({
-    title: 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design',
-    description:
-      'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
-    canonicalPath: '/',
-    robots: 'index,follow',
-  });
 
   useEffect(() => {
     if (isLoading) return;
@@ -28,6 +19,10 @@ export default function StartScreen() {
     }
     router.replace('/(tabs)/home');
   }, [currentUser, isLoading, router]);
+
+  if (Platform.OS === 'web' && !currentUser) {
+    return <HomeLandingScreen />;
+  }
 
   if (isLoading) {
     return (

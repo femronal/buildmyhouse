@@ -43,6 +43,17 @@ const indexableRoutes = [
   '/downloads/lagos-permit-starter-checklist',
   '/tools/milestone-payment-schedule',
   '/tools/renovation-budget-planner',
+  '/for-contractors',
+  '/services/plumbing-repair-nigeria',
+  '/services/electrical-repair-nigeria',
+  '/services/roof-leak-repair-nigeria',
+  '/services/drainage-repair-nigeria',
+  '/services/window-repair-nigeria',
+  '/services/bathroom-repair-nigeria',
+  '/services/painting-services-nigeria',
+  '/services/kitchen-renovation-nigeria',
+  '/services/home-renovation-nigeria',
+  '/services/general-contractors-nigeria',
 ];
 
 async function getCmsArticleRoutes() {

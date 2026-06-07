@@ -116,6 +116,7 @@ export function isIndexablePath(pathname?: string) {
 
   const exactIndexable = new Set([
     '/',
+    '/for-contractors',
     '/explore',
     '/rent',
     '/construction/nigeria',
@@ -148,8 +149,9 @@ export function isIndexablePath(pathname?: string) {
     '/land-verification-in-nigeria-guide',
     '/building-permit-in-lagos-nigeria-guide',
   ]);
-
-  return exactIndexable.has(path);
+  if (exactIndexable.has(path)) return true;
+  if (path.startsWith('/services/')) return true;
+  return false;
 }
 
 export function useWebSeo(options: SeoOptions) {
@@ -234,9 +236,19 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/') {
     return {
-      title: 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design',
+      title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
       description:
-        'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
+        'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/for-contractors') {
+    return {
+      title: 'For Contractors | BuildMyHouse',
+      description:
+        'Join BuildMyHouse as a verified artisan, repairer, renovator, interior specialist, or general contractor.',
       canonicalPath,
       robots: 'index,follow',
     };

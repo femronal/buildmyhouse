@@ -30,9 +30,64 @@ const PRIVATE_ROUTE_PREFIXES = [
 
 const SEO_PAGES = {
   '/': {
-    title: 'BuildMyHouse Technologies Nigeria | Construction, Renovation, Interior Design',
+    title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
     description:
-      'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
+      'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+  },
+  '/for-contractors': {
+    title: 'For Contractors | BuildMyHouse',
+    description:
+      'Join BuildMyHouse as a verified artisan, repairer, renovator, or contractor and receive better project requests.',
+  },
+  '/services/plumbing-repair-nigeria': {
+    title: 'Plumbing Repair in Nigeria | BuildMyHouse',
+    description:
+      'Find verified plumbing repair support in Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
+  },
+  '/services/electrical-repair-nigeria': {
+    title: 'Electrical Repair in Nigeria | BuildMyHouse',
+    description:
+      'Get verified electrical repair support with documented updates and safer approval flow.',
+  },
+  '/services/roof-leak-repair-nigeria': {
+    title: 'Roof Leak Repair in Nigeria | BuildMyHouse',
+    description:
+      'Handle roof leak diagnosis, materials, and repairs with staged updates and evidence.',
+  },
+  '/services/drainage-repair-nigeria': {
+    title: 'Drainage Repair in Nigeria | BuildMyHouse',
+    description:
+      'Coordinate drainage fixes with clearer scope and progress visibility.',
+  },
+  '/services/window-repair-nigeria': {
+    title: 'Window Repair in Nigeria | BuildMyHouse',
+    description:
+      'Find verified support for window and aluminum-related repairs.',
+  },
+  '/services/bathroom-repair-nigeria': {
+    title: 'Bathroom Repair in Nigeria | BuildMyHouse',
+    description:
+      'Track bathroom repairs and upgrades with stage-based coordination.',
+  },
+  '/services/painting-services-nigeria': {
+    title: 'Painting Services in Nigeria | BuildMyHouse',
+    description:
+      'Coordinate painting jobs with better scope definition and quality checkpoints.',
+  },
+  '/services/kitchen-renovation-nigeria': {
+    title: 'Kitchen Renovation in Nigeria | BuildMyHouse',
+    description:
+      'Plan kitchen upgrades and installation work with structured stage visibility.',
+  },
+  '/services/home-renovation-nigeria': {
+    title: 'Home Renovation in Nigeria | BuildMyHouse',
+    description:
+      'Manage renovation projects with documented scope, updates, and approvals.',
+  },
+  '/services/general-contractors-nigeria': {
+    title: 'General Contractors in Nigeria | BuildMyHouse',
+    description:
+      'Find verified general contractor support and execute with better workflow control.',
   },
   '/explore': {
     title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
@@ -99,6 +154,63 @@ const SEO_PAGES = {
     description:
       'Preview how BuildMyHouse helps diaspora homeowners watch stage progress, receive notifications, and stay in control of payment flow.',
   },
+};
+
+const HOME_JSON_LD = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${WEB_URL}/#organization`,
+      name: 'BuildMyHouse',
+      url: WEB_URL,
+      logo: `${WEB_URL}/favicon.png`,
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${WEB_URL}/#website`,
+      name: 'BuildMyHouse',
+      url: WEB_URL,
+    },
+    {
+      '@type': 'Service',
+      '@id': `${WEB_URL}/#service`,
+      name: 'BuildMyHouse property workflow platform',
+      serviceType: 'Property repair and project coordination in Nigeria',
+      provider: { '@id': `${WEB_URL}/#organization` },
+      areaServed: 'Nigeria',
+    },
+    {
+      '@type': 'FAQPage',
+      '@id': `${WEB_URL}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'What is BuildMyHouse?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I use BuildMyHouse if I live abroad?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. BuildMyHouse supports diaspora users who need structured remote project visibility.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I find repairers on BuildMyHouse?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes. You can start with repairs like plumbing, electrical faults, roof leaks, and more.',
+          },
+        },
+      ],
+    },
+  ],
 };
 
 function routeFromHtmlFile(filePath) {
@@ -169,6 +281,19 @@ function upsertTitle(html, title) {
   return withoutTitles.replace('</head>', `  <title>${escapeHtml(title)}</title>\n</head>`);
 }
 
+function upsertJsonLd(html, id, payload) {
+  const scriptPattern = new RegExp(
+    `<script\\s+type="application/ld\\+json"\\s+id="${id}">[\\s\\S]*?<\\/script>`,
+    'i',
+  );
+  const json = JSON.stringify(payload).replace(/</g, '\\u003c');
+  const scriptTag = `<script type="application/ld+json" id="${id}">${json}</script>`;
+  if (scriptPattern.test(html)) {
+    return html.replace(scriptPattern, scriptTag);
+  }
+  return html.replace('</head>', `  ${scriptTag}\n</head>`);
+}
+
 function patchHtmlForRoute(html, route) {
   const redirectTarget = REDIRECTS[route];
   if (redirectTarget) {
@@ -198,6 +323,9 @@ function patchHtmlForRoute(html, route) {
   next = upsertMeta(next, 'property', 'og:url', canonicalUrl);
   next = upsertMeta(next, 'name', 'twitter:title', title);
   next = upsertMeta(next, 'name', 'twitter:description', description);
+  if (route === '/') {
+    next = upsertJsonLd(next, 'buildmyhouse-home-jsonld', HOME_JSON_LD);
+  }
   return next;
 }
 
