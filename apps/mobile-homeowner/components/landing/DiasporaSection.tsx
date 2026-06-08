@@ -16,7 +16,7 @@ export default function DiasporaSection() {
             Need a reliable repairer without stories?
           </SeoHeading>
           <Text className="text-sm leading-6 mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes around you.
+            Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Lagos.
           </Text>
           <Link href={'/location?mode=explore' as any} asChild>
             <Pressable className="self-start rounded-full px-4 py-2 bg-black" accessibilityRole="link">
@@ -29,7 +29,7 @@ export default function DiasporaSection() {
 
         <View className="w-full md:w-[49%] border rounded-2xl p-5 mb-3" style={{ borderColor: LANDING_BORDER }}>
           <SeoHeading level={3} className="text-2xl mb-2" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-            Managing property work in Nigeria from abroad?
+            Managing property work in Lagos from abroad?
           </SeoHeading>
           <Text className="text-sm leading-6 mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
             Reduce blind updates, unclear scope, and pressure-based payments. Track stages, evidence, and communication in
@@ -50,8 +50,8 @@ export default function DiasporaSection() {
           Distance should not mean losing control
         </SeoHeading>
         <Text className="text-sm leading-6 mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          If you live in the UK, US, Canada, UAE, Europe, or anywhere outside Nigeria, BuildMyHouse helps you manage
-          property work with clearer scope, stage-based updates, documented communication, and evidence before payment
+          If you live in the UK, US, Canada, UAE, Europe, or elsewhere abroad, BuildMyHouse helps you manage property
+          work in Lagos with clearer scope, stage-based updates, documented communication, and evidence before payment
           decisions.
         </Text>
         <View className="flex-row flex-wrap">

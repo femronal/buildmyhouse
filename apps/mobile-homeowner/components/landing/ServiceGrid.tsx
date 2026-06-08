@@ -108,7 +108,7 @@ export default function ServiceGrid({ searchQuery }: ServiceGridProps) {
       </View>
 
       <SeoHeading level={3} className="text-2xl mt-10 mb-3" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-        Popular services in Nigeria
+        Popular services in Lagos
       </SeoHeading>
       <View className="flex-row flex-wrap">
         {POPULAR_SERVICE_LINKS.map((link) => (

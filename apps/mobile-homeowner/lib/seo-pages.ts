@@ -518,14 +518,14 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
       internalLinks: crossLinks,
     },
     diasporaUae: {
-      title: 'Build in Nigeria from UAE/Middle East | BuildMyHouse',
+      title: 'Build in Lagos, Nigeria from UAE/Middle East | BuildMyHouse',
       description:
-        'Build or renovate in Nigeria while living in UAE or the Middle East, with better project visibility using BuildMyHouse.',
+        'Build or renovate in Lagos, Nigeria while living in UAE or the Middle East, with better project visibility using BuildMyHouse.',
       canonicalPath: '/diaspora/build-in-nigeria-from-uae',
       eyebrow: 'Diaspora (UAE/Middle East)',
-      heroTitle: 'Build in Nigeria from UAE or the Middle East',
+      heroTitle: 'Build in Lagos, Nigeria from UAE or the Middle East',
       heroDescription:
-        'Use BuildMyHouse to coordinate your Nigerian project with stronger planning, communication, and milestone tracking.',
+        'Use BuildMyHouse to coordinate your Lagos project with stronger planning, communication, and milestone tracking.',
       bullets: [
         'Built for diaspora homeowners managing projects remotely',
         'Clear workflow from project request to execution',

@@ -269,7 +269,7 @@ export default function ProjectMonitoringDemoPhone({
         setRoute({ name: 'chat' });
       }}
       className="absolute right-3 bg-black rounded-full p-4 shadow-lg"
-      style={{ bottom: hintText ? 52 : route.name === 'stage' ? 112 : 16 }}
+      style={{ bottom: hintText ? 52 : 16 }}
       accessibilityLabel="Open chat (demo)"
     >
       <MessageCircle size={26} color="#FFFFFF" strokeWidth={2} />
@@ -996,8 +996,6 @@ export default function ProjectMonitoringDemoPhone({
             </View>
           </View>
         ) : null}
-
-        {renderFloatingChat()}
       </View>
     );
   };

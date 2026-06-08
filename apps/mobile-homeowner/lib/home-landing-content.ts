@@ -7,9 +7,9 @@ export const LANDING_SURFACE = '#F5F5F5';
 export const LANDING_ACCENT = '#000000';
 
 export const HOMEPAGE_META = {
-  title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
+  title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Lagos, Nigeria',
   description:
-    'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+    'Find verified repairers, artisans, renovators, interior specialists, and contractors in Lagos, Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
   canonicalPath: '/',
 } as const;
 
@@ -22,7 +22,7 @@ export const HERO_KEYWORDS = [
 ] as const;
 
 export const HERO_SUBHEADLINE =
-  'From leaking roofs and plumbing faults to room upgrades, renovations, and full builds, BuildMyHouse helps you find verified workers and manage property work with clearer scope, evidence, and progress updates.';
+  'From leaking roofs and plumbing faults to room upgrades, renovations, and full builds, BuildMyHouse helps you find verified workers in Lagos and manage property work with clearer scope, evidence, and progress updates.';
 
 /** Rotating hero verbs for the contractor / get-hired audience tab. */
 export const CONTRACTOR_HERO_KEYWORDS = [
@@ -47,7 +47,7 @@ export const DIASPORA_HERO_KEYWORDS = [
 ] as const;
 
 export const DIASPORA_HERO_SUBHEADLINE =
-  'Whether you are in the UK, US, Canada, UAE, or Europe, BuildMyHouse gives you one workflow for scope, evidence, communication, and payment decisions — so distance does not mean losing visibility on property work in Nigeria.';
+  'Whether you are in the UK, US, Canada, UAE, or Europe, BuildMyHouse gives you one workflow for scope, evidence, communication, and payment decisions — so distance does not mean losing visibility on property work in Lagos.';
 
 export type AudienceTab = {
   key: 'need-worker' | 'get-hired' | 'diaspora';
@@ -74,7 +74,7 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
   'need-worker': {
     rotatingKeywords: HERO_KEYWORDS,
     headlineLead: 'Find verified',
-    headlineSuffix: 'in Nigeria.',
+    headlineSuffix: 'in Lagos, Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
     primaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
@@ -106,7 +106,7 @@ export const AUDIENCE_TABS: AudienceTab[] = [
   {
     key: 'need-worker',
     label: 'I need a worker',
-    title: 'Find verified repairers and contractors for property work in Nigeria.',
+    title: 'Find verified repairers and contractors for property work in Lagos.',
     description:
       'Start with repairs, then move into upgrades, renovations, interiors, and larger projects with better structure.',
     ctaLabel: 'Hire a Verified Worker',
@@ -301,7 +301,7 @@ export const PLATFORM_CARDS: PlatformCard[] = [
     image: require('@/assets/images/blog-3.png'),
   },
   {
-    title: 'Build in Nigeria from UK / US / Canada / UAE',
+    title: 'Build in Lagos from UK / US / Canada / UAE',
     description:
       'Use structured remote workflows for construction planning and execution.',
     href: '/diaspora/build-in-nigeria-from-abroad',
@@ -357,20 +357,20 @@ export const COMPARISON_ROWS = [
 ] as const;
 
 export const POPULAR_SERVICE_LINKS = [
-  { label: 'Plumbing Repair in Nigeria', href: '/services/plumbing-repair-nigeria' },
-  { label: 'Electrical Repair in Nigeria', href: '/services/electrical-repair-nigeria' },
-  { label: 'Roof Leak Repair in Nigeria', href: '/services/roof-leak-repair-nigeria' },
-  { label: 'Drainage Repair in Nigeria', href: '/services/drainage-repair-nigeria' },
-  { label: 'Window Repair in Nigeria', href: '/services/window-repair-nigeria' },
-  { label: 'Bathroom Repair in Nigeria', href: '/services/bathroom-repair-nigeria' },
-  { label: 'Kitchen Renovation in Nigeria', href: '/services/kitchen-renovation-nigeria' },
-  { label: 'Home Renovation in Nigeria', href: '/services/home-renovation-nigeria' },
-  { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
-  { label: 'General Contractors in Nigeria', href: '/services/general-contractors-nigeria' },
-  { label: 'Build from UK to Nigeria', href: '/diaspora/build-in-nigeria-from-uk' },
-  { label: 'Build from US to Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
-  { label: 'Build from Canada to Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
-  { label: 'Build from UAE to Nigeria', href: '/diaspora/build-in-nigeria-from-uae' },
+  { label: 'Plumbing Repair in Lagos, Nigeria', href: '/services/plumbing-repair-nigeria' },
+  { label: 'Electrical Repair in Lagos, Nigeria', href: '/services/electrical-repair-nigeria' },
+  { label: 'Roof Leak Repair in Lagos, Nigeria', href: '/services/roof-leak-repair-nigeria' },
+  { label: 'Drainage Repair in Lagos, Nigeria', href: '/services/drainage-repair-nigeria' },
+  { label: 'Window Repair in Lagos, Nigeria', href: '/services/window-repair-nigeria' },
+  { label: 'Bathroom Repair in Lagos, Nigeria', href: '/services/bathroom-repair-nigeria' },
+  { label: 'Kitchen Renovation in Lagos, Nigeria', href: '/services/kitchen-renovation-nigeria' },
+  { label: 'Home Renovation in Lagos, Nigeria', href: '/services/home-renovation-nigeria' },
+  { label: 'Interior Design in Lagos, Nigeria', href: '/interior-design/nigeria' },
+  { label: 'General Contractors in Lagos, Nigeria', href: '/services/general-contractors-nigeria' },
+  { label: 'Build from UK to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-uk' },
+  { label: 'Build from US to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
+  { label: 'Build from Canada to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
+  { label: 'Build from UAE to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-uae' },
 ] as const;
 
 export const WORKER_CATEGORIES = [
@@ -400,17 +400,17 @@ export const FAQ_ITEMS = [
   {
     question: 'What is BuildMyHouse?',
     answer:
-      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps owners define scope, connect with verified workers, track stages, and make payment decisions with better evidence.',
+      'BuildMyHouse is a trust-and-workflow platform for property work in Lagos, Nigeria. It helps owners define scope, connect with verified workers, track stages, and make payment decisions with better evidence.',
   },
   {
-    question: 'Can I use BuildMyHouse if I live in Nigeria?',
+    question: 'Can I use BuildMyHouse if I live in Lagos?',
     answer:
-      'Yes. BuildMyHouse supports Nigerians in Nigeria who need reliable repairers, artisans, renovators, interior specialists, or contractors with clearer structure.',
+      'Yes — absolutely. BuildMyHouse was built first for diaspora Nigerians who need to manage Lagos projects remotely, with structured workflows and staged payments between you and your contractor. If you live in Lagos, you can use it to find verified contractors for repairs, upgrades, renovations, or full builds — and you’re free to work with them on or off the app. It’s also a strong fit if you’re busy on the ground: landlords, property managers, estate managers, and companies who want someone else handling the monitoring while they focus on everything else.',
   },
   {
     question: 'Can I use BuildMyHouse if I live abroad?',
     answer:
-      'Yes. BuildMyHouse is built to help diaspora users monitor scope, stage updates, communication, and evidence while managing property work from abroad.',
+      'Yes. BuildMyHouse is built to help diaspora users monitor scope, stage updates, communication, and evidence while managing property work in Lagos from abroad.',
   },
   {
     question: 'Does BuildMyHouse only handle full construction?',
@@ -425,7 +425,7 @@ export const FAQ_ITEMS = [
   {
     question: 'How are workers verified?',
     answer:
-      'BuildMyHouse verification may include identity checks, business information, references, portfolio review, and platform behavior review based on the available records.',
+      'Verification starts at the contractor’s workshop — where they actually work. A BuildMyHouse agent visits to confirm the site, and a follow-up check verifies the tools on hand and that work has been carried out there for at least three years. We also collect CAC registration, a valid government ID, and any relevant professional documents where available.',
   },
   {
     question: 'Can I monitor a project from abroad?',
@@ -448,6 +448,62 @@ export const FAQ_ITEMS = [
       'Contractors and artisans can apply through the contractor onboarding flow, complete verification steps, and start receiving project opportunities.',
   },
 ] as const;
+
+export type LandingTestimonial = {
+  name: string;
+  role: string;
+  quote: string;
+  tag: string;
+  tagDetail: string;
+};
+
+export const LANDING_TESTIMONIAL_STATS = [
+  { value: '3+', label: 'Years verified minimum' },
+  { value: '1001+', label: 'Projects completed' },
+  { value: 'Lagos', label: 'Primary service area' },
+] as const;
+
+export const LANDING_TESTIMONIALS: LandingTestimonial[] = [
+  {
+    name: 'Adedamola Mulikah',
+    role: 'Homeowner, Agege, Lagos',
+    quote:
+      'Thank you very much, Build my home for providing one of the best experience with an artisan I have had so far. The regular updates, transparency, meeting timelines can only be professionalism. I am truly glad.',
+    tag: 'Washing machine setup',
+    tagDetail: 'Agege',
+  },
+  {
+    name: 'Aminat Otaru',
+    role: 'Homeowner, Egbeda, Lagos',
+    quote: 'Professional artisans. Transparent and easy to use! Amazing service.',
+    tag: 'Window repair',
+    tagDetail: 'Egbeda',
+  },
+  {
+    name: 'Ngozi E.',
+    role: 'Homeowner, Yaba',
+    quote:
+      'I had a leaking ceiling and the last guy took money and disappeared. Here I saw photos at each stage before releasing payment. No drama.',
+    tag: 'Roof leak',
+    tagDetail: 'Yaba',
+  },
+  {
+    name: 'James O.',
+    role: 'Based in Manchester, UK',
+    quote:
+      "My mum's house in Surulere needed a full kitchen redo. I could see daily progress from my phone instead of trusting random voice notes.",
+    tag: 'Diaspora',
+    tagDetail: 'Kitchen renovation',
+  },
+  {
+    name: 'Bisi Adeyemi',
+    role: 'Property manager, Victoria Island',
+    quote:
+      'I manage three flats and cannot be on every site daily. Stage updates and one thread per job beats five different group chats.',
+    tag: 'Property management',
+    tagDetail: 'Victoria Island',
+  },
+];
 
 export const FOR_CONTRACTOR_URL = 'https://gc.buildmyhouse.app/';
 
@@ -488,54 +544,54 @@ export const BUILDMYHOUSE_SOCIALS = [
 
 export const SERVICE_SEO_PAGES = {
   'plumbing-repair-nigeria': {
-    title: 'Plumbing Repair in Nigeria',
+    title: 'Plumbing Repair in Lagos, Nigeria',
     summary:
-      'Find verified plumbing repair support in Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
+      'Find verified plumbing repair support in Lagos, Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
   },
   'electrical-repair-nigeria': {
-    title: 'Electrical Repair in Nigeria',
+    title: 'Electrical Repair in Lagos, Nigeria',
     summary:
-      'Get verified electrical repair support with documented updates and safer approval flow.',
+      'Get verified electrical repair support in Lagos, Nigeria with documented updates and a safer approval flow.',
   },
   'roof-leak-repair-nigeria': {
-    title: 'Roof Leak Repair in Nigeria',
+    title: 'Roof Leak Repair in Lagos, Nigeria',
     summary:
-      'Handle roof leak diagnosis, materials, and repairs with staged updates and evidence.',
+      'Handle roof leak diagnosis, materials, and repairs in Lagos, Nigeria with staged updates and evidence.',
   },
   'drainage-repair-nigeria': {
-    title: 'Drainage Repair in Nigeria',
+    title: 'Drainage Repair in Lagos, Nigeria',
     summary:
-      'Coordinate drainage fixes with clearer scope and progress visibility.',
+      'Coordinate drainage fixes in Lagos, Nigeria with clearer scope and progress visibility.',
   },
   'window-repair-nigeria': {
-    title: 'Window Repair in Nigeria',
+    title: 'Window Repair in Lagos, Nigeria',
     summary:
-      'Find verified support for window and aluminum-related repairs.',
+      'Find verified window and aluminum repair support in Lagos, Nigeria.',
   },
   'bathroom-repair-nigeria': {
-    title: 'Bathroom Repair in Nigeria',
+    title: 'Bathroom Repair in Lagos, Nigeria',
     summary:
-      'Track bathroom repairs and upgrades with stage-based coordination.',
+      'Track bathroom repairs and upgrades in Lagos, Nigeria with stage-based coordination.',
   },
   'painting-services-nigeria': {
-    title: 'Painting Services in Nigeria',
+    title: 'Painting Services in Lagos, Nigeria',
     summary:
-      'Coordinate painting jobs with better scope definition and quality checkpoints.',
+      'Coordinate painting jobs in Lagos, Nigeria with better scope definition and quality checkpoints.',
   },
   'kitchen-renovation-nigeria': {
-    title: 'Kitchen Renovation in Nigeria',
+    title: 'Kitchen Renovation in Lagos, Nigeria',
     summary:
-      'Plan kitchen upgrades and installation work with structured stage visibility.',
+      'Plan kitchen upgrades and installation work in Lagos, Nigeria with structured stage visibility.',
   },
   'home-renovation-nigeria': {
-    title: 'Home Renovation in Nigeria',
+    title: 'Home Renovation in Lagos, Nigeria',
     summary:
-      'Manage renovation projects with documented scope, updates, and approvals.',
+      'Manage renovation projects in Lagos, Nigeria with documented scope, updates, and approvals.',
   },
   'general-contractors-nigeria': {
-    title: 'General Contractors in Nigeria',
+    title: 'General Contractors in Lagos, Nigeria',
     summary:
-      'Find verified general contractor support and execute with better workflow control.',
+      'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },
 } as const;
 

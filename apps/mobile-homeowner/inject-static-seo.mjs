@@ -30,9 +30,9 @@ const PRIVATE_ROUTE_PREFIXES = [
 
 const SEO_PAGES = {
   '/': {
-    title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
+    title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Lagos, Nigeria',
     description:
-      'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+      'Find verified repairers, artisans, renovators, interior specialists, and contractors in Lagos, Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
   },
   '/for-contractors': {
     title: 'For Contractors | BuildMyHouse',
@@ -40,54 +40,54 @@ const SEO_PAGES = {
       'Join BuildMyHouse as a verified artisan, repairer, renovator, or contractor and receive better project requests.',
   },
   '/services/plumbing-repair-nigeria': {
-    title: 'Plumbing Repair in Nigeria | BuildMyHouse',
+    title: 'Plumbing Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Find verified plumbing repair support in Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
+      'Find verified plumbing repair support in Lagos, Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
   },
   '/services/electrical-repair-nigeria': {
-    title: 'Electrical Repair in Nigeria | BuildMyHouse',
+    title: 'Electrical Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Get verified electrical repair support with documented updates and safer approval flow.',
+      'Get verified electrical repair support in Lagos, Nigeria with documented updates and a safer approval flow.',
   },
   '/services/roof-leak-repair-nigeria': {
-    title: 'Roof Leak Repair in Nigeria | BuildMyHouse',
+    title: 'Roof Leak Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Handle roof leak diagnosis, materials, and repairs with staged updates and evidence.',
+      'Handle roof leak diagnosis, materials, and repairs in Lagos, Nigeria with staged updates and evidence.',
   },
   '/services/drainage-repair-nigeria': {
-    title: 'Drainage Repair in Nigeria | BuildMyHouse',
+    title: 'Drainage Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Coordinate drainage fixes with clearer scope and progress visibility.',
+      'Coordinate drainage fixes in Lagos, Nigeria with clearer scope and progress visibility.',
   },
   '/services/window-repair-nigeria': {
-    title: 'Window Repair in Nigeria | BuildMyHouse',
+    title: 'Window Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Find verified support for window and aluminum-related repairs.',
+      'Find verified window and aluminum repair support in Lagos, Nigeria.',
   },
   '/services/bathroom-repair-nigeria': {
-    title: 'Bathroom Repair in Nigeria | BuildMyHouse',
+    title: 'Bathroom Repair in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Track bathroom repairs and upgrades with stage-based coordination.',
+      'Track bathroom repairs and upgrades in Lagos, Nigeria with stage-based coordination.',
   },
   '/services/painting-services-nigeria': {
-    title: 'Painting Services in Nigeria | BuildMyHouse',
+    title: 'Painting Services in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Coordinate painting jobs with better scope definition and quality checkpoints.',
+      'Coordinate painting jobs in Lagos, Nigeria with better scope definition and quality checkpoints.',
   },
   '/services/kitchen-renovation-nigeria': {
-    title: 'Kitchen Renovation in Nigeria | BuildMyHouse',
+    title: 'Kitchen Renovation in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Plan kitchen upgrades and installation work with structured stage visibility.',
+      'Plan kitchen upgrades and installation work in Lagos, Nigeria with structured stage visibility.',
   },
   '/services/home-renovation-nigeria': {
-    title: 'Home Renovation in Nigeria | BuildMyHouse',
+    title: 'Home Renovation in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Manage renovation projects with documented scope, updates, and approvals.',
+      'Manage renovation projects in Lagos, Nigeria with documented scope, updates, and approvals.',
   },
   '/services/general-contractors-nigeria': {
-    title: 'General Contractors in Nigeria | BuildMyHouse',
+    title: 'General Contractors in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Find verified general contractor support and execute with better workflow control.',
+      'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },
   '/explore': {
     title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
@@ -120,19 +120,19 @@ const SEO_PAGES = {
       'Plan and manage renovation projects in Nigeria with clearer scope, contractor accountability, and remote visibility through BuildMyHouse.',
   },
   '/interior-design/nigeria': {
-    title: 'Interior Design in Nigeria | BuildMyHouse',
+    title: 'Interior Design in Lagos, Nigeria | BuildMyHouse',
     description:
-      'Manage interior design and furnishing projects in Nigeria remotely with verified designers, staged approvals, and payment discipline.',
+      'Manage interior design and furnishing projects in Lagos, Nigeria remotely with verified designers, staged approvals, and payment discipline.',
   },
   '/diaspora/build-in-nigeria-from-uk': {
-    title: 'Build in Nigeria from the UK | Manage Your Project Remotely | BuildMyHouse',
+    title: 'Build in Lagos, Nigeria from the UK | Manage Your Project Remotely | BuildMyHouse',
     description:
-      'A practical guide for UK-based Nigerians who want to build in Nigeria with more control. Plan your project, verify contractors, track stages, manage payments, and reduce remote-building risk with BuildMyHouse.',
+      'A practical guide for UK-based Nigerians who want to build in Lagos, Nigeria with more control. Plan your project, verify contractors, track stages, manage payments, and reduce remote-building risk with BuildMyHouse.',
   },
   '/diaspora/build-in-nigeria-from-usa-canada': {
-    title: 'Build in Nigeria from the USA or Canada | BuildMyHouse',
+    title: 'Build in Lagos, Nigeria from the USA or Canada | BuildMyHouse',
     description:
-      'Build in Nigeria from USA or Canada with clearer scope, verified contractor workflows, construction project tracking in Nigeria, and milestone payment discipline through BuildMyHouse.',
+      'Build in Lagos, Nigeria from USA or Canada with clearer scope, verified contractor workflows, construction project tracking in Lagos, and milestone payment discipline through BuildMyHouse.',
   },
   '/diaspora/build-in-nigeria-from-abroad': {
     title: 'Build in Nigeria from Abroad | BuildMyHouse',
@@ -176,9 +176,13 @@ const HOME_JSON_LD = {
       '@type': 'Service',
       '@id': `${WEB_URL}/#service`,
       name: 'BuildMyHouse property workflow platform',
-      serviceType: 'Property repair and project coordination in Nigeria',
+      serviceType: 'Property repair and project coordination in Lagos, Nigeria',
       provider: { '@id': `${WEB_URL}/#organization` },
-      areaServed: 'Nigeria',
+      areaServed: {
+        '@type': 'City',
+        name: 'Lagos',
+        containedInPlace: { '@type': 'Country', name: 'Nigeria' },
+      },
     },
     {
       '@type': 'FAQPage',
@@ -189,7 +193,7 @@ const HOME_JSON_LD = {
           name: 'What is BuildMyHouse?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria.',
+            text: 'BuildMyHouse is a trust-and-workflow platform for property work in Lagos, Nigeria.',
           },
         },
         {

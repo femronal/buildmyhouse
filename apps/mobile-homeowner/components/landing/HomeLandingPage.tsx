@@ -23,6 +23,7 @@ import SEOJsonLd from '@/components/landing/SEOJsonLd';
 import SocialLinksStrip from '@/components/landing/SocialLinksStrip';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
+import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import RotatingKeyword from '@/components/landing/RotatingKeyword';
 import {
   AUDIENCE_TABS,
@@ -137,10 +138,12 @@ function AudienceTabBar({
       <Pressable
         key={tab.key}
         onPress={() => onSelect(tab.key)}
-        className={`px-3 py-1.5 rounded-md ${active ? 'bg-white border border-slate-200' : ''}`}
+        className={`px-3 py-1.5 rounded-md ${active ? 'bg-black' : ''}`}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: active }}
       >
         <Text
-          className={`text-xs text-center ${active ? 'text-black' : 'text-slate-500'}`}
+          className={`text-xs text-center ${active ? 'text-white' : 'text-slate-500'}`}
           style={{ fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_500Medium' }}
         >
           {compact ? mobileLabels[tab.key] : tab.label}
@@ -285,18 +288,21 @@ export default function HomeLandingPage() {
 
         {/* Hero */}
         <View className="pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
-          <View
-            className="max-w-7xl w-full self-center px-6 md:px-12 bmh-hero-grid"
-            style={{
-              flexDirection: isDesktop ? 'row' : 'column',
-              alignItems: isDesktop ? 'flex-start' : 'stretch',
-              width: '100%',
-            }}
-          >
-            <View className="bmh-hero-left z-10 gap-8 w-full" style={{ flex: isDesktop ? 5 : undefined }}>
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="mb-6 md:mb-8">
               <AudienceTabBar audience={audience} onSelect={setAudience} isDesktop={isDesktop} />
+            </View>
 
-              <View className="gap-6 mt-6">
+            <View
+              className="bmh-hero-grid w-full"
+              style={{
+                flexDirection: isDesktop ? 'row' : 'column',
+                alignItems: 'flex-start',
+                width: '100%',
+              }}
+            >
+            <View className="bmh-hero-left z-10 gap-8 w-full" style={{ flex: isDesktop ? 5 : undefined }}>
+              <View className="gap-6">
                 <HeroHeadlineBlock audience={audience} />
 
                 <Text className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -391,6 +397,7 @@ export default function HomeLandingPage() {
               }}
             >
               <PhoneDashboardMockup />
+            </View>
             </View>
           </View>
         </View>
@@ -492,7 +499,7 @@ export default function HomeLandingPage() {
                   Need a reliable repairer without stories?
                 </Text>
                 <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes around you.
+                  Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Lagos.
                 </Text>
                 <Link href={'/location?mode=explore' as any} asChild>
                   <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center" accessibilityRole="link">
@@ -527,6 +534,8 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
+        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
+
         {/* Contractor CTA */}
         <View className="py-24 bg-white" onLayout={(e) => recordSectionOffset('contractors', e.nativeEvent.layout.y)}>
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
@@ -555,7 +564,7 @@ export default function HomeLandingPage() {
         <View className="py-16 border-t border-slate-100 bg-white">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <Text className="text-sm text-black mb-6 uppercase tracking-wide" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Popular Services in Nigeria
+              Popular Services in Lagos
             </Text>
             <View className="flex-row flex-wrap gap-y-4 gap-x-8">
               {POPULAR_SERVICE_LINKS.map((link) => (
@@ -608,7 +617,7 @@ export default function HomeLandingPage() {
         {/* Final CTA */}
         <View className="py-24 bg-white border-t border-slate-100 items-center px-6 md:px-12">
           <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-6 text-center">
-            Ready to fix, upgrade, renovate, or build in Nigeria?
+            Ready to fix, upgrade, renovate, or build in Lagos, Nigeria?
           </SectionHeading>
           <Text className="text-base text-slate-500 mb-8 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
             Start with BuildMyHouse.

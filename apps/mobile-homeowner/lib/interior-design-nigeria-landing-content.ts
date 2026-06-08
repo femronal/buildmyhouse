@@ -2,17 +2,17 @@ const WEB = 'https://buildmyhouse.app';
 
 export const interiorDesignNigeriaLandingPageContent = {
   seo: {
-    title: 'Interior Design in Nigeria | BuildMyHouse',
+    title: 'Interior Design in Lagos, Nigeria | BuildMyHouse',
     description:
-      'BuildMyHouse helps homeowners and diaspora clients plan and manage interior design in Nigeria with better structure, verified workflows, supplier visibility, and stage-by-stage updates.',
+      'BuildMyHouse helps homeowners and diaspora clients plan and manage interior design in Lagos, Nigeria with better structure, verified workflows, supplier visibility, and stage-by-stage updates.',
     canonical: `${WEB}/interior-design/nigeria`,
     robots: 'index, follow',
   },
   hero: {
     eyebrow: 'INTERIOR DESIGN SERVICES IN NIGERIA',
-    title: 'Interior Design in Nigeria',
+    title: 'Interior Design in Lagos, Nigeria',
     description:
-      "BuildMyHouse helps diaspora homeowners, local families, short-let/rental owners, and event decorators manage interior design projects in Nigeria with clearer structure, verified workflows, supplier visibility, and stage-by-stage updates.",
+      "BuildMyHouse helps diaspora homeowners, local families, short-let/rental owners, and event decorators manage interior design projects in Lagos, Nigeria with clearer structure, verified workflows, supplier visibility, and stage-by-stage updates.",
     primaryCta: {
       label: 'Start Your Interior Project',
       href: '/projects/new?type=interior-design',
@@ -35,16 +35,16 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   hook: {
-    title: 'Interior Design in Nigeria Can Look Simple Until Money Starts Moving',
+    title: 'Interior Design in Lagos, Nigeria Can Look Simple Until Money Starts Moving',
     paragraphs: [
-      "Many people think interior decoration in Nigeria is just 'buy chairs and paint wall'.",
+      "Many people think interior decoration in Lagos, Nigeria is just 'buy chairs and paint wall'.",
       'In reality, projects quickly involve carpenters, furniture makers, POP workers, painters, electricians, curtain vendors, lighting suppliers, delivery logistics, measurements, and installation problems.',
-      "If you are abroad trying to furnish your home in Nigeria, refresh your parents' house, style a short-let/rental unit, or monitor an event setup remotely, this stress multiplies fast.",
+      "If you are abroad trying to furnish your home in Lagos, Nigeria, refresh your parents' house, style a short-let/rental unit, or monitor an event setup remotely, this stress multiplies fast.",
       'One minute, you are choosing a sofa. Next minute, someone is talking about wall panels, POP correction, curtain measurements, lighting points, delivery fees, carpenter balance, and "madam, we need to buy one more material." That is how interior projects become stressful when there is no structure.',
     ],
   },
   quickAnswer: {
-    title: 'How to Manage Interior Design in Nigeria With More Control',
+    title: 'How to Manage Interior Design in Lagos, Nigeria With More Control',
     items: [
       'Start with a clear design goal',
       'Decide which spaces are being designed',
@@ -61,7 +61,7 @@ export const interiorDesignNigeriaLandingPageContent = {
       'BuildMyHouse is not just where you meet a decorator. It is how you run the project with control.',
       'You set up the project clearly, agree what each stage should deliver, and track progress with real updates.',
       'You get professional workflow structure, project chat/notifications, stage tracking, uploaded material and photo records, plus admin-side support when something looks off.',
-      'So for interior design from abroad, house furnishing in Nigeria, or cosmetic refresh projects, money moves with visibility, not pressure.',
+      'So for interior design from abroad, house furnishing in Lagos, Nigeria, or cosmetic refresh projects, money moves with visibility, not pressure.',
     ],
   },
   projectTypes: {
@@ -146,7 +146,7 @@ export const interiorDesignNigeriaLandingPageContent = {
         bmhTrack: 'Supplier communication, payment trail, dispatch updates, delivery/installation confirmation.',
       },
       {
-        title: 'Event decoration setup in Nigeria',
+        title: 'Event decoration setup in Lagos, Nigeria',
         commonRequest: 'Execute event decor setup remotely with local vendors and teams.',
         canGoWrong: 'Late vendor movement, setup mismatch, poor onsite coordination.',
         bmhTrack: 'Material movement, vendor coordination updates, setup photos/videos, and final setup signoff.',
@@ -154,15 +154,15 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   diaspora: {
-    title: 'Managing Interior Design in Nigeria From Abroad',
+    title: 'Managing Interior Design in Lagos, Nigeria From Abroad',
     paragraphs: [
-      'Many Nigerians abroad want better interior design Lagos, interior design Abuja, or interior design Port Harcourt execution for homes in Nigeria, but cannot travel just to supervise finishing work.',
+      'Many Nigerians abroad want quality interior design execution for homes in Lagos, Nigeria, but cannot travel just to supervise finishing work.',
       'Common issues include wrong measurements, supplier delays, poor finishing, furniture not matching the plan, unclear receipts, artisans requesting extra money, family sending random photos, and nobody coordinating properly.',
-      'BuildMyHouse gives you interior design project management Nigeria structure so you can monitor progress from abroad with clearer stage updates and proof-based decisions.',
+      'BuildMyHouse gives you a structured interior design project management workflow in Lagos, Nigeria so you can monitor progress from abroad with clearer stage updates and proof-based decisions.',
     ],
     links: [
-      { label: 'Renovate in Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
-      { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
+      { label: 'Renovate in Lagos, Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
+      { label: 'Build in Lagos, Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
       { label: 'Milestone payment schedule tool', href: '/tools/milestone-payment-schedule' },
     ],
     cta: {
@@ -175,9 +175,9 @@ export const interiorDesignNigeriaLandingPageContent = {
     },
   },
   eventDecorators: {
-    title: 'For Event Decorators Abroad With Gigs in Nigeria',
+    title: 'For Event Decorators Abroad With Gigs in Lagos, Nigeria',
     paragraphs: [
-      'Some event decorators, planners, and creative business owners abroad get decoration gigs in Nigeria but cannot fly in for every setup.',
+      'Some event decorators, planners, and creative business owners abroad get decoration gigs in Lagos, Nigeria but cannot fly in for every setup.',
       'BuildMyHouse can support this as a monitored design/decor project workflow where applicable, especially for vendor coordination and execution visibility.',
       'This is not positioned as full event management software. It is useful for project monitoring, update flow, and coordination support around design-style setup work.',
     ],
@@ -202,11 +202,11 @@ export const interiorDesignNigeriaLandingPageContent = {
   cosmeticRenovation: {
     title: 'Interior Design Often Overlaps With Cosmetic Renovation',
     paragraphs: [
-      'Some interior projects are simple styling. Others become cosmetic renovation in Nigeria: painting, POP ceiling Nigeria correction, wall panels Nigeria upgrades, lighting design Nigeria changes, tile replacement, cabinet work, curtain installation Nigeria, and fixture replacement.',
+      'Some interior projects are simple styling. Others become cosmetic renovation in Lagos, Nigeria: painting, POP ceiling work, wall panels, lighting upgrades, tile replacement, cabinet work, curtain installation, and fixture replacement.',
       'If the project goes deeper than surface updates, define scope clearly before spending and use renovation planning logic where needed.',
     ],
     links: [
-      { label: 'Renovation services in Nigeria', href: '/renovation/nigeria' },
+      { label: 'Renovation services in Lagos, Nigeria', href: '/renovation/nigeria' },
       { label: 'Repair vs renovation permit guide', href: '/guides/renovation-permit-lagos-repair-vs-renovation' },
       { label: 'Remote scope worksheet', href: '/downloads/remote-renovation-scope-worksheet' },
     ],
@@ -220,7 +220,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     },
   },
   process: {
-    title: 'A Better Way to Run an Interior Design Project in Nigeria',
+    title: 'A Better Way to Run an Interior Design Project in Lagos, Nigeria',
     items: [
       {
         title: '1. Space review and measurements',
@@ -273,7 +273,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   trust: {
-    title: 'Why People Choose BuildMyHouse for Interior Design in Nigeria',
+    title: 'Why People Choose BuildMyHouse for Interior Design in Lagos, Nigeria',
     items: [
       'Interior-focused planning and project visibility',
       'Verified professional and contractor workflows',
@@ -285,7 +285,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   mistakes: {
-    title: 'Common Interior Design Mistakes to Avoid in Nigeria',
+    title: 'Common Interior Design Mistakes to Avoid in Lagos, Nigeria',
     items: [
       'Starting without measurements',
       'Buying furniture before confirming space size',
@@ -299,11 +299,11 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   budget: {
-    title: 'How Much Does Interior Design Cost in Nigeria?',
+    title: 'How Much Does Interior Design Cost in Lagos, Nigeria?',
     paragraphs: [
-      'There is no one fixed number for interior design services in Nigeria.',
+      'There is no one fixed number for interior design services in Lagos, Nigeria.',
       'Cost depends on number of rooms, location, finish level, furniture quality, custom furniture needs, lighting and ceiling work, painting/wall panels, curtains/blinds, delivery/installation, and supplier reliability.',
-      'It also depends on whether the project is simple home styling in Nigeria or a broader cosmetic renovation in Nigeria.',
+      'It also depends on whether the project is simple home styling in Lagos, Nigeria or a broader cosmetic renovation in Lagos, Nigeria.',
     ],
     cta: {
       label: 'Build a Milestone Payment Schedule',
@@ -334,7 +334,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     title: 'Use BuildMyHouse to Discover Interior Design Ideas',
     paragraphs: [
       'Use BuildMyHouse to browse ideas, save inspiration, and clarify your preferred style before execution starts.',
-      'From modern Nigerian living room ideas to minimalist bedroom interior design Nigeria, luxury kitchen interior design Nigeria, hotel-style bathroom looks, short-let styling, parents’ home refresh, office design, and event decoration inspiration, the goal is to turn inspiration into a tracked project.',
+      'From modern living room ideas to minimalist bedroom layouts, luxury kitchen design, hotel-style bathroom looks, short-let styling, parents’ home refresh, office design, and event decoration inspiration, the goal is to turn inspiration into a tracked project in Lagos, Nigeria.',
     ],
     cta: {
       label: 'Explore Interior Ideas',
@@ -344,7 +344,7 @@ export const interiorDesignNigeriaLandingPageContent = {
   bestFor: {
     title: 'Who This Interior Design Service Is Best For',
     cards: [
-      'Nigerians abroad furnishing a house in Nigeria',
+      'Nigerians abroad furnishing a house in Lagos, Nigeria',
       'Homeowners redesigning living rooms or bedrooms',
       "Families upgrading parents' homes",
       'Short-let and rental property owners',
@@ -372,12 +372,12 @@ export const interiorDesignNigeriaLandingPageContent = {
         href: '/downloads/remote-renovation-scope-worksheet',
       },
       {
-        title: 'Renovation Services in Nigeria',
+        title: 'Renovation Services in Lagos, Nigeria',
         description: 'Useful when your interior project grows into renovation.',
         href: '/renovation/nigeria',
       },
       {
-        title: 'Renovate in Nigeria From Abroad',
+        title: 'Renovate in Lagos, Nigeria From Abroad',
         description: 'Diaspora-focused guide for remote project execution.',
         href: '/diaspora/renovate-in-nigeria-from-abroad',
       },
@@ -397,27 +397,27 @@ export const interiorDesignNigeriaLandingPageContent = {
           'It often comes after core construction and sits around finishing, furnishing, styling, and cosmetic upgrades, but it still requires proper project planning and coordination.',
       },
       {
-        question: 'Can I manage an interior design project in Nigeria from abroad?',
+        question: 'Can I manage an interior design project in Lagos, Nigeria from abroad?',
         answer:
           'Yes. With structured stage tracking, supplier visibility, and proof-based updates, diaspora clients can monitor interior projects remotely with better control.',
       },
       {
-        question: 'Can BuildMyHouse help me find verified interior designers in Nigeria?',
+        question: 'Can BuildMyHouse help me find verified interior designers in Lagos, Nigeria?',
         answer:
-          'BuildMyHouse supports verified professional workflows and structured project tracking for interior design in Nigeria.',
+          'BuildMyHouse supports verified professional workflows and structured project tracking for interior design in Lagos, Nigeria.',
       },
       {
         question: 'Can BuildMyHouse help with living room and bedroom design?',
         answer:
-          'Yes. You can run living room design Nigeria and bedroom interior design Nigeria projects with clearer scope, progress updates, and quality checks.',
+          'Yes. You can run living room and bedroom interior design projects in Lagos, Nigeria with clearer scope, progress updates, and quality checks.',
       },
       {
         question: 'Can BuildMyHouse help with furniture sourcing?',
         answer:
-          'Yes. Furniture sourcing Nigeria workflows can be tracked with supplier documentation, delivery updates, and installation proof.',
+          'Yes. Furniture sourcing workflows in Lagos, Nigeria can be tracked with supplier documentation, delivery updates, and installation proof.',
       },
       {
-        question: 'Can BuildMyHouse help event decorators monitor gigs in Nigeria?',
+        question: 'Can BuildMyHouse help event decorators monitor gigs in Lagos, Nigeria?',
         answer:
           'It can support monitored design/decor coordination workflows where applicable, especially around progress visibility and vendor updates. It is not positioned as full event management software.',
       },
@@ -432,7 +432,7 @@ export const interiorDesignNigeriaLandingPageContent = {
           'Not always. Interior design can be styling-focused, while renovation may involve deeper corrections. Some projects overlap as cosmetic renovation.',
       },
       {
-        question: 'How much does interior design cost in Nigeria?',
+        question: 'How much does interior design cost in Lagos, Nigeria?',
         answer:
           'Cost varies by room count, finish quality, custom furniture, supplier choices, lighting/ceiling scope, and whether the project includes cosmetic renovation.',
       },
@@ -449,7 +449,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
   },
   finalCta: {
-    title: 'Ready to Start Your Interior Design Project in Nigeria?',
+    title: 'Ready to Start Your Interior Design Project in Lagos, Nigeria?',
     description:
       'Use BuildMyHouse to turn interior ideas into a structured project with clearer scope, better communication, stage visibility, and more disciplined execution.',
     primaryCta: {
@@ -465,9 +465,9 @@ export const interiorDesignNigeriaLandingPageContent = {
     title: 'Related interior project resources',
     links: [
       { label: 'Project monitoring demo', href: '/demo/project-monitoring' },
-      { label: 'Renovate in Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
+      { label: 'Renovate in Lagos, Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
       { label: 'Milestone payment schedule', href: '/tools/milestone-payment-schedule' },
-      { label: 'Renovation services in Nigeria', href: '/renovation/nigeria' },
+      { label: 'Renovation services in Lagos, Nigeria', href: '/renovation/nigeria' },
     ],
   },
 } as const;
@@ -505,7 +505,7 @@ export function getInteriorDesignNigeriaLandingJsonLd() {
         {
           '@type': 'ListItem',
           position: 2,
-          name: 'Interior Design in Nigeria',
+          name: 'Interior Design in Lagos, Nigeria',
           item: canonicalUrl,
         },
       ],

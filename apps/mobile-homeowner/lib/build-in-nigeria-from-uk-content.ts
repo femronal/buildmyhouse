@@ -1,17 +1,17 @@
 export const buildInNigeriaFromUkPageContent = {
   seo: {
-    title: "Build in Nigeria from the UK | Manage Your Project Remotely | BuildMyHouse",
+    title: "Build in Lagos, Nigeria from the UK | Manage Your Project Remotely | BuildMyHouse",
     description:
-      "A practical guide for UK-based Nigerians who want to build in Nigeria with more control. Plan your project, verify contractors, track stages, manage payments, and reduce remote-building risk with BuildMyHouse.",
+      "A practical guide for UK-based Nigerians who want to build in Lagos, Nigeria with more control. Plan your project, verify contractors, track stages, manage payments, and reduce remote-building risk with BuildMyHouse.",
     canonical: "https://buildmyhouse.app/diaspora/build-in-nigeria-from-uk",
     robots: "index, follow",
   },
 
   hero: {
     eyebrow: "DIASPORA (UK)",
-    title: "Build in Nigeria from the UK — Without Losing Control of the Project",
+    title: "Build in Lagos, Nigeria from the UK — Without Losing Control of the Project",
     description:
-      "If you live in London, Manchester, Birmingham, Leeds, Glasgow, or anywhere else in the UK, BuildMyHouse helps you manage your building project in Nigeria with clearer stages, better contractor accountability, stronger payment discipline, and more visible progress from abroad.",
+      "If you live in London, Manchester, Birmingham, Leeds, Glasgow, or anywhere else in the UK, BuildMyHouse helps you manage your building project in Lagos, Nigeria with clearer stages, better contractor accountability, stronger payment discipline, and more visible progress from abroad.",
     primaryCta: {
       label: "Start Your Project",
       href: "/projects/new",
@@ -31,14 +31,14 @@ export const buildInNigeriaFromUkPageContent = {
     title: "Building from the UK Should Not Feel Like Sending Money into a Black Hole",
     paragraphs: [
       "Many Nigerians in the UK already know the feeling.",
-      "You want to build in Nigeria, but every serious step seems to come with risk: land stories that are not fully clear, contractors that sound convincing too quickly, family updates that are too vague, and payment requests that arrive before you are sure what stage has actually been completed.",
+      "You want to build in Lagos, Nigeria, but every serious step seems to come with risk: land stories that are not fully clear, contractors that sound convincing too quickly, family updates that are too vague, and payment requests that arrive before you are sure what stage has actually been completed.",
       "That is exactly where many diaspora projects start going wrong.",
       "BuildMyHouse exists to make remote building feel more structured, more visible, and more controlled from the beginning.",
     ],
   },
 
   quickAnswer: {
-    title: "How to Build in Nigeria from the UK More Safely",
+    title: "How to Build in Lagos, Nigeria from the UK More Safely",
     items: [
       "Start with a clear project scope and location reality",
       "Do not rely on verbal trust alone for contractors or project control",
@@ -51,7 +51,7 @@ export const buildInNigeriaFromUkPageContent = {
 
   intro: {
     paragraphs: [
-      "The biggest problem with building in Nigeria from the UK is not distance by itself.",
+      "The biggest problem with building in Lagos, Nigeria from the UK is not distance by itself.",
       "The real problem is losing control from a distance.",
       "That is the core insight behind BuildMyHouse: diaspora homeowners do not mainly suffer from lack of contractors. They suffer from weak project control, unclear scope, poor updates, payment pressure, and uncertainty about whether activity on site actually equals progress. :contentReference[oaicite:2]{index=2}",
       "This page is here to help a UK-based visitor understand that quickly — and see why BuildMyHouse is a better fit than trying to manage the whole project through hope, relatives, and raw transfers.",
@@ -61,9 +61,9 @@ export const buildInNigeriaFromUkPageContent = {
   ukReality: {
     title: "Why This Problem Feels Different When You Are in the UK",
     paragraphs: [
-      "For many Nigerians in the UK, building in Nigeria is not just another investment decision.",
+      "For many Nigerians in the UK, building in Lagos, Nigeria is not just another investment decision.",
       "It is tied to years of work abroad, family responsibility, long-term plans, and the desire to create something real back home.",
-      "That is why remote project confusion feels especially painful. You are not just spending money. You are trying to turn hard-earned life in pounds into a house in Nigeria that actually gets built properly.",
+      "That is why remote project confusion feels especially painful. You are not just spending money. You are trying to turn hard-earned life in pounds into a house in Lagos, Nigeria that actually gets built properly.",
       "So when updates are weak, payments feel rushed, or the contractor story is not clear, the emotional and financial cost is higher.",
     ],
   },
@@ -86,7 +86,7 @@ export const buildInNigeriaFromUkPageContent = {
     title: "What BuildMyHouse Actually Is",
     paragraphs: [
       "BuildMyHouse is not just a contractor directory. It is not just a marketplace. And it is not simply 'Uber for artisans.'",
-      "BuildMyHouse is a remote property project management platform designed to help Nigerians abroad manage property work in Nigeria with more structure, visibility, and control. :contentReference[oaicite:3]{index=3}",
+      "BuildMyHouse is a remote property project management platform designed to help Nigerians abroad manage property work in Lagos, Nigeria with more structure, visibility, and control. :contentReference[oaicite:3]{index=3}",
       "In practical terms, BMH sits between the homeowner abroad, the contractor on ground, the project scope, the current stage, and the money being released.",
     ],
   },
@@ -168,7 +168,7 @@ export const buildInNigeriaFromUkPageContent = {
         href: "/guides/lagos-building-permits-and-stage-inspections",
       },
       {
-        label: "How to choose a general contractor in Nigeria",
+        label: "How to choose a general contractor in Lagos, Nigeria",
         href: "/guides/contractor-vetting-nigeria-diaspora",
       },
       {
@@ -184,7 +184,7 @@ export const buildInNigeriaFromUkPageContent = {
         href: "/diaspora/uk/renovate-parents-house",
       },
       {
-        label: "Global pillar: Build in Nigeria from abroad",
+        label: "Global pillar: Build in Lagos, Nigeria from abroad",
         href: "/diaspora/build-in-nigeria-from-abroad",
       },
     ],
@@ -199,7 +199,7 @@ export const buildInNigeriaFromUkPageContent = {
           "Yes. This page is written specifically for UK-based Nigerians, while still connecting back to the broader global pillar.",
       },
       {
-        question: "Can I really manage a building project in Nigeria from the UK?",
+        question: "Can I really manage a building project in Lagos, Nigeria from the UK?",
         answer:
           "Yes, but it works far better when the project is managed through stages, documented updates, stronger payment discipline, and a clearer workflow instead of raw trust alone.",
       },
@@ -219,7 +219,7 @@ export const buildInNigeriaFromUkPageContent = {
   finalCta: {
     title: "Ready to plan your project from the UK?",
     description:
-      "Start with a structured workflow so your build in Nigeria is executed with clearer accountability, stage control, and visibility from day one.",
+      "Start with a structured workflow so your build in Lagos, Nigeria is executed with clearer accountability, stage control, and visibility from day one.",
     primary: {
       label: "Start your project",
       href: "/projects/new",
@@ -236,7 +236,7 @@ export const buildInNigeriaFromUkPageContent = {
     mainEntity: [
       {
         "@type": "Question",
-        name: "Can I really manage a building project in Nigeria from the UK?",
+        name: "Can I really manage a building project in Lagos, Nigeria from the UK?",
         acceptedAnswer: {
           "@type": "Answer",
           text: "Yes, but it works far better when the project is managed through stages, documented updates, stronger payment discipline, and a clearer workflow instead of raw trust alone.",

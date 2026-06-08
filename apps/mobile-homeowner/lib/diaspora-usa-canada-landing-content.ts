@@ -2,19 +2,19 @@ const WEB = 'https://buildmyhouse.app';
 
 export const diasporaUsaCanadaLandingPageContent = {
   seo: {
-    title: 'Build in Nigeria from the USA or Canada | BuildMyHouse',
+    title: 'Build in Lagos, Nigeria from the USA or Canada | BuildMyHouse',
     description:
-      'Build in Nigeria from USA or Canada with clearer scope, verified contractor workflows, construction project tracking in Nigeria, and milestone payment discipline through BuildMyHouse.',
+      'Build in Lagos, Nigeria from USA or Canada with clearer scope, verified contractor workflows, construction project tracking in Lagos, Nigeria, and milestone payment discipline through BuildMyHouse.',
     canonical: `${WEB}/diaspora/build-in-nigeria-from-usa-canada`,
     robots: 'index, follow',
   },
   hero: {
     eyebrow: 'DIASPORA (USA/CANADA)',
-    title: 'Build in Nigeria from the USA or Canada Without Losing Control',
+    title: 'Build in Lagos, Nigeria from the USA or Canada Without Losing Control',
     description:
-      'BuildMyHouse helps Nigerians in America and Canada manage construction, renovation, repairs, and interior projects in Nigeria with clearer scope, verified contractor workflows, stage tracking, communication, and payment discipline.',
+      'BuildMyHouse helps Nigerians in America and Canada manage construction, renovation, repairs, and interior projects in Lagos, Nigeria with clearer scope, verified contractor workflows, stage tracking, communication, and payment discipline.',
     primaryCta: {
-      label: 'Start Your Nigeria Project',
+      label: 'Start Your Lagos Project',
       href: '/projects/new',
     },
     secondaryCta: {
@@ -37,7 +37,7 @@ export const diasporaUsaCanadaLandingPageContent = {
     ],
   },
   quickAnswer: {
-    title: 'How to Build in Nigeria from the USA or Canada More Safely',
+    title: 'How to Build in Lagos, Nigeria from the USA or Canada More Safely',
     items: [
       'Start with a clear scope before money moves',
       'Break the project into stages',
@@ -63,7 +63,7 @@ export const diasporaUsaCanadaLandingPageContent = {
       'USD and CAD are hard-earned. People are doing double shifts, healthcare night duties, trucking routes, tech deadlines, warehouse hours, care work, business pressure, and school-plus-work schedules.',
       'After rent or mortgage, taxes, insurance, childcare, and monthly bills, what remains is sent home with hope.',
       'That transfer is not free money. Every transfer should be respected with clear accountability.',
-      'If you can track a $30 Amazon delivery in America or Canada, you should not be completely blind on a ₦20m building project in Nigeria.',
+      'If you can track a $30 Amazon delivery in America or Canada, you should not be completely blind on a ₦20m building project in Lagos, Nigeria.',
     ],
   },
   scamFear: {
@@ -71,20 +71,20 @@ export const diasporaUsaCanadaLandingPageContent = {
     paragraphs: [
       'Many Nigerians abroad are not paranoid. They have seen abandoned foundations, inflated material costs, fake progress photos, family conflict, disappearing contractors, and projects dragging for years.',
       'They have seen "small extra money" requests with no proper record, and projects where nobody can explain what stage is truly complete.',
-      'The answer is not to stop building in Nigeria. The answer is to stop building without a system.',
-      'BuildMyHouse does not promise that no problem can ever happen. It gives a safer structured workflow for diaspora property management Nigeria.',
+      'The answer is not to stop building in Lagos, Nigeria. The answer is to stop building without a system.',
+      'BuildMyHouse does not promise that no problem can ever happen. It gives a safer structured workflow for diaspora property management in Lagos, Nigeria.',
     ],
     cta: {
       label: 'See How Project Tracking Works',
       href: '/demo/project-monitoring',
     },
     secondaryCta: {
-      label: 'Start Your Nigeria Project',
+      label: 'Start Your Lagos Project',
       href: '/projects/new',
     },
   },
   mistakes: {
-    title: 'Common Mistakes Nigerians in the USA and Canada Make When Building in Nigeria',
+    title: 'Common Mistakes Nigerians in the USA and Canada Make When Building in Lagos, Nigeria',
     items: [
       'Sending large lump sums before stages are defined',
       'Relying only on family supervision',
@@ -115,7 +115,7 @@ export const diasporaUsaCanadaLandingPageContent = {
       'Contractor workflows instead of random referrals',
       'Chat, updates, and files tied to the project',
       'Better payment discipline',
-      'Useful for Nigerians who cannot travel to Nigeria often',
+      'Useful for Nigerians who cannot travel to Lagos often',
       'Helps reduce blind trust, scattered communication, and pressure-based payments',
     ],
   },
@@ -124,14 +124,14 @@ export const diasporaUsaCanadaLandingPageContent = {
     paragraphs: [
       'A busy site is not the same as a completed stage.',
       'The next payment should move when the current stage is clear, proof is reviewed, materials are accounted for, and the homeowner understands what comes next.',
-      'That is the core of milestone payment construction Nigeria discipline.',
+      'That is the core of milestone payment discipline for construction in Lagos, Nigeria.',
     ],
     cta: {
       label: 'Build a Milestone Payment Schedule',
       href: '/tools/milestone-payment-schedule',
     },
     secondaryCta: {
-      label: 'Start Your Nigeria Project',
+      label: 'Start Your Lagos Project',
       href: '/projects/new',
     },
   },
@@ -147,7 +147,7 @@ export const diasporaUsaCanadaLandingPageContent = {
       href: '/demo/project-monitoring',
     },
     secondaryCta: {
-      label: 'Start Your Nigeria Project',
+      label: 'Start Your Lagos Project',
       href: '/projects/new',
     },
   },
@@ -156,20 +156,20 @@ export const diasporaUsaCanadaLandingPageContent = {
     paragraphs: [
       'US and Canada time differences can cause missed calls and voice notes at odd hours.',
       'Scattered updates make it hard to know what changed and what still needs approval.',
-      'A structured project history with chat, uploads, notifications, and stage records helps you manage building project in Nigeria remotely with less confusion.',
+      'A structured project history with chat, uploads, notifications, and stage records helps you manage building project in Lagos, Nigeria remotely with less confusion.',
     ],
   },
   projectTypes: {
     title: 'What You Can Start on BuildMyHouse',
     cards: [
       {
-        title: 'House construction in Nigeria',
+        title: 'House construction in Lagos, Nigeria',
         description: 'New build execution from foundation to handover.',
         risk: 'Scope creep, uncontrolled spending, and weak stage visibility.',
         track: 'Scope baseline, stage progress, proof, and payment readiness.',
       },
       {
-        title: 'Home renovation in Nigeria',
+        title: 'Home renovation in Lagos, Nigeria',
         description: 'Structured upgrades for occupied or family properties.',
         risk: 'Hidden defects and repeated unplanned payment requests.',
         track: 'Repair vs upgrade boundaries, stage proofs, and change requests.',
@@ -240,7 +240,7 @@ export const diasporaUsaCanadaLandingPageContent = {
     ],
   },
   cityCompliance: {
-    title: 'Building in Lagos or Other Nigerian Cities?',
+    title: 'Building in Lagos, Nigeria?',
     paragraphs: [
       'If your project is in Lagos, Abuja, Port Harcourt, Ibadan, Enugu, Benin, Lekki, Ajah, Ibeju-Lekki, Epe, Ikeja, Magodo, Surulere, or other locations, you should consider location realities, permits, contractor quality, logistics, material movement, and stage readiness.',
       'This is practical planning guidance, not legal advice. Verify official requirements with qualified professionals where needed.',
@@ -248,7 +248,7 @@ export const diasporaUsaCanadaLandingPageContent = {
     links: [
       { label: 'Lagos permits and stage inspections', href: '/guides/lagos-building-permits-and-stage-inspections' },
       { label: 'Construction in Lagos', href: '/construction/lagos' },
-      { label: 'Construction services in Nigeria', href: '/construction/nigeria' },
+      { label: 'Construction services in Lagos, Nigeria', href: '/construction/nigeria' },
     ],
   },
   comparison: {
@@ -267,24 +267,24 @@ export const diasporaUsaCanadaLandingPageContent = {
     title: 'Frequently Asked Questions',
     items: [
       {
-        question: 'Can I build a house in Nigeria from the USA?',
-        answer: 'Yes. You can build in Nigeria from USA with clearer control when scope, stages, proof, and payment discipline are structured.',
+        question: 'Can I build a house in Lagos, Nigeria from the USA?',
+        answer: 'Yes. You can build in Lagos, Nigeria from USA with clearer control when scope, stages, proof, and payment discipline are structured.',
       },
       {
-        question: 'Can I build a house in Nigeria from Canada?',
-        answer: 'Yes. Build in Nigeria from Canada works better when project visibility is stage-based and communication is centralized.',
+        question: 'Can I build a house in Lagos, Nigeria from Canada?',
+        answer: 'Yes. Build in Lagos, Nigeria from Canada works better when project visibility is stage-based and communication is centralized.',
       },
       {
-        question: 'How do I avoid being scammed while building in Nigeria from abroad?',
+        question: 'How do I avoid being scammed while building in Lagos, Nigeria from abroad?',
         answer: 'Use written scope, contractor workflow structure, evidence checks, and avoid pressure-based payments without stage proof.',
       },
       {
         question: 'Can BuildMyHouse help me track my project remotely?',
-        answer: 'Yes. BuildMyHouse supports remote construction management Nigeria by keeping stages, updates, and files tied to your project.',
+        answer: 'Yes. BuildMyHouse supports remote construction management in Lagos, Nigeria by keeping stages, updates, and files tied to your project.',
       },
       {
-        question: 'Does BuildMyHouse provide verified contractors in Nigeria?',
-        answer: 'BuildMyHouse supports verified contractors in Nigeria through structured onboarding and operational workflows.',
+        question: 'Does BuildMyHouse provide verified contractors in Lagos, Nigeria?',
+        answer: 'BuildMyHouse supports verified contractors in Lagos, Nigeria through structured onboarding and operational workflows.',
       },
       {
         question: 'Can my family still be involved?',
@@ -303,12 +303,12 @@ export const diasporaUsaCanadaLandingPageContent = {
         answer: 'You can still bring structure into an ongoing project by clarifying current stage status, evidence, and payment discipline.',
       },
       {
-        question: 'Can I use BuildMyHouse if I cannot travel to Nigeria soon?',
+        question: 'Can I use BuildMyHouse if I cannot travel to Lagos soon?',
         answer: 'Yes. The workflow is designed for homeowners who cannot visit often and need better remote clarity.',
       },
       {
         question: 'Is BuildMyHouse only for Lagos?',
-        answer: 'No. It can support projects across major cities and locations in Nigeria.',
+        answer: 'Yes. BuildMyHouse is built for remote project management in Lagos, Nigeria.',
       },
       {
         question: 'How do I start?',
@@ -317,11 +317,11 @@ export const diasporaUsaCanadaLandingPageContent = {
     ],
   },
   finalCta: {
-    title: 'Ready to Build in Nigeria From the USA or Canada With More Control?',
+    title: 'Ready to Build in Lagos, Nigeria From the USA or Canada With More Control?',
     description:
-      'Start your Nigeria property project with clearer scope, contractor workflows, stage visibility, communication, and payment discipline through BuildMyHouse.',
+      'Start your Lagos property project with clearer scope, contractor workflows, stage visibility, communication, and payment discipline through BuildMyHouse.',
     primaryCta: {
-      label: 'Start Your Nigeria Project',
+      label: 'Start Your Lagos Project',
       href: '/projects/new',
     },
     secondaryCta: {
@@ -335,8 +335,8 @@ export const diasporaUsaCanadaLandingPageContent = {
       { label: 'Project monitoring demo', href: '/demo/project-monitoring' },
       { label: 'Milestone payment schedule', href: '/tools/milestone-payment-schedule' },
       { label: 'Contractor vetting guide', href: '/guides/contractor-vetting-nigeria-diaspora' },
-      { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
-      { label: 'Renovation services in Nigeria', href: '/renovation/nigeria' },
+      { label: 'Build in Lagos, Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
+      { label: 'Renovation services in Lagos, Nigeria', href: '/renovation/nigeria' },
     ],
   },
 } as const;
@@ -367,7 +367,7 @@ export function getDiasporaUsaCanadaLandingJsonLd() {
       itemListElement: [
         { '@type': 'ListItem', position: 1, name: 'Home', item: WEB },
         { '@type': 'ListItem', position: 2, name: 'Diaspora', item: `${WEB}/diaspora/build-in-nigeria-from-abroad` },
-        { '@type': 'ListItem', position: 3, name: 'Build in Nigeria from the USA or Canada', item: canonicalUrl },
+        { '@type': 'ListItem', position: 3, name: 'Build in Lagos, Nigeria from the USA or Canada', item: canonicalUrl },
       ],
     },
     {

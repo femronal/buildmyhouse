@@ -51,11 +51,15 @@ export default function SEOJsonLd() {
         '@type': 'Service',
         '@id': `${WEB_URL}/#service`,
         name: 'BuildMyHouse property workflow platform',
-        serviceType: 'Property repair, renovation, and project coordination in Nigeria',
+        serviceType: 'Property repair, renovation, and project coordination in Lagos, Nigeria',
         provider: { '@id': `${WEB_URL}/#organization` },
-        areaServed: 'Nigeria',
+        areaServed: {
+          '@type': 'City',
+          name: 'Lagos',
+          containedInPlace: { '@type': 'Country', name: 'Nigeria' },
+        },
         audience: [
-          { '@type': 'Audience', audienceType: 'Homeowners in Nigeria' },
+          { '@type': 'Audience', audienceType: 'Homeowners in Lagos, Nigeria' },
           { '@type': 'Audience', audienceType: 'Nigerians in diaspora' },
         ],
       },

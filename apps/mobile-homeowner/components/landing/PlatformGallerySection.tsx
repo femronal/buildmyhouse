@@ -183,7 +183,7 @@ export default function PlatformGallerySection({ onLayout }: PlatformGallerySect
             <Link key={`seo-${item.href}`} href={item.href as any} asChild>
               <Pressable accessibilityRole="link">
                 <Text className="text-xs text-neutral-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  {item.title} in Nigeria
+                  {item.title} in Lagos, Nigeria
                 </Text>
               </Pressable>
             </Link>

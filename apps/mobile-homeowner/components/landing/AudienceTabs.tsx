@@ -29,9 +29,7 @@ export default function AudienceTabs({ selectedKey, onSelect }: AudienceTabsProp
               onPress={() => onSelect(tab.key)}
               className="px-4 py-2.5 rounded-xl mr-2 mb-2"
               style={{
-                backgroundColor: isActive ? '#FFFFFF' : 'transparent',
-                borderWidth: isActive ? 1 : 0,
-                borderColor: isActive ? LANDING_BORDER : 'transparent',
+                backgroundColor: isActive ? LANDING_ACCENT : 'transparent',
               }}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
@@ -40,7 +38,7 @@ export default function AudienceTabs({ selectedKey, onSelect }: AudienceTabsProp
                 className="text-sm"
                 style={{
                   fontFamily: isActive ? 'Poppins_700Bold' : 'Poppins_600SemiBold',
-                  color: isActive ? LANDING_INK : LANDING_MUTED,
+                  color: isActive ? '#FFFFFF' : LANDING_MUTED,
                 }}
               >
                 {tab.label}
