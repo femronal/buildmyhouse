@@ -64,6 +64,21 @@ const SEO_PAGES = {
     description:
       'Find verified window and aluminum repair support in Lagos, Nigeria.',
   },
+  '/services/pumping-machine-repair-nigeria': {
+    title: 'Pumping Machine Repair in Lagos, Nigeria | BuildMyHouse',
+    description:
+      'Find verified pumping machine repair support in Lagos, Nigeria with clearer scope and progress updates.',
+  },
+  '/services/fan-repair-nigeria': {
+    title: 'Fan Repair in Lagos, Nigeria | BuildMyHouse',
+    description:
+      'Get verified fan repair support in Lagos, Nigeria for ceiling, standing, and wall fans.',
+  },
+  '/services/rechargeable-fan-repair-nigeria': {
+    title: 'Rechargeable Fan Repair in Lagos, Nigeria | BuildMyHouse',
+    description:
+      'Fix rechargeable and inverter fans in Lagos, Nigeria with verified artisans and documented work.',
+  },
   '/services/bathroom-repair-nigeria': {
     title: 'Bathroom Repair in Lagos, Nigeria | BuildMyHouse',
     description:

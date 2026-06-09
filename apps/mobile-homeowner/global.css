@@ -429,6 +429,19 @@ body * {
   }
 }
 
+.bmh-testimonial-stat-value {
+  white-space: nowrap;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 767px) {
+  .bmh-testimonial-stat-value {
+    font-size: 1.125rem !important;
+    line-height: 1.25rem !important;
+  }
+}
+
 @media (prefers-reduced-motion: no-preference) {
   .bmh-testimonial-scroll-inner {
     animation: bmhTestimonialScroll 36s linear infinite;

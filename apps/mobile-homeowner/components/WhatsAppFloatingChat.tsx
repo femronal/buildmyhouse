@@ -13,7 +13,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFloatingTabBarMetrics } from '@/lib/responsive-layout';
 
-const WHATSAPP_URL = 'https://wa.me/2348105475652';
+const WHATSAPP_URL = 'https://wa.me/2347030282417';
 
 export default function WhatsAppFloatingChat() {
   const pathname = usePathname();

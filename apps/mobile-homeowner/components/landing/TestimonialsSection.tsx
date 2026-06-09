@@ -93,12 +93,21 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
                 {LANDING_TESTIMONIAL_STATS.map((stat) => (
                   <View
                     key={stat.label}
-                    className="flex-1 min-w-[96px] rounded-2xl border border-white/10 bg-white/[0.04] p-4 md:p-5"
+                    className="flex-1 basis-0 min-w-[88px] rounded-2xl border border-white/10 bg-white/[0.04] p-3 md:p-5"
                   >
-                    <Text className="text-2xl md:text-3xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    <Text
+                      className="bmh-testimonial-stat-value text-lg md:text-3xl text-white"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit={Platform.OS !== 'web'}
+                      minimumFontScale={0.85}
+                    >
                       {stat.value}
                     </Text>
-                    <Text className="text-xs text-slate-400 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    <Text
+                      className="text-[11px] md:text-xs text-slate-400 mt-1 leading-snug"
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                    >
                       {stat.label}
                     </Text>
                   </View>
