@@ -119,7 +119,7 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               <View className="flex-row flex-wrap items-center gap-3 mt-5">
                 <Link href={'/location?mode=explore' as any} asChild>
                   <Pressable
-                    className="h-12 px-6 rounded-lg bg-white justify-center"
+                    className="h-12 px-6 rounded-lg bg-white justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="link"
                   >
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -129,7 +129,7 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
                 </Link>
                 <Pressable
                   onPress={onHowItWorksPress}
-                  className="h-12 px-6 rounded-lg border border-white/15 bg-white/5 flex-row items-center gap-2"
+                  className="h-12 px-6 rounded-lg border border-white/15 bg-white/5 flex-row items-center gap-2 bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="button"
                 >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>

@@ -1,6 +1,6 @@
 import { Redirect } from 'expo-router';
 
-/** Legacy auth entry — canonical landing page is `/`. */
+/** Auth entry — send users straight to the sign up / log in form. */
 export default function LoginRoute() {
-  return <Redirect href="/" />;
+  return <Redirect href={'/email-login' as any} />;
 }

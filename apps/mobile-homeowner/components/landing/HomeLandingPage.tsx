@@ -1,5 +1,5 @@
 import { createElement, useRef, useState, type ReactNode } from 'react';
-import { Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import {
   Airplane,
@@ -20,7 +20,7 @@ import Logo from '@/components/Logo';
 import PhoneDashboardMockup from '@/components/landing/PhoneDashboardMockup';
 import LandingMobileNav from '@/components/landing/LandingMobileNav';
 import SEOJsonLd from '@/components/landing/SEOJsonLd';
-import SocialLinksStrip from '@/components/landing/SocialLinksStrip';
+import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/SocialBrandIcon';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
@@ -34,6 +34,7 @@ import {
   POPULAR_CHIPS,
   POPULAR_SERVICE_LINKS,
   BUILDMYHOUSE_CONTACT,
+  BUILDMYHOUSE_SOCIALS,
   type AudienceTab,
 } from '@/lib/home-landing-content';
 
@@ -193,6 +194,31 @@ function AudienceTabBar({
   );
 }
 
+function FooterHeadline() {
+  if (Platform.OS === 'web') {
+    return createElement(
+      'h2',
+      { className: 'bmh-footer-headline', style: { fontFamily: 'Poppins_600SemiBold' } },
+      createElement('span', { key: 'l1', style: { display: 'block' } }, 'Ready to fix, upgrade,'),
+      createElement(
+        'span',
+        { key: 'l2', style: { display: 'block', color: 'rgba(255,255,255,0.6)' } },
+        'renovate, or build?',
+      ),
+    );
+  }
+  return (
+    <Text
+      accessibilityRole="header"
+      className="text-white"
+      style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 40, lineHeight: 42, letterSpacing: -1 }}
+    >
+      Ready to fix, upgrade,{'\n'}
+      <Text style={{ color: 'rgba(255,255,255,0.6)' }}>renovate, or build?</Text>
+    </Text>
+  );
+}
+
 function SectionHeading({
   children,
   className = '',
@@ -275,7 +301,7 @@ export default function HomeLandingPage() {
                 </Pressable>
               </Link>
               <Link href={'/location?mode=explore' as any} asChild>
-                <Pressable className="bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
+                <Pressable className="bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Get Started
                   </Text>
@@ -327,7 +353,7 @@ export default function HomeLandingPage() {
                     style={{ fontFamily: 'Poppins_500Medium', outlineStyle: 'none' } as any}
                   />
                   <Link href={'/location?mode=explore' as any} asChild>
-                    <Pressable className="bg-black p-2 rounded-lg m-1" accessibilityRole="link">
+                    <Pressable className="bg-black p-2 rounded-lg m-1 bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
                       <ArrowRight size={18} color="#fff" weight="bold" />
                     </Pressable>
                   </Link>
@@ -348,7 +374,7 @@ export default function HomeLandingPage() {
 
               <View className="flex-col sm:flex-row gap-4 pt-4">
                 <Link href={heroContent.primaryCta.href as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-black items-center justify-center" accessibilityRole="link">
+                  <Pressable className="h-12 px-6 rounded-lg bg-black items-center justify-center bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
                     <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                       {heroContent.primaryCta.label}
                     </Text>
@@ -357,7 +383,7 @@ export default function HomeLandingPage() {
                 {heroContent.secondaryCta.href.startsWith('#') ? (
                   <Pressable
                     onPress={() => navPress(heroContent.secondaryCta.href)}
-                    className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center"
+                    className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="button"
                   >
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -366,7 +392,7 @@ export default function HomeLandingPage() {
                   </Pressable>
                 ) : (
                   <Link href={heroContent.secondaryCta.href as any} asChild>
-                    <Pressable className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center" accessibilityRole="link">
+                    <Pressable className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
                       <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                         {heroContent.secondaryCta.label}
                       </Text>
@@ -502,7 +528,7 @@ export default function HomeLandingPage() {
                   Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Lagos.
                 </Text>
                 <Link href={'/location?mode=explore' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center" accessibilityRole="link">
+                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                       Find a Verified Worker
                     </Text>
@@ -523,7 +549,7 @@ export default function HomeLandingPage() {
                   If you live in the UK, US, Canada, UAE, or Europe, distance should not mean losing control. Track stages, evidence, and communication in one place.
                 </Text>
                 <Link href={'/diaspora/build-in-nigeria-from-abroad' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center" accessibilityRole="link">
+                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                       Start a Tracked Project
                     </Text>
@@ -550,7 +576,7 @@ export default function HomeLandingPage() {
                 Join BuildMyHouse, get verified, receive better project requests, and build trust with homeowners who value documented work.
               </Text>
               <Link href={'/for-contractors' as any} asChild>
-                <Pressable className="h-12 px-8 rounded-lg bg-black justify-center" accessibilityRole="link">
+                <Pressable className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Get Hired on BuildMyHouse
                   </Text>
@@ -614,73 +640,140 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* Final CTA */}
-        <View className="py-24 bg-white border-t border-slate-100 items-center px-6 md:px-12">
-          <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-6 text-center">
-            Ready to fix, upgrade, renovate, or build in Lagos, Nigeria?
-          </SectionHeading>
-          <Text className="text-base text-slate-500 mb-8 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
-            Start with BuildMyHouse.
-          </Text>
-          <Link href={'/location?mode=explore' as any} asChild>
-            <Pressable className="h-12 px-8 rounded-lg bg-black justify-center" accessibilityRole="link">
-              <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Start Your Project
+        {/* Footer — dark CTA card */}
+        <View className="py-10 md:py-16 bg-white border-t border-slate-100 px-4 sm:px-6">
+          <View className="max-w-7xl w-full self-center">
+            <View
+              className="bmh-footer-card relative overflow-hidden rounded-[40px] border border-white/10 p-6 sm:p-10 md:p-14"
+              style={{ backgroundColor: '#0a0a0a' }}
+            >
+              <FooterHeadline />
+
+              <Text className="text-sm md:text-base text-white/60 mt-5 max-w-xl" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Verified workers. Staged payments. Evidence before you pay. Start with BuildMyHouse.
               </Text>
-            </Pressable>
-          </Link>
-        </View>
 
-        <SocialLinksStrip />
+              <View className="flex-row flex-wrap gap-8 mt-10">
+                <View className="w-full md:w-[30%]">
+                  <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Talk to Us
+                  </Text>
+                  <Link href={`tel:${BUILDMYHOUSE_CONTACT.phoneTel}` as any} asChild>
+                    <Pressable className="flex-row items-center gap-3 mt-2" accessibilityRole="link">
+                      <Phone size={20} color="#ffffff" weight="regular" />
+                      <Text className="text-xl md:text-2xl text-white tracking-tight" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {BUILDMYHOUSE_CONTACT.phoneDisplay}
+                      </Text>
+                    </Pressable>
+                  </Link>
+                </View>
 
-        {/* Footer */}
-        <View className="bg-white border-t border-slate-100 py-12 px-6 md:px-12">
-          <View className="max-w-7xl w-full self-center gap-8">
-            <View className="flex-row flex-wrap justify-between items-center gap-6">
-              <Logo size="sm" />
-              <View className="flex-row gap-6">
-                <Link href={'/terms-conditions' as any} asChild>
-                  <Pressable accessibilityRole="link">
-                    <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Terms
-                    </Text>
-                  </Pressable>
-                </Link>
-                <Link href={'/privacy-security' as any} asChild>
-                  <Pressable accessibilityRole="link">
-                    <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Privacy
-                    </Text>
-                  </Pressable>
-                </Link>
+                <View className="w-full md:w-[30%]">
+                  <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Get Started
+                  </Text>
+                  <Link href={'/location?mode=explore' as any} asChild>
+                    <Pressable
+                      className="self-start flex-row items-center gap-2 bg-white rounded-full px-5 py-3 mt-2 bmh-glass-btn bmh-glass-btn-light"
+                      accessibilityRole="link"
+                    >
+                      <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        Start Your Project
+                      </Text>
+                      <ArrowRight size={16} color="#000000" weight="bold" />
+                    </Pressable>
+                  </Link>
+                </View>
+
+                <View className="w-full md:w-[30%]">
+                  <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Follow Along
+                  </Text>
+                  <View className="flex-row flex-wrap items-center gap-3 mt-2">
+                    {BUILDMYHOUSE_SOCIALS.map((social) => (
+                      <Pressable
+                        key={social.id}
+                        onPress={() => Linking.openURL(social.href)}
+                        accessibilityRole="link"
+                        accessibilityLabel={social.label}
+                        className="w-12 h-12 rounded-full bg-white items-center justify-center bmh-glass-btn bmh-glass-btn-light"
+                      >
+                        <SocialBrandIcon brand={social.id as SocialBrandId} size={20} color="#000000" />
+                      </Pressable>
+                    ))}
+                  </View>
+                </View>
               </View>
-            </View>
 
-            <View className="gap-3">
+              <View className="h-px bg-white/10 mt-10" />
+
+              <View className="flex-row flex-wrap gap-8 mt-8">
+                <View className="w-full md:w-[48%]">
+                  <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Explore
+                  </Text>
+                  <View className="flex-row flex-wrap mt-3">
+                    {NAV_ITEMS.map((item) => (
+                      <View key={item.label} className="w-1/2 mb-2 pr-2">
+                        {item.href.startsWith('#') ? (
+                          <Pressable onPress={() => navPress(item.href)} accessibilityRole="button">
+                            <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                              {item.label}
+                            </Text>
+                          </Pressable>
+                        ) : (
+                          <Link href={item.href as any} asChild>
+                            <Pressable accessibilityRole="link">
+                              <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                                {item.label}
+                              </Text>
+                            </Pressable>
+                          </Link>
+                        )}
+                      </View>
+                    ))}
+                  </View>
+                </View>
+
+                <View className="w-full md:w-[48%]">
+                  <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Fine Print
+                  </Text>
+                  <View className="mt-3 gap-2">
+                    <Link href={'/terms-conditions' as any} asChild>
+                      <Pressable accessibilityRole="link">
+                        <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                          Terms & Conditions
+                        </Text>
+                      </Pressable>
+                    </Link>
+                    <Link href={'/privacy-security' as any} asChild>
+                      <Pressable accessibilityRole="link">
+                        <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                          Privacy Notice
+                        </Text>
+                      </Pressable>
+                    </Link>
+                  </View>
+                </View>
+              </View>
+
               <Link
                 href={`https://maps.google.com/?q=${encodeURIComponent(BUILDMYHOUSE_CONTACT.mapsQuery)}` as any}
                 asChild
               >
-                <Pressable className="flex-row items-start gap-2.5 max-w-lg" accessibilityRole="link">
-                  <MapPin size={16} color="#64748b" weight="regular" style={{ marginTop: 2 }} />
-                  <Text className="text-sm text-slate-500 flex-1 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                <Pressable className="flex-row items-start gap-2 mt-8 self-start max-w-lg" accessibilityRole="link">
+                  <MapPin size={16} color="rgba(255,255,255,0.5)" weight="regular" style={{ marginTop: 2 }} />
+                  <Text className="text-xs text-white/50 flex-1 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {BUILDMYHOUSE_CONTACT.address}
                   </Text>
                 </Pressable>
               </Link>
-              <Link href={`tel:${BUILDMYHOUSE_CONTACT.phoneTel}` as any} asChild>
-                <Pressable className="flex-row items-center gap-2.5 self-start" accessibilityRole="link">
-                  <Phone size={16} color="#64748b" weight="regular" />
-                  <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {BUILDMYHOUSE_CONTACT.phoneDisplay}
-                  </Text>
-                </Pressable>
-              </Link>
-            </View>
 
-            <Text className="text-xs text-slate-400" style={{ fontFamily: 'Poppins_500Medium' }}>
-              © {new Date().getFullYear()} BuildMyHouse. All rights reserved.
-            </Text>
+              <Text className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'Poppins_500Medium' }}>
+                © {new Date().getFullYear()} BuildMyHouse — Built with care in Lagos, Nigeria
+              </Text>
+            </View>
           </View>
         </View>
       </ScrollView>
