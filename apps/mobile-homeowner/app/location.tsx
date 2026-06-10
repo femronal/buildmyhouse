@@ -1,373 +1,420 @@
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, Keyboard, useWindowDimensions } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { MapPin, ArrowRight, ArrowLeft, Navigation, Search } from "lucide-react-native";
-import { useState, useRef, useMemo } from "react";
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { ArrowLeft, ArrowRight, Crosshair, MapPin } from 'phosphor-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { geocodeAddress, type AddressDetails } from '@/services/addressService';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
-import { reverseGeocode, AddressDetails } from '@/services/addressService';
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
-// Native version (iOS/Android) with full Google Maps
+const LAGOS_COORDS = { lat: 6.5244, lon: 3.3792 };
+
+type SelectedLocation = {
+  /** e.g. "Surulere, Lagos" */
+  label: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+  formattedAddress: string;
+};
+
+type IpLocation = { city: string; region: string; countryCode: string; lat: number; lon: number };
+
+async function lookupIpLocation(): Promise<IpLocation | null> {
+  try {
+    const res = await fetch('https://ipapi.co/json/', { headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const d = await res.json();
+      if (d && d.latitude != null) {
+        return {
+          city: d.city || '',
+          region: d.region || '',
+          countryCode: d.country_code || d.country || '',
+          lat: Number(d.latitude),
+          lon: Number(d.longitude),
+        };
+      }
+    }
+  } catch {
+    // fall through to backup provider
+  }
+  try {
+    const res = await fetch('https://ipwho.is/', { headers: { Accept: 'application/json' } });
+    if (res.ok) {
+      const d = await res.json();
+      if (d && d.success !== false && d.latitude != null) {
+        return {
+          city: d.city || '',
+          region: d.region || '',
+          countryCode: d.country_code || '',
+          lat: Number(d.latitude),
+          lon: Number(d.longitude),
+        };
+      }
+    }
+  } catch {
+    // both providers failed
+  }
+  return null;
+}
+
+/** Pulsing white dot next to the location headline. */
+function PulseDot() {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 1000, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  return (
+    <Animated.View
+      className="w-4 h-4 rounded-full bg-white/80"
+      style={{
+        opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 0.55] }),
+        transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.18] }) }],
+      }}
+    />
+  );
+}
+
 export default function LocationScreen() {
   const router = useRouter();
   useLocalSearchParams();
-  const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
-  const mapRef = useRef<MapView>(null);
-  const autocompleteRef = useRef<any>(null);
-  
-  const [region] = useState(GOOGLE_MAPS_CONFIG.defaultRegion);
-  const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
-  const [markerCoordinate, setMarkerCoordinate] = useState<{latitude: number, longitude: number} | null>(null);
-  const [isGeocoding, setIsGeocoding] = useState(false);
-  const [locationLookupMessage, setLocationLookupMessage] = useState<string | null>(null);
+
+  const [area, setArea] = useState('');
+  const [selected, setSelected] = useState<SelectedLocation | null>(null);
+  const [busy, setBusy] = useState<'ip' | 'search' | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const mapsApiKey = GOOGLE_MAPS_CONFIG.apiKey?.trim() ?? '';
+  const hasMapsApiKey =
+    mapsApiKey.length > 0 &&
+    mapsApiKey !== 'YOUR_API_KEY_HERE' &&
+    mapsApiKey !== 'your_google_maps_api_key_here' &&
+    !mapsApiKey.toLowerCase().includes('demo');
+
+  const headline = selected ? selected.label : 'Lagos, Nigeria';
+  const coords = selected
+    ? { lat: selected.latitude, lon: selected.longitude }
+    : { lat: LAGOS_COORDS.lat, lon: LAGOS_COORDS.lon };
+
+  const coordLabel = useMemo(() => {
+    const latDir = coords.lat >= 0 ? 'N' : 'S';
+    const lonDir = coords.lon >= 0 ? 'E' : 'W';
+    return {
+      lat: `${Math.abs(coords.lat).toFixed(4)}° ${latDir}`,
+      lon: `${Math.abs(coords.lon).toFixed(4)}° ${lonDir}`,
+    };
+  }, [coords.lat, coords.lon]);
+
+  // Slide-in animation whenever the headline changes
+  const slideIn = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    slideIn.setValue(0);
+    Animated.timing(slideIn, { toValue: 1, duration: 450, easing: Easing.out(Easing.ease), useNativeDriver: true }).start();
+  }, [headline, slideIn]);
+
+  const geocodeWithOpenStreetMap = async (query: string): Promise<AddressDetails | null> => {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`,
+      { headers: { Accept: 'application/json' } },
+    );
+    if (!response.ok) return null;
+    const results = await response.json();
+    const first = Array.isArray(results) ? results[0] : null;
+    if (!first) return null;
+    const addr = first.address || {};
+    return {
+      formattedAddress: first.display_name || query,
+      street: '',
+      city: addr.city || addr.town || addr.suburb || addr.county || '',
+      state: addr.state || '',
+      zipCode: addr.postcode || '',
+      country: addr.country || '',
+      latitude: Number(first.lat),
+      longitude: Number(first.lon),
+    };
+  };
+
+  const isInLagos = (details: AddressDetails) => {
+    const haystack = `${details.state} ${details.formattedAddress}`.toLowerCase();
+    const country = details.country.toLowerCase();
+    return haystack.includes('lagos') && (country.includes('nigeria') || country === 'ng' || country === '');
+  };
+
+  const toTitleCase = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const handleUseCurrentLocation = async () => {
+    setBusy('ip');
+    setErrorMessage(null);
+    try {
+      const ip = await lookupIpLocation();
+      if (!ip) {
+        setErrorMessage('We could not detect your location. Please type your area below instead.');
+        return;
+      }
+      const inLagos = ip.countryCode.toUpperCase().startsWith('NG') && ip.region.toLowerCase().includes('lagos');
+      if (!inLagos) {
+        setSelected(null);
+        setErrorMessage(
+          `You appear to be outside Lagos (${[ip.city, ip.region].filter(Boolean).join(', ') || 'unknown location'}). BuildMyHouse only operates in Lagos, Nigeria for now — type your Lagos project area below instead.`,
+        );
+        return;
+      }
+      const areaName = toTitleCase(ip.city || 'Lagos');
+      setSelected({
+        label: areaName.toLowerCase() === 'lagos' ? 'Lagos, Nigeria' : `${areaName}, Lagos`,
+        area: areaName,
+        latitude: ip.lat,
+        longitude: ip.lon,
+        formattedAddress: `${areaName}, Lagos, Nigeria`,
+      });
+      setArea(areaName);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const handleConfirmArea = async () => {
+    const cleaned = area.trim();
+    if (!cleaned) return;
+    setBusy('search');
+    setErrorMessage(null);
+    try {
+      const query = `${cleaned}, Lagos, Nigeria`;
+      let details: AddressDetails | null = null;
+      try {
+        details = hasMapsApiKey ? await geocodeAddress(query) : await geocodeWithOpenStreetMap(query);
+      } catch {
+        details = await geocodeWithOpenStreetMap(query);
+      }
+      if (!details || !isInLagos(details)) {
+        setSelected(null);
+        setErrorMessage('We could not find that area in Lagos. Try a major area like Surulere, Lekki, Agege, or Yaba.');
+        return;
+      }
+      const areaName = toTitleCase(cleaned);
+      setSelected({
+        label: `${areaName}, Lagos`,
+        area: areaName,
+        latitude: details.latitude,
+        longitude: details.longitude,
+        formattedAddress: `${areaName}, Lagos, Nigeria`,
+      });
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const handleContinue = () => {
-    if (!selectedAddress) {
-      Alert.alert('Address Required', 'Please select a valid address to continue');
-      return;
-    }
-
-    // Store address in route params for next screen
-    const addressData = {
-      address: selectedAddress.formattedAddress,
-      street: selectedAddress.street,
-      city: selectedAddress.city,
-      state: selectedAddress.state,
-      zipCode: selectedAddress.zipCode,
-      country: selectedAddress.country,
-      latitude: selectedAddress.latitude,
-      longitude: selectedAddress.longitude,
-    };
-
-    // Always go to choice page first, regardless of mode
+    if (!selected) return;
     router.push({
       pathname: '/choose-project-type',
-      params: addressData,
+      params: {
+        address: selected.formattedAddress,
+        street: '',
+        city: selected.area,
+        state: 'Lagos',
+        zipCode: '',
+        country: 'Nigeria',
+        latitude: selected.latitude,
+        longitude: selected.longitude,
+      },
     });
   };
 
-  const handleMapPress = async (event: any) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    setMarkerCoordinate({ latitude, longitude });
-    setIsGeocoding(true);
-    setLocationLookupMessage(null);
-
-    // Reverse geocode the coordinates
-    const addressDetails = await reverseGeocode(latitude, longitude);
-    
-    if (addressDetails) {
-      setSelectedAddress(addressDetails);
-      
-      // Update the autocomplete input
-      if (autocompleteRef.current) {
-        autocompleteRef.current.setAddressText(addressDetails.formattedAddress);
-      }
-      
-      // Animate map to the selected location
-      mapRef.current?.animateToRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 500);
-    } else {
-      setSelectedAddress(null);
-      Alert.alert('Error', 'Could not get address details for this location');
-    }
-
-    setIsGeocoding(false);
-  };
-
-  const handlePlaceSelect = async (data: any, details: any) => {
-    if (!details?.geometry?.location) return;
-
-    const { lat, lng } = details.geometry.location;
-    const coordinate = { latitude: lat, longitude: lng };
-    
-    setMarkerCoordinate(coordinate);
-    setIsGeocoding(true);
-    setLocationLookupMessage(null);
-
-    // Get full address details
-    const addressDetails = await reverseGeocode(lat, lng);
-    
-    if (addressDetails) {
-      setSelectedAddress(addressDetails);
-      
-      // Animate map to the selected location
-      mapRef.current?.animateToRegion({
-        latitude: lat,
-        longitude: lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 500);
-    }
-
-    setIsGeocoding(false);
-    Keyboard.dismiss();
-  };
-
   return (
-    <View className="flex-1 bg-white">
-      <View
-        className="pb-4 bg-white z-10"
-        style={{ paddingHorizontal: horizontalPadding, paddingTop: Math.max(16, insets.top + 8) }}
+    <View className="flex-1 bg-black">
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{
+          paddingHorizontal: 20,
+          paddingTop: Math.max(20, insets.top + 10),
+          paddingBottom: Math.max(28, insets.bottom + 16),
+        }}
+        keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity 
-          onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-          className="mb-4"
+        <TouchableOpacity
+          onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
+          className="w-10 h-10 rounded-full border border-white/15 items-center justify-center mb-5"
+          accessibilityLabel="Go back"
         >
-          <ArrowLeft size={28} color="#000000" strokeWidth={2} />
+          <ArrowLeft size={20} color="#ffffff" weight="regular" />
         </TouchableOpacity>
 
-        <View className="mb-4">
-          <Text 
-            className="text-3xl text-black mb-2"
-            style={{ fontFamily: 'Poppins_800ExtraBold' }}
-          >
-            Where is this project located?
-          </Text>
-          <Text 
-            className="text-sm text-gray-500 leading-5"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Set the location to begin.
-          </Text>
-          <Text
-            className="text-sm text-gray-700 leading-6 mt-3"
-            style={{ fontFamily: 'Poppins_500Medium' }}
-          >
-            From repairs and upgrades to renovations and full builds, your address anchors everything—matching, planning, and oversight.
-          </Text>
-        </View>
-
-        {/* Google Places Autocomplete */}
-        <View className="mb-2 z-20">
-          <GooglePlacesAutocomplete
-            ref={autocompleteRef}
-            placeholder="Enter project address"
-            fetchDetails={true}
-            onPress={handlePlaceSelect}
-            onFail={() => {
-              setSelectedAddress(null);
-              setLocationLookupMessage(
-                'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
-              );
-            }}
-            onNotFound={() => {
-              setSelectedAddress(null);
-              setLocationLookupMessage(
-                'We could not find that location. Please enter a valid, more specific address (for example: street, area, and city).',
-              );
-            }}
-            query={{
-              key: GOOGLE_MAPS_CONFIG.apiKey,
-              language: 'en',
-              components: 'country:ng', // Restrict to Nigeria, change as needed
-            }}
-            styles={{
-              container: {
-                flex: 0,
-              },
-              textInputContainer: {
-                backgroundColor: '#F9FAFB',
-                borderRadius: 16,
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-                paddingHorizontal: 4,
-              },
-              textInput: {
-                height: 48,
-                color: '#000',
-                fontSize: 16,
-                fontFamily: 'Poppins_400Regular',
-                backgroundColor: 'transparent',
-              },
-              predefinedPlacesDescription: {
-                color: '#1faadb',
-              },
-              listView: {
-                backgroundColor: 'white',
-                borderRadius: 12,
-                marginTop: 4,
-                elevation: 3,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-              },
-              row: {
-                padding: 12,
-                height: 'auto',
-                minHeight: 48,
-              },
-              description: {
-                fontFamily: 'Poppins_400Regular',
-                fontSize: 14,
-              },
-            }}
-            enablePoweredByContainer={false}
-            renderLeftButton={() => (
-              <View className="absolute left-4 top-3 z-10">
-                <Search size={20} color="#9CA3AF" strokeWidth={2} />
-              </View>
-            )}
-            textInputProps={{
-              placeholderTextColor: '#A3A3A3',
-              style: { paddingLeft: 36 },
-              onChangeText: () => {
-                setLocationLookupMessage(null);
-                setSelectedAddress(null);
-              },
-            }}
-          />
-        </View>
-
-        <View className="mb-2 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2">
-          <Text className="text-[11px] text-gray-600 leading-4" style={{ fontFamily: 'Poppins_500Medium' }}>
-            Your address is encrypted and only visible to your assigned GC and BuildMyHouse admin for dispute resolution.
-          </Text>
-        </View>
-
-        {locationLookupMessage ? (
-          <View className="mb-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5">
-            <Text className="text-red-700 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {locationLookupMessage}
+        {/* Location card */}
+        <View className="border border-white/10 rounded-3xl bg-black overflow-hidden p-6">
+          <View className="flex-row items-center justify-between mb-8">
+            <Text
+              className="text-white/45 text-xs uppercase"
+              style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 4 }}
+            >
+              Project Location
             </Text>
+            <View className="flex-row items-center gap-3">
+              <View className="w-8 h-1 rounded-full bg-white/95" />
+              <View className="w-2 h-2 rounded-full bg-white/25" />
+            </View>
           </View>
-        ) : null}
 
-        <View className="mt-4 mb-2 bg-gray-50 rounded-2xl p-4 border border-gray-100">
+          {/* Animated headline */}
+          <Animated.View
+            style={{
+              opacity: slideIn,
+              transform: [{ translateY: slideIn.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }],
+            }}
+          >
+            <View className="flex-row items-center gap-3.5">
+              <PulseDot />
+              <Text
+                className="text-white text-[26px] leading-tight tracking-tight flex-1"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+                numberOfLines={1}
+              >
+                {headline}
+              </Text>
+            </View>
+
+            <View className="mt-5 h-px w-full bg-white/15" />
+
+            <View className="mt-4 flex-row flex-wrap gap-x-8 gap-y-1">
+              {[coordLabel.lat, coordLabel.lon, 'UTC+1'].map((item) => (
+                <Text
+                  key={item}
+                  className="text-white/40 text-xs uppercase"
+                  style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}
+                >
+                  {item}
+                </Text>
+              ))}
+            </View>
+          </Animated.View>
+
+          {/* form */}
+          <View className="mt-6 gap-3">
+            <Pressable
+              onPress={handleUseCurrentLocation}
+              disabled={busy !== null}
+              className="h-12 rounded-xl bg-white flex-row items-center justify-center gap-2"
+              accessibilityRole="button"
+            >
+              {busy === 'ip' ? (
+                <ActivityIndicator size="small" color="#000000" />
+              ) : (
+                <Crosshair size={18} color="#000000" weight="bold" />
+              )}
+              <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Use my current location
+              </Text>
+            </Pressable>
+
+            <View className="flex-row items-center gap-3">
+              <View className="flex-1 h-px bg-white/10" />
+              <Text
+                className="text-white/35 text-[11px] uppercase"
+                style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}
+              >
+                or type your area
+              </Text>
+              <View className="flex-1 h-px bg-white/10" />
+            </View>
+
+            <View className="flex-row items-center gap-2">
+              <View className="flex-1 flex-row items-center h-12 rounded-xl border border-white/15 bg-white/5 px-3.5">
+                <MapPin size={18} color="rgba(255,255,255,0.45)" weight="regular" />
+                <TextInput
+                  value={area}
+                  onChangeText={(value) => {
+                    setArea(value);
+                    setErrorMessage(null);
+                  }}
+                  onSubmitEditing={handleConfirmArea}
+                  placeholder="Area — e.g. Surulere"
+                  placeholderTextColor="rgba(255,255,255,0.35)"
+                  className="flex-1 ml-2.5 text-sm text-white"
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                />
+              </View>
+              <View className="h-12 px-4 rounded-xl border border-white/15 bg-white/5 items-center justify-center">
+                <Text className="text-sm text-white/65" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Lagos
+                </Text>
+              </View>
+            </View>
+
+            <Pressable
+              onPress={handleConfirmArea}
+              disabled={!area.trim() || busy !== null}
+              className={`h-12 rounded-xl border flex-row items-center justify-center gap-2 ${
+                area.trim() && busy === null ? 'border-white/25 bg-white/10' : 'border-white/10 bg-white/5'
+              }`}
+              accessibilityRole="button"
+            >
+              {busy === 'search' ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text
+                  className={`text-sm ${area.trim() ? 'text-white' : 'text-white/35'}`}
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  Confirm area
+                </Text>
+              )}
+            </Pressable>
+
+            {errorMessage ? (
+              <View className="rounded-xl border border-white/15 bg-white/5 px-3.5 py-2.5">
+                <Text className="text-white/80 text-xs leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  {errorMessage}
+                </Text>
+              </View>
+            ) : (
+              <Text className="text-white/35 text-[11px] leading-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Just your area and Lagos — no street address needed yet.
+              </Text>
+            )}
+          </View>
+        </View>
+
+        {/* Continue */}
+        <Pressable
+          onPress={handleContinue}
+          disabled={!selected}
+          className={`mt-5 h-14 rounded-xl flex-row items-center justify-center gap-2 ${
+            selected ? 'bg-white' : 'bg-white/10 border border-white/10'
+          }`}
+          accessibilityRole="button"
+        >
           <Text
-            className="text-black text-sm mb-1.5"
+            className={`text-base ${selected ? 'text-black' : 'text-white/35'}`}
             style={{ fontFamily: 'Poppins_600SemiBold' }}
           >
-            One platform. Every project type.
+            Continue
           </Text>
-          <Text
-            className="text-gray-600 text-xs leading-5"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Initiate with precision. Execute with confidence—wherever you are.
-          </Text>
-        </View>
-      </View>
-
-      {/* Map */}
-      <View className="flex-1 relative">
-        <MapView
-          ref={mapRef}
-          style={StyleSheet.absoluteFillObject}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={region}
-          onPress={handleMapPress}
-          showsUserLocation={true}
-          showsMyLocationButton={true}
-          showsCompass={true}
-          mapType="standard"
-        >
-          {markerCoordinate && (
-            <Marker
-              coordinate={markerCoordinate}
-              title={selectedAddress?.formattedAddress || 'Selected Location'}
-              description={selectedAddress ? `${selectedAddress.city}, ${selectedAddress.state}` : undefined}
-            >
-              <View className="items-center">
-                <View className="w-10 h-10 bg-black rounded-full items-center justify-center shadow-lg">
-                  <MapPin size={24} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
-                </View>
-                <View className="w-1 h-4 bg-black" />
-              </View>
-            </Marker>
-          )}
-        </MapView>
-
-        {/* Geocoding Indicator */}
-        {isGeocoding && (
-          <View className="absolute top-4 left-0 right-0 items-center">
-            <View className="bg-white rounded-full px-4 py-2 flex-row items-center shadow-lg">
-              <ActivityIndicator size="small" color="#000" />
-              <Text className="ml-2 text-black text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Getting address...
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Selected Location Info */}
-        {selectedAddress && !isGeocoding && (
-          <View className="absolute bottom-4 left-4 right-4 bg-white rounded-2xl p-4 shadow-lg">
-            <View className="flex-row items-start">
-              <MapPin size={20} color="#000" strokeWidth={2} className="mr-2 mt-1" />
-              <View className="flex-1">
-                <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Selected Location
-                </Text>
-                <Text className="text-gray-600 text-xs leading-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {selectedAddress.formattedAddress}
-                </Text>
-                {selectedAddress.city && selectedAddress.state && (
-                  <Text className="text-gray-500 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {selectedAddress.city}, {selectedAddress.state}
-                  </Text>
-                )}
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Instructions Overlay (when no location selected) */}
-        {!markerCoordinate && !isGeocoding && (
-          <View className="absolute inset-0 items-center justify-center pointer-events-none">
-            <View className="bg-white/95 rounded-2xl px-6 py-4 items-center shadow-lg">
-              <Navigation size={28} color="#000000" strokeWidth={2} />
-              <Text 
-                className="text-black mt-3 text-base text-center"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Tap on the map
-              </Text>
-              <Text 
-                className="text-gray-500 text-sm text-center mt-1"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-              >
-                or search to select location
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
-
-      {/* Continue Button */}
-      <View className="py-4 bg-white border-t border-gray-100" style={{ paddingHorizontal: horizontalPadding }}>
-        <TouchableOpacity
-          onPress={handleContinue}
-          disabled={!selectedAddress || isGeocoding}
-          className={`rounded-full py-4 px-8 ${
-            selectedAddress && !isGeocoding ? 'bg-black' : 'bg-gray-200'
-          }`}
-        >
-          <View className="flex-row items-center justify-center">
-            <Text 
-              className={`text-base mr-2 ${
-                selectedAddress && !isGeocoding ? 'text-white' : 'text-gray-400'
-              }`}
-              style={{ fontFamily: 'Poppins_700Bold' }}
-            >
-              Continue
-            </Text>
-            <ArrowRight 
-              size={22} 
-              color={selectedAddress && !isGeocoding ? "#FFFFFF" : "#A3A3A3"} 
-              strokeWidth={2} 
-            />
-          </View>
-        </TouchableOpacity>
-      </View>
+          <ArrowRight size={20} color={selected ? '#000000' : 'rgba(255,255,255,0.35)'} weight="bold" />
+        </Pressable>
+      </ScrollView>
     </View>
   );
 }
