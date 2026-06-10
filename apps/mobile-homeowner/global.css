@@ -429,6 +429,36 @@ body * {
   }
 }
 
+.bmh-product-card {
+  transition:
+    transform 0.5s ease,
+    box-shadow 0.5s ease;
+}
+
+.bmh-product-card-img {
+  transition: transform 0.7s ease;
+}
+
+.bmh-product-card-arrow {
+  opacity: 0.45;
+  transition: opacity 0.3s ease;
+}
+
+@media (hover: hover) {
+  .bmh-product-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+  }
+
+  .bmh-product-card:hover .bmh-product-card-img {
+    transform: scale(1.05);
+  }
+
+  .bmh-product-card:hover .bmh-product-card-arrow {
+    opacity: 1;
+  }
+}
+
 @keyframes bmhGlobeSlideIn {
   from {
     opacity: 0;

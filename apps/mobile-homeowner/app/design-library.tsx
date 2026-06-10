@@ -1,72 +1,13 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Home, Bed, Bath, Maximize, Star, Filter, Search, ChevronDown } from "lucide-react-native";
+import { ArrowLeft, Home, Filter, Search, ChevronDown } from "lucide-react-native";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import DesignProductCard from '@/components/DesignProductCard';
 import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { getScreenHorizontalPadding, getTwoColumnCardWidth } from "@/lib/responsive-layout";
-import { cardShadowStyle } from "@/lib/card-styles";
-
-// Helper to get full image URL from backend
-const getImageUrl = (imageUrl: string) => {
-  if (imageUrl.startsWith('http')) {
-    return imageUrl;
-  }
-  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
-  const backendOrigin = apiUrl
-    ? apiUrl.replace(/\/api\/?$/, '')
-    : (__DEV__ ? 'http://localhost:3001' : 'https://api.buildmyhouse.app');
-  return `${backendOrigin}${imageUrl}`;
-};
-
-type UiProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
-
-const resolveUiProjectTag = (params: { projectTypeTag?: string | null; planType?: string | null }): UiProjectTag => {
-  const explicitTag = `${params.projectTypeTag || ''}`.toLowerCase();
-  if (explicitTag === 'repair') return 'repair';
-  if (explicitTag === 'upgrades') return 'upgrades';
-  if (explicitTag === 'renovation') return 'renovation';
-  if (explicitTag === 'full_builds') return 'full_builds';
-
-  const legacyPlanType = `${params.planType || ''}`.toLowerCase();
-  if (legacyPlanType === 'interior_design') return 'upgrades';
-  if (legacyPlanType === 'homebuilding') return 'full_builds';
-  return 'renovation';
-};
-
-const formatPlanTypeLabel = (projectTag: UiProjectTag) => {
-  if (projectTag === 'repair') return 'Repair';
-  if (projectTag === 'upgrades') return 'Upgrades';
-  if (projectTag === 'renovation') return 'Renovation';
-  return 'Full Builds';
-};
-
-const getPlanTypeTagClasses = (projectTag: UiProjectTag) => {
-  if (projectTag === 'repair') {
-    return {
-      container: 'bg-cyan-50 border-cyan-200',
-      text: 'text-cyan-700',
-    };
-  }
-  if (projectTag === 'upgrades') {
-    return {
-      container: 'bg-purple-50 border-purple-200',
-      text: 'text-purple-700',
-    };
-  }
-  if (projectTag === 'renovation') {
-    return {
-      container: 'bg-amber-50 border-amber-200',
-      text: 'text-amber-700',
-    };
-  }
-  return {
-    container: 'bg-blue-50 border-blue-200',
-    text: 'text-blue-700',
-  };
-};
+import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
 export default function DesignLibraryScreen() {
   const router = useRouter();
@@ -140,7 +81,11 @@ export default function DesignLibraryScreen() {
     outputRange: [0, 1],
   });
 
-  const cardWidth = getTwoColumnCardWidth(screenWidth);
+  // 1 column on mobile, 3 on tablet, 4 on desktop
+  const gridGap = 16;
+  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 1;
+  const cardWidth = (screenWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns;
+  const cardHeight = gridColumns === 1 ? 460 : 420;
 
   const normalizeDesignTab = useCallback((design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' => {
     const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
@@ -450,150 +395,18 @@ export default function DesignLibraryScreen() {
             )}
           </View>
         ) : (
-        <View className="flex-row flex-wrap justify-between pb-8">
-            {filteredDesigns.map((design: any) => {
-              const images = design.images || [];
-              const squareMeters = design.squareMeters || (design.squareFootage * 0.092903);
-              const projectTag = resolveUiProjectTag({
-                projectTypeTag: design.projectTypeTag,
-                planType: design.planType,
-              });
-              const projectTagStyles = getPlanTypeTagClasses(projectTag);
-              return (
-            <TouchableOpacity
-              key={design.id}
-                  onPress={() => handleUseDesign(design)}
-              style={cardShadowStyle}
-              className="w-[48%] mb-6 bg-white rounded-2xl border border-gray-200"
-            >
-                  <View className="overflow-hidden rounded-2xl">
-                  <View className="relative">
-                    {images.length > 0 ? (
-                      <>
-                        <ScrollView
-                          horizontal
-                          pagingEnabled
-                          showsHorizontalScrollIndicator={false}
-                          onScroll={(e) => handleImageScroll(design.id, e)}
-                          scrollEventThrottle={16}
-                        >
-                          {images.map((image: any, index: number) => (
-                            <View key={image.id || index} style={{ width: cardWidth }} className="relative">
-              <Image
-                                source={{ uri: getImageUrl(image.url) }}
-                                className="h-40"
-                                style={{ width: cardWidth }}
-                resizeMode="cover"
+        <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap }}>
+            {filteredDesigns.map((design: any) => (
+              <DesignProductCard
+                key={design.id}
+                design={design}
+                width={cardWidth}
+                height={cardHeight}
+                onPress={() => handleUseDesign(design)}
+                activeImageIndex={activeImageIndex[design.id] || 0}
+                onImageScroll={(e) => handleImageScroll(design.id, e)}
               />
-                              {image.label && (
-                                <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-2 py-0.5">
-                                  <Text 
-                                    className="text-white text-xs"
-                                    style={{ fontFamily: 'Poppins_500Medium', fontSize: 10 }}
-                                  >
-                                    {image.label}
-                                  </Text>
-                                </View>
-                              )}
-                            </View>
-                          ))}
-                        </ScrollView>
-                        
-                        {/* Dots Indicator */}
-                        {images.length > 1 && (
-                          <View className="absolute bottom-2 right-2 flex-row">
-                            {images.slice(0, 5).map((_: any, index: number) => (
-                              <View
-                                key={index}
-                                className={`w-1 h-1 rounded-full mx-0.5 ${
-                                  index === (activeImageIndex[design.id] || 0) ? 'bg-white' : 'bg-white/50'
-                                }`}
-                              />
-                            ))}
-                          </View>
-                        )}
-                      </>
-                    ) : (
-                      <View style={{ width: cardWidth, height: 160 }} className="bg-gray-200 items-center justify-center">
-                        <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          No images
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-              <View className="p-4">
-                <Text 
-                  className="text-lg text-black mb-2"
-                  style={{ fontFamily: 'Poppins_700Bold' }}
-                      numberOfLines={1}
-                >
-                  {design.name}
-                </Text>
-                <View className={`self-start border rounded-full px-2 py-1 mb-2 ${projectTagStyles.container}`}>
-                  <Text className={projectTagStyles.text} style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
-                    {formatPlanTypeLabel(projectTag)}
-                  </Text>
-                </View>
-                {!!design.projectTypeFilter && (
-                  <View className="self-start border rounded-full px-2 py-1 mb-2 bg-gray-100 border-gray-200">
-                    <Text className="text-gray-700" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
-                      {design.projectTypeFilter}
-                    </Text>
-                  </View>
-                )}
-                
-                <View className="flex-row items-center mb-2">
-                  <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
-                  <Text 
-                    className="text-black ml-1 text-sm"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                        {design.rating?.toFixed(1) || '0.0'}
-                  </Text>
-                  <Text 
-                    className="text-gray-500 ml-1 text-xs"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                        ({design.reviews || 0})
-                  </Text>
-                </View>
-
-                <View className="flex-row items-center mb-2">
-                  <Bed size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2 mr-4"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                        {design.bedrooms} bed
-                  </Text>
-                  <Bath size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                        {design.bathrooms} bath
-                  </Text>
-                </View>
-                <View className="flex-row items-center mb-3">
-                  <Maximize size={16} color="#737373" strokeWidth={2} />
-                  <Text 
-                    className="text-sm text-gray-500 ml-2"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                        {Math.round(squareMeters)} m²
-                  </Text>
-                </View>
-                <Text 
-                  className="text-xl text-black"
-                  style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                >
-                      ₦{design.estimatedCost?.toLocaleString() || '0'}
-                    </Text>
-                  </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
+            ))}
           </View>
         )}
       </ScrollView>
