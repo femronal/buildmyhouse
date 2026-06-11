@@ -1,18 +1,13 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Alert } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Plus, ChevronRight, MapPin, Home, X, Check, LandPlot, FileCheck, Clock, Bed, Bath, Maximize, Car, Lock, Zap, Droplets, Shield, Wifi, Wrench } from "lucide-react-native";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { User, Plus, MapPin, Lock, Clock, X, ArrowUpRight } from "phosphor-react-native";
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useActiveProjects, usePendingProjects, usePausedProjects, useHousesForSale, useLandsForSale, useActivateProject } from '@/hooks';
-import { useRentalsForLease } from '@/hooks/useRentalsForLease';
-import { useDesigns } from '@/hooks/useDesigns';
-import { useScheduleHouseViewing } from '@/hooks/useHouseViewing';
-import { useScheduleLandViewing } from '@/hooks/useLandViewing';
-import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
+import { useActiveProjects, usePendingProjects, usePausedProjects, useActivateProject } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
-import ImageCarousel from '@/components/ImageCarousel';
 import NotificationBell from '@/components/NotificationBell';
 import Logo from '@/components/Logo';
 import { getBackendAssetUrl } from '@/lib/image';
@@ -22,8 +17,9 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
 } from "@/lib/responsive-layout";
-import { cardShadowStyle } from "@/lib/card-styles";
 import { needsHomeownerIntroOnboarding } from "@/lib/onboarding";
+
+const CARD_BG = '#151515';
 
 export default function HomeScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
@@ -43,29 +39,13 @@ export default function HomeScreen() {
     [tabBarMetrics],
   );
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
-  const { data: housesForSale = [], isLoading: loadingHouses } = useHousesForSale();
-  const { data: landsForSale = [], isLoading: loadingLands } = useLandsForSale();
-  const { data: rentalsForLease = [], isLoading: loadingRentals } = useRentalsForLease();
-  const { data: designs = [], isLoading: loadingDesigns } = useDesigns();
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: pendingProjects = [], isLoading: loadingPending } = usePendingProjects();
   const { data: pausedProjects = [], isLoading: loadingPaused } = usePausedProjects();
   const createPaymentIntentMutation = useCreatePaymentIntent();
   const activateProjectMutation = useActivateProject();
-  const scheduleViewingMutation = useScheduleHouseViewing();
-  const scheduleLandViewingMutation = useScheduleLandViewing();
-  const requestRentalInspectionMutation = useRequestRentalInspection();
   const queryClient = useQueryClient();
-  
-  const [showBuyModal, setShowBuyModal] = useState(false);
-  const [selectedHome, setSelectedHome] = useState<any | null>(null);
-  const [buySuccess, setBuySuccess] = useState(false);
-  const [showRentModal, setShowRentModal] = useState(false);
-  const [selectedRent, setSelectedRent] = useState<any | null>(null);
-  const [rentRequestSuccess, setRentRequestSuccess] = useState(false);
-  const [showLandModal, setShowLandModal] = useState(false);
-  const [selectedLand, setSelectedLand] = useState<any | null>(null);
-  const [landSuccess, setLandSuccess] = useState(false);
+
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedProjectForPayment, setSelectedProjectForPayment] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -76,9 +56,7 @@ export default function HomeScreen() {
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any>(null);
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
-  const [activeRepairFilter, setActiveRepairFilter] = useState('All');
-  
-  const userName = currentUser?.fullName || 'User';
+
   const userPicture = currentUser?.pictureUrl;
 
   useEffect(() => {
@@ -91,17 +69,17 @@ export default function HomeScreen() {
   useEffect(() => {
     setHeaderImageFailed(false);
   }, [userPicture]);
-  
+
   // Combine active and pending projects for display, ensuring no duplicates
   // IMPORTANT: Use actual project.status to determine if paid, not just which array it came from
-  const activeProjectsWithStatus = activeProjects.map((p: any, idx: number) => ({ 
-    ...p, 
+  const activeProjectsWithStatus = activeProjects.map((p: any, idx: number) => ({
+    ...p,
     // Completed projects should remain openable like active projects.
     isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
     uniqueKey: `active-${p.id || p.projectId || `idx-${idx}`}`
   }));
-  const pendingProjectsWithStatus = pendingProjects.map((p: any, idx: number) => ({ 
-    ...p, 
+  const pendingProjectsWithStatus = pendingProjects.map((p: any, idx: number) => ({
+    ...p,
     // A project can be effectively complete even if status lagged.
     isPaid: p.status === 'active' || p.status === 'completed' || Number(p.progress || 0) >= 100,
     uniqueKey: `pending-${p.id || p.projectId || `idx-${idx}`}`
@@ -113,7 +91,7 @@ export default function HomeScreen() {
     isPaid: false,
     uniqueKey: `paused-${p.id || p.projectId || `idx-${idx}`}`,
   }));
-  
+
   // Filter out duplicates by project ID (in case a project appears in both arrays)
   // Prefer the one with status='active' if there's a conflict
   const projectIds = new Set<string>();
@@ -176,7 +154,7 @@ export default function HomeScreen() {
       setProjectBudget(budget);
       setPaymentClientSecret(null);
       setPaymentError(null);
-      
+
       // Stripe maximum amount is ₦999,999.99
       const STRIPE_MAX_AMOUNT = 999999.99;
       if (amount > STRIPE_MAX_AMOUNT) {
@@ -185,7 +163,7 @@ export default function HomeScreen() {
         setIsProcessingPayment(false);
         return;
       }
-      
+
       if (amount <= 0) {
         setPaymentError('Budget information is missing or invalid for this project.');
         setShowPaymentModal(true);
@@ -223,12 +201,12 @@ export default function HomeScreen() {
 
     try {
       await activateProjectMutation.mutateAsync(selectedProjectForPayment.id || selectedProjectForPayment.projectId);
-      
+
       // Invalidate all project queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
       queryClient.invalidateQueries({ queryKey: ['projects', 'pending'] });
-      
+
       setShowPaymentModal(false);
       setSelectedProjectForPayment(null);
       router.push(`/dashboard?projectId=${selectedProjectForPayment.id || selectedProjectForPayment.projectId}`);
@@ -240,11 +218,6 @@ export default function HomeScreen() {
   const handlePaymentError = (error: string) => {
     setPaymentError(error);
     setIsProcessingPayment(false);
-  };
-
-  const getHouseImageUrl = (house: any) => {
-    const firstImg = house?.images?.[0]?.url;
-    return firstImg ? getBackendAssetUrl(firstImg) : 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=600&q=80';
   };
 
   const getProjectCoverImage = (project: any) => {
@@ -311,135 +284,22 @@ export default function HomeScreen() {
     return Number(acceptedTotalQuote || baseBudget || acceptedBudget || aiBudget || 0);
   };
 
-  const formatNaira = (amount: number) => `₦${amount.toLocaleString()}`;
-  const repairFilterSuggestions = useMemo(
-    () => [
-      'Electricals',
-      'Plumbing Fixes',
-      'Roof Leak Repair',
-      'Drainage Fix',
-      'Bathroom Repair',
-      'Gate/Fence Repair',
-    ],
-    [],
+  const isLoadingProjects = loadingActive || loadingPending || loadingPaused;
+  const hasProjects = dashboardProjects.length > 0;
+  const isLoggedOut = !currentUser && !userLoading;
+
+  const launchButton = (
+    <TouchableOpacity
+      onPress={() => (isLoggedOut ? router.push('/login') : router.push('/location?mode=explore'))}
+      activeOpacity={0.85}
+      className="bmh-glass-btn bmh-glass-btn-dark bg-black rounded-full self-center flex-row items-center justify-center gap-2 px-7 py-3.5"
+    >
+      <Plus size={16} color="#FFFFFF" weight="bold" />
+      <Text className="text-white text-sm md:text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        {isLoggedOut ? 'Sign up / Log in' : 'Launch a New Project'}
+      </Text>
+    </TouchableOpacity>
   );
-
-  const normalizeRepairPlanType = useCallback((design: any) => {
-    const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
-    if (explicitTag === 'repair') return 'repair';
-    if (explicitTag === 'upgrades') return 'upgrades';
-    if (explicitTag === 'renovation') return 'renovation';
-    if (explicitTag === 'full_builds') return 'full_builds';
-
-    // Backward compatibility for older records that only stored backend planType.
-    const apiPlanType = `${design?.planType || ''}`.toLowerCase();
-    if (apiPlanType === 'interior_design') return 'upgrades';
-    if (apiPlanType === 'homebuilding') return 'full_builds';
-
-    const searchable = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
-    const likelyRepair = ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage'].some((keyword) =>
-      searchable.includes(keyword),
-    );
-    return likelyRepair ? 'repair' : 'renovation';
-  }, []);
-
-  const repairDesignPlans = useMemo(
-    () => (designs || []).filter((design: any) => normalizeRepairPlanType(design) === 'repair'),
-    [designs, normalizeRepairPlanType],
-  );
-
-  const availableRepairFilters = useMemo(() => {
-    const dynamicFilters = repairDesignPlans
-      .map((design: any) => `${design?.projectTypeFilter || ''}`.trim())
-      .filter(Boolean);
-    const merged = [...repairFilterSuggestions, ...dynamicFilters];
-    const unique = Array.from(new Set(merged.map((filter) => filter.toLowerCase()))).map(
-      (lower) => merged.find((item) => item.toLowerCase() === lower) as string,
-    );
-    return ['All', ...unique];
-  }, [repairDesignPlans, repairFilterSuggestions]);
-
-  const filteredRepairDesignPlans = useMemo(() => {
-    if (activeRepairFilter === 'All') return repairDesignPlans;
-    const selected = activeRepairFilter.toLowerCase();
-    return repairDesignPlans.filter((design: any) => {
-      const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
-      const fallbackSearch = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
-      return explicitFilter.includes(selected) || fallbackSearch.includes(selected);
-    });
-  }, [activeRepairFilter, repairDesignPlans]);
-
-  useEffect(() => {
-    if (!availableRepairFilters.includes(activeRepairFilter)) {
-      setActiveRepairFilter('All');
-    }
-  }, [activeRepairFilter, availableRepairFilters]);
-
-  const openRentModal = (listing: any) => {
-    setSelectedRent(listing);
-    setRentRequestSuccess(false);
-    setShowRentModal(true);
-  };
-
-  const requestRentInspection = async () => {
-    if (!selectedRent?.id) return;
-    try {
-      await requestRentalInspectionMutation.mutateAsync(selectedRent.id);
-      setRentRequestSuccess(true);
-      setTimeout(() => {
-        setShowRentModal(false);
-        setRentRequestSuccess(false);
-      }, 2000);
-    } catch (error: any) {
-      Alert.alert('Request failed', error?.message || 'Could not request inspection. Please try again.');
-    }
-  };
-
-  const handleBuyHome = (home: any) => {
-    setSelectedHome(home);
-    setBuySuccess(false);
-    setShowBuyModal(true);
-  };
-
-  const confirmBuyHome = async () => {
-    if (!selectedHome?.id) return;
-    try {
-      await scheduleViewingMutation.mutateAsync(selectedHome.id);
-      setBuySuccess(true);
-      setTimeout(() => {
-        setShowBuyModal(false);
-        setBuySuccess(false);
-      }, 2000);
-    } catch (error: any) {
-      Alert.alert(
-        'Could not schedule viewing',
-        error?.message || 'Please try again.',
-      );
-    }
-  };
-
-  const handleLandPurchase = (land: any) => {
-    setSelectedLand(land);
-    setLandSuccess(false);
-    setShowLandModal(true);
-  };
-
-  const confirmLandPurchase = async () => {
-    if (!selectedLand?.id) return;
-    try {
-      await scheduleLandViewingMutation.mutateAsync(selectedLand.id);
-      setLandSuccess(true);
-      setTimeout(() => {
-        setShowLandModal(false);
-        setLandSuccess(false);
-      }, 2000);
-    } catch (error: any) {
-      Alert.alert(
-        'Could not schedule land viewing',
-        error?.message || 'Please try again.',
-      );
-    }
-  };
 
   return (
     <View className="flex-1 bg-white">
@@ -448,7 +308,7 @@ export default function HomeScreen() {
         className="pb-2 flex-row items-center gap-2"
         style={{ paddingTop: Math.max(12, insets.top + 8), paddingHorizontal: horizontalPadding }}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => router.push('/profile')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
@@ -456,22 +316,22 @@ export default function HomeScreen() {
         >
           {userPicture && !headerImageFailed ? (
             <View pointerEvents="none" className="w-full h-full">
-              <Image 
-                source={{ uri: getBackendAssetUrl(userPicture) }} 
+              <Image
+                source={{ uri: getBackendAssetUrl(userPicture) }}
                 className="w-full h-full"
                 resizeMode="cover"
                 onError={() => setHeaderImageFailed(true)}
               />
             </View>
           ) : (
-            <User size={22} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={22} color="#FFFFFF" weight="bold" />
           )}
         </TouchableOpacity>
-        
+
         <View className="flex-1 items-center justify-center min-w-0">
           <Logo size="lg" />
         </View>
-        
+
         <View className="flex-shrink-0">
           <NotificationBell />
         </View>
@@ -480,276 +340,230 @@ export default function HomeScreen() {
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
+          flexGrow: 1,
           paddingBottom: tabContentBottomPadding,
           paddingHorizontal: horizontalPadding,
         }}
       >
-        {/* Welcome Section */}
-        <View className="mb-8">
-          <Text 
-            className="text-3xl md:text-4xl text-black mb-2"
-            style={{ fontFamily: 'Poppins_600SemiBold' }}
-          >
-            Welcome back,
-          </Text>
-          <Text 
-            className="text-3xl md:text-4xl text-black"
-            style={{ fontFamily: 'Poppins_600SemiBold' }}
-          >
-            {userName.split(' ')[0]} 👋
-          </Text>
-        </View>
-
-        {/* Start New Project */}
-        <TouchableOpacity
-          onPress={() => router.push('/location?mode=explore')}
-          className="bg-black rounded-3xl p-6 mb-8 flex-row items-center justify-between"
-        >
-          <View className="flex-1">
-          <Text 
-            className="text-white text-xl mb-2"
-            style={{ fontFamily: 'Poppins_600SemiBold' }}
-          >
-            Launch a New Project
-          </Text>
-            <Text 
-              className="text-white/70"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Define your goal, upload your brief, and get a structured scope in minutes.
+        {isLoadingProjects && !hasProjects ? (
+          /* Loading — keep the screen calm and centered */
+          <View className="flex-1 items-center justify-center py-24">
+            <ActivityIndicator size="small" color="#000" />
+            <Text className="text-gray-500 mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Loading projects...
             </Text>
           </View>
-          <View className="w-14 h-14 bg-white rounded-full items-center justify-center">
-            <Plus size={28} color="#000000" strokeWidth={2.5} />
+        ) : !hasProjects ? (
+          /* No projects — the launch button is the only object, centered */
+          <View className="flex-1 items-center justify-center py-24">
+            {launchButton}
           </View>
-        </TouchableOpacity>
+        ) : (
+          <>
+            {/* Launch button moves up to make room for project cards */}
+            <View className="mt-4 mb-8">{launchButton}</View>
 
-        {/* Current Projects */}
-        <View className="mb-8">
-          <Text 
-            className="text-2xl text-black mb-4"
-            style={{ fontFamily: 'Poppins_600SemiBold' }}
-          >
-            Your Projects
-          </Text>
-
-          {(loadingActive || loadingPending || loadingPaused) ? (
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
-              <ActivityIndicator size="small" color="#000" />
-              <Text className="text-gray-500 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Loading projects...
+            {/* Current Projects */}
+            <View className="mb-8 w-full max-w-2xl self-center">
+              <Text
+                className="text-2xl text-black mb-4"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Your Projects
               </Text>
-            </View>
-          ) : dashboardProjects.length === 0 ? (
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 items-center border border-gray-200">
-              {!currentUser && !userLoading ? (
-                <>
-                  <Text className="text-gray-500 text-center mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Sign up to start a new project and build your dream home.
-                  </Text>
+
+              {dashboardProjects.map((project: any, index: number) => {
+                const projectId = project.id || project.projectId || `project-${index}`;
+                const uniqueKey = project.uniqueKey || `${project.isPaid ? 'active' : 'pending'}-${projectId}`;
+                const isPaid = project.isPaid;
+                const isPaused = project.status === 'paused';
+                const isCompleted = project.status === 'completed' || Number(project.progress || 0) >= 100;
+                const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : 'Unpaid';
+                const budget = getProjectBudget(project);
+                const amountDue = budget * 1.0;
+                const gradientId = `bmh-project-fade-${projectId}`;
+
+                return (
                   <TouchableOpacity
-                    onPress={() => router.push('/login')}
-                    className="bg-black rounded-full py-3 px-6"
+                    key={uniqueKey}
+                    onPress={() => handleProjectPress(project)}
+                    activeOpacity={0.9}
+                    className="bmh-product-card rounded-[28px] overflow-hidden mb-4"
+                    style={{ backgroundColor: CARD_BG }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${project.name || 'Untitled Project'} — ${statusLabel}`}
                   >
-                    <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Sign up / Log in
-                    </Text>
-                  </TouchableOpacity>
-                </>
-              ) : (
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  No projects yet. Start a new project to get started!
-                </Text>
-              )}
-            </View>
-          ) : (
-            dashboardProjects.map((project: any, index: number) => {
-              const projectId = project.id || project.projectId || `project-${index}`;
-              const uniqueKey = project.uniqueKey || `${project.isPaid ? 'active' : 'pending'}-${projectId}`;
-              const isPaid = project.isPaid;
-              const isPaused = project.status === 'paused';
-              const isCompleted = project.status === 'completed' || Number(project.progress || 0) >= 100;
-              const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : 'Unpaid';
-              const statusBg = isPaused
-                ? 'bg-orange-100'
-                : isCompleted
-                  ? 'bg-emerald-100'
-                  : isPaid
-                    ? 'bg-blue-100'
-                    : 'bg-yellow-100';
-              const statusText = isPaused
-                ? 'text-orange-700'
-                : isCompleted
-                  ? 'text-emerald-700'
-                  : isPaid
-                    ? 'text-blue-700'
-                    : 'text-yellow-700';
-              const budget = getProjectBudget(project);
-              const paymentAmount = budget * 1.0;
-              
-              return (
-                <TouchableOpacity
-                  key={uniqueKey}
-                  onPress={() => handleProjectPress(project)}
-                  style={cardShadowStyle}
-                  className={`bg-gray-50 rounded-3xl mb-4 border ${
-                    isPaused ? 'border-orange-200' : 'border-gray-200'
-                  }`}
-                >
-                  <View className="overflow-hidden rounded-3xl">
-                  <Image
-                    source={{ uri: getProjectCoverImage(project) }}
-                    className="w-full h-36"
-                    resizeMode="cover"
-                  />
-                  <View className="p-5">
-                    <View className="flex-row justify-between items-start mb-3">
-                      <View className="flex-1">
-                        <View className="flex-row items-center mb-1 min-w-0">
-                          <Text 
-                            className="text-xl text-black flex-shrink"
-                            style={{ fontFamily: 'Poppins_700Bold' }}
-                            numberOfLines={1}
-                          >
-                            {project.name || 'Untitled Project'}
-                          </Text>
-                          <View className={`ml-2 rounded-full px-2 py-1 flex-shrink-0 ${statusBg}`}>
-                            <Text 
-                              className={`text-xs ${statusText}`}
-                              style={{ fontFamily: 'Poppins_600SemiBold' }}
-                            >
-                              {statusLabel}
-                            </Text>
-                          </View>
-                        </View>
-                        <View className="flex-row items-center">
-                          <MapPin size={14} color="#737373" strokeWidth={2} />
-                          <Text 
-                            className="text-gray-500 ml-1 text-sm flex-1"
-                            style={{ fontFamily: 'Poppins_400Regular' }}
-                            numberOfLines={2}
-                          >
-                            {project.address || 'Address not available'}
-                          </Text>
-                        </View>
+                    {/* Cover image fading into the dark canvas */}
+                    <View className="relative">
+                      <Image
+                        source={{ uri: getProjectCoverImage(project) }}
+                        className="bmh-product-card-img w-full"
+                        style={{ height: 168, opacity: 0.85 }}
+                        resizeMode="cover"
+                      />
+                      <Svg
+                        pointerEvents="none"
+                        width="100%"
+                        height="70%"
+                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+                      >
+                        <Defs>
+                          <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
+                            <Stop offset="1" stopColor={CARD_BG} stopOpacity="1" />
+                          </SvgLinearGradient>
+                        </Defs>
+                        <Rect width="100%" height="100%" fill={`url(#${gradientId})`} />
+                      </Svg>
+
+                      {/* Open / locked indicator */}
+                      <View
+                        pointerEvents="none"
+                        className="bmh-product-card-arrow absolute top-4 right-4 w-10 h-10 rounded-full border border-white/20 bg-black/30 items-center justify-center"
+                      >
+                        {isPaused ? (
+                          <Lock size={17} color="#ffffff" weight="regular" />
+                        ) : (
+                          <ArrowUpRight size={18} color="#ffffff" weight="regular" />
+                        )}
                       </View>
-                      {isPaused ? (
-                        <Lock size={22} color="#F97316" strokeWidth={2} />
-                      ) : (
-                        <ChevronRight size={24} color="#000000" strokeWidth={2} />
-                      )}
                     </View>
 
-                    {isPaused ? (
-                      <View className="bg-orange-50 rounded-2xl p-4 mb-1 border border-orange-200">
-                        <Text className="text-orange-800 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          This project has been paused by admin
-                        </Text>
-                        <Text className="text-orange-700 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          Tap to learn why and what to do next.
+                    <View className="px-5 pb-5" style={{ marginTop: -8 }}>
+                      <Text
+                        className="text-[10px] text-white/50 uppercase mb-1.5"
+                        style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}
+                      >
+                        {statusLabel}
+                      </Text>
+
+                      <Text
+                        className="text-white text-[22px] leading-7 tracking-tight mb-1.5"
+                        style={{ fontFamily: 'Poppins_500Medium' }}
+                        numberOfLines={1}
+                      >
+                        {project.name || 'Untitled Project'}
+                      </Text>
+
+                      <View className="flex-row items-center gap-1 mb-3">
+                        <MapPin size={11} color="#ffffff" weight="fill" />
+                        <Text
+                          className="text-xs text-white/60 flex-1"
+                          style={{ fontFamily: 'Poppins_400Regular' }}
+                          numberOfLines={2}
+                        >
+                          {project.address || 'Address not available'}
                         </Text>
                       </View>
-                    ) : isPaid ? (
-                      <>
-                        {/* Progress Bar for Active Projects */}
-                        <View className="mb-3">
-                          <View className="flex-row justify-between mb-2">
-                            <Text 
-                              className="text-black text-sm"
-                              style={{ fontFamily: 'Poppins_600SemiBold' }}
-                            >
-                              {project.currentStage || 'In Progress'}
-                            </Text>
-                            <Text 
-                              className="text-black"
-                              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                            >
-                              {project.progress || 0}%
-                            </Text>
-                          </View>
-                          <View className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                            <View 
-                              className="h-full bg-black rounded-full" 
-                              style={{ width: `${project.progress || 0}%` }} 
-                            />
-                          </View>
-                        </View>
 
-                        {/* Budget Info for Active Projects */}
-                        <View className="flex-row justify-between pt-3 border-t border-gray-200">
-                          <View>
-                            <Text 
-                              className="text-gray-500 text-xs mb-1"
-                              style={{ fontFamily: 'Poppins_400Regular' }}
-                            >
-                              Budget
-                            </Text>
-                            <Text 
-                              className="text-black"
-                              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                            >
-                              ₦{budget.toLocaleString()}
-                            </Text>
-                          </View>
-                          <View>
-                            <Text 
-                              className="text-gray-500 text-xs mb-1"
-                              style={{ fontFamily: 'Poppins_400Regular' }}
-                            >
-                              Spent
-                            </Text>
-                            <Text 
-                              className="text-black"
-                              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                            >
-                              ₦{(project.spent || 0).toLocaleString()}
-                            </Text>
-                          </View>
+                      {isPaused ? (
+                        <View className="bg-white/10 border border-white/15 rounded-2xl p-4">
+                          <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            This project has been paused by admin
+                          </Text>
+                          <Text className="text-white/60 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                            Tap to learn why and what to do next.
+                          </Text>
                         </View>
-                      </>
-                    ) : (
-                      <>
-                        {/* Payment Info for Unpaid Projects */}
-                        <View className="bg-yellow-50 rounded-2xl p-4 mb-3 border border-yellow-200">
+                      ) : isPaid ? (
+                        <>
+                          {/* Progress Bar for Active Projects */}
+                          <View className="mb-1">
+                            <View className="flex-row justify-between mb-2">
+                              <Text
+                                className="text-white text-sm"
+                                style={{ fontFamily: 'Poppins_600SemiBold' }}
+                              >
+                                {project.currentStage || 'In Progress'}
+                              </Text>
+                              <Text
+                                className="text-white"
+                                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                              >
+                                {project.progress || 0}%
+                              </Text>
+                            </View>
+                            <View className="h-2 bg-white/15 rounded-full overflow-hidden">
+                              <View
+                                className="h-full bg-white rounded-full"
+                                style={{ width: `${project.progress || 0}%` }}
+                              />
+                            </View>
+                          </View>
+
+                          {/* Budget Info for Active Projects */}
+                          <View className="flex-row justify-between border-t border-white/10 mt-3 pt-3.5">
+                            <View>
+                              <Text
+                                className="text-white/50 text-xs mb-1"
+                                style={{ fontFamily: 'Poppins_400Regular' }}
+                              >
+                                Budget
+                              </Text>
+                              <Text
+                                className="text-white"
+                                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                              >
+                                ₦{budget.toLocaleString()}
+                              </Text>
+                            </View>
+                            <View>
+                              <Text
+                                className="text-white/50 text-xs mb-1"
+                                style={{ fontFamily: 'Poppins_400Regular' }}
+                              >
+                                Spent
+                              </Text>
+                              <Text
+                                className="text-white"
+                                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                              >
+                                ₦{(project.spent || 0).toLocaleString()}
+                              </Text>
+                            </View>
+                          </View>
+                        </>
+                      ) : (
+                        /* Payment Info for Unpaid Projects */
+                        <View className="bg-white/10 border border-white/15 rounded-2xl p-4">
                           <View className="flex-row items-center mb-2">
-                            <Clock size={18} color="#d97706" strokeWidth={2} />
-                            <Text 
-                              className="text-yellow-900 ml-2"
+                            <Clock size={16} color="#ffffff" weight="bold" />
+                            <Text
+                              className="text-white ml-2"
                               style={{ fontFamily: 'Poppins_600SemiBold' }}
                             >
                               Payment Required
                             </Text>
                           </View>
-                          <Text 
-                            className="text-yellow-800 text-sm mb-2"
+                          <Text
+                            className="text-white/70 text-sm mb-2"
                             style={{ fontFamily: 'Poppins_400Regular' }}
                           >
                             GC has reviewed your project. Pay 100% to start building.
                           </Text>
                           <View className="flex-row justify-between items-center">
-                            <Text 
-                              className="text-yellow-900"
+                            <Text
+                              className="text-white/80"
                               style={{ fontFamily: 'Poppins_500Medium' }}
                             >
                               Amount Due:
                             </Text>
-                            <Text 
-                              className="text-yellow-900 text-lg"
+                            <Text
+                              className="text-white text-lg"
                               style={{ fontFamily: 'JetBrainsMono_500Medium' }}
                             >
-                              ₦{paymentAmount.toLocaleString()}
+                              ₦{amountDue.toLocaleString()}
                             </Text>
                           </View>
                         </View>
-                      </>
-                    )}
-                  </View>
-                  </View>
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </>
+        )}
 
         {/* Paused Project Modal */}
         <Modal
@@ -765,7 +579,7 @@ export default function HomeScreen() {
                   Project paused
                 </Text>
                 <TouchableOpacity onPress={() => setShowPausedModal(false)} className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center">
-                  <X size={18} color="#000000" strokeWidth={2.5} />
+                  <X size={18} color="#000000" weight="bold" />
                 </TouchableOpacity>
               </View>
 
@@ -814,887 +628,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </Modal>
-
-        {/* Repairs */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center flex-1 min-w-0 pr-2">
-              <Wrench size={24} color="#000000" strokeWidth={2.5} />
-              <Text
-                className="text-2xl text-black ml-2 flex-shrink"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-                numberOfLines={1}
-              >
-                Repairs
-              </Text>
-            </View>
-            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
-              <Text
-                className="text-white text-xs"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Fix + Stabilize
-              </Text>
-            </View>
-          </View>
-
-          <Text
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Start with urgent fixes before moving into bigger upgrade or renovation scope.
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-            {availableRepairFilters.map((filter) => (
-              <TouchableOpacity
-                key={filter}
-                onPress={() => setActiveRepairFilter(filter)}
-                className={`px-4 py-2 rounded-full mr-2 ${activeRepairFilter === filter ? 'bg-black' : 'bg-gray-100'}`}
-              >
-                <Text
-                  className={activeRepairFilter === filter ? 'text-white text-xs' : 'text-black text-xs'}
-                  style={{ fontFamily: 'Poppins_500Medium' }}
-                >
-                  {filter}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {loadingDesigns ? (
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 items-center border border-gray-200">
-              <ActivityIndicator size="small" color="#000" />
-              <Text className="text-gray-500 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Loading repair scopes...
-              </Text>
-            </View>
-          ) : filteredRepairDesignPlans.length === 0 ? (
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
-              <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                No repair scopes yet
-              </Text>
-              <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                {activeRepairFilter === 'All'
-                  ? 'Approved GC repair plans will appear here once uploaded.'
-                  : `No repair plans found for "${activeRepairFilter}" yet.`}
-              </Text>
-            </View>
-          ) : (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {filteredRepairDesignPlans.map((design: any) => (
-                <TouchableOpacity
-                  key={design.id}
-                  onPress={() => router.push(`/house-summary?designId=${design.id}&designName=${encodeURIComponent(design.name || 'Repair Scope')}`)}
-                  style={[
-                    cardShadowStyle,
-                    { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
-                  ]}
-                  className="bg-white rounded-3xl mr-4 border border-gray-200"
-                >
-                  <View className="overflow-hidden rounded-3xl">
-                    <Image
-                      source={{
-                        uri: design?.images?.[0]?.url
-                          ? getBackendAssetUrl(design.images[0].url)
-                          : 'https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80',
-                      }}
-                      className="w-full h-32"
-                      resizeMode="cover"
-                    />
-                    <View className="p-3">
-                      <Text
-                        className="text-base text-black mb-1"
-                        style={{ fontFamily: 'Poppins_600SemiBold' }}
-                        numberOfLines={1}
-                      >
-                        {design.name}
-                      </Text>
-                      <Text
-                        className="text-gray-500 text-xs mb-2"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                        numberOfLines={2}
-                      >
-                        {design.description || 'Repair scope uploaded by a verified GC.'}
-                      </Text>
-                      <View className="flex-row justify-between items-center">
-                        <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                          {formatNaira(Number(design.estimatedCost || 0))}
-                        </Text>
-                        <View className="bg-gray-100 rounded-full px-2 py-0.5">
-                          <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                            {design.projectTypeFilter || 'Repair'}
-                          </Text>
-                        </View>
-                      </View>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-        </View>
-
-        {/* Upgrades */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center flex-1 min-w-0 pr-2">
-              <Home size={24} color="#000000" strokeWidth={2.5} />
-              <Text
-                className="text-2xl text-black ml-2 flex-shrink"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-                numberOfLines={1}
-              >
-                Upgrades
-              </Text>
-            </View>
-            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
-              <Text
-                className="text-white text-xs"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Room + Finish
-              </Text>
-            </View>
-          </View>
-
-          <Text
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Improve existing spaces with practical room-by-room upgrade direction.
-          </Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(loadingRentals ? [] : rentalsForLease).map((listing: any) => (
-              <TouchableOpacity
-                key={listing.id}
-                onPress={() => openRentModal(listing)}
-                style={[
-                  cardShadowStyle,
-                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
-                ]}
-                className="bg-white rounded-3xl mr-4 border border-gray-200"
-              >
-                <View className="overflow-hidden rounded-3xl">
-                <Image
-                  source={{
-                    uri: listing.images?.[0]?.url
-                      ? getBackendAssetUrl(listing.images[0].url)
-                      : 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-                  }}
-                  className="w-full h-36"
-                  resizeMode="cover"
-                />
-                <View className="p-3">
-                  <Text
-                    className="text-base text-black mb-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    numberOfLines={1}
-                  >
-                    {listing.title}
-                  </Text>
-                  <View className="flex-row items-center mb-2">
-                    <MapPin size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {listing.location}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center mb-2">
-                    <Bed size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {listing.bedrooms}
-                    </Text>
-                    <Bath size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {listing.bathrooms}
-                    </Text>
-                    <Maximize size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {listing.sizeSqm}m²
-                    </Text>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-black text-base" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      {formatNaira(listing.annualRent)}/yr
-                    </Text>
-                    <View className="bg-emerald-100 rounded-full px-2 py-0.5">
-                      <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {listing.propertyType}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Renovation Plans */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center flex-1 min-w-0 pr-2">
-              <Home size={24} color="#000000" strokeWidth={2.5} />
-              <Text 
-                className="text-2xl text-black ml-2 flex-shrink"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-                numberOfLines={1}
-              >
-                Renovations
-              </Text>
-            </View>
-            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
-              <Text 
-                className="text-white text-xs"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Scope + Budget
-              </Text>
-            </View>
-          </View>
-
-          <Text 
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Upgrade existing spaces with phased renovation plans and cost clarity.
-          </Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(loadingHouses ? [] : housesForSale).map((home: any) => (
-              <TouchableOpacity
-                key={home.id}
-                onPress={() => handleBuyHome(home)}
-                style={[
-                  cardShadowStyle,
-                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
-                ]}
-                className="bg-white rounded-3xl mr-4 border border-gray-200"
-              >
-                <View className="overflow-hidden rounded-3xl">
-                <Image
-                  source={{ uri: getHouseImageUrl(home) }}
-                  className="w-full h-32"
-                  resizeMode="cover"
-                />
-                <View className="p-3">
-                  <Text 
-                    className="text-base text-black mb-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    numberOfLines={1}
-                  >
-                    {home.name}
-                  </Text>
-                  <View className="flex-row items-center mb-2">
-                    <MapPin size={12} color="#737373" strokeWidth={2} />
-                    <Text 
-                      className="text-gray-500 ml-1 text-xs"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      {home.location}
-                    </Text>
-                  </View>
-
-                  <View className="flex-row items-center mb-2">
-                    <Bed size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {home.bedrooms}
-                    </Text>
-                    <Bath size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {home.bathrooms}
-                    </Text>
-                    <Maximize size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {home.squareMeters ?? home.squareFootage}m²
-                    </Text>
-                  </View>
-
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-black text-base" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ₦{home.price.toLocaleString()}
-                    </Text>
-                    <View className="bg-green-100 rounded-full px-2 py-0.5">
-                      <Text className="text-green-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {home.condition || 'For Sale'}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* Building Plans */}
-        <View className="mb-8">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center flex-1 min-w-0 pr-2">
-              <LandPlot size={24} color="#000000" strokeWidth={2.5} />
-              <Text 
-                className="text-2xl text-black ml-2 flex-shrink"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-                numberOfLines={1}
-              >
-                Full Builds
-              </Text>
-            </View>
-            <View className="bg-black rounded-full px-3 py-1 flex-shrink-0">
-              <Text 
-                className="text-white text-xs"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Ready to Build
-              </Text>
-            </View>
-          </View>
-
-          <Text 
-            className="text-gray-500 mb-4"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            Review complete building plan options prepared for execution and approvals.
-          </Text>
-
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {(loadingLands ? [] : landsForSale).map((land: any) => (
-              <TouchableOpacity
-                key={land.id}
-                onPress={() => handleLandPurchase(land)}
-                style={[
-                  cardShadowStyle,
-                  { width: Math.min(280, Math.max(220, screenWidth - horizontalPadding * 2 - 12)) },
-                ]}
-                className="bg-white rounded-3xl mr-4 border border-gray-200"
-              >
-                <View className="overflow-hidden rounded-3xl">
-                <Image
-                  source={{ uri: land.images?.[0]?.url ? getBackendAssetUrl(land.images[0].url) : 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80' }}
-                  className="w-full h-32"
-                  resizeMode="cover"
-                />
-                <View className="p-3">
-                  <Text 
-                    className="text-base text-black mb-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {land.name}
-                  </Text>
-                  <View className="flex-row items-center mb-2 min-w-0">
-                    <MapPin size={12} color="#737373" strokeWidth={2} className="flex-shrink-0" />
-                    <Text 
-                      className="text-gray-500 ml-1 text-xs flex-1 min-w-0"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                      numberOfLines={2}
-                      ellipsizeMode="tail"
-                    >
-                      {land.location}
-                    </Text>
-                  </View>
-
-                  <View className="flex-row justify-between mb-2">
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Per Plot</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(land.price / 1000000).toFixed(1)}M</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Size</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>{land.sizeSqm} sqm</Text>
-                    </View>
-                  </View>
-
-                  <View className="flex-row flex-wrap">
-                    {(land.documents || []).slice(0, 2).map((doc: string, i: number) => (
-                      <View key={i} className="bg-gray-100 rounded-full px-2 py-0.5 mr-1 mb-1">
-                        <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>{doc}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
       </ScrollView>
-
-      {/* Buy Home Modal */}
-      <Modal
-        visible={showBuyModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowBuyModal(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-6 max-h-[90%]">
-            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
-            
-            {!buySuccess ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row justify-between items-start mb-4">
-                  <Text 
-                    className="text-2xl text-black flex-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {selectedHome?.name}
-                  </Text>
-                  <TouchableOpacity onPress={() => setShowBuyModal(false)}>
-                    <X size={24} color="#000000" strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-
-                <View className="-mx-6 mb-4">
-                  <ImageCarousel
-                    images={
-                      selectedHome?.images && selectedHome.images.length > 0
-                        ? selectedHome.images.map((img: any) => ({
-                            url: getBackendAssetUrl(img.url) || img.url || getHouseImageUrl(selectedHome),
-                            label: img.label || 'Photo',
-                          }))
-                        : [{ url: getHouseImageUrl(selectedHome), label: 'Exterior' }]
-                    }
-                    height={192}
-                  />
-                </View>
-
-                <Text 
-                  className="text-gray-600 mb-4"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  {selectedHome?.description}
-                </Text>
-
-                {/* Key Details */}
-                <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
-                  <View className="flex-row justify-between mb-3">
-                    <View className="flex-row items-center">
-                      <Bed size={18} color="#737373" strokeWidth={2} />
-                      <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {selectedHome?.bedrooms} Bedrooms
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                      <Bath size={18} color="#737373" strokeWidth={2} />
-                      <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {selectedHome?.bathrooms} Bathrooms
-                      </Text>
-                    </View>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <View className="flex-row items-center">
-                      <Maximize size={18} color="#737373" strokeWidth={2} />
-                      <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {(selectedHome?.squareMeters ?? selectedHome?.squareFootage)}m²
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center">
-                      <Car size={18} color="#737373" strokeWidth={2} />
-                      <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {selectedHome?.parking} Parking
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Property Info */}
-                <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
-                  <Text className="text-black mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Property Details
-                  </Text>
-                  <View className="space-y-2">
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Property Type</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>{selectedHome?.propertyType}</Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Year Built</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>{selectedHome?.yearBuilt}</Text>
-                    </View>
-                    <View className="flex-row justify-between">
-                      <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Condition</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>{selectedHome?.condition}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Documents */}
-                {selectedHome?.documents && selectedHome.documents.length > 0 && (
-                  <View className="mb-4">
-                    <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Documents Available
-                    </Text>
-                    <View className="flex-row flex-wrap">
-                      {selectedHome.documents.map((doc: any, i: number) => (
-                        <View key={i} className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
-                          <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>{doc}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {/* Amenities */}
-                {selectedHome?.amenities && selectedHome.amenities.length > 0 && (
-                  <View className="mb-4">
-                    <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Amenities
-                    </Text>
-                    <View className="flex-row flex-wrap">
-                      {selectedHome.amenities.map((amenity: any, i: number) => (
-                        <View key={i} className="bg-gray-100 rounded-full px-3 py-1 mr-2 mb-2">
-                          <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>{amenity}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-
-                {/* Nearby Facilities */}
-                {selectedHome?.nearbyFacilities && selectedHome.nearbyFacilities.length > 0 && (
-                  <View className="mb-4">
-                    <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      Nearby Facilities
-                    </Text>
-                    {selectedHome.nearbyFacilities.map((facility: any, i: number) => (
-                      <Text key={i} className="text-gray-600 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        • {facility}
-                      </Text>
-                    ))}
-                  </View>
-                )}
-
-                {/* Price */}
-                <View className="bg-black rounded-2xl p-4 mb-4">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-white/70 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Price</Text>
-                    <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                      ₦{selectedHome?.price.toLocaleString()}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Contact Info */}
-                <View className="bg-gray-50 rounded-2xl p-4 mb-4 border border-gray-200">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Contact for Viewing
-                  </Text>
-                  <Text className="text-black text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {selectedHome?.contactName}
-                  </Text>
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {selectedHome?.contactPhone}
-                  </Text>
-                </View>
-
-                <TouchableOpacity
-                  onPress={confirmBuyHome}
-                  disabled={scheduleViewingMutation.isPending}
-                  className="bg-black rounded-full py-5 px-8 mb-4"
-                >
-                  <Text 
-                    className="text-white text-lg text-center"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {scheduleViewingMutation.isPending ? 'Scheduling...' : 'Schedule Viewing'}
-                  </Text>
-                </TouchableOpacity>
-
-                <Text 
-                  className="text-gray-500 text-xs text-center"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  Contact the seller to schedule a viewing or make an offer
-                </Text>
-              </ScrollView>
-            ) : (
-              <View className="items-center py-8">
-                <View className="w-16 h-16 bg-black rounded-full items-center justify-center mb-4">
-                  <Check size={32} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
-                  <Text 
-                    className="text-xl text-black mb-2 text-center"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    Viewing Scheduled!
-                  </Text>
-                <Text 
-                  className="text-gray-500 text-center text-sm"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  The seller will contact you soon to confirm details
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Rent Listing Modal (Mock Data Preview) */}
-      <Modal
-        visible={showRentModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowRentModal(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-5 max-h-[90%]">
-            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
-            {!rentRequestSuccess ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row justify-between items-start mb-3">
-                  <Text className="text-xl text-black flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {selectedRent?.title}
-                  </Text>
-                  <TouchableOpacity onPress={() => setShowRentModal(false)}>
-                    <X size={24} color="#000000" strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-
-                <ImageCarousel
-                  images={
-                    selectedRent?.images?.length
-                      ? selectedRent.images.map((img: any, index: number) => ({
-                          url: getBackendAssetUrl(img.url) || img.url,
-                          label: img.label || (index === 0 ? 'Exterior' : 'Interior'),
-                        }))
-                      : [
-                          {
-                            url: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-                            label: 'Exterior',
-                          },
-                        ]
-                  }
-                  height={192}
-                />
-
-                <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
-                  <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse agency fee is fixed at 5% of annual rent.
-                  </Text>
-                </View>
-
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Key Rent Breakdown
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Annual rent: {formatNaira(selectedRent?.annualRent || 0)}
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Service charge: {formatNaira(selectedRent?.serviceCharge || 0)}
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Caution deposit: {formatNaira(selectedRent?.cautionDeposit || 0)}
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Legal fee: {selectedRent?.legalFeePercent || 0}%
-                  </Text>
-                  <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse agency fee: {selectedRent?.agencyFeePercent || 2}%
-                  </Text>
-                </View>
-
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Confirm these features before going renting a new home.
-                  </Text>
-                  {[
-                    { label: `Power: ${selectedRent?.power}`, icon: Zap },
-                    { label: `Water: ${selectedRent?.water}`, icon: Droplets },
-                    { label: `Security: ${selectedRent?.security}`, icon: Shield },
-                    { label: `Internet: ${selectedRent?.internet}`, icon: Wifi },
-                    { label: `Parking: ${selectedRent?.parking}`, icon: Car },
-                    { label: `Rules: ${selectedRent?.rules}`, icon: Lock },
-                    { label: `Inspection window: ${selectedRent?.inspectionWindow}`, icon: Clock },
-                  ].map((item) => (
-                    <View key={item.label} className="flex-row items-start mb-2">
-                      <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
-                        <item.icon size={13} color="#374151" strokeWidth={2.2} />
-                      </View>
-                      <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {item.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                <View className="mb-4">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse Verification Checks
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {(selectedRent?.verificationDocs || []).map((doc: string) => (
-                      <View key={doc} className="bg-black rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                        <FileCheck size={12} color="#FFFFFF" strokeWidth={2} />
-                        <Text className="text-white text-xs ml-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                          {doc}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  onPress={requestRentInspection}
-                  disabled={requestRentalInspectionMutation.isPending}
-                  className="bg-black rounded-full py-4 px-8 mb-2"
-                >
-                  <Text className="text-white text-base text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {requestRentalInspectionMutation.isPending ? 'Submitting...' : 'Request Inspection'}
-                  </Text>
-                </TouchableOpacity>
-                <Text className="text-gray-500 text-xs text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  BuildMyHouse will coordinate inspection directly with the homeowner.
-                </Text>
-              </ScrollView>
-            ) : (
-              <View className="items-center py-8">
-                <View className="w-16 h-16 bg-black rounded-full items-center justify-center mb-4">
-                  <Check size={32} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
-                <Text className="text-xl text-black mb-2 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Inspection Requested!
-                </Text>
-                <Text className="text-gray-500 text-center text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  You will receive homeowner inspection details soon.
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Land Viewing Modal */}
-      <Modal
-        visible={showLandModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowLandModal(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-5 max-h-[85%]">
-            <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
-            
-            {!landSuccess ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View className="flex-row justify-between items-start mb-3">
-                  <Text 
-                    className="text-xl text-black flex-1"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {selectedLand?.name}
-                  </Text>
-                  <TouchableOpacity onPress={() => setShowLandModal(false)}>
-                    <X size={24} color="#000000" strokeWidth={2} />
-                  </TouchableOpacity>
-                </View>
-
-                <View className="-mx-5 mb-3">
-                  <ImageCarousel
-                    images={
-                      selectedLand?.images?.length
-                        ? selectedLand.images.map((img: any, index: number) => ({
-                            url: getBackendAssetUrl(img.url) || img.url,
-                            label: img.label || (index === 0 ? 'Main view' : `View ${index + 1}`),
-                          }))
-                        : [
-                            {
-                              url: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80',
-                              label: 'Main view',
-                            },
-                          ]
-                    }
-                    height={192}
-                  />
-                </View>
-
-                <Text 
-                  className="text-gray-600 mb-3 text-sm"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  {selectedLand?.description}
-                </Text>
-
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
-                  <View className="flex-row justify-between mb-2">
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Price</Text>
-                      <Text className="text-black text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(selectedLand?.price || 0).toLocaleString()}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Land Size</Text>
-                      <Text className="text-black text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>{selectedLand?.sizeSqm} sqm</Text>
-                    </View>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Title</Text>
-                      <Text className="text-black" style={{ fontFamily: 'Poppins_500Medium' }}>{selectedLand?.titleDocument || 'N/A'}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
-                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>{selectedLand?.location}</Text>
-                    </View>
-                  </View>
-                </View>
-
-                <View className="mb-3">
-                  <Text className="text-black mb-2 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>Verified Documents</Text>
-                  <View className="flex-row flex-wrap">
-                    {selectedLand?.documents?.map((doc: string, i: number) => (
-                      <View key={i} className="bg-black rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                        <FileCheck size={12} color="#FFFFFF" strokeWidth={2} />
-                        <Text className="text-white text-xs ml-1" style={{ fontFamily: 'Poppins_500Medium' }}>{doc}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  onPress={confirmLandPurchase}
-                  disabled={scheduleLandViewingMutation.isPending}
-                  className="bg-black rounded-full py-4 px-8 mb-3"
-                >
-                  <Text 
-                    className="text-white text-base text-center"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    {scheduleLandViewingMutation.isPending ? 'Scheduling...' : 'Schedule Viewing'}
-                  </Text>
-                </TouchableOpacity>
-
-                <Text 
-                  className="text-gray-500 text-xs text-center"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  BuildMyHouse team will contact you to confirm site inspection
-                </Text>
-              </ScrollView>
-            ) : (
-              <View className="items-center py-8">
-                <View className="w-16 h-16 bg-black rounded-full items-center justify-center mb-4">
-                  <Check size={32} color="#FFFFFF" strokeWidth={2.5} />
-                </View>
-                  <Text 
-                    className="text-xl text-black mb-2 text-center"
-                    style={{ fontFamily: 'Poppins_600SemiBold' }}
-                  >
-                    Viewing Request Sent!
-                  </Text>
-                <Text 
-                  className="text-gray-500 text-center text-sm"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  Admin will contact you shortly to arrange the site visit.
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
 
       {/* Payment Modal */}
       <PaymentModal
