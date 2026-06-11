@@ -292,17 +292,17 @@ export default function HomeScreen() {
     <TouchableOpacity
       onPress={() => (isLoggedOut ? router.push('/login') : router.push('/location?mode=explore'))}
       activeOpacity={0.85}
-      className="bmh-glass-btn bmh-glass-btn-dark bg-black rounded-full self-center flex-row items-center justify-center gap-2 px-7 py-3.5"
+      className="bmh-glass-btn bmh-glass-btn-light bg-white rounded-full self-center flex-row items-center justify-center gap-2 px-7 py-3.5"
     >
-      <Plus size={16} color="#FFFFFF" weight="bold" />
-      <Text className="text-white text-sm md:text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+      <Plus size={16} color="#000000" weight="bold" />
+      <Text className="text-black text-sm md:text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
         {isLoggedOut ? 'Sign up / Log in' : 'Launch a New Project'}
       </Text>
     </TouchableOpacity>
   );
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bmh-dark-page" style={{ backgroundColor: '#050505' }}>
       {/* Header */}
       <View
         className="pb-2 flex-row items-center gap-2"
@@ -312,7 +312,7 @@ export default function HomeScreen() {
           onPress={() => router.push('/profile')}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           activeOpacity={0.7}
-          className="w-10 h-10 bg-black rounded-full items-center justify-center overflow-hidden flex-shrink-0 z-10"
+          className="w-10 h-10 bg-white/10 border border-white/15 rounded-full items-center justify-center overflow-hidden flex-shrink-0 z-10"
         >
           {userPicture && !headerImageFailed ? (
             <View pointerEvents="none" className="w-full h-full">
@@ -329,11 +329,13 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <View className="flex-1 items-center justify-center min-w-0">
-          <Logo size="lg" />
+          <View className="bg-white rounded-xl px-3 py-1.5">
+            <Logo size="md" />
+          </View>
         </View>
 
         <View className="flex-shrink-0">
-          <NotificationBell />
+          <NotificationBell dark />
         </View>
       </View>
 
@@ -348,8 +350,8 @@ export default function HomeScreen() {
         {isLoadingProjects && !hasProjects ? (
           /* Loading — keep the screen calm and centered */
           <View className="flex-1 items-center justify-center py-24">
-            <ActivityIndicator size="small" color="#000" />
-            <Text className="text-gray-500 mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <ActivityIndicator size="small" color="#fff" />
+            <Text className="text-white/50 mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
               Loading projects...
             </Text>
           </View>
@@ -366,7 +368,7 @@ export default function HomeScreen() {
             {/* Current Projects */}
             <View className="mb-8 w-full max-w-2xl self-center">
               <Text
-                className="text-2xl text-black mb-4"
+                className="text-2xl text-white mb-4"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
                 Your Projects
@@ -389,7 +391,7 @@ export default function HomeScreen() {
                     onPress={() => handleProjectPress(project)}
                     activeOpacity={0.9}
                     className="bmh-product-card rounded-[28px] overflow-hidden mb-4"
-                    style={{ backgroundColor: CARD_BG }}
+                    style={{ backgroundColor: CARD_BG, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
                     accessibilityRole="button"
                     accessibilityLabel={`${project.name || 'Untitled Project'} — ${statusLabel}`}
                   >

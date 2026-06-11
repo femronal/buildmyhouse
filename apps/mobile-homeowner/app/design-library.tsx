@@ -209,7 +209,7 @@ export default function DesignLibraryScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bmh-dark-page" style={{ backgroundColor: '#050505' }}>
       <View
         className="pb-2"
         style={{ paddingTop: Math.max(8, insets.top + 2), paddingHorizontal: horizontalPadding }}
@@ -217,15 +217,15 @@ export default function DesignLibraryScreen() {
         <View className="flex-row items-center mb-3">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-9 h-9 bg-gray-50 border border-gray-200 rounded-full items-center justify-center mr-2"
+            className="w-9 h-9 bg-white/5 border border-white/15 rounded-full items-center justify-center mr-2"
           >
-            <ArrowLeft size={18} color="#000000" weight="bold" />
+            <ArrowLeft size={18} color="#FFFFFF" weight="bold" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
-            className="w-9 h-9 bg-black rounded-full items-center justify-center"
+            className="w-9 h-9 bg-white rounded-full items-center justify-center"
           >
-            <House size={16} color="#FFFFFF" weight="bold" />
+            <House size={16} color="#000000" weight="bold" />
           </TouchableOpacity>
         </View>
 
@@ -233,21 +233,21 @@ export default function DesignLibraryScreen() {
         <View className="flex-row flex-wrap items-end justify-between gap-y-3">
           <View>
             <Text
-              className="text-[10px] text-gray-400 uppercase mb-1"
+              className="text-[10px] text-white/40 uppercase mb-1"
               style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
             >
               Design Library
             </Text>
             <Text
-              className="text-[26px] md:text-4xl text-black tracking-tight leading-tight"
+              className="text-[26px] md:text-4xl text-white tracking-tight leading-tight"
               style={{ fontFamily: 'Poppins_500Medium' }}
               accessibilityRole="header"
             >
               Choose Your{'\n'}
-              <Text style={{ color: '#c4c4c4' }}>Design.</Text>
+              <Text style={{ color: '#5c5c5c' }}>Design.</Text>
             </Text>
             <Text 
-              className="text-xs text-gray-500 mt-1"
+              className="text-xs text-white/50 mt-1"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
               Browse designs uploaded by General Contractors
@@ -255,6 +255,7 @@ export default function DesignLibraryScreen() {
           </View>
 
           <ProjectTypeTabs
+            dark
             activeTab={activeTab}
             onSelect={(key) => {
               setActiveTab(key);
@@ -267,22 +268,22 @@ export default function DesignLibraryScreen() {
       {/* Search & Filter */}
       <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 h-11 flex-row items-center mr-2">
-            <MagnifyingGlass size={16} color="#737373" weight="regular" />
+          <View className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 h-11 flex-row items-center mr-2">
+            <MagnifyingGlass size={16} color="#8a8a8a" weight="regular" />
             <TextInput
               placeholder="Search designs..."
-              placeholderTextColor="#737373"
+              placeholderTextColor="#8a8a8a"
               value={searchQuery}
               onChangeText={setSearchQuery}
-              className="flex-1 ml-2 text-black text-sm"
+              className="flex-1 ml-2 text-white text-sm"
               style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0, outlineStyle: 'none' } as any}
             />
           </View>
           <TouchableOpacity 
             onPress={toggleFilters}
-            className={`w-10 h-10 rounded-full items-center justify-center border ${showFilters ? 'bg-black border-black' : 'bg-gray-50 border-gray-200'}`}
+            className={`w-10 h-10 rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
           >
-            <FunnelSimple size={18} color={showFilters ? '#FFFFFF' : '#000000'} weight="bold" />
+            <FunnelSimple size={18} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
           </TouchableOpacity>
         </View>
       </View>
@@ -294,10 +295,10 @@ export default function DesignLibraryScreen() {
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
-              className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-black' : 'bg-gray-100'}`}
+              className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
             >
               <Text 
-                className={activeFilter === tag ? 'text-white' : 'text-black'}
+                className={activeFilter === tag ? 'text-black' : 'text-white/80'}
                 style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
               >
                 {tag}
@@ -311,8 +312,8 @@ export default function DesignLibraryScreen() {
       {activeFilter !== 'All' && (
         <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-            <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
-            <CaretDown size={16} color="#000000" weight="bold" style={{ marginLeft: 4 }} />
+            <Text className="text-lg text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+            <CaretDown size={16} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
       )}
@@ -325,8 +326,8 @@ export default function DesignLibraryScreen() {
       >
         {designsLoading ? (
           <View className="items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#000" />
-            <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text className="text-white/50 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
               Loading designs...
             </Text>
           </View>
@@ -334,27 +335,27 @@ export default function DesignLibraryScreen() {
           <View className="items-center justify-center py-20">
             {!currentUser && !userLoading && !searchQuery && activeFilter === 'All' ? (
               <>
-                <Text className="text-gray-500 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-white/70 text-center text-lg mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Sign in to browse designs
                 </Text>
-                <Text className="text-gray-400 text-center text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-white/40 text-center text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
                   Create an account or log in to browse designs uploaded by General Contractors.
                 </Text>
                 <TouchableOpacity
                   onPress={() => router.push('/login')}
-                  className="bg-black rounded-full py-3 px-6"
+                  className="bg-white rounded-full py-3 px-6"
                 >
-                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Sign up / Log in
                   </Text>
                 </TouchableOpacity>
               </>
             ) : (
               <>
-                <Text className="text-gray-500 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-white/70 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   {searchQuery || activeFilter !== 'All' ? 'No designs match your filters' : 'No designs available yet'}
                 </Text>
-                <Text className="text-gray-400 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-white/40 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {searchQuery || activeFilter !== 'All' 
                     ? 'Try adjusting your search, project type, or filters'
                     : 'General Contractors can upload design plans that will appear here'}

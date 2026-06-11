@@ -58,7 +58,7 @@ export default function OpportunityProductCard({
     <Pressable
       onPress={onPress}
       className="bmh-product-card rounded-[28px] overflow-hidden"
-      style={{ width, height, backgroundColor: CARD_BG }}
+      style={{ width, height, backgroundColor: CARD_BG, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
       accessibilityRole="button"
       accessibilityLabel={`${listing.title} — view opportunity details`}
     >

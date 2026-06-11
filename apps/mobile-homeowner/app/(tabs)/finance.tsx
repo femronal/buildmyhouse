@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Animated, Linking, Alert, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { User, Filter, CreditCard, Receipt, FileText, Home, ChevronDown, Landmark, ChevronRight, Building2 } from "lucide-react-native";
+import { User, FunnelSimple, CreditCard, Receipt, FileText, House, CaretDown, Bank, CaretRight, Buildings } from "phosphor-react-native";
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, useMyInvoiceFiles, usePendingProjects, useUserPaymentsStructured } from '@/hooks';
@@ -13,8 +13,6 @@ import {
   getTabContentBottomPadding,
   getTabListingChrome,
 } from "@/lib/responsive-layout";
-import { cardShadowStyle } from "@/lib/card-styles";
-
 type TabKey = 'overview' | 'payments' | 'invoices' | 'landPurchases' | 'homePurchases' | 'rentals';
 
 function formatDate(dateStr: string) {
@@ -124,24 +122,24 @@ export default function FinanceScreen() {
   };
 
   const renderInvoiceFileCard = (file: any) => (
-    <View key={file.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
+    <View key={file.id} className="bg-white/5 rounded-2xl p-4 mb-3 border border-white/10">
       <View className="flex-row items-start justify-between">
         <View className="flex-1 pr-3">
-          <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {file.name}
           </Text>
-          <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className="text-white/60 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
             {file.projectName} • {file.stageName}
           </Text>
-          <Text className="text-gray-500 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className="text-white/40 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
             Uploaded {formatDate(file.createdAt)}
           </Text>
         </View>
         <TouchableOpacity
           onPress={() => openInvoiceOrReceipt(file.url)}
-          className="bg-black rounded-full px-4 py-2"
+          className="bg-white rounded-full px-4 py-2"
         >
-          <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+          <Text className="text-black text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
             Download
           </Text>
         </TouchableOpacity>
@@ -150,7 +148,7 @@ export default function FinanceScreen() {
   );
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bmh-dark-page" style={{ backgroundColor: '#050505' }}>
       <View
         className="flex-row items-center justify-between"
         style={{
@@ -161,7 +159,7 @@ export default function FinanceScreen() {
       >
         <TouchableOpacity
           onPress={() => router.push('/profile')}
-          className="bg-black rounded-full items-center justify-center overflow-hidden"
+          className="bg-white/10 border border-white/15 rounded-full items-center justify-center overflow-hidden"
           style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
           {userPicture ? (
@@ -171,18 +169,18 @@ export default function FinanceScreen() {
               resizeMode="cover"
             />
           ) : (
-            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" weight="bold" />
           )}
         </TouchableOpacity>
-        <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}>
+        <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}>
           Finance
         </Text>
         <TouchableOpacity
           onPress={toggleFilters}
-          className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+          className={`rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
           style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
         >
-          <Filter size={listingChrome.mobileWeb ? 20 : 24} color="#000000" strokeWidth={2.5} />
+          <FunnelSimple size={listingChrome.mobileWeb ? 18 : 20} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
         </TouchableOpacity>
       </View>
 
@@ -195,16 +193,16 @@ export default function FinanceScreen() {
           contentContainerStyle={{ paddingHorizontal: horizontalPadding }}
         >
           {[
-            { key: 'overview' as TabKey, label: 'Overview', icon: Home },
+            { key: 'overview' as TabKey, label: 'Overview', icon: House },
             { key: 'payments' as TabKey, label: 'Payments', icon: CreditCard },
             { key: 'invoices' as TabKey, label: 'Invoices', icon: Receipt },
-            { key: 'rentals' as TabKey, label: 'Rentals', icon: Building2 },
-            { key: 'landPurchases' as TabKey, label: 'Land Purchases', icon: Landmark },
-            { key: 'homePurchases' as TabKey, label: 'Home Purchases', icon: Home },
+            { key: 'rentals' as TabKey, label: 'Rentals', icon: Buildings },
+            { key: 'landPurchases' as TabKey, label: 'Land Purchases', icon: Bank },
+            { key: 'homePurchases' as TabKey, label: 'Home Purchases', icon: House },
           ].map((tab) => (
-            <TouchableOpacity key={tab.key} onPress={() => setActiveTab(tab.key)} className={`px-4 py-2 rounded-full mr-3 flex-row items-center ${activeTab === tab.key ? 'bg-black' : 'bg-gray-100'}`}>
-              <tab.icon size={16} color={activeTab === tab.key ? '#FFFFFF' : '#000000'} strokeWidth={2} />
-              <Text className={`ml-2 text-sm ${activeTab === tab.key ? 'text-white' : 'text-black'}`} style={{ fontFamily: 'Poppins_500Medium' }}>{tab.label}</Text>
+            <TouchableOpacity key={tab.key} onPress={() => setActiveTab(tab.key)} className={`px-4 py-2 rounded-full mr-3 flex-row items-center ${activeTab === tab.key ? 'bg-white' : 'bg-white/10'}`}>
+              <tab.icon size={16} color={activeTab === tab.key ? '#000000' : '#FFFFFF'} weight="regular" />
+              <Text className={`ml-2 text-sm ${activeTab === tab.key ? 'text-black' : 'text-white/80'}`} style={{ fontFamily: 'Poppins_500Medium' }}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -214,12 +212,12 @@ export default function FinanceScreen() {
       <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
           <Text
-            className="text-black"
+            className="text-white"
             style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 17 : 20 }}
           >
             {tabLabel}
           </Text>
-          <ChevronDown size={20} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
+          <CaretDown size={18} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
 
@@ -230,41 +228,40 @@ export default function FinanceScreen() {
         {activeTab === 'overview' && (
           <View className={listingChrome.mobileWeb ? 'pb-4' : 'pb-8'}>
             <View
-              className={`bg-black rounded-3xl ${listingChrome.mobileWeb ? 'mb-4' : 'mb-6'}`}
+              className={`bg-white rounded-3xl ${listingChrome.mobileWeb ? 'mb-4' : 'mb-6'}`}
               style={{ padding: listingChrome.mobileWeb ? 16 : 24 }}
             >
-              <Text className="text-white/70 mb-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
+              <Text className="text-black/60 mb-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
                 Total Invested
               </Text>
               <Text
-                className="text-white mb-3"
+                className="text-black mb-3"
                 style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 28 : 36 }}
               >
                 ₦{totalInvested.toLocaleString()}
               </Text>
               <View className="flex-row justify-between">
                 <View>
-                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
-                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 18 : 20 }}>{activeCount}</Text>
+                  <Text className="text-black/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
+                  <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 18 : 20 }}>{activeCount}</Text>
                 </View>
                 <View>
-                  <Text className="text-white/70 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text>
-                  <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 16 : 20 }}>₦{totalBudget.toLocaleString()}</Text>
+                  <Text className="text-black/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Total Budget</Text>
+                  <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 16 : 20 }}>₦{totalBudget.toLocaleString()}</Text>
                 </View>
               </View>
             </View>
             <Text
-              className="text-black mb-2"
+              className="text-white mb-2"
               style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 17 : 20 }}
             >
               Project Budgets
             </Text>
             {allProjects.length === 0 ? (
               <View
-                style={cardShadowStyle}
-                className={`bg-gray-50 rounded-3xl border border-gray-200 items-center ${listingChrome.mobileWeb ? 'p-5' : 'p-8'}`}
+                className={`bg-white/5 rounded-3xl border border-white/10 items-center ${listingChrome.mobileWeb ? 'p-5' : 'p-8'}`}
               >
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No projects yet. Start a project to see your budget breakdown here.</Text>
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No projects yet. Start a project to see your budget breakdown here.</Text>
               </View>
             ) : (
               allProjects.map((p) => {
@@ -273,15 +270,15 @@ export default function FinanceScreen() {
                 const remaining = budget - spent;
                 const percent = budget > 0 ? Math.round((spent / budget) * 100) : 0;
                 return (
-                  <View key={p.id} style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-5 mb-4 border border-gray-200">
-                    <Text className="text-lg text-black mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
+                  <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">
+                    <Text className="text-lg text-white mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
                     <View className="flex-row justify-between mb-3">
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{budget.toLocaleString()}</Text></View>
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{spent.toLocaleString()}</Text></View>
-                      <View><Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{remaining.toLocaleString()}</Text></View>
+                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{budget.toLocaleString()}</Text></View>
+                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{spent.toLocaleString()}</Text></View>
+                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{remaining.toLocaleString()}</Text></View>
                     </View>
-                    <View className="h-3 bg-gray-200 rounded-full overflow-hidden"><View className="h-full bg-black rounded-full" style={{ width: `${Math.min(percent, 100)}%` }} /></View>
-                    <Text className="text-gray-500 text-xs mt-2 text-right" style={{ fontFamily: 'Poppins_400Regular' }}>{percent}% spent</Text>
+                    <View className="h-3 bg-white/15 rounded-full overflow-hidden"><View className="h-full bg-white rounded-full" style={{ width: `${Math.min(percent, 100)}%` }} /></View>
+                    <Text className="text-white/50 text-xs mt-2 text-right" style={{ fontFamily: 'Poppins_400Regular' }}>{percent}% spent</Text>
                   </View>
                 );
               })
@@ -292,9 +289,9 @@ export default function FinanceScreen() {
         {activeTab === 'payments' && (
           <View className="pb-8">
             {paymentsWithData.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <Text className="text-gray-400 text-4xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No payments yet. Materials and team costs recorded by your GC will appear here.</Text>
+              <View className="bg-white/5 rounded-3xl p-8 border border-white/10 items-center">
+                <Text className="text-white/30 text-4xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No payments yet. Materials and team costs recorded by your GC will appear here.</Text>
               </View>
             ) : (
               paymentsWithData.map((group) => {
@@ -305,40 +302,40 @@ export default function FinanceScreen() {
                 const subCount = subPayments.length;
                 const hasActivation = !!activation;
                 return (
-                  <View key={group.projectId} style={cardShadowStyle} className="bg-gray-50 rounded-2xl mb-3 border border-gray-200">
+                  <View key={group.projectId} className="bg-white/5 rounded-2xl mb-3 border border-white/10">
                     <View className="overflow-hidden rounded-2xl">
                     <TouchableOpacity
                       onPress={() => setExpandedProjectId(isExpanded ? null : group.projectId)}
                       className="p-4 flex-row items-center"
                       activeOpacity={0.7}
                     >
-                      <View className="w-12 h-12 bg-black rounded-full items-center justify-center">
-                        <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
+                      <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+                        <Text className="text-black text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
                       </View>
                       <View className="flex-1 ml-4">
-                        <Text className="text-black text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>{group.projectName}</Text>
-                        <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>{group.projectName}</Text>
+                        <Text className="text-white/50 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                           {hasActivation ? 'Project paid • ' : ''}{subCount > 0 ? `${subCount} material/team cost${subCount !== 1 ? 's' : ''}` : hasActivation ? 'No materials/team recorded yet' : ''}
                         </Text>
                       </View>
                       <View className="items-end">
-                        <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{total.toLocaleString()}</Text>
-                        <ChevronRight size={20} color="#6B7280" strokeWidth={2} style={{ transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }} />
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{total.toLocaleString()}</Text>
+                        <CaretRight size={18} color="#8a8a8a" weight="bold" style={{ transform: [{ rotate: isExpanded ? '90deg' : '0deg' }] }} />
                       </View>
                     </TouchableOpacity>
                     {isExpanded && (
-                      <View className="border-t border-gray-200 pt-2 pb-2">
+                      <View className="border-t border-white/10 pt-2 pb-2">
                         {subPayments.length === 0 ? (
                           <View className="px-4 py-3 pl-16">
-                            <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>No materials or team costs recorded by the GC yet.</Text>
+                            <Text className="text-white/50 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>No materials or team costs recorded by the GC yet.</Text>
                           </View>
                         ) : (
                           subPayments.map((sp) => (
                             <View key={sp.id} className="flex-row items-center px-4 py-2 pl-16">
-                              <Text className="flex-1 text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                              <Text className="flex-1 text-white/60 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                                 {sp.type === 'material' ? 'Material' : 'Team'} • {sp.stageName} • {sp.description}
                               </Text>
-                              <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{sp.amount.toLocaleString()}</Text>
+                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{sp.amount.toLocaleString()}</Text>
                             </View>
                           ))
                         )}
@@ -355,22 +352,22 @@ export default function FinanceScreen() {
         {activeTab === 'invoices' && (
           <View className="pb-8">
             {invoiceFiles.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <FileText size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <View className="bg-white/5 rounded-3xl p-8 border border-white/10 items-center">
+                <FileText size={48} color="#5c5c5c" weight="regular" style={{ marginBottom: 12 }} />
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No invoices or receipts uploaded yet. Files added by your GC will appear here.
                 </Text>
               </View>
             ) : (
               <View>
                 <View className="flex-row items-center mb-3">
-                  <Receipt size={16} color="#111827" strokeWidth={2} />
-                  <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Receipt size={16} color="#FFFFFF" weight="regular" />
+                  <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Receipts ({receiptFiles.length})
                   </Text>
                 </View>
                 {receiptFiles.length === 0 ? (
-                  <Text className="text-gray-500 text-sm mb-5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/50 text-sm mb-5" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No receipts uploaded yet.
                   </Text>
                 ) : (
@@ -378,13 +375,13 @@ export default function FinanceScreen() {
                 )}
 
                 <View className="flex-row items-center mb-3 mt-2">
-                  <FileText size={16} color="#111827" strokeWidth={2} />
-                  <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <FileText size={16} color="#FFFFFF" weight="regular" />
+                  <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Invoices ({invoiceOnlyFiles.length})
                   </Text>
                 </View>
                 {invoiceOnlyFiles.length === 0 ? (
-                  <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/50 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No invoices uploaded yet.
                   </Text>
                 ) : (
@@ -398,26 +395,26 @@ export default function FinanceScreen() {
         {activeTab === 'landPurchases' && (
           <View className="pb-8">
             {landPurchases.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <Landmark size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <View className="bg-white/5 rounded-3xl p-8 border border-white/10 items-center">
+                <Bank size={48} color="#5c5c5c" weight="regular" style={{ marginBottom: 12 }} />
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No land purchase records yet.
                 </Text>
               </View>
             ) : (
               landPurchases.map((purchase: any) => (
-                <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
-                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <View key={purchase.id} className="bg-white/5 rounded-2xl p-4 mb-3 border border-white/10">
+                  <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {purchase.snapshotName ?? purchase.landForSale?.name ?? 'Land'}
                   </Text>
-                  <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/50 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {purchase.snapshotLocation ?? purchase.landForSale?.location ?? ''}
                   </Text>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                       ₦{(purchase.purchaseAmount ?? purchase.snapshotPrice ?? purchase.landForSale?.price ?? 0).toLocaleString()}
                     </Text>
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    <Text className="text-white/50 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
                     </Text>
                   </View>
@@ -430,26 +427,26 @@ export default function FinanceScreen() {
         {activeTab === 'homePurchases' && (
           <View className="pb-8">
             {homePurchases.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <Home size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <View className="bg-white/5 rounded-3xl p-8 border border-white/10 items-center">
+                <House size={48} color="#5c5c5c" weight="regular" style={{ marginBottom: 12 }} />
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No home purchase records yet.
                 </Text>
               </View>
             ) : (
               homePurchases.map((purchase: any) => (
-                <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
-                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <View key={purchase.id} className="bg-white/5 rounded-2xl p-4 mb-3 border border-white/10">
+                  <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {purchase.snapshotName ?? purchase.houseForSale?.name ?? 'House'}
                   </Text>
-                  <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-white/50 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {purchase.snapshotLocation ?? purchase.houseForSale?.location ?? ''}
                   </Text>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                    <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                       ₦{(purchase.purchaseAmount ?? purchase.snapshotPrice ?? purchase.houseForSale?.price ?? 0).toLocaleString()}
                     </Text>
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    <Text className="text-white/50 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
                     </Text>
                   </View>
@@ -462,9 +459,9 @@ export default function FinanceScreen() {
         {activeTab === 'rentals' && (
           <View className="pb-8">
             {rentalPurchases.length === 0 ? (
-              <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-8 border border-gray-200 items-center">
-                <Building2 size={48} color="#9CA3AF" strokeWidth={2} style={{ marginBottom: 12 }} />
-                <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <View className="bg-white/5 rounded-3xl p-8 border border-white/10 items-center">
+                <Buildings size={48} color="#5c5c5c" weight="regular" style={{ marginBottom: 12 }} />
+                <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No rental spend records yet.
                 </Text>
               </View>
@@ -480,35 +477,35 @@ export default function FinanceScreen() {
                 const agencyFee = Math.round((annualRent * agencyFeePercent) / 100);
                 const totalSpent = annualRent + serviceCharge + cautionDeposit + legalFee + agencyFee;
                 return (
-                  <View key={purchase.id} style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200">
-                    <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <View key={purchase.id} className="bg-white/5 rounded-2xl p-4 mb-3 border border-white/10">
+                    <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       {purchase.snapshotTitle ?? listing?.title ?? 'Rental'}
                     </Text>
-                    <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    <Text className="text-white/50 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {purchase.snapshotLocation ?? listing?.location ?? ''}
                     </Text>
-                    <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-xl p-3 mb-2">
-                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    <View className="bg-white/5 border border-white/10 rounded-xl p-3 mb-2">
+                      <Text className="text-white/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Annual rent: ₦{annualRent.toLocaleString()}
                       </Text>
-                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-white/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Service charge: ₦{serviceCharge.toLocaleString()}
                       </Text>
-                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-white/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Caution deposit: ₦{cautionDeposit.toLocaleString()}
                       </Text>
-                      <Text className="text-gray-600 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-white/60 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Legal fee ({legalFeePercent}%): ₦{legalFee.toLocaleString()}
                       </Text>
-                      <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-white/60 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                         BuildMyHouse agency fee ({agencyFeePercent}%): ₦{agencyFee.toLocaleString()}
                       </Text>
                     </View>
                     <View className="flex-row justify-between items-center">
-                      <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                         ₦{totalSpent.toLocaleString()}
                       </Text>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-white/50 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                         {formatDate(purchase.purchaseMarkedAt || purchase.createdAt)}
                       </Text>
                     </View>

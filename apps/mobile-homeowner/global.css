@@ -429,6 +429,28 @@ body * {
   }
 }
 
+/* === Dark page shell (homeowner tab screens) — deep black with soft light edges === */
+.bmh-dark-page {
+  background-color: #050505;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 0% 0%, rgba(255, 255, 255, 0.08) 0px, transparent 60%),
+    radial-gradient(ellipse 50% 35% at 100% 0%, rgba(255, 255, 255, 0.06) 0px, transparent 60%),
+    radial-gradient(ellipse 55% 40% at 0% 100%, rgba(255, 255, 255, 0.05) 0px, transparent 60%),
+    radial-gradient(ellipse 60% 45% at 100% 100%, rgba(255, 255, 255, 0.07) 0px, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Light glass floating tab bar */
+.bmh-glass-tabbar {
+  background-color: rgba(255, 255, 255, 0.78) !important;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
 /* === Dark glass auth card (email-login) === */
 @keyframes bmhAuthSpin {
   to {

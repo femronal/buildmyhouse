@@ -18,6 +18,8 @@ type ProjectTypeTabsProps<K extends string> = {
   onSelect: (key: K) => void;
   /** Render inside a horizontal scroller (for long tab sets). */
   scrollable?: boolean;
+  /** White-on-dark variant for dark pages. */
+  dark?: boolean;
 };
 
 /** Editorial text tabs with an underline on the active item (template style). */
@@ -26,7 +28,12 @@ export default function ProjectTypeTabs<K extends string = ProjectTypeTabKey>({
   activeTab,
   onSelect,
   scrollable,
+  dark,
 }: ProjectTypeTabsProps<K>) {
+  const activeColor = dark ? '#ffffff' : '#000000';
+  const inactiveColor = dark ? '#4f4f4f' : '#c4c4c4';
+  const rowBorderClass = dark ? 'border-white/10' : 'border-gray-100';
+
   const items = tabs.map((tab) => {
     const active = tab.key === activeTab;
     return (
@@ -38,7 +45,7 @@ export default function ProjectTypeTabs<K extends string = ProjectTypeTabKey>({
         className="pb-1.5"
         style={
           active
-            ? { borderBottomWidth: 2, borderBottomColor: '#000000', marginBottom: -1 }
+            ? { borderBottomWidth: 2, borderBottomColor: activeColor, marginBottom: -1 }
             : undefined
         }
       >
@@ -46,7 +53,7 @@ export default function ProjectTypeTabs<K extends string = ProjectTypeTabKey>({
           className="text-sm md:text-lg"
           style={{
             fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_400Regular',
-            color: active ? '#000000' : '#c4c4c4',
+            color: active ? activeColor : inactiveColor,
           }}
         >
           {tab.label}
@@ -63,7 +70,7 @@ export default function ProjectTypeTabs<K extends string = ProjectTypeTabKey>({
         className="self-end max-w-full md:mr-12"
         style={{ flexGrow: 0 }}
       >
-        <View className="flex-row items-end border-b border-gray-100" style={{ columnGap: 18 }}>
+        <View className={`flex-row items-end border-b ${rowBorderClass}`} style={{ columnGap: 18 }}>
           {items}
         </View>
       </ScrollView>
@@ -72,7 +79,7 @@ export default function ProjectTypeTabs<K extends string = ProjectTypeTabKey>({
 
   return (
     <View
-      className="flex-row items-end border-b border-gray-100 self-end max-w-full md:mr-12"
+      className={`flex-row items-end border-b ${rowBorderClass} self-end max-w-full md:mr-12`}
       style={{ columnGap: 18 }}
     >
       {items}

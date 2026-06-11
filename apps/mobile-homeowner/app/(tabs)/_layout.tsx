@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { Home, Compass, Wallet, Hammer } from "lucide-react-native";
+import { House, Compass, Hammer, Wallet } from "phosphor-react-native";
 import { View, Platform, useWindowDimensions } from "react-native";
 import { BlurView } from "expo-blur";
 import { useMemo } from "react";
@@ -14,6 +14,20 @@ export default function TabsLayout() {
     [width, insets.bottom],
   );
 
+  const renderIcon = (Icon: any) =>
+    ({ color, focused }: { color: string; focused: boolean }) => (
+      <View
+        className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+        style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+      >
+        <Icon
+          size={width <= 390 ? 22 : 24}
+          color={focused ? '#FFFFFF' : color}
+          weight={focused ? 'fill' : 'regular'}
+        />
+      </View>
+    );
+
   return (
     <Tabs
       screenOptions={{
@@ -24,15 +38,25 @@ export default function TabsLayout() {
           left: metrics.sideInset,
           right: metrics.sideInset,
           height: metrics.height,
-          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255,255,255,0.85)',
+          backgroundColor: Platform.OS === 'ios' ? 'transparent' : 'rgba(255,255,255,0.78)',
           borderRadius: metrics.borderRadius,
           borderTopWidth: 0,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
-          elevation: 8,
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.3,
+          shadowRadius: 16,
+          elevation: 10,
           paddingHorizontal: width <= 390 ? 6 : 10,
+          ...(Platform.OS === 'web'
+            ? ({
+                backdropFilter: 'blur(18px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+                borderWidth: 1,
+                borderColor: 'rgba(255,255,255,0.65)',
+                boxShadow:
+                  '0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+              } as any)
+            : null),
         },
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
@@ -52,7 +76,7 @@ export default function TabsLayout() {
           ) : null
         ),
         tabBarActiveTintColor: '#000000',
-        tabBarInactiveTintColor: '#A3A3A3',
+        tabBarInactiveTintColor: '#737373',
         /** Space between icon row and label — prevents active pill overlapping text */
         tabBarIconStyle: {
           marginBottom: width <= 390 ? 6 : 8,
@@ -70,62 +94,10 @@ export default function TabsLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="home"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-            >
-              <Home size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Projects",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-            >
-              <Compass size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="rent"
-        options={{
-          title: "Build",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-            >
-              <Hammer size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="finance"
-        options={{
-          title: "Finance",
-          tabBarIcon: ({ color, focused }) => (
-            <View
-              className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-              style={{ paddingVertical: 6, paddingHorizontal: 8 }}
-            >
-              <Wallet size={width <= 390 ? 24 : 26} color={focused ? '#FFFFFF' : color} strokeWidth={focused ? 3 : 2.5} />
-            </View>
-          ),
-        }}
-      />
+      <Tabs.Screen name="home" options={{ title: "Home", tabBarIcon: renderIcon(House) }} />
+      <Tabs.Screen name="explore" options={{ title: "Projects", tabBarIcon: renderIcon(Compass) }} />
+      <Tabs.Screen name="rent" options={{ title: "Build", tabBarIcon: renderIcon(Hammer) }} />
+      <Tabs.Screen name="finance" options={{ title: "Finance", tabBarIcon: renderIcon(Wallet) }} />
     </Tabs>
   );
 }
