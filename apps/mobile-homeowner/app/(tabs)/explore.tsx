@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Filter, Search, ChevronDown, ChevronUp, Info } from "lucide-react-native";
+import { User, FunnelSimple, MagnifyingGlass, CaretDown, CaretUp, Info } from "phosphor-react-native";
+import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDesigns } from '@/hooks';
@@ -256,97 +257,67 @@ export default function ExploreScreen() {
               resizeMode="cover"
             />
           ) : (
-            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" weight="bold" />
           )}
         </TouchableOpacity>
-        
-        <Text 
-          className="text-black"
-          style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}
-        >
-          Projects
-        </Text>
-        
+
         <NotificationBell />
+      </View>
+
+      {/* Editorial headline + tabs */}
+      <View
+        className="flex-row flex-wrap items-end justify-between gap-y-3"
+        style={{ paddingHorizontal: horizontalPadding, marginBottom: listingChrome.tabsSectionMarginBottom }}
+      >
+        <View>
+          <Text
+            className="text-[10px] text-gray-400 uppercase mb-1"
+            style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
+          >
+            Catalog
+          </Text>
+          <Text
+            className="text-[26px] md:text-4xl text-black tracking-tight leading-tight"
+            style={{ fontFamily: 'Poppins_500Medium' }}
+            accessibilityRole="header"
+          >
+            Pick Your{'\n'}
+            <Text style={{ color: '#c4c4c4' }}>Project.</Text>
+          </Text>
+        </View>
+
+        <ProjectTypeTabs
+          activeTab={activeTab}
+          onSelect={(key) => {
+            setActiveTab(key);
+            setActiveFilter('All');
+          }}
+        />
       </View>
 
       {/* Search & Filter */}
       <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
           <View
-            className="flex-1 bg-gray-100 rounded-2xl px-3 flex-row items-center mr-3"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 flex-row items-center mr-3"
             style={{ paddingVertical: listingChrome.searchBarPaddingY }}
           >
-            <Search size={20} color="#737373" strokeWidth={2} />
+            <MagnifyingGlass size={18} color="#737373" weight="regular" />
             <TextInput
               placeholder="Search by phrases and keywords (e.g. AC repair in Akoka)"
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
               className="flex-1 ml-3 text-gray-900"
-              style={{ fontFamily: 'Poppins_400Regular' }}
+              style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
             />
           </View>
           <TouchableOpacity 
             onPress={toggleFilters}
-            className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`rounded-full items-center justify-center border ${showFilters ? 'bg-black border-black' : 'bg-gray-50 border-gray-200'}`}
             style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
           >
-            <Filter size={listingChrome.mobileWeb ? 20 : 22} color="#000000" strokeWidth={2.5} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Tabs */}
-      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
-        <View className="flex-row bg-gray-100 rounded-2xl p-1">
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('repairs');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-xs ${activeTab === 'repairs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Repairs
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('upgrades');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-xs ${activeTab === 'upgrades' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Upgrades
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('renovation');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-xs ${activeTab === 'renovation' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Renovation
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('full_builds');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-xl items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-          >
-            <Text className={`text-xs ${activeTab === 'full_builds' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Full Builds
-            </Text>
+            <FunnelSimple size={listingChrome.mobileWeb ? 18 : 20} color={showFilters ? '#FFFFFF' : '#000000'} weight="bold" />
           </TouchableOpacity>
         </View>
       </View>
@@ -360,7 +331,7 @@ export default function ExploreScreen() {
           >
             <View className="flex-row items-start flex-1 pr-2">
               <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
-                <Info size={14} color="#374151" strokeWidth={2.2} />
+                <Info size={14} color="#374151" weight="bold" />
               </View>
               <View className="flex-1">
                 <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
@@ -376,9 +347,9 @@ export default function ExploreScreen() {
             </View>
             <View className="pl-1 pt-0.5">
               {isProjectsMessageExpanded ? (
-                <ChevronUp size={18} color="#111827" strokeWidth={2.2} />
+                <CaretUp size={16} color="#111827" weight="bold" />
               ) : (
-                <ChevronDown size={18} color="#111827" strokeWidth={2.2} />
+                <CaretDown size={16} color="#111827" weight="bold" />
               )}
             </View>
           </TouchableOpacity>
@@ -414,7 +385,7 @@ export default function ExploreScreen() {
             >
               {activeFilter}
             </Text>
-            <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
+            <CaretDown size={16} color="#000000" weight="bold" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
       </View>
 

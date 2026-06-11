@@ -11,18 +11,9 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Alert,
-  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
-  User,
-  Filter,
-  Search,
-  Heart,
-  MapPin,
-  Bed,
-  Bath,
-  Maximize,
   X,
   Check,
   FileCheck,
@@ -33,10 +24,15 @@ import {
   Car,
   Lock,
   Clock,
-  ChevronDown,
-  ChevronUp,
-  Info,
 } from "lucide-react-native";
+import {
+  User,
+  FunnelSimple,
+  MagnifyingGlass,
+  CaretDown,
+  CaretUp,
+  Info,
+} from "phosphor-react-native";
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageCarousel from '@/components/ImageCarousel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -55,17 +51,24 @@ import {
   getFloatingTabBarMetrics,
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
-  getTwoColumnCardWidth,
   getTabListingChrome,
 } from "@/lib/responsive-layout";
-import { cardShadowStyle } from "@/lib/card-styles";
 import {
-  BUILD_OPPORTUNITY_CATEGORIES,
   BUILD_OPPORTUNITY_FILTERS,
   formatBuildOpportunityKey,
   type BuildOpportunityCategoryKey,
 } from "@/lib/build-opportunity-taxonomy";
 import { matchesKeywordPhraseQuery } from "@/lib/keyword-search";
+import ProjectTypeTabs, { type UnderlineTabItem } from '@/components/ProjectTypeTabs';
+import OpportunityProductCard from '@/components/OpportunityProductCard';
+
+const OPPORTUNITY_TABS: UnderlineTabItem<BuildOpportunityCategoryKey>[] = [
+  { key: 'residential', label: 'Residential' },
+  { key: 'commercial', label: 'Commercial' },
+  { key: 'heavy_civil_construction', label: 'Heavy Civil' },
+  { key: 'industrial_construction', label: 'Industrial' },
+  { key: 'environmental_construction', label: 'Environmental' },
+];
 
 type BuildOpportunity = {
   id: string;
@@ -143,28 +146,20 @@ export default function RentScreen() {
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
-  const isDesktopThreeColumn = screenWidth >= 1200;
-  const cardWidth = useMemo(() => {
-    if (!isDesktopThreeColumn) {
-      return getTwoColumnCardWidth(screenWidth);
-    }
-    const columnGap = 12;
-    return (screenWidth - horizontalPadding * 2 - columnGap * 2) / 3;
-  }, [horizontalPadding, isDesktopThreeColumn, screenWidth]);
-  const listingCardShadow = useMemo(
-    () => [
-      cardShadowStyle,
-      Platform.OS === 'web'
-        ? ({ boxShadow: '0 10px 24px rgba(15, 23, 42, 0.12)' } as const)
-        : ({
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.12,
-            shadowRadius: 10,
-            elevation: 5,
-          } as const),
-    ],
-    [],
+  // 1 column on mobile, 3 on tablet, 4 on desktop
+  const gridGap = 16;
+  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 1;
+  const cardWidth = useMemo(
+    () => (screenWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns,
+    [gridColumns, horizontalPadding, screenWidth],
   );
+  const cardHeight = gridColumns === 1 ? 460 : 420;
+
+  const [activeImageIndex, setActiveImageIndex] = useState<{ [key: string]: number }>({});
+  const handleImageScroll = (id: string, event: any) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
+    setActiveImageIndex((prev) => (prev[id] === index ? prev : { ...prev, [id]: index }));
+  };
 
   const filterHeight = useMemo(
     () =>
@@ -364,63 +359,68 @@ export default function RentScreen() {
           {userPicture ? (
             <Image source={{ uri: getBackendAssetUrl(userPicture) }} className="w-full h-full" resizeMode="cover" />
           ) : (
-            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" strokeWidth={2.5} />
+            <User size={listingChrome.headerUserIconSize} color="#FFFFFF" weight="bold" />
           )}
         </TouchableOpacity>
-
-        <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.titleFontSize }}>
-          Build
-        </Text>
 
         <NotificationBell />
       </View>
 
+      {/* Editorial headline + tabs */}
+      <View
+        className="flex-row flex-wrap items-end justify-between gap-y-3"
+        style={{ paddingHorizontal: horizontalPadding, marginBottom: listingChrome.tabsSectionMarginBottom }}
+      >
+        <View>
+          <Text
+            className="text-[10px] text-gray-400 uppercase mb-1"
+            style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
+          >
+            Verified Opportunities
+          </Text>
+          <Text
+            className="text-[26px] md:text-4xl text-black tracking-tight leading-tight"
+            style={{ fontFamily: 'Poppins_500Medium' }}
+            accessibilityRole="header"
+          >
+            Find Your{'\n'}
+            <Text style={{ color: '#c4c4c4' }}>Next Build.</Text>
+          </Text>
+        </View>
+
+        <ProjectTypeTabs
+          tabs={OPPORTUNITY_TABS}
+          activeTab={activeTab}
+          onSelect={setActiveTab}
+          scrollable
+        />
+      </View>
+
+      {/* Search & Filter */}
       <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
           <View
-            className="flex-1 bg-gray-100 rounded-2xl px-3 flex-row items-center mr-3"
+            className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 flex-row items-center mr-3"
             style={{ paddingVertical: listingChrome.searchBarPaddingY }}
           >
-            <Search size={20} color="#737373" strokeWidth={2} />
+            <MagnifyingGlass size={18} color="#737373" weight="regular" />
             <TextInput
               placeholder="Search by phrases and keywords (e.g. AC repair in Akoka)"
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
               className="flex-1 ml-3 text-gray-900"
-              style={{ fontFamily: 'Poppins_400Regular' }}
+              style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
             />
           </View>
           <TouchableOpacity
             onPress={toggleFilters}
-            className={`rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`rounded-full items-center justify-center border ${showFilters ? 'bg-black border-black' : 'bg-gray-50 border-gray-200'}`}
             style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
           >
-            <Filter size={listingChrome.mobileWeb ? 20 : 22} color="#000000" strokeWidth={2.5} />
+            <FunnelSimple size={listingChrome.mobileWeb ? 18 : 20} color={showFilters ? '#FFFFFF' : '#000000'} weight="bold" />
           </TouchableOpacity>
         </View>
-      </View>
-
-      <View style={{ marginBottom: listingChrome.tabsSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1">
-          <View className="flex-row">
-            {BUILD_OPPORTUNITY_CATEGORIES.map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setActiveTab(tab.key)}
-                className={`px-4 rounded-full items-center mr-2 ${activeTab === tab.key ? 'bg-black' : 'bg-gray-100'}`}
-                style={{ paddingVertical: listingChrome.segmentedTabPaddingY }}
-              >
-                <Text
-                  className={`text-sm ${activeTab === tab.key ? 'text-white' : 'text-gray-600'}`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  {tab.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
       </View>
 
       <View style={{ marginBottom: 12, paddingHorizontal: horizontalPadding }}>
@@ -432,7 +432,7 @@ export default function RentScreen() {
           >
             <View className="flex-row items-start flex-1 pr-2">
               <View className="w-5 h-5 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
-                <Info size={11} color="#374151" strokeWidth={2.2} />
+                <Info size={11} color="#374151" weight="bold" />
               </View>
               <View className="flex-1">
                 <Text className="text-black mb-1" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10 }}>
@@ -447,9 +447,9 @@ export default function RentScreen() {
             </View>
             <View className="pl-1 pt-0.5">
               {isBuildMessageExpanded ? (
-                <ChevronUp size={16} color="#111827" strokeWidth={2.2} />
+                <CaretUp size={16} color="#111827" weight="bold" />
               ) : (
-                <ChevronDown size={16} color="#111827" strokeWidth={2.2} />
+                <CaretDown size={16} color="#111827" weight="bold" />
               )}
             </View>
           </TouchableOpacity>
@@ -480,6 +480,7 @@ export default function RentScreen() {
           >
             {activeFilter === 'All' ? 'All' : formatBuildOpportunityKey(activeFilter)}
           </Text>
+          <CaretDown size={16} color="#000000" weight="bold" style={{ marginLeft: 4 }} />
         </TouchableOpacity>
       </View>
 
@@ -511,92 +512,31 @@ export default function RentScreen() {
             </Text>
           </View>
         ) : (
-          <View className="flex-row flex-wrap justify-between pb-6">
+          <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap }}>
             {filteredListings.map((listing) => (
-              <TouchableOpacity
+              <OpportunityProductCard
                 key={listing.id}
+                listing={{
+                  id: listing.id,
+                  title: listing.title,
+                  subtitle: listing.subtitle,
+                  location: listing.location,
+                  priceLabel: listing.priceLabel,
+                  bedrooms: listing.bedrooms,
+                  bathrooms: listing.bathrooms,
+                  sizeLabel: listing.sizeLabel,
+                  serviceHint: listing.serviceHint,
+                  tagLabel: formatBuildOpportunityKey(listing.opportunityType || listing.source),
+                  images: listing.images || [],
+                }}
+                width={cardWidth}
+                height={cardHeight}
                 onPress={() => openRentModal(listing)}
-                style={[listingCardShadow, { width: cardWidth }]}
-                className="mb-5 bg-white rounded-3xl border border-gray-200"
-              >
-                <View className="overflow-hidden rounded-3xl">
-                <View className="relative">
-                  <Image
-                    source={{
-                      uri: listing.images?.[0]?.url
-                        ? getBackendAssetUrl(listing.images[0].url)
-                        : 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-                    }}
-                    className="h-36"
-                    style={{ width: cardWidth }}
-                    resizeMode="cover"
-                  />
-                  <TouchableOpacity
-                    onPress={() => toggleFavorite(listing.id)}
-                    className="absolute top-3 right-3 w-8 h-8 bg-white/95 rounded-full items-center justify-center"
-                  >
-                    <Heart
-                      size={16}
-                      color={favorites.includes(listing.id) ? '#EF4444' : '#737373'}
-                      strokeWidth={2}
-                      fill={favorites.includes(listing.id) ? '#EF4444' : 'transparent'}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                <View className="p-3">
-                  <Text className="text-lg text-black mb-1" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
-                    {listing.title}
-                  </Text>
-                  {listing.subtitle ? (
-                    <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium' }} numberOfLines={1}>
-                      {listing.subtitle}
-                    </Text>
-                  ) : null}
-                  <View className="flex-row items-center mb-2">
-                    <MapPin size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
-                      {listing.location}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center mb-2">
-                    {typeof listing.bedrooms === 'number' ? (
-                      <>
-                        <Bed size={12} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bedrooms}</Text>
-                      </>
-                    ) : null}
-                    {typeof listing.bathrooms === 'number' ? (
-                      <>
-                        <Bath size={12} color="#737373" strokeWidth={2} />
-                        <Text className="text-gray-500 ml-1 mr-2 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.bathrooms}</Text>
-                      </>
-                    ) : null}
-                    <Maximize size={12} color="#737373" strokeWidth={2} />
-                    <Text className="text-gray-500 ml-1 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>{listing.sizeLabel}</Text>
-                  </View>
-                  <Text
-                    className="text-black text-lg"
-                    style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.75}
-                  >
-                    {listing.priceLabel}
-                  </Text>
-                  <View className="flex-row justify-between items-center mt-1 min-w-0">
-                    <Text className="text-gray-500 text-xs flex-1 pr-2" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
-                      {listing.serviceHint || 'Verified property opportunity'}
-                    </Text>
-                    <View className="bg-emerald-100 rounded-full px-2 py-0.5 flex-shrink-0">
-                      <Text className="text-emerald-700 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {formatBuildOpportunityKey(listing.opportunityType || listing.source)}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-                </View>
-              </TouchableOpacity>
+                isFavorite={favorites.includes(listing.id)}
+                onToggleFavorite={() => toggleFavorite(listing.id)}
+                activeImageIndex={activeImageIndex[listing.id] || 0}
+                onImageScroll={(event) => handleImageScroll(listing.id, event)}
+              />
             ))}
           </View>
         )}

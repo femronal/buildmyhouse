@@ -131,7 +131,7 @@ export default function EmailLoginScreen() {
                   <View className="flex-row items-center gap-2 mb-3">
                     <View
                       className="bmh-auth-dot w-1.5 h-1.5 rounded-full"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.8)' }}
+                      style={{ backgroundColor: 'rgba(52,211,153,0.8)' }}
                     />
                     <Text className="text-xs" style={{ color: MUTED_COLOR, fontFamily: 'Poppins_400Regular' }}>
                       Secure area

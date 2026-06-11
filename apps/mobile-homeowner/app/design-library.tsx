@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Home, Filter, Search, ChevronDown } from "lucide-react-native";
+import { ArrowLeft, House, FunnelSimple, MagnifyingGlass, CaretDown } from "phosphor-react-native";
+import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { useState, useRef, useCallback, useMemo } from "react";
 import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -213,108 +214,75 @@ export default function DesignLibraryScreen() {
         className="pb-2"
         style={{ paddingTop: Math.max(8, insets.top + 2), paddingHorizontal: horizontalPadding }}
       >
-        <View className="flex-row items-center mb-2">
+        <View className="flex-row items-center mb-3">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mr-2"
+            className="w-9 h-9 bg-gray-50 border border-gray-200 rounded-full items-center justify-center mr-2"
           >
-            <ArrowLeft size={19} color="#000000" strokeWidth={2} />
+            <ArrowLeft size={18} color="#000000" weight="bold" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
             className="w-9 h-9 bg-black rounded-full items-center justify-center"
           >
-            <Home size={17} color="#FFFFFF" strokeWidth={2} />
+            <House size={16} color="#FFFFFF" weight="bold" />
           </TouchableOpacity>
         </View>
-        
-        <Text 
-          className="text-2xl text-black mb-1"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
-          Choose Your Design
-        </Text>
-        <Text 
-          className="text-xs text-gray-500"
-          style={{ fontFamily: 'Poppins_400Regular' }}
-        >
-          Browse designs uploaded by General Contractors
-        </Text>
+
+        {/* Editorial headline + tabs */}
+        <View className="flex-row flex-wrap items-end justify-between gap-y-3">
+          <View>
+            <Text
+              className="text-[10px] text-gray-400 uppercase mb-1"
+              style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
+            >
+              Design Library
+            </Text>
+            <Text
+              className="text-[26px] md:text-4xl text-black tracking-tight leading-tight"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+              accessibilityRole="header"
+            >
+              Choose Your{'\n'}
+              <Text style={{ color: '#c4c4c4' }}>Design.</Text>
+            </Text>
+            <Text 
+              className="text-xs text-gray-500 mt-1"
+              style={{ fontFamily: 'Poppins_400Regular' }}
+            >
+              Browse designs uploaded by General Contractors
+            </Text>
+          </View>
+
+          <ProjectTypeTabs
+            activeTab={activeTab}
+            onSelect={(key) => {
+              setActiveTab(key);
+              setActiveFilter('All');
+            }}
+          />
+        </View>
       </View>
 
       {/* Search & Filter */}
-      <View className="mb-2" style={{ paddingHorizontal: horizontalPadding }}>
+      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
         <View className="flex-row items-center">
-          <View className="flex-1 bg-gray-100 rounded-xl px-3 h-11 flex-row items-center mr-2">
-            <Search size={18} color="#737373" strokeWidth={2} />
+          <View className="flex-1 bg-gray-50 border border-gray-200 rounded-full px-4 h-11 flex-row items-center mr-2">
+            <MagnifyingGlass size={16} color="#737373" weight="regular" />
             <TextInput
               placeholder="Search designs..."
               placeholderTextColor="#737373"
               value={searchQuery}
               onChangeText={setSearchQuery}
               className="flex-1 ml-2 text-black text-sm"
-              style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0 }}
+              style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0, outlineStyle: 'none' } as any}
             />
           </View>
           <TouchableOpacity 
             onPress={toggleFilters}
-            className={`w-10 h-10 rounded-full items-center justify-center ${showFilters ? 'bg-gray-200' : 'bg-gray-100'}`}
+            className={`w-10 h-10 rounded-full items-center justify-center border ${showFilters ? 'bg-black border-black' : 'bg-gray-50 border-gray-200'}`}
           >
-            <Filter size={19} color="#000000" strokeWidth={2.3} />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Project Type Tabs */}
-      <View className="mb-2" style={{ paddingHorizontal: horizontalPadding }}>
-        <View className="flex-row bg-gray-100 rounded-xl p-1">
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('repairs');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'repairs' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text className={`text-xs ${activeTab === 'repairs' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Repairs
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('upgrades');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'upgrades' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text className={`text-xs ${activeTab === 'upgrades' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Upgrades
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('renovation');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'renovation' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text className={`text-xs ${activeTab === 'renovation' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Renovation
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              setActiveTab('full_builds');
-              setActiveFilter('All');
-            }}
-            className={`flex-1 px-1 rounded-lg items-center ${activeTab === 'full_builds' ? 'bg-black' : ''}`}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text className={`text-xs ${activeTab === 'full_builds' ? 'text-white' : 'text-gray-600'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Full Builds
-            </Text>
+            <FunnelSimple size={18} color={showFilters ? '#FFFFFF' : '#000000'} weight="bold" />
           </TouchableOpacity>
         </View>
       </View>
@@ -344,7 +312,7 @@ export default function DesignLibraryScreen() {
         <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
           <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
             <Text className="text-lg text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
-            <ChevronDown size={18} color="#000000" strokeWidth={2} style={{ marginLeft: 4 }} />
+            <CaretDown size={16} color="#000000" weight="bold" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
       )}
