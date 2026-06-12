@@ -1,0 +1,341 @@
+# BuildMyHouse Codebase Reference (June 2026)
+
+Last updated: 2026-06-12
+Scope: Full monorepo — apps/admin-dashboard, apps/mobile-homeowner, apps/mobile-contractor, apps/backend, packages/
+
+Use with companion uploads:
+- BUILDMYHOUSE_API_ROUTE_MAP.txt
+- BUILDMYHOUSE_ROUTE_URL_MAP.txt
+- BUILDMYHOUSE_DATA_MODEL_SUMMARY.txt
+- BUILDMYHOUSE_CHATGPT_PROMPTS.md
+
+Start ChatGPT prompts with: "Based on my attached BuildMyHouse codebase reference..."
+
+---
+
+## 1) What BuildMyHouse Is
+
+BuildMyHouse is a monorepo for a Nigerian construction ecosystem with four shipped surfaces:
+
+| App | Path | Domain | Users |
+|-----|------|--------|-------|
+| Homeowner | apps/mobile-homeowner | buildmyhouse.app | Homeowners in Nigeria + diaspora |
+| GC/Contractor | apps/mobile-contractor | gc.buildmyhouse.app | General contractors, artisans |
+| Admin | apps/admin-dashboard | admin.buildmyhouse.app | Internal ops team |
+| Backend API | apps/backend | api.buildmyhouse.app | All clients |
+
+Shared packages: packages/shared-types, shared-ui, shared-utils
+Package manager: pnpm@9.14.2, Node >=18
+
+Product positioning (2026): "Repairs-first" platform — verified workers, staged payments, evidence before you pay. Strong SEO/content layer for diaspora homeowners building/renovating remotely in Nigeria.
+
+---
+
+## 2) Monorepo Commands
+
+Root scripts (package.json):
+- pnpm dev:homeowner / dev:contractor / dev:backend / dev:admin
+- pnpm build:homeowner / build:contractor / build:admin / build:all
+- pnpm test:all / lint:all
+
+---
+
+## 3) Production Architecture
+
+| Service | Hosting | URL |
+|---------|---------|-----|
+| Backend | AWS ECS (Fargate), ECR image | https://api.buildmyhouse.app |
+| Admin | AWS ECS, Next.js standalone Docker | https://admin.buildmyhouse.app |
+| Homeowner web | S3 + CloudFront static export | https://buildmyhouse.app |
+| GC web | S3 + CloudFront static export | https://gc.buildmyhouse.app |
+
+Deploy: .github/workflows/deploy-production.yml (push to main)
+Region: eu-north-1
+Backend Docker CMD: prisma generate → prisma migrate deploy → node dist/src/main.js
+
+Critical production constraints (DEPLOYMENT.md):
+1. Run backend as exactly 1 ECS task (Socket.IO in-memory; no Redis adapter yet)
+2. Uploads must use S3 (AWS_S3_BUCKET) — container disk is ephemeral
+3. ALLOWED_ORIGINS must list exact production URLs with https://
+4. EXPO_PUBLIC_API_URL / NEXT_PUBLIC_API_URL baked at build time (must include /api suffix)
+5. Stripe webhook uses raw body at /api/payments/webhooks/stripe
+
+---
+
+## 4) Backend (apps/backend)
+
+### Stack
+NestJS 10, Prisma 5, PostgreSQL, JWT auth, Socket.IO, Stripe, AWS S3, Resend email, Google OAuth, OpenAI (plan analysis), @nestjs/schedule, @nestjs/throttler
+
+Global prefix: /api
+Health: GET /api/health
+
+### Module map
+auth, admin, users, projects, chat, payments, marketplace (materials, contractors, reviews, search), contractors, designs, plans, houses, lands, rentals, notifications, push-tokens, upload, websocket, email, openai, articles, resource-sections, prisma
+
+Full route list: see BUILDMYHOUSE_API_ROUTE_MAP.txt
+
+### Auth model
+- JWT payload: sub, email, role
+- JwtAuthGuard + RolesGuard + @Roles(...) on protected routes
+- Roles: homeowner, general_contractor, subcontractor, vendor, admin
+- Google OAuth: browser flow + POST /auth/google/mobile for Expo apps
+- Admin login: POST /auth/admin/login (optional email allowlist via ADMIN_DASHBOARD_ALLOWED_EMAILS)
+
+### Key business flows
+
+**Project lifecycle:**
+Homeowner creates project → plan upload/AI analysis → admin review → GC matching (MATCHING_ALGO_VERSION v1) → ProjectRequest → GC assigned → stages with documentation → payments → completion
+
+**Manual payment path (common for diaspora):**
+GC sets externalPaymentLink → homeowner declares payment → admin confirms (paymentConfirmationStatus) → tracking unlocks
+
+**Stage disputes:**
+Homeowner files dispute on stage → admin reviews → may pause project
+
+**GC verification:**
+GC uploads verification docs + certifications → admin verifies → designs can go live
+
+### CMS (added/expanded 2026)
+- CmsArticle: TipTap JSON content, FAQs, internal links, resourceSectionKeys, articlePillar
+- CmsResourceSection: admin-managed sidebar topics for /articles hub
+- Public: GET /api/articles, GET /api/resource-sections
+- Admin editor: apps/admin-dashboard/src/app/articles/editor/
+- Admin sections: apps/admin-dashboard/src/app/articles/sections/
+
+### Environment (apps/backend/.env.example)
+DATABASE_URL, JWT_SECRET, STRIPE_*, OPENAI_*, GOOGLE_*, AWS_*, RESEND_*, ALLOWED_ORIGINS, PORT, MATCHING_ALGO_VERSION, GC_MATCHING_AI_*, HOMEOWNER_APP_URL, CONTRACTOR_APP_URL, ADMIN_DASHBOARD_URL
+
+---
+
+## 5) Admin Dashboard (apps/admin-dashboard)
+
+### Stack
+Next.js 14 App Router, React Query, Tailwind, standalone Docker output
+
+### Auth
+Token in localStorage (auth_token). ProtectedRoute wraps all pages except /login and /health.
+
+### Pages
+/dashboard, /homeowners, /contractors, /projects, /verification, /disputes, /land, /houses, /rentals, /articles, /articles/editor, /articles/sections, /emails, /admin-access, /review-insights
+
+Full route map: BUILDMYHOUSE_ROUTE_URL_MAP.txt
+
+### CMS article editor
+- TipTap rich text editor
+- Section picker (resourceSectionKeys) — required on publish
+- Pillar assignment (articlePillar)
+- Publish/unpublish via PATCH /api/articles/admin/:id/publish
+
+---
+
+## 6) Homeowner App (apps/mobile-homeowner)
+
+### Stack
+Expo 54, React Native, React 19, Expo Router, React Query, NativeWind (Tailwind), Socket.IO client
+
+### Navigation structure
+- Web entry: / → HomeLandingPage (marketing)
+- Tabs: /home, /property-projects-nigeria, /build-opportunities-nigeria, /finance
+- Legacy redirects: /explore → property-projects-nigeria, /rent → build-opportunities-nigeria
+
+### Main product flows
+1. Auth (email + Google OAuth)
+2. Onboarding intro
+3. Project creation: choose type → location → upload plan / pick design → house summary → submit
+4. Dashboard + timeline + stage detail (evidence, materials, team, docs)
+5. GC matching + chat + notifications
+6. Payments (Stripe native/web adapters + manual declare flow)
+7. Marketplace: designs (Explore tab), houses/land/rentals (Build tab)
+8. Profile, billing, settings
+
+### SEO & content system (major 2026 investment)
+
+**Unified readable layout:**
+components/seo/SeoContentLayout.tsx — SeoContentShell, SeoContentColumn (max-w 760px), SeoContentBackButton, seoContentTypography
+Used by: all guides, diaspora pages, tools, downloads, SeoLandingPage, SeoArticlePage, ServiceRoutePage, demo
+
+**Resources hub (/articles):**
+- app/articles/index.tsx — dark layout, topic sidebar, featured hero, search
+- lib/resources-catalog.ts — merges static guides + CMS articles + tools + downloads
+- lib/resource-sections.ts — fetches GET /api/resource-sections for sidebar
+- lib/article-pillars.ts — pillar grouping + search
+
+**Content types:**
+- CMS articles: /articles/{slug} via SeoArticlePage + GET /api/articles/:slug
+- Static SEO guides: SeoLandingPage or custom page components
+- Tools: /tools/milestone-payment-schedule, /tools/renovation-budget-planner
+- Downloads: lead magnet PDF gates
+- Diaspora pillars: /diaspora/*
+- Service pages: /services/* via ServiceRoutePage
+- Demo: /demo/project-monitoring
+
+**SEO infrastructure:**
+- lib/seo.ts — isIndexablePath(), getDefaultSeoForPath()
+- lib/seo-schema.ts — JSON-LD builders
+- inject-static-seo.mjs + generate-seo-files.mjs — build-time meta injection
+- public/sitemap.xml + robots.txt
+
+**SEO URL renames (June 2026):**
+/explore → /property-projects-nigeria
+/rent → /build-opportunities-nigeria
+(legacy routes redirect with noindex)
+
+### Landing page (web /)
+components/landing/HomeLandingPage.tsx
+- Hero with audience tabs (need worker, get hired, diaspora)
+- Platform gallery, WhatsApp comparison, how it works
+- Testimonials + Trustpilot review section
+- Contractor CTA, FAQ, footer
+- LogoText component (white/black wordmark SVG)
+- Trustpilot AFS email in lib/home-landing-content.ts → TRUSTPILOT_REVIEW
+
+### Key components
+- components/LogoText.tsx — text wordmark (logo-text-white.svg / logo-text-black.svg)
+- components/AnimatedCtaButton.tsx — Aura-style animated pill CTA
+- components/seo/* — 30+ SEO page components
+- components/landing/* — marketing sections
+- components/articles/ArticleHtmlBody.tsx — renders CMS HTML
+
+### Environment
+EXPO_PUBLIC_API_URL (must end in /api), EXPO_PUBLIC_WEB_URL, EXPO_PUBLIC_GOOGLE_CLIENT_ID, Stripe publishable key, Google Maps key
+
+---
+
+## 7) GC App (apps/mobile-contractor)
+
+### Stack
+Same as homeowner (Expo 54 + Expo Router + React Query + NativeWind)
+
+### Main flows
+- Auth (GC + admin roles only)
+- Onboarding + verification document upload
+- GC dashboard: pending/active projects
+- Request management (accept/reject/send)
+- Stage detail with documentation upload
+- Earnings + Stripe Connect + bank accounts
+- GC plans/designs management
+- Chat + notifications
+
+### Routes under /contractor/*
+See BUILDMYHOUSE_ROUTE_URL_MAP.txt
+
+No Stripe client package like homeowner; no marketplace listing surfaces.
+
+---
+
+## 8) Shared Patterns
+
+### Authentication across clients
+| Client | Token storage | Header |
+|--------|---------------|--------|
+| Homeowner/GC mobile | AsyncStorage auth_token | Authorization: Bearer |
+| Admin web | localStorage auth_token | Authorization: Bearer |
+
+### API calls
+All clients use EXPO_PUBLIC_API_URL or NEXT_PUBLIC_API_URL pointing to https://api.buildmyhouse.app/api
+
+### Realtime
+Socket.IO gateway validates JWT, joins conversation/project rooms, emits notification and chat events.
+
+### Push notifications
+POST /api/push-tokens/register from mobile; backend sends via Expo push service.
+
+---
+
+## 9) Content & SEO Workflow
+
+See apps/mobile-homeowner/SEO_CONTENT_WORKFLOW.md
+
+Publishing model:
+1. Publish original on buildmyhouse.app
+2. Wait for indexation (24-72h)
+3. Republish adapted version on Medium with canonical link back
+4. Never duplicate full text without canonical
+
+Admin CMS flow:
+1. Write article in /articles/editor
+2. Assign resourceSectionKeys (sidebar topics) — required to publish
+3. Publish → appears in /articles hub + GET /api/articles
+4. Static export includes slug via generateStaticParams()
+
+---
+
+## 10) Data Model
+
+See BUILDMYHOUSE_DATA_MODEL_SUMMARY.txt for full entity reference.
+
+Core entities: User, Project, Stage, Payment, ProjectRequest, ProjectStageDispute, Contractor, Design, HouseForSale, LandForSale, RentalListing, CmsArticle, CmsResourceSection, Conversation, Message, Notification
+
+---
+
+## 11) CI/CD
+
+.github/workflows/ci.yml — lint, backend tests (Postgres service), admin Playwright E2E, mobile builds
+.github/workflows/deploy-production.yml — ECS backend + admin, S3 homeowner + GC
+
+Some CI jobs use continue-on-error — green pipeline may hide partial failures.
+
+---
+
+## 12) Key file index (where to look)
+
+| Need to understand... | Start here |
+|----------------------|------------|
+| API endpoints | apps/backend/src/**/*.controller.ts |
+| Database schema | apps/backend/prisma/schema.prisma |
+| Admin ops | apps/admin-dashboard/src/app/ |
+| Homeowner routes | apps/mobile-homeowner/app/ |
+| SEO pages | apps/mobile-homeowner/components/seo/ |
+| Articles hub | app/articles/index.tsx + lib/resources-catalog.ts |
+| CMS backend | apps/backend/src/articles/ + resource-sections/ |
+| Landing page | components/landing/HomeLandingPage.tsx |
+| Payment flow | apps/backend/src/payments/ + app/billing-payments.tsx |
+| GC matching | apps/backend/src/contractors/ + GC_MATCHING_* env vars |
+| Deployment | DEPLOYMENT.md + .github/workflows/deploy-production.yml |
+| Shared types | packages/shared-types/ |
+
+---
+
+## 13) Canonical truths for AI assistants
+
+When answering BuildMyHouse questions, prioritize:
+
+1. This is a multi-app monorepo — always specify which app/surface.
+2. Backend + PostgreSQL is the system of record.
+3. Homeowner and GC apps share architecture but different feature surfaces.
+4. Admin is internal ops only — not user-facing product.
+5. Project stages + evidence + payment confirmation are core to trust model.
+6. Diaspora remote monitoring is a primary product story.
+7. SEO/content on buildmyhouse.app is a major acquisition channel.
+8. Two contractor APIs exist: /api/contractors (workflows) vs /api/marketplace/contractors (profiles).
+9. CMS articles require resourceSectionKeys on publish (June 2026 rule).
+10. Production backend must run as single ECS task until Socket.IO Redis adapter is added.
+
+---
+
+## 14) Recent changes (March → June 2026)
+
+- Articles hub redesign with topic sidebar + featured hero
+- CmsResourceSection model + admin sections page + public API
+- SEO URL rename: explore/rent tabs → property-projects-nigeria / build-opportunities-nigeria
+- Unified SeoContentLayout across all long-form content pages
+- lib/resources-catalog.ts unified content index
+- /tools hub page
+- Trustpilot review section on landing page
+- LogoText wordmark (replaced emblem logo in header + landing + login)
+- Admin article editor: section picker on publish
+- Production deploy: ECS + S3/CloudFront pipeline active
+
+---
+
+## 15) Update procedure
+
+When refreshing these docs:
+1. Re-scan prisma/schema.prisma for model changes
+2. Grep @Controller in apps/backend/src for new routes
+3. Glob apps/mobile-homeowner/app/**/*.tsx for new routes
+4. Update sections 4, 6, 10, 14 first
+5. Regenerate BUILDMYHOUSE_API_ROUTE_MAP.txt and BUILDMYHOUSE_ROUTE_URL_MAP.txt
+
+This reference + companion maps should be the primary technical attachment for BuildMyHouse ChatGPT/NotebookLM sessions.

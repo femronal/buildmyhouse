@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   XCircle,
 } from 'phosphor-react-native';
-import Logo from '@/components/Logo';
+import LogoText from '@/components/LogoText';
 import PhoneDashboardMockup from '@/components/landing/PhoneDashboardMockup';
 import LandingMobileNav from '@/components/landing/LandingMobileNav';
 import SEOJsonLd from '@/components/landing/SEOJsonLd';
@@ -24,6 +24,7 @@ import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/Social
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import TrustpilotReviewSection from '@/components/landing/TrustpilotReviewSection';
 import RotatingKeyword from '@/components/landing/RotatingKeyword';
 import {
   AUDIENCE_TABS,
@@ -269,7 +270,7 @@ export default function HomeLandingPage() {
             <View className="flex-row items-center gap-8 flex-1">
               <Link href={'/' as any} asChild>
                 <Pressable accessibilityRole="link">
-                  <Logo size="md" />
+                  <LogoText variant="black" size="md" />
                 </Pressable>
               </Link>
               <View className="hidden lg:flex flex-row items-center gap-6">
@@ -561,6 +562,8 @@ export default function HomeLandingPage() {
         </View>
 
         <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
+
+        <TrustpilotReviewSection />
 
         {/* Contractor CTA */}
         <View className="py-24 bg-white" onLayout={(e) => recordSectionOffset('contractors', e.nativeEvent.layout.y)}>

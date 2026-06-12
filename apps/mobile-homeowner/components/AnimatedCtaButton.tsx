@@ -51,7 +51,8 @@ export default function AnimatedCtaButton({ label, onPress, compact }: AnimatedC
           ...(isNative
             ? {
                 color: active ? '#000000' : '#ffffff',
-                transform: [{ translateX: active ? 12 : -12 }],
+                transform: [{ translateX: active ? 12 : -8 }],
+                paddingRight: 32,
               }
             : null),
         }}
@@ -73,7 +74,7 @@ export default function AnimatedCtaButton({ label, onPress, compact }: AnimatedC
       <View
         className="bmh-animated-cta-arr bmh-animated-cta-arr-1"
         pointerEvents="none"
-        style={isNative ? (active ? { right: -60 } : { right: 16 }) : undefined}
+        style={isNative ? (active ? { right: -60 } : { right: 14 }) : undefined}
       >
         <ArrowIcon fill={arrowFill} />
       </View>

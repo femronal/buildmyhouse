@@ -1,0 +1,298 @@
+# BuildMyHouse Route URL Map
+
+Last updated: 2026-06-12
+Production web base: https://buildmyhouse.app
+Router: Expo Router (homeowner/GC) + Next.js App Router (admin)
+
+Companion docs: BUILDMYHOUSE_API_ROUTE_MAP.txt, BUILDMYHOUSE_DATA_MODEL_SUMMARY.txt
+
+---
+
+## SEO & routing libraries (homeowner)
+
+| File | Role |
+|------|------|
+| lib/seo.ts | Indexability whitelist, default meta, canonical normalization |
+| lib/seo-pages.ts | City/market long-form SEO page content |
+| lib/seo-schema.ts | JSON-LD, breadcrumbs, buildCanonical() |
+| lib/resources-catalog.ts | Unified resources hub index (articles, guides, tools, downloads, diaspora) |
+| lib/resource-sections.ts | Articles hub sidebar topics (API + defaults) |
+| lib/published-content-catalog.ts | Static flagship catalog rows |
+| lib/home-landing-content.ts | Homepage + SERVICE_SEO_PAGES (13 service slugs) |
+| lib/articles.ts | Article seeds, CMS fetch, getAllArticleSlugs() |
+| components/seo/SeoContentLayout.tsx | Shared centered readable layout (max-w 760px) |
+
+---
+
+## Legacy redirects (homeowner)
+
+| Legacy URL | Redirect target | SEO |
+|------------|-----------------|-----|
+| /explore | /property-projects-nigeria | noindex,follow |
+| /rent | /build-opportunities-nigeria | noindex,follow |
+| /login | /email-login | noindex; canonical → / |
+| /diaspora/us/build-in-nigeria | /diaspora/build-in-nigeria-from-usa-canada | noindex alias |
+| /diaspora/uk/build-in-nigeria | /diaspora/build-in-nigeria-from-uk | noindex alias |
+
+---
+
+## 1. Homeowner app (apps/mobile-homeowner/app/)
+
+### Root, tabs & marketing
+
+| URL | File | Purpose | SEO |
+|-----|------|---------|-----|
+| / | app/index.tsx | Web: marketing landing; native: auth router | index |
+| /home | app/(tabs)/home.tsx | Homeowner dashboard — projects, payments | noindex |
+| /property-projects-nigeria | app/(tabs)/property-projects-nigeria.tsx | Browse designs/repair/renovation/build catalog | index |
+| /build-opportunities-nigeria | app/(tabs)/build-opportunities-nigeria.tsx | Rentals, homes for sale, land | index |
+| /finance | app/(tabs)/finance.tsx | Payments, invoices, purchases | noindex |
+| /explore | app/explore.tsx | Redirect → /property-projects-nigeria | noindex |
+| /rent | app/rent.tsx | Redirect → /build-opportunities-nigeria | noindex |
+| /for-contractors | app/for-contractors.tsx | Contractor recruitment landing | index |
+
+### Auth & account
+
+| URL | File | Purpose | SEO |
+|-----|------|---------|-----|
+| /login | app/login.tsx | Redirect → /email-login | noindex |
+| /email-login | app/email-login.tsx | Email sign-up & sign-in | noindex |
+| /forgot-password | app/forgot-password.tsx | Password reset request | noindex |
+| /reset-password | app/reset-password.tsx | Set new password | noindex |
+| /google-callback | app/google-callback.tsx | Google OAuth callback (web) | noindex |
+| /onboarding-intro | app/onboarding-intro.tsx | First-run onboarding | noindex |
+| /profile | app/profile.tsx | Profile hub | noindex |
+| /personal-information | app/personal-information.tsx | Edit profile | noindex |
+| /notification-settings | app/notification-settings.tsx | Notification prefs | noindex |
+| /billing-payments | app/billing-payments.tsx | Payment methods | noindex |
+| /privacy-security | app/privacy-security.tsx | Privacy settings | noindex |
+| /app-settings | app/app-settings.tsx | App preferences | noindex |
+| /terms-conditions | app/terms-conditions.tsx | Terms of service | noindex |
+| /help-support | app/help-support.tsx | Support | noindex |
+| /install-app | app/install-app.tsx | PWA install prompt | noindex |
+
+### Project workflow (authenticated)
+
+| URL | File | Purpose | SEO |
+|-----|------|---------|-----|
+| /choose-project-type | app/choose-project-type.tsx | Pick project category | noindex |
+| /location | app/location.tsx / location.web.tsx | Map/address picker | noindex |
+| /design-library | app/design-library.tsx | Design inspirations | noindex |
+| /upload-plan | app/upload-plan.tsx | Upload architectural plan | noindex |
+| /house-summary | app/house-summary.tsx | Review before submit | noindex |
+| /house-detail | app/house-detail.tsx | House listing detail | noindex |
+| /land-detail | app/land-detail.tsx | Land listing detail | noindex |
+| /pending-projects | app/pending-projects.tsx | Unpaid/pending projects | noindex |
+| /dashboard | app/dashboard.tsx | Project dashboard | noindex |
+| /timeline | app/timeline.tsx | Project timeline | noindex |
+| /stage-detail | app/stage-detail.tsx | Stage detail | noindex |
+| /chat | app/chat.tsx | Messaging | noindex |
+| /notifications | app/notifications.tsx | Notification inbox | noindex |
+| /review-contractor | app/review-contractor.tsx | Post-project review | noindex |
+
+### Construction SEO
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /construction/nigeria | app/construction/nigeria.tsx | Diaspora building hub (flagship) |
+| /construction/lagos | app/construction/lagos.tsx | House construction Lagos |
+| /construction/abuja | app/construction/abuja.tsx | House construction Abuja |
+| /construction/port-harcourt | app/construction/port-harcourt.tsx | House construction PH |
+
+### Renovation, interior, real estate
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /renovation/nigeria | app/renovation/nigeria.tsx | Renovation services |
+| /interior-design/nigeria | app/interior-design/nigeria.tsx | Interior design |
+| /homes-for-rent/nigeria | app/homes-for-rent/nigeria.tsx | Homes for rent |
+| /houses-for-sale/nigeria | app/houses-for-sale/nigeria.tsx | Houses for sale |
+| /land-for-sale/nigeria | app/land-for-sale/nigeria.tsx | Land for sale |
+
+### Diaspora pages
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /diaspora/build-in-nigeria-from-abroad | app/diaspora/build-in-nigeria-from-abroad.tsx | Flagship build-from-abroad pillar |
+| /diaspora/renovate-in-nigeria-from-abroad | app/diaspora/renovate-in-nigeria-from-abroad.tsx | Flagship renovate-from-abroad pillar |
+| /diaspora/build-in-nigeria-from-uk | app/diaspora/build-in-nigeria-from-uk.tsx | UK diaspora build |
+| /diaspora/build-in-nigeria-from-usa-canada | app/diaspora/build-in-nigeria-from-usa-canada.tsx | USA/Canada diaspora build |
+| /diaspora/build-in-nigeria-from-uae | app/diaspora/build-in-nigeria-from-uae.tsx | UAE/Middle East diaspora build |
+| /diaspora/uk/renovate-parents-house | app/diaspora/uk/renovate-parents-house.tsx | UK renovate parents' home |
+
+### Guides (/guides/*)
+
+| URL | File |
+|-----|------|
+| /guides/lagos-building-permits-and-stage-inspections | app/guides/lagos-building-permits-and-stage-inspections.tsx |
+| /guides/contractor-vetting-nigeria-diaspora | app/guides/contractor-vetting-nigeria-diaspora.tsx |
+| /guides/weekly-site-updates-standard | app/guides/weekly-site-updates-standard.tsx |
+| /guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad | app/guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad.tsx |
+| /guides/renovation-permit-lagos-repair-vs-renovation | app/guides/renovation-permit-lagos-repair-vs-renovation.tsx |
+
+### Standalone SEO guides (app root)
+
+| URL | File |
+|-----|------|
+| /mistakes-nigerians-in-diaspora-make-when-building | app/mistakes-nigerians-in-diaspora-make-when-building.tsx |
+| /how-to-choose-a-general-contractor-in-nigeria | app/how-to-choose-a-general-contractor-in-nigeria.tsx |
+| /land-verification-in-nigeria-guide | app/land-verification-in-nigeria-guide.tsx |
+| /building-permit-in-lagos-nigeria-guide | app/building-permit-in-lagos-nigeria-guide.tsx |
+
+### Tools & downloads
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /tools | app/tools/index.tsx | Tools hub |
+| /tools/milestone-payment-schedule | app/tools/milestone-payment-schedule.tsx | Milestone payment builder |
+| /tools/renovation-budget-planner | app/tools/renovation-budget-planner.tsx | Renovation budget planner |
+| /downloads/lagos-permit-starter-checklist | app/downloads/lagos-permit-starter-checklist.tsx | PDF lead magnet |
+| /downloads/remote-renovation-scope-worksheet | app/downloads/remote-renovation-scope-worksheet.tsx | PDF lead magnet |
+
+### Demo
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /demo/project-monitoring | app/demo/project-monitoring.tsx | Interactive product demo |
+
+### Service landing pages (/services/*)
+
+Static files use ServiceRoutePage; unknown slugs use app/services/[slug].tsx.
+Registry: lib/home-landing-content.ts → SERVICE_SEO_PAGES
+
+| URL | File |
+|-----|------|
+| /services/plumbing-repair-nigeria | app/services/plumbing-repair-nigeria.tsx |
+| /services/electrical-repair-nigeria | app/services/electrical-repair-nigeria.tsx |
+| /services/roof-leak-repair-nigeria | app/services/roof-leak-repair-nigeria.tsx |
+| /services/drainage-repair-nigeria | app/services/drainage-repair-nigeria.tsx |
+| /services/window-repair-nigeria | app/services/window-repair-nigeria.tsx |
+| /services/pumping-machine-repair-nigeria | app/services/pumping-machine-repair-nigeria.tsx |
+| /services/fan-repair-nigeria | app/services/fan-repair-nigeria.tsx |
+| /services/rechargeable-fan-repair-nigeria | app/services/rechargeable-fan-repair-nigeria.tsx |
+| /services/bathroom-repair-nigeria | app/services/bathroom-repair-nigeria.tsx |
+| /services/painting-services-nigeria | app/services/painting-services-nigeria.tsx |
+| /services/kitchen-renovation-nigeria | app/services/kitchen-renovation-nigeria.tsx |
+| /services/home-renovation-nigeria | app/services/home-renovation-nigeria.tsx |
+| /services/general-contractors-nigeria | app/services/general-contractors-nigeria.tsx |
+| /services/{slug} | app/services/[slug].tsx |
+
+### Articles hub & CMS
+
+| URL | File | Purpose |
+|-----|------|---------|
+| /articles | app/articles/index.tsx | Resources hub — dark layout, topic sidebar, featured hero |
+| /articles/{slug} | app/articles/[slug].tsx | Article detail (bundled seeds + CMS API) |
+
+Bundled article slugs (lib/articles.ts):
+- /articles/cost-to-build-house-in-nigeria-2026
+- /articles/renovation-checklist-for-homeowners-nigeria
+- /articles/diaspora-guide-build-in-nigeria-from-abroad
+
+Additional CMS articles may exist in production (e.g. site-excavation-lagos, diaspora money-loss guides).
+
+---
+
+## 2. Admin dashboard (apps/admin-dashboard/src/app/)
+
+Base: https://admin.buildmyhouse.app
+Auth: ProtectedRoute on all routes except /login and /health
+
+| URL | File | Purpose |
+|-----|------|---------|
+| / | src/app/page.tsx | Redirect → /dashboard |
+| /login | src/app/login/page.tsx | Admin login |
+| /dashboard | src/app/dashboard/page.tsx | KPI overview |
+| /homeowners | src/app/homeowners/page.tsx | Homeowner management |
+| /contractors | src/app/contractors/page.tsx | Contractor management |
+| /projects | src/app/projects/page.tsx | Project monitoring |
+| /verification | src/app/verification/page.tsx | GC/plan verification |
+| /disputes | src/app/disputes/page.tsx | Dispute resolution |
+| /land | src/app/land/page.tsx | Land listings |
+| /houses | src/app/houses/page.tsx | House listings |
+| /rentals | src/app/rentals/page.tsx | Rental listings |
+| /articles | src/app/articles/page.tsx | CMS articles list |
+| /articles/editor | src/app/articles/editor/page.tsx | Article editor (TipTap) |
+| /articles/sections | src/app/articles/sections/page.tsx | Resource hub sidebar sections |
+| /emails | src/app/emails/page.tsx | Bulk email campaigns |
+| /admin-access | src/app/admin-access/page.tsx | Admin access control |
+| /review-insights | src/app/review-insights/page.tsx | Review analytics |
+| /users | src/app/users/page.tsx | Redirect → /homeowners |
+| /health | src/app/health/route.ts | ALB health check (public JSON) |
+
+---
+
+## 3. GC / Contractor app (apps/mobile-contractor/app/)
+
+Base: https://gc.buildmyhouse.app
+No public SEO surface — auth-gated.
+
+### Auth
+
+| URL | File |
+|-----|------|
+| / | app/index.tsx |
+| /login | app/login.tsx |
+| /email-login | app/email-login.tsx |
+| /forgot-password | app/forgot-password.tsx |
+| /reset-password | app/reset-password.tsx |
+| /google-callback | app/google-callback.tsx |
+
+### Tabs & shared
+
+| URL | File |
+|-----|------|
+| /home | app/(tabs)/home.tsx |
+| /finance | app/(tabs)/finance.tsx |
+| /profile | app/profile.tsx |
+| /chat | app/chat.tsx |
+| /notifications | app/notifications.tsx |
+| /timeline | app/timeline.tsx |
+| /stage-detail | app/stage-detail.tsx |
+| /dashboard | app/dashboard.tsx |
+| /articles | app/articles/index.tsx |
+| /articles/{slug} | app/articles/[slug].tsx |
+
+### Contractor namespace (/contractor/*)
+
+| URL | File |
+|-----|------|
+| /contractor | app/contractor/index.tsx |
+| /contractor/onboarding | app/contractor/onboarding.tsx |
+| /contractor/verification | app/contractor/verification.tsx |
+| /contractor/gc-dashboard | app/contractor/gc-dashboard.tsx |
+| /contractor/gc-plans | app/contractor/gc-plans.tsx |
+| /contractor/gc-profile | app/contractor/gc-profile.tsx |
+| /contractor/gc-notifications | app/contractor/gc-notifications.tsx |
+| /contractor/gc-requests | app/contractor/gc-requests.tsx |
+| /contractor/gc-request-detail | app/contractor/gc-request-detail.tsx |
+| /contractor/gc-project-detail | app/contractor/gc-project-detail.tsx |
+| /contractor/gc-earnings | app/contractor/gc-earnings.tsx |
+| /contractor/stage-detail | app/contractor/stage-detail.tsx |
+| /contractor/chat | app/contractor/chat.tsx |
+| /contractor/privacy-settings | app/contractor/privacy-settings.tsx |
+| /contractor/terms-conditions | app/contractor/terms-conditions.tsx |
+| /contractor/help-support | app/contractor/help-support.tsx |
+| /contractor/about | app/contractor/about.tsx |
+| /contractor/install-app | app/contractor/install-app.tsx |
+
+---
+
+## Production domains
+
+| App | URL |
+|-----|-----|
+| Homeowner web | https://buildmyhouse.app |
+| GC web | https://gc.buildmyhouse.app |
+| Admin | https://admin.buildmyhouse.app |
+| Backend API | https://api.buildmyhouse.app/api |
+
+---
+
+## Indexability summary (homeowner web)
+
+Indexed: /, /for-contractors, tab SEO paths, construction/renovation/diaspora/guides/tools/downloads/demo/services/articles routes.
+
+Noindex: auth flows, app dashboards, legacy redirects, private project routes.
+
+robots.txt Disallow hints: /dashboard, /timeline, /stage-detail, /chat, /profile, /notifications, /pending-projects, /billing-payments, /house-summary, /upload-plan, etc.

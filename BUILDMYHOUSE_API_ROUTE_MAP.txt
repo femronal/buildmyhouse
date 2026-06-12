@@ -1,0 +1,381 @@
+# BuildMyHouse API Route Map
+
+Last updated: 2026-06-12
+Global prefix: /api (set in apps/backend/src/main.ts)
+Base URL (production): https://api.buildmyhouse.app/api
+
+Guard legend:
+- Public — no auth required
+- JWT — JwtAuthGuard (Bearer token)
+- Roles — JwtAuthGuard + RolesGuard + @Roles(...)
+
+---
+
+## Health
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/health | Public | Health check (defined in main.ts) |
+
+---
+
+## Auth (/api/auth)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| POST | /api/auth/register | Public (throttled) | Register new user |
+| POST | /api/auth/login | Public (throttled) | Login |
+| POST | /api/auth/forgot-password | Public (throttled) | Request password reset |
+| POST | /api/auth/reset-password | Public (throttled) | Reset password with token |
+| POST | /api/auth/admin/login | Public (throttled) | Admin login |
+| GET | /api/auth/google | Google OAuth | Start Google OAuth flow |
+| GET | /api/auth/google/callback | Google OAuth | Google OAuth callback |
+| POST | /api/auth/google/mobile | Public (throttled) | Mobile Google sign-in (code exchange) |
+| GET | /api/auth/me | JWT | Get current user profile |
+| PATCH | /api/auth/me | JWT | Update current user profile |
+| PATCH | /api/auth/me/password | JWT | Change password |
+| POST | /api/auth/me/picture | JWT | Upload profile picture to S3 |
+
+---
+
+## Users — Admin (/api/users)
+
+Class guards: JWT + Roles(admin)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/users | List users (paginated) |
+| GET | /api/users/:id | Get user by ID |
+| PATCH | /api/users/:id/verification | Set user verification status |
+
+---
+
+## Admin (/api/admin)
+
+Class guards: JWT + Roles(admin)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/admin/dashboard | Admin dashboard metrics |
+| GET | /api/admin/contractor-review-insights | Contractor review analytics |
+| GET | /api/admin/email-health | Email delivery health |
+| GET | /api/admin/access/full-admins | List full-admin access accounts |
+| PATCH | /api/admin/access/full-admins/:adminUserId | Enable/disable admin access |
+| POST | /api/admin/access/full-admins | Create admin account |
+| GET | /api/admin/emails/audience-counts | Bulk email audience counts |
+| POST | /api/admin/emails/send | Send bulk email |
+| POST | /api/admin/plan-files/repair | Repair missing plan files |
+| POST | /api/admin/plan-files/notify-homeowners | Notify homeowners about missing plans |
+
+---
+
+## Projects (/api/projects)
+
+### Core CRUD
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| POST | /api/projects | homeowner, admin | Create project |
+| POST | /api/projects/from-design | homeowner, admin | Create project from design |
+| GET | /api/projects | JWT | List projects (scoped by role) |
+| GET | /api/projects/:id | JWT | Get project by ID |
+| PATCH | /api/projects/:id | homeowner, general_contractor, admin | Update project |
+| DELETE | /api/projects/:id | homeowner, general_contractor, admin | Delete project |
+
+### Stages
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| PATCH | /api/projects/:projectId/stages/:stageId | general_contractor, admin, homeowner | Update stage status |
+
+### Stage documentation — team, materials, media, documents
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| POST/GET | /api/projects/:projectId/stages/:stageId/team-members | GC write / JWT read | Stage team members |
+| PATCH/DELETE | /api/projects/stages/team-members/:teamMemberId | general_contractor, admin | Update/delete team member |
+| POST/GET | /api/projects/:projectId/stages/:stageId/materials | GC write / JWT read | Stage materials |
+| PATCH/DELETE | /api/projects/stages/materials/:materialId | general_contractor, admin | Update/delete material |
+| POST/GET | /api/projects/:projectId/stages/:stageId/media | GC write / JWT read | Stage photos/videos |
+| PATCH/DELETE | /api/projects/stages/media/:mediaId | general_contractor, admin | Update/delete media |
+| POST/GET | /api/projects/:projectId/stages/:stageId/documents | GC write / JWT read | Stage documents |
+| PATCH/DELETE | /api/projects/stages/documents/:documentId | general_contractor, admin | Update/delete document |
+
+### Disputes & change requests
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| POST | /api/projects/:projectId/stages/:stageId/disputes | homeowner | Create stage dispute |
+| GET | /api/projects/disputes | admin | List disputes |
+| PATCH | /api/projects/disputes/:disputeId/status | admin | Update dispute status |
+| POST | /api/projects/:projectId/stages/:stageId/change-requests | general_contractor, admin | Create stage change request |
+| GET | /api/projects/stage-change-requests | admin | List change requests |
+| PATCH | /api/projects/stage-change-requests/:requestId/review | admin | Review change request |
+
+### Admin review & manual payment
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| GET | /api/projects/me/invoice-files | homeowner | Homeowner invoice/receipt files |
+| PATCH | /api/projects/:id/review | admin | Update project review status |
+| PATCH | /api/projects/:id/risk-level | admin | Set project risk level |
+| PATCH | /api/projects/:id/activate | admin | Admin activate pending_payment project |
+| PATCH | /api/projects/:id/deactivate | admin | Admin pause/deactivate project |
+| PATCH | /api/projects/:id/external-payment-link | general_contractor, admin | Set external payment link |
+| POST | /api/projects/:id/payment/declare | homeowner | Declare manual payment |
+| PATCH | /api/projects/:id/payment/confirm | admin | Confirm manual payment |
+
+---
+
+## Designs (/api/designs)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/designs | Public | List designs (Explore tab) |
+| GET | /api/designs/:id | Public | Get design by ID |
+| GET | /api/designs/my-designs | JWT + GC/admin | GC's own designs |
+| POST | /api/designs | JWT + GC/admin | Create design |
+| PATCH | /api/designs/:id | JWT + GC/admin | Update design |
+| DELETE | /api/designs/:id | JWT + GC/admin | Delete design |
+| GET | /api/designs/admin/pending | JWT + admin | Pending verification |
+| GET | /api/designs/admin/contractor/:userId | JWT + admin | Designs by contractor |
+| PATCH | /api/designs/admin/:id/go-live | JWT + admin | Approve design |
+| PATCH | /api/designs/admin/:id/reject | JWT + admin | Reject design |
+
+---
+
+## Plans (/api/plans)
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| POST | /api/plans/upload | homeowner, general_contractor, subcontractor, vendor, admin | Upload plan PDF |
+| GET | /api/plans/:projectId/analysis | JWT | Get AI plan analysis |
+| GET | /api/plans/:projectId/download-url | JWT + roles | Get plan download URL |
+
+---
+
+## Contractors — GC workflows (/api/contractors)
+
+NOTE: Distinct from /api/marketplace/contractors (directory profiles).
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| GET | /api/contractors/public/:contractorId | Public | Public contractor summary |
+| GET/PATCH | /api/contractors/profile | general_contractor | GC profile |
+| GET/POST/DELETE | /api/contractors/certifications | general_contractor | Certifications |
+| GET/POST | /api/contractors/verification-documents | general_contractor | Verification docs |
+| GET | /api/contractors/earnings | general_contractor | GC earnings |
+| GET/POST/PATCH/DELETE | /api/contractors/bank-accounts | general_contractor | Bank accounts |
+| GET | /api/contractors/recommend/:projectId | homeowner | Recommend GCs for project |
+| POST | /api/contractors/requests/send | homeowner, general_contractor | Send project requests |
+| GET | /api/contractors/requests/pending | general_contractor, subcontractor | Pending requests |
+| GET | /api/contractors/requests/sent | general_contractor | Sent requests |
+| GET | /api/contractors/requests/accepted | general_contractor, subcontractor | Accepted requests |
+| POST | /api/contractors/requests/:requestId/accept | general_contractor, subcontractor | Accept request |
+| POST | /api/contractors/requests/:requestId/reject | general_contractor, subcontractor | Reject request |
+| DELETE | /api/contractors/requests/:requestId | general_contractor | Delete sent request |
+| POST | /api/contractors/connect/account | general_contractor | Stripe Connect account |
+| POST | /api/contractors/connect/account-link | general_contractor | Connect onboarding link |
+| GET | /api/contractors/connect/status | general_contractor | Connect status |
+| GET/POST/PATCH | /api/contractors/admin/* | admin | Admin GC management |
+
+---
+
+## Chat (/api/chat)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| POST | /api/chat/conversations | JWT | Get or create conversation |
+| GET | /api/chat/conversations | JWT | List conversations |
+| DELETE | /api/chat/conversations/:conversationId | JWT | Delete conversation |
+| GET | /api/chat/conversations/:conversationId/messages | JWT | Get messages |
+| POST | /api/chat/conversations/:conversationId/messages | JWT | Send message |
+| GET | /api/chat/conversations/:conversationId/unread-count | JWT | Unread count |
+| POST | /api/chat/conversations/:conversationId/mark-read | JWT | Mark read |
+
+---
+
+## Payments (/api/payments)
+
+| Method | Path | Roles | Purpose |
+|--------|------|-------|---------|
+| POST | /api/payments/setup-checkout | homeowner, admin | Stripe setup checkout |
+| POST | /api/payments/setup-intent | homeowner, admin | Stripe setup intent |
+| GET | /api/payments/methods | homeowner, admin | List payment methods |
+| POST | /api/payments/methods/default | homeowner, admin | Set default method |
+| POST | /api/payments/intent | homeowner, admin | Create payment intent |
+| GET | /api/payments/project/:projectId | homeowner, general_contractor, admin | Project payments |
+| GET | /api/payments/my | multiple roles | User payments |
+| GET | /api/payments/my-structured | homeowner, admin | Structured payment history |
+| GET | /api/payments/:id | multiple roles | Payment by ID |
+| POST | /api/payments/payout | admin, vendor | Create payout |
+
+### Webhooks
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| POST | /api/payments/webhooks/stripe | Stripe signature | Stripe webhook events |
+
+---
+
+## Articles (/api/articles)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/articles | Public | List published articles |
+| GET | /api/articles/:slug | Public | Get article by slug |
+| GET | /api/articles/admin/list | JWT + admin | List all articles |
+| GET | /api/articles/admin/:id | JWT + admin | Get article by ID |
+| POST | /api/articles/admin | JWT + admin | Create article |
+| PATCH | /api/articles/admin/:id | JWT + admin | Update article |
+| PATCH | /api/articles/admin/:id/publish | JWT + admin | Publish/unpublish |
+| DELETE | /api/articles/admin/:id | JWT + admin | Delete article |
+
+---
+
+## Resource Sections (/api/resource-sections)
+
+Added June 2026 — powers /articles hub sidebar topics.
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/resource-sections | Public | List active sections for articles hub |
+| GET | /api/resource-sections/admin/list | JWT + admin | List all sections |
+| POST | /api/resource-sections/admin | JWT + admin | Create section |
+| PATCH | /api/resource-sections/admin/:id | JWT + admin | Update section |
+| DELETE | /api/resource-sections/admin/:id | JWT + admin | Delete section |
+
+---
+
+## Marketplace
+
+### Search (/api/marketplace/search)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/marketplace/search | Search all items |
+| GET | /api/marketplace/search/suggestions | Search suggestions |
+| GET | /api/marketplace/search/popular | Popular items |
+
+### Materials (/api/marketplace/materials)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/marketplace/materials | Public | List/search materials |
+| GET | /api/marketplace/materials/:id | Public | Get material |
+| POST | /api/marketplace/materials | JWT + vendor/admin | Create listing |
+| GET | /api/marketplace/materials/vendor/my | JWT + vendor/admin | Vendor's materials |
+| PATCH/DELETE | /api/marketplace/materials/:id | JWT + vendor/admin | Update/delete |
+
+### Contractors (/api/marketplace/contractors)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/marketplace/contractors | Public | List/search contractors |
+| GET | /api/marketplace/contractors/:id | Public | Get by ID |
+| GET | /api/marketplace/contractors/user/:userId | Public | Get by user ID |
+| GET/POST/PATCH | /api/marketplace/contractors/profile | JWT + GC roles | Own marketplace profile |
+
+### Reviews (/api/marketplace/reviews)
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/marketplace/reviews/material/:materialId | Public | Material reviews |
+| GET | /api/marketplace/reviews/contractor/:contractorId | Public | Contractor reviews |
+| GET | /api/marketplace/reviews/contractor/:contractorId/reason-options | Public | Review reason options |
+| POST/PATCH/DELETE | /api/marketplace/reviews | JWT + roles | CRUD reviews |
+
+---
+
+## Listings — Houses, Lands, Rentals
+
+Each module follows the same pattern:
+
+| Method | Path | Guards | Purpose |
+|--------|------|--------|---------|
+| GET | /api/{houses\|lands\|rentals} | Public | List active listings |
+| GET | /api/{houses\|lands\|rentals}/:id | Public | Get listing |
+| POST/PATCH/DELETE | /api/{houses\|lands\|rentals}/:id | JWT + admin | Admin CRUD |
+| POST | /api/houses/:id/schedule-viewing | JWT + homeowner | Schedule viewing |
+| POST | /api/lands/:id/schedule-viewing | JWT + homeowner | Schedule viewing |
+| POST | /api/rentals/:id/request-inspection | JWT + homeowner | Request inspection |
+| GET | /api/{module}/me/purchases | JWT + homeowner | Homeowner interests |
+| GET | /api/{module}/admin/list | JWT + admin | Admin list all |
+| GET | /api/{module}/admin/viewing-interests | JWT + admin | Viewing interests |
+| PATCH | /api/{module}/admin/viewing-interests/read | JWT + admin | Mark read |
+| PATCH | /api/{module}/admin/viewing-interests/:interestId/outcome | JWT + admin | Update outcome |
+
+---
+
+## Notifications (/api/notifications)
+
+Class guards: JWT
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | /api/notifications/me | Get my notifications |
+| GET | /api/notifications/me/unread-count | Unread count |
+| PATCH | /api/notifications/me/read-all | Mark all read |
+| PATCH | /api/notifications/me/:id/read | Mark one read |
+
+---
+
+## Upload (/api/upload)
+
+Class guards: JWT
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | /api/upload/image | Upload image to S3 |
+| POST | /api/upload/file | Upload document/video/image |
+| POST | /api/upload/document | Alias for /upload/file |
+
+---
+
+## Push Tokens (/api/push-tokens)
+
+Class guards: JWT
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| POST | /api/push-tokens/register | Register device token |
+| POST | /api/push-tokens/unregister | Unregister device token |
+
+---
+
+## Route count summary
+
+| Domain | Prefix | ~Routes |
+|--------|--------|---------|
+| Health | /api/health | 1 |
+| Auth | /api/auth | 12 |
+| Users | /api/users | 3 |
+| Admin | /api/admin | 10 |
+| Projects | /api/projects | 44 |
+| Designs | /api/designs | 10 |
+| Plans | /api/plans | 3 |
+| Contractors (GC) | /api/contractors | 33 |
+| Chat | /api/chat | 7 |
+| Payments | /api/payments | 10 |
+| Webhooks | /api/payments/webhooks | 1 |
+| Articles | /api/articles | 8 |
+| Resource sections | /api/resource-sections | 5 |
+| Marketplace | /api/marketplace/* | 23 |
+| Houses/Lands/Rentals | /api/{module} | 33 |
+| Notifications | /api/notifications | 4 |
+| Upload | /api/upload | 3 |
+| Push tokens | /api/push-tokens | 2 |
+
+---
+
+## Important notes
+
+1. Two contractor APIs exist:
+   - /api/contractors — project/GC onboarding, requests, Stripe Connect, verification
+   - /api/marketplace/contractors — marketplace directory profiles
+
+2. WebSocket (Socket.IO) handles realtime chat/notifications — not REST routes above.
+
+3. Rate limiting (@Throttle) on auth routes; webhooks skip throttle.
+
+4. Production runs prisma migrate deploy on container start before boot.

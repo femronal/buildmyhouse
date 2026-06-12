@@ -548,6 +548,16 @@ export const BUILDMYHOUSE_SOCIALS = [
   },
 ] as const;
 
+export const TRUSTPILOT_REVIEW = {
+  inviteEmail: 'buildmyhouse.app+39f06dae81@invite.trustpilot.com',
+  evaluateUrl: 'https://www.trustpilot.com/evaluate/buildmyhouse.app',
+  profileUrl: 'https://www.trustpilot.com/review/buildmyhouse.app',
+} as const;
+
+export const GOOGLE_BUSINESS_REVIEW = {
+  reviewUrl: 'https://g.page/r/CQF16quHjs2XEBM/review',
+} as const;
+
 export const SERVICE_SEO_PAGES = {
   'plumbing-repair-nigeria': {
     title: 'Plumbing Repair in Lagos, Nigeria',

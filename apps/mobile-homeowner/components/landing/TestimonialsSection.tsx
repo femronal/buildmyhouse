@@ -58,7 +58,7 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
   const scrollItems = [...LANDING_TESTIMONIALS, ...LANDING_TESTIMONIALS];
 
   return (
-    <View className="pb-24 pt-4 bg-black">
+    <View className="pb-6 pt-4 bg-black">
       <View className="max-w-7xl w-full self-center px-6 md:px-12">
         <View className="border border-white/10 rounded-3xl p-6 md:p-8">
           <View className="flex-row items-center gap-4 md:gap-6">

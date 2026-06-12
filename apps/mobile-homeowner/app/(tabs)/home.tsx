@@ -10,7 +10,7 @@ import { useActiveProjects, usePendingProjects, usePausedProjects, useActivatePr
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import NotificationBell from '@/components/NotificationBell';
-import Logo from '@/components/Logo';
+import LogoText from '@/components/LogoText';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -324,10 +324,8 @@ export default function HomeScreen() {
           )}
         </TouchableOpacity>
 
-        <View className="flex-1 items-center justify-center min-w-0">
-          <View className="bg-white rounded-xl px-3 py-1.5">
-            <Logo size="md" />
-          </View>
+        <View className="flex-1 items-center justify-center min-w-0 px-0.5">
+          <LogoText variant="white" size="lg" />
         </View>
 
         <View className="flex-shrink-0">

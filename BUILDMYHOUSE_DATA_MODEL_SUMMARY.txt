@@ -1,0 +1,443 @@
+# BuildMyHouse Data Model Summary
+
+Last updated: 2026-06-12
+Source of truth: apps/backend/prisma/schema.prisma
+Database: PostgreSQL via Prisma 5
+
+Companion docs: BUILDMYHOUSE_API_ROUTE_MAP.txt, BUILDMYHOUSE_ROUTE_URL_MAP.txt
+
+---
+
+## Overview
+
+BuildMyHouse is a role-based construction platform. The data model centers on:
+
+1. Users with roles (homeowner, general_contractor, subcontractor, vendor, admin)
+2. Projects with staged execution, payments, and disputes
+3. Marketplace listings (materials, contractor profiles, designs)
+4. Real estate listings (houses, land, rentals) with viewing interests
+5. CMS content (articles, resource sections)
+6. Communication (conversations, messages, notifications, push tokens)
+
+---
+
+## Enums
+
+| Enum | Values | Used on |
+|------|--------|---------|
+| ProjectType | homebuilding, renovation, interior_design | Project, Design |
+| ProjectReviewStatus | pending_admin_review, changes_requested, approved | Project |
+| PaymentConfirmationStatus | not_declared, declared, confirmed, rejected | Project (manual payment flow) |
+| ProjectRiskLevel | low, medium, high | Project |
+| StageChangeRequestStatus | pending, approved, rejected | StageChangeRequest |
+| ArticleAudience | homeowner, gc | CmsArticle |
+
+---
+
+## Core actors
+
+### User (users)
+
+Central identity for all apps.
+
+Key fields:
+- email (unique), password (hashed), fullName, phone, address fields
+- role: homeowner | general_contractor | subcontractor | vendor | admin
+- verified, profileSetupCompleted
+- homeownerTermsAcceptedAt, gcTermsAcceptedAt
+- adminDashboardAccess (admin panel gate)
+- stripeCustomerId (homeowner payments)
+
+Relations (high level):
+- Owns projects as homeowner (homeownerProjects)
+- Assigned as GC on projects (contractorProjects)
+- Sends/receives messages, notifications
+- May have Contractor profile, PaymentMethods, Reviews, Designs
+- Viewing interests on houses/land/rentals
+- Submits/reviews disputes and stage change requests
+
+Who can do what:
+- homeowner: create projects, declare payments, open disputes, browse listings, review contractors
+- general_contractor: accept requests, manage stages, upload stage evidence, Stripe Connect
+- subcontractor: accept subcontract requests
+- vendor: marketplace material listings
+- admin: all operational endpoints
+
+---
+
+## Project execution domain
+
+### Project (projects)
+
+A homeowner's construction/renovation job.
+
+Key fields:
+- name, address (+ geo fields), homeownerId, generalContractorId
+- status: draft | active | paused | completed | cancelled (string)
+- projectType: homebuilding | renovation | interior_design
+- reviewStatus, riskLevel
+- budget, spent, progress, currentStage
+- aiAnalysis, planFileName, planPdfUrl (plan upload + AI)
+- externalPaymentLink, paymentDeclaredAt, paymentConfirmedAt, paymentConfirmationStatus (manual payment path)
+
+Relations:
+- homeowner → User
+- generalContractor → User (optional until assigned)
+- stages[], payments[], projectRequests[], disputes[], stageChangeRequests[], reviews[]
+
+Lifecycle (simplified):
+1. Homeowner creates draft project (upload plan or pick design)
+2. Admin may review (reviewStatus)
+3. GC matching + ProjectRequest sent/accepted
+4. generalContractorId assigned; status → active
+5. Stages executed with documentation
+6. Payments tied to stages; homeowner confirms satisfaction
+7. Disputes may pause workflow; admin resolves
+8. Project completes or is paused/cancelled
+
+### Stage (stages)
+
+Ordered work breakdown within a project.
+
+Key fields:
+- name, order, status: not_started | in_progress | completed | blocked
+- estimatedCost, actualCost, estimatedDuration, dates
+
+Relations:
+- teamMembers[], materials[], media[], documents[]
+- payments[], disputes[], changeRequests[]
+
+Stage documentation (evidence before payment):
+- StageTeamMember: workers on site
+- StageMaterial: materials purchased
+- StageMedia: photos/videos
+- StageDocument: invoices, permits, etc.
+
+### ProjectRequest (project_requests)
+
+GC/subcontractor invitation and quote workflow.
+
+Key fields:
+- projectId, contractorId, senderId, stageId
+- status: pending | accepted | rejected
+- estimatedBudget, fee breakdown (monitoring, coordination, contingency), totalQuoteAmount
+- gcNotes, quoteGeneratedAt, sentAt, respondedAt
+
+Flow:
+- Homeowner (or system) sends request to GC
+- GC accepts/rejects with quote
+- On accept → project may assign generalContractorId
+
+### ProjectStageDispute (project_stage_disputes)
+
+Homeowner raises issue on a stage.
+
+Key fields:
+- projectId, stageId, homeownerId, generalContractorId
+- status: open | in_review | resolved
+- reasons[], otherReason, resolutionNotes, resolvedAt
+
+### StageChangeRequest (stage_change_requests)
+
+GC requests scope/cost/duration change mid-stage.
+
+Key fields:
+- requestTypes[], additionalAmount, additionalDurationDays
+- requestedSiteChange, siteChangeDetails, reason, evidence (JSON)
+- status: pending | approved | rejected
+- Admin reviews via reviewedById, adminReviewNote
+
+---
+
+## Payments domain
+
+### Payment (payments)
+
+Financial transaction record.
+
+Key fields:
+- projectId, stageId (optional), homeownerId (preserved if project deleted)
+- amount, status: pending | processing | completed | failed | refunded
+- method, transactionId
+- snapshotProjectName, snapshotStageName (audit trail)
+
+Stripe integration handles card payments; manual flow uses Project.paymentConfirmationStatus.
+
+### PaymentMethod (payment_methods)
+
+Saved Stripe payment methods for homeowners.
+
+Key fields:
+- brand, last4, expMonth, expYear, stripePaymentMethodId, isBackup
+
+---
+
+## Communication domain
+
+### Conversation (conversations) + Message (messages)
+
+Project-scoped or general chat.
+
+- Conversation has many participants (User[]) and messages
+- Message: senderId, content, type (text|image|file), read flag
+
+Realtime via Socket.IO gateway (not in Prisma).
+
+### Notification (notifications)
+
+In-app notification inbox.
+
+Key fields:
+- userId, type, title, message, data (JSON), isRead, readAt
+
+### PushToken (push_tokens)
+
+Device push registration.
+
+Key fields:
+- userId, token (unique), platform, app, deviceId
+
+---
+
+## Contractor domain
+
+### Contractor (contractors)
+
+Extended GC/subcontractor profile linked 1:1 to User.
+
+Key fields:
+- name, specialty, specialtyCategory, specialtyTags[]
+- location, experienceYears, rating, reviews count, projects count
+- verified, hiringFee, type: general_contractor | subcontractor
+- connectAccountId (Stripe Connect)
+- professionalOnboardingCompleted, professionalOnboardingSkipped
+
+Relations:
+- certifications[], bankAccounts[], contractorReviews[]
+
+### ContractorCertification (contractor_certifications)
+
+Uploaded certs/docs for verification.
+
+### BankAccount (bank_accounts)
+
+GC payout bank details.
+
+---
+
+## Marketplace domain
+
+### Material (materials)
+
+Vendor product listing.
+
+Key fields:
+- name, category, brand, price, unit, stock, imageUrl, vendorId, verified
+
+### Order (orders) + OrderItem (order_items)
+
+Material purchase orders linked to projects optionally.
+
+### Review (reviews)
+
+Ratings for materials or contractors (unique per user+contractor+project).
+
+Key fields:
+- rating 1-5, comment, reasons[], otherReason
+- materialId OR contractorId, optional projectId
+
+---
+
+## Design catalog
+
+### Design (designs) + DesignImage (design_images)
+
+GC-uploaded build/renovation plans for homeowner Explore tab.
+
+Key fields:
+- planType, bedrooms, bathrooms, squareFootage, estimatedCost
+- adminApprovalStatus: pending | approved | rejected
+- constructionPhases (JSON), rooms[], materials[], features[]
+- createdById (GC user), adminReviewedById
+
+Admin approves before design appears in public Explore.
+
+---
+
+## Real estate listings
+
+Three parallel listing types with similar patterns:
+
+### HouseForSale (+ HouseForSaleImage, HouseViewingInterest)
+### LandForSale (+ LandForSaleImage, LandViewingInterest)
+### RentalListing (+ RentalListingImage, RentalViewingInterest)
+
+Common patterns:
+- Admin creates/manages listings (isActive flag)
+- Homeowner expresses interest (viewing/inspection request)
+- Admin tracks outcome (outcomeStatus, purchaseAmount)
+- Snapshots preserve data if listing deleted
+
+RentalListing includes rent-specific fields: annualRent, serviceCharge, cautionDeposit, furnishing, etc.
+
+Viewing interest models link homeownerId → listing with read/outcome tracking for admin dashboard.
+
+---
+
+## CMS content domain
+
+Added/expanded 2026.
+
+### CmsArticle (cms_articles)
+
+Admin-authored SEO articles served at /articles/{slug}.
+
+Key fields:
+- slug (unique), title, description, excerpt
+- coverImageUrl, coverImageAlt, readingMinutes, tags[]
+- authorName, audience: homeowner | gc
+- canonicalPath
+- content (JSON — TipTap document)
+- faqs (JSON), internalLinks (JSON)
+- resourceSectionKeys[] — which sidebar sections show this article
+- articlePillar — optional pillar grouping
+- isPublished, publishedAt
+
+Public API: GET /api/articles, GET /api/articles/:slug
+Admin API: full CRUD + publish
+
+### CmsResourceSection (cms_resource_sections)
+
+Admin-managed sidebar topics on /articles hub.
+
+Key fields:
+- key (unique slug, e.g. start-here, diaspora-guides)
+- label, hint, sortOrder
+- isActive, isSystem (system sections seeded by migration, cannot delete easily)
+
+Public API: GET /api/resource-sections
+Admin: CRUD at /api/resource-sections/admin/*
+
+Migration 20260611120000 seeds 11 default system sections.
+
+---
+
+## Auth support
+
+### PasswordResetToken (password_reset_tokens)
+
+Hashed token, expiresAt, usedAt for forgot-password flow.
+
+---
+
+## Entity relationship diagram (text)
+
+```
+User
+ ├── Project (homeowner) ──┬── Stage ──┬── StageTeamMember
+ │                         │           ├── StageMaterial
+ │                         │           ├── StageMedia
+ │                         │           └── StageDocument
+ │                         ├── Payment
+ │                         ├── ProjectRequest
+ │                         ├── ProjectStageDispute
+ │                         └── StageChangeRequest
+ ├── Project (as GC)
+ ├── Contractor ──┬── ContractorCertification
+ │                └── BankAccount
+ ├── Design (created)
+ ├── Conversation ── Message
+ ├── Notification
+ ├── PushToken
+ ├── PaymentMethod
+ ├── Review
+ ├── Material (as vendor)
+ ├── Order
+ ├── HouseViewingInterest ── HouseForSale
+ ├── LandViewingInterest ── LandForSale
+ └── RentalViewingInterest ── RentalListing
+
+CmsArticle ── (resourceSectionKeys[]) ── CmsResourceSection
+```
+
+---
+
+## Status reference tables
+
+### Project.status (string)
+| Value | Meaning |
+|-------|---------|
+| draft | Created, not yet active |
+| active | In execution |
+| paused | Admin or workflow pause |
+| completed | Finished |
+| cancelled | Cancelled |
+
+### Project.paymentConfirmationStatus
+| Value | Meaning |
+|-------|---------|
+| not_declared | No manual payment declared |
+| declared | Homeowner declared payment; admin reviewing |
+| confirmed | Admin confirmed; tracking unlocked |
+| rejected | Admin rejected declaration |
+
+### Stage.status
+| Value | Meaning |
+|-------|---------|
+| not_started | Not begun |
+| in_progress | GC working |
+| completed | GC marked complete |
+| blocked | Blocked (dispute, approval, etc.) |
+
+### ProjectRequest.status
+| Value | Meaning |
+|-------|---------|
+| pending | Awaiting GC response |
+| accepted | GC accepted |
+| rejected | GC rejected |
+
+### ProjectStageDispute.status
+| Value | Meaning |
+|-------|---------|
+| open | Newly filed |
+| in_review | Admin reviewing |
+| resolved | Closed |
+
+### Payment.status
+| Value | Meaning |
+|-------|---------|
+| pending | Created |
+| processing | In flight |
+| completed | Paid |
+| failed | Failed |
+| refunded | Refunded |
+
+### Design.adminApprovalStatus
+| Value | Meaning |
+|-------|---------|
+| pending | Awaiting admin |
+| approved | Live in Explore |
+| rejected | Rejected with reason |
+
+---
+
+## Data integrity notes
+
+1. Payments and viewing interests store snapshots when parent project/listing is deleted (SetNull + snapshot fields).
+
+2. Reviews have unique constraint on (userId, contractorId, projectId) — one review per project per contractor per user.
+
+3. User.role is a string, not a Prisma enum — validated in application layer.
+
+4. CMS article content and FAQs are JSON blobs — frontend normalizes via lib/article-content-normalize.ts and lib/article-tiptap-html.ts.
+
+5. Project aiAnalysis stores OpenAI plan extraction results as JSON.
+
+---
+
+## Migration history (notable)
+
+Prisma migrations live in apps/backend/prisma/migrations/.
+Container startup runs: prisma generate && prisma migrate deploy && node dist/src/main.js
+
+Recent: 20260611120000_add_cms_resource_sections — CmsResourceSection model + seed data.

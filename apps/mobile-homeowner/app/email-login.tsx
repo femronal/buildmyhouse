@@ -4,7 +4,7 @@ import { useState } from "react";
 import { storeAuthToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, LogIn, UserPlus } from "lucide-react-native";
-import Logo from "@/components/Logo";
+import LogoText from '@/components/LogoText';
 
 const PAGE_BG = '#050505';
 const CARD_BG = '#171717';
@@ -106,9 +106,7 @@ export default function EmailLoginScreen() {
           </TouchableOpacity>
 
           <View className="items-center mb-8">
-            <View className="bg-white rounded-2xl px-5 py-3">
-              <Logo size="sm" />
-            </View>
+            <LogoText variant="white" size="lg" />
           </View>
 
           {/* Card */}
