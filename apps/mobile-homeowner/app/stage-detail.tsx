@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Phone, Download, Lock, CreditCard, Clock, AlertTriangle, Check } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, VideoCamera, Image as ImageIcon, MusicNote, House, Phone, DownloadSimple, Lock, CreditCard, Clock, Warning, Check } from "phosphor-react-native";
 import { useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
@@ -11,15 +11,15 @@ const getFileIcon = (type: string) => {
   switch (type) {
     case "pdf":
     case "doc":
-      return <FileText size={20} color="#FFFFFF" strokeWidth={2} />;
+      return <FileText size={20} color="#FFFFFF" weight="regular" />;
     case "video":
-      return <Video size={20} color="#FFFFFF" strokeWidth={2} />;
+      return <VideoCamera size={20} color="#FFFFFF" weight="regular" />;
     case "image":
-      return <ImageIcon size={20} color="#FFFFFF" strokeWidth={2} />;
+      return <ImageIcon size={20} color="#FFFFFF" weight="regular" />;
     case "audio":
-      return <Music size={20} color="#FFFFFF" strokeWidth={2} />;
+      return <MusicNote size={20} color="#FFFFFF" weight="regular" />;
     default:
-      return <File size={20} color="#FFFFFF" strokeWidth={2} />;
+      return <File size={20} color="#FFFFFF" weight="regular" />;
   }
 };
 
@@ -283,7 +283,7 @@ export default function StageDetailScreen() {
     return (
       <View className="flex-1 bg-white items-center justify-center px-6">
         <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
-          <Lock size={28} color="#000000" strokeWidth={2} />
+          <Lock size={28} color="#000000" weight="regular" />
         </View>
         <Text className="text-black text-xl text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
           Tracking locked
@@ -300,9 +300,9 @@ export default function StageDetailScreen() {
         >
           <View className="flex-row items-center justify-center">
             {paymentConfirmationStatus === 'declared' ? (
-              <Clock size={18} color="#FFFFFF" strokeWidth={2} />
+              <Clock size={18} color="#FFFFFF" weight="regular" />
             ) : (
-              <CreditCard size={18} color="#FFFFFF" strokeWidth={2} />
+              <CreditCard size={18} color="#FFFFFF" weight="regular" />
             )}
             <Text className="text-white ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Billing & Payments
@@ -322,13 +322,13 @@ export default function StageDetailScreen() {
               onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
               className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
             >
-              <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+              <ArrowLeft size={22} color="#000000" weight="bold" />
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => router.push('/(tabs)/home')} 
               className="w-10 h-10 bg-black rounded-full items-center justify-center"
             >
-              <Home size={20} color="#FFFFFF" strokeWidth={2} />
+              <House size={20} color="#FFFFFF" weight="bold" />
             </TouchableOpacity>
           </View>
           <TouchableOpacity
@@ -336,7 +336,7 @@ export default function StageDetailScreen() {
             className="w-9 h-9 rounded-full border border-red-200 bg-red-50 items-center justify-center"
             accessibilityLabel="Report dispute"
           >
-            <AlertTriangle size={16} color="#DC2626" strokeWidth={2.2} />
+            <Warning size={16} color="#DC2626" weight="bold" />
           </TouchableOpacity>
         </View>
         
@@ -365,7 +365,7 @@ export default function StageDetailScreen() {
           }`}
         >
           <View className="flex-row items-center justify-center">
-            <Package size={20} color={activeTab === 'materials' ? '#000000' : '#A3A3A3'} strokeWidth={2} />
+            <Package size={20} color={activeTab === 'materials' ? '#000000' : '#A3A3A3'} weight="regular" />
             <Text 
               className={`ml-2 ${activeTab === 'materials' ? 'text-black' : 'text-gray-400'}`}
               style={{ fontFamily: 'Poppins_500Medium' }}
@@ -382,7 +382,7 @@ export default function StageDetailScreen() {
           }`}
         >
           <View className="flex-row items-center justify-center">
-            <Users size={20} color={activeTab === 'team' ? '#000000' : '#A3A3A3'} strokeWidth={2} />
+            <Users size={20} color={activeTab === 'team' ? '#000000' : '#A3A3A3'} weight="regular" />
             <Text 
               className={`ml-2 ${activeTab === 'team' ? 'text-black' : 'text-gray-400'}`}
               style={{ fontFamily: 'Poppins_500Medium' }}
@@ -399,7 +399,7 @@ export default function StageDetailScreen() {
           }`}
         >
           <View className="flex-row items-center justify-center">
-            <FileText size={20} color={activeTab === 'files' ? '#000000' : '#A3A3A3'} strokeWidth={2} />
+            <FileText size={20} color={activeTab === 'files' ? '#000000' : '#A3A3A3'} weight="regular" />
             <Text 
               className={`ml-2 ${activeTab === 'files' ? 'text-black' : 'text-gray-400'}`}
               style={{ fontFamily: 'Poppins_500Medium' }}
@@ -481,7 +481,7 @@ export default function StageDetailScreen() {
           <View className="pb-32">
             {materials.length === 0 ? (
               <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
-                <Package size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <Package size={48} color="#D4D4D4" weight="light" />
                 <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   No Materials Yet
                 </Text>
@@ -503,7 +503,7 @@ export default function StageDetailScreen() {
                       </View>
                     ) : (
                       <View className="w-24 h-24 ml-3 rounded-xl bg-gray-100 items-center justify-center">
-                        <Package size={32} color="#A3A3A3" strokeWidth={2} />
+                        <Package size={32} color="#A3A3A3" weight="regular" />
                       </View>
                     )}
                     <View className="flex-1 p-4 justify-center">
@@ -542,14 +542,14 @@ export default function StageDetailScreen() {
                       className="w-8 h-8 rounded-full bg-black/80 items-center justify-center mr-2"
                       accessibilityLabel="Download receipt"
                     >
-                      <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                      <DownloadSimple size={16} color="#FFFFFF" weight="bold" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => callSupplier(material.supplierContact || material.supplierPhone)}
                       className="w-8 h-8 rounded-full bg-emerald-600 items-center justify-center"
                       accessibilityLabel="Call supplier"
                     >
-                      <Phone size={16} color="#FFFFFF" strokeWidth={2} />
+                      <Phone size={16} color="#FFFFFF" weight="regular" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -563,7 +563,7 @@ export default function StageDetailScreen() {
           <View className="pb-32">
             {teamMembers.length === 0 ? (
               <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
-                <Users size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <Users size={48} color="#D4D4D4" weight="light" />
                 <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   No Team Members Yet
                 </Text>
@@ -583,7 +583,7 @@ export default function StageDetailScreen() {
                       />
                     ) : (
                       <View className="w-20 h-20 bg-gray-100 rounded-2xl items-center justify-center">
-                        <Users size={32} color="#A3A3A3" strokeWidth={2} />
+                        <Users size={32} color="#A3A3A3" weight="regular" />
                       </View>
                     )}
                     <View className="flex-1 ml-4 justify-center">
@@ -624,14 +624,14 @@ export default function StageDetailScreen() {
                       className="w-8 h-8 rounded-full bg-black/80 items-center justify-center mr-2"
                       accessibilityLabel="Download invoice"
                     >
-                      <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                      <DownloadSimple size={16} color="#FFFFFF" weight="bold" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => callTeamMember(member.phone)}
                       className="w-8 h-8 rounded-full bg-emerald-600 items-center justify-center"
                       accessibilityLabel="Call sub-contractor"
                     >
-                      <Phone size={16} color="#FFFFFF" strokeWidth={2} />
+                      <Phone size={16} color="#FFFFFF" weight="regular" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -645,7 +645,7 @@ export default function StageDetailScreen() {
           <View className="pb-32">
             {allFiles.length === 0 ? (
               <View className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
-                <FileText size={48} color="#D4D4D4" strokeWidth={1.5} />
+                <FileText size={48} color="#D4D4D4" weight="light" />
                 <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   No Files Yet
                 </Text>
@@ -683,7 +683,7 @@ export default function StageDetailScreen() {
                     className="w-9 h-9 rounded-full bg-black items-center justify-center"
                     accessibilityLabel="Download file"
                   >
-                    <Download size={16} color="#FFFFFF" strokeWidth={2} />
+                    <DownloadSimple size={16} color="#FFFFFF" weight="bold" />
                   </TouchableOpacity>
                 </View>
               ))
@@ -697,7 +697,7 @@ export default function StageDetailScreen() {
         {isComplete ? (
           <View className="bg-black rounded-2xl p-5">
             <View className="flex-row items-center justify-center mb-2">
-              <CheckCircle size={24} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
+              <CheckCircle size={24} color="#FFFFFF" weight="fill" />
               <Text 
                 className="text-white text-lg ml-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
@@ -715,7 +715,7 @@ export default function StageDetailScreen() {
         ) : isInProgress ? (
           <View className="bg-green-100 rounded-2xl p-4 border border-green-600">
             <View className="flex-row items-center justify-center mb-2">
-              <CheckCircle size={18} color="#16A34A" strokeWidth={2} fill="#16A34A" />
+              <CheckCircle size={18} color="#16A34A" weight="fill" />
               <Text 
                 className="text-green-700 text-base ml-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
@@ -796,7 +796,7 @@ export default function StageDetailScreen() {
                           isSelected ? 'border-white bg-white' : 'border-gray-400 bg-white'
                         }`}
                       >
-                        {isSelected ? <Check size={13} color="#000000" strokeWidth={3} /> : null}
+                        {isSelected ? <Check size={13} color="#000000" weight="bold" /> : null}
                       </View>
                       <Text
                         className={`flex-1 text-sm ${isSelected ? 'text-white' : 'text-gray-800'}`}
@@ -939,7 +939,7 @@ export default function StageDetailScreen() {
               </>
             ) : (
               <View className="items-center py-8">
-                <CheckCircle size={80} color="#000000" strokeWidth={2} fill="#000000" />
+                <CheckCircle size={80} color="#000000" weight="fill" />
                 <Text 
                   className="text-2xl text-black mt-6 text-center"
                   style={{ fontFamily: 'Poppins_800ExtraBold' }}

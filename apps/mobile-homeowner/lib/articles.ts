@@ -46,6 +46,8 @@ export type Article = {
   content: Record<string, unknown>;
   /** When set (CMS or seed), drives articles index sections and filters. */
   articlePillar?: ArticlePillarKey;
+  /** Admin-assigned sidebar section keys for /articles landing page */
+  resourceSectionKeys?: string[];
 };
 
 type RemoteArticle = {
@@ -69,6 +71,7 @@ type RemoteArticle = {
   /** Legacy API field */
   blocks?: ArticleBlock[];
   articlePillar?: string;
+  resourceSectionKeys?: string[];
 };
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -345,6 +348,9 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
     faqs: Array.isArray(input.faqs) ? input.faqs : [],
     internalLinks: Array.isArray(input.internalLinks) ? input.internalLinks : [],
     articlePillar: parseArticlePillar(input.articlePillar),
+    resourceSectionKeys: Array.isArray(input.resourceSectionKeys)
+      ? input.resourceSectionKeys.map((key) => String(key || '').trim()).filter(Boolean)
+      : [],
     content: normalizeStoredArticleContent(
       input.content ?? (Array.isArray(input.blocks) ? input.blocks : []),
     ),

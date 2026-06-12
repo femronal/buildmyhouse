@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Check, Copy, FilePenLine, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, FilePenLine, Layers3, Plus, Trash2 } from 'lucide-react';
 import {
   useCmsArticles,
   type CmsArticle,
   type CmsArticleAudience,
 } from '@/hooks/useCmsArticles';
+import { useResourceSections } from '@/hooks/useResourceSections';
 
 const AUDIENCE_OPTIONS: { value: CmsArticleAudience; label: string; hint: string }[] = [
   { value: 'homeowner', label: 'Homeowner', hint: 'buildmyhouse.app/articles' },
@@ -54,6 +55,15 @@ export default function ArticlesAdminPage() {
     publishArticle,
     isDeleting,
   } = useCmsArticles(audience);
+  const { sections } = useResourceSections();
+
+  const sectionLabelByKey = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const section of sections) {
+      map.set(section.key, section.label);
+    }
+    return map;
+  }, [sections]);
 
   const sortedArticles = useMemo(
     () =>
@@ -74,13 +84,22 @@ export default function ArticlesAdminPage() {
             Medium-style publishing for homeowner and GC domains.
           </p>
         </div>
-        <Link
-          href={`/articles/editor?audience=${audience}`}
-          className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          New article
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/articles/sections"
+            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-800 text-sm flex items-center gap-2 hover:bg-gray-50"
+          >
+            <Layers3 className="w-4 h-4" />
+            Manage sections
+          </Link>
+          <Link
+            href={`/articles/editor?audience=${audience}`}
+            className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            New article
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -173,6 +192,18 @@ export default function ArticlesAdminPage() {
                     ) : null}
                   </div>
                   <p className="text-sm text-gray-600 line-clamp-2">{article.excerpt}</p>
+                  {audience === 'homeowner' && article.resourceSectionKeys?.length ? (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                      {article.resourceSectionKeys.map((key) => (
+                        <span
+                          key={key}
+                          className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700"
+                        >
+                          {sectionLabelByKey.get(key) || key}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   <p className="text-xs text-gray-400 mt-2">
                     Updated {new Date(article.updatedAt).toLocaleString()}
                     {article.publishedAt

@@ -22,7 +22,7 @@ export default function LandForSaleNigeriaSeoPage() {
       faqs={content.faqs}
       internalLinks={content.internalLinks}
       ctaLabel="Discover land options"
-      ctaHref="/explore"
+      ctaHref="/property-projects-nigeria"
     />
   );
 }

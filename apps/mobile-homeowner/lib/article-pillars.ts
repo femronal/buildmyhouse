@@ -18,6 +18,8 @@ export type ArticleIndexItem = {
   /** Route path for expo-router */
   href: string;
   isCuratedGuide?: boolean;
+  /** CMS-assigned landing page section keys */
+  resourceSectionKeys?: string[];
 };
 
 export const ARTICLE_PILLAR_META: {
@@ -91,7 +93,7 @@ export function inferArticlePillar(article: Article): ArticlePillarKey {
 }
 
 export function articleToIndexItem(article: Article): ArticleIndexItem {
-  const pillarKey = inferArticlePillar(article);
+  const pillarKey = article.articlePillar ?? inferArticlePillar(article);
   return {
     key: article.slug,
     pillarKey,
@@ -104,6 +106,7 @@ export function articleToIndexItem(article: Article): ArticleIndexItem {
     readingMinutes: article.readingMinutes,
     tags: article.tags,
     href: article.canonicalPath.startsWith('/') ? article.canonicalPath : `/articles/${article.slug}`,
+    resourceSectionKeys: article.resourceSectionKeys,
   };
 }
 

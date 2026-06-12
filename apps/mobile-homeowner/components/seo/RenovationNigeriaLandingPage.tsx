@@ -2,6 +2,7 @@ import { Linking, Platform, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
@@ -150,20 +151,36 @@ export default function RenovationNigeriaLandingPage() {
   const showStickyMobileCta = Platform.OS === 'web';
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 150 : 44 }}>
-        <View className="pt-10 pb-4 md:pt-14">
+    <SeoContentShell contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 150 : 44 }}
+      footer={showStickyMobileCta ? (
+        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-5 pt-3 bg-white/95 border-t border-gray-200">
+          <Text className="text-gray-500 text-xs text-center mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Start with scope. Pay by proof.
+          </Text>
           <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mb-4"
+            onPress={() => {
+              trackWebEvent('renovation_nigeria_sticky_mobile_cta_click', {
+                href: content.finalCta.primaryCta.href,
+                cta_label: 'Start your renovation project',
+              });
+              openLink(content.finalCta.primaryCta.href, router);
+            }}
+            className="bg-black rounded-full py-4 px-5"
           >
-            <ArrowLeft size={18} color="#111827" strokeWidth={2.2} />
+            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Start your renovation project
+            </Text>
           </TouchableOpacity>
+        </View>
+      ) : null}>
+      <SeoContentColumn>
+        <View className="pt-10 pb-2 md:pt-14 md:pb-4">
+          <SeoContentBackButton fallbackHref="/login" />
 
           <Text className="text-[11px] uppercase tracking-wide text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
-          <SeoHeading level={1} className="text-black text-3xl leading-tight mb-3 md:text-4xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.hero.title}
           </SeoHeading>
           <Text className="text-gray-700 text-base leading-7 mb-5 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -463,29 +480,7 @@ export default function RenovationNigeriaLandingPage() {
             />
           </View>
         </View>
-      </ScrollView>
-
-      {showStickyMobileCta ? (
-        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-5 pt-3 bg-white/95 border-t border-gray-200">
-          <Text className="text-gray-500 text-xs text-center mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Start with scope. Pay by proof.
-          </Text>
-          <TouchableOpacity
-            onPress={() => {
-              trackWebEvent('renovation_nigeria_sticky_mobile_cta_click', {
-                href: content.finalCta.primaryCta.href,
-                cta_label: 'Start your renovation project',
-              });
-              openLink(content.finalCta.primaryCta.href, router);
-            }}
-            className="bg-black rounded-full py-4 px-5"
-          >
-            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Start your renovation project
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

@@ -124,6 +124,8 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="explore" options={{ headerShown: false }} />
+          <Stack.Screen name="rent" options={{ headerShown: false }} />
           <Stack.Screen name="location" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding-intro" options={{ headerShown: false }} />
           <Stack.Screen name="design-library" options={{ headerShown: false }} />
@@ -157,6 +159,7 @@ export default function RootLayout() {
           <Stack.Screen name="guides/contractor-vetting-nigeria-diaspora" options={{ headerShown: false }} />
           <Stack.Screen name="downloads/remote-renovation-scope-worksheet" options={{ headerShown: false }} />
           <Stack.Screen name="downloads/lagos-permit-starter-checklist" options={{ headerShown: false }} />
+          <Stack.Screen name="tools/index" options={{ headerShown: false }} />
           <Stack.Screen name="tools/milestone-payment-schedule" options={{ headerShown: false }} />
           <Stack.Screen name="tools/renovation-budget-planner" options={{ headerShown: false }} />
           <Stack.Screen name="demo/project-monitoring" options={{ headerShown: false }} />

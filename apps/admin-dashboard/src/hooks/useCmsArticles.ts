@@ -4,6 +4,7 @@ import { api } from '@/lib/api';
 export type CmsArticleFaq = { question: string; answer: string };
 export type CmsArticleInternalLink = { label: string; href: string };
 export type CmsArticleAudience = 'homeowner' | 'gc';
+export type CmsArticlePillar = 'build-abroad' | 'renovate-abroad' | 'lagos-compliance' | 'general';
 
 export interface CmsArticle {
   id: string;
@@ -18,6 +19,8 @@ export interface CmsArticle {
   authorName: string;
   canonicalPath: string;
   audience: CmsArticleAudience;
+  resourceSectionKeys: string[];
+  articlePillar?: CmsArticlePillar | null;
   /** TipTap / ProseMirror JSON document */
   content: Record<string, unknown>;
   faqs: CmsArticleFaq[];

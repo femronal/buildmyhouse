@@ -160,6 +160,8 @@ model CmsArticle {
   content       Json
   faqs          Json
   internalLinks Json
+  resourceSectionKeys String[] @default([])
+  articlePillar String?
   isPublished   Boolean  @default(false)
   publishedAt   DateTime?
   createdAt     DateTime @default(now())
@@ -167,6 +169,20 @@ model CmsArticle {
 
   @@index([isPublished, publishedAt, updatedAt])
   @@map("cms_articles")
+}
+
+model CmsResourceSection {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  label     String
+  hint      String   @default("")
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  isSystem  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cms_resource_sections")
 }
 
 model Project {

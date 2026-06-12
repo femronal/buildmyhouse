@@ -69,25 +69,25 @@ function getNotificationLink(item: NotificationItem): string | null {
   if (item.type === "house_viewing_outcome") {
     return outcomeStatus === "purchased"
       ? "/(tabs)/finance?tab=homePurchases"
-      : "/(tabs)/explore";
+      : "/(tabs)/property-projects-nigeria";
   }
   if (item.type === "land_viewing_outcome") {
     return outcomeStatus === "purchased"
       ? "/(tabs)/finance?tab=landPurchases"
-      : "/(tabs)/explore";
+      : "/(tabs)/property-projects-nigeria";
   }
   if (item.type === "rental_viewing_outcome") {
     return outcomeStatus === "purchased"
       ? "/(tabs)/finance?tab=rentals"
-      : "/(tabs)/rent";
+      : "/(tabs)/build-opportunities-nigeria";
   }
 
   // Viewing requests (not outcome) → explore or rent
   if (data.houseForSaleId && item.type === "house_viewing_request") {
-    return "/(tabs)/explore";
+    return "/(tabs)/property-projects-nigeria";
   }
   if (data.landForSaleId && item.type === "land_viewing_request") {
-    return "/(tabs)/explore";
+    return "/(tabs)/property-projects-nigeria";
   }
   return null;
 }

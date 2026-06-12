@@ -19,7 +19,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     },
     secondaryCta: {
       label: 'Explore Interior Ideas',
-      href: '/explore',
+      href: '/property-projects-nigeria',
     },
   },
   coverImage: {
@@ -338,7 +338,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     ],
     cta: {
       label: 'Explore Interior Ideas',
-      href: '/explore',
+      href: '/property-projects-nigeria',
     },
   },
   bestFor: {
@@ -458,7 +458,7 @@ export const interiorDesignNigeriaLandingPageContent = {
     },
     secondaryCta: {
       label: 'Explore Interior Ideas',
-      href: '/explore',
+      href: '/property-projects-nigeria',
     },
   },
   internalLinks: {

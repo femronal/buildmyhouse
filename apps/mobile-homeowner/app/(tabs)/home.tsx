@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { User, Plus, MapPin, Lock, Clock, X, ArrowUpRight } from "phosphor-react-native";
+import { User, MapPin, Lock, Clock, X, ArrowUpRight } from "phosphor-react-native";
+import AnimatedCtaButton from '@/components/AnimatedCtaButton';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
@@ -289,16 +290,11 @@ export default function HomeScreen() {
   const isLoggedOut = !currentUser && !userLoading;
 
   const launchButton = (
-    <TouchableOpacity
+    <AnimatedCtaButton
+      label={isLoggedOut ? 'Sign up / Log in' : 'Start Building'}
+      compact={hasProjects}
       onPress={() => (isLoggedOut ? router.push('/login') : router.push('/location?mode=explore'))}
-      activeOpacity={0.85}
-      className="bmh-glass-btn bmh-glass-btn-light bg-white rounded-full self-center flex-row items-center justify-center gap-2 px-7 py-3.5"
-    >
-      <Plus size={16} color="#000000" weight="bold" />
-      <Text className="text-black text-sm md:text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-        {isLoggedOut ? 'Sign up / Log in' : 'Launch a New Project'}
-      </Text>
-    </TouchableOpacity>
+    />
   );
 
   return (
@@ -396,22 +392,24 @@ export default function HomeScreen() {
                     accessibilityLabel={`${project.name || 'Untitled Project'} — ${statusLabel}`}
                   >
                     {/* Cover image fading into the dark canvas */}
-                    <View className="relative">
+                    <View className="relative overflow-hidden" style={{ backgroundColor: CARD_BG }}>
                       <Image
                         source={{ uri: getProjectCoverImage(project) }}
                         className="bmh-product-card-img w-full"
-                        style={{ height: 168, opacity: 0.85 }}
+                        style={{ height: 168, opacity: 0.85, marginBottom: -2 }}
                         resizeMode="cover"
                       />
                       <Svg
                         pointerEvents="none"
                         width="100%"
-                        height="70%"
-                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+                        height="100%"
+                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, top: 0 }}
                       >
                         <Defs>
                           <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                             <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
+                            <Stop offset="0.45" stopColor={CARD_BG} stopOpacity="0" />
+                            <Stop offset="0.72" stopColor={CARD_BG} stopOpacity="0.82" />
                             <Stop offset="1" stopColor={CARD_BG} stopOpacity="1" />
                           </SvgLinearGradient>
                         </Defs>
@@ -431,7 +429,7 @@ export default function HomeScreen() {
                       </View>
                     </View>
 
-                    <View className="px-5 pb-5" style={{ marginTop: -8 }}>
+                    <View className="px-5 pb-5" style={{ marginTop: -24, backgroundColor: CARD_BG }}>
                       <Text
                         className="text-[10px] text-white/50 uppercase mb-1.5"
                         style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}

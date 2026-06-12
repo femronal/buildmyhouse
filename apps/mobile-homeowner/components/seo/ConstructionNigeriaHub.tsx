@@ -4,6 +4,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight, MapPin } from 'lucide-react-nati
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import { trackWebEvent } from '@/lib/analytics';
 import type { ConstructionNigeriaHubContent } from '@/lib/construction-nigeria-hub';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -88,18 +89,27 @@ export default function ConstructionNigeriaHub({ content }: Props) {
   );
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView
-        className="flex-1 px-5 md:px-6"
-        contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 165 : 44 }}
-      >
-        <View className="pt-10 pb-2 md:pt-14 md:pb-4">
+    <SeoContentShell contentContainerStyle={{ paddingBottom: showStickyMobileCta ? 165 : 44 }}
+      footer={showStickyMobileCta ? (
+        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-5 pt-3 bg-white/95 border-t border-gray-200">
           <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
+            onPress={() => {
+              trackWebEvent('construction_nigeria_sticky_mobile_cta_click', {
+                href: content.finalCta.primaryCta.href,
+              });
+              openLink(content.finalCta.primaryCta.href);
+            }}
+            className="bg-black rounded-full py-4 px-5"
           >
-            <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
+            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Start your project
+            </Text>
           </TouchableOpacity>
+        </View>
+      ) : null}>
+      <SeoContentColumn>
+        <View className="pt-10 pb-2 md:pt-14 md:pb-4">
+          <SeoContentBackButton fallbackHref="/login" />
           {eyebrow ? (
             <Text
               className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
@@ -110,13 +120,13 @@ export default function ConstructionNigeriaHub({ content }: Props) {
           ) : null}
           <SeoHeading
             level={1}
-            className="text-2xl leading-snug text-black mb-2 md:text-4xl md:leading-tight md:mb-2"
+            className={seoContentTypography.title}
             style={{ fontFamily: 'Poppins_700Bold' }}
           >
             {content.heroTitle}
           </SeoHeading>
           <Text
-            className="text-gray-600 text-sm leading-6 md:text-base md:leading-7"
+            className={seoContentTypography.description}
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
             {content.heroDescription}
@@ -440,25 +450,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-
-      {showStickyMobileCta ? (
-        <View className="absolute bottom-0 left-0 right-0 md:hidden px-4 pb-5 pt-3 bg-white/95 border-t border-gray-200">
-          <TouchableOpacity
-            onPress={() => {
-              trackWebEvent('construction_nigeria_sticky_mobile_cta_click', {
-                href: content.finalCta.primaryCta.href,
-              });
-              openLink(content.finalCta.primaryCta.href);
-            }}
-            className="bg-black rounded-full py-4 px-5"
-          >
-            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Start your project
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

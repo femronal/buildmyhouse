@@ -22,7 +22,7 @@ export default function HomesForRentNigeriaSeoPage() {
       faqs={content.faqs}
       internalLinks={content.internalLinks}
       ctaLabel="Browse rental listings"
-      ctaHref="/rent"
+      ctaHref="/build-opportunities-nigeria"
     />
   );
 }

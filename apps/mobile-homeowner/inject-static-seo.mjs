@@ -7,6 +7,8 @@ const distDir = path.resolve(process.cwd(), 'dist');
 /** Legacy paths that must not compete in Search; point crawlers to canonical URLs. */
 const REDIRECTS = {
   '/login': '/',
+  '/explore': '/property-projects-nigeria',
+  '/rent': '/build-opportunities-nigeria',
   '/diaspora/us/build-in-nigeria': '/diaspora/build-in-nigeria-from-usa-canada',
   '/diaspora/uk/build-in-nigeria': '/diaspora/build-in-nigeria-from-uk',
 };
@@ -104,15 +106,15 @@ const SEO_PAGES = {
     description:
       'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },
-  '/explore': {
-    title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
+  '/property-projects-nigeria': {
+    title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
     description:
-      'Discover house designs, homes for sale, and land opportunities in Nigeria. Start your construction, renovation, or interior design project with verified professionals.',
+      'Pick your project in Nigeria — browse verified repair, upgrade, renovation, and full build scopes in Lagos and nationwide. Start property work with clearer scope and verified professionals.',
   },
-  '/rent': {
-    title: 'Homes for Rent in Nigeria (Owner-Listed) | BuildMyHouse Technologies',
+  '/build-opportunities-nigeria': {
+    title: 'Build Opportunities in Nigeria | Land, Homes & Investment Properties | BuildMyHouse',
     description:
-      'Find owner-listed rental homes in Nigeria with transparent fees and verified listings. Browse options in Lagos, Abuja, and other key cities.',
+      'Find your next build in Nigeria. Browse verified rentals, houses for sale, land, and redevelopment opportunities in Lagos, Ogun, and across Nigeria.',
   },
   '/articles': {
     title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',

@@ -1,7 +1,13 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CreditCard, ShieldCheck } from 'lucide-react-native';
+import { CreditCard, ShieldCheck } from 'lucide-react-native';
 import ProjectMonitoringDemoPhone from '@/components/demo/ProjectMonitoringDemoPhone';
+import {
+  SeoContentBackButton,
+  SeoContentColumn,
+  SeoContentShell,
+  seoContentTypography,
+} from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
 import { projectMonitoringDemoData } from '@/lib/demo-project-monitoring';
@@ -38,68 +44,58 @@ export default function ProjectMonitoringDemoPage() {
   });
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="pt-10 pb-3 md:pt-14">
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
+      <SeoContentColumn className="pt-10 pb-3 md:pt-14">
+        <SeoContentBackButton fallbackHref="/" />
+
+        <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          Interactive Demo
+        </Text>
+        <SeoHeading
+          level={1}
+          className={seoContentTypography.title}
+          style={{ fontFamily: 'Poppins_700Bold' }}
+        >
+          Public Preview: Remote Project Monitoring
+        </SeoHeading>
+        <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
+          This demo mirrors the in-app homeowner experience using sample data: project list, dashboard, build timeline,
+          stage materials/team/files, and GC chat.
+        </Text>
+        <View className="flex-row items-start bg-gray-100 border border-gray-300 rounded-2xl p-3 mb-4">
+          <ShieldCheck size={18} color="#1f2937" style={{ marginTop: 1, marginRight: 8 }} />
+          <Text className="text-xs text-gray-800 flex-1 leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
+            This is a demo experience with sample data, built for public preview.
+          </Text>
+        </View>
+
+        <View className="flex-col md:flex-row gap-3 mb-2">
           <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-3 md:w-10 md:h-10"
+            onPress={() => {
+              trackWebEvent('demo_project_monitoring_cta_top_start', {
+                cta_href: '/location?mode=explore',
+              });
+              router.push('/location?mode=explore' as any);
+            }}
+            className="bg-black rounded-full py-3.5 px-5"
           >
-            <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
-          </TouchableOpacity>
-
-          <Text
-            className="text-[10px] md:text-xs uppercase tracking-wide text-gray-500 mb-1"
-            style={{ fontFamily: 'Poppins_600SemiBold' }}
-          >
-            Interactive Demo
-          </Text>
-          <SeoHeading
-            level={1}
-            className="text-2xl leading-tight text-black mb-2 md:text-4xl"
-            style={{ fontFamily: 'Poppins_700Bold' }}
-          >
-            Public Preview: Remote Project Monitoring
-          </SeoHeading>
-          <Text className="text-sm text-gray-600 leading-6 mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-            This demo mirrors the in-app homeowner experience using sample data: project list, dashboard, build
-            timeline, stage materials/team/files, and GC chat.
-          </Text>
-          <View className="flex-row items-start bg-gray-100 border border-gray-300 rounded-2xl p-3 mb-4">
-            <ShieldCheck size={18} color="#1f2937" style={{ marginTop: 1, marginRight: 8 }} />
-            <Text className="text-xs text-gray-800 flex-1 leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-              This is a demo experience with sample data, built for public preview.
+            <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Start a Tracked Project
             </Text>
-          </View>
-
-          <View className="flex-col md:flex-row gap-3 mb-2">
-            <TouchableOpacity
-              onPress={() => {
-                trackWebEvent('demo_project_monitoring_cta_top_start', {
-                  cta_href: '/location?mode=explore',
-                });
-                router.push('/location?mode=explore' as any);
-              }}
-              className="bg-black rounded-full py-3.5 px-5"
-            >
-              <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Start a Tracked Project
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                trackWebEvent('demo_project_monitoring_cta_top_learn', {
-                  cta_href: '/diaspora/build-in-nigeria-from-abroad',
-                });
-                router.push('/diaspora/build-in-nigeria-from-abroad' as any);
-              }}
-              className="border border-gray-300 rounded-full py-3.5 px-5"
-            >
-              <Text className="text-gray-900 text-center text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Learn How Building From Abroad Works
-              </Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              trackWebEvent('demo_project_monitoring_cta_top_learn', {
+                cta_href: '/diaspora/build-in-nigeria-from-abroad',
+              });
+              router.push('/diaspora/build-in-nigeria-from-abroad' as any);
+            }}
+            className="border border-gray-300 rounded-full py-3.5 px-5"
+          >
+            <Text className="text-gray-900 text-center text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Learn How Building From Abroad Works
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View className="items-center mb-5">
@@ -197,7 +193,7 @@ export default function ProjectMonitoringDemoPage() {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

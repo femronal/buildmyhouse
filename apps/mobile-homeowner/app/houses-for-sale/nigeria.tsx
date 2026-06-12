@@ -22,7 +22,7 @@ export default function HousesForSaleNigeriaSeoPage() {
       faqs={content.faqs}
       internalLinks={content.internalLinks}
       ctaLabel="Explore home opportunities"
-      ctaHref="/explore"
+      ctaHref="/property-projects-nigeria"
     />
   );
 }

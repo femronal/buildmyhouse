@@ -5,6 +5,7 @@ import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import { SeoRichSection } from '@/components/seo/SeoLandingPage';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import { trackWebEvent } from '@/lib/analytics';
 import { diasporaUkBuildNigeriaPageContent } from '@/lib/diaspora-uk-build-nigeria-hub';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -59,15 +60,10 @@ export default function DiasporaUkBuildNigeriaHub() {
   };
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
+      <SeoContentColumn>
         <View className="pt-10 pb-2 md:pt-14 md:pb-4">
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
-          >
-            <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
-          </TouchableOpacity>
+          <SeoContentBackButton fallbackHref="/login" />
           <Text
             className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
             style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -255,7 +251,7 @@ export default function DiasporaUkBuildNigeriaHub() {
             {c.cta.primary.label}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

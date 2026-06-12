@@ -95,8 +95,8 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="home" options={{ title: "Home", tabBarIcon: renderIcon(House) }} />
-      <Tabs.Screen name="explore" options={{ title: "Projects", tabBarIcon: renderIcon(Compass) }} />
-      <Tabs.Screen name="rent" options={{ title: "Build", tabBarIcon: renderIcon(Hammer) }} />
+      <Tabs.Screen name="property-projects-nigeria" options={{ title: "Projects", tabBarIcon: renderIcon(Compass) }} />
+      <Tabs.Screen name="build-opportunities-nigeria" options={{ title: "Build", tabBarIcon: renderIcon(Hammer) }} />
       <Tabs.Screen name="finance" options={{ title: "Finance", tabBarIcon: renderIcon(Wallet) }} />
     </Tabs>
   );

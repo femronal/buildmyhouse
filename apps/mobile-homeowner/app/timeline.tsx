@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, CheckCircle, Clock, Lock, Home, AlertCircle, ExternalLink, CreditCard, ChevronDown, ChevronUp } from "lucide-react-native";
+import { ArrowLeft, CheckCircle, Clock, Lock, House, WarningCircle, ArrowSquareOut, CreditCard, CaretDown, CaretUp } from "phosphor-react-native";
 import { useProject } from "@/hooks/useProject";
 import * as WebBrowser from 'expo-web-browser';
 import { useMemo, useState } from "react";
@@ -88,11 +88,11 @@ export default function TimelineScreen() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
-        return <CheckCircle size={24} color="#000000" strokeWidth={2} fill="#000000" />;
+        return <CheckCircle size={24} color="#000000" weight="fill" />;
       case "in_progress":
-        return <Clock size={24} color="#000000" strokeWidth={2} />;
+        return <Clock size={24} color="#000000" weight="regular" />;
       default:
-        return <Lock size={24} color="#D4D4D4" strokeWidth={2} />;
+        return <Lock size={24} color="#D4D4D4" weight="regular" />;
     }
   };
 
@@ -185,7 +185,7 @@ export default function TimelineScreen() {
   if (error || !project) {
     return (
       <View className="flex-1 bg-white items-center justify-center px-6">
-        <AlertCircle size={48} color="#EF4444" strokeWidth={2} />
+        <WarningCircle size={48} color="#EF4444" weight="regular" />
         <Text className="text-red-500 text-center text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
           Failed to load project timeline
         </Text>
@@ -237,13 +237,13 @@ export default function TimelineScreen() {
               onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
               className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
             >
-              <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+              <ArrowLeft size={22} color="#000000" weight="bold" />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push('/(tabs)/home')}
               className="w-10 h-10 bg-black rounded-full items-center justify-center"
             >
-              <Home size={20} color="#FFFFFF" strokeWidth={2} />
+              <House size={20} color="#FFFFFF" weight="bold" />
             </TouchableOpacity>
           </View>
 
@@ -262,9 +262,9 @@ export default function TimelineScreen() {
           <View style={cardShadowStyle} className="bg-gray-50 rounded-3xl p-6 border border-gray-200">
             <View className="flex-row items-center mb-3">
               {paymentConfirmationStatus === 'declared' ? (
-                <Clock size={22} color="#F59E0B" strokeWidth={2.5} />
+                <Clock size={22} color="#F59E0B" weight="bold" />
               ) : (
-                <CreditCard size={22} color="#111827" strokeWidth={2.5} />
+                <CreditCard size={22} color="#111827" weight="bold" />
               )}
               <Text className="text-black text-xl ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                 {title}
@@ -280,7 +280,7 @@ export default function TimelineScreen() {
                 onPress={handleOpenExternalLink}
                 className="mt-4 flex-row items-center justify-center bg-black rounded-xl py-3"
               >
-                <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <ArrowSquareOut size={18} color="#FFFFFF" weight="bold" />
                 <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Open payment link
                 </Text>
@@ -312,13 +312,13 @@ export default function TimelineScreen() {
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
             className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
           >
-            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            <ArrowLeft size={22} color="#000000" weight="bold" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
             className="w-10 h-10 bg-black rounded-full items-center justify-center"
           >
-            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            <House size={20} color="#FFFFFF" weight="bold" />
           </TouchableOpacity>
         </View>
         
@@ -363,9 +363,9 @@ export default function TimelineScreen() {
                 </View>
                 <View className="w-8 h-8 rounded-full bg-white border border-gray-200 items-center justify-center">
                   {isStageHistoryExpanded ? (
-                    <ChevronUp size={16} color="#171717" strokeWidth={2.5} />
+                    <CaretUp size={16} color="#171717" weight="bold" />
                   ) : (
-                    <ChevronDown size={16} color="#171717" strokeWidth={2.5} />
+                    <CaretDown size={16} color="#171717" weight="bold" />
                   )}
                 </View>
               </TouchableOpacity>
@@ -439,7 +439,7 @@ export default function TimelineScreen() {
 
           {stages.length === 0 ? (
             <View className="items-center py-10">
-              <Clock size={48} color="#D4D4D4" strokeWidth={1.5} />
+              <Clock size={48} color="#D4D4D4" weight="light" />
               <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 No Stages Yet
               </Text>
@@ -488,7 +488,7 @@ export default function TimelineScreen() {
                     </View>
                     
                     <View className="flex-row items-center">
-                      <Clock size={16} color={isClickable ? "#737373" : "#D4D4D4"} strokeWidth={2} />
+                      <Clock size={16} color={isClickable ? "#737373" : "#D4D4D4"} weight="regular" />
                       <Text 
                         className={`text-sm ml-2 ${isClickable ? 'text-gray-500' : 'text-gray-300'}`}
                         style={{ fontFamily: 'Poppins_400Regular' }}
@@ -497,7 +497,7 @@ export default function TimelineScreen() {
                       </Text>
                       {!isClickable && (
                         <View className="flex-row items-center ml-auto">
-                          <Lock size={14} color="#D4D4D4" strokeWidth={2} />
+                          <Lock size={14} color="#D4D4D4" weight="regular" />
                           <Text 
                             className="text-gray-300 text-xs ml-1"
                             style={{ fontFamily: 'Poppins_400Regular' }}

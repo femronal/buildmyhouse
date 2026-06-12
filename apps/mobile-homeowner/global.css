@@ -18,7 +18,12 @@ body * {
   font-family: "Poppins", sans-serif !important;
 }
 
-/* TipTap HTML output on article pages (web) */
+/* Shared SEO / guide / article readable column (web) */
+@media (min-width: 768px) {
+  .seo-content-shell-scroll > div {
+    align-items: center;
+  }
+}
 .article-html-host {
   max-width: 680px;
   width: 100%;
@@ -738,6 +743,127 @@ body * {
   }
 }
 
+/* === Animated CTA button (Aura.build dual-arrow pill) — BuildMyHouse white on dark === */
+.bmh-animated-cta {
+  position: relative;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 36px;
+  border-width: 4px;
+  border-color: transparent;
+  border-radius: 100px;
+  background-color: transparent;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px #ffffff;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bmh-animated-cta-compact {
+  padding: 10px 28px;
+}
+
+.bmh-animated-cta-arr {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  z-index: 9;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bmh-animated-cta-arr-1 {
+  right: 16px;
+}
+
+.bmh-animated-cta-arr-2 {
+  left: -25%;
+}
+
+.bmh-animated-cta-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  background-color: #ffffff;
+  border-radius: 10%;
+  opacity: 0;
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bmh-animated-cta-text {
+  position: relative;
+  z-index: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  transform: translateX(-12px);
+  transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.bmh-animated-cta-compact .bmh-animated-cta-text {
+  font-size: 14px;
+}
+
+.bmh-animated-cta:hover,
+.bmh-animated-cta.bmh-animated-cta-active {
+  box-shadow: 0 0 0 12px transparent;
+  border-radius: 12px;
+}
+
+.bmh-animated-cta:hover .bmh-animated-cta-arr-1,
+.bmh-animated-cta.bmh-animated-cta-active .bmh-animated-cta-arr-1 {
+  right: -25%;
+}
+
+.bmh-animated-cta:hover .bmh-animated-cta-arr-2,
+.bmh-animated-cta.bmh-animated-cta-active .bmh-animated-cta-arr-2 {
+  left: 16px;
+}
+
+.bmh-animated-cta:hover .bmh-animated-cta-text,
+.bmh-animated-cta.bmh-animated-cta-active .bmh-animated-cta-text,
+.bmh-animated-cta-text-active {
+  color: #000000;
+  transform: translateX(12px);
+}
+
+.bmh-animated-cta:hover .bmh-animated-cta-circle,
+.bmh-animated-cta.bmh-animated-cta-active .bmh-animated-cta-circle,
+.bmh-animated-cta-circle-active {
+  width: 220px;
+  height: 220px;
+  margin-top: -110px;
+  margin-left: -110px;
+  opacity: 1;
+}
+
+.bmh-animated-cta:active {
+  transform: scale(0.95);
+  box-shadow: 0 0 0 4px #ffffff;
+}
+
+@media (max-width: 768px) {
+  .bmh-animated-cta {
+    padding: 12px 24px;
+  }
+
+  .bmh-animated-cta-text {
+    font-size: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bmh-animated-cta,
+  .bmh-animated-cta-arr,
+  .bmh-animated-cta-circle,
+  .bmh-animated-cta-text {
+    transition: none;
+  }
+}
+
 .bmh-product-card {
   transition:
     transform 0.5s ease,
@@ -860,5 +986,63 @@ body * {
     max-width: 50% !important;
     flex-shrink: 0 !important;
     height: 600px !important;
+  }
+}
+
+/* === Articles hub (topic sidebar + featured card) === */
+.bmh-articles-hub-sidebar,
+.bmh-articles-hub-feature,
+.bmh-articles-hub-card {
+  transition:
+    transform 0.35s ease,
+    box-shadow 0.35s ease,
+    border-color 0.35s ease;
+}
+
+.bmh-articles-hub-topic {
+  transition:
+    transform 0.25s ease,
+    background-color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+@media (hover: hover) {
+  .bmh-articles-hub-sidebar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  .bmh-articles-hub-feature:hover,
+  .bmh-articles-hub-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.18);
+  }
+
+  .bmh-articles-hub-topic:hover {
+    transform: scale(1.01);
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+
+  .bmh-articles-hub-feature:hover img,
+  .bmh-articles-hub-card:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.bmh-articles-hub-feature img,
+.bmh-articles-hub-card img {
+  transition: transform 0.7s ease;
+}
+
+.bmh-articles-hub-feature-media {
+  min-height: 220px;
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+@media (min-width: 1024px) {
+  .bmh-articles-hub-feature-media {
+    min-height: 100%;
+    align-self: stretch;
   }
 }

@@ -189,10 +189,10 @@ export default function RentScreen() {
   });
 
   useWebSeo({
-    title: 'Build Opportunities in Nigeria | BuildMyHouse',
+    title: 'Build Opportunities in Nigeria | Land, Homes & Investment Properties | BuildMyHouse',
     description:
-      'Browse location-specific build opportunities curated by BuildMyHouse admin for verified properties in Nigeria.',
-    canonicalPath: '/rent',
+      'Find your next build in Nigeria. Browse verified rentals, houses for sale, land, and redevelopment opportunities in Lagos, Ogun, and across Nigeria.',
+    canonicalPath: '/build-opportunities-nigeria',
     robots: 'index,follow',
   });
 
@@ -448,7 +448,7 @@ export default function RentScreen() {
               >
                 <MagnifyingGlass size={18} color="#8a8a8a" weight="regular" />
                 <TextInput
-                  placeholder="Search by phrases and keywords (e.g. AC repair in Akoka)"
+                  placeholder="Search by location or type (e.g. land in Mowe)"
                   placeholderTextColor="#8a8a8a"
                   value={searchQuery}
                   onChangeText={setSearchQuery}

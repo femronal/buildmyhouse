@@ -117,8 +117,8 @@ export function isIndexablePath(pathname?: string) {
   const exactIndexable = new Set([
     '/',
     '/for-contractors',
-    '/explore',
-    '/rent',
+    '/property-projects-nigeria',
+    '/build-opportunities-nigeria',
     '/construction/nigeria',
     '/construction/lagos',
     '/construction/abuja',
@@ -136,6 +136,7 @@ export function isIndexablePath(pathname?: string) {
     '/downloads/lagos-permit-starter-checklist',
     '/tools/milestone-payment-schedule',
     '/tools/renovation-budget-planner',
+    '/tools',
     '/demo/project-monitoring',
     '/interior-design/nigeria',
     '/homes-for-rent/nigeria',
@@ -204,23 +205,41 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
   const indexable = isIndexablePath(normalized);
   const canonicalPath = normalized;
 
-  if (normalized === '/explore') {
+  if (normalized === '/property-projects-nigeria') {
     return {
-      title: 'Explore House Designs, Homes & Land in Nigeria | BuildMyHouse Technologies',
+      title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
       description:
-        'Discover house designs, homes for sale, and land opportunities in Nigeria. Start your construction, renovation, or interior design project with verified professionals.',
+        'Pick your project in Nigeria — browse verified repair, upgrade, renovation, and full build scopes in Lagos and nationwide. Start property work with clearer scope and verified professionals.',
       canonicalPath,
       robots: 'index,follow',
     };
   }
 
-  if (normalized === '/rent') {
+  if (normalized === '/build-opportunities-nigeria') {
     return {
-      title: 'Homes for Rent in Nigeria (Owner-Listed) | BuildMyHouse Technologies',
+      title: 'Build Opportunities in Nigeria | Land, Homes & Investment Properties | BuildMyHouse',
       description:
-        'Find owner-listed rental homes in Nigeria with transparent fees and verified listings. Browse options in Lagos, Abuja, and other key cities.',
+        'Find your next build in Nigeria. Browse verified rentals, houses for sale, land, and redevelopment opportunities in Lagos, Ogun, and across Nigeria.',
       canonicalPath,
       robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/explore') {
+    return {
+      title: 'Property Projects in Nigeria | BuildMyHouse',
+      description: 'Redirecting to property projects in Nigeria.',
+      canonicalPath: '/property-projects-nigeria',
+      robots: 'noindex,follow',
+    };
+  }
+
+  if (normalized === '/rent') {
+    return {
+      title: 'Build Opportunities in Nigeria | BuildMyHouse',
+      description: 'Redirecting to build opportunities in Nigeria.',
+      canonicalPath: '/build-opportunities-nigeria',
+      robots: 'noindex,follow',
     };
   }
 

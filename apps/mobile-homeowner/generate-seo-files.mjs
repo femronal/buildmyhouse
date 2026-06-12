@@ -7,8 +7,8 @@ const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.ap
 
 const indexableRoutes = [
   '/',
-  '/explore',
-  '/rent',
+  '/property-projects-nigeria',
+  '/build-opportunities-nigeria',
   '/articles',
   '/articles/cost-to-build-house-in-nigeria-2026',
   '/articles/renovation-checklist-for-homeowners-nigeria',
@@ -43,6 +43,7 @@ const indexableRoutes = [
   '/downloads/lagos-permit-starter-checklist',
   '/tools/milestone-payment-schedule',
   '/tools/renovation-budget-planner',
+  '/tools',
   '/for-contractors',
   '/services/plumbing-repair-nigeria',
   '/services/electrical-repair-nigeria',

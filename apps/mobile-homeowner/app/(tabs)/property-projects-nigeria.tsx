@@ -251,10 +251,10 @@ export default function ExploreScreen() {
   }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
   useWebSeo({
-    title: 'Explore Designs, Homes & Land in Nigeria | BuildMyHouse',
+    title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
     description:
-      'Explore home designs, houses for sale, and land opportunities in Nigeria. Compare options and start your next project with BuildMyHouse.',
-    canonicalPath: '/explore',
+      'Pick your project in Nigeria — browse verified repair, upgrade, renovation, and full build scopes in Lagos and nationwide. Compare scopes and start property work with BuildMyHouse.',
+    canonicalPath: '/property-projects-nigeria',
     robots: 'index,follow',
   });
 

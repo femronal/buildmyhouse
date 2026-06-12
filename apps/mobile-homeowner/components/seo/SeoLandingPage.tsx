@@ -1,6 +1,6 @@
-import { View, Text, ScrollView, TouchableOpacity, type ImageSourcePropType } from 'react-native';
+import { View, Text, TouchableOpacity, type ImageSourcePropType } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react-native';
+import { CheckCircle2 } from 'lucide-react-native';
 import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import RelatedLinkSections, { type RelatedLinkSection } from '@/components/seo/RelatedLinkSections';
@@ -8,6 +8,12 @@ import TrustBlocks, { type TrustBlock } from '@/components/seo/TrustBlocks';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import ProofOfProcessDemoSection from '@/components/seo/ProofOfProcessDemoSection';
 import type { ProofOfProcessDemoContent } from '@/components/seo/proof-of-process-types';
+import {
+  SeoContentBackButton,
+  SeoContentColumn,
+  SeoContentShell,
+  seoContentTypography,
+} from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
 import type { SeoContentSection } from '@/lib/seo-pages';
@@ -49,13 +55,17 @@ export function SeoRichSection({ section }: { section: SeoContentSection }) {
 
   return (
     <View className={wrapClass}>
-      <SeoHeading level={2} className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+      <SeoHeading
+        level={2}
+        className={seoContentTypography.sectionHeading}
+        style={{ fontFamily: 'Poppins_700Bold' }}
+      >
         {section.heading}
       </SeoHeading>
       {section.paragraphs?.map((p) => (
         <Text
           key={p.slice(0, 48)}
-          className="text-gray-700 text-sm leading-6 mb-2"
+          className={seoContentTypography.bodyParagraph}
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           {p}
@@ -66,7 +76,7 @@ export function SeoRichSection({ section }: { section: SeoContentSection }) {
           <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
             •
           </Text>
-          <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className={`${seoContentTypography.bodyParagraph} flex-1`} style={{ fontFamily: 'Poppins_400Regular' }}>
             {b}
           </Text>
         </View>
@@ -74,7 +84,7 @@ export function SeoRichSection({ section }: { section: SeoContentSection }) {
       {section.paragraphsAfterBullets?.map((p) => (
         <Text
           key={p.slice(0, 48)}
-          className="text-gray-700 text-sm leading-6 mb-2 mt-1"
+          className={`${seoContentTypography.bodyParagraph} mt-1`}
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
           {p}
@@ -85,13 +95,13 @@ export function SeoRichSection({ section }: { section: SeoContentSection }) {
           <Text className="text-gray-700 mr-2" style={{ fontFamily: 'Poppins_400Regular' }}>
             •
           </Text>
-          <Text className="text-gray-700 text-sm flex-1 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className={`${seoContentTypography.bodyParagraph} flex-1`} style={{ fontFamily: 'Poppins_400Regular' }}>
             {b}
           </Text>
         </View>
       ))}
       {section.closingParagraph ? (
-        <Text className="text-gray-700 text-sm leading-6 mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+        <Text className={`${seoContentTypography.bodyParagraph} mt-2`} style={{ fontFamily: 'Poppins_400Regular' }}>
           {section.closingParagraph}
         </Text>
       ) : null}
@@ -124,40 +134,33 @@ export default function SeoLandingPage({
   const router = useRouter();
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="pt-10 pb-2 md:pt-14 md:pb-4">
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-9 h-9 bg-gray-100 rounded-full items-center justify-center mb-2 md:mb-4 md:w-10 md:h-10"
-          >
-            <ArrowLeft size={18} color="#000000" strokeWidth={2.5} />
-          </TouchableOpacity>
-          {eyebrow ? (
-            <Text
-              className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
-              style={{ fontFamily: 'Poppins_600SemiBold' }}
-            >
-              {eyebrow}
-            </Text>
-          ) : null}
-          <SeoHeading
-            level={1}
-            className="text-xl leading-snug text-black mb-1.5 md:text-3xl md:leading-tight md:mb-2"
-            style={{ fontFamily: 'Poppins_700Bold' }}
-          >
-            {title}
-          </SeoHeading>
-          {coverImageSource ? (
-            <SeoCoverImage source={coverImageSource} alt={coverImageAlt || title} aspectRatio={coverImageAspectRatio} className="mb-3" />
-          ) : null}
-          <Text
-            className="text-gray-600 text-xs leading-5 md:text-sm md:leading-6"
-            style={{ fontFamily: 'Poppins_400Regular' }}
-          >
-            {description}
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
+      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
+        <SeoContentBackButton fallbackHref="/" />
+        {eyebrow ? (
+          <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            {eyebrow}
           </Text>
-        </View>
+        ) : null}
+        <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
+          {title}
+        </SeoHeading>
+        <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
+          {description}
+        </Text>
+      </SeoContentColumn>
+
+      {coverImageSource ? (
+        <SeoContentColumn className="mb-8">
+          <SeoCoverImage
+            source={coverImageSource}
+            alt={coverImageAlt || title}
+            aspectRatio={coverImageAspectRatio}
+          />
+        </SeoContentColumn>
+      ) : null}
+
+      <SeoContentColumn>
         {preWhySections.map((section) => (
           <SeoRichSection key={section.heading} section={section} />
         ))}
@@ -192,7 +195,7 @@ export default function SeoLandingPage({
                     {index + 1}
                   </Text>
                 </View>
-                <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-gray-700 text-base leading-7 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {step}
                 </Text>
               </View>
@@ -222,13 +225,13 @@ export default function SeoLandingPage({
             });
             router.push(ctaHref as any);
           }}
-          className="bg-blue-600 rounded-full py-4 px-5 mb-3"
+          className="bg-black rounded-full py-4 px-5 mb-3"
         >
           <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
             {ctaLabel}
           </Text>
         </TouchableOpacity>
-      </ScrollView>
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

@@ -2,11 +2,15 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaClient } from '@prisma/client';
 import { isTipTapDoc, normalizeStoredArticleContent } from './article-content';
 import { UpsertArticleDto } from './dto/upsert-article.dto';
+import { ResourceSectionsService } from '../resource-sections/resource-sections.service';
 
 @Injectable()
 export class ArticlesService {
   private prisma = new PrismaClient() as any;
   private readonly validAudiences = new Set(['homeowner', 'gc']);
+  private readonly validPillars = new Set(['build-abroad', 'renovate-abroad', 'lagos-compliance', 'general']);
+
+  constructor(private readonly resourceSectionsService: ResourceSectionsService) {}
 
   private normalizeSlug(slug: string) {
     const clean = String(slug || '')
@@ -32,7 +36,16 @@ export class ArticlesService {
     return raw as 'homeowner' | 'gc';
   }
 
-  private normalizeUpsertPayload(dto: UpsertArticleDto) {
+  private normalizeArticlePillar(value?: string) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    if (!this.validPillars.has(raw)) {
+      throw new BadRequestException('articlePillar must be build-abroad, renovate-abroad, lagos-compliance, or general');
+    }
+    return raw;
+  }
+
+  private async normalizeUpsertPayload(dto: UpsertArticleDto) {
     const slug = this.normalizeSlug(dto.slug);
     if (!slug) {
       throw new BadRequestException('Slug is required');
@@ -53,6 +66,20 @@ export class ArticlesService {
       throw new BadRequestException('content.content must be an array');
     }
 
+    const isPublished = Boolean(dto.isPublished);
+    const audience = this.normalizeAudience(dto.audience);
+    let resourceSectionKeys = Array.isArray(dto.resourceSectionKeys)
+      ? dto.resourceSectionKeys.map((key) => String(key || '').trim()).filter(Boolean)
+      : [];
+
+    if (resourceSectionKeys.length > 0) {
+      resourceSectionKeys = await this.resourceSectionsService.validateSectionKeys(resourceSectionKeys);
+    } else if (isPublished && audience === 'homeowner') {
+      throw new BadRequestException(
+        'Choose at least one articles landing page section before publishing a homeowner article',
+      );
+    }
+
     return {
       slug,
       title: String(dto.title || '').trim(),
@@ -63,12 +90,14 @@ export class ArticlesService {
       readingMinutes: Number(dto.readingMinutes || 5),
       tags: Array.isArray(dto.tags) ? dto.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [],
       authorName: String(dto.authorName || '').trim() || 'BuildMyHouse Editorial',
-      audience: this.normalizeAudience(dto.audience),
+      audience,
       canonicalPath,
       content: dto.content as object,
       faqs: Array.isArray(dto.faqs) ? dto.faqs : [],
       internalLinks: Array.isArray(dto.internalLinks) ? dto.internalLinks : [],
-      isPublished: Boolean(dto.isPublished),
+      resourceSectionKeys,
+      articlePillar: this.normalizeArticlePillar(dto.articlePillar),
+      isPublished,
     };
   }
 
@@ -79,32 +108,36 @@ export class ArticlesService {
     };
   }
 
+  private articleSelectFields = {
+    id: true,
+    slug: true,
+    title: true,
+    description: true,
+    excerpt: true,
+    coverImageUrl: true,
+    coverImageAlt: true,
+    readingMinutes: true,
+    tags: true,
+    authorName: true,
+    audience: true,
+    canonicalPath: true,
+    content: true,
+    faqs: true,
+    internalLinks: true,
+    resourceSectionKeys: true,
+    articlePillar: true,
+    isPublished: true,
+    publishedAt: true,
+    createdAt: true,
+    updatedAt: true,
+  };
+
   async listPublished(audience?: string) {
     const normalizedAudience = this.normalizeAudience(audience);
     const rows = await this.prisma.cmsArticle.findMany({
       where: { isPublished: true, audience: normalizedAudience },
       orderBy: [{ publishedAt: 'desc' }, { updatedAt: 'desc' }],
-      select: {
-        id: true,
-        slug: true,
-        title: true,
-        description: true,
-        excerpt: true,
-        coverImageUrl: true,
-        coverImageAlt: true,
-        readingMinutes: true,
-        tags: true,
-        authorName: true,
-        audience: true,
-        canonicalPath: true,
-        content: true,
-        faqs: true,
-        internalLinks: true,
-        isPublished: true,
-        publishedAt: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: this.articleSelectFields,
     });
     return rows.map((r) => this.withNormalizedContent(r));
   }
@@ -144,7 +177,7 @@ export class ArticlesService {
   }
 
   async createAdmin(dto: UpsertArticleDto) {
-    const payload = this.normalizeUpsertPayload(dto);
+    const payload = await this.normalizeUpsertPayload(dto);
     const now = new Date();
 
     return this.prisma.cmsArticle.create({
@@ -157,7 +190,7 @@ export class ArticlesService {
 
   async updateAdmin(id: string, dto: UpsertArticleDto) {
     await this.getAdminById(id);
-    const payload = this.normalizeUpsertPayload(dto);
+    const payload = await this.normalizeUpsertPayload(dto);
     const now = new Date();
 
     return this.prisma.cmsArticle.update({
@@ -170,7 +203,16 @@ export class ArticlesService {
   }
 
   async updatePublishStatus(id: string, isPublished: boolean) {
-    await this.getAdminById(id);
+    const existing = await this.getAdminById(id);
+    if (isPublished) {
+      const keys = Array.isArray(existing.resourceSectionKeys) ? existing.resourceSectionKeys : [];
+      if (existing.audience === 'homeowner' && keys.length === 0) {
+        throw new BadRequestException(
+          'Assign at least one articles landing page section before publishing this homeowner article',
+        );
+      }
+    }
+
     return this.prisma.cmsArticle.update({
       where: { id },
       data: {

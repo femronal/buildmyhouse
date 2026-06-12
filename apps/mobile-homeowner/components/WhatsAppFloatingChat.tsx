@@ -29,7 +29,7 @@ export default function WhatsAppFloatingChat() {
     /(^|\/)timeline(\/|$)/.test(currentPath);
 
   const tabRoutes = useMemo(
-    () => new Set(['/home', '/explore', '/rent', '/finance']),
+    () => new Set(['/home', '/property-projects-nigeria', '/build-opportunities-nigeria', '/finance']),
     [],
   );
   const isTabScreen = tabRoutes.has(pathname ?? '');

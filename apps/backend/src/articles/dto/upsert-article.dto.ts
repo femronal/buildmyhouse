@@ -97,4 +97,16 @@ export class UpsertArticleDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  /** Sidebar section keys for /articles landing page (e.g. articles, build-abroad) */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  resourceSectionKeys?: string[];
+
+  /** Optional pillar: build-abroad | renovate-abroad | lagos-compliance | general */
+  @IsOptional()
+  @IsString()
+  @IsIn(['build-abroad', 'renovate-abroad', 'lagos-compliance', 'general'])
+  articlePillar?: 'build-abroad' | 'renovate-abroad' | 'lagos-compliance' | 'general';
 }

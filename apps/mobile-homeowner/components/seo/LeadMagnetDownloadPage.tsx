@@ -24,6 +24,7 @@ import {
 } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import InternalLinksBlock, { type InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -246,22 +247,17 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
   });
 
   return (
-    <View className="flex-1 bg-white">
-      <ScrollView className="flex-1 px-5 md:px-6" contentContainerStyle={{ paddingBottom: 40 }}>
-        <View className="pt-10 pb-4 md:pt-14">
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.push('/login'))}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center mb-4"
-          >
-            <ArrowLeft size={18} color="#111827" strokeWidth={2.2} />
-          </TouchableOpacity>
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
+      <SeoContentColumn>
+        <View className="pt-10 pb-2 md:pt-14 md:pb-4">
+          <SeoContentBackButton fallbackHref="/login" />
           <Text className="text-[11px] uppercase tracking-wide text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
-          <SeoHeading level={1} className="text-black text-3xl leading-tight mb-3 md:text-4xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
             {content.hero.title}
           </SeoHeading>
-          <Text className="text-gray-700 text-base leading-7 mb-4 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
+          <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
           {content.coverImage ? (
@@ -398,7 +394,7 @@ export default function LeadMagnetDownloadPage({ content }: { content: LeadMagne
         </View>
 
         <CollapsibleFaqSection title={content.faq.title} items={content.faq.items} />
-      </ScrollView>
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }

@@ -23,6 +23,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { AdminModule } from './admin/admin.module';
 import { EmailModule } from './email/email.module';
 import { ArticlesModule } from './articles/articles.module';
+import { ResourceSectionsModule } from './resource-sections/resource-sections.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { ArticlesModule } from './articles/articles.module';
     NotificationsModule,
     AdminModule,
     ArticlesModule,
+    ResourceSectionsModule,
   ],
   controllers: [],
   providers: [

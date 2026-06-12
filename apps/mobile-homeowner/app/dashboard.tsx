@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Modal, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MessageCircle, Calendar, ChevronRight, ArrowLeft, Home, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bath, Maximize, PartyPopper, ExternalLink, CreditCard, X } from "lucide-react-native";
+import { ChatCircle, Calendar, CaretRight, ArrowLeft, House, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bathtub, ArrowsOut, Confetti, ArrowSquareOut, CreditCard, X } from "phosphor-react-native";
 import { useProject } from "@/hooks/useProject";
 import { useProjectAnalysis } from "@/hooks/usePlan";
 import { chatService } from "@/services/chatService";
@@ -93,7 +93,7 @@ export default function DashboardScreen() {
                   onPress={() => router.push('/(tabs)/home')}
                   className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center"
                 >
-                  <X size={18} color="#000000" strokeWidth={2.5} />
+                  <X size={18} color="#000000" weight="bold" />
                 </TouchableOpacity>
               </View>
 
@@ -223,13 +223,13 @@ export default function DashboardScreen() {
   const getStageStatusIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle size={20} color="#10b981" strokeWidth={2} />;
+        return <CheckCircle size={20} color="#10b981" weight="fill" />;
       case 'in_progress':
-        return <Clock size={20} color="#3b82f6" strokeWidth={2} />;
+        return <Clock size={20} color="#3b82f6" weight="regular" />;
       case 'blocked':
-        return <Lock size={20} color="#ef4444" strokeWidth={2} />;
+        return <Lock size={20} color="#ef4444" weight="regular" />;
       default:
-        return <Lock size={20} color="#9ca3af" strokeWidth={2} />;
+        return <Lock size={20} color="#9ca3af" weight="regular" />;
     }
   };
 
@@ -257,13 +257,13 @@ export default function DashboardScreen() {
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
             className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
           >
-            <ArrowLeft size={22} color="#000000" strokeWidth={2} />
+            <ArrowLeft size={22} color="#000000" weight="bold" />
           </TouchableOpacity>
           <TouchableOpacity 
             onPress={() => router.push('/(tabs)/home')} 
             className="w-10 h-10 bg-black rounded-full items-center justify-center"
           >
-            <Home size={20} color="#FFFFFF" strokeWidth={2} />
+            <House size={20} color="#FFFFFF" weight="bold" />
           </TouchableOpacity>
         </View>
         <Text 
@@ -273,7 +273,7 @@ export default function DashboardScreen() {
           {project.name}
         </Text>
         <View className="flex-row items-center">
-          <MapPin size={14} color="#737373" strokeWidth={2} />
+          <MapPin size={14} color="#737373" weight="regular" />
         <Text 
             className="text-sm text-gray-500 ml-1"
           style={{ fontFamily: 'Poppins_400Regular' }}
@@ -330,7 +330,7 @@ export default function DashboardScreen() {
 
           <View className="bg-white/10 rounded-2xl p-4 mb-4">
             <View className="flex-row items-center mb-2">
-              <HardHat size={18} color="#FFFFFF" strokeWidth={2} />
+              <HardHat size={18} color="#FFFFFF" weight="regular" />
               <Text 
                 className="text-white/80 text-sm ml-2"
                 style={{ fontFamily: 'Poppins_400Regular' }}
@@ -375,9 +375,9 @@ export default function DashboardScreen() {
               {isTrackingUnlocked ? 'View Full Timeline' : 'Tracking Locked'}
             </Text>
             {isTrackingUnlocked ? (
-              <ChevronRight size={20} color="#000000" strokeWidth={2} />
+              <CaretRight size={20} color="#000000" weight="bold" />
             ) : (
-              <Lock size={18} color="#000000" strokeWidth={2} />
+              <Lock size={18} color="#000000" weight="regular" />
             )}
           </TouchableOpacity>
         </View>
@@ -387,9 +387,9 @@ export default function DashboardScreen() {
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-3">
               {paymentConfirmationStatus === 'declared' ? (
-                <Clock size={22} color="#F59E0B" strokeWidth={2.5} />
+                <Clock size={22} color="#F59E0B" weight="bold" />
               ) : (
-                <CreditCard size={22} color="#111827" strokeWidth={2.5} />
+                <CreditCard size={22} color="#111827" weight="bold" />
               )}
               <Text className="text-xl text-black ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                 {paymentConfirmationStatus === 'declared' ? 'Payment under review' : 'Payment required'}
@@ -409,7 +409,7 @@ export default function DashboardScreen() {
                 onPress={openExternalPaymentLink}
                 className="mt-4 bg-black rounded-xl py-3 flex-row items-center justify-center"
               >
-                <ExternalLink size={18} color="#FFFFFF" strokeWidth={2.5} />
+                <ArrowSquareOut size={18} color="#FFFFFF" weight="bold" />
                 <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Open payment link
                 </Text>
@@ -431,7 +431,7 @@ export default function DashboardScreen() {
         {aiAnalysis && (
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-4">
-              <HardHat size={24} color="#000000" strokeWidth={2} />
+              <HardHat size={24} color="#000000" weight="regular" />
               <Text 
                 className="text-xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
@@ -444,7 +444,7 @@ export default function DashboardScreen() {
             <View className="flex-row flex-wrap mb-4">
               {aiAnalysis.bedrooms && (
                 <View className="bg-white rounded-full px-4 py-2 mr-2 mb-2 flex-row items-center border border-gray-200">
-                  <Bed size={16} color="#000000" strokeWidth={2} />
+                  <Bed size={16} color="#000000" weight="regular" />
                   <Text className="text-black ml-2 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {aiAnalysis.bedrooms} Bed
                   </Text>
@@ -452,7 +452,7 @@ export default function DashboardScreen() {
               )}
               {aiAnalysis.bathrooms && (
                 <View className="bg-white rounded-full px-4 py-2 mr-2 mb-2 flex-row items-center border border-gray-200">
-                  <Bath size={16} color="#000000" strokeWidth={2} />
+                  <Bathtub size={16} color="#000000" weight="regular" />
                   <Text className="text-black ml-2 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {aiAnalysis.bathrooms} Bath
                   </Text>
@@ -460,7 +460,7 @@ export default function DashboardScreen() {
               )}
               {aiAnalysis.squareFootage && (
                 <View className="bg-white rounded-full px-4 py-2 mr-2 mb-2 flex-row items-center border border-gray-200">
-                  <Maximize size={16} color="#000000" strokeWidth={2} />
+                  <ArrowsOut size={16} color="#000000" weight="regular" />
                   <Text className="text-black ml-2 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {aiAnalysis.squareFootage} sqft
                   </Text>
@@ -560,7 +560,7 @@ export default function DashboardScreen() {
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
             <View className="flex-row items-center">
-            <Calendar size={24} color="#000000" strokeWidth={2} />
+            <Calendar size={24} color="#000000" weight="regular" />
             <Text 
               className="text-xl text-black ml-2"
               style={{ fontFamily: 'Poppins_700Bold' }}
@@ -612,7 +612,7 @@ export default function DashboardScreen() {
                     <View className="flex-row items-center mt-2">
                       {estimatedDuration && (
                         <View className="flex-row items-center mr-4">
-                          <Clock size={14} color="#6b7280" strokeWidth={2} />
+                          <Clock size={14} color="#6b7280" weight="regular" />
           <Text 
                             className="text-gray-600 text-xs ml-1"
             style={{ fontFamily: 'Poppins_400Regular' }}
@@ -643,7 +643,7 @@ export default function DashboardScreen() {
         {(project.startDate || project.dueDate) && (
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
             <View className="flex-row items-center mb-4">
-              <Calendar size={24} color="#000000" strokeWidth={2} />
+              <Calendar size={24} color="#000000" weight="regular" />
               <Text 
                 className="text-xl text-black ml-2"
                 style={{ fontFamily: 'Poppins_700Bold' }}
@@ -693,7 +693,7 @@ export default function DashboardScreen() {
           <View style={cardShadowStyle} className="bg-green-50 rounded-3xl p-6 mb-6 border border-green-200">
             <View className="items-center mb-4">
               <View className="w-16 h-16 bg-green-600 rounded-full items-center justify-center mb-3">
-                <PartyPopper size={32} color="#FFFFFF" strokeWidth={2} />
+                <Confetti size={32} color="#FFFFFF" weight="regular" />
               </View>
               <Text 
                 className="text-2xl text-black mb-2 text-center"
@@ -764,7 +764,7 @@ export default function DashboardScreen() {
         onPress={() => router.push(`/chat?projectId=${projectId}`)}
         className="absolute bottom-8 right-6 bg-black rounded-full p-5 shadow-lg"
       >
-        <MessageCircle size={28} color="#FFFFFF" strokeWidth={2} />
+        <ChatCircle size={28} color="#FFFFFF" weight="regular" />
         {unreadCount > 0 && (
           <View className="absolute top-1 right-1 w-6 h-6 bg-red-600 rounded-full items-center justify-center border-2 border-white">
             <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>

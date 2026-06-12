@@ -10,8 +10,10 @@ import {
   useCmsArticles,
   type CmsArticle,
   type CmsArticleAudience,
+  type CmsArticlePillar,
   type UpsertCmsArticlePayload,
 } from '@/hooks/useCmsArticles';
+import { useResourceSections } from '@/hooks/useResourceSections';
 
 type FormState = {
   slug: string;
@@ -25,6 +27,8 @@ type FormState = {
   authorName: string;
   canonicalPath: string;
   audience: CmsArticleAudience;
+  resourceSectionKeys: string[];
+  articlePillar: CmsArticlePillar | '';
   contentDoc: Record<string, unknown>;
   faqsJson: string;
   internalLinksJson: string;
@@ -54,6 +58,8 @@ function emptyForm(audience: CmsArticleAudience): FormState {
     authorName: 'BuildMyHouse Editorial',
     canonicalPath: '',
     audience,
+    resourceSectionKeys: ['articles'],
+    articlePillar: '',
     contentDoc: emptyTipTapDoc(),
     faqsJson: JSON.stringify(
       [{ question: 'Sample question?', answer: 'Sample answer.' }],
@@ -88,6 +94,8 @@ function toFormState(article: CmsArticle): FormState {
     authorName: article.authorName || 'BuildMyHouse Editorial',
     canonicalPath: article.canonicalPath || `/articles/${article.slug}`,
     audience: article.audience || 'homeowner',
+    resourceSectionKeys: article.resourceSectionKeys?.length ? article.resourceSectionKeys : ['articles'],
+    articlePillar: article.articlePillar || '',
     contentDoc,
     faqsJson: JSON.stringify(article.faqs || [], null, 2),
     internalLinksJson: JSON.stringify(article.internalLinks || [], null, 2),
@@ -103,6 +111,7 @@ export default function ArticleEditorPage() {
     params.get('audience') === 'gc' ? 'gc' : 'homeowner';
 
   const { articles, createArticle, updateArticle, isSaving } = useCmsArticles();
+  const { activeSections, isLoading: sectionsLoading } = useResourceSections();
   const [uploadingCover, setUploadingCover] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(() => emptyForm(initialAudience));
@@ -162,6 +171,10 @@ export default function ArticleEditorPage() {
     if (!Array.isArray(faqs)) throw new Error('FAQs JSON must be an array');
     if (!Array.isArray(internalLinks)) throw new Error('Internal links JSON must be an array');
 
+    if (form.audience === 'homeowner' && form.isPublished && form.resourceSectionKeys.length === 0) {
+      throw new Error('Choose at least one articles landing page section before publishing');
+    }
+
     const canonicalPath = form.canonicalPath.trim() || `/articles/${form.slug.trim()}`;
 
     return {
@@ -179,11 +192,23 @@ export default function ArticleEditorPage() {
       authorName: form.authorName.trim() || 'BuildMyHouse Editorial',
       canonicalPath,
       audience: form.audience,
+      resourceSectionKeys: form.resourceSectionKeys,
+      articlePillar: form.articlePillar || undefined,
       content,
       faqs,
       internalLinks,
       isPublished: form.isPublished,
     };
+  };
+
+  const toggleSectionKey = (key: string) => {
+    setForm((prev) => {
+      const selected = prev.resourceSectionKeys.includes(key);
+      const resourceSectionKeys = selected
+        ? prev.resourceSectionKeys.filter((item) => item !== key)
+        : [...prev.resourceSectionKeys, key];
+      return { ...prev, resourceSectionKeys };
+    });
   };
 
   const onUploadCover: React.ChangeEventHandler<HTMLInputElement> = async (event) => {
@@ -310,6 +335,72 @@ export default function ArticleEditorPage() {
                 alt={form.coverImageAlt || 'Cover preview'}
                 className="w-full rounded-2xl border border-gray-200 max-h-[320px] object-cover"
               />
+            ) : null}
+
+            {form.audience === 'homeowner' ? (
+              <div className="rounded-xl border border-gray-200 bg-gray-50/80 p-4 space-y-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Articles landing page placement *</h2>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Choose where this article appears on buildmyhouse.app/articles. The first selected
+                    section is used when readers filter by topic.
+                  </p>
+                  <Link href="/articles/sections" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                    Manage sections
+                  </Link>
+                </div>
+
+                {sectionsLoading ? (
+                  <p className="text-sm text-gray-500">Loading sections…</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {activeSections.map((section) => {
+                      const selected = form.resourceSectionKeys.includes(section.key);
+                      return (
+                        <button
+                          key={section.id}
+                          type="button"
+                          onClick={() => toggleSectionKey(section.key)}
+                          className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                            selected
+                              ? 'border-gray-900 bg-gray-900 text-white'
+                              : 'border-gray-200 bg-white text-gray-800 hover:border-gray-300'
+                          }`}
+                        >
+                          <div className="text-sm font-semibold">{section.label}</div>
+                          {section.hint ? (
+                            <div className={`text-[11px] mt-0.5 ${selected ? 'text-white/75' : 'text-gray-500'}`}>
+                              {section.hint}
+                            </div>
+                          ) : null}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Optional pillar (for filters & SEO)
+                  </label>
+                  <select
+                    value={form.articlePillar}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        articlePillar: e.target.value as CmsArticlePillar | '',
+                      }))
+                    }
+                    className="w-full px-3 py-2 border rounded-lg text-sm bg-white"
+                  >
+                    <option value="">Auto-detect from content</option>
+                    <option value="build-abroad">Build from abroad</option>
+                    <option value="renovate-abroad">Renovate from abroad</option>
+                    <option value="lagos-compliance">Lagos compliance</option>
+                    <option value="general">General</option>
+                  </select>
+                </div>
+              </div>
             ) : null}
 
             <div className="pt-1">

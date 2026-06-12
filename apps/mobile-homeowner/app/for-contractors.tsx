@@ -1,4 +1,10 @@
 import { Linking, Pressable, Text, View } from 'react-native';
+import {
+  SeoContentBackButton,
+  SeoContentColumn,
+  SeoContentShell,
+  seoContentTypography,
+} from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { FOR_CONTRACTOR_URL, LANDING_BORDER, LANDING_INK, LANDING_MUTED, WORKER_CATEGORIES } from '@/lib/home-landing-content';
 import { useWebSeo } from '@/lib/seo';
@@ -13,12 +19,17 @@ export default function ForContractorsPage() {
   });
 
   return (
-    <View className="flex-1 bg-white px-5 py-10 md:px-10">
-      <View className="max-w-3xl w-full self-center">
-        <SeoHeading level={1} className="text-4xl mb-3" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
+      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
+        <SeoContentBackButton fallbackHref="/" />
+
+        <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          For Contractors
+        </Text>
+        <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
           Join as a verified worker on BuildMyHouse
         </SeoHeading>
-        <Text className="text-base leading-7 mb-5" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+        <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
           If you are a skilled artisan, repairer, renovator, interior specialist, or general contractor, BuildMyHouse helps
           you receive clearer project requests from homeowners who care about documented work and accountability.
         </Text>
@@ -43,7 +54,7 @@ export default function ForContractorsPage() {
             Continue to Contractor Portal
           </Text>
         </Pressable>
-      </View>
-    </View>
+      </SeoContentColumn>
+    </SeoContentShell>
   );
 }
