@@ -77,8 +77,8 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'in Lagos, Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
-    primaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
-    secondaryCta: { label: 'Get Hired on BuildMyHouse', href: '/for-contractors' },
+    primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
+    secondaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
     tertiaryLink: {
       label: 'Managing from abroad? Start a tracked project',
       href: '/diaspora/build-in-nigeria-from-abroad',
@@ -360,6 +360,12 @@ export const COMPARISON_ROWS = [
 ] as const;
 
 export const POPULAR_SERVICE_LINKS = [
+  { label: 'Plumbing Repair in Lagos', href: '/services/lagos/plumbing-repair' },
+  { label: 'Electrical Repair in Lagos', href: '/services/lagos/electrical-repair' },
+  { label: 'Roof Leak Repair in Lagos', href: '/services/lagos/roof-leak-repair' },
+  { label: 'Drainage Repair in Lagos', href: '/services/lagos/drainage-repair' },
+  { label: 'Painting Services in Lagos', href: '/services/lagos/painting-services' },
+  { label: 'Property Maintenance in Lagos', href: '/services/lagos/property-maintenance' },
   { label: 'Plumbing Repair in Lagos, Nigeria', href: '/services/plumbing-repair-nigeria' },
   { label: 'Electrical Repair in Lagos, Nigeria', href: '/services/electrical-repair-nigeria' },
   { label: 'Roof Leak Repair in Lagos, Nigeria', href: '/services/roof-leak-repair-nigeria' },

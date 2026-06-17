@@ -5,60 +5,10 @@ const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').
 const outputDir = path.resolve(process.cwd(), 'public');
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(/\/+$/, '');
 
-const indexableRoutes = [
-  '/',
-  '/property-projects-nigeria',
-  '/build-opportunities-nigeria',
-  '/articles',
-  '/articles/cost-to-build-house-in-nigeria-2026',
-  '/articles/renovation-checklist-for-homeowners-nigeria',
-  '/articles/diaspora-guide-build-in-nigeria-from-abroad',
-  '/construction/nigeria',
-  '/construction/lagos',
-  '/construction/abuja',
-  '/construction/port-harcourt',
-  '/renovation/nigeria',
-  '/interior-design/nigeria',
-  '/homes-for-rent/nigeria',
-  '/houses-for-sale/nigeria',
-  '/land-for-sale/nigeria',
-  '/construction/nigeria',
-  '/diaspora/build-in-nigeria-from-abroad',
-  '/diaspora/build-in-nigeria-from-uk',
-  '/diaspora/build-in-nigeria-from-usa-canada',
-  '/diaspora/renovate-in-nigeria-from-abroad',
-  '/diaspora/uk/renovate-parents-house',
-  '/demo/project-monitoring',
-  '/guides/weekly-site-updates-standard',
-  '/guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad',
-  '/guides/renovation-permit-lagos-repair-vs-renovation',
-  '/guides/lagos-building-permits-and-stage-inspections',
-  '/diaspora/build-in-nigeria-from-uae',
-  '/mistakes-nigerians-in-diaspora-make-when-building',
-  '/how-to-choose-a-general-contractor-in-nigeria',
-  '/land-verification-in-nigeria-guide',
-  '/building-permit-in-lagos-nigeria-guide',
-  '/guides/contractor-vetting-nigeria-diaspora',
-  '/downloads/remote-renovation-scope-worksheet',
-  '/downloads/lagos-permit-starter-checklist',
-  '/tools/milestone-payment-schedule',
-  '/tools/renovation-budget-planner',
-  '/tools',
-  '/for-contractors',
-  '/services/plumbing-repair-nigeria',
-  '/services/electrical-repair-nigeria',
-  '/services/roof-leak-repair-nigeria',
-  '/services/drainage-repair-nigeria',
-  '/services/window-repair-nigeria',
-  '/services/pumping-machine-repair-nigeria',
-  '/services/fan-repair-nigeria',
-  '/services/rechargeable-fan-repair-nigeria',
-  '/services/bathroom-repair-nigeria',
-  '/services/painting-services-nigeria',
-  '/services/kitchen-renovation-nigeria',
-  '/services/home-renovation-nigeria',
-  '/services/general-contractors-nigeria',
-];
+const routesConfig = JSON.parse(
+  fs.readFileSync(path.resolve(process.cwd(), 'lib/seo-indexable-routes.json'), 'utf8'),
+);
+const indexableRoutes = routesConfig.exact ?? [];
 
 async function getCmsArticleRoutes() {
   try {
@@ -69,7 +19,7 @@ async function getCmsArticleRoutes() {
 
     return data
       .map((item) => String(item?.canonicalPath || '').trim())
-      .filter((path) => path.startsWith('/articles/'));
+      .filter((routePath) => routePath.startsWith('/articles/'));
   } catch {
     return [];
   }
@@ -77,7 +27,7 @@ async function getCmsArticleRoutes() {
 
 const now = new Date().toISOString();
 const cmsRoutes = await getCmsArticleRoutes();
-const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes]));
+const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes])).sort();
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -87,7 +37,7 @@ ${finalRoutes
     <loc>${route === '/' ? WEB_URL : `${WEB_URL}${route}`}</loc>
     <lastmod>${now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${route === '/' ? '1.0' : '0.7'}</priority>
+    <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start-repair' ? '0.9' : '0.7'}</priority>
   </url>`,
   )
   .join('\n')}
@@ -112,6 +62,10 @@ Disallow: /personal-information
 Disallow: /app-settings
 Disallow: /house-summary
 Disallow: /upload-plan
+Disallow: /login
+Disallow: /email-login
+Disallow: /choose-project-type
+Disallow: /location
 
 Sitemap: ${WEB_URL}/sitemap.xml
 `;
@@ -120,5 +74,4 @@ fs.mkdirSync(outputDir, { recursive: true });
 fs.writeFileSync(path.join(outputDir, 'sitemap.xml'), sitemapXml, 'utf8');
 fs.writeFileSync(path.join(outputDir, 'robots.txt'), robotsTxt, 'utf8');
 
-console.log('[seo] Generated public/sitemap.xml and public/robots.txt');
-
+console.log(`[seo] Generated public/sitemap.xml and public/robots.txt (${finalRoutes.length} routes)`);

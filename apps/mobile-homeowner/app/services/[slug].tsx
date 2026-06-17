@@ -47,9 +47,20 @@ export default function ServiceLandingPlaceholderPage() {
             This service route is ready so homeowners can discover and request this category through BuildMyHouse.
           </Text>
           <View className="flex-row flex-wrap">
-            <Link href={'/location?mode=explore' as any} asChild>
+            <Link href={'/start-repair' as any} asChild>
               <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Start a Tracked Repair
+                </Text>
+              </Pressable>
+            </Link>
+            <Link href={'/location?mode=explore' as any} asChild>
+              <Pressable
+                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
+                style={{ borderColor: LANDING_BORDER }}
+                accessibilityRole="link"
+              >
+                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
                   Hire a Verified Worker
                 </Text>
               </Pressable>

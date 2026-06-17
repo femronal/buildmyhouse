@@ -74,7 +74,11 @@ function typedPrimaryNode(
   if (type === 'Service') {
     return {
       ...base,
-      areaServed: 'Nigeria',
+      areaServed: {
+        '@type': 'City',
+        name: 'Lagos',
+        containedInPlace: { '@type': 'Country', name: 'Nigeria' },
+      },
       serviceType: title,
     };
   }

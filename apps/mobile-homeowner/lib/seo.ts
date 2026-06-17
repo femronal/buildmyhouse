@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { isStaticIndexablePath } from '@/lib/seo-indexable-routes';
 
-type RobotsValue = 'index,follow' | 'noindex,nofollow';
+type RobotsValue = 'index,follow' | 'noindex,nofollow' | 'noindex,follow';
 
 type SeoOptions = {
   title: string;
@@ -109,50 +110,7 @@ export function buildCanonicalUrl(pathname?: string) {
 
 export function isIndexablePath(pathname?: string) {
   const path = normalizePathname(pathname);
-
-  if (path === '/articles' || path.startsWith('/articles/')) {
-    return true;
-  }
-
-  const exactIndexable = new Set([
-    '/',
-    '/for-contractors',
-    '/property-projects-nigeria',
-    '/build-opportunities-nigeria',
-    '/construction/nigeria',
-    '/construction/lagos',
-    '/construction/abuja',
-    '/construction/port-harcourt',
-    '/renovation/nigeria',
-    '/diaspora/build-in-nigeria-from-abroad',
-    '/diaspora/renovate-in-nigeria-from-abroad',
-    '/diaspora/uk/renovate-parents-house',
-    '/guides/lagos-building-permits-and-stage-inspections',
-    '/guides/contractor-vetting-nigeria-diaspora',
-    '/guides/weekly-site-updates-standard',
-    '/guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad',
-    '/guides/renovation-permit-lagos-repair-vs-renovation',
-    '/downloads/remote-renovation-scope-worksheet',
-    '/downloads/lagos-permit-starter-checklist',
-    '/tools/milestone-payment-schedule',
-    '/tools/renovation-budget-planner',
-    '/tools',
-    '/demo/project-monitoring',
-    '/interior-design/nigeria',
-    '/homes-for-rent/nigeria',
-    '/houses-for-sale/nigeria',
-    '/land-for-sale/nigeria',
-    '/diaspora/build-in-nigeria-from-uk',
-    '/diaspora/build-in-nigeria-from-usa-canada',
-    '/diaspora/build-in-nigeria-from-uae',
-    '/mistakes-nigerians-in-diaspora-make-when-building',
-    '/how-to-choose-a-general-contractor-in-nigeria',
-    '/land-verification-in-nigeria-guide',
-    '/building-permit-in-lagos-nigeria-guide',
-  ]);
-  if (exactIndexable.has(path)) return true;
-  if (path.startsWith('/services/')) return true;
-  return false;
+  return isStaticIndexablePath(path);
 }
 
 export function useWebSeo(options: SeoOptions) {
@@ -268,6 +226,46 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       title: 'For Contractors | BuildMyHouse',
       description:
         'Join BuildMyHouse as a verified artisan, repairer, renovator, interior specialist, or general contractor.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/start-repair') {
+    return {
+      title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
+      description:
+        'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment. Plumbing, electrical, roof leaks, drainage, painting, and maintenance.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/contractors/lagos') {
+    return {
+      title: 'Verified Contractors in Lagos | BuildMyHouse Directory',
+      description:
+        'Browse verified contractors in Lagos for plumbing, electrical, roof leak repairs, and property maintenance with tracked repair workflows.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized.startsWith('/contractors/lagos/')) {
+    return {
+      title: 'Verified Contractors in Lagos | BuildMyHouse',
+      description:
+        'Find verified contractors in Lagos and start tracked repairs with evidence before payment on BuildMyHouse.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized.startsWith('/services/lagos/')) {
+    return {
+      title: 'Repair Services in Lagos | BuildMyHouse',
+      description:
+        'Verified repair services in Lagos with tracked stages, photo evidence, and safer payment approvals.',
       canonicalPath,
       robots: 'index,follow',
     };

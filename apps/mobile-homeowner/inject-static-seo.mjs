@@ -106,6 +106,58 @@ const SEO_PAGES = {
     description:
       'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },
+  '/start-repair': {
+    title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
+    description:
+      'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment.',
+  },
+  '/services/lagos/plumbing-repair': {
+    title: 'Plumbing Repair in Lagos | Verified Workers & Tracked Repairs | BuildMyHouse',
+    description:
+      'Fix burst pipes, blocked drains, and leaking fixtures in Lagos with verified plumbers, staged updates, and evidence before payment.',
+  },
+  '/services/lagos/electrical-repair': {
+    title: 'Electrical Repair in Lagos | Verified Electricians | BuildMyHouse',
+    description:
+      'Resolve tripping breakers, faulty wiring, and power faults in Lagos with verified electricians and documented repair stages.',
+  },
+  '/services/lagos/roof-leak-repair': {
+    title: 'Roof Leak Repair in Lagos | Diagnosis & Tracked Fixes | BuildMyHouse',
+    description:
+      'Stop roof leaks in Lagos with staged diagnosis, material approval, and verified roofers — with evidence before payment.',
+  },
+  '/services/lagos/drainage-repair': {
+    title: 'Drainage Repair in Lagos | Blockages & Channel Fixes | BuildMyHouse',
+    description:
+      'Fix blocked drains and flooding risks in Lagos with verified specialists, clearer scope, and stage-by-stage visibility.',
+  },
+  '/services/lagos/painting-services': {
+    title: 'Painting Services in Lagos | Interior & Exterior | BuildMyHouse',
+    description:
+      'Coordinate interior and exterior painting in Lagos with defined scope, surface prep stages, and evidence before payment.',
+  },
+  '/services/lagos/property-maintenance': {
+    title: 'Property Maintenance in Lagos | Tracked Upkeep | BuildMyHouse',
+    description:
+      'Keep Lagos properties maintained with verified workers, recurring repair tracking, and evidence-based approvals.',
+  },
+  '/contractors/lagos': {
+    title: 'Verified Contractors in Lagos | BuildMyHouse Directory',
+    description:
+      'Browse verified contractors in Lagos for plumbing, electrical, roof leak repairs, and property maintenance.',
+  },
+  '/contractors/lagos/plumbing-repair': {
+    title: 'Plumbing Repair Contractors in Lagos | BuildMyHouse',
+    description: 'Browse verified plumbers serving Lagos with ratings and review counts on BuildMyHouse.',
+  },
+  '/contractors/lagos/electrical-repair': {
+    title: 'Electrical Repair Contractors in Lagos | BuildMyHouse',
+    description: 'Browse verified electricians in Lagos for faults, rewiring, and safe staged repairs.',
+  },
+  '/contractors/lagos/roof-leak-repair': {
+    title: 'Roof Leak Repair Contractors in Lagos | BuildMyHouse',
+    description: 'Browse verified roofers in Lagos for leak diagnosis, materials, and tracked fixes.',
+  },
   '/property-projects-nigeria': {
     title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
     description:

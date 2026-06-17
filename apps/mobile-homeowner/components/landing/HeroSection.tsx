@@ -79,6 +79,17 @@ export default function HeroSection({ selectedAudience, onSelectAudience, isDesk
         </Text>
 
         <View className="flex-row flex-wrap items-center mt-6">
+          <Link href={'/start-repair' as any} asChild>
+            <Pressable
+              className="rounded-full px-6 py-3.5 mr-3 mb-3"
+              style={{ backgroundColor: LANDING_INK }}
+              accessibilityRole="link"
+            >
+              <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Start a Tracked Repair
+              </Text>
+            </Pressable>
+          </Link>
           <Link href={'/location?mode=explore' as any} asChild>
             <Pressable
               className="rounded-full px-6 py-3.5 mr-3 mb-3"

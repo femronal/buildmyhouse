@@ -7,75 +7,39 @@ import {
   seoContentTypography,
 } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, SERVICE_SEO_PAGES, type ServiceSeoSlug } from '@/lib/home-landing-content';
-import { lagosServicePath, type LagosRepairSlug } from '@/lib/lagos-repair-services';
+import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
+import {
+  LAGOS_REPAIR_SERVICES,
+  type LagosRepairSlug,
+  lagosServicePath,
+} from '@/lib/lagos-repair-services';
+import { contractorDirectoryPath } from '@/lib/public-contractors';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
 
-const NIGERIA_TO_LAGOS: Partial<Record<ServiceSeoSlug, LagosRepairSlug>> = {
-  'plumbing-repair-nigeria': 'plumbing-repair',
-  'electrical-repair-nigeria': 'electrical-repair',
-  'roof-leak-repair-nigeria': 'roof-leak-repair',
-  'drainage-repair-nigeria': 'drainage-repair',
-  'painting-services-nigeria': 'painting-services',
+type LagosRepairServicePageProps = {
+  slug: LagosRepairSlug;
 };
 
-const SERVICE_FAQS: Partial<Record<ServiceSeoSlug, readonly { question: string; answer: string }[]>> = {
-  'plumbing-repair-nigeria': [
-    {
-      question: 'Can I track plumbing repairs remotely?',
-      answer: 'Yes. BuildMyHouse sends stage updates and photo evidence so you approve payments after verified progress.',
-    },
-  ],
-  'electrical-repair-nigeria': [
-    {
-      question: 'Are electricians verified?',
-      answer: 'You can browse verified contractors and run repairs with staged evidence before payment.',
-    },
-  ],
-  'roof-leak-repair-nigeria': [
-    {
-      question: 'How are roof leak repairs staged?',
-      answer: 'Typical stages include inspection, materials, repair, and final approval with photos at each step.',
-    },
-  ],
-};
-
-type ServiceRoutePageProps = {
-  slug: ServiceSeoSlug;
-};
-
-export default function ServiceRoutePage({ slug }: ServiceRoutePageProps) {
-  const service = SERVICE_SEO_PAGES[slug];
-  const canonicalPath = `/services/${slug}`;
-  const lagosSlug = NIGERIA_TO_LAGOS[slug];
-  const faqs = SERVICE_FAQS[slug] ?? [
-    {
-      question: 'How do I start this repair on BuildMyHouse?',
-      answer:
-        'Use Start a Tracked Repair to describe the issue, match verified workers, and approve stages with evidence before payment.',
-    },
-    {
-      question: 'Is BuildMyHouse only for full construction projects?',
-      answer:
-        'No. BuildMyHouse is repairs-first — you can scope and track single repair jobs without turning them into open-ended projects.',
-    },
-  ];
+export default function LagosRepairServicePage({ slug }: LagosRepairServicePageProps) {
+  const service = LAGOS_REPAIR_SERVICES[slug];
+  const canonicalPath = lagosServicePath(slug);
 
   const jsonLd = buildSeoJsonLd({
     path: canonicalPath,
-    title: service.title,
+    title: service.metaTitle,
     description: service.summary,
     schemaType: 'Service',
-    faqs: [...faqs],
+    faqs: [...service.faqs],
     breadcrumbs: [
       { name: 'Home', path: '/' },
+      { name: 'Lagos repair services', path: '/services/lagos/plumbing-repair' },
       { name: service.title, path: canonicalPath },
     ],
   });
 
   useWebSeo({
-    title: `${service.title} | BuildMyHouse`,
+    title: `${service.metaTitle} | BuildMyHouse`,
     description: service.summary,
     canonicalPath,
     robots: 'index,follow',
@@ -105,10 +69,24 @@ export default function ServiceRoutePage({ slug }: ServiceRoutePageProps) {
             className={seoContentTypography.bodyParagraph}
             style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
           >
-            BuildMyHouse helps owners clarify scope, choose verified workers, and monitor execution with stage
-            visibility and evidence before major payment decisions.
+            {service.intro}
           </Text>
-          <View className="flex-row flex-wrap">
+
+          {service.bullets.map((bullet) => (
+            <View key={bullet} className="flex-row items-start mb-2">
+              <Text className="mr-2" style={{ color: LANDING_INK }}>
+                •
+              </Text>
+              <Text
+                className="flex-1 text-sm leading-6"
+                style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
+              >
+                {bullet}
+              </Text>
+            </View>
+          ))}
+
+          <View className="flex-row flex-wrap mt-4">
             <Link href={'/start-repair' as any} asChild>
               <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -116,26 +94,28 @@ export default function ServiceRoutePage({ slug }: ServiceRoutePageProps) {
                 </Text>
               </Pressable>
             </Link>
-            <Link href={'/location?mode=explore' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Hire a Verified Worker
-                </Text>
-              </Pressable>
-            </Link>
-            {lagosSlug ? (
-              <Link href={lagosServicePath(lagosSlug) as any} asChild>
+            {service.contractorDirectorySlug ? (
+              <Link href={contractorDirectoryPath(service.contractorDirectorySlug) as any} asChild>
+                <Pressable
+                  className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
+                  style={{ borderColor: LANDING_BORDER }}
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+                    Browse verified contractors
+                  </Text>
+                </Pressable>
+              </Link>
+            ) : null}
+            {service.relatedNigeriaSlug ? (
+              <Link href={`/services/${service.relatedNigeriaSlug}` as any} asChild>
                 <Pressable
                   className="rounded-full px-4 py-2.5 mb-2 border"
                   style={{ borderColor: LANDING_BORDER }}
                   accessibilityRole="link"
                 >
                   <Text className="text-sm" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_MUTED }}>
-                    Lagos local guide
+                    Nigeria-wide page
                   </Text>
                 </Pressable>
               </Link>
@@ -151,8 +131,8 @@ export default function ServiceRoutePage({ slug }: ServiceRoutePageProps) {
           >
             Frequently asked questions
           </SeoHeading>
-          {faqs.map((faq) => (
-            <View key={faq.question} className="mb-4">
+          {service.faqs.map((faq) => (
+            <View key={faq.question} className="mb-5">
               <Text className="text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
                 {faq.question}
               </Text>
