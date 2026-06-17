@@ -21,6 +21,7 @@ import { useUpdateCurrentUser } from '@/hooks/useUpdateCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { getBackendAssetUrl } from '@/lib/image';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
+import { navigateAfterOnboarding, getPostAuthReturnPath } from '@/lib/post-auth-navigation';
 
 type MissingFieldKey =
   | 'profilePhoto'
@@ -76,6 +77,11 @@ export default function HomeownerOnboardingIntroScreen() {
   const [agreedTerms, setAgreedTerms] = useState(false);
   const [missingFields, setMissingFields] = useState<Partial<Record<MissingFieldKey, string>>>({});
   const [activeInfo, setActiveInfo] = useState<{ label: string; info: string } | null>(null);
+  const [pendingReturnPath, setPendingReturnPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getPostAuthReturnPath().then(setPendingReturnPath);
+  }, []);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -92,7 +98,7 @@ export default function HomeownerOnboardingIntroScreen() {
   useEffect(() => {
     if (!currentUser) return;
     if (!needsHomeownerIntroOnboarding(currentUser)) {
-      router.replace('/(tabs)/home');
+      void navigateAfterOnboarding(router);
     }
   }, [currentUser, router]);
 
@@ -191,7 +197,7 @@ export default function HomeownerOnboardingIntroScreen() {
         completeProfileSetup: true,
       });
       Alert.alert('All set', 'Thank you. Your information has been saved and your account is now verified.', [
-        { text: 'Continue', onPress: () => router.replace('/(tabs)/home') },
+        { text: 'Continue', onPress: () => { void navigateAfterOnboarding(router); } },
       ]);
     } catch (error: any) {
       Alert.alert('Could not submit', error?.message || 'Please try again.');
@@ -247,6 +253,11 @@ export default function HomeownerOnboardingIntroScreen() {
         <Text className="text-sm text-gray-500 mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
           Before you use BuildMyHouse, we need a few details to keep projects secure and accountable.
         </Text>
+        {pendingReturnPath ? (
+          <Text className="text-xs text-emerald-700 mb-4" style={{ fontFamily: 'Poppins_500Medium' }}>
+            After you save your details, we will take you back to the plan scope you selected.
+          </Text>
+        ) : null}
 
         <View className="mb-5">
           <InfoLabel

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { exchangeGoogleAuthCode, storeAuthToken } from "@/lib/auth";
+import { navigateAfterAuth } from "@/lib/post-auth-navigation";
 
 export default function GoogleCallbackScreen() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function GoogleCallbackScreen() {
         }
 
         await storeAuthToken(result.token);
-        router.replace("/");
+        await navigateAfterAuth(router, result.user);
       } catch (error: any) {
         setMessage(error?.message || "Login failed. Please try again.");
       }

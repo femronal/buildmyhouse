@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, House, FunnelSimple, MagnifyingGlass, CaretDown } from "phosphor-react-native";
 import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { useState, useRef, useCallback, useMemo } from "react";
+import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import DesignProductCard from '@/components/DesignProductCard';
@@ -187,8 +188,7 @@ export default function DesignLibraryScreen() {
     });
   }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
-  const handleUseDesign = (design: any) => {
-    // Build query params with location data and design info
+  const handleUseDesign = async (design: any) => {
     const queryParams = new URLSearchParams({
       designId: design.id,
       designName: design.name,
@@ -201,11 +201,18 @@ export default function DesignLibraryScreen() {
       ...(locationParams.latitude && { latitude: locationParams.latitude }),
       ...(locationParams.longitude && { longitude: locationParams.longitude }),
     });
-    
-    // Small delay to ensure modal closes smoothly before navigation
-    setTimeout(() => {
-      router.push(`/house-summary?${queryParams.toString()}`);
-    }, 100);
+
+    const destinationPath = `/house-summary?${queryParams.toString()}`;
+    const canContinue = await requireAuthToContinue({
+      router,
+      currentUser,
+      userLoading,
+      destinationPath,
+    });
+
+    if (!canContinue) return;
+
+    router.push(destinationPath as any);
   };
 
   return (

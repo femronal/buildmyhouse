@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
+import { getPostAuthReturnPath, clearPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import HomeLandingScreen from '@/components/HomeLandingScreen';
 
 export default function StartScreen() {
@@ -13,11 +14,21 @@ export default function StartScreen() {
     if (isLoading) return;
     if (!currentUser) return;
 
-    if (needsHomeownerIntroOnboarding(currentUser)) {
-      router.replace('/onboarding-intro');
-      return;
-    }
-    router.replace('/(tabs)/home');
+    void (async () => {
+      if (needsHomeownerIntroOnboarding(currentUser)) {
+        router.replace('/onboarding-intro');
+        return;
+      }
+
+      const returnPath = await getPostAuthReturnPath();
+      if (returnPath) {
+        await clearPostAuthReturnPath();
+        router.replace(returnPath as any);
+        return;
+      }
+
+      router.replace('/(tabs)/home');
+    })();
   }, [currentUser, isLoading, router]);
 
   if (Platform.OS === 'web' && !currentUser) {

@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { User, FunnelSimple, MagnifyingGlass, CaretDown, CaretUp, Info } from "phosphor-react-native";
 import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { useState, useRef, useCallback, useMemo } from "react";
+import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useDesigns } from '@/hooks';
 import { getBackendAssetUrl } from '@/lib/image';
@@ -504,7 +505,18 @@ export default function ExploreScreen() {
                     design={design}
                     width={cardWidth}
                     height={cardHeight}
-                    onPress={() => router.push(`/house-summary?designId=${design.id}&designName=${design.name}`)}
+                    onPress={async () => {
+                      const destinationPath = `/house-summary?designId=${encodeURIComponent(design.id)}&designName=${encodeURIComponent(design.name || '')}`;
+                      const canContinue = await requireAuthToContinue({
+                        router,
+                        currentUser,
+                        userLoading,
+                        destinationPath,
+                      });
+                      if (canContinue) {
+                        router.push(destinationPath as any);
+                      }
+                    }}
                     isFavorite={favorites.includes(design.id)}
                     onToggleFavorite={() => toggleFavorite(design.id)}
                     activeImageIndex={activeImageIndex[design.id] || 0}

@@ -1,13 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
 import { Link, useLocalSearchParams } from 'expo-router';
-import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
-import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, SERVICE_SEO_PAGES, type ServiceSeoSlug } from '@/lib/home-landing-content';
+import ServiceExperiencePage from '@/components/service-experience/ServiceExperiencePage';
+import { SERVICE_SEO_PAGES, type ServiceSeoSlug } from '@/lib/home-landing-content';
+import { getServiceExperienceContent } from '@/lib/service-experience-content';
 import { useWebSeo } from '@/lib/seo';
 
 function isKnownSlug(value: string): value is ServiceSeoSlug {
@@ -17,64 +12,27 @@ function isKnownSlug(value: string): value is ServiceSeoSlug {
 export default function ServiceLandingPlaceholderPage() {
   const params = useLocalSearchParams<{ slug?: string }>();
   const slug = typeof params.slug === 'string' ? params.slug : '';
-  const service = isKnownSlug(slug) ? SERVICE_SEO_PAGES[slug] : null;
-
-  const title = service?.title || 'Property Services in Nigeria | BuildMyHouse';
-  const description =
-    service?.summary ||
-    'Find verified property services in Nigeria with clearer scope, stage updates, and evidence-based approvals.';
+  const content = isKnownSlug(slug) ? getServiceExperienceContent(`/services/${slug}`) : null;
 
   useWebSeo({
-    title: `${title} | BuildMyHouse`,
-    description,
+    title: content?.metaTitle || 'Property Services in Nigeria | BuildMyHouse',
+    description: content?.summary || 'Find verified property services in Nigeria with clearer scope, stage updates, and evidence-based approvals.',
     canonicalPath: `/services/${slug || ''}`,
-    robots: 'index,follow',
+    robots: content ? 'index,follow' : 'noindex,follow',
   });
 
-  return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
-      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
-        <SeoContentBackButton fallbackHref="/" />
+  if (content) {
+    return <ServiceExperiencePage content={content} />;
+  }
 
-        <View className="border rounded-3xl p-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-            {title}
-          </SeoHeading>
-          <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {description}
-          </Text>
-          <Text className={seoContentTypography.bodyParagraph} style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            This service route is ready so homeowners can discover and request this category through BuildMyHouse.
-          </Text>
-          <View className="flex-row flex-wrap">
-            <Link href={'/start-repair' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Start a Tracked Repair
-                </Text>
-              </Pressable>
-            </Link>
-            <Link href={'/location?mode=explore' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Hire a Verified Worker
-                </Text>
-              </Pressable>
-            </Link>
-            <Link href={'/' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mb-2 border" style={{ borderColor: LANDING_BORDER }} accessibilityRole="link">
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Back to homepage
-                </Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-      </SeoContentColumn>
-    </SeoContentShell>
+  return (
+    <View className="flex-1 bg-[#060706] items-center justify-center px-6">
+      <Text className="text-[#f3f0e8] text-xl mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Service not found</Text>
+      <Link href={'/start-repair' as any} asChild>
+        <Pressable className="rounded-full px-4 py-2.5 bg-[#ff5a1f]">
+          <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: '#060706' }}>Start a Tracked Repair</Text>
+        </Pressable>
+      </Link>
+    </View>
   );
 }

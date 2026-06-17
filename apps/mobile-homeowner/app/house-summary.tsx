@@ -9,11 +9,14 @@ import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 import { reverseGeocode, AddressDetails } from '@/services/addressService';
 import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
 import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater, useDesign, useCreateProjectFromDesign } from '@/hooks';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useProjectAnalysis } from '@/hooks/usePlan';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import { getBackendAssetUrl } from '@/lib/image';
 import { api } from '@/lib/api';
+import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
+import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
@@ -114,6 +117,8 @@ export default function HouseSummaryScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
   const queryClient = useQueryClient();
+  const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const [authGateReady, setAuthGateReady] = useState(!params.designId);
   
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [selectedGCs, setSelectedGCs] = useState<Set<string>>(new Set());
@@ -138,6 +143,39 @@ export default function HouseSummaryScreen() {
   // Check if this is a design selection flow (designId present) or project flow (projectId present)
   const designId = params.designId as string | undefined;
   const isDesignSelection = !!designId;
+
+  useEffect(() => {
+    if (!isDesignSelection || userLoading) return;
+
+    const buildReturnPath = () => {
+      const search = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.length > 0) {
+          search.set(key, value);
+        }
+      });
+      const qs = search.toString();
+      return qs ? `/house-summary?${qs}` : '/house-summary';
+    };
+
+    if (!currentUser) {
+      void (async () => {
+        await setPostAuthReturnPath(buildReturnPath());
+        router.replace('/login');
+      })();
+      return;
+    }
+
+    if (needsHomeownerIntroOnboarding(currentUser)) {
+      void (async () => {
+        await setPostAuthReturnPath(buildReturnPath());
+        router.replace('/onboarding-intro');
+      })();
+      return;
+    }
+
+    setAuthGateReady(true);
+  }, [currentUser, isDesignSelection, params, router, userLoading]);
 
   // Fetch design if designId is present
   const { data: designData, isLoading: loadingDesign } = useDesign(designId);
@@ -779,6 +817,17 @@ export default function HouseSummaryScreen() {
     }),
     [],
   );
+
+  if (isDesignSelection && (!authGateReady || userLoading)) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#000" />
+        <Text className="text-gray-500 mt-4" style={{ fontFamily: 'Poppins_500Medium' }}>
+          Preparing your plan scope...
+        </Text>
+      </View>
+    );
+  }
 
   // Show loading state only if we don't have analysis yet AND we're actually loading
   // Don't block rendering if we're just polling in the background

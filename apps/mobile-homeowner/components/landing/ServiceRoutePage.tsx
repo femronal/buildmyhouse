@@ -1,168 +1,34 @@
-import { Pressable, Text, View } from 'react-native';
+import ServiceExperiencePage from '@/components/service-experience/ServiceExperiencePage';
+import { getServiceExperienceContent } from '@/lib/service-experience-content';
+import type { ServiceSeoSlug } from '@/lib/home-landing-content';
+import { SeoContentShell, SeoContentColumn } from '@/components/seo/SeoContentLayout';
+import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
-import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, SERVICE_SEO_PAGES, type ServiceSeoSlug } from '@/lib/home-landing-content';
-import { lagosServicePath, type LagosRepairSlug } from '@/lib/lagos-repair-services';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
-import { useWebSeo } from '@/lib/seo';
-
-const NIGERIA_TO_LAGOS: Partial<Record<ServiceSeoSlug, LagosRepairSlug>> = {
-  'plumbing-repair-nigeria': 'plumbing-repair',
-  'electrical-repair-nigeria': 'electrical-repair',
-  'roof-leak-repair-nigeria': 'roof-leak-repair',
-  'drainage-repair-nigeria': 'drainage-repair',
-  'painting-services-nigeria': 'painting-services',
-};
-
-const SERVICE_FAQS: Partial<Record<ServiceSeoSlug, readonly { question: string; answer: string }[]>> = {
-  'plumbing-repair-nigeria': [
-    {
-      question: 'Can I track plumbing repairs remotely?',
-      answer: 'Yes. BuildMyHouse sends stage updates and photo evidence so you approve payments after verified progress.',
-    },
-  ],
-  'electrical-repair-nigeria': [
-    {
-      question: 'Are electricians verified?',
-      answer: 'You can browse verified contractors and run repairs with staged evidence before payment.',
-    },
-  ],
-  'roof-leak-repair-nigeria': [
-    {
-      question: 'How are roof leak repairs staged?',
-      answer: 'Typical stages include inspection, materials, repair, and final approval with photos at each step.',
-    },
-  ],
-};
+import { Pressable } from 'react-native';
 
 type ServiceRoutePageProps = {
   slug: ServiceSeoSlug;
 };
 
 export default function ServiceRoutePage({ slug }: ServiceRoutePageProps) {
-  const service = SERVICE_SEO_PAGES[slug];
-  const canonicalPath = `/services/${slug}`;
-  const lagosSlug = NIGERIA_TO_LAGOS[slug];
-  const faqs = SERVICE_FAQS[slug] ?? [
-    {
-      question: 'How do I start this repair on BuildMyHouse?',
-      answer:
-        'Use Start a Tracked Repair to describe the issue, match verified workers, and approve stages with evidence before payment.',
-    },
-    {
-      question: 'Is BuildMyHouse only for full construction projects?',
-      answer:
-        'No. BuildMyHouse is repairs-first — you can scope and track single repair jobs without turning them into open-ended projects.',
-    },
-  ];
+  const content = getServiceExperienceContent(`/services/${slug}`);
 
-  const jsonLd = buildSeoJsonLd({
-    path: canonicalPath,
-    title: service.title,
-    description: service.summary,
-    schemaType: 'Service',
-    faqs: [...faqs],
-    breadcrumbs: [
-      { name: 'Home', path: '/' },
-      { name: service.title, path: canonicalPath },
-    ],
-  });
-
-  useWebSeo({
-    title: `${service.title} | BuildMyHouse`,
-    description: service.summary,
-    canonicalPath,
-    robots: 'index,follow',
-    jsonLd,
-  });
-
-  return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
-      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
-        <SeoContentBackButton fallbackHref="/" />
-
-        <View className="border rounded-3xl p-6 mb-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading
-            level={1}
-            className={seoContentTypography.title}
-            style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-          >
-            {service.title}
-          </SeoHeading>
-          <Text
-            className={seoContentTypography.description}
-            style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
-          >
-            {service.summary}
-          </Text>
-          <Text
-            className={seoContentTypography.bodyParagraph}
-            style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
-          >
-            BuildMyHouse helps owners clarify scope, choose verified workers, and monitor execution with stage
-            visibility and evidence before major payment decisions.
-          </Text>
-          <View className="flex-row flex-wrap">
+  if (!content) {
+    return (
+      <SeoContentShell>
+        <SeoContentColumn>
+          <View className="py-16">
+            <Text className="text-xl text-black mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Service not found</Text>
             <Link href={'/start-repair' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Start a Tracked Repair
-                </Text>
+              <Pressable className="rounded-full px-4 py-2.5 bg-black self-start">
+                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>Start a Tracked Repair</Text>
               </Pressable>
             </Link>
-            <Link href={'/location?mode=explore' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Hire a Verified Worker
-                </Text>
-              </Pressable>
-            </Link>
-            {lagosSlug ? (
-              <Link href={lagosServicePath(lagosSlug) as any} asChild>
-                <Pressable
-                  className="rounded-full px-4 py-2.5 mb-2 border"
-                  style={{ borderColor: LANDING_BORDER }}
-                  accessibilityRole="link"
-                >
-                  <Text className="text-sm" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_MUTED }}>
-                    Lagos local guide
-                  </Text>
-                </Pressable>
-              </Link>
-            ) : null}
           </View>
-        </View>
+        </SeoContentColumn>
+      </SeoContentShell>
+    );
+  }
 
-        <View className="border rounded-3xl p-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading
-            level={2}
-            className={seoContentTypography.sectionHeading}
-            style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-          >
-            Frequently asked questions
-          </SeoHeading>
-          {faqs.map((faq) => (
-            <View key={faq.question} className="mb-4">
-              <Text className="text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-                {faq.question}
-              </Text>
-              <Text className="text-sm leading-6" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-                {faq.answer}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </SeoContentColumn>
-    </SeoContentShell>
-  );
+  return <ServiceExperiencePage content={content} />;
 }

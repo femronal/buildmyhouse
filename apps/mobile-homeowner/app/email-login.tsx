@@ -1,8 +1,10 @@
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from '@tanstack/react-query';
 import { storeAuthToken } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { navigateAfterAuth, getPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, LogIn, UserPlus } from "lucide-react-native";
 import LogoText from '@/components/LogoText';
 
@@ -16,6 +18,7 @@ const FAINT_COLOR = '#737373';
 
 export default function EmailLoginScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -23,6 +26,11 @@ export default function EmailLoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [pendingReturnPath, setPendingReturnPath] = useState<string | null>(null);
+
+  useEffect(() => {
+    void getPostAuthReturnPath().then(setPendingReturnPath);
+  }, []);
 
   const clearError = () => setFormError(null);
 
@@ -67,7 +75,8 @@ export default function EmailLoginScreen() {
       }
 
       await storeAuthToken(data.token);
-      router.replace('/');
+      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      await navigateAfterAuth(router, data.user);
     } catch (error: any) {
       const message = error?.data?.message ?? error?.message ?? 'Something went wrong. Please try again.';
       setFormError(message);
@@ -146,6 +155,11 @@ export default function EmailLoginScreen() {
                       ? 'Sign up with your email to start your first project.'
                       : 'Use your email and password to continue.'}
                   </Text>
+                  {pendingReturnPath ? (
+                    <Text className="text-xs mt-3" style={{ color: '#34d399', fontFamily: 'Poppins_500Medium' }}>
+                      Sign in to continue viewing the plan you selected.
+                    </Text>
+                  ) : null}
                 </View>
 
                 {/* Full name (signup) */}

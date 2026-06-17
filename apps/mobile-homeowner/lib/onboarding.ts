@@ -1,4 +1,4 @@
-type HomeownerUserLike = {
+export type HomeownerUserLike = {
   profileSetupCompleted?: boolean | null;
 };
 
