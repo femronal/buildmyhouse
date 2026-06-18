@@ -82,6 +82,11 @@ function unsplash(photoId: string, w = 1600) {
   return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=${w}&q=80`;
 }
 
+const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
+
+/** Bundled hero for plumbing service pages — source: assets/images/worried-woman-dealing-with-a-plumbing-emergency-2026-03-25-08-24-07-utc.jpg */
+const PLUMBING_HERO_MAIN = `${webBase()}/plumbing-service-hero.jpg`;
+
 function imageSet(
   hero: string,
   accent: string,
@@ -103,15 +108,18 @@ function imageSet(
 }
 
 const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
-  'plumbing-repair': imageSet(
-    '1607472586893-edb1543ab523',
-    '1581578731548-c64695cc8212',
-    '1607472586893-edb1543ab523',
-    '1558618666-fcd25c85cd64',
-    '1504307651254-4da29b8c3e05',
-    ['1607472586893-edb1543ab523', '1581578731548-c64695cc8212', '1558618666-fcd25c85cd64'],
-    '1607472586893-edb1543ab523',
-  ),
+  'plumbing-repair': {
+    ...imageSet(
+      '1607472586893-edb1543ab523',
+      '1581578731548-c64695cc8212',
+      '1607472586893-edb1543ab523',
+      '1558618666-fcd25c85cd64',
+      '1504307651254-4da29b8c3e05',
+      ['1607472586893-edb1543ab523', '1581578731548-c64695cc8212', '1558618666-fcd25c85cd64'],
+      '1607472586893-edb1543ab523',
+    ),
+    heroMain: PLUMBING_HERO_MAIN,
+  },
   'electrical-repair': imageSet(
     '1621905251189-4798adcf397d',
     '1473341303090-f831f5eb9320',
