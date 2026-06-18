@@ -1055,17 +1055,36 @@ body * {
   }
 }
 
-/* Service experience pages (Axisform-inspired) */
+/* Service experience pages (Axisform-inspired, BuildMyHouse green) */
+html.bmh-svc-scroll,
+html.bmh-svc-scroll body,
+html.bmh-svc-scroll #root,
+html.bmh-svc-scroll #root > div,
+html.bmh-svc-scroll #root > div > div {
+  height: auto !important;
+  min-height: 100%;
+  overflow-y: visible !important;
+}
+
 .bmh-svc-page {
   --bmh-svc-bg: #060706;
   --bmh-svc-cream: #f3f0e8;
-  --bmh-svc-orange: #ff5a1f;
+  --bmh-svc-green: #22c55e;
+  --bmh-svc-green-deep: #059669;
+  --bmh-svc-green-soft: rgba(34, 197, 94, 0.22);
   background:
-    radial-gradient(circle at 70% 10%, rgba(255, 90, 31, 0.12), transparent 34rem),
+    radial-gradient(circle at 70% 10%, rgba(34, 197, 94, 0.12), transparent 34rem),
     radial-gradient(circle at 15% 45%, rgba(243, 240, 232, 0.05), transparent 26rem),
     var(--bmh-svc-bg);
   color: var(--bmh-svc-cream);
   min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.bmh-svc-main {
+  position: relative;
+  z-index: 10;
   overflow-x: hidden;
 }
 
@@ -1122,14 +1141,15 @@ body * {
   width: 7px;
   height: 7px;
   border-radius: 999px;
-  background: var(--bmh-svc-orange);
-  box-shadow: 0 0 20px rgba(255, 90, 31, 0.5);
+  background: var(--bmh-svc-green);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
 }
 
 .bmh-svc-reveal,
 .bmh-svc-page [data-reveal] {
   opacity: 0;
   transform: translateY(32px);
+  will-change: opacity, transform;
 }
 
 .bmh-svc-glass {
@@ -1142,6 +1162,7 @@ body * {
   border: 1px solid rgba(243, 240, 232, 0.1);
   box-shadow: 0 40px 120px rgba(0, 0, 0, 0.62);
   will-change: transform;
+  transform-origin: center;
 }
 
 .bmh-svc-hero-lead {
@@ -1155,6 +1176,7 @@ body * {
 .bmh-svc-hero-wordmark {
   color: #e8e0d4;
   letter-spacing: -0.08em;
+  white-space: nowrap;
 }
 
 .bmh-svc-logo-link {
@@ -1176,11 +1198,29 @@ body * {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   text-decoration: none;
-  transition: transform 0.45s ease, border-color 0.45s ease, background 0.45s ease;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.45s ease, background 0.45s ease;
 }
 
 .bmh-svc-magnetic-button:hover {
   transform: translateY(-2px);
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.13);
+}
+
+.bmh-svc-primary-cta {
+  background: var(--bmh-svc-green) !important;
+  color: #060706 !important;
+}
+
+.bmh-svc-cta-icon {
+  display: flex;
+  height: 2rem;
+  width: 2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #060706;
+  color: var(--bmh-svc-green);
 }
 
 .bmh-svc-hero-cta-btn {
@@ -1200,17 +1240,124 @@ body * {
   color: white;
   text-decoration: none;
   font-size: 1.5rem;
+  transition: transform 0.3s ease, background 0.3s ease;
 }
 
 .bmh-svc-hero-cta-btn:hover {
-  background: var(--bmh-svc-orange);
+  background: var(--bmh-svc-green);
   color: #060706;
+  transform: translateY(-50%) scale(1.08);
 }
 
 .bmh-svc-timeline-bar {
   transform: scaleX(0);
   transform-origin: left center;
-  background: linear-gradient(90deg, var(--bmh-svc-orange), rgba(243, 240, 232, 0.82));
+  background: linear-gradient(90deg, var(--bmh-svc-green), rgba(243, 240, 232, 0.82));
+}
+
+.bmh-svc-pillar-card,
+.bmh-svc-pricing-card,
+.bmh-svc-note-card,
+.bmh-svc-archive-card {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.55s ease, background 0.55s ease;
+  will-change: transform, opacity;
+}
+
+.bmh-svc-pillar-card:hover,
+.bmh-svc-pricing-card:hover,
+.bmh-svc-note-card:hover,
+.bmh-svc-archive-card:hover {
+  transform: translateY(-8px);
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bmh-svc-parallax-image {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid rgba(243, 240, 232, 0.1);
+  background: #101310;
+  opacity: 0.68;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.bmh-svc-parallax-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.72) brightness(0.72);
+  transform: scale(1.14);
+  will-change: transform;
+}
+
+.bmh-svc-strip-image,
+.bmh-svc-archive-card img {
+  will-change: transform;
+  transform: scale(1.08);
+}
+
+.bmh-svc-archive-card:hover img {
+  transform: scale(1.16);
+  opacity: 0.95;
+}
+
+.bmh-svc-masked-number {
+  color: transparent;
+  background-image: var(--number-image);
+  background-position: 50% 50%;
+  background-size: 118%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: saturate(0.82) brightness(1.06);
+  will-change: transform, background-position;
+}
+
+.bmh-svc-project-card {
+  will-change: transform, opacity;
+}
+
+.bmh-svc-partners-heading {
+  pointer-events: none;
+  color: rgba(243, 240, 232, 0.055);
+  letter-spacing: -0.1em;
+}
+
+.bmh-svc-note-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(135deg, rgba(243, 240, 232, 0.14), transparent 42%);
+  transition: opacity 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bmh-svc-note-card:hover::after {
+  opacity: 1;
+}
+
+.bmh-svc-contact-field {
+  transition: border-color 0.35s ease, background 0.35s ease;
+}
+
+.bmh-svc-contact-field:hover {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bmh-svc-check-icon {
+  color: var(--bmh-svc-green);
+  flex-shrink: 0;
+}
+
+.bmh-svc-badge {
+  border-radius: 999px;
+  background: var(--bmh-svc-green);
+  padding: 0.25rem 0.75rem;
+  font-size: 12px;
+  font-weight: 700;
+  color: #060706;
 }
 
 .bmh-svc-loader {
@@ -1221,6 +1368,7 @@ body * {
   align-items: center;
   justify-content: center;
   background: var(--bmh-svc-bg);
+  will-change: transform;
 }
 
 .bmh-svc-loader__inner {
@@ -1253,7 +1401,7 @@ body * {
   transform: scaleX(0);
   transform-origin: left center;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--bmh-svc-orange), rgba(243, 240, 232, 0.82));
+  background: linear-gradient(90deg, var(--bmh-svc-green), rgba(243, 240, 232, 0.82));
 }
 
 .bmh-svc-loader__meta {
@@ -1271,6 +1419,9 @@ body * {
 @media (max-width: 767px) {
   .bmh-svc-page-rail {
     display: none;
+  }
+  .bmh-svc-hero-wordmark {
+    letter-spacing: -0.065em;
   }
 }
 

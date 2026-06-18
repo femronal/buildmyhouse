@@ -43,7 +43,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         <Image source={{ uri: content.images.heroMain }} style={{ width: '100%', height: 240, borderRadius: 20, marginBottom: 24 }} contentFit="cover" />
         <View className="flex-row flex-wrap gap-3 mb-8">
           <Link href={content.primaryCta.href as any} asChild>
-            <Pressable className="rounded-full px-5 py-3" style={{ backgroundColor: '#ff5a1f' }}>
+            <Pressable className="rounded-full px-5 py-3" style={{ backgroundColor: '#22c55e' }}>
               <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: '#060706' }}>{content.primaryCta.label}</Text>
             </Pressable>
           </Link>

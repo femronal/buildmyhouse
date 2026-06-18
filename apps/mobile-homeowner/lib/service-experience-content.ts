@@ -8,6 +8,13 @@ export type ServiceExperienceReview = {
   detail: string;
 };
 
+export type ServiceExperienceEngageCard = {
+  title: string;
+  subtitle: string;
+  badge?: string;
+  features: readonly string[];
+};
+
 export type ServiceExperienceContent = {
   canonicalPath: string;
   metaTitle: string;
@@ -17,6 +24,14 @@ export type ServiceExperienceContent = {
   heroLead: string;
   heroMeta: string;
   trustWords: readonly string[];
+  pillarsHeadline: string;
+  archiveTitle: string;
+  fieldNotesHeading: string;
+  workTitle: string;
+  workBody: string;
+  engageIntro: string;
+  contactPrompt: string;
+  engageCards: readonly ServiceExperienceEngageCard[];
   pillars: readonly { title: string; body: string }[];
   stats: readonly { value: string; label: string }[];
   processSteps: readonly { label: string; title: string; body: string }[];
@@ -523,6 +538,8 @@ function buildContent(kind: ServiceKind, region: 'lagos' | 'nigeria', canonicalP
   const copy = SERVICE_KIND_COPY[kind];
   const locationLabel = region === 'lagos' ? 'Lagos, Nigeria' : 'Nigeria';
 
+  const serviceLabel = copy.headline.toLowerCase();
+
   return {
     canonicalPath,
     metaTitle,
@@ -532,6 +549,26 @@ function buildContent(kind: ServiceKind, region: 'lagos' | 'nigeria', canonicalP
     heroLead: copy.heroLead,
     heroMeta: copy.heroMeta,
     trustWords: ['verify', 'scope', 'track', 'approve'],
+    pillarsHeadline: `${copy.headline} repairs with clearer scope, verified workers, and proof before payment.`,
+    archiveTitle: `Evidence collected before your ${serviceLabel} repair is signed off.`,
+    fieldNotesHeading: `Five rules for ${serviceLabel} repairs you can actually trust.`,
+    workTitle: '04 tracked stages',
+    workBody: `Every ${serviceLabel} job runs through the same BuildMyHouse loop — scope, match, track, approve — so you stay in control from first message to final payment.`,
+    engageIntro: `Choose how you want to start your ${serviceLabel} job — a focused tracked repair or a verified project with a general contractor.`,
+    contactPrompt: `Ready to stop guessing on ${serviceLabel} costs and start with evidence before payment?`,
+    engageCards: [
+      {
+        title: 'Tracked Repair',
+        subtitle: 'Best for urgent fixes and single-scope jobs',
+        badge: 'Most popular',
+        features: ['Guided fault intake with photos', 'Verified worker matching', 'Stage updates before each payment', 'Works for local and diaspora owners'],
+      },
+      {
+        title: 'Verified Project',
+        subtitle: 'Best when scope spans multiple trades',
+        features: ['Structured scope and milestones', 'GC or specialist coordination', 'Evidence at every checkpoint', 'Payment tied to verified progress'],
+      },
+    ],
     pillars: copy.pillars,
     stats: [
       { value: '04', label: 'tracked stages' },
