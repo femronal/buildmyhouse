@@ -14,7 +14,7 @@ import { getSeoPageContent } from '@/lib/seo-pages';
 const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
 
 export function marketingImageAsset(fileName: string): string {
-  return `${webBase()}/assets/images/${fileName}`;
+  return `${webBase()}/assets/images/${encodeURIComponent(fileName)}`;
 }
 
 const PILLAR_IMAGE_FILES = {

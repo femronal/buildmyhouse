@@ -13,6 +13,20 @@ type ServiceExperiencePageProps = {
 const green = '#22c55e';
 const cream = '#f3f0e8';
 const muted = 'rgba(243,240,232,.56)';
+const PAGE_BG = '#060706';
+
+const pageShellStyle: CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  overflowX: 'hidden',
+  overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
+  backgroundColor: PAGE_BG,
+  color: cream,
+  zIndex: 0,
+};
 
 function CtaLink({
   href,
@@ -77,8 +91,19 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
   useServiceExperienceAnimations(containerRef, loaderComplete, () => setLoaderComplete(true));
 
   useEffect(() => {
-    document.documentElement.classList.add('bmh-svc-scroll');
-    return () => document.documentElement.classList.remove('bmh-svc-scroll');
+    const html = document.documentElement;
+    const body = document.body;
+    html.classList.add('bmh-svc-active');
+    html.style.backgroundColor = PAGE_BG;
+    body.style.backgroundColor = PAGE_BG;
+    body.style.overflow = 'hidden';
+
+    return () => {
+      html.classList.remove('bmh-svc-active');
+      html.style.backgroundColor = '';
+      body.style.backgroundColor = '';
+      body.style.overflow = '';
+    };
   }, []);
 
   const archiveImages = content.images.archive.length >= 5
@@ -86,7 +111,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
     : [...content.images.archive, content.images.heroMain, content.images.heroAccent];
 
   return (
-    <div ref={containerRef} className="bmh-svc-page">
+    <div ref={containerRef} className="bmh-svc-page" style={pageShellStyle}>
       <div className="bmh-svc-noise" aria-hidden="true" />
       <div className="bmh-svc-grid-veil" aria-hidden="true" />
       <div className="bmh-svc-page-rail" aria-hidden="true">
@@ -108,7 +133,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </div>
       ) : null}
 
-      <header className="bmh-svc-header fixed inset-x-0 top-0 z-50 flex items-center justify-between px-5 py-5 md:px-8 lg:px-12">
+      <header className="bmh-svc-header sticky top-0 z-50 flex items-center justify-between px-5 py-5 md:px-8 lg:px-12" style={{ backgroundColor: 'rgba(6,7,6,0.82)', backdropFilter: 'blur(12px)' }}>
         <Link href={'/' as any} asChild>
           <a className="bmh-svc-logo-link">BuildMyHouse</a>
         </Link>
@@ -130,6 +155,9 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
               <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
               <CtaLink href={content.secondaryCta.href} label={content.secondaryCta.label} />
             </div>
+            <p className="mt-6 max-w-sm text-sm leading-relaxed" style={{ color: 'rgba(243,240,232,.52)' }}>
+              Describe the fault once, match a verified worker, and approve each stage with photo evidence before you pay.
+            </p>
           </div>
 
           <div className="bmh-svc-hero-stack absolute left-1/2 top-[48%] z-10 h-[430px] w-[310px] -translate-x-1/2 -translate-y-1/2 md:h-[560px] md:w-[430px] lg:h-[620px] lg:w-[480px]">

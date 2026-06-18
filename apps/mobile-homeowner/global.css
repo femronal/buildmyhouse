@@ -1056,14 +1056,11 @@ body * {
 }
 
 /* Service experience pages (Axisform-inspired, BuildMyHouse green) */
-html.bmh-svc-scroll,
-html.bmh-svc-scroll body,
-html.bmh-svc-scroll #root,
-html.bmh-svc-scroll #root > div,
-html.bmh-svc-scroll #root > div > div {
-  height: auto !important;
-  min-height: 100%;
-  overflow-y: visible !important;
+html.bmh-svc-active,
+html.bmh-svc-active body {
+  background-color: #060706 !important;
+  overflow: hidden !important;
+  height: 100% !important;
 }
 
 .bmh-svc-page {
@@ -1072,24 +1069,30 @@ html.bmh-svc-scroll #root > div > div {
   --bmh-svc-green: #22c55e;
   --bmh-svc-green-deep: #059669;
   --bmh-svc-green-soft: rgba(34, 197, 94, 0.22);
-  background:
-    radial-gradient(circle at 70% 10%, rgba(34, 197, 94, 0.12), transparent 34rem),
-    radial-gradient(circle at 15% 45%, rgba(243, 240, 232, 0.05), transparent 26rem),
-    var(--bmh-svc-bg);
-  color: var(--bmh-svc-cream);
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
   overflow-x: hidden;
-  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  background-color: #060706 !important;
+  background-image:
+    radial-gradient(circle at 70% 10%, rgba(34, 197, 94, 0.12), transparent 34rem),
+    radial-gradient(circle at 15% 45%, rgba(243, 240, 232, 0.05), transparent 26rem);
+  color: var(--bmh-svc-cream);
 }
 
 .bmh-svc-main {
   position: relative;
   z-index: 10;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .bmh-svc-noise {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
@@ -1099,7 +1102,7 @@ html.bmh-svc-scroll #root > div > div {
 }
 
 .bmh-svc-grid-veil {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
@@ -1361,7 +1364,7 @@ html.bmh-svc-scroll #root > div > div {
 }
 
 .bmh-svc-loader {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 200;
   display: flex;
