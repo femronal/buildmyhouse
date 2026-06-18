@@ -33,23 +33,34 @@ function CtaLink({
   label,
   primary,
   compact,
+  shortLabel,
+  className,
 }: {
   href: string;
   label: string;
   primary?: boolean;
   compact?: boolean;
+  shortLabel?: string;
+  className?: string;
 }) {
   return (
     <Link href={href as any} asChild>
       <a
-        className={`bmh-svc-magnetic-button ${primary ? 'bmh-svc-primary-cta' : 'bmh-svc-secondary-cta'}`}
+        className={`bmh-svc-magnetic-button ${primary ? 'bmh-svc-primary-cta' : 'bmh-svc-secondary-cta'} ${className ?? ''}`}
         style={
           primary
             ? ({ backgroundColor: green, color: '#060706' } as CSSProperties)
             : ({ border: `1px solid rgba(243,240,232,.12)`, color: cream } as CSSProperties)
         }
       >
-        {label}
+        {shortLabel ? (
+          <>
+            <span className="bmh-svc-cta-text-full">{label}</span>
+            <span className="bmh-svc-cta-text-short">{shortLabel}</span>
+          </>
+        ) : (
+          label
+        )}
         {primary ? (
           <span className="bmh-svc-cta-icon">
             <ArrowRight size={compact ? 14 : 16} color={green} weight="bold" />
@@ -133,14 +144,21 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </div>
       ) : null}
 
-      <header className="bmh-svc-header sticky top-0 z-50 flex items-center justify-between px-5 py-5 md:px-8 lg:px-12" style={{ backgroundColor: 'rgba(6,7,6,0.82)', backdropFilter: 'blur(12px)' }}>
+      <header className="bmh-svc-header sticky top-0 z-50 flex items-center justify-between gap-3 px-4 py-4 md:gap-8 md:px-8 md:py-5 lg:px-12" style={{ backgroundColor: 'rgba(6,7,6,0.82)', backdropFilter: 'blur(12px)' }}>
         <Link href={'/' as any} asChild>
-          <a className="bmh-svc-logo-link">BuildMyHouse</a>
+          <a className="bmh-svc-logo-link shrink-0">BuildMyHouse</a>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-xs font-bold uppercase tracking-wide">
           <span style={{ color: 'rgba(243,240,232,.55)' }}>{content.locationLabel}</span>
         </nav>
-        <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary compact />
+        <CtaLink
+          href={content.primaryCta.href}
+          label={content.primaryCta.label}
+          shortLabel="Start repair"
+          primary
+          compact
+          className="bmh-svc-header-cta shrink min-w-0"
+        />
       </header>
 
       <main className="bmh-svc-main">
@@ -539,37 +557,43 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </section>
 
         {/* ENGAGE / PRICING */}
-        <section className="bmh-svc-pricing-section relative min-h-screen px-5 py-24 md:px-8 lg:px-12">
-          <div className="grid gap-12 md:grid-cols-12">
+        <section className="bmh-svc-pricing-section relative px-5 py-16 md:min-h-screen md:py-24 md:px-8 lg:px-12">
+          <div className="bmh-svc-pricing-grid mx-auto grid w-full max-w-6xl gap-10 md:grid-cols-12 md:gap-12">
             <div className="bmh-svc-pricing-copy md:col-span-4">
               <p className="bmh-svc-section-label mb-8">Engage</p>
-              <h2 className="text-6xl font-semibold leading-[0.95] tracking-tight md:text-8xl">Engage</h2>
+              <h2 className="text-5xl font-semibold leading-[0.95] tracking-tight md:text-8xl">Engage</h2>
               <p className="mt-6 max-w-72 text-sm font-medium leading-7" style={{ color: muted }}>
                 {content.engageIntro}
               </p>
             </div>
-            <div className="grid gap-5 md:col-span-7 md:col-start-6">
-              {content.engageCards.map((card) => (
-                <div key={card.title} className="bmh-svc-pricing-card bmh-svc-glass rounded-[36px] p-8">
+            <div className="bmh-svc-pricing-cards grid w-full gap-5 md:col-span-7 md:col-start-6">
+              {content.engageCards.map((card, index) => (
+                <div key={card.title} className="bmh-svc-pricing-card bmh-svc-glass w-full max-w-full rounded-[28px] p-6 md:rounded-[36px] md:p-8">
                   {card.badge ? (
-                    <div className="mb-10 flex flex-wrap gap-2">
+                    <div className="mb-8 flex flex-wrap gap-2 md:mb-10">
                       <span className="bmh-svc-badge">{card.badge}</span>
                     </div>
                   ) : null}
-                  <h3 className="text-4xl font-semibold tracking-tight md:text-5xl">{card.title}</h3>
+                  <h3 className="text-3xl font-semibold tracking-tight md:text-5xl">{card.title}</h3>
                   <p className="mt-3 text-sm font-medium" style={{ color: 'rgba(243,240,232,.54)' }}>
                     {card.subtitle}
                   </p>
                   <div className="mt-8 grid gap-4 md:grid-cols-2">
                     {card.features.map((feature) => (
-                      <p key={feature} className="flex items-center gap-2 text-sm font-medium">
-                        <CheckCircle size={16} color={green} weight="fill" />
+                      <p key={feature} className="flex items-start gap-2 text-sm font-medium leading-relaxed">
+                        <span className="mt-0.5 shrink-0">
+                          <CheckCircle size={16} color={green} weight="fill" />
+                        </span>
                         {feature}
                       </p>
                     ))}
                   </div>
-                  <div className="mt-10">
-                    <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
+                  <div className="mt-8 md:mt-10">
+                    <CtaLink
+                      href={index === 0 ? content.primaryCta.href : content.secondaryCta.href}
+                      label={index === 0 ? content.primaryCta.label : content.secondaryCta.label}
+                      primary={index === 0}
+                    />
                   </div>
                 </div>
               ))}
@@ -637,70 +661,104 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </section>
 
         {/* FOOTER */}
-        <footer className="bmh-svc-footer-section relative min-h-screen overflow-hidden px-5 py-24 md:px-8 lg:px-12">
-          <div className="grid gap-12 md:grid-cols-12">
-            <div className="md:col-span-3">
-              <p className="bmh-svc-section-label">BuildMyHouse</p>
-            </div>
-            <div className="md:col-span-9">
-              <h2 className="bmh-svc-footer-wordmark text-[4rem] font-black leading-none md:text-[8rem] lg:text-[11rem]">
-                BuildMyHouse
-              </h2>
-            </div>
-          </div>
-          <div className="absolute right-5 top-28 text-xs font-bold uppercase tracking-[0.14em] md:right-8" style={{ color: 'rgba(243,240,232,.44)' }}>
-            © 2024–26
-          </div>
-          <div
-            className="bmh-svc-footer-links absolute bottom-16 left-5 right-5 grid gap-10 border-t pt-10 md:left-8 md:right-8 md:grid-cols-12"
-            style={{ borderColor: 'rgba(243,240,232,.12)' }}
-          >
-            <div className="md:col-span-5">
-              <p className="mb-5 text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
-                Verified property work / {content.locationLabel}
-              </p>
-              <h3 className="max-w-xl text-[36px] font-black leading-[0.92] tracking-tight md:text-[56px] lg:text-[64px]">
+        <footer className="bmh-svc-footer-section relative overflow-hidden px-5 py-14 md:min-h-screen md:py-24 md:px-8 lg:px-12">
+          {/* Mobile: compact footer */}
+          <div className="bmh-svc-footer-mobile mx-auto max-w-lg space-y-8 md:hidden">
+            <div>
+              <p className="bmh-svc-section-label mb-4">BuildMyHouse</p>
+              <h2 className="text-[1.75rem] font-black leading-tight tracking-tight">
                 Start your {content.headline.toLowerCase()} repair with evidence before payment.
-              </h3>
-              <div className="mt-10 flex flex-wrap gap-3">
-                <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
-                <CtaLink href={content.secondaryCta.href} label={content.secondaryCta.label} />
-              </div>
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed" style={{ color: muted }}>
+                Verified property work in {content.locationLabel}. Describe the fault once, approve each stage with photos, then pay.
+              </p>
             </div>
-            <div className="md:col-span-3 md:col-start-7">
-              <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
+            <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(243,240,232,.36)' }}>
                 Guides
               </p>
-              <p className="mt-6 text-sm font-medium leading-relaxed" style={{ color: 'rgba(243,240,232,.58)' }}>
-                Practical reading for homeowners planning repairs, renovations, or contractor hires in Nigeria.
-              </p>
-              {content.articleLinks.map((link) => (
-                <Link key={link.href} href={link.href as any} asChild>
-                  <a className="group mt-6 flex items-center justify-between border-b pb-4 text-sm font-bold transition hover:opacity-80" style={{ borderColor: 'rgba(243,240,232,.14)', color: cream }}>
-                    {link.label}
-                    <span className="transition duration-300 group-hover:translate-x-2">→</span>
-                  </a>
-                </Link>
-              ))}
-            </div>
-            <div className="md:col-span-2 md:col-start-11">
-              <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
-                Field
-              </p>
-              <div className="mt-6 space-y-3 text-sm font-semibold" style={{ color: 'rgba(243,240,232,.5)' }}>
-                <p>{content.locationLabel}</p>
-                <p>{content.headline} repairs</p>
-                <p>Evidence before payment</p>
+              <div className="mt-4 space-y-3">
+                {content.articleLinks.map((link) => (
+                  <Link key={link.href} href={link.href as any} asChild>
+                    <a className="block border-b pb-3 text-sm font-semibold" style={{ borderColor: 'rgba(243,240,232,.12)', color: cream }}>
+                      {link.label}
+                    </a>
+                  </Link>
+                ))}
               </div>
             </div>
-            <div className="md:col-span-12">
-              <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t pt-5" style={{ borderColor: 'rgba(243,240,232,.12)' }}>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(243,240,232,.34)' }}>
-                  © 2024-2026 BuildMyHouse
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em]" style={{ color: 'rgba(243,240,232,.34)' }}>
+              © 2024–2026 BuildMyHouse · {content.locationLabel}
+            </p>
+          </div>
+
+          {/* Desktop: cinematic footer */}
+          <div className="hidden md:block">
+            <div className="grid gap-12 md:grid-cols-12">
+              <div className="md:col-span-3">
+                <p className="bmh-svc-section-label">BuildMyHouse</p>
+              </div>
+              <div className="md:col-span-9">
+                <h2 className="bmh-svc-footer-wordmark text-[8rem] font-black leading-none lg:text-[11rem]">
+                  BuildMyHouse
+                </h2>
+              </div>
+            </div>
+            <div className="absolute right-8 top-28 text-xs font-bold uppercase tracking-[0.14em]" style={{ color: 'rgba(243,240,232,.44)' }}>
+              © 2024–26
+            </div>
+            <div
+              className="bmh-svc-footer-links absolute bottom-16 left-8 right-8 grid gap-10 border-t pt-10 md:grid-cols-12"
+              style={{ borderColor: 'rgba(243,240,232,.12)' }}
+            >
+              <div className="md:col-span-5">
+                <p className="mb-5 text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
+                  Verified property work / {content.locationLabel}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(243,240,232,.34)' }}>
-                  Lagos / Nigeria / Repairs-first
+                <h3 className="max-w-xl text-[56px] font-black leading-[0.92] tracking-tight lg:text-[64px]">
+                  Start your {content.headline.toLowerCase()} repair with evidence before payment.
+                </h3>
+                <div className="mt-10 flex flex-wrap gap-3">
+                  <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
+                  <CtaLink href={content.secondaryCta.href} label={content.secondaryCta.label} />
+                </div>
+              </div>
+              <div className="md:col-span-3 md:col-start-7">
+                <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
+                  Guides
                 </p>
+                <p className="mt-6 text-sm font-medium leading-relaxed" style={{ color: 'rgba(243,240,232,.58)' }}>
+                  Practical reading for homeowners planning repairs, renovations, or contractor hires in Nigeria.
+                </p>
+                {content.articleLinks.map((link) => (
+                  <Link key={link.href} href={link.href as any} asChild>
+                    <a className="group mt-6 flex items-center justify-between border-b pb-4 text-sm font-bold transition hover:opacity-80" style={{ borderColor: 'rgba(243,240,232,.14)', color: cream }}>
+                      {link.label}
+                      <span className="transition duration-300 group-hover:translate-x-2">→</span>
+                    </a>
+                  </Link>
+                ))}
+              </div>
+              <div className="md:col-span-2 md:col-start-11">
+                <p className="text-xs font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(243,240,232,.36)' }}>
+                  Field
+                </p>
+                <div className="mt-6 space-y-3 text-sm font-semibold" style={{ color: 'rgba(243,240,232,.5)' }}>
+                  <p>{content.locationLabel}</p>
+                  <p>{content.headline} repairs</p>
+                  <p>Evidence before payment</p>
+                </div>
+              </div>
+              <div className="md:col-span-12">
+                <div className="mt-10 flex flex-wrap items-center justify-between gap-4 border-t pt-5" style={{ borderColor: 'rgba(243,240,232,.12)' }}>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(243,240,232,.34)' }}>
+                    © 2024-2026 BuildMyHouse
+                  </p>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: 'rgba(243,240,232,.34)' }}>
+                    Lagos / Nigeria / Repairs-first
+                  </p>
+                </div>
               </div>
             </div>
           </div>

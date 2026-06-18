@@ -325,18 +325,24 @@ export function useServiceExperienceAnimations(
           .to(root.querySelectorAll('.bmh-svc-timeline-bar'), { scaleX: 1, stagger: 0.12, duration: 0.6 }, 0)
           .from(root.querySelectorAll('.bmh-svc-process-col'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.25);
 
+        const isMobile = window.innerWidth < 768;
+
         gsap.timeline({
           scrollTrigger: st({
             trigger: root.querySelector('.bmh-svc-pricing-section'),
             start: 'top top',
-            end: '+=80%',
-            scrub: 1,
-            pin: window.innerWidth >= 768,
+            end: isMobile ? 'bottom bottom' : '+=80%',
+            scrub: isMobile ? false : 1,
+            pin: !isMobile,
             anticipatePin: 1,
           }),
         })
-          .from(root.querySelector('.bmh-svc-pricing-copy'), { y: 50, opacity: 0, duration: 0.35 }, 0)
-          .from(root.querySelectorAll('.bmh-svc-pricing-card'), { x: 110, opacity: 0, stagger: 0.16, duration: 0.55 }, 0.12);
+          .from(root.querySelector('.bmh-svc-pricing-copy'), { y: isMobile ? 24 : 50, opacity: 0, duration: 0.35 }, 0)
+          .from(
+            root.querySelectorAll('.bmh-svc-pricing-card'),
+            { x: isMobile ? 0 : 110, y: isMobile ? 28 : 0, opacity: 0, stagger: 0.16, duration: 0.55 },
+            0.12,
+          );
 
         gsap.timeline({
           scrollTrigger: st({
@@ -364,23 +370,35 @@ export function useServiceExperienceAnimations(
           .from(root.querySelectorAll('.bmh-svc-contact-form > *'), { y: 36, opacity: 0, stagger: 0.07, duration: 0.45 }, 0)
           .from(root.querySelectorAll('.bmh-svc-faq-row'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.12);
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-footer-section'),
-            start: 'top 72%',
-            end: 'bottom bottom',
-            scrub: 1,
-          }),
-        })
-          .fromTo(
-            root.querySelector('.bmh-svc-footer-wordmark'),
-            { scale: 0.9, y: 120, opacity: 0.35 },
-            { scale: 1, y: 0, opacity: 1, duration: 0.9 },
-            0,
-          )
-          .from(root.querySelector('.bmh-svc-footer-links'), { y: 80, opacity: 0, duration: 0.5 }, 0.2)
-          .from(root.querySelector('.bmh-svc-footer-links h3'), { y: 60, opacity: 0, letterSpacing: '-0.12em', duration: 0.45 }, 0.3)
-          .from(root.querySelectorAll('.bmh-svc-footer-links a'), { y: 18, opacity: 0, stagger: 0.04, duration: 0.3 }, 0.45);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-footer-section'),
+              start: 'top 72%',
+              end: 'bottom bottom',
+              scrub: 1,
+            }),
+          })
+            .fromTo(
+              root.querySelector('.bmh-svc-footer-wordmark'),
+              { scale: 0.9, y: 120, opacity: 0.35 },
+              { scale: 1, y: 0, opacity: 1, duration: 0.9 },
+              0,
+            )
+            .from(root.querySelector('.bmh-svc-footer-links'), { y: 80, opacity: 0, duration: 0.5 }, 0.2)
+            .from(root.querySelector('.bmh-svc-footer-links h3'), { y: 60, opacity: 0, letterSpacing: '-0.12em', duration: 0.45 }, 0.3)
+            .from(root.querySelectorAll('.bmh-svc-footer-links a'), { y: 18, opacity: 0, stagger: 0.04, duration: 0.3 }, 0.45);
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-footer-mobile'), {
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-footer-section'),
+              start: 'top 85%',
+            }),
+            y: 28,
+            opacity: 0,
+            duration: 0.45,
+          });
+        }
       }, root);
 
       ScrollTrigger.refresh();

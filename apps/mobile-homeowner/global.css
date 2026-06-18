@@ -1426,6 +1426,132 @@ html.bmh-svc-active body {
   .bmh-svc-hero-wordmark {
     letter-spacing: -0.065em;
   }
+
+  .bmh-svc-cta-text-short {
+    display: none;
+  }
+
+  .bmh-svc-header-cta .bmh-svc-cta-text-full {
+    display: none;
+  }
+
+  .bmh-svc-header-cta .bmh-svc-cta-text-short {
+    display: inline;
+  }
+
+  .bmh-svc-header-cta {
+    max-width: 52%;
+    padding: 0.5rem 0.65rem;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    gap: 0.35rem;
+  }
+
+  .bmh-svc-header-cta .bmh-svc-cta-icon {
+    height: 1.45rem;
+    width: 1.45rem;
+    flex-shrink: 0;
+  }
+
+  .bmh-svc-logo-link {
+    max-width: 44%;
+    font-size: 1rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bmh-svc-pricing-grid,
+  .bmh-svc-pricing-cards {
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .bmh-svc-pricing-card {
+    transform: none !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.bmh-svc-cta-text-short {
+  display: none;
+}
+
+.bmh-auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+}
+
+.bmh-auth-modal-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 1.75rem;
+  border: 1px solid rgba(243, 240, 232, 0.12);
+  background: #0a0a0a;
+  padding: 1.75rem 1.5rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+.bmh-auth-modal-eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(243, 240, 232, 0.45);
+}
+
+.bmh-auth-modal-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f3f0e8;
+}
+
+.bmh-auth-modal-message {
+  margin: 0 0 1.75rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(243, 240, 232, 0.7);
+}
+
+.bmh-auth-modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.bmh-auth-modal-secondary,
+.bmh-auth-modal-primary {
+  flex: 1;
+  border-radius: 999px;
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.bmh-auth-modal-secondary {
+  background: transparent;
+  border: 1px solid rgba(243, 240, 232, 0.15);
+  color: #f3f0e8;
+}
+
+.bmh-auth-modal-primary {
+  background: #22c55e;
+  color: #060706;
+  font-weight: 700;
 }
 
 @media (prefers-reduced-motion: reduce) {

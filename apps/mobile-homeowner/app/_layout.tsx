@@ -27,6 +27,7 @@ import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
+import AuthContinueModal from '@/components/AuthContinueModal';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 import {
   initialWindowMetrics,
@@ -180,6 +181,7 @@ export default function RootLayout() {
           <Stack.Screen name="chat" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
+          <AuthContinueModal />
           <WhatsAppFloatingChat />
         </ThemeProvider>
       </InvestmentProvider>

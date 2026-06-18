@@ -1,6 +1,7 @@
 import { Alert, Platform } from 'react-native';
 import type { Router } from 'expo-router';
 import { needsHomeownerIntroOnboarding, type HomeownerUserLike } from '@/lib/onboarding';
+import { showAuthContinueModal } from '@/lib/auth-continue-modal-store';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 
 type RequireAuthOptions = {
@@ -41,9 +42,10 @@ export async function requireAuthToContinue({
     };
 
     if (Platform.OS === 'web') {
-      const confirmed = window.confirm(`${promptTitle}\n\n${promptMessage}`);
-      if (confirmed) goToLogin();
-      else resolve(false);
+      void showAuthContinueModal(promptTitle, promptMessage).then((confirmed) => {
+        if (confirmed) goToLogin();
+        else resolve(false);
+      });
       return;
     }
 

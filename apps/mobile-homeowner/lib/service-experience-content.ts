@@ -1,5 +1,4 @@
 import { LAGOS_REPAIR_SERVICES, type LagosRepairSlug } from '@/lib/lagos-repair-services';
-import { marketingImageAsset } from '@/lib/published-content-catalog';
 import { SERVICE_SEO_PAGES, type ServiceSeoSlug } from '@/lib/home-landing-content';
 
 export type ServiceExperienceReview = {
@@ -72,175 +71,145 @@ const SHARED_ARTICLES = [
   { label: 'How to choose a contractor in Nigeria', href: '/how-to-choose-a-general-contractor-in-nigeria' },
 ] as const;
 
+/**
+ * Service page images — edit IMAGE_SETS below to swap placeholders.
+ * Replace Unsplash URLs with your own assets when ready.
+ */
+function unsplash(photoId: string, w = 1600) {
+  return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=${w}&q=80`;
+}
+
+function imageSet(
+  hero: string,
+  accent: string,
+  strip: string,
+  parallaxA: string,
+  parallaxB: string,
+  archive: [string, string, string],
+): ServiceExperienceContent['images'] {
+  return {
+    heroMain: unsplash(hero),
+    heroAccent: unsplash(accent),
+    strip: unsplash(strip),
+    parallaxA: unsplash(parallaxA),
+    parallaxB: unsplash(parallaxB),
+    archive: archive.map((id) => unsplash(id)),
+  };
+}
+
 const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
-  'plumbing-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('engineer at BuildMyHouse.png'),
-    strip: marketingImageAsset('repair.jpg'),
-    parallaxA: marketingImageAsset('upgrade.jpg'),
-    parallaxB: marketingImageAsset('transportation.webp'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('engineer at BuildMyHouse.png'),
-      marketingImageAsset('upgrade.jpg'),
-    ],
-  },
-  'electrical-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('engineer at BuildMyHouse.png'),
-    strip: marketingImageAsset('upgrade.jpg'),
-    parallaxA: marketingImageAsset('repair.jpg'),
-    parallaxB: marketingImageAsset('dangotecement.jpg'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('engineer at BuildMyHouse.png'),
-    ],
-  },
-  'roof-leak-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('renovations.jpg'),
-    strip: marketingImageAsset('renovations.jpg'),
-    parallaxA: marketingImageAsset('repair.jpg'),
-    parallaxB: marketingImageAsset('fullbuilds.jpg'),
-    archive: [
-      marketingImageAsset('renovations.jpg'),
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('fullbuilds.jpg'),
-    ],
-  },
-  'drainage-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('fullbuilds.jpg'),
-    strip: marketingImageAsset('fullbuilds.jpg'),
-    parallaxA: marketingImageAsset('repair.jpg'),
-    parallaxB: marketingImageAsset('transportation.webp'),
-    archive: [
-      marketingImageAsset('fullbuilds.jpg'),
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('dangotecement.jpg'),
-    ],
-  },
-  'painting-services': {
-    heroMain: marketingImageAsset('interiorDesign.jpg'),
-    heroAccent: marketingImageAsset('upgrade.jpg'),
-    strip: marketingImageAsset('interiorDesign.jpg'),
-    parallaxA: marketingImageAsset('renovations.jpg'),
-    parallaxB: marketingImageAsset('upgrade.jpg'),
-    archive: [
-      marketingImageAsset('interiorDesign.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('renovations.jpg'),
-    ],
-  },
-  'property-maintenance': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('engineer at BuildMyHouse.png'),
-    strip: marketingImageAsset('upgrade.jpg'),
-    parallaxA: marketingImageAsset('renovations.jpg'),
-    parallaxB: marketingImageAsset('interiorDesign.jpg'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('renovations.jpg'),
-    ],
-  },
-  'window-repair': {
-    heroMain: marketingImageAsset('upgrade.jpg'),
-    heroAccent: marketingImageAsset('repair.jpg'),
-    strip: marketingImageAsset('upgrade.jpg'),
-    parallaxA: marketingImageAsset('interiorDesign.jpg'),
-    parallaxB: marketingImageAsset('repair.jpg'),
-    archive: [
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('interiorDesign.jpg'),
-    ],
-  },
-  'pumping-machine-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('engineer at BuildMyHouse.png'),
-    strip: marketingImageAsset('repair.jpg'),
-    parallaxA: marketingImageAsset('upgrade.jpg'),
-    parallaxB: marketingImageAsset('transportation.webp'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('engineer at BuildMyHouse.png'),
-      marketingImageAsset('upgrade.jpg'),
-    ],
-  },
-  'fan-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('upgrade.jpg'),
-    strip: marketingImageAsset('repair.jpg'),
-    parallaxA: marketingImageAsset('upgrade.jpg'),
-    parallaxB: marketingImageAsset('interiorDesign.jpg'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('interiorDesign.jpg'),
-    ],
-  },
-  'rechargeable-fan-repair': {
-    heroMain: marketingImageAsset('repair.jpg'),
-    heroAccent: marketingImageAsset('upgrade.jpg'),
-    strip: marketingImageAsset('repair.jpg'),
-    parallaxA: marketingImageAsset('upgrade.jpg'),
-    parallaxB: marketingImageAsset('transportation.webp'),
-    archive: [
-      marketingImageAsset('repair.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-      marketingImageAsset('engineer at BuildMyHouse.png'),
-    ],
-  },
-  'bathroom-repair': {
-    heroMain: marketingImageAsset('renovations.jpg'),
-    heroAccent: marketingImageAsset('interiorDesign.jpg'),
-    strip: marketingImageAsset('renovations.jpg'),
-    parallaxA: marketingImageAsset('repair.jpg'),
-    parallaxB: marketingImageAsset('upgrade.jpg'),
-    archive: [
-      marketingImageAsset('renovations.jpg'),
-      marketingImageAsset('interiorDesign.jpg'),
-      marketingImageAsset('repair.jpg'),
-    ],
-  },
-  'kitchen-renovation': {
-    heroMain: marketingImageAsset('renovations.jpg'),
-    heroAccent: marketingImageAsset('interiorDesign.jpg'),
-    strip: marketingImageAsset('renovations.jpg'),
-    parallaxA: marketingImageAsset('upgrade.jpg'),
-    parallaxB: marketingImageAsset('interiorDesign.jpg'),
-    archive: [
-      marketingImageAsset('renovations.jpg'),
-      marketingImageAsset('interiorDesign.jpg'),
-      marketingImageAsset('upgrade.jpg'),
-    ],
-  },
-  'home-renovation': {
-    heroMain: marketingImageAsset('renovations.jpg'),
-    heroAccent: marketingImageAsset('renovate-in-nigeria-from-abroad.png'),
-    strip: marketingImageAsset('renovations.jpg'),
-    parallaxA: marketingImageAsset('interiorDesign.jpg'),
-    parallaxB: marketingImageAsset('fullbuilds.jpg'),
-    archive: [
-      marketingImageAsset('renovations.jpg'),
-      marketingImageAsset('renovate-in-nigeria-from-abroad.png'),
-      marketingImageAsset('fullbuilds.jpg'),
-    ],
-  },
-  'general-contractors': {
-    heroMain: marketingImageAsset('fullbuilds.jpg'),
-    heroAccent: marketingImageAsset('engineer at BuildMyHouse.png'),
-    strip: marketingImageAsset('fullbuilds.jpg'),
-    parallaxA: marketingImageAsset('dangotecement.jpg'),
-    parallaxB: marketingImageAsset('renovations.jpg'),
-    archive: [
-      marketingImageAsset('fullbuilds.jpg'),
-      marketingImageAsset('engineer at BuildMyHouse.png'),
-      marketingImageAsset('dangotecement.jpg'),
-    ],
-  },
+  'plumbing-repair': imageSet(
+    '1607472586893-edb1543ab523',
+    '1581578731548-c64695cc8212',
+    '1607472586893-edb1543ab523',
+    '1558618666-fcd25c85cd64',
+    '1504307651254-4da29b8c3e05',
+    ['1607472586893-edb1543ab523', '1581578731548-c64695cc8212', '1558618666-fcd25c85cd64'],
+  ),
+  'electrical-repair': imageSet(
+    '1621905251189-4798adcf397d',
+    '1473341303090-f831f5eb9320',
+    '1621905251189-4798adcf397d',
+    '1503387769248-ac8983c8e028',
+    '1558618666-fcd25c85cd64',
+    ['1621905251189-4798adcf397d', '1473341303090-f831f5eb9320', '1503387769248-ac8983c8e028'],
+  ),
+  'roof-leak-repair': imageSet(
+    '1632779140123-0c47d1932cbb',
+    '1600585154526-5ed7d9d75465',
+    '1632779140123-0c47d1932cbb',
+    '1503387769248-ac8983c8e028',
+    '1600585154362-3e1a2c1f9e31',
+    ['1632779140123-0c47d1932cbb', '1600585154526-5ed7d9d75465', '1503387769248-ac8983c8e028'],
+  ),
+  'drainage-repair': imageSet(
+    '1581578731548-c64695cc8212',
+    '1558618666-fcd25c85cd64',
+    '1581578731548-c64695cc8212',
+    '1607472586893-edb1543ab523',
+    '1504307651254-4da29b8c3e05',
+    ['1581578731548-c64695cc8212', '1558618666-fcd25c85cd64', '1607472586893-edb1543ab523'],
+  ),
+  'painting-services': imageSet(
+    '1562259949-bd68673abe65',
+    '1589939705384-51851334a518',
+    '1562259949-bd68673abe65',
+    '1600585154526-5ed7d9d75465',
+    '1589939705384-51851334a518',
+    ['1562259949-bd68673abe65', '1589939705384-51851334a518', '1600585154526-5ed7d9d75465'],
+  ),
+  'property-maintenance': imageSet(
+    '1504307651254-4da29b8c3e05',
+    '1581578731548-c64695cc8212',
+    '1504307651254-4da29b8c3e05',
+    '1600585154526-5ed7d9d75465',
+    '1558618666-fcd25c85cd64',
+    ['1504307651254-4da29b8c3e05', '1581578731548-c64695cc8212', '1600585154526-5ed7d9d75465'],
+  ),
+  'window-repair': imageSet(
+    '1600585154362-3e1a2c1f9e31',
+    '1600607687939-ce8a6c25118c',
+    '1600585154362-3e1a2c1f9e31',
+    '1600585154526-5ed7d9d75465',
+    '1562259949-bd68673abe65',
+    ['1600585154362-3e1a2c1f9e31', '1600607687939-ce8a6c25118c', '1600585154526-5ed7d9d75465'],
+  ),
+  'pumping-machine-repair': imageSet(
+    '1558618666-fcd25c85cd64',
+    '1607472586893-edb1543ab523',
+    '1558618666-fcd25c85cd64',
+    '1581578731548-c64695cc8212',
+    '1504307651254-4da29b8c3e05',
+    ['1558618666-fcd25c85cd64', '1607472586893-edb1543ab523', '1581578731548-c64695cc8212'],
+  ),
+  'fan-repair': imageSet(
+    '1585779034826-d38f3753070e',
+    '1558618666-fcd25c85cd64',
+    '1585779034826-d38f3753070e',
+    '1621905251189-4798adcf397d',
+    '1504307651254-4da29b8c3e05',
+    ['1585779034826-d38f3753070e', '1558618666-fcd25c85cd64', '1621905251189-4798adcf397d'],
+  ),
+  'rechargeable-fan-repair': imageSet(
+    '1585779034826-d38f3753070e',
+    '1473341303090-f831f5eb9320',
+    '1585779034826-d38f3753070e',
+    '1621905251189-4798adcf397d',
+    '1504307651254-4da29b8c3e05',
+    ['1585779034826-d38f3753070e', '1473341303090-f831f5eb9320', '1621905251189-4798adcf397d'],
+  ),
+  'bathroom-repair': imageSet(
+    '1552321554-5f848e4830a4',
+    '1600607687939-ce8a6c25118c',
+    '1552321554-5f848e4830a4',
+    '1607472586893-edb1543ab523',
+    '1562259949-bd68673abe65',
+    ['1552321554-5f848e4830a4', '1600607687939-ce8a6c25118c', '1607472586893-edb1543ab523'],
+  ),
+  'kitchen-renovation': imageSet(
+    '1556912170-ef71bcc7e0f7',
+    '1600607687939-ce8a6c25118c',
+    '1556912170-ef71bcc7e0f7',
+    '1562259949-bd68673abe65',
+    '1600585154526-5ed7d9d75465',
+    ['1556912170-ef71bcc7e0f7', '1600607687939-ce8a6c25118c', '1562259949-bd68673abe65'],
+  ),
+  'home-renovation': imageSet(
+    '1600585154526-5ed7d9d75465',
+    '1600607687939-ce8a6c25118c',
+    '1600585154526-5ed7d9d75465',
+    '1562259949-bd68673abe65',
+    '1556912170-ef71bcc7e0f7',
+    ['1600585154526-5ed7d9d75465', '1600607687939-ce8a6c25118c', '1562259949-bd68673abe65'],
+  ),
+  'general-contractors': imageSet(
+    '1503387769248-ac8983c8e028',
+    '1504307651254-4da29b8c3e05',
+    '1503387769248-ac8983c8e028',
+    '1600585154526-5ed7d9d75465',
+    '1558618666-fcd25c85cd64',
+    ['1503387769248-ac8983c8e028', '1504307651254-4da29b8c3e05', '1600585154526-5ed7d9d75465'],
+  ),
 };
 
 const SERVICE_KIND_COPY: Record<
