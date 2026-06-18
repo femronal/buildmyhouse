@@ -87,6 +87,18 @@ const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.
 /** Bundled hero for plumbing service pages — source: assets/images/worried-woman-dealing-with-a-plumbing-emergency-2026-03-25-08-24-07-utc.jpg */
 const PLUMBING_HERO_MAIN = `${webBase()}/plumbing-service-hero.jpg`;
 
+/** Bundled hero for electrical service pages — source: assets/images/man-working-on-electrical-wiring-outside-of-home-2026-03-18-06-55-48-utc.jpg */
+const ELECTRICAL_HERO_MAIN = `${webBase()}/electrical-service-hero.jpg`;
+
+/** Bundled hero for roof leak service pages — source: assets/images/leaking-roof-problem.png */
+const ROOF_LEAK_HERO_MAIN = `${webBase()}/roof-leak-service-hero.png`;
+
+/** Bundled hero for drainage service pages — source: assets/images/water-in-white-ceramic-sink-drains-down-close-up-2026-03-17-02-31-46-utc.jpg */
+const DRAINAGE_HERO_MAIN = `${webBase()}/drainage-service-hero.jpg`;
+
+/** Bundled hero for window repair service pages — source: assets/images/man-repairing-window-with-screwdriver-inside-a-hom-2026-03-24-07-43-18-utc.jpg */
+const WINDOW_REPAIR_HERO_MAIN = `${webBase()}/window-repair-service-hero.jpg`;
+
 function imageSet(
   hero: string,
   accent: string,
@@ -120,33 +132,42 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     ),
     heroMain: PLUMBING_HERO_MAIN,
   },
-  'electrical-repair': imageSet(
-    '1621905251189-4798adcf397d',
-    '1473341303090-f831f5eb9320',
-    '1621905251189-4798adcf397d',
-    '1503387769248-ac8983c8e028',
-    '1558618666-fcd25c85cd64',
-    ['1621905251189-4798adcf397d', '1473341303090-f831f5eb9320', '1503387769248-ac8983c8e028'],
-    '1621905251189-4798adcf397d',
-  ),
-  'roof-leak-repair': imageSet(
-    '1632779140123-0c47d1932cbb',
-    '1503387769248-ac8983c8e028',
-    '1632779140123-0c47d1932cbb',
-    '1503387769248-ac8983c8e028',
-    '1600607687939-ce8a6c25118c',
-    ['1632779140123-0c47d1932cbb', '1503387769248-ac8983c8e028', '1503387769248-ac8983c8e028'],
-    '1632779140123-0c47d1932cbb',
-  ),
-  'drainage-repair': imageSet(
-    '1581578731548-c64695cc8212',
-    '1558618666-fcd25c85cd64',
-    '1581578731548-c64695cc8212',
-    '1607472586893-edb1543ab523',
-    '1504307651254-4da29b8c3e05',
-    ['1581578731548-c64695cc8212', '1558618666-fcd25c85cd64', '1607472586893-edb1543ab523'],
-    '1581578731548-c64695cc8212',
-  ),
+  'electrical-repair': {
+    ...imageSet(
+      '1621905251189-4798adcf397d',
+      '1473341303090-f831f5eb9320',
+      '1621905251189-4798adcf397d',
+      '1503387769248-ac8983c8e028',
+      '1558618666-fcd25c85cd64',
+      ['1621905251189-4798adcf397d', '1473341303090-f831f5eb9320', '1503387769248-ac8983c8e028'],
+      '1621905251189-4798adcf397d',
+    ),
+    heroMain: ELECTRICAL_HERO_MAIN,
+  },
+  'roof-leak-repair': {
+    ...imageSet(
+      '1632779140123-0c47d1932cbb',
+      '1503387769248-ac8983c8e028',
+      '1632779140123-0c47d1932cbb',
+      '1503387769248-ac8983c8e028',
+      '1600607687939-ce8a6c25118c',
+      ['1632779140123-0c47d1932cbb', '1503387769248-ac8983c8e028', '1503387769248-ac8983c8e028'],
+      '1632779140123-0c47d1932cbb',
+    ),
+    heroMain: ROOF_LEAK_HERO_MAIN,
+  },
+  'drainage-repair': {
+    ...imageSet(
+      '1581578731548-c64695cc8212',
+      '1558618666-fcd25c85cd64',
+      '1581578731548-c64695cc8212',
+      '1607472586893-edb1543ab523',
+      '1504307651254-4da29b8c3e05',
+      ['1581578731548-c64695cc8212', '1558618666-fcd25c85cd64', '1607472586893-edb1543ab523'],
+      '1581578731548-c64695cc8212',
+    ),
+    heroMain: DRAINAGE_HERO_MAIN,
+  },
   'painting-services': imageSet(
     '1562259949-bd68673abe65',
     '1589939705384-51851334a518',
@@ -165,15 +186,18 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     ['1504307651254-4da29b8c3e05', '1581578731548-c64695cc8212', '1503387769248-ac8983c8e028'],
     '1504307651254-4da29b8c3e05',
   ),
-  'window-repair': imageSet(
-    '1600607687939-ce8a6c25118c',
-    '1600607687939-ce8a6c25118c',
-    '1600607687939-ce8a6c25118c',
-    '1503387769248-ac8983c8e028',
-    '1562259949-bd68673abe65',
-    ['1600607687939-ce8a6c25118c', '1600607687939-ce8a6c25118c', '1503387769248-ac8983c8e028'],
-    '1600607687939-ce8a6c25118c',
-  ),
+  'window-repair': {
+    ...imageSet(
+      '1600607687939-ce8a6c25118c',
+      '1600607687939-ce8a6c25118c',
+      '1600607687939-ce8a6c25118c',
+      '1503387769248-ac8983c8e028',
+      '1562259949-bd68673abe65',
+      ['1600607687939-ce8a6c25118c', '1600607687939-ce8a6c25118c', '1503387769248-ac8983c8e028'],
+      '1600607687939-ce8a6c25118c',
+    ),
+    heroMain: WINDOW_REPAIR_HERO_MAIN,
+  },
   'pumping-machine-repair': imageSet(
     '1558618666-fcd25c85cd64',
     '1607472586893-edb1543ab523',
