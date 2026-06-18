@@ -2,34 +2,30 @@ import { Image } from 'expo-image';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import type { ServiceExperienceContent } from '@/lib/service-experience-content';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
+import { buildServiceExperienceJsonLd } from '@/lib/service-experience-seo';
 import { useWebSeo } from '@/lib/seo';
+import ServiceExperienceSeoHead from '@/components/service-experience/ServiceExperienceSeoHead';
 
 type ServiceExperiencePageProps = {
   content: ServiceExperienceContent;
 };
 
 export default function ServiceExperiencePage({ content }: ServiceExperiencePageProps) {
+  const jsonLd = buildServiceExperienceJsonLd(content);
+
   useWebSeo({
     title: content.metaTitle,
     description: content.summary,
     canonicalPath: content.canonicalPath,
     robots: 'index,follow',
-    jsonLd: buildSeoJsonLd({
-      path: content.canonicalPath,
-      title: content.metaTitle,
-      description: content.summary,
-      schemaType: 'Service',
-      faqs: [...content.faqs],
-      breadcrumbs: [
-        { name: 'Home', path: '/' },
-        { name: content.headline, path: content.canonicalPath },
-      ],
-    }),
+    jsonLd,
+    ogImage: content.images.heroMain,
   });
 
   return (
-    <ScrollView className="flex-1" style={{ backgroundColor: '#060706' }} contentContainerStyle={{ paddingBottom: 48 }}>
+    <>
+      <ServiceExperienceSeoHead content={content} jsonLd={jsonLd} />
+      <ScrollView className="flex-1" style={{ backgroundColor: '#060706' }} contentContainerStyle={{ paddingBottom: 48 }}>
       <View className="px-5 pt-14 pb-8">
         <Text className="text-[11px] uppercase tracking-widest mb-3" style={{ color: 'rgba(243,240,232,.54)', fontFamily: 'Poppins_700Bold' }}>
           Verified {content.headline} · {content.locationLabel}
@@ -86,5 +82,6 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         ))}
       </View>
     </ScrollView>
+    </>
   );
 }

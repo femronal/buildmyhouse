@@ -44,6 +44,8 @@ export type ServiceExperienceContent = {
     strip: string;
     parallaxA: string;
     parallaxB: string;
+    /** Photo clipped inside the large "04" in the Systems section — swap per service in IMAGE_SETS. */
+    workMask: string;
     archive: readonly string[];
   };
   primaryCta: { label: string; href: string };
@@ -73,7 +75,8 @@ const SHARED_ARTICLES = [
 
 /**
  * Service page images — edit IMAGE_SETS below to swap placeholders.
- * Replace Unsplash URLs with your own assets when ready.
+ * The 7th argument in each imageSet() call is workMask (photo inside the "04" typography).
+ * Replace Unsplash photo IDs with your own assets when ready.
  */
 function unsplash(photoId: string, w = 1600) {
   return `https://images.unsplash.com/photo-${photoId}?auto=format&fit=crop&w=${w}&q=80`;
@@ -86,6 +89,7 @@ function imageSet(
   parallaxA: string,
   parallaxB: string,
   archive: [string, string, string],
+  workMask: string,
 ): ServiceExperienceContent['images'] {
   return {
     heroMain: unsplash(hero),
@@ -93,6 +97,7 @@ function imageSet(
     strip: unsplash(strip),
     parallaxA: unsplash(parallaxA),
     parallaxB: unsplash(parallaxB),
+    workMask: unsplash(workMask, 2400),
     archive: archive.map((id) => unsplash(id)),
   };
 }
@@ -105,6 +110,7 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1558618666-fcd25c85cd64',
     '1504307651254-4da29b8c3e05',
     ['1607472586893-edb1543ab523', '1581578731548-c64695cc8212', '1558618666-fcd25c85cd64'],
+    '1607472586893-edb1543ab523',
   ),
   'electrical-repair': imageSet(
     '1621905251189-4798adcf397d',
@@ -113,14 +119,16 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1503387769248-ac8983c8e028',
     '1558618666-fcd25c85cd64',
     ['1621905251189-4798adcf397d', '1473341303090-f831f5eb9320', '1503387769248-ac8983c8e028'],
+    '1621905251189-4798adcf397d',
   ),
   'roof-leak-repair': imageSet(
     '1632779140123-0c47d1932cbb',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1632779140123-0c47d1932cbb',
     '1503387769248-ac8983c8e028',
-    '1600585154362-3e1a2c1f9e31',
-    ['1632779140123-0c47d1932cbb', '1600585154526-5ed7d9d75465', '1503387769248-ac8983c8e028'],
+    '1600607687939-ce8a6c25118c',
+    ['1632779140123-0c47d1932cbb', '1503387769248-ac8983c8e028', '1503387769248-ac8983c8e028'],
+    '1632779140123-0c47d1932cbb',
   ),
   'drainage-repair': imageSet(
     '1581578731548-c64695cc8212',
@@ -129,30 +137,34 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1607472586893-edb1543ab523',
     '1504307651254-4da29b8c3e05',
     ['1581578731548-c64695cc8212', '1558618666-fcd25c85cd64', '1607472586893-edb1543ab523'],
+    '1581578731548-c64695cc8212',
   ),
   'painting-services': imageSet(
     '1562259949-bd68673abe65',
     '1589939705384-51851334a518',
     '1562259949-bd68673abe65',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1589939705384-51851334a518',
-    ['1562259949-bd68673abe65', '1589939705384-51851334a518', '1600585154526-5ed7d9d75465'],
+    ['1562259949-bd68673abe65', '1589939705384-51851334a518', '1503387769248-ac8983c8e028'],
+    '1562259949-bd68673abe65',
   ),
   'property-maintenance': imageSet(
     '1504307651254-4da29b8c3e05',
     '1581578731548-c64695cc8212',
     '1504307651254-4da29b8c3e05',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1558618666-fcd25c85cd64',
-    ['1504307651254-4da29b8c3e05', '1581578731548-c64695cc8212', '1600585154526-5ed7d9d75465'],
+    ['1504307651254-4da29b8c3e05', '1581578731548-c64695cc8212', '1503387769248-ac8983c8e028'],
+    '1504307651254-4da29b8c3e05',
   ),
   'window-repair': imageSet(
-    '1600585154362-3e1a2c1f9e31',
     '1600607687939-ce8a6c25118c',
-    '1600585154362-3e1a2c1f9e31',
-    '1600585154526-5ed7d9d75465',
+    '1600607687939-ce8a6c25118c',
+    '1600607687939-ce8a6c25118c',
+    '1503387769248-ac8983c8e028',
     '1562259949-bd68673abe65',
-    ['1600585154362-3e1a2c1f9e31', '1600607687939-ce8a6c25118c', '1600585154526-5ed7d9d75465'],
+    ['1600607687939-ce8a6c25118c', '1600607687939-ce8a6c25118c', '1503387769248-ac8983c8e028'],
+    '1600607687939-ce8a6c25118c',
   ),
   'pumping-machine-repair': imageSet(
     '1558618666-fcd25c85cd64',
@@ -161,6 +173,7 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1581578731548-c64695cc8212',
     '1504307651254-4da29b8c3e05',
     ['1558618666-fcd25c85cd64', '1607472586893-edb1543ab523', '1581578731548-c64695cc8212'],
+    '1558618666-fcd25c85cd64',
   ),
   'fan-repair': imageSet(
     '1585779034826-d38f3753070e',
@@ -169,6 +182,7 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1621905251189-4798adcf397d',
     '1504307651254-4da29b8c3e05',
     ['1585779034826-d38f3753070e', '1558618666-fcd25c85cd64', '1621905251189-4798adcf397d'],
+    '1585779034826-d38f3753070e',
   ),
   'rechargeable-fan-repair': imageSet(
     '1585779034826-d38f3753070e',
@@ -177,6 +191,7 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1621905251189-4798adcf397d',
     '1504307651254-4da29b8c3e05',
     ['1585779034826-d38f3753070e', '1473341303090-f831f5eb9320', '1621905251189-4798adcf397d'],
+    '1585779034826-d38f3753070e',
   ),
   'bathroom-repair': imageSet(
     '1552321554-5f848e4830a4',
@@ -185,30 +200,34 @@ const IMAGE_SETS: Record<ServiceKind, ServiceExperienceContent['images']> = {
     '1607472586893-edb1543ab523',
     '1562259949-bd68673abe65',
     ['1552321554-5f848e4830a4', '1600607687939-ce8a6c25118c', '1607472586893-edb1543ab523'],
+    '1552321554-5f848e4830a4',
   ),
   'kitchen-renovation': imageSet(
     '1556912170-ef71bcc7e0f7',
     '1600607687939-ce8a6c25118c',
     '1556912170-ef71bcc7e0f7',
     '1562259949-bd68673abe65',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     ['1556912170-ef71bcc7e0f7', '1600607687939-ce8a6c25118c', '1562259949-bd68673abe65'],
+    '1556912170-ef71bcc7e0f7',
   ),
   'home-renovation': imageSet(
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1600607687939-ce8a6c25118c',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1562259949-bd68673abe65',
     '1556912170-ef71bcc7e0f7',
-    ['1600585154526-5ed7d9d75465', '1600607687939-ce8a6c25118c', '1562259949-bd68673abe65'],
+    ['1503387769248-ac8983c8e028', '1600607687939-ce8a6c25118c', '1562259949-bd68673abe65'],
+    '1503387769248-ac8983c8e028',
   ),
   'general-contractors': imageSet(
     '1503387769248-ac8983c8e028',
     '1504307651254-4da29b8c3e05',
     '1503387769248-ac8983c8e028',
-    '1600585154526-5ed7d9d75465',
+    '1503387769248-ac8983c8e028',
     '1558618666-fcd25c85cd64',
-    ['1503387769248-ac8983c8e028', '1504307651254-4da29b8c3e05', '1600585154526-5ed7d9d75465'],
+    ['1503387769248-ac8983c8e028', '1504307651254-4da29b8c3e05', '1503387769248-ac8983c8e028'],
+    '1503387769248-ac8983c8e028',
   ),
 };
 
@@ -610,6 +629,10 @@ for (const slug of Object.keys(LAGOS_REPAIR_SERVICES) as LagosRepairSlug[]) {
 
 export function getServiceExperienceContent(canonicalPath: string): ServiceExperienceContent | null {
   return REGISTRY.get(canonicalPath) ?? null;
+}
+
+export function getAllServiceExperiencePaths(): string[] {
+  return Array.from(REGISTRY.keys()).sort();
 }
 
 export function getServiceExperienceContentBySlug(slug: string, region: 'lagos' | 'nigeria' = 'nigeria'): ServiceExperienceContent | null {

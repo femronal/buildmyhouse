@@ -38,6 +38,22 @@ function setupScroller(root: HTMLElement, ScrollTrigger: typeof import('gsap/Scr
   });
 }
 
+function mobileEnter(
+  isMobile: boolean,
+  st: (vars: ScrollTriggerVars) => ScrollTriggerVars,
+  vars: ScrollTriggerVars,
+): ScrollTriggerVars {
+  const base = st(vars);
+  if (!isMobile) return base;
+  return {
+    ...base,
+    pin: false,
+    scrub: false,
+    anticipatePin: 0,
+    toggleActions: 'play none none none',
+  };
+}
+
 export function useServiceExperienceAnimations(
   containerRef: RefObject<HTMLElement | null>,
   loaderComplete: boolean,
@@ -67,21 +83,32 @@ export function useServiceExperienceAnimations(
       const { ScrollTrigger } = await import('gsap/ScrollTrigger');
       gsap.registerPlugin(ScrollTrigger);
       gsap.defaults({ ease: 'power3.out' });
+      ScrollTrigger.config({ ignoreMobileResize: true });
 
       const root = containerRef.current;
       if (!root) return;
 
+      const isMobile = window.innerWidth < 768;
       const st = setupScroller(root, ScrollTrigger);
+      const enter = (vars: ScrollTriggerVars) => mobileEnter(isMobile, st, vars);
 
       ctx = gsap.context(() => {
         const loadTl = gsap.timeline({ paused: true });
         loadTl
-          .from(root.querySelector('.bmh-svc-header'), { y: -24, opacity: 0, duration: 0.75 })
-          .from(root.querySelectorAll('.bmh-svc-hero-copy > *'), { y: 28, opacity: 0, stagger: 0.09, duration: 0.8 }, '-=0.35')
-          .from(root.querySelectorAll('.bmh-svc-hero-card'), { y: 90, opacity: 0, scale: 0.94, stagger: 0.08, duration: 1.05 }, '-=0.55')
-          .from(root.querySelector('.bmh-svc-hero-cta'), { scale: 0, opacity: 0, duration: 0.6 }, '-=0.45')
-          .from(root.querySelector('.bmh-svc-hero-wordmark'), { yPercent: 18, opacity: 0, duration: 1 }, '-=0.7')
-          .from(root.querySelector('.bmh-svc-hero-meta'), { y: 24, opacity: 0, duration: 0.75 }, '-=0.65');
+          .from(root.querySelector('.bmh-svc-header'), { y: isMobile ? -12 : -24, opacity: 0, duration: isMobile ? 0.5 : 0.75 })
+          .from(
+            root.querySelectorAll('.bmh-svc-hero-copy > *'),
+            { y: isMobile ? 16 : 28, opacity: 0, stagger: isMobile ? 0.05 : 0.09, duration: isMobile ? 0.55 : 0.8 },
+            '-=0.35',
+          )
+          .from(
+            root.querySelectorAll('.bmh-svc-hero-card'),
+            { y: isMobile ? 40 : 90, opacity: 0, scale: isMobile ? 0.98 : 0.94, stagger: isMobile ? 0.05 : 0.08, duration: isMobile ? 0.65 : 1.05 },
+            '-=0.55',
+          )
+          .from(root.querySelector('.bmh-svc-hero-cta'), { scale: 0, opacity: 0, duration: isMobile ? 0.4 : 0.6 }, '-=0.45')
+          .from(root.querySelector('.bmh-svc-hero-wordmark'), { yPercent: isMobile ? 8 : 18, opacity: 0, duration: isMobile ? 0.65 : 1 }, '-=0.7')
+          .from(root.querySelector('.bmh-svc-hero-meta'), { y: isMobile ? 12 : 24, opacity: 0, duration: isMobile ? 0.5 : 0.75 }, '-=0.65');
 
         if (!loaderComplete) {
           const counter = { v: 0 };
@@ -91,17 +118,17 @@ export function useServiceExperienceAnimations(
               onComplete: () => {
                 onLoaderComplete();
                 loadTl.play();
-                ScrollTrigger.refresh();
+                requestAnimationFrame(() => ScrollTrigger.refresh());
               },
             })
-            .to(root.querySelector('.bmh-svc-loader__brand'), { opacity: 1, y: 0, filter: 'blur(0px)', duration: 0.9, ease: 'power2.out' }, 0)
-            .to(root.querySelector('.bmh-svc-loader__meta'), { opacity: 1, duration: 0.6 }, 0.3)
-            .to(root.querySelector('.bmh-svc-loader__bar'), { scaleX: 1, duration: 1.1, ease: 'power2.inOut' }, 0.2)
+            .to(root.querySelector('.bmh-svc-loader__brand'), { opacity: 1, y: 0, filter: 'blur(0px)', duration: isMobile ? 0.65 : 0.9, ease: 'power2.out' }, 0)
+            .to(root.querySelector('.bmh-svc-loader__meta'), { opacity: 1, duration: isMobile ? 0.45 : 0.6 }, 0.3)
+            .to(root.querySelector('.bmh-svc-loader__bar'), { scaleX: 1, duration: isMobile ? 0.75 : 1.1, ease: 'power2.inOut' }, 0.2)
             .to(
               counter,
               {
                 v: 100,
-                duration: 1.1,
+                duration: isMobile ? 0.75 : 1.1,
                 ease: 'power2.inOut',
                 onUpdate: () => {
                   if (pctEl) pctEl.textContent = String(Math.round(counter.v)).padStart(3, '0');
@@ -109,8 +136,12 @@ export function useServiceExperienceAnimations(
               },
               0.2,
             )
-            .to([root.querySelector('.bmh-svc-loader__brand'), root.querySelector('.bmh-svc-loader__meta')], { opacity: 0, y: -20, filter: 'blur(8px)', duration: 0.5, ease: 'power2.in' }, '+=0.15')
-            .to(root.querySelector('.bmh-svc-loader'), { yPercent: -100, duration: 0.9, ease: 'power4.inOut' }, '<0.1');
+            .to(
+              [root.querySelector('.bmh-svc-loader__brand'), root.querySelector('.bmh-svc-loader__meta')],
+              { opacity: 0, y: -20, filter: 'blur(8px)', duration: isMobile ? 0.35 : 0.5, ease: 'power2.in' },
+              '+=0.15',
+            )
+            .to(root.querySelector('.bmh-svc-loader'), { yPercent: -100, duration: isMobile ? 0.65 : 0.9, ease: 'power4.inOut' }, '<0.1');
         } else {
           loadTl.play();
         }
@@ -119,97 +150,120 @@ export function useServiceExperienceAnimations(
           gsap.to(item, {
             opacity: 1,
             y: 0,
-            duration: 0.9,
-            scrollTrigger: st({
+            duration: isMobile ? 0.55 : 0.9,
+            ease: 'power2.out',
+            scrollTrigger: enter({
               trigger: item,
-              start: 'top 84%',
-              toggleActions: 'play none none reverse',
+              start: isMobile ? 'top 92%' : 'top 84%',
             }),
           });
         });
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-hero-section'),
-            start: 'top top',
-            end: '+=115%',
-            scrub: 1,
-            pin: true,
-            anticipatePin: 1,
-          }),
-        })
-          .to(root.querySelector('.bmh-svc-hero-wordmark'), { yPercent: -50, scale: 1.07, opacity: 0.86, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-copy'), { y: -60, opacity: 0.42, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-meta'), { y: -34, opacity: 0.72, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-stack'), { y: -70, scale: 0.94, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-card:nth-child(1)'), { x: -46, y: 34, rotate: -24, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-card:nth-child(2)'), { x: 42, y: -34, rotate: 20, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-card:nth-child(3)'), { x: 54, y: 22, rotate: 22, duration: 1 }, 0)
-          .to(root.querySelector('.bmh-svc-hero-card:nth-child(4)'), { x: 8, y: 12, rotate: 0, duration: 1 }, 0);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-hero-section'),
+              start: 'top top',
+              end: '+=115%',
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+            }),
+          })
+            .to(root.querySelector('.bmh-svc-hero-wordmark'), { yPercent: -50, scale: 1.07, opacity: 0.86, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-copy'), { y: -60, opacity: 0.42, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-meta'), { y: -34, opacity: 0.72, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-stack'), { y: -70, scale: 0.94, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-card:nth-child(1)'), { x: -46, y: 34, rotate: -24, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-card:nth-child(2)'), { x: 42, y: -34, rotate: 20, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-card:nth-child(3)'), { x: 54, y: 22, rotate: 22, duration: 1 }, 0)
+            .to(root.querySelector('.bmh-svc-hero-card:nth-child(4)'), { x: 8, y: 12, rotate: 0, duration: 1 }, 0);
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-brand-section'),
-            start: 'top top',
-            end: '+=110%',
-            scrub: 1,
-            pin: true,
-            anticipatePin: 1,
-          }),
-        })
-          .fromTo(root.querySelector('.bmh-svc-brand-drift'), { xPercent: 4 }, { xPercent: -22, duration: 1 }, 0)
-          .fromTo(
-            root.querySelectorAll('.bmh-svc-brand-word'),
-            { opacity: 0, y: 80, x: (i: number) => (i % 2 ? -90 : 90) },
-            { opacity: 1, y: 0, x: 0, stagger: 0.08, duration: 0.6 },
-            0.08,
-          )
-          .to(
-            root.querySelectorAll('.bmh-svc-brand-word'),
-            { x: (i: number) => (i % 2 ? -34 : 34), stagger: 0.04, duration: 0.45 },
-            0.64,
-          );
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-brand-section'),
+              start: 'top top',
+              end: '+=110%',
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+            }),
+          })
+            .fromTo(root.querySelector('.bmh-svc-brand-drift'), { xPercent: 4 }, { xPercent: -22, duration: 1 }, 0)
+            .fromTo(
+              root.querySelectorAll('.bmh-svc-brand-word'),
+              { opacity: 0, y: 80, x: (i: number) => (i % 2 ? -90 : 90) },
+              { opacity: 1, y: 0, x: 0, stagger: 0.08, duration: 0.6 },
+              0.08,
+            )
+            .to(
+              root.querySelectorAll('.bmh-svc-brand-word'),
+              { x: (i: number) => (i % 2 ? -34 : 34), stagger: 0.04, duration: 0.45 },
+              0.64,
+            );
+        } else {
+          gsap.from(root.querySelectorAll('.bmh-svc-brand-word'), {
+            opacity: 0,
+            y: 28,
+            stagger: 0.05,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-brand-section'),
+              start: 'top 82%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-services-section'),
-            start: 'top 65%',
-            end: 'bottom 30%',
-            scrub: 1,
-          }),
-        })
-          .from(root.querySelector('.bmh-svc-services-copy'), { y: 90, opacity: 0, duration: 0.35 })
-          .from(root.querySelectorAll('.bmh-svc-pillar-card'), { y: 42, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.16)
-          .to(root.querySelector('.bmh-svc-strip-image'), { xPercent: -14, scale: 1.22, duration: 0.8 }, 0);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-services-section'),
+              start: 'top 65%',
+              end: 'bottom 30%',
+              scrub: 1,
+            }),
+          })
+            .from(root.querySelector('.bmh-svc-services-copy'), { y: 90, opacity: 0, duration: 0.35 })
+            .from(root.querySelectorAll('.bmh-svc-pillar-card'), { y: 42, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.16)
+            .to(root.querySelector('.bmh-svc-strip-image'), { xPercent: -14, scale: 1.22, duration: 0.8 }, 0);
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-services-copy'), {
+            y: 24,
+            opacity: 0,
+            duration: 0.5,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-services-section'),
+              start: 'top 82%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-pillar-card'), {
+            y: 20,
+            opacity: 0,
+            stagger: 0.06,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-services-section'),
+              start: 'top 78%',
+            }),
+          });
+        }
 
-        gsap.utils.toArray<Element>(root.querySelectorAll('.bmh-svc-parallax-image')).forEach((item) => {
-          const isFast = item.classList.contains('bmh-svc-parallax-fast');
-          const section = item.closest('section');
-          if (!section) return;
+        if (!isMobile) {
+          gsap.utils.toArray<Element>(root.querySelectorAll('.bmh-svc-parallax-image')).forEach((item) => {
+            const isFast = item.classList.contains('bmh-svc-parallax-fast');
+            const section = item.closest('section');
+            if (!section) return;
 
-          gsap.fromTo(
-            item,
-            { y: isFast ? 90 : 50 },
-            {
-              y: isFast ? -120 : -70,
-              ease: 'none',
-              scrollTrigger: st({
-                trigger: section,
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: true,
-              }),
-            },
-          );
-
-          const img = item.querySelector('img');
-          if (img) {
             gsap.fromTo(
-              img,
-              { scale: 1.18, yPercent: isFast ? -8 : -5 },
+              item,
+              { y: isFast ? 90 : 50 },
               {
-                scale: 1.04,
-                yPercent: isFast ? 8 : 5,
+                y: isFast ? -120 : -70,
                 ease: 'none',
                 scrollTrigger: st({
                   trigger: section,
@@ -219,156 +273,327 @@ export function useServiceExperienceAnimations(
                 }),
               },
             );
-          }
-        });
+
+            const img = item.querySelector('img');
+            if (img) {
+              gsap.fromTo(
+                img,
+                { scale: 1.18, yPercent: isFast ? -8 : -5 },
+                {
+                  scale: 1.04,
+                  yPercent: isFast ? 8 : 5,
+                  ease: 'none',
+                  scrollTrigger: st({
+                    trigger: section,
+                    start: 'top bottom',
+                    end: 'bottom top',
+                    scrub: true,
+                  }),
+                },
+              );
+            }
+          });
+        }
 
         gsap.from(root.querySelectorAll('.bmh-svc-stat-card'), {
-          y: 52,
+          y: isMobile ? 24 : 52,
           opacity: 0,
-          stagger: 0.08,
-          duration: 0.8,
-          scrollTrigger: st({
+          stagger: isMobile ? 0.05 : 0.08,
+          duration: isMobile ? 0.45 : 0.8,
+          ease: 'power2.out',
+          scrollTrigger: enter({
             trigger: root.querySelector('.bmh-svc-stats-section'),
-            start: 'top 58%',
-            toggleActions: 'play none none reverse',
+            start: isMobile ? 'top 85%' : 'top 58%',
           }),
         });
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-archive-section'),
-            start: 'top 75%',
-            end: 'bottom 20%',
-            scrub: 1,
-          }),
-        })
-          .from(root.querySelector('.bmh-svc-archive-title'), { y: 80, opacity: 0, duration: 0.45 }, 0)
-          .from(
-            root.querySelectorAll('.bmh-svc-archive-card'),
-            {
-              y: 100,
-              opacity: 0,
-              rotate: (i: number) => [-3, 2, -2, 3, -1][i] ?? 0,
-              stagger: 0.08,
-              duration: 0.65,
-            },
-            0.12,
-          )
-          .to(root.querySelector('.bmh-svc-archive-gallery'), { xPercent: -18, duration: 1 }, 0.25)
-          .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-archive-section'),
+              start: 'top 75%',
+              end: 'bottom 20%',
+              scrub: 1,
+            }),
+          })
+            .from(root.querySelector('.bmh-svc-archive-title'), { y: 80, opacity: 0, duration: 0.45 }, 0)
+            .from(
+              root.querySelectorAll('.bmh-svc-archive-card'),
+              {
+                y: 100,
+                opacity: 0,
+                rotate: (i: number) => [-3, 2, -2, 3, -1][i] ?? 0,
+                stagger: 0.08,
+                duration: 0.65,
+              },
+              0.12,
+            )
+            .to(root.querySelector('.bmh-svc-archive-gallery'), { xPercent: -18, duration: 1 }, 0.25)
+            .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-archive-title'), {
+            y: 20,
+            opacity: 0,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-archive-section'),
+              start: 'top 85%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-archive-card'), {
+            y: 16,
+            opacity: 0,
+            stagger: 0.05,
+            duration: 0.4,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-archive-section'),
+              start: 'top 80%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-work-section'),
-            start: 'top top',
-            end: '+=120%',
-            scrub: 1,
-            pin: true,
-            anticipatePin: 1,
-          }),
-        })
-          .from(root.querySelector('.bmh-svc-work-copy'), { x: -80, opacity: 0, duration: 0.4 }, 0)
-          .fromTo(
-            root.querySelector('.bmh-svc-masked-number'),
-            { scale: 0.82, y: 80, backgroundPosition: '50% 28%' },
-            { scale: 1.1, y: -50, backgroundPosition: '50% 74%', duration: 1 },
-            0,
-          )
-          .from(root.querySelectorAll('.bmh-svc-project-card'), { y: 80, opacity: 0, rotate: 0, stagger: 0.1, duration: 0.4 }, 0.15)
-          .to(root.querySelectorAll('.bmh-svc-project-card'), { y: -40, x: (i: number) => (i ? 42 : -34), duration: 0.8 }, 0.45);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-work-section'),
+              start: 'top top',
+              end: '+=120%',
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+            }),
+          })
+            .from(root.querySelector('.bmh-svc-work-copy'), { x: -80, opacity: 0, duration: 0.4 }, 0)
+            .fromTo(
+              root.querySelector('.bmh-svc-masked-number'),
+              { scale: 0.82, y: 80, backgroundPosition: '50% 28%' },
+              { scale: 1.1, y: -50, backgroundPosition: '50% 74%', duration: 1 },
+              0,
+            )
+            .from(root.querySelectorAll('.bmh-svc-project-card'), { y: 80, opacity: 0, rotate: 0, stagger: 0.1, duration: 0.4 }, 0.15)
+            .to(root.querySelectorAll('.bmh-svc-project-card'), { y: -40, x: (i: number) => (i ? 42 : -34), duration: 0.8 }, 0.45);
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-work-copy'), {
+            y: 20,
+            opacity: 0,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-work-section'),
+              start: 'top 85%',
+            }),
+          });
+          gsap.from(root.querySelector('.bmh-svc-masked-number'), {
+            scale: 0.94,
+            y: 24,
+            duration: 0.55,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-work-section'),
+              start: 'top 78%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-field-notes-section'),
-            start: 'top 72%',
-            end: 'bottom 28%',
-            scrub: 1,
-          }),
-        })
-          .fromTo(
-            root.querySelector('.bmh-svc-partners-heading'),
-            { yPercent: 10, opacity: 0.06 },
-            { yPercent: -16, opacity: 0.12, duration: 1 },
-            0,
-          )
-          .from(root.querySelector('.bmh-svc-field-notes-section .bmh-svc-section-label'), { y: 24, opacity: 0, duration: 0.35 }, 0.08)
-          .from(root.querySelector('.bmh-svc-field-notes-heading'), { y: 70, opacity: 0, duration: 0.55 }, 0.12)
-          .from(
-            root.querySelectorAll('.bmh-svc-note-card'),
-            {
-              y: 100,
-              opacity: 0,
-              rotate: (i: number) => [-2, 2, -1, 1, -2][i] ?? 0,
-              stagger: 0.08,
-              duration: 0.7,
-            },
-            0.2,
-          )
-          .to(
-            root.querySelectorAll('.bmh-svc-note-card'),
-            {
-              y: (i: number) => [-24, 18, -12, 14, -18][i] ?? 0,
-              stagger: 0.04,
-              duration: 0.55,
-            },
-            0.62,
-          );
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-field-notes-section'),
+              start: 'top 72%',
+              end: 'bottom 28%',
+              scrub: 1,
+            }),
+          })
+            .fromTo(
+              root.querySelector('.bmh-svc-partners-heading'),
+              { yPercent: 10, opacity: 0.06 },
+              { yPercent: -16, opacity: 0.12, duration: 1 },
+              0,
+            )
+            .from(root.querySelector('.bmh-svc-field-notes-section .bmh-svc-section-label'), { y: 24, opacity: 0, duration: 0.35 }, 0.08)
+            .from(root.querySelector('.bmh-svc-field-notes-heading'), { y: 70, opacity: 0, duration: 0.55 }, 0.12)
+            .from(
+              root.querySelectorAll('.bmh-svc-note-card'),
+              {
+                y: 100,
+                opacity: 0,
+                rotate: (i: number) => [-2, 2, -1, 1, -2][i] ?? 0,
+                stagger: 0.08,
+                duration: 0.7,
+              },
+              0.2,
+            )
+            .to(
+              root.querySelectorAll('.bmh-svc-note-card'),
+              {
+                y: (i: number) => [-24, 18, -12, 14, -18][i] ?? 0,
+                stagger: 0.04,
+                duration: 0.55,
+              },
+              0.62,
+            );
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-field-notes-heading'), {
+            y: 24,
+            opacity: 0,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-field-notes-section'),
+              start: 'top 85%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-note-card'), {
+            y: 20,
+            opacity: 0,
+            stagger: 0.05,
+            duration: 0.4,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-field-notes-section'),
+              start: 'top 80%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-process-section'),
-            start: 'top 60%',
-            end: 'bottom 40%',
-            scrub: 1,
-          }),
-        })
-          .to(root.querySelectorAll('.bmh-svc-timeline-bar'), { scaleX: 1, stagger: 0.12, duration: 0.6 }, 0)
-          .from(root.querySelectorAll('.bmh-svc-process-col'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.25);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-process-section'),
+              start: 'top 60%',
+              end: 'bottom 40%',
+              scrub: 1,
+            }),
+          })
+            .to(root.querySelectorAll('.bmh-svc-timeline-bar'), { scaleX: 1, stagger: 0.12, duration: 0.6 }, 0)
+            .from(root.querySelectorAll('.bmh-svc-process-col'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.25);
+        } else {
+          gsap.to(root.querySelectorAll('.bmh-svc-timeline-bar'), {
+            scaleX: 1,
+            stagger: 0.08,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-process-section'),
+              start: 'top 85%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-process-col'), {
+            y: 20,
+            opacity: 0,
+            stagger: 0.06,
+            duration: 0.4,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-process-section'),
+              start: 'top 80%',
+            }),
+          });
+        }
 
-        const isMobile = window.innerWidth < 768;
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-pricing-section'),
+              start: 'top top',
+              end: '+=80%',
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+            }),
+          })
+            .from(root.querySelector('.bmh-svc-pricing-copy'), { y: 50, opacity: 0, duration: 0.35 }, 0)
+            .from(root.querySelectorAll('.bmh-svc-pricing-card'), { x: 110, opacity: 0, stagger: 0.16, duration: 0.55 }, 0.12);
+        } else {
+          gsap.from(root.querySelector('.bmh-svc-pricing-copy'), {
+            y: 20,
+            opacity: 0,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-pricing-section'),
+              start: 'top 88%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-pricing-card'), {
+            y: 20,
+            opacity: 0,
+            stagger: 0.08,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-pricing-section'),
+              start: 'top 82%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-pricing-section'),
-            start: 'top top',
-            end: isMobile ? 'bottom bottom' : '+=80%',
-            scrub: isMobile ? false : 1,
-            pin: !isMobile,
-            anticipatePin: 1,
-          }),
-        })
-          .from(root.querySelector('.bmh-svc-pricing-copy'), { y: isMobile ? 24 : 50, opacity: 0, duration: 0.35 }, 0)
-          .from(
-            root.querySelectorAll('.bmh-svc-pricing-card'),
-            { x: isMobile ? 0 : 110, y: isMobile ? 28 : 0, opacity: 0, stagger: 0.16, duration: 0.55 },
-            0.12,
-          );
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-reviews-section'),
+              start: 'top 72%',
+              end: 'bottom 28%',
+              scrub: 1,
+            }),
+          }).from(root.querySelectorAll('.bmh-svc-review-card'), {
+            y: 100,
+            opacity: 0,
+            rotate: (i: number) => [-2, 2, -1][i] ?? 0,
+            stagger: 0.08,
+            duration: 0.7,
+          });
+        } else {
+          gsap.from(root.querySelectorAll('.bmh-svc-review-card'), {
+            y: 20,
+            opacity: 0,
+            stagger: 0.06,
+            duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-reviews-section'),
+              start: 'top 85%',
+            }),
+          });
+        }
 
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-reviews-section'),
-            start: 'top 72%',
-            end: 'bottom 28%',
-            scrub: 1,
-          }),
-        }).from(root.querySelectorAll('.bmh-svc-review-card'), {
-          y: 100,
-          opacity: 0,
-          rotate: (i: number) => [-2, 2, -1][i] ?? 0,
-          stagger: 0.08,
-          duration: 0.7,
-        });
-
-        gsap.timeline({
-          scrollTrigger: st({
-            trigger: root.querySelector('.bmh-svc-contact-section'),
-            start: 'top 62%',
-            end: 'bottom 34%',
-            scrub: 1,
-          }),
-        })
-          .from(root.querySelectorAll('.bmh-svc-contact-form > *'), { y: 36, opacity: 0, stagger: 0.07, duration: 0.45 }, 0)
-          .from(root.querySelectorAll('.bmh-svc-faq-row'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.12);
+        if (!isMobile) {
+          gsap.timeline({
+            scrollTrigger: st({
+              trigger: root.querySelector('.bmh-svc-contact-section'),
+              start: 'top 62%',
+              end: 'bottom 34%',
+              scrub: 1,
+            }),
+          })
+            .from(root.querySelectorAll('.bmh-svc-contact-form > *'), { y: 36, opacity: 0, stagger: 0.07, duration: 0.45 }, 0)
+            .from(root.querySelectorAll('.bmh-svc-faq-row'), { y: 38, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.12);
+        } else {
+          gsap.from(root.querySelectorAll('.bmh-svc-contact-form > *'), {
+            y: 16,
+            opacity: 0,
+            stagger: 0.05,
+            duration: 0.4,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-contact-section'),
+              start: 'top 88%',
+            }),
+          });
+          gsap.from(root.querySelectorAll('.bmh-svc-faq-row'), {
+            y: 16,
+            opacity: 0,
+            stagger: 0.05,
+            duration: 0.4,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-contact-section'),
+              start: 'top 82%',
+            }),
+          });
+        }
 
         if (!isMobile) {
           gsap.timeline({
@@ -390,18 +615,19 @@ export function useServiceExperienceAnimations(
             .from(root.querySelectorAll('.bmh-svc-footer-links a'), { y: 18, opacity: 0, stagger: 0.04, duration: 0.3 }, 0.45);
         } else {
           gsap.from(root.querySelector('.bmh-svc-footer-mobile'), {
-            scrollTrigger: st({
-              trigger: root.querySelector('.bmh-svc-footer-section'),
-              start: 'top 85%',
-            }),
-            y: 28,
+            y: 16,
             opacity: 0,
             duration: 0.45,
+            ease: 'power2.out',
+            scrollTrigger: enter({
+              trigger: root.querySelector('.bmh-svc-footer-section'),
+              start: 'top 90%',
+            }),
           });
         }
       }, root);
 
-      ScrollTrigger.refresh();
+      requestAnimationFrame(() => ScrollTrigger.refresh());
     })();
 
     return () => ctx?.revert();

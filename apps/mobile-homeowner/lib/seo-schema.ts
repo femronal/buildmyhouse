@@ -1,5 +1,7 @@
 type FaqItem = { question: string; answer: string };
 type BreadcrumbItem = { name: string; path: string };
+type ReviewItem = { quote: string; name: string; detail: string };
+type ProcessStepItem = { label: string; title: string; body: string };
 type PageSchemaType = 'Article' | 'Service' | 'HowTo' | 'SoftwareApplication';
 
 const WEB = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -50,6 +52,7 @@ function typedPrimaryNode(
   canonicalUrl: string,
   title: string,
   description: string,
+  image?: string,
 ) {
   const base = {
     '@type': type,
@@ -61,6 +64,7 @@ function typedPrimaryNode(
     mainEntityOfPage: { '@id': `${canonicalUrl}#webpage` },
     provider: { '@id': `${WEB}/#organization` },
     publisher: { '@id': `${WEB}/#organization` },
+    ...(image ? { image: [image] } : {}),
   };
 
   if (type === 'SoftwareApplication') {
@@ -74,12 +78,24 @@ function typedPrimaryNode(
   if (type === 'Service') {
     return {
       ...base,
-      areaServed: {
-        '@type': 'City',
-        name: 'Lagos',
-        containedInPlace: { '@type': 'Country', name: 'Nigeria' },
-      },
+      areaServed: [
+        {
+          '@type': 'City',
+          name: 'Lagos',
+          containedInPlace: { '@type': 'Country', name: 'Nigeria' },
+        },
+        { '@type': 'Country', name: 'Nigeria' },
+      ],
       serviceType: title,
+      category: title,
+      offers: {
+        '@type': 'Offer',
+        url: `${WEB}/start-repair`,
+        availability: 'https://schema.org/InStock',
+        price: '0',
+        priceCurrency: 'NGN',
+        description: 'Free intake to match verified repairers with staged evidence before payment.',
+      },
     };
   }
 
@@ -127,6 +143,34 @@ export function buildVideoObjectNode(params: {
   };
 }
 
+function reviewNodes(canonicalUrl: string, reviews: ReviewItem[]) {
+  return reviews.map((review, index) => ({
+    '@type': 'Review',
+    '@id': `${canonicalUrl}#review-${index + 1}`,
+    reviewBody: review.quote,
+    author: {
+      '@type': 'Person',
+      name: review.name,
+    },
+    itemReviewed: { '@id': `${canonicalUrl}#primary` },
+  }));
+}
+
+function howToNode(canonicalUrl: string, steps: ProcessStepItem[]) {
+  return {
+    '@type': 'HowTo',
+    '@id': `${canonicalUrl}#howto`,
+    name: 'BuildMyHouse tracked repair workflow',
+    description: 'How homeowners start a verified repair with evidence before payment on BuildMyHouse.',
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.title,
+      text: step.body,
+    })),
+  };
+}
+
 export function buildSeoJsonLd(params: {
   path: string;
   title: string;
@@ -134,6 +178,9 @@ export function buildSeoJsonLd(params: {
   schemaType: PageSchemaType;
   faqs?: FaqItem[];
   breadcrumbs?: BreadcrumbItem[];
+  image?: string;
+  reviews?: ReviewItem[];
+  processSteps?: ProcessStepItem[];
 }) {
   const canonicalUrl = buildCanonical(params.path);
   const graph: Record<string, unknown>[] = [
@@ -146,8 +193,9 @@ export function buildSeoJsonLd(params: {
       description: params.description,
       isPartOf: { '@id': `${WEB}/#organization` },
       about: { '@id': `${canonicalUrl}#primary` },
+      ...(params.image ? { primaryImageOfPage: { '@type': 'ImageObject', url: params.image } } : {}),
     },
-    typedPrimaryNode(params.schemaType, canonicalUrl, params.title, params.description),
+    typedPrimaryNode(params.schemaType, canonicalUrl, params.title, params.description, params.image),
   ];
 
   if (params.faqs?.length) {
@@ -156,6 +204,14 @@ export function buildSeoJsonLd(params: {
 
   if (params.breadcrumbs?.length) {
     graph.push(breadcrumbNode(canonicalUrl, params.breadcrumbs));
+  }
+
+  if (params.reviews?.length) {
+    graph.push(...reviewNodes(canonicalUrl, params.reviews));
+  }
+
+  if (params.processSteps?.length) {
+    graph.push(howToNode(canonicalUrl, params.processSteps));
   }
 
   return graph;

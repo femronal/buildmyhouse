@@ -1169,6 +1169,7 @@ html.bmh-svc-active body {
 }
 
 .bmh-svc-hero-lead {
+  margin: 0;
   font-size: 21px;
   line-height: 1.45;
   letter-spacing: -0.045em;
@@ -1294,7 +1295,63 @@ html.bmh-svc-active body {
   will-change: transform;
 }
 
-.bmh-svc-strip-image,
+.bmh-svc-strip-image {
+  will-change: transform;
+  transform: scale(1.08);
+}
+
+.bmh-svc-review-card {
+  color: #f3f0e8;
+}
+
+.bmh-svc-review-card--featured {
+  color: #f3f0e8;
+}
+
+@media (min-width: 768px) {
+  .bmh-svc-review-card--featured {
+    background: #f3f0e8 !important;
+    color: #060706;
+  }
+}
+
+.bmh-svc-archive-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.bmh-svc-archive-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .bmh-svc-archive-section {
+    overflow: visible;
+  }
+
+  .bmh-svc-archive-gallery {
+    width: max-content;
+    padding-right: 1.25rem;
+    transform: none !important;
+  }
+
+  .bmh-svc-archive-card {
+    scroll-snap-align: start;
+    margin-top: 0 !important;
+    transform: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .bmh-svc-archive-scroll {
+    overflow: visible;
+  }
+}
+
 .bmh-svc-archive-card img {
   will-change: transform;
   transform: scale(1.08);
@@ -1306,14 +1363,19 @@ html.bmh-svc-active body {
 }
 
 .bmh-svc-masked-number {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
   color: transparent;
-  background-image: var(--number-image);
+  -webkit-text-fill-color: transparent;
+  background-repeat: no-repeat;
   background-position: 50% 50%;
-  background-size: 118%;
+  background-size: cover;
   -webkit-background-clip: text;
   background-clip: text;
-  filter: saturate(0.82) brightness(1.06);
+  filter: saturate(0.92) brightness(1.04);
   will-change: transform, background-position;
+  letter-spacing: -0.06em;
 }
 
 .bmh-svc-project-card {
@@ -1420,6 +1482,25 @@ html.bmh-svc-active body {
 }
 
 @media (max-width: 767px) {
+  .bmh-svc-page {
+    overscroll-behavior-y: contain;
+  }
+
+  .bmh-svc-hero-card,
+  .bmh-svc-pillar-card,
+  .bmh-svc-pricing-card,
+  .bmh-svc-note-card,
+  .bmh-svc-archive-card,
+  .bmh-svc-parallax-image,
+  .bmh-svc-parallax-image img,
+  .bmh-svc-strip-image,
+  .bmh-svc-masked-number,
+  .bmh-svc-project-card,
+  .bmh-svc-reveal,
+  .bmh-svc-page [data-reveal] {
+    will-change: auto;
+  }
+
   .bmh-svc-page-rail {
     display: none;
   }
@@ -1560,7 +1641,14 @@ html.bmh-svc-active body {
   }
   .bmh-svc-reveal,
   .bmh-svc-page [data-reveal],
-  .bmh-svc-timeline-bar {
+  .bmh-svc-timeline-bar,
+  .bmh-svc-masked-number,
+  .bmh-svc-hero-card,
+  .bmh-svc-pillar-card,
+  .bmh-svc-pricing-card,
+  .bmh-svc-note-card,
+  .bmh-svc-archive-card,
+  .bmh-svc-review-card {
     opacity: 1 !important;
     transform: none !important;
   }

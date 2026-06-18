@@ -2,8 +2,9 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'expo-router';
 import { ArrowRight, CheckCircle } from 'phosphor-react-native';
 import type { ServiceExperienceContent } from '@/lib/service-experience-content';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
+import { buildServiceExperienceJsonLd } from '@/lib/service-experience-seo';
 import { useWebSeo } from '@/lib/seo';
+import ServiceExperienceSeoHead from '@/components/service-experience/ServiceExperienceSeoHead';
 import { useServiceExperienceAnimations } from '@/components/service-experience/useServiceExperienceAnimations.web';
 
 type ServiceExperiencePageProps = {
@@ -75,21 +76,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
   const containerRef = useRef<HTMLDivElement>(null);
   const [loaderComplete, setLoaderComplete] = useState(false);
 
-  const jsonLd = useMemo(
-    () =>
-      buildSeoJsonLd({
-        path: content.canonicalPath,
-        title: content.metaTitle,
-        description: content.summary,
-        schemaType: 'Service',
-        faqs: [...content.faqs],
-        breadcrumbs: [
-          { name: 'Home', path: '/' },
-          { name: content.headline, path: content.canonicalPath },
-        ],
-      }),
-    [content],
-  );
+  const jsonLd = useMemo(() => buildServiceExperienceJsonLd(content), [content]);
 
   useWebSeo({
     title: content.metaTitle,
@@ -97,6 +84,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
     canonicalPath: content.canonicalPath,
     robots: 'index,follow',
     jsonLd,
+    ogImage: content.images.heroMain,
   });
 
   useServiceExperienceAnimations(containerRef, loaderComplete, () => setLoaderComplete(true));
@@ -123,6 +111,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
 
   return (
     <div ref={containerRef} className="bmh-svc-page" style={pageShellStyle}>
+      <ServiceExperienceSeoHead content={content} jsonLd={jsonLd} />
       <div className="bmh-svc-noise" aria-hidden="true" />
       <div className="bmh-svc-grid-veil" aria-hidden="true" />
       <div className="bmh-svc-page-rail" aria-hidden="true">
@@ -168,7 +157,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             <p className="bmh-svc-section-label mb-8">
               Verified {content.headline} · {content.locationLabel}
             </p>
-            <p className="bmh-svc-hero-lead">{content.heroLead}</p>
+            <h1 className="bmh-svc-hero-lead">{content.heroLead}</h1>
             <div className="mt-10 flex flex-wrap gap-3">
               <CtaLink href={content.primaryCta.href} label={content.primaryCta.label} primary />
               <CtaLink href={content.secondaryCta.href} label={content.secondaryCta.label} />
@@ -214,9 +203,9 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             </Link>
           </div>
 
-          <h1 className="bmh-svc-hero-wordmark pointer-events-none absolute -bottom-5 left-2 z-0 select-none text-[18vw] font-black leading-none md:-bottom-12 lg:left-6 lg:text-[16vw]">
+          <div className="bmh-svc-hero-wordmark pointer-events-none absolute -bottom-5 left-2 z-0 select-none text-[18vw] font-black leading-none md:-bottom-12 lg:left-6 lg:text-[16vw]" aria-hidden="true">
             {content.headline}
-          </h1>
+          </div>
 
           <div className="bmh-svc-hero-meta bmh-svc-glass absolute bottom-10 right-5 z-20 hidden w-[270px] rounded-[24px] p-6 md:right-8 lg:block">
             <div className="mb-6 text-2xl" style={{ color: green }}>
@@ -346,7 +335,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </section>
 
         {/* FIELD ARCHIVE */}
-        <section className="bmh-svc-archive-section relative overflow-hidden px-5 py-24 md:px-8 lg:px-12">
+        <section className="bmh-svc-archive-section relative overflow-visible md:overflow-hidden px-5 py-24 md:px-8 lg:px-12">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-12">
             <div className="md:col-span-3">
               <p className="bmh-svc-section-label">Field Archive</p>
@@ -360,18 +349,20 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
               </h2>
             </div>
           </div>
-          <div className="bmh-svc-archive-gallery mt-20 flex gap-5 will-change-transform">
-            {archiveImages.slice(0, 5).map((src, index) => (
-              <figure
-                key={src + index}
-                className={`bmh-svc-archive-card shrink-0 overflow-hidden rounded-[34px] border bg-[#101310] ${
-                  index % 2 === 1 ? 'mt-20 h-[360px] w-[300px] md:h-[460px] md:w-[360px]' : 'h-[420px] w-[320px] md:h-[560px] md:w-[420px]'
-                } ${index === 3 ? 'mt-28' : ''}`}
-                style={{ borderColor: 'rgba(243,240,232,.1)' }}
-              >
-                <img src={src} alt="" className="h-full w-full object-cover opacity-75" />
-              </figure>
-            ))}
+          <div className="bmh-svc-archive-scroll mt-20 -mx-5 px-5 md:mx-0 md:px-0">
+            <div className="bmh-svc-archive-gallery flex gap-5 will-change-transform">
+              {archiveImages.slice(0, 5).map((src, index) => (
+                <figure
+                  key={src + index}
+                  className={`bmh-svc-archive-card shrink-0 overflow-hidden rounded-[34px] border bg-[#101310] h-[360px] w-[78vw] md:h-[560px] md:w-[420px] ${
+                    index % 2 === 1 ? 'md:mt-20 md:h-[460px] md:w-[360px]' : ''
+                  } ${index === 3 ? 'md:mt-28' : ''}`}
+                  style={{ borderColor: 'rgba(243,240,232,.1)' }}
+                >
+                  <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                </figure>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -391,22 +382,25 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
               </Link>
             </div>
             <div className="relative md:col-span-7 md:col-start-4">
-              <div className="relative flex min-h-[520px] items-center justify-center">
+              <div className="relative flex min-h-[420px] items-center justify-center md:min-h-[520px]">
                 <span
-                  className="bmh-svc-masked-number text-[13rem] font-black leading-none tracking-tight md:text-[24rem] lg:text-[29rem]"
-                  style={{ '--number-image': `url('${content.images.heroMain}')` } as CSSProperties}
+                  className="bmh-svc-masked-number text-[11rem] font-black leading-none tracking-tight sm:text-[13rem] md:text-[24rem] lg:text-[29rem]"
+                  style={{ backgroundImage: `url("${content.images.workMask}")` }}
+                  aria-label="04 tracked stages"
                 >
                   04
                 </span>
                 <img
                   src={content.images.heroAccent}
                   alt=""
+                  loading="lazy"
                   className="bmh-svc-project-card absolute left-0 top-14 hidden h-44 w-72 rotate-[-14deg] rounded-[18px] border object-cover md:block"
                   style={{ borderColor: 'rgba(243,240,232,.1)' }}
                 />
                 <img
                   src={content.images.heroMain}
                   alt=""
+                  loading="lazy"
                   className="bmh-svc-project-card absolute right-4 top-6 hidden h-44 w-72 rotate-[10deg] rounded-[18px] border object-cover md:block"
                   style={{ borderColor: 'rgba(243,240,232,.1)' }}
                 />
@@ -609,7 +603,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
               <article
                 key={review.name + index}
                 className={`bmh-svc-review-card bmh-svc-glass rounded-[32px] p-8 ${
-                  index === 0 ? 'md:col-span-5 bg-[#f3f0e8] text-[#060706]' : 'md:col-span-4'
+                  index === 0 ? 'bmh-svc-review-card--featured md:col-span-5' : 'md:col-span-4'
                 }`}
               >
                 <p className="text-lg leading-relaxed font-medium">&ldquo;{review.quote}&rdquo;</p>

@@ -271,6 +271,16 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (normalized.startsWith('/services/')) {
+    return {
+      title: 'Verified Repair Services in Nigeria | BuildMyHouse',
+      description:
+        'Find verified repairers in Lagos and Nigeria for plumbing, electrical, roof leaks, drainage, painting, and property maintenance with staged evidence before payment.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
   if (normalized === '/articles' || normalized.startsWith('/articles/')) {
     return {
       title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',
