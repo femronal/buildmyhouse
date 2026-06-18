@@ -1183,6 +1183,25 @@ html.bmh-svc-active body {
   white-space: nowrap;
 }
 
+@media (max-width: 767px) {
+  .bmh-svc-hero-section {
+    isolation: isolate;
+  }
+
+  .bmh-svc-hero-wordmark {
+    opacity: 0.38;
+    letter-spacing: -0.065em;
+    max-height: 4.25rem;
+    mask-image: linear-gradient(180deg, transparent 0%, #000 32%, #000 100%);
+  }
+
+  .bmh-svc-brand-drift {
+    top: 0 !important;
+    font-size: clamp(3rem, 18vw, 4.5rem) !important;
+    opacity: 0.06 !important;
+  }
+}
+
 .bmh-svc-logo-link {
   font-size: 1.125rem;
   font-weight: 700;
@@ -1503,9 +1522,6 @@ html.bmh-svc-active body {
 
   .bmh-svc-page-rail {
     display: none;
-  }
-  .bmh-svc-hero-wordmark {
-    letter-spacing: -0.065em;
   }
 
   .bmh-svc-cta-text-short {

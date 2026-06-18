@@ -152,8 +152,8 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
 
       <main className="bmh-svc-main">
         {/* HERO */}
-        <section className="bmh-svc-hero-section relative flex min-h-screen items-center overflow-hidden px-5 py-24 md:px-8 lg:px-12">
-          <div className="bmh-svc-hero-copy relative z-20 max-w-[420px]">
+        <section className="bmh-svc-hero-section relative flex min-h-[100svh] flex-col gap-6 overflow-hidden px-5 pb-8 pt-28 md:min-h-screen md:flex-row md:items-center md:justify-normal md:gap-0 md:py-24 md:px-8 lg:px-12">
+          <div className="bmh-svc-hero-copy relative z-20 w-full max-w-[420px] shrink-0 md:max-w-[420px]">
             <p className="bmh-svc-section-label mb-8">
               Verified {content.headline} · {content.locationLabel}
             </p>
@@ -167,7 +167,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             </p>
           </div>
 
-          <div className="bmh-svc-hero-stack absolute left-1/2 top-[48%] z-10 h-[430px] w-[310px] -translate-x-1/2 -translate-y-1/2 md:h-[560px] md:w-[430px] lg:h-[620px] lg:w-[480px]">
+          <div className="bmh-svc-hero-stack relative z-10 mx-auto h-[250px] w-[210px] shrink-0 sm:h-[290px] sm:w-[240px] md:absolute md:left-1/2 md:top-[48%] md:mx-0 md:h-[560px] md:w-[430px] md:-translate-x-1/2 md:-translate-y-1/2 lg:h-[620px] lg:w-[480px]">
             <div
               className="bmh-svc-hero-card absolute inset-0 -translate-x-20 translate-y-12 -rotate-[17deg] rounded-[20px]"
               style={{ background: '#151713' }}
@@ -203,7 +203,10 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             </Link>
           </div>
 
-          <div className="bmh-svc-hero-wordmark pointer-events-none absolute -bottom-5 left-2 z-0 select-none text-[18vw] font-black leading-none md:-bottom-12 lg:left-6 lg:text-[16vw]" aria-hidden="true">
+          <div
+            className="bmh-svc-hero-wordmark pointer-events-none relative z-0 mt-auto w-full shrink-0 select-none overflow-hidden pt-2 text-[clamp(3rem,14vw,4.25rem)] font-black leading-[0.88] tracking-[-0.07em] md:absolute md:-bottom-12 md:left-6 md:mt-0 md:w-auto md:pt-0 md:text-[16vw] md:leading-none lg:text-[16vw]"
+            aria-hidden="true"
+          >
             {content.headline}
           </div>
 
