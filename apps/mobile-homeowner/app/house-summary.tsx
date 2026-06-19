@@ -16,6 +16,7 @@ import PaymentModal from '@/components/PaymentModal';
 import { getBackendAssetUrl } from '@/lib/image';
 import { api } from '@/lib/api';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
+import { trackRedditProjectRequestSubmitted } from '@/lib/analytics';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -592,6 +593,8 @@ export default function HouseSummaryScreen() {
         projectId,
         contractorIds: Array.from(selectedGCs),
       });
+
+      trackRedditProjectRequestSubmitted(projectId, { flow: 'gc_selection' });
 
       // Don't set status here - let the polling check determine it
       // Wait a moment for backend to save the request, then invalidate and poll
@@ -2038,6 +2041,8 @@ export default function HouseSummaryScreen() {
 
                   // Create project from design and send request to GC
                   const project = await createProjectFromDesignMutation.mutateAsync(projectData);
+
+                  trackRedditProjectRequestSubmitted(project.id, { flow: 'design' });
 
                   // Set project ID and status to pending
                   setProjectId(project.id);

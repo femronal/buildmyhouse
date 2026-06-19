@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
+import { injectRedditPixel } from '@/lib/analytics';
 import { isStaticIndexablePath } from '@/lib/seo-indexable-routes';
 
 type RobotsValue = 'index,follow' | 'noindex,nofollow' | 'noindex,follow';
@@ -147,6 +148,7 @@ export function useWebSeo(options: SeoOptions) {
     }
 
     injectAnalytics(process.env.EXPO_PUBLIC_GA_MEASUREMENT_ID);
+    injectRedditPixel(process.env.EXPO_PUBLIC_REDDIT_PIXEL_ID);
   }, [
     options.title,
     options.description,
