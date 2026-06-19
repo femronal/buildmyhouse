@@ -99,6 +99,9 @@ const DRAINAGE_HERO_MAIN = `${webBase()}/drainage-service-hero.jpg`;
 /** Bundled hero for window repair service pages — source: assets/images/man-repairing-window-with-screwdriver-inside-a-hom-2026-03-24-07-43-18-utc.jpg */
 const WINDOW_REPAIR_HERO_MAIN = `${webBase()}/window-repair-service-hero.jpg`;
 
+/** Shared "Why BuildMyHouse" strip — source: assets/images/engineer at BuildMyHouse.png */
+const BMH_WHY_STRIP_IMAGE = `${webBase()}/engineer-at-buildmyhouse.png`;
+
 function imageSet(
   hero: string,
   accent: string,
@@ -619,7 +622,7 @@ function buildContent(kind: ServiceKind, region: 'lagos' | 'nigeria', canonicalP
       },
     ],
     articleLinks: [...SHARED_ARTICLES],
-    images: IMAGE_SETS[kind],
+    images: { ...IMAGE_SETS[kind], strip: BMH_WHY_STRIP_IMAGE },
     primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
     secondaryCta: { label: 'Browse Verified Plans', href: '/location?mode=explore' },
   };

@@ -66,6 +66,24 @@ export class ContractorsService {
     return params.fallback || 'General Contractor';
   }
 
+  private formatVerifiedSpecialtyForEmail(params: {
+    category?: GCSpecialtyCategory | null;
+    tags?: string[];
+    fallback?: string | null;
+  }) {
+    const categoryLabel =
+      params.category && GC_SPECIALTY_LABELS[params.category]
+        ? GC_SPECIALTY_LABELS[params.category]
+        : null;
+    const tags = this.normalizeSpecialtyTags(params.tags);
+    if (categoryLabel && tags.length > 0) {
+      return `${categoryLabel} — ${tags.join(', ')}`;
+    }
+    if (categoryLabel) return categoryLabel;
+    if (tags.length > 0) return tags.join(', ');
+    return params.fallback || 'General Contractor';
+  }
+
   private getHomeownerAppUrl(): string {
     return String(
       this.configService.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app',
@@ -2390,6 +2408,16 @@ export class ContractorsService {
 
     // Notify only on verification state transitions.
     if (!user.verified && verified) {
+      const finalCategory =
+        specialtyCategory || (contractor.specialtyCategory as GCSpecialtyCategory | null);
+      const finalTags =
+        normalizedTags.length > 0 ? normalizedTags : contractor.specialtyTags || [];
+      const verifiedSpecialty = this.formatVerifiedSpecialtyForEmail({
+        category: finalCategory,
+        tags: finalTags,
+        fallback: contractor.specialty || 'General Contractor',
+      });
+
       await this.wsService.sendNotification(userId, {
         type: 'account_verified',
         title: 'Account Verified',
@@ -2398,6 +2426,7 @@ export class ContractorsService {
         data: {
           role: 'general_contractor',
           verified: true,
+          specialty: verifiedSpecialty,
         },
       });
     } else if (user.verified && !verified) {
