@@ -14,7 +14,6 @@ import {
   LandPlot,
   Home,
   FileText,
-  Wrench,
   Shield,
   LogOut,
   X
@@ -32,7 +31,6 @@ const menuItems = [
   { href: '/houses', label: 'Houses', icon: Home },
   { href: '/rentals', label: 'Rentals', icon: Building },
   { href: '/articles', label: 'Content', icon: FileText },
-  { href: '/service-pages', label: 'Service Pages', icon: Wrench },
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/admin-access', label: 'Admin Access', icon: Shield },
 ];
@@ -78,6 +76,7 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
         {menuItems.map((item) => {
           const isActive =
             pathname === item.href ||
+            (item.href === '/articles' && pathname.startsWith('/service-pages')) ||
             (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
           return (

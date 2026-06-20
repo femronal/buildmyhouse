@@ -1707,6 +1707,16 @@ html.bmh-svc-active body {
 
 .bmh-start-repair-visual {
   isolation: isolate;
+  aspect-ratio: 4 / 5;
+  border-radius: 1.25rem;
+}
+
+@media (max-width: 1023px) {
+  .bmh-start-repair-visual {
+    aspect-ratio: auto;
+    min-height: 520px;
+    max-height: 620px;
+  }
 }
 
 .bmh-start-repair-hero-image {
@@ -1715,44 +1725,54 @@ html.bmh-svc-active body {
   z-index: 1;
 }
 
-.bmh-start-repair-glow {
-  background: radial-gradient(circle, rgba(34, 197, 94, 0.35) 0%, rgba(17, 24, 39, 0.05) 55%, transparent 72%);
-  filter: blur(40px);
-  z-index: 0;
-  pointer-events: none;
+.bmh-start-repair-visual-fade {
+  z-index: 2;
+  background: linear-gradient(
+    to top,
+    rgba(17, 24, 39, 0.72) 0%,
+    rgba(17, 24, 39, 0.28) 42%,
+    transparent 100%
+  );
 }
 
 .bmh-start-repair-stack {
-  perspective: 900px;
+  perspective: 1200px;
+  z-index: 3;
 }
 
 .bmh-start-repair-stack-card {
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.04) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transform-origin: center bottom;
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+    filter 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bmh-start-repair-stack-card--active {
   opacity: 1;
   transform: scale(1) translateY(0);
   z-index: 30;
+  filter: none;
 }
 
 .bmh-start-repair-stack-card--next {
-  opacity: 0.6;
-  transform: scale(0.96) translateY(12px);
+  opacity: 0.55;
+  transform: scale(0.97) translateY(-14px);
   z-index: 20;
-  filter: grayscale(100%);
+  filter: saturate(0.35) brightness(0.85);
 }
 
 .bmh-start-repair-stack-card--last {
-  opacity: 0.3;
-  transform: scale(0.92) translateY(24px);
+  opacity: 0.28;
+  transform: scale(0.94) translateY(-28px);
   z-index: 10;
-  filter: grayscale(100%);
+  filter: saturate(0.2) brightness(0.75);
 }
 
 @keyframes bmhStartRepairProgress {

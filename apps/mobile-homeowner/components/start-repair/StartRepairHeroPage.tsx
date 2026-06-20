@@ -79,27 +79,26 @@ export default function StartRepairHeroPage() {
       </View>
 
       <View
-        className={`bmh-start-repair-grid max-w-5xl w-full self-center mx-auto my-10 md:my-20 px-4 md:px-8 ${
-          isDesktop ? 'flex-row' : 'flex-col'
+        className={`bmh-start-repair-grid max-w-6xl w-full self-center mx-auto px-4 md:px-8 ${
+          isDesktop ? 'flex-row items-center gap-10 lg:gap-14 py-16 md:py-24' : 'flex-col py-10'
         }`}
-        style={{ minHeight: isDesktop ? 600 : undefined }}
       >
         {/* Left */}
-        <View className={`${isDesktop ? 'w-[58%]' : 'w-full'} z-10 flex-col justify-center py-8 md:py-12 md:pr-8`}>
+        <View className={`${isDesktop ? 'flex-1 max-w-[540px]' : 'w-full'} z-10 flex-col justify-center`}>
           {headline}
 
           <Text
-            className="text-base md:text-lg text-neutral-500 max-w-xl leading-relaxed mt-8 mb-10"
+            className="text-base md:text-lg text-neutral-500 max-w-lg leading-relaxed mt-6 md:mt-8 mb-8 md:mb-10"
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
             Verified workers, staged updates, and photo evidence before you pay — for plumbing, electrical, roof leaks,
             and urgent Lagos repairs.
           </Text>
 
-          <View className="flex-col sm:flex-row items-start sm:items-center gap-6 md:gap-8 mb-12 md:mb-16">
+          <View className="flex-col sm:flex-row items-start sm:items-center gap-5 md:gap-8 mb-10 md:mb-14">
             <Link href={'/choose-project-type' as any} asChild>
               <Pressable
-                className="bmh-start-repair-cta group px-8 py-4 rounded-lg bg-neutral-900 flex-row items-center gap-2"
+                className="bmh-start-repair-cta group px-7 py-3.5 rounded-xl bg-neutral-900 flex-row items-center gap-2"
                 accessibilityRole="link"
               >
                 <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -109,15 +108,15 @@ export default function StartRepairHeroPage() {
               </Pressable>
             </Link>
 
-            <View className="flex-row items-center gap-4">
-              <View className="flex-row -space-x-3">
+            <View className="flex-row items-center gap-3.5">
+              <View className="flex-row">
                 {['#111827', '#374151', '#6B7280'].map((color, index) => (
                   <View
                     key={color}
-                    className="w-10 h-10 rounded-full border-2 border-white items-center justify-center"
-                    style={{ backgroundColor: color, marginLeft: index === 0 ? 0 : -12 }}
+                    className="w-9 h-9 rounded-full border-2 border-white items-center justify-center"
+                    style={{ backgroundColor: color, marginLeft: index === 0 ? 0 : -10 }}
                   >
-                    <Text className="text-[10px] text-white" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    <Text className="text-[9px] text-white" style={{ fontFamily: 'Poppins_700Bold' }}>
                       {['HO', 'GC', 'BM'][index]}
                     </Text>
                   </View>
@@ -126,31 +125,31 @@ export default function StartRepairHeroPage() {
               <View>
                 <View className="flex-row items-center gap-0.5 mb-0.5">
                   {[0, 1, 2, 3].map((i) => (
-                    <Star key={i} size={14} color="#111827" fill="#111827" strokeWidth={0} />
+                    <Star key={i} size={13} color="#111827" fill="#111827" strokeWidth={0} />
                   ))}
-                  <Star size={14} color="#D1D5DB" fill="#D1D5DB" strokeWidth={0} />
+                  <Star size={13} color="#D1D5DB" fill="#D1D5DB" strokeWidth={0} />
                 </View>
-                <Text className="text-xs text-neutral-600" style={{ fontFamily: 'Poppins_500Medium' }}>
+                <Text className="text-[11px] text-neutral-600" style={{ fontFamily: 'Poppins_500Medium' }}>
                   Evidence before payment
                 </Text>
               </View>
             </View>
           </View>
 
-          <View className="flex-row flex-wrap items-center gap-6 opacity-60">
+          <View className="flex-row flex-wrap items-center gap-x-8 gap-y-3 opacity-50">
             {TRUST_STRIP.map((label) => (
-              <Text key={label} className="text-sm text-neutral-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              <Text key={label} className="text-sm text-neutral-800" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 {label}
               </Text>
             ))}
           </View>
         </View>
 
-        {/* Right visual */}
+        {/* Right visual — Aura-style portrait panel with bottom glass card */}
         <View
-          className={`bmh-start-repair-visual relative overflow-hidden bg-neutral-50/50 ${
-            isDesktop ? 'w-[42%] min-h-[600px]' : 'w-full h-[500px] mt-4'
-          } rounded-2xl`}
+          className={`bmh-start-repair-visual relative overflow-hidden bg-neutral-100 ${
+            isDesktop ? 'w-full max-w-[380px] shrink-0' : 'w-full mt-8'
+          }`}
         >
           <Image
             source={{ uri: HERO_IMAGE }}
@@ -159,70 +158,60 @@ export default function StartRepairHeroPage() {
             resizeMode="contain"
           />
 
-          <View className="absolute top-1/2 left-1/2 w-[420px] h-[420px] -ml-[210px] -mt-[210px] rounded-full bmh-start-repair-glow opacity-70" />
-
-          {/* Glass stripes */}
-          <View className="absolute inset-0 flex-row pointer-events-none">
-            <View className="w-1/4 h-full border-r border-white/10" />
-            <View className="w-1/4 h-full border-r border-white/10 bg-white/5" />
-            <View className="w-1/4 h-full border-r border-white/10 bg-white/10" />
-            <View className="w-1/4 h-full bg-white/15" />
-          </View>
-
-          {/* Stacked cards */}
-          <View className="absolute inset-x-0 bottom-8 md:bottom-10 items-center justify-end pointer-events-none z-30">
-            <View className="w-72 md:w-80 h-64 relative bmh-start-repair-stack">
+          <View className="absolute inset-x-0 bottom-0 px-4 pb-4 pt-24 bmh-start-repair-visual-fade pointer-events-none">
+            <View className="relative w-full h-[248px] bmh-start-repair-stack">
               {STAGE_CARDS.map((card, index) => {
                 const state = cardState(index, activeCard, STAGE_CARDS.length);
                 const Icon = card.icon;
+                const isActive = state === 'active';
+
                 return (
                   <View
                     key={card.id}
-                    className={`bmh-start-repair-stack-card bmh-start-repair-stack-card--${state} absolute inset-0 flex-col justify-between rounded-3xl p-5 border border-white/10`}
+                    className={`bmh-start-repair-stack-card bmh-start-repair-stack-card--${state} absolute inset-x-0 bottom-0 rounded-[1.35rem] p-4 border border-white/15`}
                   >
-                    <View className="flex-row items-start justify-between">
-                      <View className="flex-row items-center gap-3">
-                        <View className="w-10 h-10 rounded-lg border border-white/10 bg-white/5 items-center justify-center">
-                          <Icon size={18} color="#f4f4f5" strokeWidth={2} />
+                    <View className="flex-row items-start justify-between mb-3">
+                      <View className="flex-row items-center gap-2.5 flex-1 pr-3">
+                        <View className="w-9 h-9 rounded-lg border border-white/10 bg-white/10 items-center justify-center">
+                          <Icon size={16} color="#fafafa" strokeWidth={2} />
                         </View>
-                        <View>
-                          <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        <View className="flex-1">
+                          <Text className="text-[13px] text-white leading-tight" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                             {card.title}
                           </Text>
-                          <Text className="text-xs text-zinc-400" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          <Text className="text-[11px] text-zinc-300 mt-0.5" style={{ fontFamily: 'Poppins_400Regular' }}>
                             {card.subtitle}
                           </Text>
                         </View>
                       </View>
-                      <Text className="text-xs text-zinc-50" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      <Text className="text-[11px] text-zinc-200" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                         {String(index + 1).padStart(2, '0')}
                       </Text>
                     </View>
 
-                    <View className="w-full h-28 rounded-lg overflow-hidden border border-white/5 bg-zinc-800">
-                      <Image source={{ uri: card.image }} className="w-full h-full opacity-90" resizeMode="cover" />
+                    <View className="w-full h-[72px] rounded-lg overflow-hidden border border-white/10 bg-zinc-900/40 mb-3">
+                      <Image source={{ uri: card.image }} className="w-full h-full" resizeMode="cover" />
                     </View>
 
-                    <View className="w-full h-px mt-4 overflow-hidden rounded-full bg-white/10">
-                      {state === 'active' ? (
+                    <View className="w-full h-0.5 overflow-hidden rounded-full bg-white/15 mb-3">
+                      {isActive ? (
                         <View className="h-full bg-white rounded-full bmh-start-repair-progress" />
                       ) : (
-                        <View className="h-full bg-white/20 rounded-full w-0" />
+                        <View className="h-full w-[18%] bg-white/30 rounded-full" />
                       )}
                     </View>
+
+                    {isActive ? (
+                      <View className="rounded-full px-3 py-1.5 flex-row items-center gap-2 self-start border border-white/10 bg-black/30">
+                        <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        <Text className="text-[10px] text-neutral-100" style={{ fontFamily: 'Poppins_500Medium' }}>
+                          Tracked repair stages — scope, match, approve
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
                 );
               })}
-            </View>
-          </View>
-
-          {/* Caption */}
-          <View className="absolute bottom-2 inset-x-0 items-center pointer-events-none z-30">
-            <View className="rounded-full px-4 py-1.5 flex-row items-center gap-2 border border-white/10 bg-neutral-950/50">
-              <View className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-              <Text className="text-xs text-neutral-200" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Tracked repair stages — scope, match, approve
-              </Text>
             </View>
           </View>
         </View>

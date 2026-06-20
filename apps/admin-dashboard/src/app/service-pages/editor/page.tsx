@@ -102,11 +102,23 @@ export default function ServicePageEditorPage() {
   const searchParams = useSearchParams();
   const pageId = searchParams.get('id');
   const initialRegion = (searchParams.get('region') as ServicePageRegion) || 'lagos';
+  const initialTemplateKind = searchParams.get('templateKind') || 'plumbing-repair';
+  const initialSlug = searchParams.get('slug') || '';
 
   const { data: existingPage, isLoading: isLoadingPage } = useCmsServicePage(pageId);
   const { createPageFromTemplate, updatePage } = useCmsServicePages();
 
-  const [form, setForm] = useState<FormState>(() => emptyForm(initialRegion));
+  const [form, setForm] = useState<FormState>(() => {
+    const slug =
+      initialSlug ||
+      (initialRegion === 'lagos' ? initialTemplateKind : `${initialTemplateKind}-nigeria`);
+    return {
+      ...emptyForm(initialRegion),
+      templateKind: initialTemplateKind,
+      slug,
+      canonicalPath: defaultCanonicalPath(initialRegion, slug),
+    };
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -185,9 +197,9 @@ export default function ServicePageEditorPage() {
     <div className="p-8 space-y-6 max-w-5xl">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <Link href="/service-pages" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-3">
+          <Link href="/articles?tab=service-pages" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 mb-3">
             <ArrowLeft className="w-4 h-4" />
-            Back to service pages
+            Back to Content
           </Link>
           <h1 className="text-3xl font-bold font-poppins">
             {pageId ? 'Edit service page' : 'New service page'}
