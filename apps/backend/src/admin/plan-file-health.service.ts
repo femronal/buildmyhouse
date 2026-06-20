@@ -39,6 +39,7 @@ export class PlanFileHealthService {
   async scanMissingPlanFiles(limit = 120): Promise<MissingPlanFileItem[]> {
     const projects = await this.prisma.project.findMany({
       where: {
+        archivedAt: null,
         planPdfUrl: {
           not: null,
         },
@@ -79,6 +80,7 @@ export class PlanFileHealthService {
   async repairMissingPlanFiles(limit = 200) {
     const projects = await this.prisma.project.findMany({
       where: {
+        archivedAt: null,
         planPdfUrl: {
           not: null,
         },

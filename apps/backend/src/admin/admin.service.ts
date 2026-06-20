@@ -358,7 +358,7 @@ export class AdminService {
       this.prisma.user.count(),
       this.prisma.user.count({ where: { verified: true } }),
       this.prisma.project.findMany({
-        where: { status: 'active' },
+        where: { status: 'active', archivedAt: null },
         select: { id: true, riskLevel: true },
       }),
       this.prisma.payment.findMany({
@@ -406,7 +406,7 @@ export class AdminService {
 
     // 1. Stalled projects: active projects with no stage update in STALLED_DAYS
     const activeProjects = await this.prisma.project.findMany({
-      where: { status: 'active' },
+      where: { status: 'active', archivedAt: null },
       include: {
         generalContractor: { select: { id: true, fullName: true } },
         stages: { orderBy: { updatedAt: 'desc' }, take: 1, select: { updatedAt: true } },

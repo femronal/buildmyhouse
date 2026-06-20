@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Building2, ExternalLink, Filter, Search, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type StageView = {
@@ -31,6 +31,7 @@ type ApiProject = {
   projectType?: string | null;
   externalPaymentLink?: string | null;
   paymentConfirmationStatus?: 'not_declared' | 'declared' | 'confirmed' | 'rejected' | string;
+  archivedAt?: string | null;
   homeowner?: { fullName?: string | null; email?: string | null } | null;
   generalContractor?: { fullName?: string | null; email?: string | null } | null;
   stages?: StageView[] | null;
@@ -54,6 +55,7 @@ type ProjectView = {
   projectType?: string | null;
   externalPaymentLink?: string | null;
   paymentConfirmationStatus?: string | null;
+  archivedAt?: string | null;
   stages?: StageView[] | null;
 };
 
@@ -113,19 +115,35 @@ export default function ProjectsPage() {
   const [activateProjectTarget, setActivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [deactivateProjectTarget, setDeactivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteProjectTarget, setDeleteProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [archiveProjectTarget, setArchiveProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [bulkArchiveTarget, setBulkArchiveTarget] = useState(false);
   const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string>('');
 
   const queryClient = useQueryClient();
 
   const projectsQuery = useQuery({
-    queryKey: ['admin-projects'],
+    queryKey: ['admin-projects', statusFilter],
     queryFn: async () => {
-      const res = await api.get<ApiProject[]>('/projects');
+      const params = new URLSearchParams();
+      if (statusFilter === 'archived') {
+        params.set('status', 'archived');
+      } else if (statusFilter !== 'all') {
+        params.set('status', statusFilter);
+      }
+      const suffix = params.toString() ? `?${params.toString()}` : '';
+      const res = await api.get<ApiProject[]>(`/projects${suffix}`);
       return res;
     },
     retry: 1,
   });
+
+  const invalidateProjectQueries = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['admin-projects'] }),
+      queryClient.invalidateQueries({ queryKey: ['admin-dashboard'] }),
+    ]);
+  };
 
   const projects: ProjectView[] = useMemo(() => {
     if (!projectsQuery.data) return [];
@@ -147,6 +165,7 @@ export default function ProjectsPage() {
       projectType: p.projectType ?? null,
       externalPaymentLink: p.externalPaymentLink ?? null,
       paymentConfirmationStatus: p.paymentConfirmationStatus ?? null,
+      archivedAt: p.archivedAt ?? null,
       stages: p.stages ?? null,
     }));
   }, [projectsQuery.data]);
@@ -158,7 +177,7 @@ export default function ProjectsPage() {
       });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
       setPaymentLinkProjectId(null);
       setPaymentLinkValue('');
     },
@@ -169,7 +188,7 @@ export default function ProjectsPage() {
       return api.patch(`/projects/${projectId}/payment/confirm`, {});
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
     },
   });
 
@@ -178,7 +197,7 @@ export default function ProjectsPage() {
       return api.patch(`/projects/${projectId}/activate`, {});
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
       setActivateProjectTarget(null);
     },
   });
@@ -188,7 +207,7 @@ export default function ProjectsPage() {
       return api.patch(`/projects/${projectId}/deactivate`, {});
     },
     onSuccess: async (_data, projectId) => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
       const project = projects.find((p) => p.id === projectId);
       setPausedProjectName(project?.name || 'This project');
       setDeactivateProjectTarget(null);
@@ -200,7 +219,31 @@ export default function ProjectsPage() {
       return api.patch(`/projects/${params.projectId}/risk-level`, { riskLevel: params.riskLevel });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
+    },
+  });
+
+  const archiveProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => api.patch(`/projects/${projectId}/archive`, {}),
+    onSuccess: async () => {
+      await invalidateProjectQueries();
+      setArchiveProjectTarget(null);
+    },
+  });
+
+  const unarchiveProjectMutation = useMutation({
+    mutationFn: async (projectId: string) => api.patch(`/projects/${projectId}/unarchive`, {}),
+    onSuccess: async () => {
+      await invalidateProjectQueries();
+    },
+  });
+
+  const archiveStaleTestsMutation = useMutation({
+    mutationFn: async () =>
+      api.post<{ archivedCount: number; projectIds: string[] }>('/projects/admin/archive-stale-tests', {}),
+    onSuccess: async () => {
+      await invalidateProjectQueries();
+      setBulkArchiveTarget(false);
     },
   });
 
@@ -209,7 +252,7 @@ export default function ProjectsPage() {
       return api.delete(`/projects/${projectId}`);
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['admin-projects'] });
+      await invalidateProjectQueries();
       setDeleteProjectTarget(null);
     },
   });
@@ -240,6 +283,7 @@ export default function ProjectsPage() {
     paused: 'bg-amber-100 text-amber-700',
     completed: 'bg-blue-100 text-blue-700',
     cancelled: 'bg-red-100 text-red-700',
+    archived: 'bg-slate-200 text-slate-700',
   };
 
   const riskStyles: Record<string, string> = {
@@ -272,7 +316,18 @@ export default function ProjectsPage() {
           <h1 className="text-3xl font-bold font-poppins">Project Monitoring</h1>
           <p className="text-gray-500 mt-1">Track project health, milestones, and budget usage</p>
         </div>
-        <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">Export project report</button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-lg border border-amber-300 text-amber-800 text-sm inline-flex items-center gap-2 hover:bg-amber-50 disabled:opacity-50"
+            disabled={archiveStaleTestsMutation.isPending}
+            onClick={() => setBulkArchiveTarget(true)}
+          >
+            <Archive className="w-4 h-4" />
+            Archive stale tests
+          </button>
+          <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">Export project report</button>
+        </div>
       </div>
 
       {actionError && (
@@ -309,10 +364,12 @@ export default function ProjectsPage() {
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none"
             >
               <option value="all">All Status</option>
+              <option value="draft">Draft</option>
               <option value="active">Active</option>
               <option value="paused">Paused</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
+              <option value="archived">Archived</option>
             </select>
           </div>
 
@@ -349,9 +406,17 @@ export default function ProjectsPage() {
           const progressWidth = `${project.progress}%`;
           const outstanding = Math.max(project.budget - project.spent, 0);
           const showConfirm = project.paymentConfirmationStatus === 'declared';
-          const canActivate = project.status === 'pending_payment' || project.status === 'paused';
-          const canDeactivate = project.status === 'active';
-          const canDeleteStaleProject = project.status === 'draft' && project.gc === '—';
+          const canActivate = !project.archivedAt && (project.status === 'pending_payment' || project.status === 'paused');
+          const canDeactivate = !project.archivedAt && project.status === 'active';
+          const isArchived = Boolean(project.archivedAt);
+          const displayStatus = isArchived ? 'archived' : project.status;
+          const canDeleteProject = true;
+          const isStaleTestCandidate =
+            !isArchived &&
+            ((project.status === 'draft' && project.gc === '—') ||
+              (project.spent === 0 &&
+                project.paymentConfirmationStatus !== 'confirmed' &&
+                project.status !== 'completed'));
           const gcMailto = project.gcEmail ? `mailto:${project.gcEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}` : null;
           const homeownerMailto = project.homeownerEmail
             ? `mailto:${project.homeownerEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}`
@@ -373,17 +438,22 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {canDeleteStaleProject && (
+                  {isStaleTestCandidate && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
+                      stale test
+                    </span>
+                  )}
+                  {project.gc === '—' && !isArchived && (
                     <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
                       unmatched
                     </span>
                   )}
                   <span
                     className={`px-2 py-1 text-xs rounded-full ${
-                      statusStyles[project.status] || 'bg-gray-100 text-gray-700'
+                      statusStyles[displayStatus] || 'bg-gray-100 text-gray-700'
                     }`}
                   >
-                    {project.status}
+                    {displayStatus}
                   </span>
                   <button
                     type="button"
@@ -543,7 +613,7 @@ export default function ProjectsPage() {
                     {canDeactivate ? 'Deactivate project' : 'Activate project'}
                   </button>
                 )}
-                {canDeleteStaleProject && (
+                {canDeleteProject && (
                   <button
                     className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
                     disabled={deleteProjectMutation.isPending}
@@ -553,7 +623,36 @@ export default function ProjectsPage() {
                     }}
                   >
                     <Trash2 className="w-4 h-4" />
-                    Delete project
+                    Delete
+                  </button>
+                )}
+                {isArchived ? (
+                  <button
+                    className="px-3 py-2 text-sm rounded-lg border border-slate-300 disabled:opacity-50 inline-flex items-center gap-2"
+                    disabled={unarchiveProjectMutation.isPending}
+                    onClick={async () => {
+                      setActionError('');
+                      try {
+                        await unarchiveProjectMutation.mutateAsync(project.id);
+                      } catch (e: any) {
+                        setActionError(e?.message || 'Failed to unarchive project');
+                      }
+                    }}
+                  >
+                    <ArchiveRestore className="w-4 h-4" />
+                    Unarchive
+                  </button>
+                ) : (
+                  <button
+                    className="px-3 py-2 text-sm rounded-lg border border-slate-300 disabled:opacity-50 inline-flex items-center gap-2"
+                    disabled={archiveProjectMutation.isPending}
+                    onClick={() => {
+                      setActionError('');
+                      setArchiveProjectTarget({ id: project.id, name: project.name });
+                    }}
+                  >
+                    <Archive className="w-4 h-4" />
+                    Archive
                   </button>
                 )}
                 {gcMailto ? (
@@ -685,22 +784,110 @@ export default function ProjectsPage() {
         </div>
       )}
 
+      {archiveProjectTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <Archive className="w-5 h-5 text-slate-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Archive Project?</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Archiving <span className="font-medium text-gray-900">{archiveProjectTarget.name}</span> hides it from
+                  project monitoring, stalled alerts, and homeowner/GC app lists. Data is kept for records.
+                </p>
+              </div>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
+              Use this for test projects, unmatched requests, or jobs that were never paid and should stop appearing as
+              stalled.
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg"
+                onClick={() => setArchiveProjectTarget(null)}
+                disabled={archiveProjectMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-gray-900 text-white disabled:opacity-50"
+                disabled={archiveProjectMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    await archiveProjectMutation.mutateAsync(archiveProjectTarget.id);
+                  } catch (e: any) {
+                    setActionError(e?.message || 'Failed to archive project');
+                  }
+                }}
+              >
+                {archiveProjectMutation.isPending ? 'Archiving…' : 'Archive project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bulkArchiveTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <Archive className="w-5 h-5 text-amber-600 mt-0.5" />
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Archive stale test projects?</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  This archives unmatched draft requests and unpaid projects with no activity for 28+ days. They will
+                  disappear from stalled alerts and the default project list.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 border rounded-lg"
+                onClick={() => setBulkArchiveTarget(false)}
+                disabled={archiveStaleTestsMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 rounded-lg bg-amber-600 text-white disabled:opacity-50"
+                disabled={archiveStaleTestsMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    const result = await archiveStaleTestsMutation.mutateAsync();
+                    if (result.archivedCount === 0) {
+                      setActionError('No eligible stale test projects found to archive.');
+                    }
+                  } catch (e: any) {
+                    setActionError(e?.message || 'Failed to archive stale projects');
+                  }
+                }}
+              >
+                {archiveStaleTestsMutation.isPending ? 'Archiving…' : 'Archive eligible projects'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {deleteProjectTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Delete Stale Project?</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Delete Project Permanently?</h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Deleting <span className="font-medium text-gray-900">{deleteProjectTarget.name}</span> will permanently
-                  remove this unmatched project request from the dashboard.
+                  Deleting <span className="font-medium text-gray-900">{deleteProjectTarget.name}</span> removes it from
+                  the database. Payment records are preserved but detached from this project.
                 </p>
               </div>
             </div>
 
             <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-800">
-              This action cannot be undone. Use this only for requests that were never accepted or matched by any GC.
+              This cannot be undone. Prefer <strong>Archive</strong> if you only want to hide test or stalled projects
+              from alerts and monitoring.
             </div>
 
             <div className="flex justify-end gap-2">

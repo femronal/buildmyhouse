@@ -268,7 +268,17 @@ export function useServiceExperienceAnimations(
         })
           .from(root.querySelector('.bmh-svc-services-copy'), { y: isMobile ? 36 : 90, opacity: 0, duration: 0.35 })
           .from(root.querySelectorAll('.bmh-svc-pillar-card'), { y: isMobile ? 24 : 42, opacity: 0, stagger: 0.08, duration: 0.45 }, 0.16)
-          .to(root.querySelector('.bmh-svc-strip-image'), { xPercent: isMobile ? -6 : -14, scale: isMobile ? 1.08 : 1.22, duration: 0.8 }, 0);
+          .fromTo(
+            root.querySelector('.bmh-svc-strip-image'),
+            { scale: 1, xPercent: 0, transformOrigin: 'center center' },
+            {
+              scale: isMobile ? 1.08 : 1.22,
+              xPercent: isMobile ? -6 : -14,
+              duration: 0.8,
+              transformOrigin: 'center center',
+            },
+            0,
+          );
 
         gsap.utils.toArray<Element>(root.querySelectorAll('.bmh-svc-parallax-image')).forEach((item) => {
           const isFast = item.classList.contains('bmh-svc-parallax-fast');
@@ -342,7 +352,7 @@ export function useServiceExperienceAnimations(
             {
               y: isMobile ? 32 : 100,
               opacity: 0,
-              rotate: isMobile ? 0 : (i: number) => [-3, 2, -2, 3, -1][i] ?? 0,
+              rotate: isMobile ? 0 : (i: number) => [-3, 2, -2, 3, -1][i % 5] ?? 0,
               stagger: 0.08,
               duration: 0.65,
             },
@@ -350,6 +360,14 @@ export function useServiceExperienceAnimations(
           );
 
         if (!isMobile) {
+          const gallery = root.querySelector('.bmh-svc-archive-gallery') as HTMLElement | null;
+          const scrollWrap = root.querySelector('.bmh-svc-archive-scroll') as HTMLElement | null;
+          const galleryWidth = gallery?.scrollWidth || 0;
+          const viewportWidth = scrollWrap?.clientWidth || window.innerWidth;
+          const overflowPx = Math.max(0, galleryWidth - viewportWidth);
+          const xPercent =
+            galleryWidth > 0 ? Math.min(-92, -(overflowPx / galleryWidth) * 100) : -18;
+
           gsap.timeline({
             scrollTrigger: st({
               trigger: root.querySelector('.bmh-svc-archive-section'),
@@ -358,7 +376,7 @@ export function useServiceExperienceAnimations(
               scrub: 1,
             }),
           })
-            .to(root.querySelector('.bmh-svc-archive-gallery'), { xPercent: -18, duration: 1 }, 0.25)
+            .to(root.querySelector('.bmh-svc-archive-gallery'), { xPercent, duration: 1 }, 0.25)
             .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
         }
 

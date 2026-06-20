@@ -1,14 +1,11 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { GC_HOMEPAGE_META, GC_OG_IMAGE } from '../lib/gc-landing-content';
 
 type RootProps = {
   children: React.ReactNode;
 };
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://gc.buildmyhouse.app').replace(/\/+$/, '');
-const DEFAULT_PAGE_TITLE = 'BuildMyHouse Technologies for General Contractors';
-const DEFAULT_PAGE_DESCRIPTION =
-  'BuildMyHouse Technologies helps general contractors receive vetted project opportunities, share stage updates, upload evidence, and manage homeowners with clearer workflows.';
-const DEFAULT_OG_IMAGE = `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
 export default function Root({ children }: RootProps) {
   return (
@@ -20,20 +17,20 @@ export default function Root({ children }: RootProps) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
-        <title>{DEFAULT_PAGE_TITLE}</title>
-        <meta name="description" content={DEFAULT_PAGE_DESCRIPTION} />
+        <title>{GC_HOMEPAGE_META.title}</title>
+        <meta name="description" content={GC_HOMEPAGE_META.description} />
         <meta name="robots" content="index,follow" />
-        <link rel="canonical" href={`${WEB_URL}/`} />
+        <link rel="canonical" href={`${WEB_URL}${GC_HOMEPAGE_META.canonicalPath}`} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="BuildMyHouse Technologies" />
-        <meta property="og:title" content={DEFAULT_PAGE_TITLE} />
-        <meta property="og:description" content={DEFAULT_PAGE_DESCRIPTION} />
+        <meta property="og:title" content={GC_HOMEPAGE_META.title} />
+        <meta property="og:description" content={GC_HOMEPAGE_META.description} />
         <meta property="og:url" content={`${WEB_URL}/`} />
-        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image" content={GC_OG_IMAGE} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={DEFAULT_PAGE_TITLE} />
-        <meta name="twitter:description" content={DEFAULT_PAGE_DESCRIPTION} />
-        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
+        <meta name="twitter:title" content={GC_HOMEPAGE_META.title} />
+        <meta name="twitter:description" content={GC_HOMEPAGE_META.description} />
+        <meta name="twitter:image" content={GC_OG_IMAGE} />
         <link rel="icon" href="https://buildmyhouse.app/favicon.png" type="image/png" sizes="48x48" />
         <link rel="apple-touch-icon" href="https://buildmyhouse.app/apple-touch-icon.png" sizes="180x180" />
         <ScrollViewStyleReset />

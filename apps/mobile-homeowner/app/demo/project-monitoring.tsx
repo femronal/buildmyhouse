@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CreditCard, ShieldCheck } from 'lucide-react-native';
 import ProjectMonitoringDemoPhone from '@/components/demo/ProjectMonitoringDemoPhone';
@@ -11,6 +11,10 @@ import {
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { trackWebEvent } from '@/lib/analytics';
 import { projectMonitoringDemoData } from '@/lib/demo-project-monitoring';
+import {
+  PROJECT_MONITORING_VIDEO,
+  buildProjectMonitoringVideoJsonLd,
+} from '@/lib/project-monitoring-video';
 import { useWebSeo } from '@/lib/seo';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { cardShadowStyle } from '@/lib/card-styles';
@@ -30,17 +34,20 @@ export default function ProjectMonitoringDemoPage() {
     description: seoDescription,
     canonicalPath: '/demo/project-monitoring',
     robots: 'index,follow',
-    jsonLd: buildSeoJsonLd({
-      path: '/demo/project-monitoring',
-      title: seoTitle,
-      description: seoDescription,
-      schemaType: 'SoftwareApplication',
-      breadcrumbs: [
-        { name: 'Home', path: '/' },
-        { name: 'Demo', path: '/demo/project-monitoring' },
-        { name: 'Project Monitoring', path: '/demo/project-monitoring' },
-      ],
-    }),
+    jsonLd: [
+      ...buildSeoJsonLd({
+        path: '/demo/project-monitoring',
+        title: seoTitle,
+        description: seoDescription,
+        schemaType: 'SoftwareApplication',
+        breadcrumbs: [
+          { name: 'Home', path: '/' },
+          { name: 'Demo', path: '/demo/project-monitoring' },
+          { name: 'Project Monitoring', path: '/demo/project-monitoring' },
+        ],
+      }),
+      buildProjectMonitoringVideoJsonLd(),
+    ],
   });
 
   return (
@@ -67,6 +74,41 @@ export default function ProjectMonitoringDemoPage() {
           <Text className="text-xs text-gray-800 flex-1 leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
             This is a demo experience with sample data, built for public preview.
           </Text>
+        </View>
+
+        <View nativeID="project-monitoring-video" style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-3 mb-5">
+          <SeoHeading level={2} className="text-black text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            {PROJECT_MONITORING_VIDEO.title}
+          </SeoHeading>
+          <Text className="text-gray-700 text-sm leading-7 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+            {PROJECT_MONITORING_VIDEO.description}
+          </Text>
+          {Platform.OS === 'web' ? (
+            <View style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14, overflow: 'hidden' }}>
+              {(() => {
+                const Iframe = 'iframe' as any;
+                return (
+                  <Iframe
+                    title="BuildMyHouse project monitoring video"
+                    src={PROJECT_MONITORING_VIDEO.youtubeEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                );
+              })()}
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => Linking.openURL(PROJECT_MONITORING_VIDEO.youtubeUrl)}
+              className="bg-black rounded-xl px-4 py-4"
+            >
+              <Text className="text-white text-center text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Watch project monitoring video
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View className="flex-col md:flex-row gap-3 mb-2">

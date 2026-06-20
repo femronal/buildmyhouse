@@ -535,7 +535,7 @@ export const BUILDMYHOUSE_SOCIALS = [
   {
     id: 'instagram',
     label: 'Instagram',
-    href: 'https://instagram.com/buildmyhouseapp',
+    href: 'https://www.instagram.com/buildmyhousetech/',
   },
   {
     id: 'linkedin',
@@ -566,67 +566,67 @@ export const GOOGLE_BUSINESS_REVIEW = {
 
 export const SERVICE_SEO_PAGES = {
   'plumbing-repair-nigeria': {
-    title: 'Plumbing Repair in Lagos, Nigeria',
+    title: 'Plumber in Lagos, Nigeria | Verified & Tracked Repairs',
     summary:
       'Find verified plumbing repair support in Lagos, Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
   },
   'electrical-repair-nigeria': {
-    title: 'Electrical Repair in Lagos, Nigeria',
+    title: 'Electrician in Lagos, Nigeria | Safe, Verified & Tracked',
     summary:
       'Get verified electrical repair support in Lagos, Nigeria with documented updates and a safer approval flow.',
   },
   'roof-leak-repair-nigeria': {
-    title: 'Roof Leak Repair in Lagos, Nigeria',
+    title: 'Leaking Roof Repair in Lagos, Nigeria | Verified Roofers',
     summary:
       'Handle roof leak diagnosis, materials, and repairs in Lagos, Nigeria with staged updates and evidence.',
   },
   'drainage-repair-nigeria': {
-    title: 'Drainage Repair in Lagos, Nigeria',
+    title: 'Blocked Drain Repair in Lagos, Nigeria | Verified',
     summary:
       'Coordinate drainage fixes in Lagos, Nigeria with clearer scope and progress visibility.',
   },
   'window-repair-nigeria': {
-    title: 'Window Repair in Lagos, Nigeria',
+    title: 'Window & Aluminium Repair in Lagos, Nigeria | Verified',
     summary:
       'Find verified window and aluminum repair support in Lagos, Nigeria.',
   },
   'pumping-machine-repair-nigeria': {
-    title: 'Pumping Machine Repair in Lagos, Nigeria',
+    title: 'Water Pump Repair in Lagos, Nigeria | Verified Technicians',
     summary:
       'Find verified pumping machine repair support in Lagos, Nigeria with clearer scope and progress updates.',
   },
   'fan-repair-nigeria': {
-    title: 'Fan Repair in Lagos, Nigeria',
+    title: 'Ceiling & Standing Fan Repair in Lagos, Nigeria',
     summary:
       'Get verified fan repair support in Lagos, Nigeria for ceiling, standing, and wall fans.',
   },
   'rechargeable-fan-repair-nigeria': {
-    title: 'Rechargeable Fan Repair in Lagos, Nigeria',
+    title: 'Rechargeable Fan Repair in Lagos, Nigeria | Verified Artisans',
     summary:
       'Fix rechargeable and inverter fans in Lagos, Nigeria with verified artisans and documented work.',
   },
   'bathroom-repair-nigeria': {
-    title: 'Bathroom Repair in Lagos, Nigeria',
+    title: 'Bathroom Repair in Lagos, Nigeria | Tracked & Verified',
     summary:
       'Track bathroom repairs and upgrades in Lagos, Nigeria with stage-based coordination.',
   },
   'painting-services-nigeria': {
-    title: 'Painting Services in Lagos, Nigeria',
+    title: 'House Painters in Lagos, Nigeria | Quality-Checked Work',
     summary:
       'Coordinate painting jobs in Lagos, Nigeria with better scope definition and quality checkpoints.',
   },
   'kitchen-renovation-nigeria': {
-    title: 'Kitchen Renovation in Lagos, Nigeria',
+    title: 'Kitchen Renovation in Lagos, Nigeria | Tracked Stages',
     summary:
       'Plan kitchen upgrades and installation work in Lagos, Nigeria with structured stage visibility.',
   },
   'home-renovation-nigeria': {
-    title: 'Home Renovation in Lagos, Nigeria',
+    title: 'Home Renovation in Lagos, Nigeria | Verified Contractors',
     summary:
       'Manage renovation projects in Lagos, Nigeria with documented scope, updates, and approvals.',
   },
   'general-contractors-nigeria': {
-    title: 'General Contractors in Lagos, Nigeria',
+    title: 'Verified General Contractors in Lagos, Nigeria',
     summary:
       'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },

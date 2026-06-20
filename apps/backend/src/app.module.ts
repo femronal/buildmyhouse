@@ -24,6 +24,7 @@ import { AdminModule } from './admin/admin.module';
 import { EmailModule } from './email/email.module';
 import { ArticlesModule } from './articles/articles.module';
 import { ResourceSectionsModule } from './resource-sections/resource-sections.module';
+import { ServicePagesModule } from './service-pages/service-pages.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { ResourceSectionsModule } from './resource-sections/resource-sections.mo
     AdminModule,
     ArticlesModule,
     ResourceSectionsModule,
+    ServicePagesModule,
   ],
   controllers: [],
   providers: [

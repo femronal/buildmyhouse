@@ -1315,8 +1315,11 @@ html.bmh-svc-active body {
 }
 
 .bmh-svc-strip-image {
+  object-fit: contain;
+  object-position: center center;
+  transform: scale(1);
+  transform-origin: center center;
   will-change: transform;
-  transform: scale(1.08);
 }
 
 .bmh-svc-review-card {
@@ -1668,4 +1671,99 @@ html.bmh-svc-active body {
     opacity: 1 !important;
     transform: none !important;
   }
+  .bmh-start-repair-stack-card,
+  .bmh-start-repair-progress {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Start Repair hero (Aura-style stacked cards) */
+.bmh-start-repair-headline {
+  font-size: clamp(2.75rem, 8vw, 6rem);
+  letter-spacing: -0.04em;
+  line-height: 0.95;
+}
+
+.bmh-start-repair-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.bmh-start-repair-cta {
+  box-shadow:
+    0 18px 40px -15px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+@media (hover: hover) {
+  .bmh-start-repair-cta:hover {
+    transform: translateY(-1px);
+    box-shadow:
+      0 22px 44px -14px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+}
+
+.bmh-start-repair-visual {
+  isolation: isolate;
+}
+
+.bmh-start-repair-hero-image {
+  object-fit: contain;
+  object-position: center center;
+  z-index: 1;
+}
+
+.bmh-start-repair-glow {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.35) 0%, rgba(17, 24, 39, 0.05) 55%, transparent 72%);
+  filter: blur(40px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.bmh-start-repair-stack {
+  perspective: 900px;
+}
+
+.bmh-start-repair-stack-card {
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  transform-origin: center bottom;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bmh-start-repair-stack-card--active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  z-index: 30;
+}
+
+.bmh-start-repair-stack-card--next {
+  opacity: 0.6;
+  transform: scale(0.96) translateY(12px);
+  z-index: 20;
+  filter: grayscale(100%);
+}
+
+.bmh-start-repair-stack-card--last {
+  opacity: 0.3;
+  transform: scale(0.92) translateY(24px);
+  z-index: 10;
+  filter: grayscale(100%);
+}
+
+@keyframes bmhStartRepairProgress {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.bmh-start-repair-progress {
+  animation: bmhStartRepairProgress 4s linear forwards;
 }

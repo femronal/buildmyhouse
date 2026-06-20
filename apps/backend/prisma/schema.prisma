@@ -46,6 +46,11 @@ enum ArticleAudience {
   gc
 }
 
+enum ServicePageRegion {
+  lagos
+  nigeria
+}
+
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
@@ -185,6 +190,25 @@ model CmsResourceSection {
   @@map("cms_resource_sections")
 }
 
+model CmsServicePage {
+  id            String            @id @default(uuid())
+  slug          String
+  region        ServicePageRegion
+  templateKind  String
+  metaTitle     String
+  summary       String
+  canonicalPath String            @unique
+  payload       Json
+  isPublished   Boolean           @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([region, slug])
+  @@index([isPublished, publishedAt, updatedAt])
+  @@map("cms_service_pages")
+}
+
 model Project {
   id                  String        @id @default(uuid())
   name                String
@@ -216,6 +240,7 @@ model Project {
   aiProcessedAt        DateTime?
   planFileName         String?
   planPdfUrl           String?
+  archivedAt           DateTime?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 

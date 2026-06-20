@@ -85,15 +85,26 @@ export class ProjectsController {
 
   @Get()
   @UseGuards(JwtAuthGuard)
-  findAll(@Request() req: any, @Query('status') status?: string) {
+  findAll(
+    @Request() req: any,
+    @Query('status') status?: string,
+    @Query('includeArchived') includeArchived?: string,
+  ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
 
     // Admin can see all projects, others see only their own
     if (userRole === 'admin') {
-      return this.projectsService.getAllProjects(status);
+      return this.projectsService.getAllProjects(status, includeArchived === 'true');
     }
     return this.projectsService.getUserProjects(userId, status);
+  }
+
+  @Post('admin/archive-stale-tests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  archiveStaleTestProjects() {
+    return this.projectsService.archiveStaleTestProjectsAsAdmin();
   }
 
   // Stages route must come BEFORE :id route to avoid route matching conflicts
@@ -453,6 +464,20 @@ export class ProjectsController {
   @Roles('admin')
   deactivateProject(@Param('id') id: string) {
     return this.projectsService.deactivateProjectAsAdmin({ projectId: id });
+  }
+
+  @Patch(':id/archive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  archiveProject(@Param('id') id: string) {
+    return this.projectsService.archiveProjectAsAdmin({ projectId: id });
+  }
+
+  @Patch(':id/unarchive')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  unarchiveProject(@Param('id') id: string) {
+    return this.projectsService.unarchiveProjectAsAdmin({ projectId: id });
   }
 
   @Patch(':id/external-payment-link')

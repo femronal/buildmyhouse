@@ -105,9 +105,11 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
     };
   }, []);
 
-  const archiveImages = content.images.archive.length >= 5
-    ? content.images.archive
-    : [...content.images.archive, content.images.heroMain, content.images.heroAccent];
+  const archiveImages = (() => {
+    const uploaded = content.images.archive.filter((src) => src.trim().length > 0);
+    if (uploaded.length > 0) return uploaded;
+    return [content.images.heroMain, content.images.heroAccent].filter(Boolean);
+  })();
 
   return (
     <div ref={containerRef} className="bmh-svc-page" style={pageShellStyle}>
@@ -257,7 +259,11 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             className="absolute left-1/2 top-0 h-[360px] w-[78%] -translate-x-1/2 overflow-hidden rounded-b-[32px] border-x border-b md:h-[480px] lg:h-[620px]"
             style={{ borderColor: 'rgba(243,240,232,.1)' }}
           >
-            <img src={content.images.strip} alt="" className="bmh-svc-strip-image h-full w-full object-cover object-center opacity-70" />
+            <img
+              src={content.images.strip}
+              alt="BuildMyHouse engineer showing project stages on a phone"
+              className="bmh-svc-strip-image h-full w-full object-contain object-center opacity-70"
+            />
           </div>
           <div className="grid min-h-screen items-center gap-14 md:grid-cols-12">
             <div className="bmh-svc-reveal md:col-span-3">
@@ -353,16 +359,21 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
             </div>
           </div>
           <div className="bmh-svc-archive-scroll mt-20 -mx-5 px-5 md:mx-0 md:px-0">
+            {archiveImages.length > 1 ? (
+              <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.14em] md:hidden" style={{ color: 'rgba(243,240,232,.45)' }}>
+                Swipe to review {archiveImages.length} evidence photos →
+              </p>
+            ) : null}
             <div className="bmh-svc-archive-gallery flex gap-5 will-change-transform">
-              {archiveImages.slice(0, 5).map((src, index) => (
+              {archiveImages.map((src, index) => (
                 <figure
-                  key={src + index}
+                  key={`${src}-${index}`}
                   className={`bmh-svc-archive-card shrink-0 overflow-hidden rounded-[34px] border bg-[#101310] h-[360px] w-[78vw] md:h-[560px] md:w-[420px] ${
                     index % 2 === 1 ? 'md:mt-20 md:h-[460px] md:w-[360px]' : ''
-                  } ${index === 3 ? 'md:mt-28' : ''}`}
+                  } ${index % 4 === 3 ? 'md:mt-28' : ''}`}
                   style={{ borderColor: 'rgba(243,240,232,.1)' }}
                 >
-                  <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <img src={src} alt={`${content.headline} repair evidence ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />
                 </figure>
               ))}
             </div>

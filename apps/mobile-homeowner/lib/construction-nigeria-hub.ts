@@ -1,5 +1,6 @@
 import type { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
-import { buildSeoJsonLd, buildVideoObjectNode } from '@/lib/seo-schema';
+import { PROJECT_MONITORING_VIDEO } from '@/lib/project-monitoring-video';
+import { buildSeoJsonLd } from '@/lib/seo-schema';
 
 type SimpleSection = {
   title: string;
@@ -47,6 +48,7 @@ export type ConstructionNigeriaHubContent = {
     youtubeEmbedUrl: string;
     /** YouTube publish date for VideoObject.uploadDate (ISO 8601 date). */
     youtubeUploadDate: string;
+    watchPageHref: string;
   };
   constructionServicesSection: SimpleSection;
   renovationServicesSection: SimpleSection;
@@ -265,12 +267,12 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       ],
     },
     monitoringVideoSection: {
-      title: 'See How Project Monitoring Works',
-      description:
-        'Watch this quick walkthrough to understand how project tracking and updates look on BuildMyHouse.',
-      youtubeUrl: 'https://youtu.be/LuIZYt1DNzw?si=n3b9RvIPkMyY10NS',
-      youtubeEmbedUrl: 'https://www.youtube.com/embed/LuIZYt1DNzw',
-      youtubeUploadDate: '2026-05-26',
+      title: PROJECT_MONITORING_VIDEO.title,
+      description: PROJECT_MONITORING_VIDEO.description,
+      youtubeUrl: PROJECT_MONITORING_VIDEO.youtubeUrl,
+      youtubeEmbedUrl: PROJECT_MONITORING_VIDEO.youtubeEmbedUrl,
+      youtubeUploadDate: PROJECT_MONITORING_VIDEO.youtubeUploadDate,
+      watchPageHref: '/demo/project-monitoring',
     },
     constructionServicesSection: {
       title: 'Construction Services in Nigeria',
@@ -452,7 +454,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
 }
 
 export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubContent) {
-  const graph = buildSeoJsonLd({
+  return buildSeoJsonLd({
     path: content.canonicalPath,
     title: content.seoTitle,
     description: content.seoDescription,
@@ -464,29 +466,4 @@ export function getConstructionNigeriaJsonLd(content: ConstructionNigeriaHubCont
       { name: 'Construction Services in Nigeria', path: '/construction/nigeria' },
     ],
   });
-
-  const canonicalUrl = `https://buildmyhouse.app${content.canonicalPath}`;
-  const videoId = content.monitoringVideoSection.youtubeEmbedUrl.split('/embed/')[1]?.split('?')[0] || '';
-
-  if (videoId) {
-    graph.push(
-      buildVideoObjectNode({
-        id: `${canonicalUrl}#project-monitoring-video`,
-        name: content.monitoringVideoSection.title,
-        description: content.monitoringVideoSection.description,
-        embedUrl: content.monitoringVideoSection.youtubeEmbedUrl,
-        contentUrl: content.monitoringVideoSection.youtubeUrl,
-        uploadDate: content.monitoringVideoSection.youtubeUploadDate,
-        thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-        publisher: {
-          '@type': 'Organization',
-          '@id': 'https://buildmyhouse.app/#organization',
-          name: 'BuildMyHouse Technologies',
-        },
-        mainEntityOfPage: canonicalUrl,
-      }),
-    );
-  }
-
-  return graph;
 }

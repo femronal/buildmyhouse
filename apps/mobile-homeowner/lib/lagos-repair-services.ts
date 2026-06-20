@@ -23,7 +23,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'plumbing-repair': {
     slug: 'plumbing-repair',
     title: 'Plumbing Repair in Lagos',
-    metaTitle: 'Plumbing Repair in Lagos | Verified Workers & Tracked Repairs',
+    metaTitle: 'Burst Pipe & Blocked Drain Repair in Lagos | Verified Plumbers',
     summary:
       'Fix burst pipes, blocked drains, and leaking fixtures in Lagos with verified plumbers, staged updates, and evidence before payment.',
     intro:
@@ -58,7 +58,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'electrical-repair': {
     slug: 'electrical-repair',
     title: 'Electrical Repair in Lagos',
-    metaTitle: 'Electrical Repair in Lagos | Verified Electricians & Safe Approvals',
+    metaTitle: 'Electrician in Lagos | Faults, Rewiring & Safe Tracked Repairs',
     summary:
       'Resolve tripping breakers, faulty wiring, and power faults in Lagos with verified electricians and documented repair stages.',
     intro:
@@ -93,7 +93,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'roof-leak-repair': {
     slug: 'roof-leak-repair',
     title: 'Roof Leak Repair in Lagos',
-    metaTitle: 'Roof Leak Repair in Lagos | Diagnosis, Materials & Tracked Fixes',
+    metaTitle: 'Leaking Roof Repair in Lagos | Diagnosis & Tracked Fixes',
     summary:
       'Stop roof leaks in Lagos with staged diagnosis, material approval, and verified roofers — with evidence before payment.',
     intro:
@@ -128,7 +128,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'drainage-repair': {
     slug: 'drainage-repair',
     title: 'Drainage Repair in Lagos',
-    metaTitle: 'Drainage Repair in Lagos | Blockages, Flooding & Channel Fixes',
+    metaTitle: 'Blocked Drain & Flooding Repair in Lagos | Verified Specialists',
     summary:
       'Fix blocked drains and flooding risks in Lagos with verified specialists, clearer scope, and stage-by-stage visibility.',
     intro:
@@ -162,7 +162,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'painting-services': {
     slug: 'painting-services',
     title: 'Painting Services in Lagos',
-    metaTitle: 'Painting Services in Lagos | Interior & Exterior with Quality Checkpoints',
+    metaTitle: 'House Painters in Lagos | Interior & Exterior with Quality Checks',
     summary:
       'Coordinate interior and exterior painting in Lagos with defined scope, surface prep stages, and evidence before payment.',
     intro:
@@ -196,7 +196,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   'property-maintenance': {
     slug: 'property-maintenance',
     title: 'Property Maintenance in Lagos',
-    metaTitle: 'Property Maintenance in Lagos | Recurring Repairs & Tracked Upkeep',
+    metaTitle: 'Home Maintenance in Lagos | Tracked Repairs & Evidence Before Payment',
     summary:
       'Keep Lagos properties maintained with verified workers, recurring repair tracking, and evidence-based approvals.',
     intro:

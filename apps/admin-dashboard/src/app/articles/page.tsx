@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { Check, Copy, FilePenLine, Layers3, Plus, Trash2 } from 'lucide-react';
+import { Check, Copy, FilePenLine, Layers3, Plus, Trash2, Wrench } from 'lucide-react';
 import {
   useCmsArticles,
   type CmsArticle,
@@ -91,6 +91,13 @@ export default function ArticlesAdminPage() {
           >
             <Layers3 className="w-4 h-4" />
             Manage sections
+          </Link>
+          <Link
+            href="/service-pages"
+            className="px-4 py-2 rounded-lg border border-gray-300 text-gray-800 text-sm flex items-center gap-2 hover:bg-gray-50"
+          >
+            <Wrench className="w-4 h-4" />
+            Service pages
           </Link>
           <Link
             href={`/articles/editor?audience=${audience}`}

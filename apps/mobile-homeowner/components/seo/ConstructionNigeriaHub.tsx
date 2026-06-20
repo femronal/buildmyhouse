@@ -7,6 +7,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import { trackWebEvent } from '@/lib/analytics';
 import type { ConstructionNigeriaHubContent } from '@/lib/construction-nigeria-hub';
+import { projectMonitoringThumbnail } from '@/lib/project-monitoring-video';
 import { cardShadowStyle } from '@/lib/card-styles';
 
 type Props = {
@@ -314,32 +315,24 @@ export default function ConstructionNigeriaHub({ content }: Props) {
             {content.monitoringVideoSection.description}
           </Text>
           <View style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-3">
-            {Platform.OS === 'web' ? (
-              <View style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14, overflow: 'hidden' }}>
-                {(() => {
-                  const Iframe = 'iframe' as any;
-                  return (
-                    <Iframe
-                      title="BuildMyHouse project monitoring video"
-                      src={content.monitoringVideoSection.youtubeEmbedUrl}
-                      width="100%"
-                      height="100%"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      allowFullScreen
-                    />
-                  );
-                })()}
-              </View>
-            ) : (
-              <TouchableOpacity
-                onPress={() => openLink(content.monitoringVideoSection.youtubeUrl)}
-                className="bg-black rounded-xl px-4 py-4"
-              >
+            <TouchableOpacity
+              onPress={() => openLink(content.monitoringVideoSection.watchPageHref)}
+              accessibilityRole="link"
+              accessibilityLabel="Watch the project monitoring walkthrough video"
+              activeOpacity={0.9}
+            >
+              <Image
+                source={{ uri: projectMonitoringThumbnail('hqdefault') }}
+                accessibilityLabel="Project monitoring video thumbnail"
+                style={{ width: '100%', aspectRatio: 16 / 9, borderRadius: 14 }}
+                resizeMode="cover"
+              />
+              <View className="mt-3 bg-black rounded-xl px-4 py-4">
                 <Text className="text-white text-center text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Watch project monitoring video
+                  Watch the walkthrough on BuildMyHouse
                 </Text>
-              </TouchableOpacity>
-            )}
+              </View>
+            </TouchableOpacity>
           </View>
         </View>
 

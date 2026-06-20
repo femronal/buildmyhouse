@@ -467,6 +467,108 @@ export class ProjectsService {
     return updated;
   }
 
+  async archiveProjectAsAdmin(params: { projectId: string }) {
+    const project = await this.prisma.project.findUnique({ where: { id: params.projectId } });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    if ((project as any).archivedAt) {
+      return project;
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: { archivedAt: new Date() },
+      include: {
+        homeowner: { select: { id: true, email: true, fullName: true } },
+        generalContractor: { select: { id: true, email: true, fullName: true } },
+        stages: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: { ...(updated as any), event: 'project_archived_by_admin' },
+    });
+
+    return updated;
+  }
+
+  async unarchiveProjectAsAdmin(params: { projectId: string }) {
+    const project = await this.prisma.project.findUnique({ where: { id: params.projectId } });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    if (!(project as any).archivedAt) {
+      return project;
+    }
+
+    const updated = await this.prisma.project.update({
+      where: { id: params.projectId },
+      data: { archivedAt: null },
+      include: {
+        homeowner: { select: { id: true, email: true, fullName: true } },
+        generalContractor: { select: { id: true, email: true, fullName: true } },
+        stages: { orderBy: { order: 'asc' } },
+      },
+    });
+
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: { ...(updated as any), event: 'project_unarchived_by_admin' },
+    });
+
+    return updated;
+  }
+
+  async archiveStaleTestProjectsAsAdmin() {
+    const staleThreshold = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+    const candidates = await this.prisma.project.findMany({
+      where: {
+        archivedAt: null,
+        OR: [
+          { status: 'draft', generalContractorId: null },
+          {
+            status: { in: ['draft', 'active', 'paused', 'pending_payment'] },
+            paymentConfirmationStatus: { in: ['not_declared', 'rejected'] },
+            spent: 0,
+            updatedAt: { lt: staleThreshold },
+          },
+        ],
+      },
+      include: {
+        payments: {
+          where: { status: 'completed' },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+
+    const toArchive = candidates.filter((project) => (project.payments?.length ?? 0) === 0);
+    if (toArchive.length === 0) {
+      return { archivedCount: 0, projectIds: [] as string[] };
+    }
+
+    const now = new Date();
+    await this.prisma.project.updateMany({
+      where: { id: { in: toArchive.map((p) => p.id) } },
+      data: { archivedAt: now },
+    });
+
+    for (const project of toArchive) {
+      this.wsService.emitProjectUpdate(project.id, {
+        type: 'status_change',
+        data: { id: project.id, event: 'project_archived_by_admin' },
+      });
+    }
+
+    return {
+      archivedCount: toArchive.length,
+      projectIds: toArchive.map((p) => p.id),
+    };
+  }
+
   async deactivateProjectAsAdmin(params: { projectId: string }) {
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
@@ -1519,6 +1621,7 @@ export class ProjectsService {
    */
   async getUserProjects(userId: string, status?: string) {
     const whereClause: any = {
+      archivedAt: null,
       OR: [
         { homeownerId: userId },
         { generalContractorId: userId },
@@ -2010,12 +2113,18 @@ export class ProjectsService {
   /**
    * Get all projects (for admin or public listing)
    */
-  async getAllProjects(status?: string) {
+  async getAllProjects(status?: string, includeArchived = false) {
     const whereClause: any = {};
-    
-    // Add status filter if provided
-    if (status) {
-      whereClause.status = status;
+
+    if (status === 'archived') {
+      whereClause.archivedAt = { not: null };
+    } else {
+      if (!includeArchived) {
+        whereClause.archivedAt = null;
+      }
+      if (status) {
+        whereClause.status = status;
+      }
     }
 
     return this.prisma.project.findMany({

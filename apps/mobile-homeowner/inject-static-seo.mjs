@@ -42,67 +42,67 @@ const SEO_PAGES = {
       'Join BuildMyHouse as a verified artisan, repairer, renovator, or contractor and receive better project requests.',
   },
   '/services/plumbing-repair-nigeria': {
-    title: 'Plumbing Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Plumber in Lagos, Nigeria | Verified & Tracked Repairs | BuildMyHouse',
     description:
       'Find verified plumbing repair support in Lagos, Nigeria with clearer scope, stage tracking, and homeowner approval checkpoints.',
   },
   '/services/electrical-repair-nigeria': {
-    title: 'Electrical Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Electrician in Lagos, Nigeria | Safe, Verified & Tracked | BuildMyHouse',
     description:
       'Get verified electrical repair support in Lagos, Nigeria with documented updates and a safer approval flow.',
   },
   '/services/roof-leak-repair-nigeria': {
-    title: 'Roof Leak Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Leaking Roof Repair in Lagos, Nigeria | Verified Roofers | BuildMyHouse',
     description:
       'Handle roof leak diagnosis, materials, and repairs in Lagos, Nigeria with staged updates and evidence.',
   },
   '/services/drainage-repair-nigeria': {
-    title: 'Drainage Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Blocked Drain Repair in Lagos, Nigeria | Verified | BuildMyHouse',
     description:
       'Coordinate drainage fixes in Lagos, Nigeria with clearer scope and progress visibility.',
   },
   '/services/window-repair-nigeria': {
-    title: 'Window Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Window & Aluminium Repair in Lagos, Nigeria | Verified | BuildMyHouse',
     description:
       'Find verified window and aluminum repair support in Lagos, Nigeria.',
   },
   '/services/pumping-machine-repair-nigeria': {
-    title: 'Pumping Machine Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Water Pump Repair in Lagos, Nigeria | Verified Technicians | BuildMyHouse',
     description:
       'Find verified pumping machine repair support in Lagos, Nigeria with clearer scope and progress updates.',
   },
   '/services/fan-repair-nigeria': {
-    title: 'Fan Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Ceiling & Standing Fan Repair in Lagos, Nigeria | BuildMyHouse',
     description:
       'Get verified fan repair support in Lagos, Nigeria for ceiling, standing, and wall fans.',
   },
   '/services/rechargeable-fan-repair-nigeria': {
-    title: 'Rechargeable Fan Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Rechargeable Fan Repair in Lagos, Nigeria | Verified Artisans | BuildMyHouse',
     description:
       'Fix rechargeable and inverter fans in Lagos, Nigeria with verified artisans and documented work.',
   },
   '/services/bathroom-repair-nigeria': {
-    title: 'Bathroom Repair in Lagos, Nigeria | BuildMyHouse',
+    title: 'Bathroom Repair in Lagos, Nigeria | Tracked & Verified | BuildMyHouse',
     description:
       'Track bathroom repairs and upgrades in Lagos, Nigeria with stage-based coordination.',
   },
   '/services/painting-services-nigeria': {
-    title: 'Painting Services in Lagos, Nigeria | BuildMyHouse',
+    title: 'House Painters in Lagos, Nigeria | Quality-Checked Work | BuildMyHouse',
     description:
       'Coordinate painting jobs in Lagos, Nigeria with better scope definition and quality checkpoints.',
   },
   '/services/kitchen-renovation-nigeria': {
-    title: 'Kitchen Renovation in Lagos, Nigeria | BuildMyHouse',
+    title: 'Kitchen Renovation in Lagos, Nigeria | Tracked Stages | BuildMyHouse',
     description:
       'Plan kitchen upgrades and installation work in Lagos, Nigeria with structured stage visibility.',
   },
   '/services/home-renovation-nigeria': {
-    title: 'Home Renovation in Lagos, Nigeria | BuildMyHouse',
+    title: 'Home Renovation in Lagos, Nigeria | Verified Contractors | BuildMyHouse',
     description:
       'Manage renovation projects in Lagos, Nigeria with documented scope, updates, and approvals.',
   },
   '/services/general-contractors-nigeria': {
-    title: 'General Contractors in Lagos, Nigeria | BuildMyHouse',
+    title: 'Verified General Contractors in Lagos, Nigeria | BuildMyHouse',
     description:
       'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
   },
@@ -112,32 +112,32 @@ const SEO_PAGES = {
       'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment.',
   },
   '/services/lagos/plumbing-repair': {
-    title: 'Plumbing Repair in Lagos | Verified Workers & Tracked Repairs | BuildMyHouse',
+    title: 'Burst Pipe & Blocked Drain Repair in Lagos | Verified Plumbers | BuildMyHouse',
     description:
       'Fix burst pipes, blocked drains, and leaking fixtures in Lagos with verified plumbers, staged updates, and evidence before payment.',
   },
   '/services/lagos/electrical-repair': {
-    title: 'Electrical Repair in Lagos | Verified Electricians | BuildMyHouse',
+    title: 'Electrician in Lagos | Faults, Rewiring & Safe Tracked Repairs | BuildMyHouse',
     description:
       'Resolve tripping breakers, faulty wiring, and power faults in Lagos with verified electricians and documented repair stages.',
   },
   '/services/lagos/roof-leak-repair': {
-    title: 'Roof Leak Repair in Lagos | Diagnosis & Tracked Fixes | BuildMyHouse',
+    title: 'Leaking Roof Repair in Lagos | Diagnosis & Tracked Fixes | BuildMyHouse',
     description:
       'Stop roof leaks in Lagos with staged diagnosis, material approval, and verified roofers — with evidence before payment.',
   },
   '/services/lagos/drainage-repair': {
-    title: 'Drainage Repair in Lagos | Blockages & Channel Fixes | BuildMyHouse',
+    title: 'Blocked Drain & Flooding Repair in Lagos | Verified Specialists | BuildMyHouse',
     description:
       'Fix blocked drains and flooding risks in Lagos with verified specialists, clearer scope, and stage-by-stage visibility.',
   },
   '/services/lagos/painting-services': {
-    title: 'Painting Services in Lagos | Interior & Exterior | BuildMyHouse',
+    title: 'House Painters in Lagos | Interior & Exterior with Quality Checks | BuildMyHouse',
     description:
       'Coordinate interior and exterior painting in Lagos with defined scope, surface prep stages, and evidence before payment.',
   },
   '/services/lagos/property-maintenance': {
-    title: 'Property Maintenance in Lagos | Tracked Upkeep | BuildMyHouse',
+    title: 'Home Maintenance in Lagos | Tracked Repairs & Evidence Before Payment | BuildMyHouse',
     description:
       'Keep Lagos properties maintained with verified workers, recurring repair tracking, and evidence-based approvals.',
   },
@@ -224,6 +224,65 @@ const SEO_PAGES = {
       'Preview how BuildMyHouse helps diaspora homeowners watch stage progress, receive notifications, and stay in control of payment flow.',
   },
 };
+
+const DEBUG_LOG_PATH = path.resolve(process.cwd(), '.cursor/debug-48c7bb.log');
+
+const PROJECT_MONITORING_VIDEO = {
+  title: 'See How Project Monitoring Works',
+  description:
+    'Watch this quick walkthrough to understand how project tracking and updates look on BuildMyHouse.',
+  youtubeUrl: 'https://youtu.be/LuIZYt1DNzw?si=n3b9RvIPkMyY10NS',
+  youtubeEmbedUrl: 'https://www.youtube.com/embed/LuIZYt1DNzw',
+  youtubeUploadDate: '2026-05-26',
+  videoId: 'LuIZYt1DNzw',
+  watchPagePath: '/demo/project-monitoring',
+};
+
+function agentLog(message, data = {}) {
+  // #region agent log
+  try {
+    fs.appendFileSync(
+      DEBUG_LOG_PATH,
+      `${JSON.stringify({
+        sessionId: '48c7bb',
+        runId: 'seo-inject',
+        hypothesisId: 'H1-H3',
+        location: 'inject-static-seo.mjs',
+        message,
+        data,
+        timestamp: Date.now(),
+      })}\n`,
+    );
+  } catch {
+    // ignore debug log failures
+  }
+  // #endregion
+}
+
+function buildProjectMonitoringVideoJsonLd() {
+  const canonicalUrl = `${WEB_URL}${PROJECT_MONITORING_VIDEO.watchPagePath}`;
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'VideoObject',
+        '@id': `${canonicalUrl}#project-monitoring-video`,
+        name: PROJECT_MONITORING_VIDEO.title,
+        description: PROJECT_MONITORING_VIDEO.description,
+        embedUrl: PROJECT_MONITORING_VIDEO.youtubeEmbedUrl,
+        contentUrl: PROJECT_MONITORING_VIDEO.youtubeUrl,
+        uploadDate: PROJECT_MONITORING_VIDEO.youtubeUploadDate,
+        thumbnailUrl: `https://img.youtube.com/vi/${PROJECT_MONITORING_VIDEO.videoId}/hqdefault.jpg`,
+        mainEntityOfPage: canonicalUrl,
+        publisher: {
+          '@type': 'Organization',
+          '@id': `${WEB_URL}/#organization`,
+          name: 'BuildMyHouse Technologies',
+        },
+      },
+    ],
+  };
+}
 
 const HOME_JSON_LD = {
   '@context': 'https://schema.org',
@@ -398,6 +457,18 @@ function patchHtmlForRoute(html, route) {
   next = upsertMeta(next, 'name', 'twitter:description', description);
   if (route === '/') {
     next = upsertJsonLd(next, 'buildmyhouse-home-jsonld', HOME_JSON_LD);
+  }
+  if (route === '/demo/project-monitoring') {
+    const payload = buildProjectMonitoringVideoJsonLd();
+    next = upsertJsonLd(next, 'buildmyhouse-demo-video-jsonld', payload);
+    agentLog('Injected demo VideoObject JSON-LD', {
+      route,
+      uploadDate: PROJECT_MONITORING_VIDEO.youtubeUploadDate,
+      embedUrl: PROJECT_MONITORING_VIDEO.youtubeEmbedUrl,
+    });
+  }
+  if (route === '/construction/nigeria') {
+    agentLog('Construction hub static SEO patched without VideoObject', { route, hasUploadDate: next.includes('uploadDate') });
   }
   return next;
 }
