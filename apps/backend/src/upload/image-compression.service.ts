@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { extname } from 'path';
-import sharp from 'sharp';
+import sharp from './sharp.util';
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const MAX_IMAGE_DIMENSION = 1920;
@@ -35,6 +35,10 @@ export class ImageCompressionService {
     size: number;
     wasCompressed: boolean;
   }> {
+    // #region agent log
+    fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'post-fix',hypothesisId:'H1',location:'image-compression.service.ts:compressIfNeeded',message:'compressIfNeeded entry',data:{size:file?.size,mimetype:file?.mimetype,originalname:file?.originalname,compressible:this.isCompressibleImage(file),sharpType:typeof sharp},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+
     if (!this.isCompressibleImage(file)) {
       return {
         buffer: file.buffer,
@@ -54,6 +58,10 @@ export class ImageCompressionService {
     }
 
     const compressedBuffer = await this.compressToMax2Mb(file.buffer);
+
+    // #region agent log
+    fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'post-fix',hypothesisId:'H1',location:'image-compression.service.ts:compressIfNeeded',message:'compression completed',data:{inputSize:file.size,outputSize:compressedBuffer.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     if (compressedBuffer.length > MAX_IMAGE_BYTES) {
       throw new BadRequestException(
