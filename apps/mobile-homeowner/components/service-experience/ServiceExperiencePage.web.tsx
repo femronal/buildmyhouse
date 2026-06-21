@@ -344,7 +344,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </section>
 
         {/* FIELD ARCHIVE */}
-        <section className="bmh-svc-archive-section relative overflow-visible md:overflow-hidden px-5 py-24 md:px-8 lg:px-12">
+        <section className="bmh-svc-archive-section relative overflow-visible px-5 py-24 md:px-8 lg:px-12">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-12">
             <div className="md:col-span-3">
               <p className="bmh-svc-section-label">Field Archive</p>

@@ -1370,7 +1370,19 @@ html.bmh-svc-active body {
 
 @media (min-width: 768px) {
   .bmh-svc-archive-scroll {
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .bmh-svc-archive-gallery {
+    width: max-content;
+    padding-right: 1.25rem;
+  }
+
+  .bmh-svc-archive-card {
+    scroll-snap-align: start;
   }
 }
 

@@ -362,22 +362,52 @@ export function useServiceExperienceAnimations(
         if (!isMobile) {
           const gallery = root.querySelector('.bmh-svc-archive-gallery') as HTMLElement | null;
           const scrollWrap = root.querySelector('.bmh-svc-archive-scroll') as HTMLElement | null;
-          const galleryWidth = gallery?.scrollWidth || 0;
-          const viewportWidth = scrollWrap?.clientWidth || window.innerWidth;
-          const overflowPx = Math.max(0, galleryWidth - viewportWidth);
-          const xPercent =
-            galleryWidth > 0 ? Math.min(-92, -(overflowPx / galleryWidth) * 100) : -18;
 
-          gsap.timeline({
-            scrollTrigger: st({
-              trigger: root.querySelector('.bmh-svc-archive-section'),
-              start: 'top 75%',
-              end: 'bottom 20%',
-              scrub: 1,
-            }),
-          })
-            .to(root.querySelector('.bmh-svc-archive-gallery'), { xPercent, duration: 1 }, 0.25)
-            .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
+          const bindArchiveHorizontalScroll = () => {
+            const galleryWidth = gallery?.scrollWidth || 0;
+            const viewportWidth = scrollWrap?.clientWidth || window.innerWidth;
+            const overflowPx = Math.max(0, galleryWidth - viewportWidth);
+            const scrollPercent = galleryWidth > 0 ? (overflowPx / galleryWidth) * 100 : 0;
+            const xPercent = overflowPx > 0 ? -Math.min(scrollPercent, 92) : 0;
+
+            // #region agent log
+            fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'archive-fix',hypothesisId:'H1',location:'useServiceExperienceAnimations.web.ts:archive',message:'archive gallery metrics',data:{galleryWidth,viewportWidth,overflowPx,scrollPercent,xPercent},timestamp:Date.now()})}).catch(()=>{});
+            // #endregion
+
+            if (!gallery || xPercent === 0) return;
+
+            gsap.timeline({
+              scrollTrigger: st({
+                trigger: root.querySelector('.bmh-svc-archive-section'),
+                start: 'top 75%',
+                end: 'bottom 20%',
+                scrub: 1,
+              }),
+            })
+              .to(gallery, { xPercent, duration: 1 }, 0.25)
+              .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
+          };
+
+          const archiveImages = root.querySelectorAll('.bmh-svc-archive-card img');
+          const waitForArchiveImages = () =>
+            Promise.all(
+              Array.from(archiveImages).map(
+                (img) =>
+                  new Promise<void>((resolve) => {
+                    if ((img as HTMLImageElement).complete) {
+                      resolve();
+                      return;
+                    }
+                    img.addEventListener('load', () => resolve(), { once: true });
+                    img.addEventListener('error', () => resolve(), { once: true });
+                  }),
+              ),
+            );
+
+          void waitForArchiveImages().then(() => {
+            bindArchiveHorizontalScroll();
+            ScrollTrigger.refresh();
+          });
         }
 
         if (isMobile) {
