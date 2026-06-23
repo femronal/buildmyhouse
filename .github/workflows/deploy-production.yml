@@ -205,6 +205,14 @@ jobs:
           fi
           echo "✅ Deployed to S3"
 
+      - name: Sync CloudFront legacy redirects
+        if: env.AWS_S3_BUCKET_HOMEOWNER != ''
+        continue-on-error: true
+        env:
+          AWS_CLOUDFRONT_HOMEOWNER_ID: ${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }}
+        working-directory: apps/mobile-homeowner
+        run: node ./scripts/sync-cloudfront-redirects.mjs
+
       - name: Deploy skipped (no S3 bucket)
         if: env.AWS_S3_BUCKET_HOMEOWNER == ''
         run: |

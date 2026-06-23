@@ -370,10 +370,6 @@ export function useServiceExperienceAnimations(
             const scrollPercent = galleryWidth > 0 ? (overflowPx / galleryWidth) * 100 : 0;
             const xPercent = overflowPx > 0 ? -Math.min(scrollPercent, 92) : 0;
 
-            // #region agent log
-            fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'archive-fix',hypothesisId:'H1',location:'useServiceExperienceAnimations.web.ts:archive',message:'archive gallery metrics',data:{galleryWidth,viewportWidth,overflowPx,scrollPercent,xPercent},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-
             if (!gallery || xPercent === 0) return;
 
             gsap.timeline({

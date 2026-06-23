@@ -209,7 +209,7 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       description:
         'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
       canonicalPath: '/',
-      robots: 'noindex,follow',
+      robots: 'noindex,nofollow',
     };
   }
 

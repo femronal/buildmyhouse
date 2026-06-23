@@ -70,10 +70,6 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'post-fix',hypothesisId:'H1',location:'upload.controller.ts:uploadImage',message:'uploadImage entry',data:{size:file.size,mimetype:file.mimetype,originalname:file.originalname},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
-
     const processed = await this.imageCompressionService.compressIfNeeded(file);
     const targetOriginalName = processed.wasCompressed
       ? `${(file.originalname || 'image').replace(/\.[^/.]+$/, '')}.jpg`
@@ -85,10 +81,6 @@ export class UploadController {
       contentType: processed.contentType,
       originalName: targetOriginalName,
     });
-
-    // #region agent log
-    fetch('http://127.0.0.1:7856/ingest/ba218163-06eb-44f8-bd1f-029da3d76606',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'48c7bb'},body:JSON.stringify({sessionId:'48c7bb',runId:'post-fix',hypothesisId:'H2',location:'upload.controller.ts:uploadImage',message:'uploadImage success',data:{url:uploaded.url,key:uploaded.key,compressed:processed.wasCompressed,outputSize:processed.size},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     return {
       url: uploaded.url,

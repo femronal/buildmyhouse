@@ -28,6 +28,13 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/app-settings',
   '/house-summary',
   '/upload-plan',
+  '/email-login',
+  '/signup',
+  '/reset-password',
+  '/google-callback',
+  '/choose-project-type',
+  '/location',
+  '/onboarding-intro',
 ];
 
 const SEO_PAGES = {
@@ -371,7 +378,6 @@ function writeRedirectHtml(route, targetRoute) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Redirecting…</title>
-  <meta name="robots" content="noindex, follow" />
   <link rel="canonical" href="${targetUrl}" />
   <meta http-equiv="refresh" content="0; url=${targetUrl}" />
 </head>
