@@ -224,7 +224,7 @@ export function buildLandingServiceLinks(
     }
   }
 
-  return [...deduped.values()].sort((a, b) => a.label.localeCompare(b.label));
+  return Array.from(deduped.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export function buildPopularServiceChips(
