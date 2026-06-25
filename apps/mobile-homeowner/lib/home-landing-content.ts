@@ -146,22 +146,6 @@ export type PopularChip = {
   href: string;
 };
 
-export const POPULAR_CHIPS: PopularChip[] = [
-  { label: 'Plumbing Fix', href: '/services/plumbing-repair-nigeria' },
-  { label: 'Electrical Fix', href: '/services/electrical-repair-nigeria' },
-  { label: 'Roof Leak Repair', href: '/services/roof-leak-repair-nigeria' },
-  { label: 'Drainage Fix', href: '/services/drainage-repair-nigeria' },
-  { label: 'Window Repair', href: '/services/window-repair-nigeria' },
-  { label: 'Pumping Machine Repair', href: '/services/pumping-machine-repair-nigeria' },
-  { label: 'Fan Repair', href: '/services/fan-repair-nigeria' },
-  { label: 'Rechargeable Fan Repair', href: '/services/rechargeable-fan-repair-nigeria' },
-  { label: 'Bathroom Upgrade', href: '/services/bathroom-repair-nigeria' },
-  { label: 'Painting', href: '/services/painting-services-nigeria' },
-  { label: 'Kitchen Upgrade', href: '/services/kitchen-renovation-nigeria' },
-  { label: 'Renovation', href: '/services/home-renovation-nigeria' },
-  { label: 'Full Build', href: '/services/general-contractors-nigeria' },
-];
-
 export type PlatformPillar = {
   title: string;
   description: string;
@@ -357,32 +341,6 @@ export const COMPARISON_ROWS = [
   { oldWay: 'Pressure to send money without progress', platformWay: 'Work broken down into trackable stages' },
   { oldWay: 'No clear record of what was agreed', platformWay: 'Evidence required before approval' },
   { oldWay: 'Photos sent without context', platformWay: 'Better visibility for owners at home or abroad' },
-] as const;
-
-export const POPULAR_SERVICE_LINKS = [
-  { label: 'Plumbing Repair in Lagos', href: '/services/lagos/plumbing-repair' },
-  { label: 'Electrical Repair in Lagos', href: '/services/lagos/electrical-repair' },
-  { label: 'Roof Leak Repair in Lagos', href: '/services/lagos/roof-leak-repair' },
-  { label: 'Drainage Repair in Lagos', href: '/services/lagos/drainage-repair' },
-  { label: 'Painting Services in Lagos', href: '/services/lagos/painting-services' },
-  { label: 'Property Maintenance in Lagos', href: '/services/lagos/property-maintenance' },
-  { label: 'Plumbing Repair in Lagos, Nigeria', href: '/services/plumbing-repair-nigeria' },
-  { label: 'Electrical Repair in Lagos, Nigeria', href: '/services/electrical-repair-nigeria' },
-  { label: 'Roof Leak Repair in Lagos, Nigeria', href: '/services/roof-leak-repair-nigeria' },
-  { label: 'Drainage Repair in Lagos, Nigeria', href: '/services/drainage-repair-nigeria' },
-  { label: 'Window Repair in Lagos, Nigeria', href: '/services/window-repair-nigeria' },
-  { label: 'Pumping Machine Repair in Lagos, Nigeria', href: '/services/pumping-machine-repair-nigeria' },
-  { label: 'Fan Repair in Lagos, Nigeria', href: '/services/fan-repair-nigeria' },
-  { label: 'Rechargeable Fan Repair in Lagos, Nigeria', href: '/services/rechargeable-fan-repair-nigeria' },
-  { label: 'Bathroom Repair in Lagos, Nigeria', href: '/services/bathroom-repair-nigeria' },
-  { label: 'Kitchen Renovation in Lagos, Nigeria', href: '/services/kitchen-renovation-nigeria' },
-  { label: 'Home Renovation in Lagos, Nigeria', href: '/services/home-renovation-nigeria' },
-  { label: 'Interior Design in Lagos, Nigeria', href: '/interior-design/nigeria' },
-  { label: 'General Contractors in Lagos, Nigeria', href: '/services/general-contractors-nigeria' },
-  { label: 'Build from UK to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-uk' },
-  { label: 'Build from US to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
-  { label: 'Build from Canada to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-usa-canada' },
-  { label: 'Build from UAE to Lagos, Nigeria', href: '/diaspora/build-in-nigeria-from-uae' },
 ] as const;
 
 export const WORKER_CATEGORIES = [

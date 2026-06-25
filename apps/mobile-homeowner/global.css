@@ -257,6 +257,10 @@ body * {
   box-shadow: none !important;
 }
 
+.bmh-service-search-panel {
+  z-index: 40;
+}
+
 .bmh-demo-phone [tabindex]:active,
 .bmh-demo-phone button:active,
 .bmh-demo-phone a:active {

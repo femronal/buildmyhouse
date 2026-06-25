@@ -52,3 +52,11 @@ export async function fetchPublishedServicePageByPath(path: string): Promise<Cms
     return null;
   }
 }
+
+export async function fetchPublishedServicePages(): Promise<CmsServicePageRecord[]> {
+  try {
+    return await api.get<CmsServicePageRecord[]>('/service-pages');
+  } catch {
+    return [];
+  }
+}

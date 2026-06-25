@@ -1,5 +1,5 @@
 import { createElement, useRef, useState, type ReactNode } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import {
   Airplane,
@@ -10,7 +10,6 @@ import {
   ClipboardText,
   Hammer,
   Lifebuoy,
-  MagnifyingGlass,
   MapPin,
   Phone,
   ShieldCheck,
@@ -22,18 +21,18 @@ import LandingMobileNav from '@/components/landing/LandingMobileNav';
 import SEOJsonLd from '@/components/landing/SEOJsonLd';
 import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/SocialBrandIcon';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
+import LandingServiceSearchBar from '@/components/landing/LandingServiceSearchBar';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import TrustpilotReviewSection from '@/components/landing/TrustpilotReviewSection';
 import RotatingKeyword from '@/components/landing/RotatingKeyword';
+import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
 import {
   AUDIENCE_TABS,
   COMPARISON_ROWS,
   FAQ_ITEMS,
   HERO_AUDIENCE_CONTENT,
   NAV_ITEMS,
-  POPULAR_CHIPS,
-  POPULAR_SERVICE_LINKS,
   BUILDMYHOUSE_CONTACT,
   BUILDMYHOUSE_SOCIALS,
   type AudienceTab,
@@ -244,9 +243,9 @@ export default function HomeLandingPage() {
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<string, number>>({});
   const [audience, setAudience] = useState<AudienceTab['key']>('need-worker');
-  const [searchQuery, setSearchQuery] = useState('');
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ_ITEMS[0]?.question ?? null);
   const heroContent = HERO_AUDIENCE_CONTENT[audience];
+  const { popularLinks, popularChips } = useLandingServiceLinks();
 
   const recordSectionOffset = (key: string, y: number) => {
     sectionOffsets.current[key] = y;
@@ -338,30 +337,14 @@ export default function HomeLandingPage() {
               </View>
 
               <View className="gap-4 w-full max-w-lg mt-6">
-                <View className="flex-row items-center w-full bg-white rounded-xl border border-slate-200 px-2 bmh-hero-search-bar">
-                  <View className="pl-2 pr-1">
-                    <MagnifyingGlass size={20} color="#94a3b8" weight="regular" />
-                  </View>
-                  <TextInput
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    placeholder={heroContent.searchPlaceholder}
-                    placeholderTextColor="#94a3b8"
-                    cursorColor="#000000"
-                    selectionColor="#e2e8f0"
-                    underlineColorAndroid="transparent"
-                    className="flex-1 py-3.5 px-2 text-sm text-black bmh-hero-search-input"
-                    style={{ fontFamily: 'Poppins_500Medium', outlineStyle: 'none' } as any}
-                  />
-                  <Link href={'/location?mode=explore' as any} asChild>
-                    <Pressable className="bg-black p-2 rounded-lg m-1 bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
-                      <ArrowRight size={18} color="#fff" weight="bold" />
-                    </Pressable>
-                  </Link>
-                </View>
+                <LandingServiceSearchBar
+                  links={popularLinks}
+                  placeholder={heroContent.searchPlaceholder}
+                  variant="hero"
+                />
 
                 <View className="flex-row flex-wrap gap-2 pt-1">
-                  {POPULAR_CHIPS.slice(0, 5).map((chip) => (
+                  {popularChips.slice(0, 5).map((chip) => (
                     <Link key={chip.href} href={chip.href as any} asChild>
                       <Pressable className="px-3 py-1.5 rounded-full border border-slate-200 bg-white" accessibilityRole="link">
                         <Text className="text-xs text-slate-600" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -596,7 +579,7 @@ export default function HomeLandingPage() {
               Popular Services in Lagos
             </Text>
             <View className="flex-row flex-wrap gap-y-4 gap-x-8">
-              {POPULAR_SERVICE_LINKS.map((link) => (
+              {popularLinks.map((link) => (
                 <Link key={link.href} href={link.href as any} asChild>
                   <Pressable accessibilityRole="link">
                     <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>

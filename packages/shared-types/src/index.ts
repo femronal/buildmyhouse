@@ -119,3 +119,14 @@ export interface PaginatedResponse<T> {
   };
 }
 
+export {
+  SERVICE_PAGE_CATALOG,
+  buildLandingServiceLinks,
+  buildPopularServiceChips,
+  getServicePageCatalog,
+  type CmsServicePageHeadlineSource,
+  type LandingServiceLink,
+  type ServicePageCatalogEntry,
+  type ServicePageRegion,
+} from './service-page-catalog';
+

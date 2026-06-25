@@ -3,6 +3,7 @@ import { Image, Pressable, Text, View, useWindowDimensions } from 'react-native'
 import { Link } from 'expo-router';
 import { ArrowRight } from 'phosphor-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
 import { cardShadowStyle } from '@/lib/card-styles';
 import {
   LANDING_BORDER,
@@ -10,7 +11,6 @@ import {
   LANDING_MUTED,
   PLATFORM_CARDS,
   PLATFORM_LADDER,
-  POPULAR_SERVICE_LINKS,
 } from '@/lib/home-landing-content';
 
 type ServiceGridProps = {
@@ -25,6 +25,7 @@ function columnsFor(width: number) {
 
 export default function ServiceGrid({ searchQuery }: ServiceGridProps) {
   const { width } = useWindowDimensions();
+  const { popularLinks } = useLandingServiceLinks();
   const columns = columnsFor(width);
   const gap = width >= 760 ? 16 : 0;
 
@@ -111,7 +112,7 @@ export default function ServiceGrid({ searchQuery }: ServiceGridProps) {
         Popular services in Lagos
       </SeoHeading>
       <View className="flex-row flex-wrap">
-        {POPULAR_SERVICE_LINKS.map((link) => (
+        {popularLinks.map((link) => (
           <Link key={link.href} href={link.href as any} asChild>
             <Pressable
               className="rounded-xl px-3.5 py-2 mr-2 mb-2 border"
