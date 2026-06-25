@@ -9,6 +9,7 @@ import {
   type ServicePageRegion,
 } from '@/hooks/useCmsServicePages';
 import { getServicePageCatalog } from '@/lib/service-page-catalog';
+import { normalizeServicePageCanonicalPath } from '@buildmyhouse/shared-types';
 
 const REGION_OPTIONS: { value: ServicePageRegion; label: string; hint: string }[] = [
   { value: 'lagos', label: 'Lagos service pages', hint: 'buildmyhouse.app/services/lagos/*' },
@@ -65,25 +66,29 @@ export default function ServicePagesPanel() {
 
   const rows = useMemo(() => {
     const catalog = getServicePageCatalog(region);
-    const cmsByPath = new Map(pages.map((page) => [page.canonicalPath, page]));
+    const cmsByPath = new Map(
+      pages.map((page) => [normalizeServicePageCanonicalPath(page.canonicalPath), page]),
+    );
     const catalogPaths = new Set<string>();
 
     const catalogRows: ServicePageRow[] = catalog.map((entry) => {
-      catalogPaths.add(entry.canonicalPath);
+      const canonicalPath = normalizeServicePageCanonicalPath(entry.canonicalPath);
+      catalogPaths.add(canonicalPath);
       return {
         ...entry,
-        cms: cmsByPath.get(entry.canonicalPath),
+        canonicalPath,
+        cms: cmsByPath.get(canonicalPath),
         isCatalog: true,
       };
     });
 
     const customRows: ServicePageRow[] = pages
-      .filter((page) => !catalogPaths.has(page.canonicalPath))
+      .filter((page) => !catalogPaths.has(normalizeServicePageCanonicalPath(page.canonicalPath)))
       .map((page) => ({
         slug: page.slug,
         region: page.region,
         templateKind: page.templateKind,
-        canonicalPath: page.canonicalPath,
+        canonicalPath: normalizeServicePageCanonicalPath(page.canonicalPath),
         label: page.payload.headline || page.templateKind,
         summary: page.summary,
         cms: page,

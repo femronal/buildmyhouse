@@ -1,4 +1,4 @@
-import type { LandingServiceLink } from '@buildmyhouse/shared-types';
+import { normalizeServicePageCanonicalPath, type LandingServiceLink } from '@buildmyhouse/shared-types';
 import { matchesKeywordPhraseQuery, tokenizeSearchQuery } from '@/lib/keyword-search';
 
 function slugLabel(href: string) {
@@ -49,9 +49,10 @@ export function filterServicePageLinks(
 
   const results: LandingServiceLink[] = [];
   for (const { link } of ranked) {
-    if (seen.has(link.href)) continue;
-    seen.add(link.href);
-    results.push(link);
+    const href = normalizeServicePageCanonicalPath(link.href);
+    if (seen.has(href)) continue;
+    seen.add(href);
+    results.push({ ...link, href });
     if (results.length >= limit) break;
   }
 

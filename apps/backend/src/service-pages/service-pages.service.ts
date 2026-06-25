@@ -7,19 +7,18 @@ import {
   mergeServicePageResponse,
   type ServicePageRegion,
 } from './service-page-content';
+import {
+  buildServicePageCanonicalPath,
+  normalizeServicePageCanonicalPath,
+  normalizeServicePageSlug,
+} from './service-page-paths';
 
 @Injectable()
 export class ServicePagesService {
   private prisma = new PrismaClient() as any;
 
   private normalizeSlug(slug: string) {
-    return String(slug || '')
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
+    return normalizeServicePageSlug(slug);
   }
 
   private normalizeRegion(region?: string): ServicePageRegion {
@@ -27,13 +26,8 @@ export class ServicePagesService {
     return raw === 'nigeria' ? 'nigeria' : 'lagos';
   }
 
-  private normalizeCanonicalPath(path: string, region: ServicePageRegion, slug: string) {
-    const raw = String(path || '').trim();
-    if (!raw) {
-      return region === 'lagos' ? `/services/lagos/${slug}` : `/services/${slug}-nigeria`;
-    }
-    const prefixed = raw.startsWith('/') ? raw : `/${raw}`;
-    return prefixed.replace(/\/+$/, '');
+  private normalizeCanonicalPath(_path: string, region: ServicePageRegion, slug: string) {
+    return buildServicePageCanonicalPath(region, slug);
   }
 
   private validatePayload(payload: unknown) {
@@ -87,7 +81,7 @@ export class ServicePagesService {
   }
 
   async getPublishedByPath(path: string) {
-    const canonicalPath = String(path || '').trim().replace(/\/+$/, '') || '/';
+    const canonicalPath = normalizeServicePageCanonicalPath(String(path || '').trim() || '/');
     const row = await this.prisma.cmsServicePage.findFirst({
       where: { canonicalPath, isPublished: true },
     });

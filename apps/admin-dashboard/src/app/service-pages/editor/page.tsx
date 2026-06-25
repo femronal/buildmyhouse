@@ -15,6 +15,10 @@ import {
   type ServicePageRegion,
   type UpsertCmsServicePagePayload,
 } from '@/hooks/useCmsServicePages';
+import {
+  buildServicePageCanonicalPath,
+  normalizeServicePageCanonicalPath,
+} from '@buildmyhouse/shared-types';
 
 type FormState = {
   slug: string;
@@ -28,7 +32,30 @@ type FormState = {
 };
 
 function defaultCanonicalPath(region: ServicePageRegion, slug: string) {
-  return region === 'lagos' ? `/services/lagos/${slug}` : `/services/${slug}-nigeria`;
+  return buildServicePageCanonicalPath(region, slug);
+}
+
+function normalizeFormState(page: {
+  slug: string;
+  region: ServicePageRegion;
+  templateKind: string;
+  metaTitle: string;
+  summary: string;
+  canonicalPath: string;
+  payload: ServicePagePayload;
+  isPublished: boolean;
+}): FormState {
+  const canonicalPath = normalizeServicePageCanonicalPath(page.canonicalPath);
+  return {
+    slug: page.slug,
+    region: page.region,
+    templateKind: page.templateKind,
+    metaTitle: page.metaTitle,
+    summary: page.summary,
+    canonicalPath,
+    payload: page.payload,
+    isPublished: page.isPublished,
+  };
 }
 
 function emptyForm(region: ServicePageRegion): FormState {
@@ -86,16 +113,7 @@ function toFormState(page: {
   payload: ServicePagePayload;
   isPublished: boolean;
 }): FormState {
-  return {
-    slug: page.slug,
-    region: page.region,
-    templateKind: page.templateKind,
-    metaTitle: page.metaTitle,
-    summary: page.summary,
-    canonicalPath: page.canonicalPath,
-    payload: page.payload,
-    isPublished: page.isPublished,
-  };
+  return normalizeFormState(page);
 }
 
 export default function ServicePageEditorPage() {
@@ -142,15 +160,18 @@ export default function ServicePageEditorPage() {
       ...prev,
       metaTitle: prev.metaTitle || templateQuery.data!.metaTitle,
       summary: prev.summary || templateQuery.data!.summary,
-      canonicalPath: prev.canonicalPath || templateQuery.data!.canonicalPath,
+      canonicalPath:
+        normalizeServicePageCanonicalPath(
+          prev.canonicalPath || templateQuery.data!.canonicalPath || defaultCanonicalPath(prev.region, prev.slug),
+        ),
       payload: prev.payload.headline ? prev.payload : templateQuery.data!.payload,
     }));
   }, [pageId, templateQuery.data]);
 
   const previewUrl = useMemo(() => {
-    const path = form.canonicalPath || defaultCanonicalPath(form.region, form.slug || form.templateKind);
+    const path = buildServicePageCanonicalPath(form.region, form.slug || form.templateKind);
     return `https://buildmyhouse.app${path}`;
-  }, [form.canonicalPath, form.region, form.slug, form.templateKind]);
+  }, [form.region, form.slug, form.templateKind]);
 
   const handleSave = async (publish?: boolean) => {
     setSaving(true);
@@ -158,13 +179,14 @@ export default function ServicePageEditorPage() {
     setFeedback(closedAdminFeedback());
     try {
       const slug = form.slug.trim() || form.templateKind;
+      const canonicalPath = buildServicePageCanonicalPath(form.region, slug);
       const payload: UpsertCmsServicePagePayload = {
         slug,
         region: form.region,
         templateKind: form.templateKind,
         metaTitle: form.metaTitle,
         summary: form.summary,
-        canonicalPath: form.canonicalPath || defaultCanonicalPath(form.region, slug),
+        canonicalPath,
         payload: form.payload,
         isPublished: publish ?? form.isPublished,
       };
@@ -187,10 +209,15 @@ export default function ServicePageEditorPage() {
       }
 
       const pageLabel = form.payload.headline?.trim() || form.metaTitle.trim() || slug;
-      const livePath = form.canonicalPath || defaultCanonicalPath(form.region, slug);
+      const livePath = canonicalPath;
+
+      setForm((prev) => ({
+        ...prev,
+        canonicalPath,
+        isPublished: publish ? true : prev.isPublished,
+      }));
 
       if (publish) {
-        setForm((prev) => ({ ...prev, isPublished: true }));
         setFeedback({
           open: true,
           tone: 'success',
@@ -311,11 +338,14 @@ export default function ServicePageEditorPage() {
             <input
               value={form.slug}
               onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  slug: e.target.value,
-                  canonicalPath: prev.canonicalPath || defaultCanonicalPath(prev.region, e.target.value || prev.templateKind),
-                }))
+                setForm((prev) => {
+                  const slug = e.target.value;
+                  return {
+                    ...prev,
+                    slug,
+                    canonicalPath: buildServicePageCanonicalPath(prev.region, slug || prev.templateKind),
+                  };
+                })
               }
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="plumbing-repair"
@@ -354,9 +384,9 @@ export default function ServicePageEditorPage() {
           <label className="block space-y-1.5 md:col-span-2">
             <span className="text-xs font-semibold text-gray-700">Canonical path</span>
             <input
-              value={form.canonicalPath || defaultCanonicalPath(form.region, form.slug || form.templateKind)}
-              onChange={(e) => setForm((prev) => ({ ...prev, canonicalPath: e.target.value }))}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={buildServicePageCanonicalPath(form.region, form.slug || form.templateKind)}
+              readOnly
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-gray-50 text-gray-700"
             />
           </label>
         </div>

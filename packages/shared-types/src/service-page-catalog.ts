@@ -1,3 +1,5 @@
+import { buildServicePageCanonicalPath, normalizeServicePageCanonicalPath } from './service-page-paths';
+
 export type ServicePageRegion = 'lagos' | 'nigeria';
 
 export type ServicePageCatalogEntry = {
@@ -146,12 +148,12 @@ export const SERVICE_PAGE_CATALOG: ServicePageCatalogEntry[] = [
   ...LAGOS_ENTRIES.map((entry) => ({
     ...entry,
     region: 'lagos' as const,
-    canonicalPath: `/services/lagos/${entry.slug}`,
+    canonicalPath: buildServicePageCanonicalPath('lagos', entry.slug),
   })),
   ...NIGERIA_ENTRIES.map((entry) => ({
     ...entry,
     region: 'nigeria' as const,
-    canonicalPath: `/services/${entry.slug}`,
+    canonicalPath: buildServicePageCanonicalPath('nigeria', entry.slug),
   })),
 ];
 
@@ -191,41 +193,66 @@ function resolveCustomPageLabel(page: CmsServicePageHeadlineSource) {
 export function buildLandingServiceLinks(
   cmsPages: CmsServicePageHeadlineSource[] = [],
 ): LandingServiceLink[] {
-  const cmsByPath = new Map(cmsPages.map((page) => [page.canonicalPath, page]));
-  const catalogPaths = new Set(SERVICE_PAGE_CATALOG.map((entry) => entry.canonicalPath));
+  const cmsByPath = new Map(
+    cmsPages.map((page) => [normalizeServicePageCanonicalPath(page.canonicalPath), page]),
+  );
+  const catalogPaths = new Set(
+    SERVICE_PAGE_CATALOG.map((entry) => normalizeServicePageCanonicalPath(entry.canonicalPath)),
+  );
 
   const links: LandingServiceLink[] = SERVICE_PAGE_CATALOG.map((entry) => ({
-    label: landingLinkLabel(resolveServiceLabel(entry, cmsByPath.get(entry.canonicalPath)), entry.region),
-    href: entry.canonicalPath,
+    label: landingLinkLabel(
+      resolveServiceLabel(entry, cmsByPath.get(normalizeServicePageCanonicalPath(entry.canonicalPath))),
+      entry.region,
+    ),
+    href: normalizeServicePageCanonicalPath(entry.canonicalPath),
   }));
 
   for (const page of cmsPages) {
-    if (catalogPaths.has(page.canonicalPath) || !page.isPublished) continue;
+    const href = normalizeServicePageCanonicalPath(page.canonicalPath);
+    if (catalogPaths.has(href) || !page.isPublished) continue;
     links.push({
       label: landingLinkLabel(resolveCustomPageLabel(page), page.region),
-      href: page.canonicalPath,
+      href,
     });
   }
 
-  return links.sort((a, b) => a.label.localeCompare(b.label));
+  const deduped = new Map<string, LandingServiceLink>();
+  for (const link of links) {
+    if (!deduped.has(link.href)) {
+      deduped.set(link.href, link);
+    }
+  }
+
+  return [...deduped.values()].sort((a, b) => a.label.localeCompare(b.label));
 }
 
 export function buildPopularServiceChips(
   cmsPages: CmsServicePageHeadlineSource[] = [],
 ): LandingServiceLink[] {
-  const cmsByPath = new Map(cmsPages.map((page) => [page.canonicalPath, page]));
-  const catalogPaths = new Set(getServicePageCatalog('nigeria').map((entry) => entry.canonicalPath));
+  const cmsByPath = new Map(
+    cmsPages.map((page) => [normalizeServicePageCanonicalPath(page.canonicalPath), page]),
+  );
+  const catalogPaths = new Set(
+    getServicePageCatalog('nigeria').map((entry) =>
+      normalizeServicePageCanonicalPath(entry.canonicalPath),
+    ),
+  );
 
   const chips: LandingServiceLink[] = getServicePageCatalog('nigeria').map((entry) => ({
-    label: resolveServiceLabel(entry, cmsByPath.get(entry.canonicalPath)),
-    href: entry.canonicalPath,
+    label: resolveServiceLabel(
+      entry,
+      cmsByPath.get(normalizeServicePageCanonicalPath(entry.canonicalPath)),
+    ),
+    href: normalizeServicePageCanonicalPath(entry.canonicalPath),
   }));
 
   for (const page of cmsPages) {
-    if (page.region !== 'nigeria' || catalogPaths.has(page.canonicalPath) || !page.isPublished) continue;
+    const href = normalizeServicePageCanonicalPath(page.canonicalPath);
+    if (page.region !== 'nigeria' || catalogPaths.has(href) || !page.isPublished) continue;
     chips.push({
       label: resolveCustomPageLabel(page),
-      href: page.canonicalPath,
+      href,
     });
   }
 

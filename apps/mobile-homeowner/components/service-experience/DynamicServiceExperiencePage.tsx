@@ -1,5 +1,7 @@
 import { ActivityIndicator, View } from 'react-native';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { normalizeServicePageCanonicalPath } from '@buildmyhouse/shared-types';
 import ServiceExperiencePage from '@/components/service-experience/ServiceExperiencePage';
 import UnknownLagosServicePage from '@/components/service-experience/UnknownLagosServicePage';
 import type { ServiceExperienceContent } from '@/lib/service-experience-content';
@@ -11,21 +13,29 @@ type DynamicServiceExperiencePageProps = {
 };
 
 export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicServiceExperiencePageProps) {
+  const router = useRouter();
+  const resolvedPath = normalizeServicePageCanonicalPath(canonicalPath);
   const [content, setContent] = useState<ServiceExperienceContent | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (resolvedPath !== canonicalPath) {
+      router.replace(resolvedPath as any);
+    }
+  }, [canonicalPath, resolvedPath, router]);
 
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setLoading(true);
-      const cmsPage = await fetchPublishedServicePageByPath(canonicalPath);
+      const cmsPage = await fetchPublishedServicePageByPath(resolvedPath);
       if (cancelled) return;
 
       if (cmsPage) {
         setContent(mapCmsServicePageToExperience(cmsPage));
       } else {
-        setContent(getServiceExperienceContent(canonicalPath));
+        setContent(getServiceExperienceContent(resolvedPath));
       }
       setLoading(false);
     }
@@ -34,7 +44,7 @@ export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicS
     return () => {
       cancelled = true;
     };
-  }, [canonicalPath]);
+  }, [resolvedPath]);
 
   if (loading) {
     return (
@@ -45,7 +55,7 @@ export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicS
   }
 
   if (!content) {
-    if (canonicalPath.startsWith('/services/lagos/')) {
+    if (resolvedPath.startsWith('/services/lagos/')) {
       return <UnknownLagosServicePage />;
     }
     return null;

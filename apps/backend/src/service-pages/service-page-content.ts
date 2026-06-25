@@ -1,3 +1,5 @@
+import { buildServicePageCanonicalPath } from './service-page-paths';
+
 export type ServicePageRegion = 'lagos' | 'nigeria';
 
 export type ServicePageImageSet = {
@@ -83,8 +85,7 @@ export function buildServicePageTemplate(
 ): { metaTitle: string; summary: string; canonicalPath: string; payload: ServicePagePayload } {
   const headline = TEMPLATE_HEADLINES[templateKind] || 'Repair Service';
   const locationLabel = region === 'lagos' ? 'Lagos, Nigeria' : 'Nigeria';
-  const canonicalPath =
-    region === 'lagos' ? `/services/lagos/${slug}` : `/services/${slug}-nigeria`;
+  const canonicalPath = buildServicePageCanonicalPath(region, slug);
   const serviceLabel = headline.toLowerCase();
 
   const resolvedMetaTitle =

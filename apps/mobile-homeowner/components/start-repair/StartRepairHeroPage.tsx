@@ -74,10 +74,6 @@ export default function StartRepairHeroPage() {
 
   return (
     <View className="flex-1 bg-white min-h-screen">
-      <View className="absolute top-4 left-4 z-50">
-        <SeoContentBackButton fallbackHref="/" />
-      </View>
-
       <View
         className={`bmh-start-repair-grid max-w-6xl w-full self-center mx-auto px-4 md:px-8 ${
           isDesktop ? 'flex-row items-center gap-10 lg:gap-14 py-16 md:py-24' : 'flex-col py-10'
@@ -85,6 +81,7 @@ export default function StartRepairHeroPage() {
       >
         {/* Left */}
         <View className={`${isDesktop ? 'flex-1 max-w-[540px]' : 'w-full'} z-10 flex-col justify-center`}>
+          <SeoContentBackButton fallbackHref="/" />
           {headline}
 
           <Text

@@ -130,3 +130,9 @@ export {
   type ServicePageRegion,
 } from './service-page-catalog';
 
+export {
+  buildServicePageCanonicalPath,
+  normalizeServicePageCanonicalPath,
+  normalizeServicePageSlug,
+} from './service-page-paths';
+
