@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Globe, Save } from 'lucide-react';
+import { ArrowLeft, Globe, Save, Send } from 'lucide-react';
+import AdminFeedbackModal, { closedAdminFeedback, type AdminFeedbackState } from '@/components/AdminFeedbackModal';
 import ServicePageEditorForm from '@/components/service-pages/ServicePageEditorForm';
 import {
   SERVICE_PAGE_TEMPLATE_KINDS,
@@ -120,7 +121,8 @@ export default function ServicePageEditorPage() {
     };
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'draft' | 'publish' | null>(null);
+  const [feedback, setFeedback] = useState<AdminFeedbackState>(() => closedAdminFeedback());
 
   const templateQuery = useServicePageTemplate(
     !pageId ? form.templateKind : undefined,
@@ -152,7 +154,8 @@ export default function ServicePageEditorPage() {
 
   const handleSave = async (publish?: boolean) => {
     setSaving(true);
-    setError(null);
+    setPendingAction(publish ? 'publish' : 'draft');
+    setFeedback(closedAdminFeedback());
     try {
       const slug = form.slug.trim() || form.templateKind;
       const payload: UpsertCmsServicePagePayload = {
@@ -182,10 +185,41 @@ export default function ServicePageEditorPage() {
         await updatePage({ id: created.id, payload: { ...payload, slug: created.slug } });
         router.replace(`/service-pages/editor?id=${created.id}&region=${created.region}`);
       }
+
+      const pageLabel = form.payload.headline?.trim() || form.metaTitle.trim() || slug;
+      const livePath = form.canonicalPath || defaultCanonicalPath(form.region, slug);
+
+      if (publish) {
+        setForm((prev) => ({ ...prev, isPublished: true }));
+        setFeedback({
+          open: true,
+          tone: 'success',
+          title: 'Service Page Published',
+          message: `"${pageLabel}" is now live on BuildMyHouse. Homeowners can view the updated page immediately.`,
+          liveUrl: `https://buildmyhouse.app${livePath}`,
+        });
+        return;
+      }
+
+      setFeedback({
+        open: true,
+        tone: 'success',
+        title: 'Draft Saved',
+        message: `Your edits to "${pageLabel}" were saved as a draft.`,
+      });
     } catch (err: any) {
-      setError(err?.message || 'Failed to save service page');
+      const message =
+        err?.message ||
+        (publish ? 'Could not publish this service page right now.' : 'Could not save this service page right now.');
+      setFeedback({
+        open: true,
+        tone: 'error',
+        title: publish ? 'Publish Failed' : 'Save Failed',
+        message,
+      });
     } finally {
       setSaving(false);
+      setPendingAction(null);
     }
   };
 
@@ -225,7 +259,7 @@ export default function ServicePageEditorPage() {
             className="px-4 py-2 rounded-lg border border-gray-300 text-sm flex items-center gap-2 hover:bg-gray-50 disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            Save draft
+            {pendingAction === 'draft' ? 'Saving…' : 'Save draft'}
           </button>
           <button
             type="button"
@@ -233,13 +267,20 @@ export default function ServicePageEditorPage() {
             onClick={() => handleSave(true)}
             className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm flex items-center gap-2 disabled:opacity-50"
           >
-            <Save className="w-4 h-4" />
-            Publish
+            <Send className="w-4 h-4" />
+            {pendingAction === 'publish' ? 'Publishing…' : 'Publish'}
           </button>
         </div>
       </div>
 
-      {error ? <div className="rounded-lg border border-red-200 bg-red-50 text-red-700 px-4 py-3 text-sm">{error}</div> : null}
+      <AdminFeedbackModal
+        open={feedback.open}
+        title={feedback.title}
+        message={feedback.message}
+        tone={feedback.tone}
+        liveUrl={feedback.liveUrl}
+        onClose={() => setFeedback(closedAdminFeedback())}
+      />
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
         <h2 className="text-sm font-semibold text-gray-900">Page setup & SEO</h2>

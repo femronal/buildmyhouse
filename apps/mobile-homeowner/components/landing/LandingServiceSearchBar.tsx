@@ -55,8 +55,10 @@ export default function LandingServiceSearchBar({
 
   const isHero = variant === 'hero';
 
+  const panelMaxHeight = isHero ? 200 : 280;
+
   return (
-    <View className="relative w-full" style={{ zIndex: 20 }}>
+    <View className="w-full">
       <View
         className={
           isHero
@@ -120,10 +122,9 @@ export default function LandingServiceSearchBar({
 
       {showPanel ? (
         <View
-          className="absolute left-0 right-0 top-full mt-2 rounded-xl border bg-white overflow-hidden bmh-service-search-panel"
+          className="mt-2 rounded-xl border bg-white overflow-hidden bmh-service-search-panel"
           style={{
             borderColor: LANDING_BORDER,
-            maxHeight: 320,
             shadowColor: '#0f172a',
             shadowOffset: { width: 0, height: 10 },
             shadowOpacity: 0.12,
@@ -132,7 +133,11 @@ export default function LandingServiceSearchBar({
           }}
         >
           {hasResults ? (
-            <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
+              style={{ maxHeight: panelMaxHeight }}
+            >
               {results.map((result) => (
                 <Pressable
                   key={result.href}
