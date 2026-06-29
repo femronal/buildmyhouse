@@ -12,8 +12,7 @@ import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getFloatingTabBarMetrics } from '@/lib/responsive-layout';
-
-const WHATSAPP_URL = 'https://wa.me/2347030282417';
+import { GC_WHATSAPP_URL } from '@/lib/whatsapp-support';
 
 export default function WhatsAppFloatingChat() {
   const pathname = usePathname();
@@ -51,7 +50,7 @@ export default function WhatsAppFloatingChat() {
 
   const handleOpenChat = async () => {
     try {
-      await Linking.openURL(WHATSAPP_URL);
+      await Linking.openURL(GC_WHATSAPP_URL);
     } catch {
       // no-op: if WhatsApp/browser cannot open, keep widget usable.
     }

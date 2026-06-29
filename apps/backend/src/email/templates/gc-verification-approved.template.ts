@@ -191,7 +191,7 @@ export const GC_VERIFICATION_APPROVED_EMAIL_TEMPLATE = `<!DOCTYPE html PUBLIC "-
               <p style="margin:0;">
                 BuildMyHouse Technologies<br>
                 7 Ransome Kuti Rd, Akoka, Lagos 100001, Lagos, Nigeria<br>
-                <a href="tel:+2347030282417" style="color:#ffffff;text-decoration:none;">+234 703 028 2417</a><br>
+                <a href="tel:+2348139036559" style="color:#ffffff;text-decoration:none;">+234 813 903 6559</a><br>
                 © BuildMyHouse
               </p>
             </td>

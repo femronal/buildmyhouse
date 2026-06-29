@@ -25,7 +25,7 @@ Full guide: https://buildmyhouse.app/pricing/repairs
 
 ## Contact
 
-- Phone: +234 916 000 4656
+- Phone: +234 813 903 6559
 - Address: 7 Ransome Kuti Rd, Akoka, Lagos 100001, Nigeria
 - Markdown alternate: https://buildmyhouse.app/index.md
 

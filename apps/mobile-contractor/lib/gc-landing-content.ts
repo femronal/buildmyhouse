@@ -283,8 +283,8 @@ export const GC_WORKER_CATEGORIES = [
 
 export const GC_CONTACT = {
   address: '7 Ransome Kuti Rd, Akoka, Lagos 100001, Lagos, Nigeria',
-  phoneDisplay: '+234 703 028 2417',
-  phoneTel: '+2347030282417',
+  phoneDisplay: '+234 813 903 6559',
+  phoneTel: '+2348139036559',
   mapsQuery: '7 Ransome Kuti Rd, Akoka, Lagos 100001, Lagos, Nigeria',
   email: 'hello@buildmyhouse.app',
 } as const;

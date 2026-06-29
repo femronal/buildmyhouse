@@ -249,7 +249,7 @@ export class ContractorsService {
       doc.text(
         'After payment, send the receipt together with this quote PDF to BuildMyHouse WhatsApp for approval to begin:',
       );
-      doc.font('Helvetica-Bold').text('+2348105475652');
+      doc.font('Helvetica-Bold').text('+2348139036559');
       doc.font('Helvetica');
 
       doc.end();

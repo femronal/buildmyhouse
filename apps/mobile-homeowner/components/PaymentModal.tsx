@@ -5,6 +5,7 @@ import { X, Lock, ExternalLink, FileText } from 'lucide-react-native';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
 import { cardShadowStyle } from '@/lib/card-styles';
+import { BUILDMYHOUSE_CONTACT } from '@/lib/home-landing-content';
 
 interface PaymentModalProps {
   visible: boolean;
@@ -225,7 +226,7 @@ export default function PaymentModal({
               {[
                 `You (${firstName}) pay BuildMyHouse using the verified account details below.`,
                 'Use your project quote PDF from email as payment reference.',
-                'Send receipt + quote PDF to BuildMyHouse WhatsApp: +2348105475652.',
+                `Send receipt + quote PDF to BuildMyHouse WhatsApp: ${BUILDMYHOUSE_CONTACT.phoneDisplay}.`,
                 'BuildMyHouse confirms approval before project commencement.',
               ].map((step) => (
                 <View key={step} className="flex-row items-start mb-2">
@@ -295,7 +296,7 @@ export default function PaymentModal({
                 </Text>
               </View>
               <Text className="text-gray-600 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                After payment, send receipt + quote PDF to WhatsApp: +2348105475652 for approval.
+                After payment, send receipt + quote PDF to WhatsApp: {BUILDMYHOUSE_CONTACT.phoneDisplay} for approval.
               </Text>
             </View>
 

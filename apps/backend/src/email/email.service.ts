@@ -195,7 +195,7 @@ export class EmailService {
         <p style="margin:0 0 8px 0;font-size:13px;color:#111827;">
           After payment, send your payment receipt together with the attached quote PDF to BuildMyHouse WhatsApp for approval to begin:
         </p>
-        <p style="margin:0 0 18px 0;font-size:14px;font-weight:700;color:#111827;">+2348105475652</p>
+        <p style="margin:0 0 18px 0;font-size:14px;font-weight:700;color:#111827;">+2348139036559</p>
 
         <p style="margin:0;font-size:12px;color:#6b7280;">
           Attached file: ${this.escapeHtml(safePdfFileName)}
@@ -228,7 +228,7 @@ Monipoint MFB
 Amala Class Concepts (or Godswill Oluwafemi Okunola)
 
 After payment, send your receipt and the attached quote PDF to BuildMyHouse WhatsApp for approval to begin:
-+2348105475652`;
++2348139036559`;
 
     return this.send({
       to: params.to,
