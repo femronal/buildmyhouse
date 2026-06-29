@@ -244,6 +244,24 @@ body * {
   -webkit-backdrop-filter: blur(12px);
 }
 
+/* Semantic HTML landmarks on web — match RN View flex column so centered children work */
+header.bmh-web-landmark,
+main.bmh-web-landmark,
+footer.bmh-web-landmark,
+section.bmh-web-landmark {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+nav.bmh-web-landmark,
+form.bmh-web-landmark {
+  display: flex;
+  box-sizing: border-box;
+}
+
 .bmh-hero-search-input,
 .bmh-hero-search-input:focus,
 .bmh-hero-search-input:focus-visible {

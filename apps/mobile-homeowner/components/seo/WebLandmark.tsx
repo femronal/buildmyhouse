@@ -23,10 +23,11 @@ export default function WebLandmark({
   onSubmit,
 }: WebLandmarkProps) {
   if (Platform.OS === 'web') {
+    const landmarkClass = ['bmh-web-landmark', className].filter(Boolean).join(' ');
     return createElement(
       tag,
       {
-        className,
+        className: landmarkClass,
         id,
         role,
         'aria-label': ariaLabel,
