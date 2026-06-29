@@ -22,10 +22,12 @@ import SEOJsonLd from '@/components/landing/SEOJsonLd';
 import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/SocialBrandIcon';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import LandingServiceSearchBar from '@/components/landing/LandingServiceSearchBar';
+import AgentPricingSection from '@/components/landing/AgentPricingSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import TrustpilotReviewSection from '@/components/landing/TrustpilotReviewSection';
 import RotatingKeyword from '@/components/landing/RotatingKeyword';
+import WebLandmark from '@/components/seo/WebLandmark';
 import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
 import {
   AUDIENCE_TABS,
@@ -264,7 +266,7 @@ export default function HomeLandingPage() {
       <SEOJsonLd />
       <ScrollView ref={scrollRef} className="flex-1" keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {/* Header */}
-        <View className="bg-white/90 border-b border-slate-100 bmh-landing-header">
+        <WebLandmark tag="header" className="bg-white/90 border-b border-slate-100 bmh-landing-header">
           <View className="max-w-7xl w-full self-center px-6 md:px-12 h-16 flex-row items-center justify-between">
             <View className="flex-row items-center gap-8 flex-1">
               <Link href={'/' as any} asChild>
@@ -272,7 +274,7 @@ export default function HomeLandingPage() {
                   <LogoText variant="black" size="md" />
                 </Pressable>
               </Link>
-              <View className="hidden lg:flex flex-row items-center gap-6">
+              <WebLandmark tag="nav" aria-label="Primary" className="hidden lg:flex flex-row items-center gap-6">
                 {NAV_ITEMS.filter((item) => item.label !== 'How It Works').map((item) =>
                   item.href.startsWith('#') ? (
                     <Pressable key={item.label} onPress={() => navPress(item.href)}>
@@ -290,7 +292,7 @@ export default function HomeLandingPage() {
                     </Link>
                   ),
                 )}
-              </View>
+              </WebLandmark>
             </View>
             <View className="flex-row items-center gap-4">
               <Link href={'/email-login' as any} asChild>
@@ -310,8 +312,9 @@ export default function HomeLandingPage() {
             </View>
           </View>
           {showTabletNav ? <LandingMobileNav onNavPress={navPress} /> : null}
-        </View>
+        </WebLandmark>
 
+        <WebLandmark tag="main">
         {/* Hero */}
         <View className="pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
@@ -592,6 +595,8 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
+        <AgentPricingSection />
+
         {/* FAQ */}
         <View className="py-24 bg-slate-50 border-t border-slate-100">
           <View className="max-w-3xl w-full self-center px-6 md:px-12">
@@ -626,8 +631,10 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
+        </WebLandmark>
+
         {/* Footer — dark CTA card */}
-        <View className="py-10 md:py-16 bg-white border-t border-slate-100 px-4 sm:px-6">
+        <WebLandmark tag="footer" className="py-10 md:py-16 bg-white border-t border-slate-100 px-4 sm:px-6">
           <View className="max-w-7xl w-full self-center">
             <View
               className="bmh-footer-card relative overflow-hidden rounded-[40px] border border-white/10 p-6 sm:p-10 md:p-14"
@@ -761,7 +768,7 @@ export default function HomeLandingPage() {
               </Text>
             </View>
           </View>
-        </View>
+        </WebLandmark>
       </ScrollView>
     </View>
   );

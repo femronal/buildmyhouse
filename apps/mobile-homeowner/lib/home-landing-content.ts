@@ -77,7 +77,7 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'in Lagos, Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
-    primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
+    primaryCta: { label: 'Start a Tracked Repair', href: '/book-repair' },
     secondaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
     tertiaryLink: {
       label: 'Managing from abroad? Start a tracked project',

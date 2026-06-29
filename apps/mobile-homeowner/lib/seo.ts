@@ -13,6 +13,8 @@ type SeoOptions = {
   ogImage?: string;
   jsonLd?: Record<string, any> | Array<Record<string, any>>;
   gscVerificationToken?: string;
+  /** Static markdown twin for AI agents (link rel="alternate" type="text/markdown"). */
+  markdownAlternatePath?: string;
 };
 
 const WEB_URL = (
@@ -54,6 +56,32 @@ function upsertCanonical(url: string) {
     document.head.appendChild(el);
   }
   el.setAttribute('href', url);
+}
+
+function upsertMarkdownAlternate(markdownPath?: string) {
+  if (typeof document === 'undefined') return;
+  const id = 'buildmyhouse-markdown-alternate';
+  let el = document.getElementById(id) as HTMLLinkElement | null;
+
+  if (!markdownPath) {
+    el?.remove();
+    return;
+  }
+
+  const href = markdownPath.startsWith('http')
+    ? markdownPath
+    : `${WEB_URL}${markdownPath.startsWith('/') ? markdownPath : `/${markdownPath}`}`;
+
+  if (!el) {
+    el = document.createElement('link');
+    el.id = id;
+    el.rel = 'alternate';
+    document.head.appendChild(el);
+  }
+
+  el.type = 'text/markdown';
+  el.href = href;
+  el.title = 'Markdown version for AI agents';
 }
 
 function upsertJsonLd(schema: Record<string, any> | Array<Record<string, any>>) {
@@ -147,6 +175,8 @@ export function useWebSeo(options: SeoOptions) {
       upsertJsonLd(options.jsonLd);
     }
 
+    upsertMarkdownAlternate(options.markdownAlternatePath);
+
     injectAnalytics(process.env.EXPO_PUBLIC_GA_MEASUREMENT_ID);
     injectRedditPixel(process.env.EXPO_PUBLIC_REDDIT_PIXEL_ID);
   }, [
@@ -157,6 +187,7 @@ export function useWebSeo(options: SeoOptions) {
     options.ogImage,
     options.gscVerificationToken,
     JSON.stringify(options.jsonLd || null),
+    options.markdownAlternatePath,
   ]);
 }
 
@@ -238,6 +269,26 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
       description:
         'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment. Plumbing, electrical, roof leaks, drainage, painting, and maintenance.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/book-repair') {
+    return {
+      title: 'Book a Verified Repair in Lagos | BuildMyHouse',
+      description:
+        'Schedule a verified repair in Lagos online. Choose service, date, and time. BuildMyHouse service fee is free for now — pay contractor quote only.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/pricing/repairs') {
+    return {
+      title: 'Repair Pricing Guide Lagos | BuildMyHouse',
+      description:
+        'Directional repair pricing in Lagos (NGN). BuildMyHouse platform service fee is free for now; client pays verified contractor quote only.',
       canonicalPath,
       robots: 'index,follow',
     };

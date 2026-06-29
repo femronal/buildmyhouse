@@ -44,7 +44,9 @@ ${finalRoutes
 </urlset>
 `;
 
-const robotsTxt = `User-agent: *
+const robotsTxt = `# BuildMyHouse — robots.txt
+# Human crawlers
+User-agent: *
 Allow: /
 
 # Private app routes
@@ -66,6 +68,39 @@ Disallow: /login
 Disallow: /email-login
 Disallow: /choose-project-type
 Disallow: /location
+
+# AI agent crawlers — allowed; prefer markdown twins and llms.txt
+User-agent: GPTBot
+Allow: /
+Allow: /index.md
+Allow: /book-repair.md
+Allow: /pricing/repairs.md
+Allow: /llms.txt
+
+User-agent: ClaudeBot
+Allow: /
+Allow: /index.md
+Allow: /book-repair.md
+Allow: /pricing/repairs.md
+Allow: /llms.txt
+
+User-agent: Google-Extended
+Allow: /
+Allow: /index.md
+Allow: /book-repair.md
+Allow: /pricing/repairs.md
+Allow: /llms.txt
+
+User-agent: PerplexityBot
+Allow: /
+Allow: /index.md
+Allow: /book-repair.md
+Allow: /pricing/repairs.md
+Allow: /llms.txt
+
+# Agent discovery
+# Markdown twins: /index.md, /book-repair.md, /pricing/repairs.md (also link rel=alternate type=text/markdown)
+# Policy summary: ${WEB_URL}/llms.txt
 
 Sitemap: ${WEB_URL}/sitemap.xml
 `;

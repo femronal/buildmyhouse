@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, createElement, type FormEvent } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowRight, MagnifyingGlass } from 'phosphor-react-native';
 import type { LandingServiceLink } from '@buildmyhouse/shared-types';
+import WebLandmark from '@/components/seo/WebLandmark';
 import { filterServicePageLinks } from '@/lib/service-page-search';
 import { buildWhatsAppServiceRequestUrl } from '@/lib/whatsapp-support';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
@@ -53,36 +54,57 @@ export default function LandingServiceSearchBar({
     void openWhatsApp();
   };
 
+  const handleFormSubmit = (event?: FormEvent) => {
+    event?.preventDefault();
+    handleSubmit();
+  };
+
   const isHero = variant === 'hero';
 
   const panelMaxHeight = isHero ? 200 : 280;
 
-  return (
-    <View className="w-full">
-      <View
-        className={
-          isHero
-            ? 'flex-row items-center w-full bg-white rounded-xl border border-slate-200 px-2 bmh-hero-search-bar'
-            : 'rounded-[22px] border bg-white px-4 py-2 flex-row items-center'
-        }
-        style={isHero ? undefined : { borderColor: LANDING_BORDER }}
-      >
-        {isHero ? (
-          <View className="pl-2 pr-1">
-            <MagnifyingGlass size={20} color="#94a3b8" weight="regular" />
-          </View>
-        ) : null}
+  const searchRow = (
+    <View
+      className={
+        isHero
+          ? 'flex-row items-center w-full bg-white rounded-xl border border-slate-200 px-2 bmh-hero-search-bar'
+          : 'rounded-[22px] border bg-white px-4 py-2 flex-row items-center'
+      }
+      style={isHero ? undefined : { borderColor: LANDING_BORDER }}
+    >
+      {isHero ? (
+        <View className="pl-2 pr-1">
+          <MagnifyingGlass size={20} color="#94a3b8" weight="regular" />
+        </View>
+      ) : null}
+      {Platform.OS === 'web' ? (
+        createElement('input', {
+          type: 'search',
+          name: 'q',
+          required: true,
+          value: query,
+          placeholder,
+          'aria-label': 'Search service pages',
+          className: isHero
+            ? 'flex-1 py-3.5 px-2 text-sm text-black bmh-hero-search-input'
+            : 'flex-1 text-base py-2',
+          style: {
+            fontFamily: isHero ? 'Poppins_500Medium' : 'Poppins_400Regular',
+            color: LANDING_INK,
+            outlineStyle: 'none',
+            border: 'none',
+            background: 'transparent',
+          },
+          onFocus: () => setIsFocused(true),
+          onBlur: () => window.setTimeout(() => setIsFocused(false), 120),
+          onChange: (event: any) => setQuery(event.target.value),
+        })
+      ) : (
         <TextInput
           value={query}
           onChangeText={setQuery}
           onFocus={() => setIsFocused(true)}
-          onBlur={() => {
-            if (Platform.OS === 'web') {
-              window.setTimeout(() => setIsFocused(false), 120);
-              return;
-            }
-            setIsFocused(false);
-          }}
+          onBlur={() => setIsFocused(false)}
           onSubmitEditing={handleSubmit}
           placeholder={placeholder}
           placeholderTextColor={isHero ? '#94a3b8' : '#9CA3AF'}
@@ -102,6 +124,20 @@ export default function LandingServiceSearchBar({
             outlineStyle: 'none',
           } as any}
         />
+      )}
+      {Platform.OS === 'web' ? (
+        createElement(
+          'button',
+          {
+            type: 'submit',
+            className: isHero
+              ? 'bg-black p-2 rounded-lg m-1 bmh-glass-btn bmh-glass-btn-dark text-white text-sm font-semibold'
+              : 'w-10 h-10 rounded-full bg-black text-white flex items-center justify-center',
+            'aria-label': hasResults || !trimmedQuery ? 'Search services' : 'Request service on WhatsApp',
+          },
+          isHero ? '→' : '⌕',
+        )
+      ) : (
         <Pressable
           onPress={handleSubmit}
           className={
@@ -118,7 +154,19 @@ export default function LandingServiceSearchBar({
             <MagnifyingGlass size={18} color="#FFFFFF" weight="bold" />
           )}
         </Pressable>
-      </View>
+      )}
+    </View>
+  );
+
+  return (
+    <View className="w-full">
+      {Platform.OS === 'web' ? (
+        <WebLandmark tag="form" role="search" className="w-full" onSubmit={handleFormSubmit as any}>
+          {searchRow}
+        </WebLandmark>
+      ) : (
+        searchRow
+      )}
 
       {showPanel ? (
         <View

@@ -118,6 +118,16 @@ const SEO_PAGES = {
     description:
       'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment.',
   },
+  '/book-repair': {
+    title: 'Book a Verified Repair in Lagos | BuildMyHouse',
+    description:
+      'Schedule a verified repair in Lagos online. Choose service, date, and time. BuildMyHouse service fee is free for now — pay contractor quote only.',
+  },
+  '/pricing/repairs': {
+    title: 'Repair Pricing Guide Lagos | BuildMyHouse',
+    description:
+      'Directional repair pricing in Lagos (NGN). BuildMyHouse platform service fee is free for now; client pays verified contractor quote only.',
+  },
   '/services/lagos/plumbing-repair': {
     title: 'Burst Pipe & Blocked Drain Repair in Lagos | Verified Plumbers | BuildMyHouse',
     description:
@@ -407,9 +417,9 @@ function upsertMeta(html, attr, key, value) {
   return html.replace('</head>', `  ${tag}\n</head>`);
 }
 
-function upsertLink(html, rel, href) {
-  const pattern = new RegExp(`<link\\s+rel="${rel}"\\s+href="[^"]*"\\s*/?>`, 'i');
-  const tag = `<link rel="${rel}" href="${escapeHtml(href)}" />`;
+function upsertLink(html, rel, href, extraAttrs = '') {
+  const pattern = new RegExp(`<link\\s+rel="${rel}"\\s+href="[^"]*"[^>]*/?>`, 'i');
+  const tag = `<link rel="${rel}" href="${escapeHtml(href)}"${extraAttrs ? ` ${extraAttrs}` : ''} />`;
   if (pattern.test(html)) return html.replace(pattern, tag);
   return html.replace('</head>', `  ${tag}\n</head>`);
 }
@@ -431,6 +441,12 @@ function upsertJsonLd(html, id, payload) {
   }
   return html.replace('</head>', `  ${scriptTag}\n</head>`);
 }
+
+const MARKDOWN_ALTERNATES = {
+  '/': '/index.md',
+  '/book-repair': '/book-repair.md',
+  '/pricing/repairs': '/pricing/repairs.md',
+};
 
 function patchHtmlForRoute(html, route) {
   const redirectTarget = REDIRECTS[route];
@@ -461,6 +477,15 @@ function patchHtmlForRoute(html, route) {
   next = upsertMeta(next, 'property', 'og:url', canonicalUrl);
   next = upsertMeta(next, 'name', 'twitter:title', title);
   next = upsertMeta(next, 'name', 'twitter:description', description);
+  const markdownPath = MARKDOWN_ALTERNATES[route];
+  if (markdownPath) {
+    next = upsertLink(
+      next,
+      'alternate',
+      `${WEB_URL}${markdownPath}`,
+      'type="text/markdown" title="Markdown version for AI agents"',
+    );
+  }
   if (route === '/') {
     next = upsertJsonLd(next, 'buildmyhouse-home-jsonld', HOME_JSON_LD);
   }
@@ -515,6 +540,16 @@ for (const filePath of walkHtmlFiles(distDir)) {
 
 for (const [legacyRoute, targetRoute] of Object.entries(REDIRECTS)) {
   writeRedirectHtml(legacyRoute, targetRoute);
+}
+
+const publicDir = path.resolve(process.cwd(), 'public');
+const agentMarkdownFiles = ['index.md', 'book-repair.md', 'pricing/repairs.md', 'robots.txt', 'llms.txt', 'sitemap.xml'];
+for (const relativePath of agentMarkdownFiles) {
+  const source = path.join(publicDir, relativePath);
+  if (!fs.existsSync(source)) continue;
+  const target = path.join(distDir, relativePath);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(source, target);
 }
 
 console.log(`[seo] Static SEO injection complete (${patched} patched, ${redirected + Object.keys(REDIRECTS).length} redirects).`);
