@@ -8,6 +8,11 @@ export type InternalLinkItem = {
   href: string;
 };
 
+const LINK_CHIP_STYLE = { paddingHorizontal: 12, paddingVertical: 5 } as const;
+const LINK_CHIP_STYLE_COMPACT = { paddingHorizontal: 10, paddingVertical: 5 } as const;
+const LINK_CHIP_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 16 } as const;
+const LINK_CHIP_TEXT_COMPACT = { fontFamily: 'Poppins_500Medium', fontSize: 11, lineHeight: 14 } as const;
+
 type InternalLinksBlockProps = {
   title?: string;
   links: InternalLinkItem[];
@@ -29,11 +34,12 @@ export default function InternalLinksBlock({
     <TouchableOpacity
       key={item.href}
       onPress={() => router.push(item.href as any)}
-      className={`${dark ? 'bg-white/10' : 'bg-gray-100'} rounded-full ${compact ? 'px-2.5 py-1.5 mr-2' : 'px-3 py-2'}`}
+      className={`${dark ? 'bg-white/10' : 'bg-gray-100'} rounded-full items-center justify-center ${compact ? 'mr-2' : ''}`}
+      style={compact ? LINK_CHIP_STYLE_COMPACT : LINK_CHIP_STYLE}
     >
       <Text
         className={`${dark ? 'text-white/80' : 'text-gray-800'} text-xs`}
-        style={{ fontFamily: 'Poppins_500Medium', fontSize: compact ? 11 : 12 }}
+        style={compact ? LINK_CHIP_TEXT_COMPACT : LINK_CHIP_TEXT}
         numberOfLines={1}
       >
         {item.label}

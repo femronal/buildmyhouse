@@ -269,18 +269,37 @@ form.bmh-web-landmark {
 
 @media (hover: hover) {
   .bmh-project-start-card:hover {
-    box-shadow: 0 20px 40px rgba(24, 24, 27, 0.12);
-    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+    transform: translateY(-3px);
   }
 
   .bmh-project-start-card:hover img,
   .bmh-project-start-card:hover .bmh-project-start-card-img {
     transform: scale(1.03);
   }
+
+  .bmh-project-start-card:hover .bmh-project-start-card-arrow {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+  }
 }
 
 .bmh-project-start-card {
-  transition: box-shadow 0.25s ease, transform 0.25s ease;
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.bmh-project-start-card-arrow {
+  transition:
+    background-color 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.bmh-project-start-card-fade {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.72), transparent);
 }
 
 .bmh-project-start-card img,

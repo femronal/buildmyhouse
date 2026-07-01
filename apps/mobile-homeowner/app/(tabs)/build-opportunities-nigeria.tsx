@@ -68,6 +68,9 @@ const OPPORTUNITY_TABS: UnderlineTabItem<BuildOpportunityCategoryKey>[] = [
   { key: 'environmental_construction', label: 'Environmental' },
 ];
 
+const FILTER_PILL_STYLE = { paddingHorizontal: 12, paddingVertical: 5 } as const;
+const FILTER_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 16 } as const;
+
 type BuildOpportunity = {
   id: string;
   source: 'rental' | 'house' | 'land';
@@ -507,9 +510,10 @@ export default function RentScreen() {
             <TouchableOpacity
               key={tag}
               onPress={() => setActiveFilter(tag)}
-              className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
+              className={`rounded-full mr-2 items-center justify-center ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
+              style={FILTER_PILL_STYLE}
             >
-              <Text className={activeFilter === tag ? 'text-black' : 'text-white/80'} style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}>
+              <Text className={activeFilter === tag ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
                 {tag === 'All' ? 'All' : formatBuildOpportunityKey(tag)}
               </Text>
             </TouchableOpacity>

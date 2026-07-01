@@ -26,6 +26,11 @@ import {
   getTabListingChrome,
 } from "@/lib/responsive-layout";
 
+const FILTER_PILL_STYLE = { paddingHorizontal: 12, paddingVertical: 5 } as const;
+const FILTER_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 16 } as const;
+const FILTER_LOCATION_PILL_STYLE = { paddingHorizontal: 10, paddingVertical: 5 } as const;
+const FILTER_LOCATION_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 11, lineHeight: 14 } as const;
+
 export default function ExploreScreen() {
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
@@ -425,11 +430,12 @@ export default function ExploreScreen() {
             <TouchableOpacity 
               key={tag}
               onPress={() => setActiveFilter(tag)}
-              className={`px-4 py-2 rounded-full mr-2 ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
+              className={`rounded-full mr-2 items-center justify-center ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
+              style={FILTER_PILL_STYLE}
             >
               <Text 
                 className={activeFilter === tag ? 'text-black' : 'text-white/80'}
-                style={{ fontFamily: 'Poppins_500Medium', fontSize: 12 }}
+                style={FILTER_PILL_TEXT}
               >
                 {tag}
               </Text>
@@ -441,13 +447,14 @@ export default function ExploreScreen() {
               <TouchableOpacity
                 key={location}
                 onPress={() => setActiveLocationFilter(location)}
-                className={`px-3 py-2 rounded-full mr-2 border ${
+                className={`rounded-full mr-2 border items-center justify-center ${
                   activeLocationFilter === location ? 'bg-white border-white' : 'bg-white/5 border-white/15'
                 }`}
+                style={FILTER_LOCATION_PILL_STYLE}
               >
                 <Text
                   className={activeLocationFilter === location ? 'text-black' : 'text-white/75'}
-                  style={{ fontFamily: 'Poppins_500Medium', fontSize: 11 }}
+                  style={FILTER_LOCATION_PILL_TEXT}
                 >
                   {location}
                 </Text>
