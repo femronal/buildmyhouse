@@ -13,15 +13,22 @@ export default function TabsLayout() {
     () => getFloatingTabBarMetrics(width, insets.bottom),
     [width, insets.bottom],
   );
+  const isCompact = width <= 390;
+  const isDesktopTab = width >= 768;
 
   const renderIcon = (Icon: any) =>
     ({ color, focused }: { color: string; focused: boolean }) => (
       <View
         className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-        style={{ paddingVertical: 6, paddingHorizontal: 8 }}
+        style={{
+          width: isDesktopTab ? 32 : undefined,
+          height: isDesktopTab ? 32 : undefined,
+          paddingVertical: isDesktopTab ? 0 : 6,
+          paddingHorizontal: isDesktopTab ? 0 : 8,
+        }}
       >
         <Icon
-          size={width <= 390 ? 22 : 24}
+          size={isCompact ? 22 : 24}
           color={focused ? '#FFFFFF' : color}
           weight={focused ? 'fill' : 'regular'}
         />
@@ -32,6 +39,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarLabelPosition: isDesktopTab ? 'beside-icon' : 'below-icon',
         tabBarStyle: {
           position: 'absolute',
           bottom: metrics.bottomInset,
@@ -46,7 +54,14 @@ export default function TabsLayout() {
           shadowOpacity: 0.3,
           shadowRadius: 16,
           elevation: 10,
-          paddingHorizontal: width <= 390 ? 6 : 10,
+          paddingHorizontal: isCompact ? 6 : 10,
+          ...(Platform.OS === 'web' && isDesktopTab
+            ? ({
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-around',
+              } as any)
+            : null),
           ...(Platform.OS === 'web'
             ? ({
                 backdropFilter: 'blur(18px) saturate(160%)',
@@ -77,20 +92,26 @@ export default function TabsLayout() {
         ),
         tabBarActiveTintColor: '#000000',
         tabBarInactiveTintColor: '#737373',
-        /** Space between icon row and label — prevents active pill overlapping text */
+        /** Space between icon row and label — desktop uses beside-icon so no gap needed */
         tabBarIconStyle: {
-          marginBottom: width <= 390 ? 6 : 8,
+          marginBottom: isDesktopTab ? 0 : isCompact ? 6 : 8,
         },
         tabBarLabelStyle: {
           fontFamily: 'Poppins_600SemiBold',
-          fontSize: width <= 390 ? 11 : 13,
+          fontSize: isCompact ? 11 : 13,
           marginTop: 0,
+          marginLeft: isDesktopTab ? 2 : 0,
           fontWeight: '600',
-          lineHeight: width <= 390 ? 14 : 16,
+          lineHeight: isDesktopTab ? 20 : isCompact ? 14 : 16,
+          ...(isDesktopTab ? { alignSelf: 'center' as const } : null),
         },
         tabBarItemStyle: {
-          paddingTop: width <= 390 ? 6 : 8,
-          paddingBottom: width <= 390 ? 4 : 6,
+          flexDirection: isDesktopTab ? 'row' : 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingTop: isCompact ? 6 : 8,
+          paddingBottom: isCompact ? 4 : 6,
+          ...(isDesktopTab ? { gap: 6 } : null),
         },
       }}
     >

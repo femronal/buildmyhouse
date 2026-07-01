@@ -8,14 +8,31 @@ interface CarouselImage {
 
 interface ImageCarouselProps {
   images: CarouselImage[];
+  /** Fixed slide height — used when aspectRatio is omitted. */
   height?: number;
+  /** Width ÷ height (e.g. 4/3). Keeps photos from stretching into ultra-wide strips. */
+  aspectRatio?: number;
+  /** Caps computed height when aspectRatio is set (typical for modals on wide screens). */
+  maxHeight?: number;
+  className?: string;
 }
-export default function ImageCarousel({ images, height = 140 }: ImageCarouselProps) {
+
+export default function ImageCarousel({
+  images,
+  height = 140,
+  aspectRatio,
+  maxHeight = 320,
+  className = '',
+}: ImageCarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const { width: viewportWidth } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = useState(0);
   const effectiveWidth = containerWidth > 0 ? containerWidth : viewportWidth;
+  const slideHeight =
+    typeof aspectRatio === 'number' && aspectRatio > 0
+      ? Math.min(effectiveWidth / aspectRatio, maxHeight)
+      : height;
 
   const handleScroll = (event: any) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -26,7 +43,7 @@ export default function ImageCarousel({ images, height = 140 }: ImageCarouselPro
 
   return (
     <View
-      className="relative"
+      className={`bmh-image-carousel relative overflow-hidden rounded-2xl ${className}`.trim()}
       onLayout={(event) => {
         const width = event.nativeEvent.layout.width;
         if (width > 0 && Math.abs(width - containerWidth) > 1) {
@@ -43,10 +60,11 @@ export default function ImageCarousel({ images, height = 140 }: ImageCarouselPro
         scrollEventThrottle={16}
       >
         {images.map((image, index) => (
-          <View key={index} style={{ width: effectiveWidth, height }} className="relative">
+          <View key={index} style={{ width: effectiveWidth, height: slideHeight }} className="relative">
             <Image
               source={{ uri: image.url }}
-              style={{ width: effectiveWidth, height }}
+              className="bmh-image-carousel-slide"
+              style={{ width: effectiveWidth, height: slideHeight }}
               resizeMode="cover"
             />
             <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-3 py-1">

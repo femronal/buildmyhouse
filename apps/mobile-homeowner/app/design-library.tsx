@@ -8,6 +8,12 @@ import { useDesigns } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import DesignProductCard from '@/components/DesignProductCard';
 import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
+import {
+  ALL_LOCATIONS_FILTER,
+  LAGOS_LGAS,
+  designMatchesLocationFilter,
+  getDesignLocationSearchFields,
+} from '@/lib/design-location';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 
@@ -24,6 +30,7 @@ export default function DesignLibraryScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeLocationFilter, setActiveLocationFilter] = useState(ALL_LOCATIONS_FILTER);
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
   const filterAnim = useRef(new Animated.Value(0)).current;
@@ -75,7 +82,7 @@ export default function DesignLibraryScreen() {
 
   const filterHeight = filterAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0, 60],
+    outputRange: [0, 132],
   });
 
   const filterOpacity = filterAnim.interpolate({
@@ -174,10 +181,13 @@ export default function DesignLibraryScreen() {
           design?.projectTypeFilter,
           design?.projectTypeTag,
           design?.planType,
+          ...getDesignLocationSearchFields(design),
           ...(design?.images || []).map((image: any) => image?.label || ''),
         ],
       });
       if (!matchesSearch) return false;
+
+      if (!designMatchesLocationFilter(design, activeLocationFilter)) return false;
 
       if (normalizeDesignTab(design) !== activeTab) return false;
 
@@ -186,7 +196,7 @@ export default function DesignLibraryScreen() {
       const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
       return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
     });
-  }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
+  }, [activeFilter, activeLocationFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
   const handleUseDesign = async (design: any) => {
     const queryParams = new URLSearchParams({
@@ -267,6 +277,7 @@ export default function DesignLibraryScreen() {
             onSelect={(key) => {
               setActiveTab(key);
               setActiveFilter('All');
+              setActiveLocationFilter(ALL_LOCATIONS_FILTER);
             }}
           />
         </View>
@@ -278,7 +289,7 @@ export default function DesignLibraryScreen() {
           <View className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 h-11 flex-row items-center mr-2">
             <MagnifyingGlass size={16} color="#8a8a8a" weight="regular" />
             <TextInput
-              placeholder="Search designs..."
+              placeholder="Search designs or location..."
               placeholderTextColor="#8a8a8a"
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -297,7 +308,7 @@ export default function DesignLibraryScreen() {
 
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
           {(tabFilters[activeTab] || ['All']).map((tag) => (
             <TouchableOpacity 
               key={tag}
@@ -313,13 +324,38 @@ export default function DesignLibraryScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
+          {[ALL_LOCATIONS_FILTER, ...LAGOS_LGAS].map((location) => (
+            <TouchableOpacity
+              key={location}
+              onPress={() => setActiveLocationFilter(location)}
+              className={`px-3 py-2 rounded-full mr-2 border ${
+                activeLocationFilter === location ? 'bg-white border-white' : 'bg-white/5 border-white/15'
+              }`}
+            >
+              <Text
+                className={activeLocationFilter === location ? 'text-black' : 'text-white/75'}
+                style={{ fontFamily: 'Poppins_500Medium', fontSize: 11 }}
+              >
+                {location}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </Animated.View>
 
       {/* Current Filter Indicator */}
-      {activeFilter !== 'All' && (
+      {(activeFilter !== 'All' || activeLocationFilter !== ALL_LOCATIONS_FILTER) && (
         <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
-          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-            <Text className="text-lg text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center flex-wrap gap-x-2">
+            {activeFilter !== 'All' ? (
+              <Text className="text-lg text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{activeFilter}</Text>
+            ) : null}
+            {activeLocationFilter !== ALL_LOCATIONS_FILTER ? (
+              <Text className="text-sm text-white/70" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {activeFilter !== 'All' ? '· ' : ''}{activeLocationFilter}
+              </Text>
+            ) : null}
             <CaretDown size={16} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
         </View>
@@ -360,11 +396,11 @@ export default function DesignLibraryScreen() {
             ) : (
               <>
                 <Text className="text-white/70 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {searchQuery || activeFilter !== 'All' ? 'No designs match your filters' : 'No designs available yet'}
+                  {searchQuery || activeFilter !== 'All' || activeLocationFilter !== ALL_LOCATIONS_FILTER ? 'No designs match your filters' : 'No designs available yet'}
                 </Text>
                 <Text className="text-white/40 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {searchQuery || activeFilter !== 'All' 
-                    ? 'Try adjusting your search, project type, or filters'
+                  {searchQuery || activeFilter !== 'All' || activeLocationFilter !== ALL_LOCATIONS_FILTER
+                    ? 'Try adjusting your search, service type, or location filters'
                     : 'General Contractors can upload design plans that will appear here'}
                 </Text>
               </>

@@ -274,7 +274,7 @@ export default function HomeLandingPage() {
                   <LogoText variant="black" size="md" />
                 </Pressable>
               </Link>
-              <WebLandmark tag="nav" aria-label="Primary" className="hidden lg:flex flex-row items-center gap-6">
+              <WebLandmark tag="nav" aria-label="Primary" className="bmh-landing-primary-nav hidden lg:flex flex-row items-center gap-6">
                 {NAV_ITEMS.filter((item) => item.label !== 'How It Works').map((item) =>
                   item.href.startsWith('#') ? (
                     <Pressable key={item.label} onPress={() => navPress(item.href)}>

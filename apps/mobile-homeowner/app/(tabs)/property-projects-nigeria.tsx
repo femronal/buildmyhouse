@@ -12,6 +12,12 @@ import DesignProductCard from '@/components/DesignProductCard';
 import { useWebSeo } from '@/lib/seo';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
+import {
+  ALL_LOCATIONS_FILTER,
+  LAGOS_LGAS,
+  designMatchesLocationFilter,
+  getDesignLocationSearchFields,
+} from '@/lib/design-location';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -47,6 +53,7 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [activeLocationFilter, setActiveLocationFilter] = useState(ALL_LOCATIONS_FILTER);
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const [isProjectsMessageExpanded, setIsProjectsMessageExpanded] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
@@ -119,7 +126,7 @@ export default function ExploreScreen() {
     () =>
       filterAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, listingChrome.mobileWeb ? 52 : 60],
+        outputRange: [0, listingChrome.mobileWeb ? 104 : 132],
       }),
     [filterAnim, listingChrome.mobileWeb],
   );
@@ -237,10 +244,13 @@ export default function ExploreScreen() {
           design?.projectTypeFilter,
           design?.projectTypeTag,
           design?.planType,
+          ...getDesignLocationSearchFields(design),
           ...(design?.images || []).map((image: any) => image?.label || ''),
         ],
       });
       if (!matchesSearch) return false;
+
+      if (!designMatchesLocationFilter(design, activeLocationFilter)) return false;
 
       if (normalizeDesignTab(design) !== activeTab) return false;
 
@@ -249,7 +259,7 @@ export default function ExploreScreen() {
       const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
       return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
     });
-  }, [activeFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
+  }, [activeFilter, activeLocationFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
 
   useWebSeo({
     title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
@@ -340,6 +350,7 @@ export default function ExploreScreen() {
               onSelect={(key) => {
                 setActiveTab(key);
                 setActiveFilter('All');
+                setActiveLocationFilter(ALL_LOCATIONS_FILTER);
               }}
             />
           </View>
@@ -388,8 +399,8 @@ export default function ExploreScreen() {
                     </Text>
                     <Text className="text-white/60" style={{ fontFamily: 'Poppins_400Regular', fontSize: 10, lineHeight: 14 }}>
                       {isProjectsMessageExpanded
-                        ? 'These scopes are abstract project ideas (not tied to one physical location). Use them to plan better before speaking to anyone on site. Filter by project type and compare options to find the best fit for your property. '
-                        : 'These scopes are abstract project ideas you can adapt to your property.'}
+                        ? 'Each scope shows the contractor service location on the card. Search by neighbourhood or filter by Lagos LGA to find scopes that fit your property. Filter by project type and compare options before you speak to anyone on site. '
+                        : 'Each scope shows a service location — search or filter by Lagos LGA to find a fit.'}
                       {isProjectsMessageExpanded ? tabDescription[activeTab] : ''}
                     </Text>
                   </View>
@@ -409,7 +420,7 @@ export default function ExploreScreen() {
 
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
             {(tabFilters[activeTab] || ['All']).map((tag) => (
             <TouchableOpacity 
               key={tag}
@@ -425,17 +436,40 @@ export default function ExploreScreen() {
             </TouchableOpacity>
             ))}
           </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
+            {[ALL_LOCATIONS_FILTER, ...LAGOS_LGAS].map((location) => (
+              <TouchableOpacity
+                key={location}
+                onPress={() => setActiveLocationFilter(location)}
+                className={`px-3 py-2 rounded-full mr-2 border ${
+                  activeLocationFilter === location ? 'bg-white border-white' : 'bg-white/5 border-white/15'
+                }`}
+              >
+                <Text
+                  className={activeLocationFilter === location ? 'text-black' : 'text-white/75'}
+                  style={{ fontFamily: 'Poppins_500Medium', fontSize: 11 }}
+                >
+                  {location}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
       </Animated.View>
 
       {/* Current Filter Indicator */}
       <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
-          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
+          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center flex-wrap gap-x-2">
             <Text
               className="text-white"
               style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
             >
               {activeFilter}
             </Text>
+            {activeLocationFilter !== ALL_LOCATIONS_FILTER ? (
+              <Text className="text-white/70" style={{ fontFamily: 'Poppins_500Medium', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
+                · {activeLocationFilter}
+              </Text>
+            ) : null}
             <CaretDown size={16} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
           </TouchableOpacity>
       </View>

@@ -1,134 +1,80 @@
-import { View, Text, TouchableOpacity, Pressable, ScrollView, useWindowDimensions } from 'react-native';
+import { Image, Pressable, ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import {
-  Airplane,
-  ArrowLeft,
-  ArrowUpRight,
-  Camera,
-  ChatCircleText,
-  ClipboardText,
-  Coins,
-  FileText,
-  HouseLine,
-  Images,
-  ListChecks,
-  Ruler,
-  ShieldCheck,
-} from 'phosphor-react-native';
-import Svg, { Path } from 'react-native-svg';
+import { ArrowLeft, ArrowUpRight } from 'phosphor-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const CARD_BG = '#0A0A0A';
+const PAGE_BG = '#E4E9E5';
+const INK = '#18181B';
+const MUTED = '#71717A';
 
-function IconBadge({ children, label }: { children: React.ReactNode; label: string }) {
+const PREBUILT_IMAGE = require('@/assets/images/repair.jpg');
+const OWN_JOB_IMAGE = require('@/assets/images/worried-woman-dealing-with-a-plumbing-emergency-2026-03-25-08-24-07-utc.jpg');
+
+type ProjectStartCardProps = {
+  tag: string;
+  title: string;
+  subtitle: string;
+  image: number;
+  onPress: () => void;
+  isWide: boolean;
+};
+
+function ProjectStartCard({ tag, title, subtitle, image, onPress, isWide }: ProjectStartCardProps) {
   return (
-    <View className="items-center gap-2.5">
-      <View className="w-12 h-12 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-        {children}
-      </View>
-      <Text className="text-[11px] text-white/45 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-/** Mini "project ideas" table preview — mirrors the template's data table graphic. */
-function IdeasTablePreview() {
-  return (
-    <View className="w-full max-w-sm self-center mt-6">
-      <View className="flex-row gap-3 mb-2.5 pl-2">
-        {['Project', 'Stages', 'Status'].map((h) => (
-          <Text
-            key={h}
-            className="flex-1 text-[10px] uppercase text-white/35"
-            style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 1.5 }}
-          >
-            {h}
-          </Text>
-        ))}
-      </View>
-      <View className="flex-row gap-3 py-2 pl-2 border-t border-white/5 bg-white/[0.02] rounded-lg">
-        <Text className="flex-1 text-xs text-white/80" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          2-bed reno
-        </Text>
-        <Text className="flex-1 text-xs text-white/80" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          5
-        </Text>
-        <Text className="flex-1 text-xs text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          Verified
-        </Text>
-      </View>
-      <View className="flex-row gap-3 py-2 pl-2 border-t border-white/5 opacity-40">
-        <Text className="flex-1 text-xs text-white/60" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          Roof repair
-        </Text>
-        <Text className="flex-1 text-xs text-white/60" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          2
-        </Text>
-        <Text className="flex-1 text-xs text-white/60" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-          Verified
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-/** Hub-and-spoke graphic — your photos, goals, and documents feeding one structured scope. */
-function BriefHubGraphic() {
-  const node = (Icon: typeof Camera, style: object) => (
-    <View
-      className="absolute w-10 h-10 rounded-full bg-white/5 border border-white/10 items-center justify-center"
-      style={style}
+    <Pressable
+      onPress={onPress}
+      className="bg-white p-4 rounded-[40px] active:opacity-90 bmh-project-start-card"
+      style={{
+        flex: isWide ? 1 : undefined,
+        width: isWide ? undefined : '100%',
+        shadowColor: '#18181B',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.06,
+        shadowRadius: 24,
+        elevation: 4,
+      }}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${subtitle}`}
     >
-      <Icon size={16} color="rgba(255,255,255,0.55)" weight="regular" />
-    </View>
-  );
-
-  return (
-    <View className="w-full max-w-sm self-center" style={{ height: 210 }}>
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 400 300"
-        style={{ position: 'absolute', inset: 0, opacity: 0.2 }}
-      >
-        <Path d="M200 150 C 200 100, 120 100, 120 80" stroke="white" fill="none" strokeWidth={1.5} />
-        <Path d="M200 150 C 200 100, 280 100, 280 80" stroke="white" fill="none" strokeWidth={1.5} />
-        <Path d="M200 150 C 200 150, 80 150, 80 140" stroke="white" fill="none" strokeWidth={1.5} />
-        <Path d="M200 150 C 200 150, 320 150, 320 140" stroke="white" fill="none" strokeWidth={1.5} />
-        <Path d="M200 150 L 200 90" stroke="white" fill="none" strokeWidth={1.5} />
-      </Svg>
-
-      {node(Camera, { top: '14%', left: '22%' })}
-      {node(FileText, { top: '8%', left: '50%', marginLeft: -20 })}
-      {node(ChatCircleText, { top: '14%', right: '22%' })}
-      {node(Ruler, { top: '38%', left: '10%' })}
-      {node(Images, { top: '38%', right: '10%' })}
-
-      {/* Center hub */}
       <View
-        className="absolute w-16 h-16 rounded-full border border-white/10 items-center justify-center"
-        style={{ top: '50%', left: '50%', marginLeft: -32, marginTop: -16, backgroundColor: CARD_BG }}
+        className="rounded-[32px] overflow-hidden mb-5 relative bg-[#F2F4F3]"
+        style={{ aspectRatio: 4 / 3 }}
       >
-        <View className="w-12 h-12 rounded-full bg-white/10 border border-white/5 items-center justify-center">
-          <ListChecks size={22} color="#ffffff" weight="regular" />
+        <Image
+          source={image}
+          className="bmh-project-start-card-img"
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover"
+        />
+        <View className="absolute bottom-5 left-5">
+          <View className="px-4 py-1.5 rounded-full" style={{ backgroundColor: INK }}>
+            <Text className="text-xs text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              {tag}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
-  );
-}
 
-function CardFooterPill({ label }: { label: string }) {
-  return (
-    <View className="flex-row items-center justify-between px-5 py-3 rounded-xl border border-white/10 bg-white/5 mt-6">
-      <Text className="text-sm text-white/70" style={{ fontFamily: 'Poppins_500Medium' }}>
-        {label}
-      </Text>
-      <View className="w-8 h-8 rounded-lg bg-white items-center justify-center">
-        <ArrowUpRight size={16} color="#000000" weight="bold" />
+      <View className="flex-row items-start justify-between px-2 pb-2 gap-3">
+        <View className="flex-1">
+          <Text
+            className="text-[22px] md:text-2xl mb-1.5 leading-tight"
+            style={{ fontFamily: 'Poppins_600SemiBold', color: INK }}
+          >
+            {title}
+          </Text>
+          <Text className="text-base leading-relaxed" style={{ fontFamily: 'Poppins_400Regular', color: MUTED }}>
+            {subtitle}
+          </Text>
+        </View>
+        <View
+          className="w-11 h-11 rounded-full items-center justify-center mt-1"
+          style={{ backgroundColor: PAGE_BG }}
+        >
+          <ArrowUpRight size={20} color={INK} weight="bold" />
+        </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -137,8 +83,7 @@ export default function ChooseProjectTypeScreen() {
   const params = useLocalSearchParams();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isDesktop = width >= 1024;
-  const isTablet = width >= 768;
+  const isWide = width >= 768;
 
   const addressData = {
     address: params.address as string,
@@ -160,162 +105,82 @@ export default function ChooseProjectTypeScreen() {
   };
 
   return (
-    <View className="flex-1 bg-black">
+    <View className="flex-1" style={{ backgroundColor: PAGE_BG }}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingTop: Math.max(20, insets.top + 10),
-          paddingBottom: Math.max(40, insets.bottom + 24),
+          paddingTop: Math.max(16, insets.top + 8),
+          paddingBottom: Math.max(32, insets.bottom + 24),
         }}
         showsVerticalScrollIndicator={false}
       >
         <View className="w-full max-w-6xl self-center px-5 md:px-8">
           <TouchableOpacity
             onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
-            className="w-10 h-10 rounded-full border border-white/15 items-center justify-center mb-8"
+            className="w-10 h-10 rounded-full items-center justify-center mb-8 border"
+            style={{ borderColor: 'rgba(24,24,27,0.12)', backgroundColor: 'rgba(255,255,255,0.65)' }}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={20} color="#ffffff" weight="regular" />
+            <ArrowLeft size={20} color={INK} weight="regular" />
           </TouchableOpacity>
 
-          {/* Header */}
-          <View className="items-center mb-10 md:mb-14">
-            <Text
-              className="text-3xl md:text-5xl text-white text-center tracking-tight mb-4"
-              style={{ fontFamily: 'Poppins_600SemiBold' }}
-            >
-              Start Your Project
-            </Text>
-            <Text
-              className="text-sm md:text-base text-white/45 text-center max-w-xl leading-relaxed"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Choose how you want to begin. Either way, you get a verified contractor, a clear scope, and staged
-              payments — we'll guide the rest.
-            </Text>
-          </View>
-
-          {/* Feature cards */}
-          <View className="gap-5" style={{ flexDirection: isDesktop ? 'row' : 'column' }}>
-            {/* Card 1: Browse verified project ideas */}
-            <Pressable
-              onPress={handleChooseDesign}
-              className="flex-1 rounded-3xl border border-white/10 p-6 md:p-8 overflow-hidden active:opacity-85"
-              style={{ backgroundColor: CARD_BG }}
-              accessibilityRole="button"
-            >
-              <View className="flex-row justify-center gap-10 md:gap-14 pt-2">
-                <IconBadge label="Verified GCs">
-                  <ShieldCheck size={20} color="rgba(255,255,255,0.55)" weight="regular" />
-                </IconBadge>
-                <IconBadge label="Clear scope">
-                  <ClipboardText size={20} color="rgba(255,255,255,0.55)" weight="regular" />
-                </IconBadge>
-                <IconBadge label="Cost guidance">
-                  <Coins size={20} color="rgba(255,255,255,0.55)" weight="regular" />
-                </IconBadge>
-              </View>
-
-              {/* connector */}
-              <View className="items-center mt-3">
-                <View className="w-px h-5 bg-white/10" />
-              </View>
-
-              <IdeasTablePreview />
-
-              <View className="mt-6">
-                <View className="flex-row items-center gap-2.5 mb-2">
-                  <HouseLine size={18} color="#ffffff" weight="regular" />
-                  <Text className="text-lg md:text-xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Browse Verified Project Ideas
-                  </Text>
-                </View>
-                <Text className="text-sm text-white/45 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Explore ready project options from verified General Contractors — with scope and cost already mapped
-                  out — and kick off faster with proven direction.
-                </Text>
-              </View>
-
-              <CardFooterPill label="Browse project ideas" />
-            </Pressable>
-
-            {/* Card 2: Upload your own brief */}
-            <Pressable
-              onPress={handleUploadPlan}
-              className="flex-1 rounded-3xl border border-white/10 p-6 md:p-8 overflow-hidden active:opacity-85"
-              style={{ backgroundColor: CARD_BG }}
-              accessibilityRole="button"
-            >
-              <View className="flex-1 justify-center py-2">
-                <BriefHubGraphic />
-              </View>
-
-              <View className="mt-6">
-                <View className="flex-row items-center gap-2.5 mb-2">
-                  <ListChecks size={18} color="#ffffff" weight="regular" />
-                  <Text className="text-lg md:text-xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Upload Your Own Project Brief
-                  </Text>
-                </View>
-                <Text className="text-sm text-white/45 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Share your photos, goals, and project details. BuildMyHouse turns them into a structured scope you
-                  can execute with confidence — repairs, upgrades, renovations, or full builds.
-                </Text>
-              </View>
-
-              <CardFooterPill label="Upload your brief" />
-            </Pressable>
-          </View>
-
-          {/* Supporting features */}
           <View
-            className="mt-12 md:mt-16 gap-10 px-1"
-            style={{ flexDirection: isTablet ? 'row' : 'column' }}
+            className="mb-10 md:mb-14"
+            style={{ flexDirection: isWide ? 'row' : 'column', alignItems: isWide ? 'flex-end' : 'flex-start', justifyContent: 'space-between' }}
           >
-            <View className="flex-1 gap-4">
-              <View className="w-12 h-12 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                <ShieldCheck size={20} color="rgba(255,255,255,0.6)" weight="regular" />
-              </View>
-              <View>
-                <Text className="text-base md:text-lg text-white mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Verified professionals only
-                </Text>
-                <Text className="text-sm text-white/45 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Every contractor is verified at their workshop — tools, documents, and at least 3 years of real work —
-                  before they can take your project.
+            <View className="flex-1">
+              <View className="flex-row items-center gap-3 mb-4">
+                <View style={{ height: 1, width: 32, backgroundColor: INK }} />
+                <Text
+                  className="text-xs uppercase"
+                  style={{ fontFamily: 'Poppins_600SemiBold', color: INK, letterSpacing: 2 }}
+                >
+                  How to start
                 </Text>
               </View>
+              <Text
+                className="text-3xl md:text-5xl leading-tight tracking-tight max-w-2xl"
+                style={{ fontFamily: 'Poppins_600SemiBold', color: INK }}
+                accessibilityRole="header"
+              >
+                Pick one way to begin your project
+              </Text>
+              <Text
+                className="text-base md:text-lg mt-4 max-w-xl leading-relaxed"
+                style={{ fontFamily: 'Poppins_400Regular', color: MUTED }}
+              >
+                No long forms first. Tap the option that matches you — both give you a verified worker and step-by-step
+                payments.
+              </Text>
             </View>
+          </View>
 
-            <View className="flex-1 gap-4">
-              <View className="w-12 h-12 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                <Camera size={20} color="rgba(255,255,255,0.6)" weight="regular" />
-              </View>
-              <View>
-                <Text className="text-base md:text-lg text-white mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Pay in stages, with evidence
-                </Text>
-                <Text className="text-sm text-white/45 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Work is broken into stages. You see photos and progress before any payment moves — no lump sums, no
-                  blind transfers.
-                </Text>
-              </View>
-            </View>
+          <View style={{ flexDirection: isWide ? 'row' : 'column', gap: isWide ? 40 : 20 }}>
+            <ProjectStartCard
+              tag="Ready plan"
+              title="Use a ready-made plan"
+              subtitle="See price, stages, and location already set by a verified contractor. Good if you want to start fast."
+              image={PREBUILT_IMAGE}
+              onPress={handleChooseDesign}
+              isWide={isWide}
+            />
+            <ProjectStartCard
+              tag="Your own job"
+              title="Describe your own job"
+              subtitle="Send photos and tell us the problem. We turn it into a clear plan for repairs, upgrades, or building."
+              image={OWN_JOB_IMAGE}
+              onPress={handleUploadPlan}
+              isWide={isWide}
+            />
+          </View>
 
-            <View className="flex-1 gap-4">
-              <View className="w-12 h-12 rounded-full bg-white/5 border border-white/10 items-center justify-center">
-                <Airplane size={20} color="rgba(255,255,255,0.6)" weight="regular" />
-              </View>
-              <View>
-                <Text className="text-base md:text-lg text-white mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Track it from anywhere
-                </Text>
-                <Text className="text-sm text-white/45 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  On site in Lagos or abroad — follow stages, materials, files, and communication in one place, on any
-                  device.
-                </Text>
-              </View>
-            </View>
+          <View
+            className="mt-10 md:mt-14 px-4 py-4 rounded-2xl"
+            style={{ backgroundColor: 'rgba(255,255,255,0.55)', borderWidth: 1, borderColor: 'rgba(24,24,27,0.08)' }}
+          >
+            <Text className="text-sm text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium', color: INK }}>
+              Verified workers only · Pay in stages after photo proof · Track from Lagos or abroad
+            </Text>
           </View>
         </View>
       </ScrollView>

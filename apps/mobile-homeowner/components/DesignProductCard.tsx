@@ -1,6 +1,7 @@
 import { View, Text, Image, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { ArrowUpRight, Heart, Star } from 'phosphor-react-native';
+import { ArrowUpRight, Heart, MapPin, Star } from 'phosphor-react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
+import { getDesignLocationTag } from '@/lib/design-location';
 
 const CARD_BG = '#151515';
 
@@ -70,6 +71,10 @@ export default function DesignProductCard({
   const categoryLabel = `${design?.projectTypeFilter || ''}`.trim() || formatTagLabel(resolveUiProjectTag(design));
   const rating = design.rating ? Number(design.rating).toFixed(1) : '0.0';
   const gradientId = `bmh-card-fade-${design.id}`;
+  const { label: locationLabel, lga: locationLga } = getDesignLocationTag(design);
+  const locationDisplay = locationLga && !locationLabel.toLowerCase().includes(locationLga.toLowerCase())
+    ? `${locationLabel} · ${locationLga}`
+    : locationLabel;
 
   const metaParts = [
     `${design.bedrooms ?? 0} bed`,
@@ -179,6 +184,19 @@ export default function DesignProductCard({
         >
           {design.name}
         </Text>
+
+        <View className="flex-row items-center mb-2 self-start max-w-full">
+          <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full border border-white/15 bg-black/35 max-w-full">
+            <MapPin size={11} color="#cbd5e1" weight="fill" />
+            <Text
+              className="text-[11px] text-white/85 shrink"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+              numberOfLines={1}
+            >
+              {locationDisplay}
+            </Text>
+          </View>
+        </View>
 
         <View className="flex-row items-center flex-wrap gap-x-2 mb-1">
           <View className="flex-row items-center gap-1">

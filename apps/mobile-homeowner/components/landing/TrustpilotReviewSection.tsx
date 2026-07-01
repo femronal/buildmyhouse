@@ -56,11 +56,15 @@ function ReviewColumn({
 
       <Pressable
         onPress={onPress}
-        className={`mt-6 h-12 px-6 rounded-lg self-start flex-row items-center gap-2 bmh-glass-btn ${buttonBgClass}`}
+        className={`mt-6 h-11 md:h-12 px-4 md:px-6 rounded-lg self-start max-w-full flex-row items-center gap-2 bmh-glass-btn ${buttonBgClass}`}
         accessibilityRole="link"
         accessibilityLabel={accessibilityLabel}
       >
-        <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        <Text
+          className="text-[11px] md:text-sm text-white shrink"
+          style={{ fontFamily: 'Poppins_600SemiBold' }}
+          numberOfLines={1}
+        >
           {buttonLabel}
         </Text>
         <ArrowSquareOut size={16} color="#ffffff" weight="bold" />

@@ -244,6 +244,12 @@ body * {
   -webkit-backdrop-filter: blur(12px);
 }
 
+@media (max-width: 1023px) {
+  nav.bmh-landing-primary-nav {
+    display: none !important;
+  }
+}
+
 /* Semantic HTML landmarks on web — match RN View flex column so centered children work */
 header.bmh-web-landmark,
 main.bmh-web-landmark,
@@ -258,8 +264,28 @@ section.bmh-web-landmark {
 
 nav.bmh-web-landmark,
 form.bmh-web-landmark {
-  display: flex;
   box-sizing: border-box;
+}
+
+@media (hover: hover) {
+  .bmh-project-start-card:hover {
+    box-shadow: 0 20px 40px rgba(24, 24, 27, 0.12);
+    transform: translateY(-2px);
+  }
+
+  .bmh-project-start-card:hover img,
+  .bmh-project-start-card:hover .bmh-project-start-card-img {
+    transform: scale(1.03);
+  }
+}
+
+.bmh-project-start-card {
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.bmh-project-start-card img,
+.bmh-project-start-card-img {
+  transition: transform 0.45s ease;
 }
 
 .bmh-hero-search-input,
@@ -472,6 +498,26 @@ form.bmh-web-landmark {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@media (min-width: 768px) {
+  /* Desktop/web floating tab bar — keep icon + label vertically centered */
+  [data-testid='tab-bar'] > div,
+  nav[role='tablist'] > a,
+  nav[role='tablist'] > button {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  nav[role='tablist'] span,
+  nav[role='tablist'] div[role='tab'] {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
 }
 
 /* === Dark glass auth card (email-login) === */
@@ -897,7 +943,132 @@ form.bmh-web-landmark {
 }
 
 .bmh-product-card-img {
+  object-fit: cover;
+  object-position: center;
   transition: transform 0.7s ease;
+}
+
+.bmh-pricing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 640px) {
+  .bmh-pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .bmh-pricing-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.bmh-pricing-grid-item {
+  list-style: none;
+  min-width: 0;
+}
+
+.bmh-pricing-card {
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  padding: 1.25rem;
+  min-height: 220px;
+  transition:
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    transform 0.22s ease;
+}
+
+.bmh-pricing-card-icon {
+  transition:
+    background-color 0.22s ease,
+    transform 0.22s ease;
+}
+
+.bmh-pricing-card-index,
+.bmh-pricing-card-title,
+.bmh-pricing-card-price,
+.bmh-pricing-card-note {
+  transition: color 0.22s ease;
+}
+
+@media (hover: hover) {
+  .bmh-pricing-card:hover {
+    border-color: rgba(0, 0, 0, 0.22);
+    box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .bmh-pricing-card:hover .bmh-pricing-card-index {
+    color: #171717;
+  }
+
+  .bmh-pricing-card:hover .bmh-pricing-card-icon {
+    background-color: #e5e5e5;
+    transform: scale(1.04);
+  }
+
+  .bmh-pricing-card:hover .bmh-pricing-card-title {
+    color: #000000;
+  }
+
+  .bmh-pricing-card:hover .bmh-pricing-card-price {
+    color: #171717;
+  }
+
+  .bmh-pricing-card:hover .bmh-pricing-card-note {
+    color: #525252;
+  }
+}
+
+.bmh-pricing-card-featured {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  padding: 1.25rem;
+  background: linear-gradient(to top right, #0a0a0a, #404040);
+  color: #ffffff;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.bmh-pricing-card-featured::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(160px 160px at 30% 30%, rgba(255, 255, 255, 0.14), transparent 60%),
+    radial-gradient(220px 220px at 70% 70%, rgba(0, 0, 0, 0.35), transparent 60%);
+  pointer-events: none;
+}
+
+.bmh-pricing-card-featured-btn {
+  transition: transform 0.22s ease;
+}
+
+@media (hover: hover) {
+  .bmh-pricing-card-featured:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.22);
+  }
+
+  .bmh-pricing-card-featured:hover .bmh-pricing-card-featured-btn {
+    transform: scale(1.06);
+  }
+}
+
+.bmh-image-carousel-slide {
+  object-fit: cover;
+  object-position: center;
 }
 
 .bmh-product-card-arrow {

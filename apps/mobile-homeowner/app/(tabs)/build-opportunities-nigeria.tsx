@@ -636,7 +636,8 @@ export default function RentScreen() {
                           },
                         ]
                   }
-                  height={192}
+                  aspectRatio={4 / 3}
+                  maxHeight={320}
                 />
 
                 <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
