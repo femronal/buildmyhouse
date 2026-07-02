@@ -41,6 +41,25 @@ export default function DesignLibraryScreen() {
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
+  // Collapsible header chrome (headline, tabs, search) — collapses on scroll down,
+  // restores when the list is scrolled back to the very top.
+  const headerAnim = useRef(new Animated.Value(1)).current;
+  const headerCollapsedRef = useRef(false);
+  const [collapsibleHeight, setCollapsibleHeight] = useState(0);
+
+  const setHeaderCollapsed = useCallback(
+    (collapsed: boolean) => {
+      if (headerCollapsedRef.current === collapsed) return;
+      headerCollapsedRef.current = collapsed;
+      Animated.timing(headerAnim, {
+        toValue: collapsed ? 0 : 1,
+        duration: 280,
+        useNativeDriver: false,
+      }).start();
+    },
+    [headerAnim],
+  );
+
   // Extract location params
   const locationParams = useMemo(() => {
     return {
@@ -67,13 +86,18 @@ export default function DesignLibraryScreen() {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
-    if (currentScrollY > lastScrollY.current && currentScrollY > 50 && showFilters) {
-      Animated.timing(filterAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: false,
-      }).start();
-      setShowFilters(false);
+    if (currentScrollY > lastScrollY.current + 2 && currentScrollY > 24) {
+      setHeaderCollapsed(true);
+      if (showFilters) {
+        Animated.timing(filterAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: false,
+        }).start();
+        setShowFilters(false);
+      }
+    } else if (currentScrollY <= 4) {
+      setHeaderCollapsed(false);
     }
     lastScrollY.current = currentScrollY;
   };
@@ -236,7 +260,7 @@ export default function DesignLibraryScreen() {
         className="pb-2"
         style={{ paddingTop: Math.max(8, insets.top + 2), paddingHorizontal: horizontalPadding }}
       >
-        <View className="flex-row items-center mb-3">
+        <View className="flex-row items-center">
           <TouchableOpacity 
             onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
             className="w-9 h-9 bg-white/5 border border-white/15 rounded-full items-center justify-center mr-2"
@@ -250,66 +274,92 @@ export default function DesignLibraryScreen() {
             <House size={16} color="#000000" weight="bold" />
           </TouchableOpacity>
         </View>
-
-        {/* Editorial headline + tabs */}
-        <View className="flex-row flex-wrap items-end justify-between gap-y-3">
-          <View>
-            <Text
-              className="text-[10px] text-white/40 uppercase mb-1"
-              style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
-            >
-              Design Library
-            </Text>
-            <Text
-              className="text-[26px] md:text-4xl text-white tracking-tight leading-tight"
-              style={{ fontFamily: 'Poppins_500Medium' }}
-              accessibilityRole="header"
-            >
-              Choose Your{'\n'}
-              <Text style={{ color: '#5c5c5c' }}>Design.</Text>
-            </Text>
-            <Text 
-              className="text-xs text-white/50 mt-1"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Browse designs uploaded by General Contractors
-            </Text>
-          </View>
-
-          <ProjectTypeTabs
-            dark
-            activeTab={activeTab}
-            onSelect={(key) => {
-              setActiveTab(key);
-              setActiveFilter('All');
-              setActiveLocationFilter(ALL_LOCATIONS_FILTER);
-            }}
-          />
-        </View>
       </View>
 
-      {/* Search & Filter */}
-      <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
-        <View className="flex-row items-center">
-          <View className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 h-11 flex-row items-center mr-2">
-            <MagnifyingGlass size={16} color="#8a8a8a" weight="regular" />
-            <TextInput
-              placeholder="Search designs or location..."
-              placeholderTextColor="#8a8a8a"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="flex-1 ml-2 text-white text-sm"
-              style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0, outlineStyle: 'none' } as any}
+      {/* Collapsible chrome: headline, tabs, search */}
+      <Animated.View
+        style={{
+          opacity: headerAnim,
+          overflow: 'hidden',
+          ...(collapsibleHeight > 0
+            ? {
+                height: headerAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [0, collapsibleHeight],
+                }),
+              }
+            : null),
+        }}
+      >
+        <View
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0 && Math.abs(h - collapsibleHeight) > 1 && !headerCollapsedRef.current) {
+              setCollapsibleHeight(h);
+            }
+          }}
+        >
+          <View
+            className="flex-row flex-wrap items-end justify-between gap-y-3"
+            style={{ paddingHorizontal: horizontalPadding, marginBottom: 12 }}
+          >
+            <View>
+              <Text
+                className="text-[10px] text-white/40 uppercase mb-1"
+                style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 3 }}
+              >
+                Design Library
+              </Text>
+              <Text
+                className="text-[26px] md:text-4xl text-white tracking-tight leading-tight"
+                style={{ fontFamily: 'Poppins_500Medium' }}
+                accessibilityRole="header"
+              >
+                Choose Your{'\n'}
+                <Text style={{ color: '#5c5c5c' }}>Design.</Text>
+              </Text>
+              <Text 
+                className="text-xs text-white/50 mt-1"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                Browse designs uploaded by General Contractors
+              </Text>
+            </View>
+
+            <ProjectTypeTabs
+              dark
+              activeTab={activeTab}
+              onSelect={(key) => {
+                setActiveTab(key);
+                setActiveFilter('All');
+                setActiveLocationFilter(ALL_LOCATIONS_FILTER);
+              }}
             />
           </View>
-          <TouchableOpacity 
-            onPress={toggleFilters}
-            className={`w-10 h-10 rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
-          >
-            <FunnelSimple size={18} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
-          </TouchableOpacity>
+
+          <View className="mb-3" style={{ paddingHorizontal: horizontalPadding }}>
+            <View className="flex-row items-center">
+              <View className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 h-11 flex-row items-center mr-2">
+                <MagnifyingGlass size={16} color="#8a8a8a" weight="regular" />
+                <TextInput
+                  placeholder="Search designs or location..."
+                  placeholderTextColor="#8a8a8a"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  className="flex-1 ml-2 text-white text-sm"
+                  style={{ fontFamily: 'Poppins_400Regular', paddingVertical: 0, outlineStyle: 'none' } as any}
+                />
+              </View>
+              <TouchableOpacity 
+                onPress={toggleFilters}
+                className={`w-10 h-10 rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
+              >
+                <FunnelSimple size={18} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Animated Filter Tags */}
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
