@@ -16,14 +16,6 @@ import { useRouter } from "expo-router";
 import {
   X,
   Check,
-  SealCheck,
-  Lightning,
-  Drop,
-  Shield,
-  WifiHigh,
-  Car,
-  Lock,
-  Clock,
   User,
   FunnelSimple,
   MagnifyingGlass,
@@ -31,6 +23,7 @@ import {
   CaretUp,
   Info,
 } from "phosphor-react-native";
+import OpportunityDetailSections from '@/components/OpportunityDetailSections';
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageCarousel from '@/components/ImageCarousel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -98,6 +91,7 @@ type BuildOpportunity = {
   inspectionWindow?: string | null;
   verificationDocs?: string[];
   extraDocs?: string[];
+  profileData: Record<string, unknown>;
   images: { id?: string; url: string; label?: string | null; order?: number }[];
 };
 
@@ -254,6 +248,32 @@ export default function RentScreen() {
       rules: listing.rules,
       inspectionWindow: listing.inspectionWindow,
       verificationDocs: listing.verificationDocs,
+      profileData: {
+        opportunityCategory: listing.opportunityCategory,
+        title: listing.title,
+        location: listing.location,
+        description: listing.description,
+        propertyType: listing.propertyType,
+        annualRent: listing.annualRent,
+        serviceCharge: listing.serviceCharge,
+        cautionDeposit: listing.cautionDeposit,
+        legalFeePercent: listing.legalFeePercent,
+        agencyFeePercent: listing.agencyFeePercent,
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        sizeSqm: listing.sizeSqm,
+        furnishing: listing.furnishing,
+        paymentPattern: listing.paymentPattern,
+        power: listing.power,
+        water: listing.water,
+        internet: listing.internet,
+        parking: listing.parking,
+        security: listing.security,
+        rules: listing.rules,
+        inspectionWindow: listing.inspectionWindow,
+        proximity: listing.proximity,
+        verificationDocs: listing.verificationDocs,
+      },
       images: listing.images || [],
     }));
 
@@ -272,6 +292,24 @@ export default function RentScreen() {
       serviceHint: house.condition ? `Condition: ${house.condition}` : undefined,
       verificationDocs: house.documents,
       extraDocs: house.amenities,
+      profileData: {
+        opportunityCategory: house.opportunityCategory,
+        name: house.name,
+        location: house.location,
+        description: house.description,
+        price: house.price,
+        bedrooms: house.bedrooms,
+        bathrooms: house.bathrooms,
+        squareFootage: house.squareFootage,
+        squareMeters: house.squareMeters,
+        propertyType: house.propertyType,
+        yearBuilt: house.yearBuilt,
+        condition: house.condition,
+        parking: house.parking,
+        documents: house.documents,
+        amenities: house.amenities,
+        nearbyFacilities: house.nearbyFacilities,
+      },
       images: house.images || [],
     }));
 
@@ -288,6 +326,22 @@ export default function RentScreen() {
       serviceHint: land.roadAccess ? `Road access: ${land.roadAccess}` : undefined,
       verificationDocs: land.documents,
       extraDocs: land.restrictions,
+      profileData: {
+        opportunityCategory: land.opportunityCategory,
+        name: land.name,
+        location: land.location,
+        description: land.description,
+        price: land.price,
+        sizeSqm: land.sizeSqm,
+        titleDocument: land.titleDocument,
+        zoningType: land.zoningType,
+        topography: land.topography,
+        roadAccess: land.roadAccess,
+        ownershipType: land.ownershipType,
+        documents: land.documents,
+        nearbyLandmarks: land.nearbyLandmarks,
+        restrictions: land.restrictions,
+      },
       images: land.images || [],
     }));
 
@@ -650,77 +704,18 @@ export default function RentScreen() {
                   </Text>
                 </View>
 
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Opportunity Snapshot
-                  </Text>
-                  <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Price: {selectedOpportunity?.priceLabel || 'N/A'}
-                  </Text>
-                  {typeof selectedOpportunity?.annualRent === 'number' ? (
-                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Annual rent: {formatNaira(selectedOpportunity.annualRent)}
-                    </Text>
-                  ) : null}
-                  {typeof selectedOpportunity?.serviceCharge === 'number' ? (
-                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Service charge: {formatNaira(selectedOpportunity.serviceCharge)}
-                    </Text>
-                  ) : null}
-                  {typeof selectedOpportunity?.cautionDeposit === 'number' ? (
-                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Caution deposit: {formatNaira(selectedOpportunity.cautionDeposit)}
-                    </Text>
-                  ) : null}
-                  {typeof selectedOpportunity?.legalFeePercent === 'number' ? (
-                    <Text className="text-gray-700 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Legal fee: {selectedOpportunity.legalFeePercent}%
-                    </Text>
-                  ) : null}
-                  <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse fee: {selectedOpportunity?.agencyFeePercent || 2}%
-                  </Text>
-                </View>
-
-                <View className="bg-gray-50 rounded-2xl p-3 mb-3 border border-gray-200">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Confirm key checks before proceeding.
-                  </Text>
-                  {[
-                    { label: `Power: ${selectedOpportunity?.power || 'N/A'}`, icon: Lightning },
-                    { label: `Water: ${selectedOpportunity?.water || 'N/A'}`, icon: Drop },
-                    { label: `Security: ${selectedOpportunity?.security || 'N/A'}`, icon: Shield },
-                    { label: `Internet: ${selectedOpportunity?.internet || 'N/A'}`, icon: WifiHigh },
-                    { label: `Parking: ${selectedOpportunity?.parking || 'N/A'}`, icon: Car },
-                    { label: `Rules: ${selectedOpportunity?.rules || 'N/A'}`, icon: Lock },
-                    { label: `Inspection window: ${selectedOpportunity?.inspectionWindow || 'By arrangement'}`, icon: Clock },
-                  ].map((item) => (
-                    <View key={item.label} className="flex-row items-start mb-2">
-                      <View className="w-6 h-6 rounded-full bg-gray-100 items-center justify-center mr-2 mt-0.5">
-                        <item.icon size={13} color="#374151" weight="bold" />
-                      </View>
-                      <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {item.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                <View className="mb-4">
-                  <Text className="text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    BuildMyHouse Verification Checks
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {((selectedOpportunity?.verificationDocs || []).concat(selectedOpportunity?.extraDocs || [])).map((doc: string) => (
-                      <View key={doc} className="bg-black rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                        <SealCheck size={12} color="#FFFFFF" weight="bold" />
-                        <Text className="text-white text-xs ml-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                          {doc}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
+                {selectedOpportunity ? (
+                  <OpportunityDetailSections
+                    entity={
+                      selectedOpportunity.source === 'rental'
+                        ? 'rental'
+                        : selectedOpportunity.source === 'house'
+                          ? 'house'
+                          : 'land'
+                    }
+                    data={selectedOpportunity.profileData}
+                  />
+                ) : null}
 
                 <TouchableOpacity
                   onPress={requestRentInspection}

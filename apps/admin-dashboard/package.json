@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@buildmyhouse/shared-types": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
     "@tanstack/react-query": "^5.90.12",
     "@tiptap/core": "^2.11.5",
     "@tiptap/extension-image": "^2.11.5",

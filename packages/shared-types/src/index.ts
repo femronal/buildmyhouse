@@ -136,3 +136,29 @@ export {
   normalizeServicePageSlug,
 } from './service-page-paths';
 
+export {
+  BUILD_OPPORTUNITY_CATEGORY_OPTIONS,
+  BUILD_OPPORTUNITY_FILTERS,
+  BUILD_OPPORTUNITY_TYPE_OPTIONS,
+  formatBuildOpportunityKey,
+  slugifyBuildOpportunityType,
+  type BuildOpportunityCategoryKey,
+  type BuildOpportunityTypeOption,
+} from './build-opportunity-taxonomy';
+
+export {
+  buildOpportunityDisplayData,
+  formatOpportunityCheckValue,
+  getAllOpportunityProfiles,
+  getOpportunityFieldKeys,
+  getOpportunityProfile,
+  joinCommaList,
+  splitCommaList,
+  type OpportunityCheckRowDef,
+  type OpportunityEntity,
+  type OpportunityFieldDef,
+  type OpportunityFieldKind,
+  type OpportunityProfile,
+  type OpportunityProfileSection,
+} from './opportunity-profiles';
+

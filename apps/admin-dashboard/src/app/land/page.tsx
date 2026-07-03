@@ -9,9 +9,10 @@ import { useLandViewingInterests } from '@/hooks/useLandViewingInterests';
 import {
   BUILD_OPPORTUNITY_CATEGORY_OPTIONS,
   BUILD_OPPORTUNITY_TYPE_OPTIONS,
-  slugifyBuildOpportunityType,
   type BuildOpportunityCategoryKey,
 } from '@/lib/build-opportunity-taxonomy';
+import { buildLandPayloadFields } from '@/lib/opportunity-listing-payload';
+import { OpportunityListingModal } from '@/components/opportunity/OpportunityListingModal';
 
 export default function LandPage() {
   const { lands, isLoading, createLand, isCreating, deleteLand, updateLand, isUpdating, refetch } = useLands();
@@ -49,15 +50,20 @@ export default function LandPage() {
   });
   const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
 
-  const resolveOpportunityType = () => {
-    if (form.opportunityType === '__custom__') {
-      return slugifyBuildOpportunityType(form.opportunityTypeCustom);
-    }
-    return form.opportunityType;
-  };
-
   const getTypeOptions = (category: BuildOpportunityCategoryKey) =>
     BUILD_OPPORTUNITY_TYPE_OPTIONS[category] ?? [];
+
+  const validateOpportunityType = () => {
+    if (!form.opportunityType) {
+      setUploadError('Please select a specific filter for this build category');
+      return false;
+    }
+    if (form.opportunityType === '__custom__' && !form.opportunityTypeCustom.trim()) {
+      setUploadError('Please enter a custom filter name');
+      return false;
+    }
+    return true;
+  };
 
   const selected = lands.find((l) => l.id === selectedId) ?? lands[0];
   const selectedInterestLand = lands.find((l) => l.id === interestLandId) ?? null;
@@ -193,6 +199,7 @@ export default function LandPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploadError(null);
+    if (!validateOpportunityType()) return;
     if (images.length === 0) {
       setUploadError('Please add at least one photo');
       return;
@@ -213,23 +220,7 @@ export default function LandPage() {
       }
 
       const payload: CreateLandPayload = {
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        opportunityCategory: form.opportunityCategory || undefined,
-        opportunityType: resolveOpportunityType() || undefined,
-        location: form.location.trim(),
-        price: parseFloat(form.price) || 0,
-        sizeSqm: parseFloat(form.sizeSqm) || 0,
-        titleDocument: form.titleDocument.trim() || undefined,
-        zoningType: form.zoningType.trim() || undefined,
-        topography: form.topography.trim() || undefined,
-        roadAccess: form.roadAccess.trim() || undefined,
-        ownershipType: form.ownershipType.trim() || undefined,
-        documents: form.documents.split(',').map((s) => s.trim()).filter(Boolean),
-        nearbyLandmarks: form.nearbyLandmarks.split(',').map((s) => s.trim()).filter(Boolean),
-        restrictions: form.restrictions.split(',').map((s) => s.trim()).filter(Boolean),
-        contactName: form.contactName.trim() || undefined,
-        contactPhone: form.contactPhone.trim() || undefined,
+        ...buildLandPayloadFields(form),
         images: uploadedImages,
       };
 
@@ -247,6 +238,7 @@ export default function LandPage() {
     e.preventDefault();
     if (!editingId) return;
     setUploadError(null);
+    if (!validateOpportunityType()) return;
     if (images.length === 0) {
       setUploadError('Please keep at least one photo');
       return;
@@ -267,23 +259,7 @@ export default function LandPage() {
         });
       }
       const payload: UpdateLandPayload = {
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        opportunityCategory: form.opportunityCategory || undefined,
-        opportunityType: resolveOpportunityType() || undefined,
-        location: form.location.trim(),
-        price: parseFloat(form.price) || 0,
-        sizeSqm: parseFloat(form.sizeSqm) || 0,
-        titleDocument: form.titleDocument.trim() || undefined,
-        zoningType: form.zoningType.trim() || undefined,
-        topography: form.topography.trim() || undefined,
-        roadAccess: form.roadAccess.trim() || undefined,
-        ownershipType: form.ownershipType.trim() || undefined,
-        documents: form.documents.split(',').map((s) => s.trim()).filter(Boolean),
-        nearbyLandmarks: form.nearbyLandmarks.split(',').map((s) => s.trim()).filter(Boolean),
-        restrictions: form.restrictions.split(',').map((s) => s.trim()).filter(Boolean),
-        contactName: form.contactName.trim() || undefined,
-        contactPhone: form.contactPhone.trim() || undefined,
+        ...buildLandPayloadFields(form),
         images: uploadedImages,
       };
 
@@ -629,384 +605,65 @@ export default function LandPage() {
       )}
 
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Upload land for sale</h3>
-              <button onClick={() => setShowUploadModal(false)} className="p-1 hover:bg-gray-100 rounded">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {uploadError && (
-                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{uploadError}</div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Land title *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Prime Residential Plot"
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.location}
-                    onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
-                  <select
-                    value={form.opportunityCategory}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
-                        opportunityType: '',
-                        opportunityTypeCustom: '',
-                      }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  >
-                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
-                  <select
-                    value={form.opportunityType || ''}
-                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Select filter</option>
-                    {getTypeOptions(form.opportunityCategory).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                    <option value="__custom__">Custom filter...</option>
-                  </select>
-                </div>
-              </div>
-              {form.opportunityType === '__custom__' ? (
-                <input
-                  placeholder="Custom filter (e.g. gated_estate_infrastructure)"
-                  value={form.opportunityTypeCustom}
-                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                />
-              ) : null}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={form.price}
-                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Size (sqm) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={form.sizeSqm}
-                    onChange={(e) => setForm((f) => ({ ...f, sizeSqm: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input placeholder="Title document (e.g. C of O)" value={form.titleDocument} onChange={(e) => setForm((f) => ({ ...f, titleDocument: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Zoning type" value={form.zoningType} onChange={(e) => setForm((f) => ({ ...f, zoningType: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Topography" value={form.topography} onChange={(e) => setForm((f) => ({ ...f, topography: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Road access" value={form.roadAccess} onChange={(e) => setForm((f) => ({ ...f, roadAccess: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Ownership type" value={form.ownershipType} onChange={(e) => setForm((f) => ({ ...f, ownershipType: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-              <input placeholder="Documents (comma-separated)" value={form.documents} onChange={(e) => setForm((f) => ({ ...f, documents: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="Nearby landmarks (comma-separated)" value={form.nearbyLandmarks} onChange={(e) => setForm((f) => ({ ...f, nearbyLandmarks: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="Restrictions / caveats (comma-separated)" value={form.restrictions} onChange={(e) => setForm((f) => ({ ...f, restrictions: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Contact name" value={form.contactName} onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Contact phone" value={form.contactPhone} onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Photos * (with labels)</label>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddImages} />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center gap-2 text-gray-500 hover:border-gray-400"
-                >
-                  <Plus className="w-5 h-5" />
-                  Add photos
-                </button>
-                <div className="mt-3 space-y-2">
-                  {images.map((img, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                      <img src={img.preview} alt="" className="w-12 h-12 rounded object-cover" />
-                      <input
-                        type="text"
-                        placeholder="Label (e.g. Main Road Frontage)"
-                        value={img.label}
-                        onChange={(e) =>
-                          setImages((prev) => {
-                            const next = [...prev];
-                            next[i] = { ...next[i], label: e.target.value };
-                            return next;
-                          })
-                        }
-                        className="flex-1 px-2 py-1 border rounded text-sm"
-                      />
-                      <button type="button" onClick={() => removeImage(i)} className="p-1 text-red-600 hover:bg-red-50 rounded">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button type="button" onClick={() => setShowUploadModal(false)} className="flex-1 px-3 py-2 border rounded-lg text-sm">
-                  Cancel
-                </button>
-                <button type="submit" disabled={isCreating} className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50">
-                  {isCreating ? 'Uploading...' : 'Upload'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <OpportunityListingModal
+          title="Upload land for sale"
+          entity="land"
+          form={form}
+          setForm={setForm}
+          images={images}
+          fileInputRef={fileInputRef}
+          uploadError={uploadError}
+          isSubmitting={isCreating}
+          submitLabel="Upload land"
+          onClose={() => {
+            setShowUploadModal(false);
+            setUploadError(null);
+            resetForm();
+            resetImages();
+          }}
+          onSubmit={handleSubmit}
+          onAddImages={handleAddImages}
+          onRemoveImage={removeImage}
+          onLabelChange={(index, label) =>
+            setImages((prev) => {
+              const next = [...prev];
+              next[index] = { ...next[index], label };
+              return next;
+            })
+          }
+        />
       )}
 
       {showEditModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-lg max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Edit land listing</h3>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingId(null);
-                  setUploadError(null);
-                  resetForm();
-                  resetImages();
-                }}
-                className="p-1 hover:bg-gray-100 rounded"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-4">
-              {uploadError && (
-                <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{uploadError}</div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Land title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.name}
-                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location *</label>
-                  <input
-                    type="text"
-                    required
-                    value={form.location}
-                    onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Build category *</label>
-                  <select
-                    value={form.opportunityCategory}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        opportunityCategory: e.target.value as BuildOpportunityCategoryKey,
-                        opportunityType: '',
-                        opportunityTypeCustom: '',
-                      }))
-                    }
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  >
-                    {BUILD_OPPORTUNITY_CATEGORY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Specific filter *</label>
-                  <select
-                    value={form.opportunityType || ''}
-                    onChange={(e) => setForm((f) => ({ ...f, opportunityType: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  >
-                    <option value="">Select filter</option>
-                    {getTypeOptions(form.opportunityCategory).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                    <option value="__custom__">Custom filter...</option>
-                  </select>
-                </div>
-              </div>
-              {form.opportunityType === '__custom__' ? (
-                <input
-                  placeholder="Custom filter (e.g. gated_estate_infrastructure)"
-                  value={form.opportunityTypeCustom}
-                  onChange={(e) => setForm((f) => ({ ...f, opportunityTypeCustom: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
-                />
-              ) : null}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (₦) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="0"
-                    value={form.price}
-                    onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Size (sqm) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    value={form.sizeSqm}
-                    onChange={(e) => setForm((f) => ({ ...f, sizeSqm: e.target.value }))}
-                    className="w-full px-3 py-2 border rounded-lg text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input placeholder="Title document (e.g. C of O)" value={form.titleDocument} onChange={(e) => setForm((f) => ({ ...f, titleDocument: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Zoning type" value={form.zoningType} onChange={(e) => setForm((f) => ({ ...f, zoningType: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Topography" value={form.topography} onChange={(e) => setForm((f) => ({ ...f, topography: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Road access" value={form.roadAccess} onChange={(e) => setForm((f) => ({ ...f, roadAccess: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Ownership type" value={form.ownershipType} onChange={(e) => setForm((f) => ({ ...f, ownershipType: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-              <input placeholder="Documents (comma-separated)" value={form.documents} onChange={(e) => setForm((f) => ({ ...f, documents: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="Nearby landmarks (comma-separated)" value={form.nearbyLandmarks} onChange={(e) => setForm((f) => ({ ...f, nearbyLandmarks: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <input placeholder="Restrictions / caveats (comma-separated)" value={form.restrictions} onChange={(e) => setForm((f) => ({ ...f, restrictions: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              <div className="grid grid-cols-2 gap-3">
-                <input placeholder="Contact name" value={form.contactName} onChange={(e) => setForm((f) => ({ ...f, contactName: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-                <input placeholder="Contact phone" value={form.contactPhone} onChange={(e) => setForm((f) => ({ ...f, contactPhone: e.target.value }))} className="w-full px-3 py-2 border rounded-lg text-sm" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Photos * (relabel/reorder by list order)</label>
-                <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleAddImages} />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-4 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center gap-2 text-gray-500 hover:border-gray-400"
-                >
-                  <Plus className="w-5 h-5" />
-                  Add more photos
-                </button>
-                <div className="mt-3 space-y-2">
-                  {images.map((img, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                      <img src={img.preview} alt="" className="w-12 h-12 rounded object-cover" />
-                      <input
-                        type="text"
-                        value={img.label}
-                        onChange={(e) =>
-                          setImages((prev) => {
-                            const next = [...prev];
-                            next[i] = { ...next[i], label: e.target.value };
-                            return next;
-                          })
-                        }
-                        className="flex-1 px-2 py-1 border rounded text-sm"
-                      />
-                      <button type="button" onClick={() => removeImage(i)} className="p-1 text-red-600 hover:bg-red-50 rounded">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingId(null);
-                    setUploadError(null);
-                    resetForm();
-                    resetImages();
-                  }}
-                  className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                >
-                  Cancel
-                </button>
-                <button type="submit" disabled={isUpdating} className="flex-1 px-3 py-2 bg-gray-900 text-white rounded-lg text-sm disabled:opacity-50">
-                  {isUpdating ? 'Saving...' : 'Save changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <OpportunityListingModal
+          title="Edit land listing"
+          entity="land"
+          form={form}
+          setForm={setForm}
+          images={images}
+          fileInputRef={fileInputRef}
+          uploadError={uploadError}
+          isSubmitting={isUpdating}
+          submitLabel="Save changes"
+          photoAddLabel="Add more photos"
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingId(null);
+            setUploadError(null);
+            resetForm();
+            resetImages();
+          }}
+          onSubmit={handleEditSubmit}
+          onAddImages={handleAddImages}
+          onRemoveImage={removeImage}
+          onLabelChange={(index, label) =>
+            setImages((prev) => {
+              const next = [...prev];
+              next[index] = { ...next[index], label };
+              return next;
+            })
+          }
+        />
       )}
     </div>
   );
