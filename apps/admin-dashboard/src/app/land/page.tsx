@@ -67,7 +67,7 @@ export default function LandPage() {
     land?.images?.[0]?.url ? getBackendAssetUrl(land.images[0].url) : null;
 
   const getLandInterests = (landId: string) =>
-    interests.filter((interest) => interest.landForSale?.id === landId);
+    interests.filter((interest) => interest.landForSale.id === landId);
 
   const getUnreadCount = (landId: string) =>
     getLandInterests(landId).filter((interest) => !interest.isRead).length;

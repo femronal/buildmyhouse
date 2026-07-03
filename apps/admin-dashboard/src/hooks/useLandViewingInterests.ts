@@ -30,6 +30,14 @@ interface LandViewingInterestResponse {
   items: LandViewingInterestItem[];
 }
 
+export type LandViewingInterestWithListing = LandViewingInterestItem & {
+  landForSale: NonNullable<LandViewingInterestItem['landForSale']>;
+};
+
+function hasLandListing(item: LandViewingInterestItem): item is LandViewingInterestWithListing {
+  return item.landForSale != null;
+}
+
 export function useLandViewingInterests() {
   const queryClient = useQueryClient();
 
@@ -64,7 +72,7 @@ export function useLandViewingInterests() {
 
   return {
     unreadCount: query.data?.unreadCount ?? 0,
-    interests: query.data?.items ?? [],
+    interests: (query.data?.items ?? []).filter(hasLandListing),
     markAllRead: markReadMutation.mutateAsync,
     updateOutcome: updateOutcomeMutation.mutateAsync,
     isUpdatingOutcome: updateOutcomeMutation.isPending,

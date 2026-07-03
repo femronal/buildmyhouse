@@ -335,7 +335,7 @@ export default function RentalsPage() {
   const pendingDeleteRental = rentals.find((r) => r.id === pendingDeleteId) ?? null;
 
   const getRentalInterests = (rentalId: string) =>
-    interests.filter((interest) => interest?.rentalListing?.id === rentalId);
+    interests.filter((interest) => interest.rentalListing.id === rentalId);
 
   const getRentalUnreadCount = (rentalId: string) =>
     getRentalInterests(rentalId).filter((interest) => !interest.isRead).length;

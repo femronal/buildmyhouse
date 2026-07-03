@@ -29,6 +29,14 @@ interface HouseViewingInterestResponse {
   items: HouseViewingInterestItem[];
 }
 
+export type HouseViewingInterestWithListing = HouseViewingInterestItem & {
+  houseForSale: NonNullable<HouseViewingInterestItem['houseForSale']>;
+};
+
+function hasHouseListing(item: HouseViewingInterestItem): item is HouseViewingInterestWithListing {
+  return item.houseForSale != null;
+}
+
 export function useHouseViewingInterests() {
   const queryClient = useQueryClient();
 
@@ -64,7 +72,7 @@ export function useHouseViewingInterests() {
 
   return {
     unreadCount: query.data?.unreadCount ?? 0,
-    interests: query.data?.items ?? [],
+    interests: (query.data?.items ?? []).filter(hasHouseListing),
     isLoading: query.isLoading,
     refetch: query.refetch,
     markAllRead: markReadMutation.mutateAsync,

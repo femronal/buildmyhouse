@@ -29,6 +29,14 @@ interface RentalViewingInterestResponse {
   items: RentalViewingInterestItem[];
 }
 
+export type RentalViewingInterestWithListing = RentalViewingInterestItem & {
+  rentalListing: NonNullable<RentalViewingInterestItem['rentalListing']>;
+};
+
+function hasRentalListing(item: RentalViewingInterestItem): item is RentalViewingInterestWithListing {
+  return item.rentalListing != null;
+}
+
 export function useRentalViewingInterests() {
   const queryClient = useQueryClient();
 
@@ -63,7 +71,7 @@ export function useRentalViewingInterests() {
 
   return {
     unreadCount: query.data?.unreadCount ?? 0,
-    interests: query.data?.items ?? [],
+    interests: (query.data?.items ?? []).filter(hasRentalListing),
     markAllRead: markReadMutation.mutateAsync,
     updateOutcome: updateOutcomeMutation.mutateAsync,
     isUpdatingOutcome: updateOutcomeMutation.isPending,
