@@ -77,7 +77,8 @@ const ICON_MAP = {
 type IconName = keyof typeof ICON_MAP;
 
 function OpportunityIcon({ name, size = 13 }: { name: string; size?: number }) {
-  const Icon = ICON_MAP[name as IconName] ?? HouseLine;
+  const Icon = ICON_MAP[name as IconName];
+  if (!Icon) return <HouseLine size={size} color="#374151" weight="bold" />;
   return <Icon size={size} color="#374151" weight="bold" />;
 }
 
@@ -156,3 +157,5 @@ export function OpportunityDetailSections({ entity, data }: Props) {
     </>
   );
 }
+
+export default OpportunityDetailSections;
