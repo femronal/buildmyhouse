@@ -307,7 +307,7 @@ export default function HousesPage() {
     h?.images?.[0]?.url ? getBackendAssetUrl(h.images[0].url) : null;
 
   const getHouseInterests = (houseId: string) =>
-    interests.filter((interest) => interest.houseForSale.id === houseId);
+    interests.filter((interest) => interest.houseForSale?.id === houseId);
 
   const getHouseUnreadCount = (houseId: string) =>
     getHouseInterests(houseId).filter((interest) => !interest.isRead).length;

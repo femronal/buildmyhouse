@@ -14,7 +14,7 @@ export interface HouseViewingInterestItem {
     location: string;
     price: number;
     images: { url: string; label?: string | null }[];
-  };
+  } | null;
   homeowner: {
     id: string;
     fullName: string;

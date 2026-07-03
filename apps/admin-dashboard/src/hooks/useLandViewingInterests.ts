@@ -15,7 +15,7 @@ export interface LandViewingInterestItem {
     price: number;
     sizeSqm: number;
     images: { url: string; label?: string | null }[];
-  };
+  } | null;
   homeowner: {
     id: string;
     fullName: string;

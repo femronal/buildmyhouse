@@ -11,7 +11,10 @@ export default function AdminViewingInterestAvatar() {
     useHouseViewingInterests();
 
   const sortedInterests = useMemo(
-    () => [...interests].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
+    () =>
+      [...interests]
+        .filter((interest) => interest.houseForSale != null)
+        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
     [interests],
   );
 

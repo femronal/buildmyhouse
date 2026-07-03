@@ -14,7 +14,7 @@ export interface RentalViewingInterestItem {
     location: string;
     annualRent: number;
     images: { url: string; label?: string | null }[];
-  };
+  } | null;
   homeowner: {
     id: string;
     fullName: string;
