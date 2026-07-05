@@ -295,6 +295,102 @@ export class ProjectAccessService implements OnModuleInit {
     };
   }
 
+  async generateProjectTrackingLinks(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        homeowner: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+        generalContractor: {
+          select: { id: true, fullName: true, email: true, phone: true },
+        },
+      },
+    });
+
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const homeownerEmail = this.normalizeEmail(project.homeowner?.email || '');
+    if (!homeownerEmail) {
+      throw new BadRequestException('This project needs a homeowner email before tracking links can be generated.');
+    }
+
+    await this.prisma.projectAccessLink.updateMany({
+      where: { projectId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+
+    const homeownerLink = await this.createAccessLink({
+      projectId: project.id,
+      role: 'homeowner',
+      contactEmail: homeownerEmail,
+      contactName: project.homeowner?.fullName || undefined,
+      contactPhone: project.homeowner?.phone || undefined,
+      participantUserId: project.homeownerId,
+    });
+
+    await this.sendProjectInviteEmail({
+      to: homeownerEmail,
+      recipientName: project.homeowner?.fullName || homeownerEmail,
+      roleLabel: 'homeowner',
+      projectName: project.name,
+      accessUrl: homeownerLink.url,
+      managedByAdmin: project.managedByAdmin,
+    });
+
+    const links: {
+      homeowner: { id: string; url: string; email: string };
+      generalContractor?: { id: string; url: string; email: string } | null;
+    } = {
+      homeowner: {
+        id: homeownerLink.link.id,
+        url: homeownerLink.url,
+        email: homeownerEmail,
+      },
+    };
+
+    const warnings: string[] = [];
+
+    if (project.generalContractorId && project.generalContractor?.email) {
+      const gcEmail = this.normalizeEmail(project.generalContractor.email);
+      const gcLink = await this.createAccessLink({
+        projectId: project.id,
+        role: 'general_contractor',
+        contactEmail: gcEmail,
+        contactName: project.generalContractor.fullName || undefined,
+        contactPhone: project.generalContractor.phone || undefined,
+        participantUserId: project.generalContractorId,
+      });
+
+      await this.sendProjectInviteEmail({
+        to: gcEmail,
+        recipientName: project.generalContractor.fullName || gcEmail,
+        roleLabel: 'general contractor',
+        projectName: project.name,
+        accessUrl: gcLink.url,
+        managedByAdmin: project.managedByAdmin,
+      });
+
+      links.generalContractor = {
+        id: gcLink.link.id,
+        url: gcLink.url,
+        email: gcEmail,
+      };
+    } else {
+      links.generalContractor = null;
+      warnings.push('No GC tracking link was created because this project has no assigned general contractor with an email.');
+    }
+
+    return {
+      projectId: project.id,
+      projectName: project.name,
+      links,
+      warnings,
+    };
+  }
+
   async createManagedProject(dto: CreateManagedProjectDto) {
     const { projectType, phases } = await this.resolveProjectScope(dto);
     if (!phases.length) {
@@ -403,6 +499,7 @@ export class ProjectAccessService implements OnModuleInit {
       roleLabel: 'homeowner',
       projectName: project.name,
       accessUrl: homeownerLink.url,
+      managedByAdmin: true,
     });
 
     await this.sendProjectInviteEmail({
@@ -411,6 +508,7 @@ export class ProjectAccessService implements OnModuleInit {
       roleLabel: 'general contractor',
       projectName: project.name,
       accessUrl: gcLink.url,
+      managedByAdmin: true,
     });
 
     return {
@@ -599,6 +697,7 @@ export class ProjectAccessService implements OnModuleInit {
       roleLabel: updated.role === 'homeowner' ? 'homeowner' : 'general contractor',
       projectName: existing.project.name,
       accessUrl: url,
+      managedByAdmin: existing.project.managedByAdmin,
     });
 
     return { id: updated.id, url, email: updated.contactEmail, role: updated.role };
@@ -664,6 +763,10 @@ export class ProjectAccessService implements OnModuleInit {
       include: { project: { select: { name: true } } },
     });
 
+    if (!links.length) {
+      return;
+    }
+
     for (const link of links) {
       try {
         await this.emailService.send({
@@ -691,17 +794,22 @@ export class ProjectAccessService implements OnModuleInit {
     roleLabel: string;
     projectName: string;
     accessUrl: string;
+    managedByAdmin?: boolean;
   }) {
+    const intro = params.managedByAdmin
+      ? `BuildMyHouse has opened a managed project for you as the <strong>${params.roleLabel}</strong>.`
+      : `BuildMyHouse has shared a project tracking link with you as the <strong>${params.roleLabel}</strong>.`;
+
     await this.emailService.send({
       to: this.normalizeEmail(params.to),
       subject: `Your BuildMyHouse project link — ${params.projectName}`,
       html: `
         <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111;">
           <p>Hello ${params.recipientName},</p>
-          <p>BuildMyHouse has opened a managed project for you as the <strong>${params.roleLabel}</strong>.</p>
+          <p>${intro}</p>
           <p><strong>${params.projectName}</strong></p>
           <p><a href="${params.accessUrl}" style="display:inline-block;background:#000;color:#fff;padding:12px 18px;border-radius:999px;text-decoration:none;font-weight:600;">Open project tracking</a></p>
-          <p>No full signup is required to start. We will verify your email when you open the link.</p>
+          <p>We will verify your email when you open the link.</p>
           <p>— BuildMyHouse</p>
         </div>
       `,

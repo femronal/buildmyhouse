@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Package, Users, FileText, CheckCircle, File, VideoCamera, Image as ImageIcon, MusicNote, House, Phone, DownloadSimple, Lock, CreditCard, Clock, Warning, Check } from "phosphor-react-native";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
 import { projectService } from '@/services/projectService';
@@ -89,6 +89,8 @@ export default function StageDetailScreen() {
   const actualStatus = stage?.status || status;
   const isComplete = actualStatus === 'complete' || actualStatus === 'completed';
   const isInProgress = actualStatus === 'in-progress' || actualStatus === 'in_progress';
+  const { width } = useWindowDimensions();
+  const isCompactMobile = useMemo(() => width <= 768, [width]);
   const materials = stage?.materials || [];
   const teamMembers = stage?.teamMembers || [];
   const media = stage?.media || [];
@@ -410,7 +412,10 @@ export default function StageDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView className="flex-1 px-6">
+      <ScrollView
+        className="flex-1 px-6"
+        contentContainerStyle={{ paddingBottom: isCompactMobile ? (isInProgress ? 88 : 120) : 140 }}
+      >
         {stageChangeRequests.length > 0 && (
           <View className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -693,7 +698,13 @@ export default function StageDetailScreen() {
       </ScrollView>
 
       {/* Fixed Bottom Section */}
-      <View className="absolute bottom-0 left-0 right-0 bg-white px-6 py-6 border-t border-gray-200">
+      <View
+        className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+        style={{
+          paddingHorizontal: isCompactMobile && isInProgress ? 16 : 24,
+          paddingVertical: isCompactMobile && isInProgress ? 10 : 24,
+        }}
+      >
         {isComplete ? (
           <View className="bg-black rounded-2xl p-5">
             <View className="flex-row items-center justify-center mb-2">
@@ -713,22 +724,35 @@ export default function StageDetailScreen() {
             </Text>
           </View>
         ) : isInProgress ? (
-          <View className="bg-green-100 rounded-2xl p-4 border border-green-600">
-            <View className="flex-row items-center justify-center mb-2">
-              <CheckCircle size={18} color="#16A34A" weight="fill" />
-              <Text 
-                className="text-green-700 text-base ml-2"
-                style={{ fontFamily: 'Poppins_700Bold' }}
+          <View
+            className={`bg-green-100 border border-green-600 ${
+              isCompactMobile ? 'rounded-xl px-3 py-2.5' : 'rounded-2xl p-4'
+            }`}
+          >
+            <View className={`flex-row items-center ${isCompactMobile ? '' : 'justify-center mb-2'}`}>
+              <CheckCircle size={isCompactMobile ? 16 : 18} color="#16A34A" weight="fill" />
+              <Text
+                className={`text-green-700 ml-2 ${isCompactMobile ? 'text-sm flex-1' : 'text-base'}`}
+                style={{ fontFamily: 'Poppins_700Bold', lineHeight: isCompactMobile ? 18 : 22 }}
               >
-                Payment Approved... Work in Progress
+                Payment approved — work in progress
               </Text>
             </View>
-            <Text 
-              className="text-green-600 text-center text-xs"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              The GC is now working on this stage. It will be marked complete when finished.
-            </Text>
+            {!isCompactMobile ? (
+              <Text
+                className="text-green-600 text-center text-xs"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                The GC is now working on this stage. It will be marked complete when finished.
+              </Text>
+            ) : (
+              <Text
+                className="text-green-600 text-xs mt-1 ml-6"
+                style={{ fontFamily: 'Poppins_400Regular', lineHeight: 16 }}
+              >
+                GC is working on this stage.
+              </Text>
+            )}
           </View>
         ) : (
           <>

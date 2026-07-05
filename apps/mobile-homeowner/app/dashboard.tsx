@@ -20,6 +20,17 @@ export default function DashboardScreen() {
   const insets = useSafeAreaInsets();
   const horizontalPadding = useMemo(() => getScreenHorizontalPadding(width), [width]);
   const contentBottomPadding = Math.max(24, insets.bottom + 16);
+  const headerChrome = useMemo(() => {
+    const compact = width <= 768;
+    return {
+      compact,
+      paddingTop: compact ? Math.max(8, insets.top + 4) : Math.max(16, insets.top + 8),
+      paddingBottom: compact ? 12 : 16,
+      titleFontSize: compact ? 20 : 30,
+      titleLineHeight: compact ? 24 : 38,
+      titleMaxLines: compact ? 2 : 4,
+    };
+  }, [width, insets.top]);
   const projectId = params.projectId as string;
 
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId || '');
@@ -250,37 +261,95 @@ export default function DashboardScreen() {
     <View className="flex-1 bg-white">
       <View
         className="pb-4"
-        style={{ paddingTop: Math.max(16, insets.top + 8), paddingHorizontal: horizontalPadding }}
+        style={{
+          paddingTop: headerChrome.paddingTop,
+          paddingBottom: headerChrome.paddingBottom,
+          paddingHorizontal: horizontalPadding,
+        }}
       >
-        <View className="flex-row items-center mb-4">
-          <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
-          >
-            <ArrowLeft size={22} color="#000000" weight="bold" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => router.push('/(tabs)/home')} 
-            className="w-10 h-10 bg-black rounded-full items-center justify-center"
-          >
-            <House size={20} color="#FFFFFF" weight="bold" />
-          </TouchableOpacity>
-        </View>
-        <Text 
-          className="text-3xl text-black mb-1"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
-          {project.name}
-        </Text>
-        <View className="flex-row items-center">
-          <MapPin size={14} color="#737373" weight="regular" />
-        <Text 
-            className="text-sm text-gray-500 ml-1"
-          style={{ fontFamily: 'Poppins_400Regular' }}
-        >
-            {project.address}
-        </Text>
-        </View>
+        {headerChrome.compact ? (
+          <View className="flex-row items-start gap-3">
+            <View className="flex-row items-center pt-0.5">
+              <TouchableOpacity
+                onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
+                className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2"
+              >
+                <ArrowLeft size={20} color="#000000" weight="bold" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/home')}
+                className="w-10 h-10 bg-black rounded-full items-center justify-center"
+              >
+                <House size={18} color="#FFFFFF" weight="bold" />
+              </TouchableOpacity>
+            </View>
+            <View className="flex-1 min-w-0">
+              <Text
+                numberOfLines={headerChrome.titleMaxLines}
+                ellipsizeMode="tail"
+                className="text-black"
+                style={{
+                  fontFamily: 'Poppins_700Bold',
+                  fontSize: headerChrome.titleFontSize,
+                  lineHeight: headerChrome.titleLineHeight,
+                }}
+              >
+                {project.name}
+              </Text>
+              <View className="flex-row items-center mt-1">
+                <MapPin size={13} color="#737373" weight="regular" />
+                <Text
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                  className="text-xs text-gray-500 ml-1 flex-1"
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                >
+                  {project.address}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : (
+          <>
+            <View className="flex-row items-center mb-4">
+              <TouchableOpacity
+                onPress={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
+                className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-3"
+              >
+                <ArrowLeft size={22} color="#000000" weight="bold" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/home')}
+                className="w-10 h-10 bg-black rounded-full items-center justify-center"
+              >
+                <House size={20} color="#FFFFFF" weight="bold" />
+              </TouchableOpacity>
+            </View>
+            <Text
+              numberOfLines={headerChrome.titleMaxLines}
+              ellipsizeMode="tail"
+              className="text-black mb-1"
+              style={{
+                fontFamily: 'Poppins_800ExtraBold',
+                fontSize: headerChrome.titleFontSize,
+                lineHeight: headerChrome.titleLineHeight,
+              }}
+            >
+              {project.name}
+            </Text>
+            <View className="flex-row items-center">
+              <MapPin size={14} color="#737373" weight="regular" />
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                className="text-sm text-gray-500 ml-1 flex-1"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              >
+                {project.address}
+              </Text>
+            </View>
+          </>
+        )}
       </View>
 
       <ScrollView

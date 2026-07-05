@@ -33,6 +33,13 @@ export class ProjectAccessController {
     return this.projectAccessService.getProjectAccessLinks(projectId);
   }
 
+  @Post('admin/projects/:projectId/generate-links')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  generateProjectLinks(@Param('projectId') projectId: string) {
+    return this.projectAccessService.generateProjectTrackingLinks(projectId);
+  }
+
   @Post('admin/links/:linkId/resend')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')

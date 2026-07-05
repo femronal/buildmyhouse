@@ -596,8 +596,12 @@ export default function ProjectsPage() {
                 )}
               </div>
 
-              {project.managedByAdmin && (
-                <ProjectAccessLinksPanel projectId={project.id} projectName={project.name} />
+              {project.homeownerEmail && (
+                <ProjectAccessLinksPanel
+                  projectId={project.id}
+                  projectName={project.name}
+                  hasGc={project.gc !== '—'}
+                />
               )}
 
               {project.risk === 'high' && (

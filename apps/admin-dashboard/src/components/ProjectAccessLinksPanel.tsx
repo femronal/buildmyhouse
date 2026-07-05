@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Copy, Link2, Mail, RefreshCw } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Copy, Link2, Mail, RefreshCw, Sparkles } from 'lucide-react';
 import { api } from '@/lib/api';
 
 type AccessLink = {
@@ -15,20 +15,56 @@ type AccessLink = {
   claimedUserId?: string | null;
 };
 
+type GenerateLinksResponse = {
+  projectId: string;
+  projectName: string;
+  links: {
+    homeowner: { id: string; url: string; email: string };
+    generalContractor?: { id: string; url: string; email: string } | null;
+  };
+  warnings?: string[];
+};
+
 type Props = {
   projectId: string;
   projectName: string;
+  hasGc?: boolean;
 };
 
-export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
+export function ProjectAccessLinksPanel({ projectId, projectName, hasGc = true }: Props) {
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [resendResult, setResendResult] = useState<Record<string, string>>({});
+  const [linkUrls, setLinkUrls] = useState<Record<string, string>>({});
+  const [panelMessage, setPanelMessage] = useState<string>('');
 
   const linksQuery = useQuery({
     queryKey: ['project-access-links', projectId],
     queryFn: () => api.get<AccessLink[]>(`/project-access/admin/projects/${projectId}/links`),
     enabled: expanded,
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: () =>
+      api.post<GenerateLinksResponse>(`/project-access/admin/projects/${projectId}/generate-links`, {}),
+    onSuccess: (data) => {
+      const nextUrls: Record<string, string> = {
+        [data.links.homeowner.id]: data.links.homeowner.url,
+      };
+      if (data.links.generalContractor) {
+        nextUrls[data.links.generalContractor.id] = data.links.generalContractor.url;
+      }
+      setLinkUrls((prev) => ({ ...prev, ...nextUrls }));
+      setPanelMessage(
+        data.warnings?.length
+          ? `Links generated. ${data.warnings.join(' ')}`
+          : 'Tracking links generated and emailed to participants.',
+      );
+      void queryClient.invalidateQueries({ queryKey: ['project-access-links', projectId] });
+    },
+    onError: (error: Error) => {
+      setPanelMessage(error.message || 'Could not generate tracking links.');
+    },
   });
 
   const resendMutation = useMutation({
@@ -38,7 +74,11 @@ export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
         {},
       ),
     onSuccess: (data) => {
-      setResendResult((prev) => ({ ...prev, [data.id]: data.url }));
+      setLinkUrls((prev) => ({ ...prev, [data.id]: data.url }));
+      setPanelMessage('Fresh link emailed.');
+    },
+    onError: (error: Error) => {
+      setPanelMessage(error.message || 'Could not resend link.');
     },
   });
 
@@ -48,9 +88,12 @@ export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
       setCopiedId(linkId);
       setTimeout(() => setCopiedId(null), 1500);
     } catch {
-      // ignore
+      setPanelMessage('Could not copy to clipboard.');
     }
   };
+
+  const links = linksQuery.data || [];
+  const hasLinks = links.length > 0;
 
   return (
     <div className="border rounded-lg p-3 space-y-2 bg-indigo-50/40 border-indigo-100">
@@ -58,10 +101,10 @@ export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
         <div>
           <p className="text-sm font-medium text-gray-900 inline-flex items-center gap-2">
             <Link2 className="w-4 h-4 text-indigo-600" />
-            Managed project links
+            Project tracking links
           </p>
           <p className="text-xs text-gray-500 mt-0.5">
-            Email-verified tracking links for {projectName}. Resend to generate a fresh link.
+            Email-verified links for {projectName}. Works for admin-managed and app-created projects.
           </p>
         </div>
         <button
@@ -75,13 +118,42 @@ export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
 
       {expanded && (
         <div className="space-y-3 pt-1">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={generateMutation.isPending}
+              className="px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white inline-flex items-center gap-2 disabled:opacity-50"
+              onClick={() => {
+                setPanelMessage('');
+                generateMutation.mutate();
+              }}
+            >
+              <Sparkles className="w-4 h-4" />
+              {hasLinks ? 'Regenerate links' : 'Generate links'}
+            </button>
+            {!hasGc && (
+              <span className="text-xs text-amber-700 self-center">
+                GC link will be skipped until a contractor is assigned.
+              </span>
+            )}
+          </div>
+
+          {panelMessage && (
+            <p className="text-xs text-gray-600 bg-white border rounded-lg px-3 py-2">{panelMessage}</p>
+          )}
+
           {linksQuery.isLoading && <p className="text-sm text-gray-500">Loading links…</p>}
           {linksQuery.isError && (
             <p className="text-sm text-red-600">Could not load project access links.</p>
           )}
-          {(linksQuery.data || []).map((link) => {
+
+          {!linksQuery.isLoading && !hasLinks && !generateMutation.isPending && (
+            <p className="text-sm text-gray-500">No tracking links yet. Generate links to email participants.</p>
+          )}
+
+          {links.map((link) => {
             const label = link.role === 'homeowner' ? 'Homeowner' : 'General contractor';
-            const latestUrl = resendResult[link.id];
+            const latestUrl = linkUrls[link.id];
             return (
               <div key={link.id} className="rounded-lg border bg-white p-3 space-y-2">
                 <div className="flex items-center justify-between gap-2">
@@ -115,7 +187,7 @@ export function ProjectAccessLinksPanel({ projectId, projectName }: Props) {
                   </div>
                 ) : (
                   <p className="text-xs text-gray-500">
-                    Link URLs are only shown when created or after resend.
+                    Link URLs appear here after generate or resend.
                   </p>
                 )}
 

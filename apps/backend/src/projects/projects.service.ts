@@ -1489,13 +1489,11 @@ export class ProjectsService {
       },
     });
 
-    if (stage.project?.managedByAdmin) {
-      await this.projectAccessService.notifyManagedProjectUpdate({
-        projectId,
-        title: stageEventTitle,
-        message: `Project "${stage.project.name}" — stage "${updatedStage.name}" is now ${status.replace('_', ' ')}.`,
-      });
-    }
+    await this.projectAccessService.notifyManagedProjectUpdate({
+      projectId,
+      title: stageEventTitle,
+      message: `Project "${stage.project.name}" — stage "${updatedStage.name}" is now ${status.replace('_', ' ')}.`,
+    });
 
     return updatedStage;
   }
