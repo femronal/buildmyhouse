@@ -15,9 +15,31 @@ import {
   buildAccessUrl,
   buildPostAccessRedirect,
   DEFAULT_PROJECT_TEMPLATES,
-  ProjectTemplateStage,
 } from './project-access.constants';
-import { CreateManagedProjectDto } from './dto/project-access.dto';
+import { CreateManagedProjectDto, ManagedProjectPhaseDto } from './dto/project-access.dto';
+
+type ScopeStage = {
+  name: string;
+  description?: string;
+  estimatedCost: number;
+  estimatedDuration: string;
+};
+
+function mapProjectTypeTag(tag?: string | null): ProjectType {
+  if (tag === 'upgrades') return 'interior_design';
+  if (tag === 'full_builds') return 'homebuilding';
+  if (tag === 'renovation') return 'renovation';
+  return 'renovation';
+}
+
+function normalizePhases(phases: ManagedProjectPhaseDto[] | ScopeStage[]): ScopeStage[] {
+  return phases.map((phase) => ({
+    name: String(phase.name || '').trim(),
+    description: String(phase.description || '').trim() || undefined,
+    estimatedCost: Number(phase.estimatedCost || 0),
+    estimatedDuration: String(phase.estimatedDuration || '1 week').trim(),
+  }));
+}
 
 @Injectable()
 export class ProjectAccessService implements OnModuleInit {
@@ -111,10 +133,17 @@ export class ProjectAccessService implements OnModuleInit {
     }));
   }
 
-  private async resolveTemplateStages(dto: CreateManagedProjectDto): Promise<{
+  private async resolveProjectScope(dto: CreateManagedProjectDto): Promise<{
     projectType: ProjectType;
-    stages: ProjectTemplateStage[];
+    phases: ScopeStage[];
   }> {
+    if (dto.constructionPhases?.length) {
+      return {
+        projectType: dto.projectType || mapProjectTypeTag(dto.projectTypeTag),
+        phases: normalizePhases(dto.constructionPhases),
+      };
+    }
+
     if (dto.templateId) {
       const template = await this.prisma.projectTemplate.findUnique({
         where: { id: dto.templateId },
@@ -124,18 +153,50 @@ export class ProjectAccessService implements OnModuleInit {
       }
       return {
         projectType: template.projectType,
-        stages: (template.stages as ProjectTemplateStage[]) || [],
+        phases: normalizePhases((template.stages as ScopeStage[]) || []),
       };
     }
 
     if (dto.stages?.length) {
       return {
-        projectType: dto.projectType || 'renovation',
-        stages: dto.stages,
+        projectType: dto.projectType || mapProjectTypeTag(dto.projectTypeTag),
+        phases: normalizePhases(dto.stages),
       };
     }
 
-    throw new BadRequestException('Select a project template or provide custom stages.');
+    throw new BadRequestException('Add at least one construction phase to the project scope.');
+  }
+
+  private buildManagedProjectAnalysis(dto: CreateManagedProjectDto, phases: ScopeStage[]) {
+    const imageUrls = (dto.imageUrls || []).map((url) => String(url || '').trim()).filter(Boolean);
+    const bedrooms = Number(dto.bedrooms ?? 1);
+    const bathrooms = Number(dto.bathrooms ?? 1);
+    const squareFootage = Number(dto.squareFootage ?? 0);
+    const floors = Number(dto.floors ?? 1);
+
+    return {
+      bedrooms,
+      bathrooms,
+      squareFootage,
+      floors,
+      projectType: dto.projectType || mapProjectTypeTag(dto.projectTypeTag),
+      estimatedBudget: dto.budget,
+      estimatedDuration: dto.estimatedDuration || '4-8 weeks',
+      phases,
+      rooms: dto.rooms || [],
+      materials: dto.materials || [],
+      features: dto.features || [],
+      projectTypeTag: dto.projectTypeTag || null,
+      projectTypeFilter: dto.projectTypeFilter || null,
+      description: dto.description?.trim() || null,
+      summary: dto.scopeSummary?.trim() || null,
+      notes: dto.scopeSummary?.trim() || null,
+      projectImageUrl: imageUrls[0] || null,
+      projectImageUrls: imageUrls,
+      designPlanImageUrl: imageUrls[0] || null,
+      aiStatus: 'processed',
+      managedByAdmin: true,
+    };
   }
 
   private async createPlaceholderUser(params: {
@@ -235,9 +296,14 @@ export class ProjectAccessService implements OnModuleInit {
   }
 
   async createManagedProject(dto: CreateManagedProjectDto) {
-    const { projectType, stages } = await this.resolveTemplateStages(dto);
-    if (!stages.length) {
-      throw new BadRequestException('Project template must include at least one stage.');
+    const { projectType, phases } = await this.resolveProjectScope(dto);
+    if (!phases.length) {
+      throw new BadRequestException('Project scope must include at least one construction phase.');
+    }
+
+    const invalidPhase = phases.find((phase) => !phase.name);
+    if (invalidPhase) {
+      throw new BadRequestException('Every construction phase needs a name.');
     }
 
     const homeowner = await this.createPlaceholderUser({
@@ -267,7 +333,14 @@ export class ProjectAccessService implements OnModuleInit {
     }
 
     const budgetTotal =
-      dto.budget > 0 ? dto.budget : stages.reduce((sum, stage) => sum + Number(stage.estimatedCost || 0), 0);
+      dto.budget > 0
+        ? dto.budget
+        : phases.reduce((sum, phase) => sum + Number(phase.estimatedCost || 0), 0);
+
+    const aiAnalysis = this.buildManagedProjectAnalysis(
+      { ...dto, budget: budgetTotal },
+      phases,
+    );
 
     const project = await this.prisma.project.create({
       data: {
@@ -283,14 +356,16 @@ export class ProjectAccessService implements OnModuleInit {
         projectType,
         status: 'active',
         managedByAdmin: true,
+        aiAnalysis,
+        aiProcessedAt: new Date(),
         startDate: dto.startDate ? new Date(dto.startDate) : new Date(),
-        currentStage: stages[0]?.name || null,
+        currentStage: phases[0]?.name || null,
         stages: {
-          create: stages.map((stage, index) => ({
-            name: stage.name,
+          create: phases.map((phase, index) => ({
+            name: phase.name,
             order: index + 1,
-            estimatedCost: Number(stage.estimatedCost || 0),
-            estimatedDuration: stage.estimatedDuration || '1 week',
+            estimatedCost: Number(phase.estimatedCost || 0),
+            estimatedDuration: phase.estimatedDuration || '1 week',
             status: index === 0 ? 'in_progress' : 'not_started',
             startDate: index === 0 ? new Date() : null,
           })),

@@ -1,19 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Copy, Link2, Mail, RefreshCw, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Copy, Link2, X } from 'lucide-react';
 import { api } from '@/lib/api';
-
-type ProjectTemplate = {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  defaultBudget: number;
-  projectType: string;
-  stages?: Array<{ name: string; estimatedCost: number; estimatedDuration: string }>;
-};
+import {
+  ManagedProjectScopeFields,
+  buildManagedProjectPayload,
+  createDefaultScope,
+  validateManagedProjectScope,
+  type ManagedProjectScope,
+} from '@/components/ManagedProjectScopeFields';
 
 type CreateManagedProjectResponse = {
   project: { id: string; name: string };
@@ -29,11 +26,7 @@ type Props = {
   onCreated?: () => void;
 };
 
-const emptyForm = {
-  name: '',
-  address: '',
-  budget: '',
-  templateId: '',
+const emptyContacts = {
   homeownerName: '',
   homeownerEmail: '',
   homeownerPhone: '',
@@ -43,52 +36,26 @@ const emptyForm = {
 };
 
 export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
-  const [form, setForm] = useState(emptyForm);
+  const [scope, setScope] = useState<ManagedProjectScope>(createDefaultScope());
+  const [contacts, setContacts] = useState(emptyContacts);
   const [error, setError] = useState('');
   const [createdLinks, setCreatedLinks] = useState<CreateManagedProjectResponse['links'] | null>(null);
 
-  const templatesQuery = useQuery({
-    queryKey: ['project-access-templates'],
-    queryFn: () => api.get<ProjectTemplate[]>('/project-access/templates'),
-    enabled: open,
-  });
-
-  const selectedTemplate = useMemo(
-    () => templatesQuery.data?.find((template) => template.id === form.templateId) || null,
-    [form.templateId, templatesQuery.data],
-  );
-
   useEffect(() => {
     if (!open) return;
-    setForm(emptyForm);
+    setScope(createDefaultScope());
+    setContacts(emptyContacts);
     setError('');
     setCreatedLinks(null);
   }, [open]);
 
-  useEffect(() => {
-    if (selectedTemplate && !form.budget) {
-      setForm((prev) => ({
-        ...prev,
-        budget: String(selectedTemplate.defaultBudget || ''),
-      }));
-    }
-  }, [selectedTemplate, form.budget]);
-
   const createMutation = useMutation({
     mutationFn: async () => {
-      const budget = Number(form.budget || selectedTemplate?.defaultBudget || 0);
-      return api.post<CreateManagedProjectResponse>('/project-access/admin/managed-projects', {
-        name: form.name.trim(),
-        address: form.address.trim(),
-        budget,
-        templateId: form.templateId,
-        homeownerName: form.homeownerName.trim(),
-        homeownerEmail: form.homeownerEmail.trim().toLowerCase(),
-        homeownerPhone: form.homeownerPhone.trim() || undefined,
-        gcName: form.gcName.trim(),
-        gcEmail: form.gcEmail.trim().toLowerCase(),
-        gcPhone: form.gcPhone.trim() || undefined,
-      });
+      const payload = buildManagedProjectPayload(scope, contacts);
+      return api.post<CreateManagedProjectResponse>(
+        '/project-access/admin/managed-projects',
+        payload,
+      );
     },
     onSuccess: (data) => {
       setCreatedLinks(data.links);
@@ -112,14 +79,15 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={onClose}>
       <div
-        className="bg-white rounded-xl shadow-lg max-w-2xl w-full max-h-[92vh] overflow-y-auto"
+        className="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
           <div>
             <h3 className="text-lg font-semibold">Create managed project</h3>
             <p className="text-sm text-gray-500 mt-0.5">
-              Admin-managed project with email-verified tracking links for homeowner and GC.
+              Build the project scope here, then send email-verified tracking links to homeowner and
+              GC.
             </p>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100">
@@ -178,53 +146,7 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Project name</span>
-                  <input
-                    value={form.name}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                    placeholder="Electricity Fix"
-                  />
-                </label>
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Address</span>
-                  <input
-                    value={form.address}
-                    onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                    placeholder="University of Lagos, Yaba"
-                  />
-                </label>
-                <label className="space-y-1 md:col-span-2">
-                  <span className="text-sm font-medium text-gray-700">Template</span>
-                  <select
-                    value={form.templateId}
-                    onChange={(e) => setForm((prev) => ({ ...prev, templateId: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="">Select a template</option>
-                    {(templatesQuery.data || []).map((template) => (
-                      <option key={template.id} value={template.id}>
-                        {template.name}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedTemplate?.description && (
-                    <p className="text-xs text-gray-500">{selectedTemplate.description}</p>
-                  )}
-                </label>
-                <label className="space-y-1">
-                  <span className="text-sm font-medium text-gray-700">Budget (₦)</span>
-                  <input
-                    value={form.budget}
-                    onChange={(e) => setForm((prev) => ({ ...prev, budget: e.target.value }))}
-                    className="w-full border rounded-lg px-3 py-2 text-sm"
-                    inputMode="numeric"
-                  />
-                </label>
-              </div>
+              <ManagedProjectScopeFields scope={scope} onChange={setScope} />
 
               <div className="border-t pt-5 space-y-4">
                 <h4 className="text-sm font-semibold text-gray-900">Homeowner contact</h4>
@@ -232,16 +154,20 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   <label className="space-y-1">
                     <span className="text-sm font-medium text-gray-700">Full name</span>
                     <input
-                      value={form.homeownerName}
-                      onChange={(e) => setForm((prev) => ({ ...prev, homeownerName: e.target.value }))}
+                      value={contacts.homeownerName}
+                      onChange={(e) =>
+                        setContacts((prev) => ({ ...prev, homeownerName: e.target.value }))
+                      }
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
                   </label>
                   <label className="space-y-1">
                     <span className="text-sm font-medium text-gray-700">Email</span>
                     <input
-                      value={form.homeownerEmail}
-                      onChange={(e) => setForm((prev) => ({ ...prev, homeownerEmail: e.target.value }))}
+                      value={contacts.homeownerEmail}
+                      onChange={(e) =>
+                        setContacts((prev) => ({ ...prev, homeownerEmail: e.target.value }))
+                      }
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                       type="email"
                     />
@@ -249,8 +175,10 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   <label className="space-y-1 md:col-span-2">
                     <span className="text-sm font-medium text-gray-700">Phone (optional)</span>
                     <input
-                      value={form.homeownerPhone}
-                      onChange={(e) => setForm((prev) => ({ ...prev, homeownerPhone: e.target.value }))}
+                      value={contacts.homeownerPhone}
+                      onChange={(e) =>
+                        setContacts((prev) => ({ ...prev, homeownerPhone: e.target.value }))
+                      }
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
                   </label>
@@ -263,16 +191,16 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   <label className="space-y-1">
                     <span className="text-sm font-medium text-gray-700">Full name</span>
                     <input
-                      value={form.gcName}
-                      onChange={(e) => setForm((prev) => ({ ...prev, gcName: e.target.value }))}
+                      value={contacts.gcName}
+                      onChange={(e) => setContacts((prev) => ({ ...prev, gcName: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
                   </label>
                   <label className="space-y-1">
                     <span className="text-sm font-medium text-gray-700">Email</span>
                     <input
-                      value={form.gcEmail}
-                      onChange={(e) => setForm((prev) => ({ ...prev, gcEmail: e.target.value }))}
+                      value={contacts.gcEmail}
+                      onChange={(e) => setContacts((prev) => ({ ...prev, gcEmail: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                       type="email"
                     />
@@ -280,8 +208,8 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   <label className="space-y-1 md:col-span-2">
                     <span className="text-sm font-medium text-gray-700">Phone (optional)</span>
                     <input
-                      value={form.gcPhone}
-                      onChange={(e) => setForm((prev) => ({ ...prev, gcPhone: e.target.value }))}
+                      value={contacts.gcPhone}
+                      onChange={(e) => setContacts((prev) => ({ ...prev, gcPhone: e.target.value }))}
                       className="w-full border rounded-lg px-3 py-2 text-sm"
                     />
                   </label>
@@ -298,22 +226,15 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm disabled:opacity-50"
                   onClick={() => {
                     setError('');
-                    if (
-                      !form.name.trim() ||
-                      !form.address.trim() ||
-                      !form.templateId ||
-                      !form.homeownerName.trim() ||
-                      !form.homeownerEmail.trim() ||
-                      !form.gcName.trim() ||
-                      !form.gcEmail.trim()
-                    ) {
-                      setError('Fill in project details, template, and both contact sections.');
+                    const validationError = validateManagedProjectScope(scope, contacts);
+                    if (validationError) {
+                      setError(validationError);
                       return;
                     }
                     createMutation.mutate();
                   }}
                 >
-                  {createMutation.isPending ? 'Creating…' : 'Create & send links'}
+                  {createMutation.isPending ? 'Creating…' : 'Create scope & send links'}
                 </button>
               </div>
             </>

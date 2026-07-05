@@ -1,4 +1,6 @@
 import {
+  ArrayMinSize,
+  IsArray,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -7,8 +9,28 @@ import {
   IsString,
   IsUUID,
   Min,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ProjectType } from '@prisma/client';
+
+export class ManagedProjectPhaseDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  estimatedDuration: string;
+
+  @IsNumber()
+  @Min(0)
+  estimatedCost: number;
+}
 
 export class CreateManagedProjectDto {
   @IsString()
@@ -40,19 +62,85 @@ export class CreateManagedProjectDto {
   budget: number;
 
   @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  scopeSummary?: string;
+
+  @IsOptional()
   @IsEnum(ProjectType)
   projectType?: ProjectType;
 
+  @IsOptional()
+  @IsString()
+  projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
+
+  @IsOptional()
+  @IsString()
+  projectTypeFilter?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  bedrooms?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  bathrooms?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  squareFootage?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  floors?: number;
+
+  @IsOptional()
+  @IsString()
+  estimatedDuration?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  rooms?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  materials?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  features?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  imageUrls?: string[];
+
+  /** Legacy template support — prefer constructionPhases from admin scope form. */
   @IsOptional()
   @IsUUID()
   templateId?: string;
 
   @IsOptional()
-  stages?: Array<{
-    name: string;
-    estimatedCost: number;
-    estimatedDuration: string;
-  }>;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ManagedProjectPhaseDto)
+  stages?: ManagedProjectPhaseDto[];
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ManagedProjectPhaseDto)
+  constructionPhases: ManagedProjectPhaseDto[];
 
   @IsString()
   @IsNotEmpty()
