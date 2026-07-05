@@ -73,6 +73,7 @@ export default function RootLayout() {
                 <Stack.Screen name="login" options={{ headerShown: false }} />
                 <Stack.Screen name="contractor" options={{ headerShown: false }} />
                 <Stack.Screen name="chat" options={{ headerShown: false }} />
+                <Stack.Screen name="access/[token]" options={{ headerShown: false }} />
               </Stack>
               <StatusBar style="auto" />
               <WhatsAppFloatingChat />

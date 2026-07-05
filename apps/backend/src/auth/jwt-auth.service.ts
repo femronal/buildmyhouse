@@ -38,6 +38,27 @@ export class JwtAuthService {
   }
 
   /**
+   * Issue a signed JWT for an authenticated user session.
+   */
+  async generateToken(userId: string, email: string, role: string, expiresIn = '30d'): Promise<string> {
+    const payload: JWTPayload = {
+      sub: userId,
+      email,
+      role,
+    };
+
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    return this.jwtService.signAsync(payload, {
+      secret,
+      expiresIn,
+    });
+  }
+
+  /**
    * Extract token from Socket.io handshake
    */
   extractTokenFromHandshake(auth: any): string | null {

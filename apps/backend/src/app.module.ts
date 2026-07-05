@@ -25,6 +25,7 @@ import { EmailModule } from './email/email.module';
 import { ArticlesModule } from './articles/articles.module';
 import { ResourceSectionsModule } from './resource-sections/resource-sections.module';
 import { ServicePagesModule } from './service-pages/service-pages.module';
+import { ProjectAccessModule } from './project-access/project-access.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ServicePagesModule } from './service-pages/service-pages.module';
     ArticlesModule,
     ResourceSectionsModule,
     ServicePagesModule,
+    ProjectAccessModule,
   ],
   controllers: [],
   providers: [

@@ -179,6 +179,7 @@ export default function RootLayout() {
           <Stack.Screen name="app-settings" options={{ headerShown: false }} />
           <Stack.Screen name="notifications" options={{ headerShown: false }} />
           <Stack.Screen name="chat" options={{ headerShown: false }} />
+          <Stack.Screen name="access/[token]" options={{ headerShown: false }} />
           </Stack>
           <StatusBar style="auto" />
           <AuthContinueModal />

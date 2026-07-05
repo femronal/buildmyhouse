@@ -1,9 +1,10 @@
 import { View, Text, TouchableOpacity, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView } from "react-native";
-import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import { useQueryClient } from '@tanstack/react-query';
 import { storeAuthToken } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { claimManagedAccount } from '@/lib/project-access';
 import { navigateAfterAuth, getPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, LogIn, UserPlus } from "lucide-react-native";
 import LogoText from '@/components/LogoText';
@@ -19,7 +20,20 @@ const FAINT_COLOR = '#737373';
 export default function EmailLoginScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const params = useLocalSearchParams<{ accessToken?: string | string[]; mode?: string | string[] }>();
+  const accessToken = useMemo(
+    () => {
+      const raw = params.accessToken;
+      return (Array.isArray(raw) ? raw[0] : raw)?.trim() || '';
+    },
+    [params.accessToken],
+  );
+  const initialMode = useMemo(() => {
+    const raw = params.mode;
+    const mode = Array.isArray(raw) ? raw[0] : raw;
+    return mode === 'signup' || accessToken ? 'signup' : 'signin';
+  }, [accessToken, params.mode]);
+  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -48,7 +62,13 @@ export default function EmailLoginScreen() {
 
     setLoading(true);
     try {
-      const data = mode === 'signup'
+      const data = mode === 'signup' && accessToken
+        ? await claimManagedAccount(accessToken, {
+            fullName: fullName.trim(),
+            email: email.trim().toLowerCase(),
+            password,
+          })
+        : mode === 'signup'
         ? await api.post('/auth/register', {
             fullName: fullName.trim(),
             email: email.trim().toLowerCase(),
@@ -76,6 +96,10 @@ export default function EmailLoginScreen() {
 
       await storeAuthToken(data.token);
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      if (accessToken && data.redirectPath) {
+        router.replace(data.redirectPath as any);
+        return;
+      }
       await navigateAfterAuth(router, data.user);
     } catch (error: any) {
       const message = error?.data?.message ?? error?.message ?? 'Something went wrong. Please try again.';

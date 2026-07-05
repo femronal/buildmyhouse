@@ -276,6 +276,7 @@ export class AuthService {
     role: string;
     verified: boolean;
     profileSetupCompleted?: boolean;
+    managedParticipant?: boolean;
   }) {
     // Generate JWT token
     const token = await this.generateToken(user.id, user.email, user.role);
@@ -290,6 +291,7 @@ export class AuthService {
         role: user.role,
         verified: user.verified,
         profileSetupCompleted: !!user.profileSetupCompleted,
+        managedParticipant: !!user.managedParticipant,
       },
     };
   }
@@ -349,6 +351,7 @@ export class AuthService {
         role: true,
         verified: true,
         profileSetupCompleted: true,
+        managedParticipant: true,
         phone: true,
         address: true,
         city: true,

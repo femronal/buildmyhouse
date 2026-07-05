@@ -10,6 +10,7 @@ import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member
 import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto';
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
+import { ProjectAccessService } from '../project-access/project-access.service';
 
 @Injectable()
 export class ProjectsService {
@@ -41,6 +42,7 @@ export class ProjectsService {
     private readonly stripeService: StripeService,
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
+    private readonly projectAccessService: ProjectAccessService,
   ) {}
 
   private extractDurationDays(durationText?: string | null): number | null {
@@ -1486,6 +1488,14 @@ export class ProjectsService {
         status,
       },
     });
+
+    if (stage.project?.managedByAdmin) {
+      await this.projectAccessService.notifyManagedProjectUpdate({
+        projectId,
+        title: stageEventTitle,
+        message: `Project "${stage.project.name}" — stage "${updatedStage.name}" is now ${status.replace('_', ' ')}.`,
+      });
+    }
 
     return updatedStage;
   }

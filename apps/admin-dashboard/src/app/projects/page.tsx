@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Search, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Plus, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { CreateManagedProjectModal } from '@/components/CreateManagedProjectModal';
+import { ProjectAccessLinksPanel } from '@/components/ProjectAccessLinksPanel';
 
 type StageView = {
   id: string;
@@ -32,6 +34,7 @@ type ApiProject = {
   externalPaymentLink?: string | null;
   paymentConfirmationStatus?: 'not_declared' | 'declared' | 'confirmed' | 'rejected' | string;
   archivedAt?: string | null;
+  managedByAdmin?: boolean;
   homeowner?: { fullName?: string | null; email?: string | null } | null;
   generalContractor?: { fullName?: string | null; email?: string | null } | null;
   stages?: StageView[] | null;
@@ -56,6 +59,7 @@ type ProjectView = {
   externalPaymentLink?: string | null;
   paymentConfirmationStatus?: string | null;
   archivedAt?: string | null;
+  managedByAdmin?: boolean;
   stages?: StageView[] | null;
 };
 
@@ -119,6 +123,7 @@ export default function ProjectsPage() {
   const [bulkArchiveTarget, setBulkArchiveTarget] = useState(false);
   const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string>('');
+  const [createManagedOpen, setCreateManagedOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -166,6 +171,7 @@ export default function ProjectsPage() {
       externalPaymentLink: p.externalPaymentLink ?? null,
       paymentConfirmationStatus: p.paymentConfirmationStatus ?? null,
       archivedAt: p.archivedAt ?? null,
+      managedByAdmin: p.managedByAdmin ?? false,
       stages: p.stages ?? null,
     }));
   }, [projectsQuery.data]);
@@ -319,6 +325,14 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2 flex-wrap">
           <button
             type="button"
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm inline-flex items-center gap-2 hover:bg-indigo-700"
+            onClick={() => setCreateManagedOpen(true)}
+          >
+            <Plus className="w-4 h-4" />
+            Create managed project
+          </button>
+          <button
+            type="button"
             className="px-4 py-2 rounded-lg border border-amber-300 text-amber-800 text-sm inline-flex items-center gap-2 hover:bg-amber-50 disabled:opacity-50"
             disabled={archiveStaleTestsMutation.isPending}
             onClick={() => setBulkArchiveTarget(true)}
@@ -438,6 +452,11 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {project.managedByAdmin && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">
+                      managed
+                    </span>
+                  )}
                   {isStaleTestCandidate && (
                     <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
                       stale test
@@ -576,6 +595,10 @@ export default function ProjectsPage() {
                   <p className="text-xs text-gray-500">No external payment link set yet.</p>
                 )}
               </div>
+
+              {project.managedByAdmin && (
+                <ProjectAccessLinksPanel projectId={project.id} projectName={project.name} />
+              )}
 
               {project.risk === 'high' && (
                 <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
@@ -1088,6 +1111,12 @@ export default function ProjectsPage() {
           </div>
         </div>
       )}
+
+      <CreateManagedProjectModal
+        open={createManagedOpen}
+        onClose={() => setCreateManagedOpen(false)}
+        onCreated={invalidateProjectQueries}
+      />
     </div>
   );
 }

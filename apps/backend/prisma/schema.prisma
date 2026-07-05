@@ -67,6 +67,8 @@ model User {
   homeownerTermsAcceptedAt DateTime?
   gcTermsAcceptedAt DateTime?
   profileSetupCompleted Boolean @default(false)
+  managedParticipant Boolean @default(false)
+  accessClaimedAt DateTime?
   adminDashboardAccess Boolean @default(false)
   stripeCustomerId String? @unique
   createdAt DateTime @default(now())
@@ -94,6 +96,8 @@ model User {
   pushTokens            PushToken[]
   notifications         Notification[]
   passwordResetTokens   PasswordResetToken[]
+  projectAccessLinks    ProjectAccessLink[] @relation("ProjectAccessParticipant")
+  claimedAccessLinks    ProjectAccessLink[] @relation("ProjectAccessClaimed")
   stageChangeRequestsSubmitted StageChangeRequest[] @relation("StageChangeRequestedBy")
   stageChangeRequestsReviewed StageChangeRequest[] @relation("StageChangeReviewedBy")
   
@@ -241,6 +245,7 @@ model Project {
   planFileName         String?
   planPdfUrl           String?
   archivedAt           DateTime?
+  managedByAdmin       Boolean  @default(false)
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -254,6 +259,7 @@ model Project {
   disputes            ProjectStageDispute[]
   stageChangeRequests StageChangeRequest[]
   reviews             Review[]
+  accessLinks         ProjectAccessLink[]
   
   @@map("projects")
 }
@@ -927,4 +933,53 @@ model StageDocument {
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   @@map("stage_documents")
+}
+
+enum ProjectAccessRole {
+  homeowner
+  general_contractor
+}
+
+model ProjectAccessLink {
+  id                  String            @id @default(uuid())
+  projectId           String
+  role                ProjectAccessRole
+  contactEmail        String
+  contactName         String?
+  contactPhone        String?
+  participantUserId   String
+  tokenHash           String            @unique
+  emailVerifiedAt     DateTime?
+  verificationCodeHash String?
+  verificationExpiresAt DateTime?
+  termsAcceptedAt     DateTime?
+  claimedUserId       String?
+  revokedAt           DateTime?
+  lastAccessedAt      DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  participantUser User    @relation("ProjectAccessParticipant", fields: [participantUserId], references: [id], onDelete: Cascade)
+  claimedUser     User?   @relation("ProjectAccessClaimed", fields: [claimedUserId], references: [id], onDelete: SetNull)
+
+  @@index([projectId, role])
+  @@index([contactEmail])
+  @@map("project_access_links")
+}
+
+model ProjectTemplate {
+  id            String       @id @default(uuid())
+  name          String
+  slug          String       @unique
+  projectType   ProjectType  @default(renovation)
+  description   String?
+  defaultBudget Float?
+  stages        Json
+  isActive      Boolean      @default(true)
+  sortOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("project_templates")
 }
