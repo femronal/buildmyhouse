@@ -242,8 +242,6 @@ const SEO_PAGES = {
   },
 };
 
-const DEBUG_LOG_PATH = path.resolve(process.cwd(), '.cursor/debug-48c7bb.log');
-
 const PROJECT_MONITORING_VIDEO = {
   title: 'See How Project Monitoring Works',
   description:
@@ -254,27 +252,6 @@ const PROJECT_MONITORING_VIDEO = {
   videoId: 'LuIZYt1DNzw',
   watchPagePath: '/demo/project-monitoring',
 };
-
-function agentLog(message, data = {}) {
-  // #region agent log
-  try {
-    fs.appendFileSync(
-      DEBUG_LOG_PATH,
-      `${JSON.stringify({
-        sessionId: '48c7bb',
-        runId: 'seo-inject',
-        hypothesisId: 'H1-H3',
-        location: 'inject-static-seo.mjs',
-        message,
-        data,
-        timestamp: Date.now(),
-      })}\n`,
-    );
-  } catch {
-    // ignore debug log failures
-  }
-  // #endregion
-}
 
 function buildProjectMonitoringVideoJsonLd() {
   const canonicalUrl = `${WEB_URL}${PROJECT_MONITORING_VIDEO.watchPagePath}`;
@@ -492,14 +469,6 @@ function patchHtmlForRoute(html, route) {
   if (route === '/demo/project-monitoring') {
     const payload = buildProjectMonitoringVideoJsonLd();
     next = upsertJsonLd(next, 'buildmyhouse-demo-video-jsonld', payload);
-    agentLog('Injected demo VideoObject JSON-LD', {
-      route,
-      uploadDate: PROJECT_MONITORING_VIDEO.youtubeUploadDate,
-      embedUrl: PROJECT_MONITORING_VIDEO.youtubeEmbedUrl,
-    });
-  }
-  if (route === '/construction/nigeria') {
-    agentLog('Construction hub static SEO patched without VideoObject', { route, hasUploadDate: next.includes('uploadDate') });
   }
   return next;
 }
