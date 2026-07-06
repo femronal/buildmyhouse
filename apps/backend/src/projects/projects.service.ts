@@ -1499,6 +1499,139 @@ export class ProjectsService {
   }
 
   /**
+   * Admin: update stage metadata and sync matching phase in aiAnalysis.
+   */
+  async updateStageDetailsAsAdmin(
+    projectId: string,
+    stageId: string,
+    dto: {
+      name?: string;
+      description?: string;
+      order?: number;
+      estimatedCost?: number;
+      actualCost?: number;
+      estimatedDuration?: string;
+      startDate?: string | null;
+      completionDate?: string | null;
+    },
+  ) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: stageId },
+      include: { project: true },
+    });
+
+    if (!stage || stage.projectId !== projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+
+    const stageUpdate: Record<string, unknown> = {};
+    if (dto.name !== undefined) stageUpdate.name = dto.name.trim();
+    if (dto.order !== undefined) stageUpdate.order = dto.order;
+    if (dto.estimatedCost !== undefined) stageUpdate.estimatedCost = dto.estimatedCost;
+    if (dto.actualCost !== undefined) stageUpdate.actualCost = dto.actualCost;
+    if (dto.estimatedDuration !== undefined) stageUpdate.estimatedDuration = dto.estimatedDuration;
+    if (dto.startDate !== undefined) {
+      stageUpdate.startDate = dto.startDate ? new Date(dto.startDate) : null;
+    }
+    if (dto.completionDate !== undefined) {
+      stageUpdate.completionDate = dto.completionDate ? new Date(dto.completionDate) : null;
+    }
+
+    const aiAnalysis = (stage.project.aiAnalysis as Record<string, unknown> | null) || {};
+    const phases = Array.isArray(aiAnalysis.phases) ? [...(aiAnalysis.phases as any[])] : [];
+    const phaseIndex = stage.order;
+    if (phases[phaseIndex]) {
+      const phase = { ...phases[phaseIndex] };
+      if (dto.name !== undefined) phase.name = dto.name.trim();
+      if (dto.description !== undefined) phase.description = dto.description;
+      if (dto.estimatedCost !== undefined) phase.estimatedCost = dto.estimatedCost;
+      if (dto.estimatedDuration !== undefined) phase.estimatedDuration = dto.estimatedDuration;
+      phases[phaseIndex] = phase;
+    } else if (dto.description !== undefined || dto.name !== undefined) {
+      phases[phaseIndex] = {
+        name: dto.name ?? stage.name,
+        description: dto.description ?? '',
+        estimatedDuration: dto.estimatedDuration ?? stage.estimatedDuration,
+        estimatedCost: dto.estimatedCost ?? stage.estimatedCost,
+      };
+    }
+
+    const previousName = stage.name;
+    const [updatedStage] = await this.prisma.$transaction([
+      this.prisma.stage.update({
+        where: { id: stageId },
+        data: stageUpdate,
+      }),
+      this.prisma.project.update({
+        where: { id: projectId },
+        data: {
+          aiAnalysis: { ...aiAnalysis, phases },
+          ...(dto.name && stage.project.currentStage === previousName
+            ? { currentStage: dto.name.trim() }
+            : {}),
+        },
+      }),
+    ]);
+
+    return updatedStage;
+  }
+
+  /**
+   * Admin: update project scope fields stored in aiAnalysis.
+   */
+  async updateProjectScopeAsAdmin(
+    projectId: string,
+    dto: {
+      description?: string;
+      scopeSummary?: string;
+      rooms?: string[];
+      features?: string[];
+      materials?: string[];
+      projectImageUrls?: string[];
+      bedrooms?: number;
+      bathrooms?: number;
+      squareFootage?: number;
+      floors?: number;
+      estimatedDuration?: string;
+    },
+  ) {
+    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+
+    const aiAnalysis = (project.aiAnalysis as Record<string, unknown> | null) || {};
+    const nextAnalysis: Record<string, unknown> = { ...aiAnalysis };
+
+    if (dto.description !== undefined) nextAnalysis.description = dto.description;
+    if (dto.scopeSummary !== undefined) {
+      nextAnalysis.summary = dto.scopeSummary;
+      nextAnalysis.notes = dto.scopeSummary;
+    }
+    if (dto.rooms !== undefined) nextAnalysis.rooms = dto.rooms;
+    if (dto.features !== undefined) nextAnalysis.features = dto.features;
+    if (dto.materials !== undefined) nextAnalysis.materials = dto.materials;
+    if (dto.bedrooms !== undefined) nextAnalysis.bedrooms = dto.bedrooms;
+    if (dto.bathrooms !== undefined) nextAnalysis.bathrooms = dto.bathrooms;
+    if (dto.squareFootage !== undefined) nextAnalysis.squareFootage = dto.squareFootage;
+    if (dto.floors !== undefined) nextAnalysis.floors = dto.floors;
+    if (dto.estimatedDuration !== undefined) nextAnalysis.estimatedDuration = dto.estimatedDuration;
+    if (dto.projectImageUrls !== undefined) {
+      nextAnalysis.projectImageUrls = dto.projectImageUrls;
+      nextAnalysis.projectImageUrl = dto.projectImageUrls[0] || null;
+      nextAnalysis.designPlanImageUrl = dto.projectImageUrls[0] || null;
+    }
+
+    return this.prisma.project.update({
+      where: { id: projectId },
+      data: { aiAnalysis: nextAnalysis },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+      },
+    });
+  }
+
+  /**
    * Complete a stage and emit notification
    */
   async completeStage(projectId: string, stageId: string) {
@@ -1957,7 +2090,12 @@ export class ProjectsService {
   /**
    * Update a project
    */
-  async updateProject(projectId: string, userId: string, updateProjectDto: UpdateProjectDto) {
+  async updateProject(
+    projectId: string,
+    userId: string,
+    updateProjectDto: UpdateProjectDto,
+    userRole?: string,
+  ) {
     // Check if project exists and user has access
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
@@ -1970,8 +2108,12 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
 
-    // Check authorization: homeowner or contractor can update
-    if (project.homeownerId !== userId && project.generalContractorId !== userId) {
+    // Check authorization: admin, homeowner, or contractor can update
+    if (
+      userRole !== 'admin' &&
+      project.homeownerId !== userId &&
+      project.generalContractorId !== userId
+    ) {
       throw new ForbiddenException('You do not have permission to update this project');
     }
 

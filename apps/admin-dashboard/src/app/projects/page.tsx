@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Plus, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -612,6 +613,12 @@ export default function ProjectsPage() {
               )}
 
               <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/projects/${project.id}`}
+                  className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg"
+                >
+                  Manage project
+                </Link>
                 <button
                   className="px-3 py-2 text-sm border rounded-lg"
                   onClick={() => setTimelineProjectId(project.id)}

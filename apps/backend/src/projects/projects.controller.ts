@@ -24,6 +24,8 @@ import { UpdateDisputeStatusDto } from './dto/update-dispute-status.dto';
 import { CreateStageChangeRequestDto } from './dto/create-stage-change-request.dto';
 import { ReviewStageChangeRequestDto } from './dto/review-stage-change-request.dto';
 import { ListStageChangeRequestsDto } from './dto/list-stage-change-requests.dto';
+import { UpdateStageDetailsDto } from './dto/update-stage-details.dto';
+import { UpdateProjectScopeDto } from './dto/update-project-scope.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 
@@ -148,6 +150,17 @@ export class ProjectsController {
     }
 
     throw new ForbiddenException('You do not have permission to update stages for this project');
+  }
+
+  @Patch(':projectId/stages/:stageId/details')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  updateStageDetails(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Body() body: UpdateStageDetailsDto,
+  ) {
+    return this.projectsService.updateStageDetailsAsAdmin(projectId, stageId, body);
   }
 
   // ==================== Stage Documentation Endpoints ====================
@@ -516,6 +529,13 @@ export class ProjectsController {
     return this.projectsService.confirmManualPayment({ projectId: id });
   }
 
+  @Patch(':id/scope')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  updateProjectScope(@Param('id') id: string, @Body() body: UpdateProjectScopeDto) {
+    return this.projectsService.updateProjectScopeAsAdmin(id, body);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('homeowner', 'general_contractor', 'admin')
@@ -525,7 +545,7 @@ export class ProjectsController {
     @Body() updateProjectDto: UpdateProjectDto,
   ) {
     const userId = req.user.sub;
-    return this.projectsService.updateProject(id, userId, updateProjectDto);
+    return this.projectsService.updateProject(id, userId, updateProjectDto, req.user.role);
   }
 
   @Delete(':id')
