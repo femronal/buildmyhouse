@@ -13,12 +13,10 @@ Disallow: /notifications
 Disallow: /pending-projects
 Disallow: /billing-payments
 Disallow: /notification-settings
-Disallow: /privacy-security
 Disallow: /personal-information
 Disallow: /app-settings
 Disallow: /house-summary
 Disallow: /upload-plan
-Disallow: /login
 Disallow: /email-login
 Disallow: /choose-project-type
 Disallow: /location

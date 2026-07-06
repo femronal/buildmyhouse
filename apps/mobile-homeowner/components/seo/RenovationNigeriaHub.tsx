@@ -46,7 +46,7 @@ export default function RenovationNigeriaHub() {
     <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
       <SeoContentColumn>
         <View className="pt-10 pb-2 md:pt-14 md:pb-4">
-          <SeoContentBackButton fallbackHref="/login" />
+          <SeoContentBackButton fallbackHref="/" />
           <Text
             className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"
             style={{ fontFamily: 'Poppins_600SemiBold' }}

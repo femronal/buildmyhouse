@@ -240,7 +240,27 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       description:
         'BuildMyHouse Technologies helps homeowners and diaspora clients in Nigeria plan projects clearly, track stage progress, verify updates, and make smarter payment decisions.',
       canonicalPath: '/',
-      robots: 'noindex,nofollow',
+      robots: 'noindex,follow',
+    };
+  }
+
+  if (normalized === '/privacy-security') {
+    return {
+      title: 'Privacy Notice | BuildMyHouse',
+      description:
+        'How BuildMyHouse collects, uses, and protects your personal data when you manage repairs, renovations, and construction projects in Nigeria.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/terms-conditions') {
+    return {
+      title: 'Terms & Conditions | BuildMyHouse',
+      description:
+        'BuildMyHouse Terms of Service and platform policies for homeowners, contractors, and all users of the project management platform.',
+      canonicalPath,
+      robots: 'index,follow',
     };
   }
 

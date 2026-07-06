@@ -110,7 +110,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
       ) : null}>
       <SeoContentColumn>
         <View className="pt-10 pb-2 md:pt-14 md:pb-4">
-          <SeoContentBackButton fallbackHref="/login" />
+          <SeoContentBackButton fallbackHref="/" />
           {eyebrow ? (
             <Text
               className="text-[10px] md:text-xs uppercase tracking-wide text-blue-700 mb-1 md:mb-2"

@@ -25,9 +25,25 @@ async function getCmsArticleRoutes() {
   }
 }
 
+async function getCmsServicePageRoutes() {
+  try {
+    const response = await fetch(`${API_URL}/service-pages`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+
+    return data
+      .map((item) => String(item?.canonicalPath || '').trim())
+      .filter((routePath) => routePath.startsWith('/services/'));
+  } catch {
+    return [];
+  }
+}
+
 const now = new Date().toISOString();
 const cmsRoutes = await getCmsArticleRoutes();
-const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes])).sort();
+const cmsServiceRoutes = await getCmsServicePageRoutes();
+const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes, ...cmsServiceRoutes])).sort();
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -59,12 +75,10 @@ Disallow: /notifications
 Disallow: /pending-projects
 Disallow: /billing-payments
 Disallow: /notification-settings
-Disallow: /privacy-security
 Disallow: /personal-information
 Disallow: /app-settings
 Disallow: /house-summary
 Disallow: /upload-plan
-Disallow: /login
 Disallow: /email-login
 Disallow: /choose-project-type
 Disallow: /location

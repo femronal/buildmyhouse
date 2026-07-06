@@ -23,7 +23,6 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/pending-projects',
   '/billing-payments',
   '/notification-settings',
-  '/privacy-security',
   '/personal-information',
   '/app-settings',
   '/house-summary',
@@ -47,6 +46,16 @@ const SEO_PAGES = {
     title: 'For Contractors | BuildMyHouse',
     description:
       'Join BuildMyHouse as a verified artisan, repairer, renovator, or contractor and receive better project requests.',
+  },
+  '/privacy-security': {
+    title: 'Privacy Notice | BuildMyHouse',
+    description:
+      'How BuildMyHouse collects, uses, and protects your personal data when you manage property projects in Nigeria.',
+  },
+  '/terms-conditions': {
+    title: 'Terms & Conditions | BuildMyHouse',
+    description:
+      'BuildMyHouse Terms of Service and platform policies for homeowners, contractors, and all platform users.',
   },
   '/services/plumbing-repair-nigeria': {
     title: 'Plumber in Lagos, Nigeria | Verified & Tracked Repairs | BuildMyHouse',
@@ -365,6 +374,7 @@ function writeRedirectHtml(route, targetRoute) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Redirecting…</title>
+  <meta name="robots" content="noindex,follow" />
   <link rel="canonical" href="${targetUrl}" />
   <meta http-equiv="refresh" content="0; url=${targetUrl}" />
 </head>

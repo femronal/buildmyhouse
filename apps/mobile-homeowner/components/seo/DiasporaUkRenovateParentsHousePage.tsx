@@ -78,7 +78,7 @@ export default function DiasporaUkRenovateParentsHousePage() {
     <SeoContentShell contentContainerStyle={{ paddingBottom: 40 }}>
       <SeoContentColumn>
         <View className="pt-10 pb-2 md:pt-14 md:pb-4">
-          <SeoContentBackButton fallbackHref="/login" />
+          <SeoContentBackButton fallbackHref="/" />
           <Text className="text-[11px] uppercase tracking-wide text-gray-500 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
