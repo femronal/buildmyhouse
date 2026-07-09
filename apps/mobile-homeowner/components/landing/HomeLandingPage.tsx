@@ -302,8 +302,23 @@ export default function HomeLandingPage() {
                   </Text>
                 </Pressable>
               </Link>
+              {/* Mobile: Login → app auth. Desktop: Get Started → explore flow. */}
+              <Link href={'/email-login' as any} asChild>
+                <Pressable
+                  className="md:hidden bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                  accessibilityLabel="Login"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Login
+                  </Text>
+                </Pressable>
+              </Link>
               <Link href={'/location?mode=explore' as any} asChild>
-                <Pressable className="bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
+                <Pressable
+                  className="hidden md:flex bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Get Started
                   </Text>
