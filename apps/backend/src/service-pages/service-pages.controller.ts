@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { UpsertServicePageDto } from './dto/upsert-service-page.dto';
 import { UpdateServicePageStatusDto } from './dto/update-service-page-status.dto';
+import { GenerateServicePageDto } from './dto/generate-service-page.dto';
 
 @Controller('service-pages')
 export class ServicePagesController {
@@ -48,6 +49,13 @@ export class ServicePagesController {
     },
   ) {
     return this.servicePagesService.createFromTemplate(body);
+  }
+
+  @Post('admin/generate')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  generateWithAi(@Body() body: GenerateServicePageDto) {
+    return this.servicePagesService.generateWithAi(body);
   }
 
   @Post('admin')

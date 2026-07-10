@@ -116,6 +116,25 @@ export function useCmsServicePages(region?: ServicePageRegion) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey }),
   });
 
+  const generateWithAiMutation = useMutation({
+    mutationFn: (payload: {
+      serviceName: string;
+      region: ServicePageRegion;
+      slug?: string;
+      templateKind?: string;
+    }) =>
+      api.post<{
+        metaTitle: string;
+        summary: string;
+        canonicalPath: string;
+        slug: string;
+        region: ServicePageRegion;
+        templateKind: string;
+        payload: ServicePagePayload;
+        generatedByAi: boolean;
+      }>('/service-pages/admin/generate', payload),
+  });
+
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpsertCmsServicePagePayload }) =>
       api.patch<CmsServicePage>(`/service-pages/admin/${id}`, payload),
@@ -140,6 +159,8 @@ export function useCmsServicePages(region?: ServicePageRegion) {
     refetch: query.refetch,
     createPage: createMutation.mutateAsync,
     createPageFromTemplate: createFromTemplateMutation.mutateAsync,
+    generateWithAi: generateWithAiMutation.mutateAsync,
+    isGeneratingWithAi: generateWithAiMutation.isPending,
     updatePage: updateMutation.mutateAsync,
     publishPage: publishMutation.mutateAsync,
     deletePage: deleteMutation.mutateAsync,

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Globe, Save, Send } from 'lucide-react';
+import { ArrowLeft, Globe, Save, Send, Sparkles } from 'lucide-react';
 import AdminFeedbackModal, { closedAdminFeedback, type AdminFeedbackState } from '@/components/AdminFeedbackModal';
 import ServicePageEditorForm from '@/components/service-pages/ServicePageEditorForm';
 import {
@@ -125,7 +125,7 @@ export default function ServicePageEditorPage() {
   const initialSlug = searchParams.get('slug') || '';
 
   const { data: existingPage, isLoading: isLoadingPage } = useCmsServicePage(pageId);
-  const { createPageFromTemplate, updatePage } = useCmsServicePages();
+  const { createPageFromTemplate, updatePage, generateWithAi, isGeneratingWithAi } = useCmsServicePages();
 
   const [form, setForm] = useState<FormState>(() => {
     const slug =
@@ -141,21 +141,26 @@ export default function ServicePageEditorPage() {
   const [saving, setSaving] = useState(false);
   const [pendingAction, setPendingAction] = useState<'draft' | 'publish' | null>(null);
   const [feedback, setFeedback] = useState<AdminFeedbackState>(() => closedAdminFeedback());
+  const [aiServiceName, setAiServiceName] = useState('');
+  const [aiFilled, setAiFilled] = useState(false);
 
   const templateQuery = useServicePageTemplate(
-    !pageId ? form.templateKind : undefined,
-    !pageId ? form.region : undefined,
-    !pageId ? form.slug || form.templateKind : undefined,
+    !pageId && !aiFilled ? form.templateKind : undefined,
+    !pageId && !aiFilled ? form.region : undefined,
+    !pageId && !aiFilled ? form.slug || form.templateKind : undefined,
   );
 
   useEffect(() => {
     if (existingPage) {
       setForm(toFormState(existingPage));
+      if (!aiServiceName.trim() && existingPage.payload?.headline) {
+        setAiServiceName(existingPage.payload.headline);
+      }
     }
   }, [existingPage]);
 
   useEffect(() => {
-    if (pageId || !templateQuery.data) return;
+    if (pageId || aiFilled || !templateQuery.data) return;
     setForm((prev) => ({
       ...prev,
       metaTitle: prev.metaTitle || templateQuery.data!.metaTitle,
@@ -166,12 +171,62 @@ export default function ServicePageEditorPage() {
         ),
       payload: prev.payload.headline ? prev.payload : templateQuery.data!.payload,
     }));
-  }, [pageId, templateQuery.data]);
+  }, [pageId, aiFilled, templateQuery.data]);
 
   const previewUrl = useMemo(() => {
     const path = buildServicePageCanonicalPath(form.region, form.slug || form.templateKind);
     return `https://buildmyhouse.app${path}`;
   }, [form.region, form.slug, form.templateKind]);
+
+  const handleGenerateWithAi = async () => {
+    const serviceName = aiServiceName.trim();
+    if (serviceName.length < 2) {
+      setFeedback({
+        open: true,
+        tone: 'error',
+        title: 'Service name required',
+        message: 'Enter the service you want to create (e.g. “AC Repair” or “Gate Welding”).',
+      });
+      return;
+    }
+
+    setFeedback(closedAdminFeedback());
+    try {
+      const generated = await generateWithAi({
+        serviceName,
+        region: form.region,
+        slug: form.slug.trim() || undefined,
+        templateKind: form.templateKind || undefined,
+      });
+
+      setAiFilled(true);
+      setForm((prev) => ({
+        ...prev,
+        slug: generated.slug,
+        region: generated.region,
+        templateKind: generated.templateKind,
+        metaTitle: generated.metaTitle,
+        summary: generated.summary,
+        canonicalPath: generated.canonicalPath,
+        payload: generated.payload,
+      }));
+
+      setFeedback({
+        open: true,
+        tone: 'success',
+        title: 'Draft filled by AI',
+        message:
+          'Review the SEO fields and page sections below, tweak anything that needs it, then Save draft or Publish.',
+      });
+    } catch (err: any) {
+      setFeedback({
+        open: true,
+        tone: 'error',
+        title: 'AI generation failed',
+        message: err?.message || 'Could not generate this service page right now.',
+      });
+    }
+  };
 
   const handleSave = async (publish?: boolean) => {
     setSaving(true);
@@ -308,6 +363,49 @@ export default function ServicePageEditorPage() {
         liveUrl={feedback.liveUrl}
         onClose={() => setFeedback(closedAdminFeedback())}
       />
+
+      <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl border border-slate-700 p-4 space-y-3 text-white">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 rounded-lg bg-white/10 p-2">
+            <Sparkles className="w-4 h-4 text-amber-300" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold">Generate with AI</h2>
+            <p className="text-xs text-slate-300 mt-1">
+              Type the service name. OpenAI fills SEO, hero, pillars, FAQs, and the rest of the template — then you review before publishing.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <input
+            value={aiServiceName}
+            onChange={(e) => setAiServiceName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                void handleGenerateWithAi();
+              }
+            }}
+            placeholder='e.g. "AC Repair", "Gate Welding", "Tiling"'
+            className="flex-1 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-300/50"
+            disabled={isGeneratingWithAi}
+          />
+          <button
+            type="button"
+            disabled={isGeneratingWithAi}
+            onClick={() => void handleGenerateWithAi()}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-400 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-amber-300 disabled:opacity-50"
+          >
+            <Sparkles className="w-4 h-4" />
+            {isGeneratingWithAi ? 'Generating…' : 'Generate page'}
+          </button>
+        </div>
+        {aiFilled ? (
+          <p className="text-xs text-emerald-300">
+            AI draft loaded. Edit any field below, then Save draft or Publish.
+          </p>
+        ) : null}
+      </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-4 space-y-4">
         <h2 className="text-sm font-semibold text-gray-900">Page setup & SEO</h2>

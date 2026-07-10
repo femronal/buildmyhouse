@@ -109,6 +109,385 @@ export class OpenAIService {
     return this.hasApiKey;
   }
 
+  /**
+   * Generate BuildMyHouse service-page copy from a service name.
+   * Returns SEO fields + text payload (images/CTA hrefs filled by caller).
+   */
+  async generateServicePageCopy(params: {
+    serviceName: string;
+    region: 'lagos' | 'nigeria';
+    templateKind?: string;
+    slug?: string;
+  }): Promise<{
+    metaTitle: string;
+    summary: string;
+    slug: string;
+    templateKind: string;
+    payload: Record<string, unknown>;
+  } | null> {
+    if (!this.hasApiKey) {
+      return null;
+    }
+
+    const serviceName = this.asTrimmedString(params.serviceName);
+    if (!serviceName) {
+      return null;
+    }
+
+    const region = params.region === 'nigeria' ? 'nigeria' : 'lagos';
+    const locationLabel = region === 'lagos' ? 'Lagos, Nigeria' : 'Nigeria';
+    const locationShort = region === 'lagos' ? 'Lagos' : 'Nigeria';
+
+    const systemPrompt = [
+      'You write SEO landing pages for BuildMyHouse, a Nigerian property project platform.',
+      'Tone: clear, trustworthy, conversion-focused. Emphasize verified workers, scoped work, stage tracking, photo evidence, and payment after approval.',
+      'Never invent fake company stats or guarantees. Use directional stats like "04 tracked stages".',
+      'Write for homeowners in Nigeria and diaspora clients managing work remotely.',
+      'Return strict JSON only matching the schema.',
+    ].join(' ');
+
+    const userPrompt = JSON.stringify(
+      {
+        instructions: [
+          `Write a full service page for: "${serviceName}".`,
+          `Region focus: ${locationLabel}.`,
+          'headline should be a short hero word/phrase (1-3 words), e.g. "Plumbing" or "AC Repair".',
+          'metaTitle format: "{Service} in {Lagos|Nigeria} | Verified & Tracked | BuildMyHouse"',
+          'summary: 1-2 sentences, under 160 characters, for Google meta description.',
+          'slug: kebab-case URL slug without region prefix (e.g. "ac-repair", "plumbing-repair").',
+          'templateKind: closest match from known kinds, or the slug if none fit.',
+          'Known template kinds: plumbing-repair, electrical-repair, roof-leak-repair, drainage-repair, painting-services, property-maintenance, window-repair, pumping-machine-repair, fan-repair, rechargeable-fan-repair, bathroom-repair, kitchen-renovation, home-renovation, general-contractors.',
+          'locationLabel must be exactly the region location string provided.',
+          'Include exactly 4 pillars, 4 stats, 4 processSteps, 3 fieldNotes, 2 reviews, 3 faqs, 2 engageCards, 2 articleLinks, 4 trustWords.',
+          'engageCards[0] should be Tracked Repair style; engageCards[1] Verified Project style.',
+          'articleLinks hrefs must be real BuildMyHouse paths starting with /.',
+          'primaryCtaLabel / secondaryCtaLabel: short button labels.',
+          'Keep Nigerian English spelling where natural (e.g. labour).',
+        ],
+        region,
+        locationLabel,
+        locationShort,
+        serviceName,
+        preferredSlug: params.slug || null,
+        preferredTemplateKind: params.templateKind || null,
+        exampleStyle: {
+          metaTitle: `Plumbing in ${locationShort} | Verified & Tracked | BuildMyHouse`,
+          summary: `Find verified plumbing support in ${locationLabel} with clearer scope, stage tracking, and evidence before payment.`,
+          heroLead: `Plumbing repairs in ${locationLabel} with verified workers, staged updates, and evidence before you approve payment.`,
+          heroMeta: 'Scoped plumbing work with photo checkpoints — not open-ended handyman referrals.',
+        },
+      },
+      null,
+      2,
+    );
+
+    const stringArray = { type: 'array' as const, items: { type: 'string' as const } };
+    const titleBody = {
+      type: 'object' as const,
+      additionalProperties: false,
+      properties: {
+        title: { type: 'string' as const },
+        body: { type: 'string' as const },
+      },
+      required: ['title', 'body'],
+    };
+
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: process.env.SERVICE_PAGE_AI_MODEL?.trim() || this.model || 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.4,
+        max_tokens: 4500,
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'service_page_copy',
+            strict: true,
+            schema: {
+              type: 'object',
+              additionalProperties: false,
+              properties: {
+                metaTitle: { type: 'string' },
+                summary: { type: 'string' },
+                slug: { type: 'string' },
+                templateKind: { type: 'string' },
+                headline: { type: 'string' },
+                locationLabel: { type: 'string' },
+                heroLead: { type: 'string' },
+                heroMeta: { type: 'string' },
+                trustWords: { ...stringArray, minItems: 4, maxItems: 4 },
+                pillarsHeadline: { type: 'string' },
+                archiveTitle: { type: 'string' },
+                fieldNotesHeading: { type: 'string' },
+                workTitle: { type: 'string' },
+                workBody: { type: 'string' },
+                engageIntro: { type: 'string' },
+                contactPrompt: { type: 'string' },
+                pillars: { type: 'array', items: titleBody, minItems: 4, maxItems: 4 },
+                stats: {
+                  type: 'array',
+                  minItems: 4,
+                  maxItems: 4,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      value: { type: 'string' },
+                      label: { type: 'string' },
+                    },
+                    required: ['value', 'label'],
+                  },
+                },
+                processSteps: {
+                  type: 'array',
+                  minItems: 4,
+                  maxItems: 4,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      label: { type: 'string' },
+                      title: { type: 'string' },
+                      body: { type: 'string' },
+                    },
+                    required: ['label', 'title', 'body'],
+                  },
+                },
+                fieldNotes: {
+                  type: 'array',
+                  minItems: 3,
+                  maxItems: 3,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      number: { type: 'string' },
+                      title: { type: 'string' },
+                      body: { type: 'string' },
+                    },
+                    required: ['number', 'title', 'body'],
+                  },
+                },
+                reviews: {
+                  type: 'array',
+                  minItems: 2,
+                  maxItems: 2,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      quote: { type: 'string' },
+                      name: { type: 'string' },
+                      detail: { type: 'string' },
+                    },
+                    required: ['quote', 'name', 'detail'],
+                  },
+                },
+                faqs: {
+                  type: 'array',
+                  minItems: 3,
+                  maxItems: 3,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      question: { type: 'string' },
+                      answer: { type: 'string' },
+                    },
+                    required: ['question', 'answer'],
+                  },
+                },
+                engageCards: {
+                  type: 'array',
+                  minItems: 2,
+                  maxItems: 2,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      title: { type: 'string' },
+                      subtitle: { type: 'string' },
+                      badge: { type: 'string' },
+                      features: { ...stringArray, minItems: 3, maxItems: 5 },
+                    },
+                    required: ['title', 'subtitle', 'badge', 'features'],
+                  },
+                },
+                articleLinks: {
+                  type: 'array',
+                  minItems: 2,
+                  maxItems: 2,
+                  items: {
+                    type: 'object',
+                    additionalProperties: false,
+                    properties: {
+                      label: { type: 'string' },
+                      href: { type: 'string' },
+                    },
+                    required: ['label', 'href'],
+                  },
+                },
+                primaryCtaLabel: { type: 'string' },
+                secondaryCtaLabel: { type: 'string' },
+              },
+              required: [
+                'metaTitle',
+                'summary',
+                'slug',
+                'templateKind',
+                'headline',
+                'locationLabel',
+                'heroLead',
+                'heroMeta',
+                'trustWords',
+                'pillarsHeadline',
+                'archiveTitle',
+                'fieldNotesHeading',
+                'workTitle',
+                'workBody',
+                'engageIntro',
+                'contactPrompt',
+                'pillars',
+                'stats',
+                'processSteps',
+                'fieldNotes',
+                'reviews',
+                'faqs',
+                'engageCards',
+                'articleLinks',
+                'primaryCtaLabel',
+                'secondaryCtaLabel',
+              ],
+            },
+          },
+        },
+      });
+
+      const raw = completion.choices?.[0]?.message?.content || '{}';
+      const parsed = this.safeJsonParse(raw);
+      if (!parsed?.headline || !parsed?.metaTitle) {
+        this.logger.warn('Service page AI returned incomplete JSON');
+        return null;
+      }
+
+      const slug =
+        this.asTrimmedString(params.slug) ||
+        this.asTrimmedString(parsed.slug).toLowerCase().replace(/[^a-z0-9-]/g, '-') ||
+        serviceName
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '');
+
+      const templateKind =
+        this.asTrimmedString(params.templateKind) ||
+        this.asTrimmedString(parsed.templateKind) ||
+        slug;
+
+      const engageCards = Array.isArray(parsed.engageCards)
+        ? parsed.engageCards.map((card: any, index: number) => ({
+            title: this.asTrimmedString(card?.title) || (index === 0 ? 'Tracked Repair' : 'Verified Project'),
+            subtitle: this.asTrimmedString(card?.subtitle),
+            badge: this.asTrimmedString(card?.badge) || (index === 0 ? 'Most popular' : ''),
+            features: this.asStringArray(card?.features, [
+              'Guided intake with photos',
+              'Verified worker matching',
+              'Stage updates before payment',
+            ]),
+          }))
+        : [];
+
+      return {
+        metaTitle: this.asTrimmedString(parsed.metaTitle),
+        summary: this.asTrimmedString(parsed.summary),
+        slug,
+        templateKind,
+        payload: {
+          locationLabel: locationLabel,
+          headline: this.asTrimmedString(parsed.headline) || serviceName,
+          heroLead: this.asTrimmedString(parsed.heroLead),
+          heroMeta: this.asTrimmedString(parsed.heroMeta),
+          trustWords: this.asStringArray(parsed.trustWords, ['verify', 'scope', 'track', 'approve']).slice(0, 4),
+          pillarsHeadline: this.asTrimmedString(parsed.pillarsHeadline),
+          archiveTitle: this.asTrimmedString(parsed.archiveTitle),
+          fieldNotesHeading: this.asTrimmedString(parsed.fieldNotesHeading),
+          workTitle: this.asTrimmedString(parsed.workTitle) || '04 tracked stages',
+          workBody: this.asTrimmedString(parsed.workBody),
+          engageIntro: this.asTrimmedString(parsed.engageIntro),
+          contactPrompt: this.asTrimmedString(parsed.contactPrompt),
+          pillars: Array.isArray(parsed.pillars)
+            ? parsed.pillars.map((p: any) => ({
+                title: this.asTrimmedString(p?.title),
+                body: this.asTrimmedString(p?.body),
+              }))
+            : [],
+          stats: Array.isArray(parsed.stats)
+            ? parsed.stats.map((s: any) => ({
+                value: this.asTrimmedString(s?.value),
+                label: this.asTrimmedString(s?.label),
+              }))
+            : [],
+          processSteps: Array.isArray(parsed.processSteps)
+            ? parsed.processSteps.map((s: any) => ({
+                label: this.asTrimmedString(s?.label),
+                title: this.asTrimmedString(s?.title),
+                body: this.asTrimmedString(s?.body),
+              }))
+            : [],
+          fieldNotes: Array.isArray(parsed.fieldNotes)
+            ? parsed.fieldNotes.map((n: any) => ({
+                number: this.asTrimmedString(n?.number),
+                title: this.asTrimmedString(n?.title),
+                body: this.asTrimmedString(n?.body),
+              }))
+            : [],
+          reviews: Array.isArray(parsed.reviews)
+            ? parsed.reviews.map((r: any) => ({
+                quote: this.asTrimmedString(r?.quote),
+                name: this.asTrimmedString(r?.name),
+                detail: this.asTrimmedString(r?.detail),
+              }))
+            : [],
+          faqs: Array.isArray(parsed.faqs)
+            ? parsed.faqs.map((f: any) => ({
+                question: this.asTrimmedString(f?.question),
+                answer: this.asTrimmedString(f?.answer),
+              }))
+            : [],
+          engageCards,
+          articleLinks: Array.isArray(parsed.articleLinks)
+            ? parsed.articleLinks.map((l: any) => ({
+                label: this.asTrimmedString(l?.label),
+                href: this.asTrimmedString(l?.href).startsWith('/')
+                  ? this.asTrimmedString(l?.href)
+                  : '/articles',
+              }))
+            : [
+                {
+                  label: 'Renovation checklist for homeowners',
+                  href: '/articles/renovation-checklist-for-homeowners-nigeria',
+                },
+                {
+                  label: 'How to choose a contractor in Nigeria',
+                  href: '/how-to-choose-a-general-contractor-in-nigeria',
+                },
+              ],
+          primaryCtaLabel: this.asTrimmedString(parsed.primaryCtaLabel) || 'Start a Tracked Repair',
+          secondaryCtaLabel: this.asTrimmedString(parsed.secondaryCtaLabel) || 'Browse Verified Plans',
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Service page AI generation failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
   async rerankContractorMatches(params: {
     project: RerankProjectInput;
     candidates: RerankContractorInput[];

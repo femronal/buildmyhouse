@@ -1,10 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { OpenAIService } from '../openai/openai.service';
 import { UpsertServicePageDto } from './dto/upsert-service-page.dto';
+import { GenerateServicePageDto } from './dto/generate-service-page.dto';
 import {
   buildServicePageTemplate,
   isValidServicePagePayload,
   mergeServicePageResponse,
+  type ServicePagePayload,
   type ServicePageRegion,
 } from './service-page-content';
 import {
@@ -16,6 +19,8 @@ import {
 @Injectable()
 export class ServicePagesService {
   private prisma = new PrismaClient() as any;
+
+  constructor(private readonly openAIService: OpenAIService) {}
 
   private normalizeSlug(slug: string) {
     return normalizeServicePageSlug(slug);
@@ -120,6 +125,109 @@ export class ServicePagesService {
     const normalizedSlug = this.normalizeSlug(slug || templateKind);
     const normalizedKind = this.normalizeSlug(templateKind);
     return buildServicePageTemplate(normalizedKind, normalizedRegion, normalizedSlug);
+  }
+
+  /**
+   * AI-generate service page copy for admin review before publish.
+   * Keeps default images and CTA hrefs from the deterministic template.
+   */
+  async generateWithAi(dto: GenerateServicePageDto) {
+    const serviceName = String(dto.serviceName || '').trim();
+    if (serviceName.length < 2) {
+      throw new BadRequestException('Enter a service name (at least 2 characters).');
+    }
+
+    if (!this.openAIService.isConfigured()) {
+      throw new BadRequestException(
+        'OpenAI is not configured. Set OPENAI_API_KEY on the backend to generate service pages.',
+      );
+    }
+
+    const region = this.normalizeRegion(dto.region);
+    const generated = await this.openAIService.generateServicePageCopy({
+      serviceName,
+      region,
+      slug: dto.slug,
+      templateKind: dto.templateKind,
+    });
+
+    if (!generated) {
+      throw new BadRequestException(
+        'AI could not generate this service page. Try again in a moment, or fill the form manually.',
+      );
+    }
+
+    const slug = this.normalizeSlug(generated.slug || serviceName);
+    const templateKind = this.normalizeSlug(generated.templateKind || slug);
+    const fallback = buildServicePageTemplate(templateKind, region, slug);
+    const aiPayload = generated.payload as Record<string, any>;
+
+    const payload: ServicePagePayload = {
+      ...fallback.payload,
+      locationLabel: region === 'lagos' ? 'Lagos, Nigeria' : 'Nigeria',
+      headline: String(aiPayload.headline || fallback.payload.headline),
+      heroLead: String(aiPayload.heroLead || fallback.payload.heroLead),
+      heroMeta: String(aiPayload.heroMeta || fallback.payload.heroMeta),
+      trustWords: Array.isArray(aiPayload.trustWords)
+        ? aiPayload.trustWords.map(String)
+        : fallback.payload.trustWords,
+      pillarsHeadline: String(aiPayload.pillarsHeadline || fallback.payload.pillarsHeadline),
+      archiveTitle: String(aiPayload.archiveTitle || fallback.payload.archiveTitle),
+      fieldNotesHeading: String(aiPayload.fieldNotesHeading || fallback.payload.fieldNotesHeading),
+      workTitle: String(aiPayload.workTitle || fallback.payload.workTitle),
+      workBody: String(aiPayload.workBody || fallback.payload.workBody),
+      engageIntro: String(aiPayload.engageIntro || fallback.payload.engageIntro),
+      contactPrompt: String(aiPayload.contactPrompt || fallback.payload.contactPrompt),
+      pillars: Array.isArray(aiPayload.pillars) && aiPayload.pillars.length
+        ? aiPayload.pillars
+        : fallback.payload.pillars,
+      stats: Array.isArray(aiPayload.stats) && aiPayload.stats.length
+        ? aiPayload.stats
+        : fallback.payload.stats,
+      processSteps: Array.isArray(aiPayload.processSteps) && aiPayload.processSteps.length
+        ? aiPayload.processSteps
+        : fallback.payload.processSteps,
+      fieldNotes: Array.isArray(aiPayload.fieldNotes) && aiPayload.fieldNotes.length
+        ? aiPayload.fieldNotes
+        : fallback.payload.fieldNotes,
+      reviews: Array.isArray(aiPayload.reviews) && aiPayload.reviews.length
+        ? aiPayload.reviews
+        : fallback.payload.reviews,
+      faqs: Array.isArray(aiPayload.faqs) && aiPayload.faqs.length
+        ? aiPayload.faqs
+        : fallback.payload.faqs,
+      engageCards: Array.isArray(aiPayload.engageCards) && aiPayload.engageCards.length
+        ? aiPayload.engageCards.map((card: any, index: number) => ({
+            title: String(card?.title || ''),
+            subtitle: String(card?.subtitle || ''),
+            badge: String(card?.badge || (index === 0 ? 'Most popular' : '')),
+            features: Array.isArray(card?.features) ? card.features.map(String) : [],
+          }))
+        : fallback.payload.engageCards,
+      articleLinks: Array.isArray(aiPayload.articleLinks) && aiPayload.articleLinks.length
+        ? aiPayload.articleLinks
+        : fallback.payload.articleLinks,
+      images: fallback.payload.images,
+      primaryCta: {
+        label: String(aiPayload.primaryCtaLabel || fallback.payload.primaryCta.label),
+        href: fallback.payload.primaryCta.href,
+      },
+      secondaryCta: {
+        label: String(aiPayload.secondaryCtaLabel || fallback.payload.secondaryCta.label),
+        href: fallback.payload.secondaryCta.href,
+      },
+    };
+
+    return {
+      metaTitle: generated.metaTitle || fallback.metaTitle,
+      summary: generated.summary || fallback.summary,
+      canonicalPath: buildServicePageCanonicalPath(region, slug),
+      slug,
+      region,
+      templateKind,
+      payload,
+      generatedByAi: true,
+    };
   }
 
   async createAdmin(dto: UpsertServicePageDto) {
