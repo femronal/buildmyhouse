@@ -1,7 +1,15 @@
+/**
+ * CloudFront viewer-request function for buildmyhouse.app
+ *
+ * 1) 301 legacy alias URLs to their canonical paths
+ * 2) Rewrite extensionless public routes to matching .html objects in S3
+ *    so crawlers receive per-route SEO (canonical/title) instead of SPA index.html
+ */
 function handler(event) {
   var request = event.request;
-  var uri = request.uri;
+  var uri = request.uri || '/';
 
+  // Strip accidental .html from the public URL path before redirect matching
   if (uri.endsWith('.html')) {
     uri = uri.slice(0, -5);
   }
@@ -18,20 +26,37 @@ function handler(event) {
   };
 
   var target = redirects[uri];
-  if (!target) {
+  if (target) {
+    var host =
+      request.headers.host && request.headers.host.value
+        ? request.headers.host.value
+        : 'buildmyhouse.app';
+    var location = 'https://' + host + (target === '/' ? '/' : target);
+    return {
+      statusCode: 301,
+      statusDescription: 'Moved Permanently',
+      headers: {
+        location: { value: location },
+        'cache-control': { value: 'public, max-age=86400' },
+      },
+    };
+  }
+
+  // Leave root and real file assets alone (.js, .css, .png, .xml, etc.)
+  if (uri === '/' || uri === '') {
+    request.uri = '/index.html';
     return request;
   }
 
-  var host =
-    request.headers.host && request.headers.host.value ? request.headers.host.value : 'buildmyhouse.app';
-  var location = 'https://' + host + (target === '/' ? '/' : target);
+  var lastSlash = uri.lastIndexOf('/');
+  var lastSegment = lastSlash >= 0 ? uri.slice(lastSlash + 1) : uri;
+  if (lastSegment.indexOf('.') !== -1) {
+    // Already has an extension — fetch as-is
+    request.uri = uri;
+    return request;
+  }
 
-  return {
-    statusCode: 301,
-    statusDescription: 'Moved Permanently',
-    headers: {
-      location: { value: location },
-      'cache-control': { value: 'public, max-age=86400' },
-    },
-  };
+  // Extensionless app route → S3 .html object with route-specific SEO tags
+  request.uri = uri + '.html';
+  return request;
 }

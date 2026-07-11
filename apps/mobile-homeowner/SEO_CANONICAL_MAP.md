@@ -13,12 +13,21 @@ Purpose: keep one canonical URL per page intent and avoid duplicate path variant
 
 ### Diaspora build pages
 
-- Canonical landing page: `/` (homepage + sign-in entry)
-- Legacy alias `/login` redirects to `/`
-- UTM/query variants (e.g. `/?utm_medium=...`) should canonicalize to `/` without redirecting
 - Canonical: `/diaspora/build-in-nigeria-from-uk`
 - Canonical: `/diaspora/build-in-nigeria-from-usa-canada`
 - Canonical: `/diaspora/build-in-nigeria-from-uae`
+- Canonical: `/diaspora/build-in-nigeria-from-abroad`
+
+### Auth / entry
+
+- Canonical landing page: `/` (homepage)
+- Legacy alias `/login` redirects to `/`
+- UTM/query variants (e.g. `/?utm_medium=...`) should canonicalize to `/` without redirecting
+
+### Hosting note (critical)
+
+- Public clean URLs (e.g. `/construction/nigeria`) must be rewritten by CloudFront to the matching `.html` object.
+- If CloudFront falls back to SPA `index.html`, Google sees `canonical=/` and reports "Alternate page with proper canonical tag".
 
 ### Diaspora build legacy aliases
 

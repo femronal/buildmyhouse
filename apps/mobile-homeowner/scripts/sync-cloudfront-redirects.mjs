@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 /**
- * Publishes a CloudFront viewer-request function that 301-redirects legacy alias URLs.
+ * Publishes a CloudFront viewer-request function that:
+ * - 301-redirects legacy alias URLs
+ * - Rewrites extensionless routes to .html so S3 serves per-route SEO HTML
  * Requires AWS_CLOUDFRONT_HOMEOWNER_ID and IAM permissions for cloudfront:* on functions + distribution.
  */
 import fs from 'node:fs';
@@ -41,7 +43,7 @@ try {
     '--if-match',
     etag,
     '--function-config',
-    'Comment=Legacy URL 301 redirects,Runtime=cloudfront-js-2.0',
+    'Comment=Legacy redirects + clean URL to .html rewrite,Runtime=cloudfront-js-2.0',
     '--function-code',
     `fileb://${functionPath}`,
   ]);
@@ -54,7 +56,7 @@ try {
     '--name',
     FUNCTION_NAME,
     '--function-config',
-    'Comment=Legacy URL 301 redirects,Runtime=cloudfront-js-2.0',
+    'Comment=Legacy redirects + clean URL to .html rewrite,Runtime=cloudfront-js-2.0',
     '--function-code',
     `fileb://${functionPath}`,
   ]);

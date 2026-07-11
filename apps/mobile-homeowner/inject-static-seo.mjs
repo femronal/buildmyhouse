@@ -249,6 +249,21 @@ const SEO_PAGES = {
     description:
       'Preview how BuildMyHouse helps diaspora homeowners watch stage progress, receive notifications, and stay in control of payment flow.',
   },
+  '/land-verification-in-nigeria-guide': {
+    title: 'Land Verification in Nigeria Guide | BuildMyHouse',
+    description:
+      'Practical steps to verify land in Nigeria before you buy or build — documents, checks, and how to reduce remote purchase risk.',
+  },
+  '/building-permit-in-lagos-nigeria-guide': {
+    title: 'Building Permit in Lagos, Nigeria Guide | BuildMyHouse',
+    description:
+      'Understand Lagos building permits, inspections, and when repairs vs renovations need approval — for local and diaspora homeowners.',
+  },
+  '/how-to-choose-a-general-contractor-in-nigeria': {
+    title: 'How to Choose a General Contractor in Nigeria | BuildMyHouse',
+    description:
+      'A practical checklist for hiring a verified general contractor in Nigeria with clearer scope, stages, and payment discipline.',
+  },
 };
 
 const PROJECT_MONITORING_VIDEO = {
@@ -405,7 +420,7 @@ function upsertMeta(html, attr, key, value) {
 }
 
 function upsertLink(html, rel, href, extraAttrs = '') {
-  const pattern = new RegExp(`<link\\s+rel="${rel}"\\s+href="[^"]*"[^>]*/?>`, 'i');
+  const pattern = new RegExp(`<link\\s+[^>]*rel=["']${rel}["'][^>]*>`, 'i');
   const tag = `<link rel="${rel}" href="${escapeHtml(href)}"${extraAttrs ? ` ${extraAttrs}` : ''} />`;
   if (pattern.test(html)) return html.replace(pattern, tag);
   return html.replace('</head>', `  ${tag}\n</head>`);
@@ -498,6 +513,79 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
+const indexHtmlPath = path.join(distDir, 'index.html');
+if (!fs.existsSync(indexHtmlPath)) {
+  console.error('[seo] dist/index.html not found.');
+  process.exit(1);
+}
+const spaShellHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+
+function htmlPathForRoute(route) {
+  if (route === '/') return indexHtmlPath;
+  return path.join(distDir, `${route.slice(1)}.html`);
+}
+
+function ensureRouteHtml(route) {
+  if (route === '/') return { filePath: indexHtmlPath, created: false };
+  const filePath = htmlPathForRoute(route);
+  if (!fs.existsSync(filePath)) {
+    fs.mkdirSync(path.dirname(filePath), { recursive: true });
+    fs.writeFileSync(filePath, spaShellHtml, 'utf8');
+    return { filePath, created: true };
+  }
+  return { filePath, created: false };
+}
+
+async function fetchCmsServicePaths() {
+  const apiUrl = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
+    /\/+$/,
+    '',
+  );
+  try {
+    const response = await fetch(`${apiUrl}/service-pages`);
+    if (!response.ok) return [];
+    const data = await response.json();
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((item) => String(item?.canonicalPath || '').trim())
+      .filter((routePath) => routePath.startsWith('/services/'));
+  } catch {
+    return [];
+  }
+}
+
+function loadStaticIndexableRoutes() {
+  try {
+    const routesConfig = JSON.parse(
+      fs.readFileSync(path.resolve(process.cwd(), 'lib/seo-indexable-routes.json'), 'utf8'),
+    );
+    return Array.isArray(routesConfig.exact) ? routesConfig.exact : [];
+  } catch {
+    return [];
+  }
+}
+
+const cmsServicePaths = await fetchCmsServicePaths();
+const indexableRoutes = loadStaticIndexableRoutes();
+const routesToEnsure = Array.from(
+  new Set([
+    ...Object.keys(SEO_PAGES),
+    ...indexableRoutes,
+    ...cmsServicePaths,
+    ...Object.keys(REDIRECTS),
+  ]),
+).filter((route) => route && route.startsWith('/'));
+
+let ensured = 0;
+for (const route of routesToEnsure) {
+  if (REDIRECTS[route]) {
+    writeRedirectHtml(route, REDIRECTS[route]);
+    continue;
+  }
+  const { created } = ensureRouteHtml(route);
+  if (created) ensured += 1;
+}
+
 let patched = 0;
 let redirected = 0;
 
@@ -531,4 +619,4 @@ for (const relativePath of agentMarkdownFiles) {
   fs.copyFileSync(source, target);
 }
 
-console.log(`[seo] Static SEO injection complete (${patched} patched, ${redirected + Object.keys(REDIRECTS).length} redirects).`);
+console.log(`[seo] Static SEO injection complete (${patched} patched, ${ensured} ensured, ${redirected + Object.keys(REDIRECTS).length} redirects).`);
