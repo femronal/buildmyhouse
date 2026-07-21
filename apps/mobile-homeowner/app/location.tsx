@@ -15,13 +15,23 @@ import { ArrowLeft, ArrowRight, Crosshair, MapPin } from 'phosphor-react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { geocodeAddress, type AddressDetails } from '@/services/addressService';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
-
-const LAGOS_COORDS = { lat: 6.5244, lon: 3.3792 };
+import NigeriaStateDropdown from '@/components/location/NigeriaStateDropdown';
+import {
+  DEFAULT_NIGERIA_STATE,
+  NIGERIA_STATE_COORDS,
+  areaPlaceholderForState,
+  formatNigeriaAddress,
+  formatNigeriaLocationLabel,
+  isNigeriaCountry,
+  matchNigeriaStateFromText,
+  type NigeriaState,
+} from '@/lib/nigeria-location';
 
 type SelectedLocation = {
   /** e.g. "Surulere, Lagos" */
   label: string;
   area: string;
+  state: NigeriaState;
   latitude: number;
   longitude: number;
   formattedAddress: string;
@@ -99,6 +109,7 @@ export default function LocationScreen() {
   const insets = useSafeAreaInsets();
 
   const [area, setArea] = useState('');
+  const [selectedState, setSelectedState] = useState<NigeriaState>(DEFAULT_NIGERIA_STATE);
   const [selected, setSelected] = useState<SelectedLocation | null>(null);
   const [busy, setBusy] = useState<'ip' | 'search' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -110,19 +121,20 @@ export default function LocationScreen() {
     mapsApiKey !== 'your_google_maps_api_key_here' &&
     !mapsApiKey.toLowerCase().includes('demo');
 
-  const headline = selected ? selected.label : 'Lagos, Nigeria';
-  const coords = selected
+  const previewCoords = selected
     ? { lat: selected.latitude, lon: selected.longitude }
-    : { lat: LAGOS_COORDS.lat, lon: LAGOS_COORDS.lon };
+    : NIGERIA_STATE_COORDS[selectedState];
+
+  const headline = selected ? selected.label : `${selectedState}, Nigeria`;
 
   const coordLabel = useMemo(() => {
-    const latDir = coords.lat >= 0 ? 'N' : 'S';
-    const lonDir = coords.lon >= 0 ? 'E' : 'W';
+    const latDir = previewCoords.lat >= 0 ? 'N' : 'S';
+    const lonDir = previewCoords.lon >= 0 ? 'E' : 'W';
     return {
-      lat: `${Math.abs(coords.lat).toFixed(4)}° ${latDir}`,
-      lon: `${Math.abs(coords.lon).toFixed(4)}° ${lonDir}`,
+      lat: `${Math.abs(previewCoords.lat).toFixed(4)}° ${latDir}`,
+      lon: `${Math.abs(previewCoords.lon).toFixed(4)}° ${lonDir}`,
     };
-  }, [coords.lat, coords.lon]);
+  }, [previewCoords.lat, previewCoords.lon]);
 
   // Slide-in animation whenever the headline changes
   const slideIn = useRef(new Animated.Value(1)).current;
@@ -133,7 +145,7 @@ export default function LocationScreen() {
 
   const geocodeWithOpenStreetMap = async (query: string): Promise<AddressDetails | null> => {
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(query)}`,
+      `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&countrycodes=ng&q=${encodeURIComponent(query)}`,
       { headers: { Accept: 'application/json' } },
     );
     if (!response.ok) return null;
@@ -153,10 +165,34 @@ export default function LocationScreen() {
     };
   };
 
-  const isInLagos = (details: AddressDetails) => {
-    const haystack = `${details.state} ${details.formattedAddress}`.toLowerCase();
-    const country = details.country.toLowerCase();
-    return haystack.includes('lagos') && (country.includes('nigeria') || country === 'ng' || country === '');
+  const reverseGeocode = async (lat: number, lon: number): Promise<AddressDetails | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=${lat}&lon=${lon}`,
+        { headers: { Accept: 'application/json' } },
+      );
+      if (!response.ok) return null;
+      const first = await response.json();
+      if (!first?.address) return null;
+      const addr = first.address || {};
+      return {
+        formattedAddress: first.display_name || '',
+        street: '',
+        city: addr.city || addr.town || addr.suburb || addr.village || addr.county || '',
+        state: addr.state || '',
+        zipCode: addr.postcode || '',
+        country: addr.country || '',
+        latitude: lat,
+        longitude: lon,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const isInNigeria = (details: AddressDetails) => {
+    if (isNigeriaCountry(details.country)) return true;
+    return Boolean(matchNigeriaStateFromText(details.state, details.formattedAddress, details.city));
   };
 
   const toTitleCase = (value: string) =>
@@ -165,32 +201,90 @@ export default function LocationScreen() {
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const applyDetectedLocation = (params: {
+    areaName: string;
+    state: NigeriaState;
+    latitude: number;
+    longitude: number;
+  }) => {
+    const areaName = toTitleCase(params.areaName || params.state);
+    setSelectedState(params.state);
+    setArea(areaName);
+    setSelected({
+      label: formatNigeriaLocationLabel(areaName, params.state),
+      area: areaName,
+      state: params.state,
+      latitude: params.latitude,
+      longitude: params.longitude,
+      formattedAddress: formatNigeriaAddress(areaName, params.state),
+    });
+  };
+
+  const handleStateChange = (state: NigeriaState) => {
+    setSelectedState(state);
+    setSelected(null);
+    setErrorMessage(null);
+  };
+
   const handleUseCurrentLocation = async () => {
     setBusy('ip');
     setErrorMessage(null);
     try {
-      const ip = await lookupIpLocation();
-      if (!ip) {
-        setErrorMessage('We could not detect your location. Please type your area below instead.');
+      const gpsDetails = await new Promise<AddressDetails | null>((resolve) => {
+        const geo = (globalThis as any)?.navigator?.geolocation;
+        if (!geo?.getCurrentPosition) {
+          resolve(null);
+          return;
+        }
+        geo.getCurrentPosition(
+          async (position: { coords: { latitude: number; longitude: number } }) => {
+            const details = await reverseGeocode(position.coords.latitude, position.coords.longitude);
+            resolve(details);
+          },
+          () => resolve(null),
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+        );
+      });
+
+      if (gpsDetails) {
+        if (!isInNigeria(gpsDetails)) {
+          setSelected(null);
+          setErrorMessage(
+            'You appear to be outside Nigeria. BuildMyHouse currently supports projects across Nigerian states — choose your state and type the project area below.',
+          );
+          return;
+        }
+        const state =
+          matchNigeriaStateFromText(gpsDetails.state, gpsDetails.formattedAddress, gpsDetails.city) ||
+          selectedState;
+        applyDetectedLocation({
+          areaName: gpsDetails.city || state,
+          state,
+          latitude: gpsDetails.latitude,
+          longitude: gpsDetails.longitude,
+        });
         return;
       }
-      const inLagos = ip.countryCode.toUpperCase().startsWith('NG') && ip.region.toLowerCase().includes('lagos');
-      if (!inLagos) {
+
+      const ip = await lookupIpLocation();
+      if (!ip) {
+        setErrorMessage('We could not detect your location. Choose your state and type your area below instead.');
+        return;
+      }
+      if (!isNigeriaCountry(ip.countryCode)) {
         setSelected(null);
         setErrorMessage(
-          `You appear to be outside Lagos (${[ip.city, ip.region].filter(Boolean).join(', ') || 'unknown location'}). BuildMyHouse only operates in Lagos, Nigeria for now — type your Lagos project area below instead.`,
+          `You appear to be outside Nigeria (${[ip.city, ip.region, ip.countryCode].filter(Boolean).join(', ') || 'unknown location'}). Choose your Nigerian state and type the project area below.`,
         );
         return;
       }
-      const areaName = toTitleCase(ip.city || 'Lagos');
-      setSelected({
-        label: areaName.toLowerCase() === 'lagos' ? 'Lagos, Nigeria' : `${areaName}, Lagos`,
-        area: areaName,
+      const state = matchNigeriaStateFromText(ip.region, ip.city) || selectedState;
+      applyDetectedLocation({
+        areaName: ip.city || state,
+        state,
         latitude: ip.lat,
         longitude: ip.lon,
-        formattedAddress: `${areaName}, Lagos, Nigeria`,
       });
-      setArea(areaName);
     } finally {
       setBusy(null);
     }
@@ -202,25 +296,33 @@ export default function LocationScreen() {
     setBusy('search');
     setErrorMessage(null);
     try {
-      const query = `${cleaned}, Lagos, Nigeria`;
+      const query = `${cleaned}, ${selectedState}, Nigeria`;
       let details: AddressDetails | null = null;
       try {
         details = hasMapsApiKey ? await geocodeAddress(query) : await geocodeWithOpenStreetMap(query);
       } catch {
         details = await geocodeWithOpenStreetMap(query);
       }
-      if (!details || !isInLagos(details)) {
+      if (!details || !isInNigeria(details)) {
         setSelected(null);
-        setErrorMessage('We could not find that area in Lagos. Try a major area like Surulere, Lekki, Agege, or Yaba.');
+        setErrorMessage(
+          `We could not find that area in ${selectedState}. Try a major city, LGA, or neighbourhood name.`,
+        );
         return;
+      }
+      const detectedState =
+        matchNigeriaStateFromText(details.state, details.formattedAddress, details.city) || selectedState;
+      if (detectedState !== selectedState) {
+        setSelectedState(detectedState);
       }
       const areaName = toTitleCase(cleaned);
       setSelected({
-        label: `${areaName}, Lagos`,
+        label: formatNigeriaLocationLabel(areaName, detectedState),
         area: areaName,
+        state: detectedState,
         latitude: details.latitude,
         longitude: details.longitude,
-        formattedAddress: `${areaName}, Lagos, Nigeria`,
+        formattedAddress: formatNigeriaAddress(areaName, detectedState),
       });
     } finally {
       setBusy(null);
@@ -235,7 +337,7 @@ export default function LocationScreen() {
         address: selected.formattedAddress,
         street: '',
         city: selected.area,
-        state: 'Lagos',
+        state: selected.state,
         zipCode: '',
         country: 'Nigeria',
         latitude: selected.latitude,
@@ -350,17 +452,17 @@ export default function LocationScreen() {
                     setErrorMessage(null);
                   }}
                   onSubmitEditing={handleConfirmArea}
-                  placeholder="Area — e.g. Surulere"
+                  placeholder={areaPlaceholderForState(selectedState)}
                   placeholderTextColor="rgba(255,255,255,0.35)"
                   className="flex-1 ml-2.5 text-sm text-white"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 />
               </View>
-              <View className="h-12 px-4 rounded-xl border border-white/15 bg-white/5 items-center justify-center">
-                <Text className="text-sm text-white/65" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Lagos
-                </Text>
-              </View>
+              <NigeriaStateDropdown
+                value={selectedState}
+                onChange={handleStateChange}
+                disabled={busy !== null}
+              />
             </View>
 
             <Pressable
@@ -391,7 +493,7 @@ export default function LocationScreen() {
               </View>
             ) : (
               <Text className="text-white/35 text-[11px] leading-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Just your area and Lagos — no street address needed yet.
+                Choose any Nigerian state. Just your area — no street address needed yet.
               </Text>
             )}
           </View>
