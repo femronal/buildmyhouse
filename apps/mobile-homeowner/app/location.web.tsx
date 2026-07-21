@@ -644,9 +644,12 @@ export default function LocationScreenWeb() {
                       <View className="flex-1 h-px bg-white/10" />
                     </View>
 
-                    <View className="flex-row items-center gap-2">
-                      <View className="flex-1 flex-row items-center h-12 rounded-xl border border-white/15 bg-white/5 px-3.5">
-                        <MapPin size={18} color="rgba(255,255,255,0.45)" weight="regular" />
+                    <View className="flex-row items-center gap-2 w-full">
+                      <View
+                        className="flex-1 flex-row items-center h-12 rounded-xl border border-white/15 bg-white/5 px-3"
+                        style={{ minWidth: 0, overflow: 'hidden' }}
+                      >
+                        <MapPin size={16} color="rgba(255,255,255,0.45)" weight="regular" />
                         <TextInput
                           value={area}
                           onChangeText={(value) => {
@@ -656,8 +659,17 @@ export default function LocationScreenWeb() {
                           onSubmitEditing={handleConfirmArea}
                           placeholder={areaPlaceholderForState(selectedState)}
                           placeholderTextColor="rgba(255,255,255,0.35)"
-                          className="flex-1 ml-2.5 text-sm text-white"
-                          style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
+                          className="flex-1 ml-2 text-sm text-white"
+                          style={
+                            {
+                              fontFamily: 'Poppins_400Regular',
+                              outlineStyle: 'none',
+                              minWidth: 0,
+                              width: '100%',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            } as any
+                          }
                         />
                       </View>
                       <NigeriaStateDropdown

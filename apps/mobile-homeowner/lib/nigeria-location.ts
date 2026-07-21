@@ -163,11 +163,14 @@ export function areaPlaceholderForState(state: NigeriaState): string {
   const examples: Partial<Record<NigeriaState, string>> = {
     Lagos: 'Surulere',
     FCT: 'Wuse',
-    Rivers: 'Port Harcourt',
+    Rivers: 'PH City',
     Oyo: 'Bodija',
     Kano: 'Nassarawa',
     Ogun: 'Abeokuta',
-    Enugu: 'Independence Layout',
+    Enugu: 'New Haven',
+    Anambra: 'Awka',
+    Delta: 'Asaba',
   };
-  return `Area — e.g. ${examples[state] || 'city or LGA'}`;
+  // Keep short so it fits beside the state chip on narrow screens.
+  return `e.g. ${examples[state] || 'area / LGA'}`;
 }

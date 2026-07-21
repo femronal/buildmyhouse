@@ -442,9 +442,12 @@ export default function LocationScreen() {
               <View className="flex-1 h-px bg-white/10" />
             </View>
 
-            <View className="flex-row items-center gap-2">
-              <View className="flex-1 flex-row items-center h-12 rounded-xl border border-white/15 bg-white/5 px-3.5">
-                <MapPin size={18} color="rgba(255,255,255,0.45)" weight="regular" />
+            <View className="flex-row items-center gap-2 w-full">
+              <View
+                className="flex-1 flex-row items-center h-12 rounded-xl border border-white/15 bg-white/5 px-3"
+                style={{ minWidth: 0, overflow: 'hidden' }}
+              >
+                <MapPin size={16} color="rgba(255,255,255,0.45)" weight="regular" />
                 <TextInput
                   value={area}
                   onChangeText={(value) => {
@@ -454,8 +457,8 @@ export default function LocationScreen() {
                   onSubmitEditing={handleConfirmArea}
                   placeholder={areaPlaceholderForState(selectedState)}
                   placeholderTextColor="rgba(255,255,255,0.35)"
-                  className="flex-1 ml-2.5 text-sm text-white"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
+                  className="flex-1 ml-2 text-sm text-white"
+                  style={{ fontFamily: 'Poppins_400Regular', minWidth: 0 }}
                 />
               </View>
               <NigeriaStateDropdown
