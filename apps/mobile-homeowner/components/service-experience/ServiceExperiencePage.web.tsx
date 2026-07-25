@@ -344,7 +344,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
         </section>
 
         {/* FIELD ARCHIVE */}
-        <section className="bmh-svc-archive-section relative overflow-visible px-5 py-24 md:px-8 lg:px-12">
+        <section className="bmh-svc-archive-section relative overflow-visible px-5 py-24 pb-32 md:px-8 md:pb-40 lg:px-12">
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-12">
             <div className="md:col-span-3">
               <p className="bmh-svc-section-label">Field Archive</p>
@@ -364,13 +364,11 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
                 Swipe to review {archiveImages.length} evidence photos →
               </p>
             ) : null}
-            <div className="bmh-svc-archive-gallery flex gap-5 will-change-transform">
+            <div className="bmh-svc-archive-gallery flex items-stretch gap-5 will-change-transform">
               {archiveImages.map((src, index) => (
                 <figure
                   key={`${src}-${index}`}
-                  className={`bmh-svc-archive-card shrink-0 overflow-hidden rounded-[34px] border bg-[#101310] h-[360px] w-[78vw] md:h-[560px] md:w-[420px] ${
-                    index % 2 === 1 ? 'md:mt-20 md:h-[460px] md:w-[360px]' : ''
-                  } ${index % 4 === 3 ? 'md:mt-28' : ''}`}
+                  className="bmh-svc-archive-card shrink-0 overflow-hidden rounded-[34px] border bg-[#101310] h-[360px] w-[78vw] md:h-[560px] md:w-[400px] lg:w-[420px]"
                   style={{ borderColor: 'rgba(243,240,232,.1)' }}
                 >
                   <img src={src} alt={`${content.headline} repair evidence ${index + 1}`} loading="lazy" className="h-full w-full object-cover" />

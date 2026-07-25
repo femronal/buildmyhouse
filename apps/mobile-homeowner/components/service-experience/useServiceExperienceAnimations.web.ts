@@ -346,13 +346,15 @@ export function useServiceExperienceAnimations(
                 scrub: 1,
               }),
         })
-          .from(root.querySelector('.bmh-svc-archive-title'), { y: isMobile ? 28 : 80, opacity: 0, duration: 0.45 }, 0)
+          .from(root.querySelector('.bmh-svc-archive-title'), { y: isMobile ? 28 : 48, opacity: 0, duration: 0.45 }, 0)
           .from(
             root.querySelectorAll('.bmh-svc-archive-card'),
             {
-              y: isMobile ? 32 : 100,
+              // Keep entrance motion subtle so cards are never pushed outside the section
+              // and clipped by the next pinned section / overflow wrappers on desktop.
+              y: isMobile ? 24 : 36,
               opacity: 0,
-              rotate: isMobile ? 0 : (i: number) => [-3, 2, -2, 3, -1][i % 5] ?? 0,
+              rotate: 0,
               stagger: 0.08,
               duration: 0.65,
             },
@@ -381,7 +383,7 @@ export function useServiceExperienceAnimations(
               }),
             })
               .to(gallery, { xPercent, duration: 1 }, 0.25)
-              .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.18, duration: 1 }, 0.25);
+              .to(root.querySelectorAll('.bmh-svc-archive-card img'), { scale: 1.05, duration: 1 }, 0.25);
           };
 
           const archiveImages = root.querySelectorAll('.bmh-svc-archive-card img');

@@ -1496,9 +1496,14 @@ html.bmh-svc-active body {
 
 .bmh-svc-pillar-card:hover,
 .bmh-svc-pricing-card:hover,
-.bmh-svc-note-card:hover,
-.bmh-svc-archive-card:hover {
+.bmh-svc-note-card:hover {
   transform: translateY(-8px);
+  border-color: rgba(34, 197, 94, 0.34);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bmh-svc-archive-card:hover {
+  /* Avoid translateY here — parent overflow + hover offset was contributing to bottom clipping. */
   border-color: rgba(34, 197, 94, 0.34);
   background: rgba(255, 255, 255, 0.06);
 }
@@ -1545,62 +1550,69 @@ html.bmh-svc-active body {
   }
 }
 
+.bmh-svc-archive-section {
+  overflow: visible;
+}
+
 .bmh-svc-archive-scroll {
-  overflow-x: auto;
-  overflow-y: hidden;
+  /* Mobile: native horizontal swipe. Desktop: overflow must stay visible —
+     overflow-x:auto computes overflow-y to auto and was slicing staggered
+     archive cards with a hard horizontal clip line. */
   -webkit-overflow-scrolling: touch;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
+  padding-bottom: 1.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .bmh-svc-archive-scroll::-webkit-scrollbar {
   display: none;
 }
 
-@media (max-width: 767px) {
-  .bmh-svc-archive-section {
-    overflow: visible;
-  }
+.bmh-svc-archive-gallery {
+  width: max-content;
+  min-height: 360px;
+  padding-right: 1.25rem;
+  align-items: stretch;
+}
 
+.bmh-svc-archive-card {
+  scroll-snap-align: start;
+  margin-top: 0 !important;
+}
+
+@media (max-width: 767px) {
   .bmh-svc-archive-gallery {
-    width: max-content;
-    padding-right: 1.25rem;
     transform: none !important;
   }
 
   .bmh-svc-archive-card {
-    scroll-snap-align: start;
-    margin-top: 0 !important;
     transform: none !important;
   }
 }
 
 @media (min-width: 768px) {
   .bmh-svc-archive-scroll {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding-bottom: 2.5rem;
   }
 
   .bmh-svc-archive-gallery {
-    width: max-content;
-    padding-right: 1.25rem;
-  }
-
-  .bmh-svc-archive-card {
-    scroll-snap-align: start;
+    min-height: 560px;
   }
 }
 
 .bmh-svc-archive-card img {
   will-change: transform;
-  transform: scale(1.08);
+  transform: scale(1.02);
+  transform-origin: center center;
 }
 
 .bmh-svc-archive-card:hover img {
-  transform: scale(1.16);
+  transform: scale(1.06);
   opacity: 0.95;
 }
 
