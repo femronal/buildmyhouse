@@ -51,13 +51,13 @@ export default function HeroHeadline({ compact }: { compact?: boolean }) {
         },
         HERO_KEYWORDS[index],
       ),
-      ' in Lagos, Nigeria.',
+      ' in Nigeria.',
     );
   }
 
   return (
     <Text accessibilityRole="header" style={{ ...headlineStyle, fontSize, lineHeight }}>
-      Find verified <RotatingKeyword words={HERO_KEYWORDS} /> in Lagos, Nigeria.
+      Find verified <RotatingKeyword words={HERO_KEYWORDS} /> in Nigeria.
     </Text>
   );
 }

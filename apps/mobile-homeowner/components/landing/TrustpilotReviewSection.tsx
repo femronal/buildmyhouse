@@ -91,7 +91,7 @@ export default function TrustpilotReviewSection() {
               platformLabel="Trustpilot"
               starColor={TRUSTPILOT_GREEN}
               title="Used BuildMyHouse? Drop us a review"
-              description="Your feedback helps other homeowners in Lagos and abroad choose verified workers with more confidence. It only takes a minute."
+              description="Your feedback helps other homeowners in Nigeria and abroad choose verified workers with more confidence. It only takes a minute."
               buttonLabel="Review BuildMyHouse on Trustpilot"
               buttonBgClass="bg-[#00b67a]"
               onPress={openTrustpilotReview}

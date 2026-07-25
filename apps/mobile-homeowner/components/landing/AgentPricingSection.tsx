@@ -154,14 +154,14 @@ export default function AgentPricingSection() {
                   className: 'text-neutral-500 text-xs uppercase tracking-[0.2em] mb-2 text-center',
                   style: { fontFamily: 'Poppins_500Medium', margin: 0 },
                 },
-                'Lagos repair ranges',
+                'Nigeria repair ranges',
               )
             : (
                 <Text
                   className="text-neutral-500 text-xs uppercase tracking-widest mb-2 text-center"
                   style={{ fontFamily: 'Poppins_500Medium' }}
                 >
-                  Lagos repair ranges
+                  Nigeria repair ranges
                 </Text>
               )}
 
@@ -191,14 +191,14 @@ export default function AgentPricingSection() {
                   className: 'text-base text-neutral-600 max-w-2xl mt-4 leading-relaxed text-center mx-auto',
                   style: { fontFamily: 'Poppins_400Regular', margin: 0 },
                 },
-                'Directional Lagos contractor ranges below. BuildMyHouse service fee on repairs is free for now — you pay the verified contractor quote only.',
+                'Directional Nigeria contractor ranges below. BuildMyHouse service fee on repairs is free for now — you pay the verified contractor quote only.',
               )
             : (
                 <Text
                   className="text-base text-neutral-600 max-w-2xl mt-4 leading-relaxed text-center"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  Directional Lagos contractor ranges below. BuildMyHouse service fee on repairs is{' '}
+                  Directional Nigeria contractor ranges below. BuildMyHouse service fee on repairs is{' '}
                   <Text style={{ fontFamily: 'Poppins_700Bold' }}>free for now</Text> — you pay the verified contractor
                   quote only.
                 </Text>

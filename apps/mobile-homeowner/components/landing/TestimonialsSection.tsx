@@ -85,7 +85,7 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
                 className="mt-3 text-sm md:text-base text-slate-400 max-w-xl leading-relaxed"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                For repairs, renovations, and builds in Lagos — whether you are on site or monitoring from abroad.
+                For repairs, renovations, and builds in Nigeria — whether you are on site or monitoring from abroad.
                 Verified workers, staged updates, and evidence before you pay.
               </Text>
 

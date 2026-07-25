@@ -167,7 +167,7 @@ export default function ChooseProjectTypeScreen() {
 
           <View className="mt-10 md:mt-14 px-4 py-4 rounded-2xl bg-white/5 border border-white/10">
             <Text className="text-sm text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium', color: TEXT_MUTED }}>
-              Verified workers only · Pay in stages after photo proof · Track from Lagos or abroad
+              Verified workers only · Pay in stages after photo proof · Track from Nigeria or abroad
             </Text>
           </View>
         </View>

@@ -17,7 +17,7 @@ const STAGE_CARDS = [
   {
     id: 'match',
     title: 'Match verified',
-    subtitle: 'Lagos repair pro',
+    subtitle: 'Verified repair pro',
     icon: Wrench,
     image: HERO_IMAGE,
   },
@@ -89,7 +89,7 @@ export default function StartRepairHeroPage() {
             style={{ fontFamily: 'Poppins_400Regular' }}
           >
             Verified workers, staged updates, and photo evidence before you pay — for plumbing, electrical, roof leaks,
-            and urgent Lagos repairs.
+            and urgent Nigeria repairs.
           </Text>
 
           <View className="flex-col sm:flex-row items-start sm:items-center gap-5 md:gap-8 mb-10 md:mb-14">
@@ -150,7 +150,7 @@ export default function StartRepairHeroPage() {
         >
           <Image
             source={{ uri: HERO_IMAGE }}
-            accessibilityLabel="Verified electrician working on a Lagos home repair"
+            accessibilityLabel="Verified electrician working on a Nigeria home repair"
             className="absolute inset-0 w-full h-full bmh-start-repair-hero-image"
             resizeMode="contain"
           />

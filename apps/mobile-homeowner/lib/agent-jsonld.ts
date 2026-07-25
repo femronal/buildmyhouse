@@ -113,7 +113,7 @@ export function buildHomepageJsonLd() {
       '@type': 'Service',
       '@id': `${WEB_URL}/#service`,
       name: 'BuildMyHouse verified repair coordination',
-      serviceType: 'Property repair coordination in Lagos, Nigeria',
+      serviceType: 'Property repair coordination in Nigeria',
       provider: { '@id': `${WEB_URL}/#localbusiness` },
       offers: {
         '@type': 'Offer',
@@ -124,9 +124,8 @@ export function buildHomepageJsonLd() {
         description: PLATFORM_SERVICE_FEE_OFFER.description,
       },
       areaServed: {
-        '@type': 'City',
-        name: 'Lagos',
-        containedInPlace: { '@type': 'Country', name: 'Nigeria' },
+        '@type': 'Country',
+        name: 'Nigeria',
       },
     },
     {

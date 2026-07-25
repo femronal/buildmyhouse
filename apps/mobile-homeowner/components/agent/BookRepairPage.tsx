@@ -45,7 +45,7 @@ export default function BookRepairPage() {
       `Time window: ${timeSlot}`,
       `Name: ${fullName}`,
       `Phone: ${phone}`,
-      `Lagos area: ${area}`,
+      `Property location: ${area}`,
       details.trim() ? `Details: ${details.trim()}` : null,
       'BuildMyHouse repair booking (platform service fee currently free).',
     ]
@@ -189,7 +189,7 @@ export default function BookRepairPage() {
 
       <View className="mb-4">
         <Text className={fieldLabelClass} style={fieldLabelStyle}>
-          Lagos area / property location <Text className="text-red-500">*</Text>
+          Area / property location in Nigeria <Text className="text-red-500">*</Text>
         </Text>
         {Platform.OS === 'web' ? (
           createElement('input', {
@@ -197,7 +197,7 @@ export default function BookRepairPage() {
             name: 'area',
             required: true,
             autoComplete: 'address-level2',
-            placeholder: 'e.g. Lekki Phase 1, Ikeja, Yaba',
+            placeholder: 'e.g. Lekki Phase 1, Ikeja, Abuja, Port Harcourt',
             value: area,
             className: inputClass,
             onChange: (event: any) => setArea(event.target.value),
@@ -277,7 +277,7 @@ export default function BookRepairPage() {
                   className: 'text-3xl md:text-4xl text-black mb-3',
                   style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
                 },
-                'Book a verified repair in Lagos',
+                'Book a verified repair in Nigeria',
               )
             : (
                 <Text
@@ -285,7 +285,7 @@ export default function BookRepairPage() {
                   className="text-3xl text-black mb-3"
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
                 >
-                  Book a verified repair in Lagos
+                  Book a verified repair in Nigeria
                 </Text>
               )}
 
@@ -373,7 +373,7 @@ export default function BookRepairPage() {
 
           <View className="mt-10 pt-8 border-t border-slate-100">
             <Text className="text-sm text-slate-500 mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Directional contractor pricing (Lagos)
+              Directional contractor pricing (Nigeria)
             </Text>
             <View className="gap-2">
               {REPAIR_PRICING_GUIDE.slice(0, 3).map((item) => (

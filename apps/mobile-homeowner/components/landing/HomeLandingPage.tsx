@@ -527,7 +527,7 @@ export default function HomeLandingPage() {
                   Need a reliable repairer without stories?
                 </Text>
                 <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Lagos.
+                  Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Nigeria.
                 </Text>
                 <Link href={'/location?mode=explore' as any} asChild>
                   <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
@@ -594,7 +594,7 @@ export default function HomeLandingPage() {
         <View className="py-16 border-t border-slate-100 bg-white">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <Text className="text-sm text-black mb-6 uppercase tracking-wide" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Popular Services in Lagos
+              Popular Services in Nigeria
             </Text>
             <View className="flex-row flex-wrap gap-y-4 gap-x-8">
               {popularLinks.map((link) => (

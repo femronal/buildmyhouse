@@ -47,7 +47,7 @@ export default function RepairPricingPage() {
                   className: 'text-3xl md:text-4xl text-black mb-3',
                   style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
                 },
-                'Repair pricing guide (Lagos, Nigeria)',
+                'Repair pricing guide (Nigeria)',
               )
             : (
                 <Text
@@ -55,7 +55,7 @@ export default function RepairPricingPage() {
                   className="text-3xl text-black mb-3"
                   style={{ fontFamily: 'Poppins_600SemiBold' }}
                 >
-                  Repair pricing guide (Lagos, Nigeria)
+                  Repair pricing guide (Nigeria)
                 </Text>
               )}
 

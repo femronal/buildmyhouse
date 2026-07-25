@@ -4,9 +4,9 @@ import { useWebSeo } from '@/lib/seo';
 
 export default function BookRepairRoute() {
   const canonicalPath = '/book-repair';
-  const title = 'Book a Verified Repair in Lagos | BuildMyHouse';
+  const title = 'Book a Verified Repair in Nigeria | BuildMyHouse';
   const description =
-    'Schedule a verified repair in Lagos online. Choose service, date, and time window. BuildMyHouse service fee is free for now — pay contractor quote only.';
+    'Schedule a verified repair in Nigeria online. Choose service, date, and time window. BuildMyHouse service fee is free for now — pay contractor quote only.';
 
   useWebSeo({
     title,

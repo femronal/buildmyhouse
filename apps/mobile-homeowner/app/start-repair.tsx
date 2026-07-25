@@ -11,7 +11,7 @@ const INTAKE_FAQS = [
   {
     question: 'Who is this for?',
     answer:
-      'Homeowners in Lagos and diaspora clients managing property remotely who want verified workers and clearer repair accountability.',
+      'Homeowners in Nigeria and diaspora clients managing property remotely who want verified workers and clearer repair accountability.',
   },
   {
     question: 'What happens after I continue?',
@@ -22,9 +22,9 @@ const INTAKE_FAQS = [
 
 export default function StartRepairPage() {
   const canonicalPath = '/start-repair';
-  const title = 'Start a Tracked Repair in Lagos';
+  const title = 'Start a Tracked Repair in Nigeria';
   const description =
-    'Verified workers, staged updates, and photo evidence before you pay — for plumbing, electrical, roof leaks, and urgent Lagos repairs.';
+    'Verified workers, staged updates, and photo evidence before you pay — for plumbing, electrical, roof leaks, and urgent Nigeria repairs.';
 
   const jsonLd = buildSeoJsonLd({
     path: canonicalPath,
