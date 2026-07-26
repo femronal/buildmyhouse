@@ -23,6 +23,8 @@ function handler(event) {
     '/rent': '/build-opportunities-nigeria',
     '/diaspora/us/build-in-nigeria': '/diaspora/build-in-nigeria-from-usa-canada',
     '/diaspora/uk/build-in-nigeria': '/diaspora/build-in-nigeria-from-uk',
+    '/articles/cost-to-build-house-in-nigeria-2024':
+      '/articles/cost-to-build-house-in-nigeria-2026',
   };
 
   var target = redirects[uri];

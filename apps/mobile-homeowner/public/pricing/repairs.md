@@ -1,6 +1,6 @@
 # Repair pricing guide | BuildMyHouse
 
-Directional contractor quote ranges in Nigeria (NGN).
+Directional contractor quote ranges in Lagos, Nigeria (NGN).
 
 **URL:** https://buildmyhouse.app/pricing/repairs
 

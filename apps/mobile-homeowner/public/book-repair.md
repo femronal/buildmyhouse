@@ -1,6 +1,6 @@
 # Book a verified repair | BuildMyHouse
 
-Schedule a verified repair in Nigeria online.
+Schedule a verified repair in Lagos online.
 
 **URL:** https://buildmyhouse.app/book-repair
 
@@ -17,7 +17,7 @@ BuildMyHouse service fee for repair services is **free for now (₦0)**. Homeown
 | timeSlot | yes | 08:00–10:00, 10:00–12:00, 12:00–14:00, 14:00–16:00, or 16:00–18:00 WAT |
 | fullName | yes | Contact name |
 | phone | yes | WhatsApp-capable phone |
-| area | yes | Neighbourhood / property area in Nigeria |
+| area | yes | Lagos neighbourhood / property area |
 | details | no | Fault description |
 
 ## After booking

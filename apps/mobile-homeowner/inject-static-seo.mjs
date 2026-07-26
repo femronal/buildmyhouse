@@ -11,7 +11,14 @@ const REDIRECTS = {
   '/rent': '/build-opportunities-nigeria',
   '/diaspora/us/build-in-nigeria': '/diaspora/build-in-nigeria-from-usa-canada',
   '/diaspora/uk/build-in-nigeria': '/diaspora/build-in-nigeria-from-uk',
+  // Old year slug still appears in GSC discovery; keep a permanent redirect.
+  '/articles/cost-to-build-house-in-nigeria-2024': '/articles/cost-to-build-house-in-nigeria-2026',
 };
+
+const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
+  /\/+$/,
+  '',
+);
 
 const PRIVATE_ROUTE_PREFIXES = [
   '/dashboard',
@@ -198,6 +205,21 @@ const SEO_PAGES = {
     title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',
     description:
       'Practical BuildMyHouse articles for homeowners in Nigeria and diaspora clients planning construction, renovation, or interior projects.',
+  },
+  '/articles/cost-to-build-house-in-nigeria-2026': {
+    title: 'Cost to Build a House in Nigeria (2026 Guide) | BuildMyHouse',
+    description:
+      'A practical 2026 guide to building costs in Nigeria, with budget ranges, hidden expenses, and a safer execution workflow for local and diaspora homeowners.',
+  },
+  '/articles/renovation-checklist-for-homeowners-nigeria': {
+    title: 'Renovation Checklist for Homeowners in Nigeria | BuildMyHouse',
+    description:
+      'A practical renovation checklist for homeowners in Nigeria covering scope, budgeting, contractor selection, stages, and payment discipline.',
+  },
+  '/articles/diaspora-guide-build-in-nigeria-from-abroad': {
+    title: 'Diaspora Guide: Build in Nigeria from Abroad | BuildMyHouse',
+    description:
+      'A practical diaspora guide to building in Nigeria from abroad with clearer stages, contractor accountability, and remote visibility.',
   },
   '/construction/nigeria': {
     title: 'BuildMyHouse Nigeria | Construction Services in Nigeria for Diaspora Homeowners',
@@ -450,14 +472,14 @@ const MARKDOWN_ALTERNATES = {
   '/pricing/repairs': '/pricing/repairs.md',
 };
 
-function patchHtmlForRoute(html, route) {
+function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   const redirectTarget = REDIRECTS[route];
   if (redirectTarget) {
     writeRedirectHtml(route, redirectTarget);
     return null;
   }
 
-  const pageMeta = SEO_PAGES[route];
+  const pageMeta = dynamicSeoPages[route];
   const canonicalRoute = pageMeta?.canonicalPath || route;
   const canonicalUrl =
     canonicalRoute === '/' ? `${WEB_URL}/` : `${WEB_URL}${canonicalRoute}`;
@@ -468,17 +490,24 @@ function patchHtmlForRoute(html, route) {
   const description =
     pageMeta?.description ||
     'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.';
+  const image =
+    pageMeta?.image ||
+    `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
   let next = html;
   next = upsertTitle(next, title);
   next = upsertMeta(next, 'name', 'description', description);
   next = upsertMeta(next, 'name', 'robots', robots);
   next = upsertLink(next, 'canonical', canonicalUrl);
+  next = upsertMeta(next, 'property', 'og:type', pageMeta?.ogType || 'website');
   next = upsertMeta(next, 'property', 'og:title', title);
   next = upsertMeta(next, 'property', 'og:description', description);
   next = upsertMeta(next, 'property', 'og:url', canonicalUrl);
+  next = upsertMeta(next, 'property', 'og:image', image);
+  next = upsertMeta(next, 'name', 'twitter:card', 'summary_large_image');
   next = upsertMeta(next, 'name', 'twitter:title', title);
   next = upsertMeta(next, 'name', 'twitter:description', description);
+  next = upsertMeta(next, 'name', 'twitter:image', image);
   const markdownPath = MARKDOWN_ALTERNATES[route];
   if (markdownPath) {
     next = upsertLink(
@@ -494,6 +523,9 @@ function patchHtmlForRoute(html, route) {
   if (route === '/demo/project-monitoring') {
     const payload = buildProjectMonitoringVideoJsonLd();
     next = upsertJsonLd(next, 'buildmyhouse-demo-video-jsonld', payload);
+  }
+  if (pageMeta?.jsonLd) {
+    next = upsertJsonLd(next, 'buildmyhouse-route-jsonld', pageMeta.jsonLd);
   }
   return next;
 }
@@ -536,22 +568,95 @@ function ensureRouteHtml(route) {
   return { filePath, created: false };
 }
 
-async function fetchCmsServicePaths() {
-  const apiUrl = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
-    /\/+$/,
-    '',
-  );
+async function fetchJsonArray(pathname) {
   try {
-    const response = await fetch(`${apiUrl}/service-pages`);
+    const response = await fetch(`${API_URL}${pathname}`);
     if (!response.ok) return [];
     const data = await response.json();
-    if (!Array.isArray(data)) return [];
-    return data
-      .map((item) => String(item?.canonicalPath || '').trim())
-      .filter((routePath) => routePath.startsWith('/services/'));
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
+}
+
+function buildArticleJsonLd(article) {
+  const canonicalPath = String(article.canonicalPath || '').trim();
+  if (!canonicalPath.startsWith('/articles/')) return null;
+  const canonicalUrl = `${WEB_URL}${canonicalPath}`;
+  const title = String(article.title || '').trim();
+  const description = String(article.description || article.excerpt || '').trim();
+  const image = String(article.coverImageUrl || '').trim();
+  const datePublished = String(article.publishedAt || article.updatedAt || '').trim();
+  const dateModified = String(article.updatedAt || article.publishedAt || '').trim();
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    mainEntityOfPage: canonicalUrl,
+    headline: title,
+    description,
+    image: image ? [image] : undefined,
+    datePublished: datePublished || undefined,
+    dateModified: dateModified || undefined,
+    author: {
+      '@type': 'Person',
+      name: String(article.authorName || 'BuildMyHouse Editorial'),
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'BuildMyHouse Technologies',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${WEB_URL}/favicon.png`,
+      },
+    },
+  };
+}
+
+async function fetchCmsSeoPages() {
+  const [articles, servicePages] = await Promise.all([
+    fetchJsonArray('/articles'),
+    fetchJsonArray('/service-pages'),
+  ]);
+
+  /** @type {Record<string, { title: string; description: string; image?: string; ogType?: string; jsonLd?: Record<string, unknown> }>} */
+  const pages = {};
+
+  for (const article of articles) {
+    if (article?.isPublished === false) continue;
+    const route = String(article?.canonicalPath || '').trim();
+    if (!route.startsWith('/articles/')) continue;
+    const title = String(article?.title || '').trim();
+    const description = String(article?.description || article?.excerpt || '').trim();
+    if (!title || !description) continue;
+    pages[route] = {
+      title,
+      description,
+      image: String(article?.coverImageUrl || '').trim() || undefined,
+      ogType: 'article',
+      jsonLd: buildArticleJsonLd(article) || undefined,
+    };
+  }
+
+  for (const service of servicePages) {
+    if (service?.isPublished === false) continue;
+    const route = String(service?.canonicalPath || '').trim();
+    if (!route.startsWith('/services/')) continue;
+    const payload = service?.payload && typeof service.payload === 'object' ? service.payload : {};
+    const title = String(service?.metaTitle || payload.metaTitle || '').trim();
+    const description = String(service?.summary || payload.summary || payload.heroLead || '').trim();
+    if (!title || !description) continue;
+    const image =
+      String(payload?.images?.heroMain || payload?.images?.archive?.[0] || '').trim() || undefined;
+    pages[route] = {
+      title,
+      description,
+      image,
+      ogType: 'website',
+    };
+  }
+
+  return pages;
 }
 
 function loadStaticIndexableRoutes() {
@@ -565,13 +670,42 @@ function loadStaticIndexableRoutes() {
   }
 }
 
-const cmsServicePaths = await fetchCmsServicePaths();
+function writeNotFoundHtml() {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found | BuildMyHouse</title>
+  <meta name="robots" content="noindex,follow" />
+  <link rel="canonical" href="${WEB_URL}/404" />
+  <style>
+    body { margin: 0; font-family: Georgia, serif; background: #060706; color: #f3f0e8; }
+    main { min-height: 100vh; display: grid; place-items: center; padding: 2rem; text-align: center; }
+    a { color: #22c55e; }
+  </style>
+</head>
+<body>
+  <main>
+    <div>
+      <p>404</p>
+      <h1>This page is not available.</h1>
+      <p><a href="/">Back to BuildMyHouse</a></p>
+    </div>
+  </main>
+</body>
+</html>
+`;
+  fs.writeFileSync(path.join(distDir, '404.html'), html, 'utf8');
+}
+
+const cmsSeoPages = await fetchCmsSeoPages();
+const dynamicSeoPages = { ...SEO_PAGES, ...cmsSeoPages };
 const indexableRoutes = loadStaticIndexableRoutes();
 const routesToEnsure = Array.from(
   new Set([
-    ...Object.keys(SEO_PAGES),
+    ...Object.keys(dynamicSeoPages),
     ...indexableRoutes,
-    ...cmsServicePaths,
     ...Object.keys(REDIRECTS),
   ]),
 ).filter((route) => route && route.startsWith('/'));
@@ -591,6 +725,7 @@ let redirected = 0;
 
 for (const filePath of walkHtmlFiles(distDir)) {
   const route = routeFromHtmlFile(filePath);
+  if (route === '/404') continue;
   if (REDIRECTS[route]) {
     writeRedirectHtml(route, REDIRECTS[route]);
     redirected += 1;
@@ -598,7 +733,7 @@ for (const filePath of walkHtmlFiles(distDir)) {
   }
 
   const html = fs.readFileSync(filePath, 'utf8');
-  const next = patchHtmlForRoute(html, route);
+  const next = patchHtmlForRoute(html, route, dynamicSeoPages);
   if (next && next !== html) {
     fs.writeFileSync(filePath, next, 'utf8');
     patched += 1;
@@ -608,6 +743,8 @@ for (const filePath of walkHtmlFiles(distDir)) {
 for (const [legacyRoute, targetRoute] of Object.entries(REDIRECTS)) {
   writeRedirectHtml(legacyRoute, targetRoute);
 }
+
+writeNotFoundHtml();
 
 const publicDir = path.resolve(process.cwd(), 'public');
 const agentMarkdownFiles = ['index.md', 'book-repair.md', 'pricing/repairs.md', 'robots.txt', 'llms.txt', 'sitemap.xml'];
@@ -619,4 +756,32 @@ for (const relativePath of agentMarkdownFiles) {
   fs.copyFileSync(source, target);
 }
 
-console.log(`[seo] Static SEO injection complete (${patched} patched, ${ensured} ensured, ${redirected + Object.keys(REDIRECTS).length} redirects).`);
+// Fail the build if sitemap URLs would soft-404 (missing per-route HTML).
+const sitemapPath = path.join(distDir, 'sitemap.xml');
+if (fs.existsSync(sitemapPath)) {
+  const sitemap = fs.readFileSync(sitemapPath, 'utf8');
+  const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
+  const missing = [];
+  for (const loc of locs) {
+    const route =
+      loc === WEB_URL || loc === `${WEB_URL}/`
+        ? '/'
+        : loc.startsWith(WEB_URL)
+          ? loc.slice(WEB_URL.length)
+          : '';
+    if (!route) continue;
+    if (REDIRECTS[route]) continue;
+    if (!fs.existsSync(htmlPathForRoute(route))) {
+      missing.push(route);
+    }
+  }
+  if (missing.length) {
+    console.error('[seo] Sitemap routes missing per-route HTML (would soft-404 to homepage):');
+    for (const route of missing) console.error(`  - ${route}`);
+    process.exit(1);
+  }
+}
+
+console.log(
+  `[seo] Static SEO injection complete (${patched} patched, ${ensured} ensured, ${Object.keys(cmsSeoPages).length} CMS SEO pages, ${redirected + Object.keys(REDIRECTS).length} redirects).`,
+);

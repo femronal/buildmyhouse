@@ -18,6 +18,7 @@ async function getCmsArticleRoutes() {
     if (!Array.isArray(data)) return [];
 
     return data
+      .filter((item) => item?.isPublished !== false)
       .map((item) => String(item?.canonicalPath || '').trim())
       .filter((routePath) => routePath.startsWith('/articles/'));
   } catch {
@@ -33,6 +34,7 @@ async function getCmsServicePageRoutes() {
     if (!Array.isArray(data)) return [];
 
     return data
+      .filter((item) => item?.isPublished !== false)
       .map((item) => String(item?.canonicalPath || '').trim())
       .filter((routePath) => routePath.startsWith('/services/'));
   } catch {

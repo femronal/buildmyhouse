@@ -99,9 +99,30 @@ config.DefaultCacheBehavior.FunctionAssociations.Items.push(association);
 config.DefaultCacheBehavior.FunctionAssociations.Quantity =
   config.DefaultCacheBehavior.FunctionAssociations.Items.length;
 
+// Stop soft-404s: missing objects must not return homepage HTML with HTTP 200.
+// Legitimate public routes are prebuilt as .html during deploy.
+config.CustomErrorResponses = {
+  Quantity: 2,
+  Items: [
+    {
+      ErrorCode: 403,
+      ResponsePagePath: '/404.html',
+      ResponseCode: '404',
+      ErrorCachingMinTTL: 60,
+    },
+    {
+      ErrorCode: 404,
+      ResponsePagePath: '/404.html',
+      ResponseCode: '404',
+      ErrorCachingMinTTL: 60,
+    },
+  ],
+};
+
 const configPath = path.join(process.cwd(), '.cf-distribution-config.json');
 fs.writeFileSync(configPath, JSON.stringify(config));
 aws(['cloudfront', 'update-distribution', '--id', distributionId, '--if-match', configEtag, '--distribution-config', `file://${configPath}`]);
 fs.unlinkSync(configPath);
 
 console.log(`[cf-redirects] Attached viewer-request function to distribution ${distributionId}`);
+console.log('[cf-redirects] Custom error responses now return /404.html with HTTP 404');

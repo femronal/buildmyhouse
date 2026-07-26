@@ -1,14 +1,14 @@
 # BuildMyHouse
 
-> Find verified repairers, renovators, and contractors in Nigeria. Manage repairs with clearer scope, photo evidence, and staged payments.
+> Find verified repairers, renovators, and contractors in Lagos, Nigeria. Manage repairs with clearer scope, photo evidence, and staged payments.
 
 ## Online booking
 
 - **Book a repair**: https://buildmyhouse.app/book-repair
-- Required fields: service, preferred date, time window, name, phone, area / property location in Nigeria
+- Required fields: service, preferred date, time window, name, phone, Lagos area
 - Platform service fee for repairs: **₦0 (free for now)** — client pays verified contractor quote only
 
-## Pricing (directional, Nigeria)
+## Pricing (directional, Lagos)
 
 - **Plumbing repair**: ₦15,000 – ₦120,000 (per job); BuildMyHouse platform fee: ₦0
 - **Electrical repair**: ₦20,000 – ₦150,000 (per job); BuildMyHouse platform fee: ₦0
