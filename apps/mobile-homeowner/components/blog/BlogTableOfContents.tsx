@@ -26,7 +26,7 @@ export default function BlogTableOfContents({
         {title}
       </Text>
       <View className="gap-2">
-        {visible.map((item, index) => (
+        {visible.map((item) => (
           <TouchableOpacity
             key={item.id}
             accessibilityRole="link"
@@ -34,11 +34,9 @@ export default function BlogTableOfContents({
             onPress={() => {
               if (Platform.OS === 'web') scrollToReadingAnchor(item.id);
             }}
-            className="flex-row gap-2.5 py-0.5 active:opacity-70"
+            className="flex-row items-start gap-2.5 py-0.5 active:opacity-70"
           >
-            <Text className="text-gray-400 text-sm w-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {String(index + 1).padStart(2, '0')}
-            </Text>
+            <View className="mt-2 h-1.5 w-1.5 shrink-0 rounded-[2px] bg-[#059669]" />
             <Text
               className={`flex-1 text-gray-800 text-sm leading-6 ${item.level === 3 ? 'pl-2' : ''}`}
               style={{ fontFamily: 'Poppins_500Medium' }}
