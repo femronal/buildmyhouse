@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import { Link } from 'expo-router';
 import { Clock3 } from 'lucide-react-native';
+import BlogLottieCover from '@/components/blog/BlogLottieCover';
 import TrackingPrincipleComparison from '@/components/blog/TrackingPrincipleComparison';
+import MoweBeforeAfterVideos from '@/components/blog/MoweBeforeAfterVideos';
 import MoweCaseStudyCard from '@/components/blog/MoweCaseStudyCard';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -198,6 +200,8 @@ function renderBlock(
       return <NumberedList key={`num-${index}`} items={block.items} />;
     case 'comparison':
       return <TrackingPrincipleComparison key={`cmp-${index}`} />;
+    case 'before-after-videos':
+      return <MoweBeforeAfterVideos key={`bav-${index}`} />;
     case 'case-study':
       return <CaseStudyBlock key={`case-${index}`} onView={handlers.onCaseStudyView} />;
     case 'process':
@@ -268,6 +272,8 @@ export default function AmalaJointTrackingStoryPage() {
         <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
           {amalaJointTrackingStoryHero.h1}
         </SeoHeading>
+
+        <BlogLottieCover className="mb-5 mt-2" />
 
         <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
           {amalaJointTrackingStoryHero.introduction}

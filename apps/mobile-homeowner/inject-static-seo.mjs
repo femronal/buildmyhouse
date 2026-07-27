@@ -762,7 +762,15 @@ for (const [legacyRoute, targetRoute] of Object.entries(REDIRECTS)) {
 writeNotFoundHtml();
 
 const publicDir = path.resolve(process.cwd(), 'public');
-const agentMarkdownFiles = ['index.md', 'book-repair.md', 'pricing/repairs.md', 'robots.txt', 'llms.txt', 'sitemap.xml'];
+const agentMarkdownFiles = [
+  'index.md',
+  'book-repair.md',
+  'pricing/repairs.md',
+  'robots.txt',
+  'llms.txt',
+  'sitemap.xml',
+  'lottie/construction-worker-building-wall.json',
+];
 for (const relativePath of agentMarkdownFiles) {
   const source = path.join(publicDir, relativePath);
   if (!fs.existsSync(source)) continue;

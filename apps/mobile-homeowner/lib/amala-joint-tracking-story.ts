@@ -174,6 +174,7 @@ export type StoryBlock =
   | { type: 'list'; items: readonly string[] }
   | { type: 'numbered'; items: readonly string[] }
   | { type: 'comparison' }
+  | { type: 'before-after-videos' }
   | { type: 'case-study' }
   | { type: 'process' };
 
@@ -351,6 +352,7 @@ export const amalaJointTrackingStoryBlocks: readonly StoryBlock[] = [
     type: 'p',
     text: 'The work did not begin as one unexplained lump-sum request. The first stage covered inspection, materials and transportation. Receipts and project evidence were collected. Before-and-after videos were provided. The homeowner reviewed the result and confirmed satisfaction before the final professional payment was completed.',
   },
+  { type: 'before-after-videos' },
   { type: 'case-study' },
   {
     type: 'p',

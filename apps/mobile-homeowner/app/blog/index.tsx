@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import BlogLottieCover from '@/components/blog/BlogLottieCover';
 import {
   SeoContentBackButton,
   SeoContentColumn,
@@ -39,7 +40,8 @@ export default function BlogIndexPage() {
         </Text>
 
         <Link href={AMALA_JOINT_TRACKING_STORY_PATH as any} asChild>
-          <View className="mt-4 rounded-3xl border border-gray-200 bg-white p-5 active:bg-gray-50">
+          <View className="mt-4 rounded-3xl border border-gray-200 bg-white p-5 active:bg-gray-50 overflow-hidden">
+            <BlogLottieCover className="mb-4" />
             <Text className="text-[11px] uppercase tracking-wide text-[#059669] mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Founder story
             </Text>
