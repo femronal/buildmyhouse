@@ -13,6 +13,10 @@ const REDIRECTS = {
   '/diaspora/uk/build-in-nigeria': '/diaspora/build-in-nigeria-from-uk',
   // Old year slug still appears in GSC discovery; keep a permanent redirect.
   '/articles/cost-to-build-house-in-nigeria-2024': '/articles/cost-to-build-house-in-nigeria-2026',
+  // Earlier Amala Joint campaign destinations before the dedicated blog article existed.
+  '/from-kitchen-to-building-site':
+    '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
+  '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
@@ -220,6 +224,17 @@ const SEO_PAGES = {
     title: 'Diaspora Guide: Build in Nigeria from Abroad | BuildMyHouse',
     description:
       'A practical diaspora guide to building in Nigeria from abroad with clearer stages, contractor accountability, and remote visibility.',
+  },
+  '/blog': {
+    title: 'BuildMyHouse Blog | Founder Stories & Property Guides',
+    description:
+      'Founder stories and practical guides on tracking repairs, renovations and construction projects in Nigeria from home or abroad.',
+  },
+  '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria': {
+    title: 'Track Building Projects in Nigeria from Abroad | BuildMyHouse',
+    description:
+      'See how BuildMyHouse helps Nigerians abroad monitor repairs, renovations and construction projects in Nigeria through clear stages, verified professionals and progress evidence.',
+    ogType: 'article',
   },
   '/construction/nigeria': {
     title: 'BuildMyHouse Nigeria | Construction Services in Nigeria for Diaspora Homeowners',

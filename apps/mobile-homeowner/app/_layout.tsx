@@ -137,6 +137,12 @@ export default function RootLayout() {
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="articles/index" options={{ headerShown: false }} />
           <Stack.Screen name="articles/[slug]" options={{ headerShown: false }} />
+          <Stack.Screen name="blog/index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="blog/what-tracking-your-food-taught-me-about-building-in-nigeria"
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen name="from-kitchen-to-building-site" options={{ headerShown: false }} />
           <Stack.Screen name="timeline" options={{ headerShown: false }} />
           <Stack.Screen name="stage-detail" options={{ headerShown: false }} />
           <Stack.Screen name="construction/nigeria" options={{ headerShown: false }} />

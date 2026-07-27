@@ -364,6 +364,28 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (
+    normalized === '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria'
+  ) {
+    return {
+      title: 'Track Building Projects in Nigeria from Abroad | BuildMyHouse',
+      description:
+        'See how BuildMyHouse helps Nigerians abroad monitor repairs, renovations and construction projects in Nigeria through clear stages, verified professionals and progress evidence.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/blog' || normalized.startsWith('/blog/')) {
+    return {
+      title: 'BuildMyHouse Blog | Founder Stories & Property Guides',
+      description:
+        'Founder stories and practical guides on tracking repairs, renovations and construction projects in Nigeria from home or abroad.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
   return {
     title: 'BuildMyHouse Technologies',
     description:

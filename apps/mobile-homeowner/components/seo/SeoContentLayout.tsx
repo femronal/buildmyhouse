@@ -29,6 +29,8 @@ type SeoContentShellProps = {
   footer?: ReactNode;
   contentContainerStyle?: StyleProp<ViewStyle>;
   scrollRef?: RefObject<ScrollView | null>;
+  onScroll?: ScrollViewProps['onScroll'];
+  scrollEventThrottle?: number;
 };
 
 export function SeoContentShell({
@@ -36,6 +38,8 @@ export function SeoContentShell({
   footer,
   contentContainerStyle,
   scrollRef,
+  onScroll,
+  scrollEventThrottle = 16,
 }: SeoContentShellProps) {
   return (
     <View className="flex-1 bg-white">
@@ -44,6 +48,8 @@ export function SeoContentShell({
         className="flex-1 seo-content-shell-scroll"
         contentContainerStyle={contentContainerStyle ?? { paddingBottom: 48 }}
         keyboardShouldPersistTaps="handled"
+        onScroll={onScroll}
+        scrollEventThrottle={scrollEventThrottle}
       >
         {children}
       </ScrollView>

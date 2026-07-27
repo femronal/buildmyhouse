@@ -25,6 +25,9 @@ function handler(event) {
     '/diaspora/uk/build-in-nigeria': '/diaspora/build-in-nigeria-from-uk',
     '/articles/cost-to-build-house-in-nigeria-2024':
       '/articles/cost-to-build-house-in-nigeria-2026',
+    '/from-kitchen-to-building-site':
+      '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
+    '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
   };
 
   var target = redirects[uri];
