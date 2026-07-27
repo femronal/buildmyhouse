@@ -10,6 +10,7 @@ import {
 import { Link } from 'expo-router';
 import { Clock3 } from 'lucide-react-native';
 import BlogLottieCover from '@/components/blog/BlogLottieCover';
+import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import TrackingPrincipleComparison from '@/components/blog/TrackingPrincipleComparison';
 import MoweBeforeAfterVideos from '@/components/blog/MoweBeforeAfterVideos';
 import MoweCaseStudyCard from '@/components/blog/MoweCaseStudyCard';
@@ -18,7 +19,6 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import {
   SeoContentBackButton,
   SeoContentColumn,
-  SeoContentShell,
   seoContentTypography,
 } from '@/components/seo/SeoContentLayout';
 import {
@@ -41,6 +41,7 @@ import {
   createAmalaStoryScrollTracker,
   trackAmalaStoryEventOnce,
 } from '@/lib/amala-joint-tracking-story-analytics';
+import { buildStoryReadingAids } from '@/lib/blog-reading-chrome';
 
 function Paragraph({ children }: { children: string }) {
   return (
@@ -174,6 +175,7 @@ function renderBlock(
       return (
         <SeoHeading
           key={`h2-${index}`}
+          id={block.id}
           level={2}
           className={`${seoContentTypography.sectionHeading} mt-8`}
           style={{ fontFamily: 'Poppins_700Bold' }}
@@ -219,6 +221,10 @@ function readUtmFromWindow(): AmalaUtmParams {
 export default function AmalaJointTrackingStoryPage() {
   const [utm, setUtm] = useState<AmalaUtmParams>({});
   const scrollTracker = useMemo(() => createAmalaStoryScrollTracker(utm), [utm]);
+  const readingAids = useMemo(
+    () => buildStoryReadingAids(amalaJointTrackingStoryBlocks),
+    [],
+  );
   const fromAmala = isAmalaJointVisitor(utm);
 
   useEffect(() => {
@@ -253,7 +259,7 @@ export default function AmalaJointTrackingStoryPage() {
   };
 
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 64 }} onScroll={onScroll}>
+    <BlogReadingChrome contentContainerStyle={{ paddingBottom: 64 }} onScroll={onScroll}>
       <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
         <SeoContentBackButton fallbackHref="/blog" />
 
@@ -300,6 +306,8 @@ export default function AmalaJointTrackingStoryPage() {
             Published {amalaJointTrackingStorySeo.publishedAt}
           </Text>
         </View>
+
+        <BlogReadingAids takeaways={readingAids.takeaways} toc={readingAids.toc} />
 
         <View className="flex-col gap-3 md:flex-row md:items-center mb-2">
           <TouchableOpacity
@@ -412,6 +420,6 @@ export default function AmalaJointTrackingStoryPage() {
 
         <InternalLinksBlock title="Related BuildMyHouse resources" links={[...amalaJointTrackingStoryInternalLinks]} />
       </SeoContentColumn>
-    </SeoContentShell>
+    </BlogReadingChrome>
   );
 }

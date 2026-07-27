@@ -44,6 +44,8 @@ export type Article = {
   internalLinks: InternalLinkItem[];
   /** TipTap / ProseMirror JSON document */
   content: Record<string, unknown>;
+  /** Optional explicit takeaways; otherwise derived from first list / FAQs / excerpt. */
+  keyTakeaways?: string[];
   /** When set (CMS or seed), drives articles index sections and filters. */
   articlePillar?: ArticlePillarKey;
   /** Admin-assigned sidebar section keys for /articles landing page */
@@ -70,6 +72,7 @@ type RemoteArticle = {
   content?: Record<string, unknown>;
   /** Legacy API field */
   blocks?: ArticleBlock[];
+  keyTakeaways?: string[];
   articlePillar?: string;
   resourceSectionKeys?: string[];
 };
@@ -354,6 +357,9 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
     content: normalizeStoredArticleContent(
       input.content ?? (Array.isArray(input.blocks) ? input.blocks : []),
     ),
+    keyTakeaways: Array.isArray(input.keyTakeaways)
+      ? input.keyTakeaways.map((item) => String(item || '').trim()).filter(Boolean)
+      : undefined,
   };
 }
 

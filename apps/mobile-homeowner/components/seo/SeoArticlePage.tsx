@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { Image, Text, View } from 'react-native';
 import { Clock3, Tag } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import {
   SeoContentBackButton,
   SeoContentColumn,
-  SeoContentShell,
   seoContentTypography,
 } from '@/components/seo/SeoContentLayout';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
@@ -14,6 +14,10 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { Article } from '@/lib/articles';
+import {
+  buildArticleReadingAids,
+  injectHeadingIdsIntoHtml,
+} from '@/lib/blog-reading-chrome';
 
 type SeoArticlePageProps = {
   article: Article;
@@ -25,13 +29,26 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
     return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
   }, [article.publishedAt]);
 
+  const readingAids = useMemo(
+    () =>
+      buildArticleReadingAids({
+        keyTakeaways: article.keyTakeaways,
+        content: article.content,
+        excerpt: article.excerpt,
+        description: article.description,
+        faqs: article.faqs,
+      }),
+    [article],
+  );
+
   const html = useMemo(() => {
     const doc = normalizeStoredArticleContent(article.content);
-    return articleContentToHtml(doc);
-  }, [article.content]);
+    const raw = articleContentToHtml(doc);
+    return injectHeadingIdsIntoHtml(raw, readingAids.toc);
+  }, [article.content, readingAids.toc]);
 
   return (
-    <SeoContentShell>
+    <BlogReadingChrome>
       <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
         <SeoContentBackButton />
 
@@ -51,7 +68,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           {article.description}
         </Text>
 
-        <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2">
+        <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 mb-4">
           <View className="flex-row items-center">
             <Clock3 size={14} color="#6b7280" />
             <Text className={`${seoContentTypography.meta} ml-1.5`} style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -76,6 +93,8 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
             Published {publishedLabel}
           </Text>
         </View>
+
+        <BlogReadingAids takeaways={readingAids.takeaways} toc={readingAids.toc} />
       </SeoContentColumn>
 
       <SeoContentColumn className="mb-8">
@@ -105,6 +124,6 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           <InternalLinksBlock title="Related resources" links={article.internalLinks} />
         </SeoContentColumn>
       ) : null}
-    </SeoContentShell>
+    </BlogReadingChrome>
   );
 }
