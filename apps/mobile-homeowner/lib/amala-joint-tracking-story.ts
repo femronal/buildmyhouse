@@ -396,15 +396,15 @@ export const amalaJointTrackingStoryBlocks: readonly StoryBlock[] = [
   },
   {
     type: 'p',
-    text: 'BuildMyHouse should not pretend these realities do not exist. The purpose is to make them visible.',
+    text: 'BuildMyHouse does not pretend these realities do not exist. The purpose is to make them visible.',
   },
   {
     type: 'p',
-    text: 'When something changes, the homeowner should be able to understand what changed, why it changed, what it may cost, who recommended it, what evidence exists, and whether it should become part of the agreed scope.',
+    text: 'When something changes, the homeowner can understand what changed, why it changed, what it may cost, who recommended it, what evidence exists, and whether it should become part of the agreed scope.',
   },
   {
     type: 'pull',
-    text: 'Transparency does not mean nothing will go wrong. It means problems should not remain hidden until the money is gone.',
+    text: 'Transparency does not mean nothing will go wrong. It means problems do not have to remain hidden until the money is gone.',
   },
   {
     type: 'h2',
