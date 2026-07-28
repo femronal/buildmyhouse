@@ -22,7 +22,7 @@ import SEOJsonLd from '@/components/landing/SEOJsonLd';
 import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/SocialBrandIcon';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 import LandingServiceSearchBar from '@/components/landing/LandingServiceSearchBar';
-import AgentPricingSection from '@/components/landing/AgentPricingSection';
+import AgentToolsSection from '@/components/landing/AgentToolsSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
 import TrustpilotReviewSection from '@/components/landing/TrustpilotReviewSection';
@@ -610,7 +610,7 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        <AgentPricingSection />
+        <AgentToolsSection />
 
         {/* FAQ */}
         <View className="py-24 bg-slate-50 border-t border-slate-100">

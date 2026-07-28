@@ -136,6 +136,7 @@ export const NAV_ITEMS = [
   { label: 'Find Workers', href: '/location?mode=explore' },
   { label: 'Repairs', href: '#services' },
   { label: 'Renovations', href: '#services' },
+  { label: 'Tools', href: '#tools' },
   { label: 'Build From Abroad', href: '#diaspora' },
   { label: 'For Contractors', href: '#contractors' },
   { label: 'How It Works', href: '#how-it-works' },
@@ -370,7 +371,12 @@ export const FAQ_ITEMS = [
   {
     question: 'What is BuildMyHouse?',
     answer:
-      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps owners define scope, connect with verified workers, track stages, and make payment decisions with better evidence.',
+      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps owners define scope, connect with verified workers, track stages, and make payment decisions with better evidence. We are also shipping free property tools — price checks, quote comparison, land risk checks, repair triage, and more — so you can make better decisions before and during a project.',
+  },
+  {
+    question: 'What free tools does BuildMyHouse offer?',
+    answer:
+      'Start with Price Checker for directional Nigeria repair ranges. Next on the roadmap are Construction Scam Red-Flag Checker, Contractor Quote Comparison, Nigeria Building Cost Planner, Property Repair Triage Assistant, and Land Purchase Risk Checker — plus a fuller catalog under Check all tools.',
   },
   {
     question: 'Can I use BuildMyHouse if I live in Nigeria?',

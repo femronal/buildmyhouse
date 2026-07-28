@@ -991,6 +991,10 @@ form.bmh-web-landmark {
   .bmh-pricing-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
+
+  .bmh-tools-grid.bmh-pricing-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .bmh-pricing-grid-item {
