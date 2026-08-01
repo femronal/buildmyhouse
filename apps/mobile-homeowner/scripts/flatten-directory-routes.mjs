@@ -2,6 +2,10 @@
  * Expo web export puts nested routes at `path/index.html`.
  * CloudFront viewer-request rewrites extensionless URLs to `path.html`.
  * Copy each nested index.html to a sibling path.html so clean URLs resolve.
+ *
+ * Dynamic Expo routes keep their bracket names (e.g. reports/[reportId].html).
+ * Concrete ids like /reports/<uuid> are rewritten to that shell in
+ * cloudfront/viewer-redirects.js — flattening alone cannot invent per-id files.
  */
 import fs from 'node:fs';
 import path from 'node:path';

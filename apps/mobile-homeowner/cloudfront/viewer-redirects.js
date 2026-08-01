@@ -2,7 +2,9 @@
  * CloudFront viewer-request function for buildmyhouse.app
  *
  * 1) 301 legacy alias URLs to their canonical paths
- * 2) Rewrite extensionless public routes to matching .html objects in S3
+ * 2) Rewrite Expo Router dynamic segments to the bracket shell HTML in S3
+ *    (e.g. /tools/price-checker/reports/<uuid> → …/reports/[reportId].html)
+ * 3) Rewrite other extensionless public routes to matching .html objects
  *    so crawlers receive per-route SEO (canonical/title) instead of SPA index.html
  */
 function handler(event) {
@@ -59,6 +61,35 @@ function handler(event) {
     // Already has an extension — fetch as-is
     request.uri = uri;
     return request;
+  }
+
+  // Expo exports dynamic routes as literal bracket filenames
+  // (reports/[reportId].html). Map concrete ids to that shell so paid
+  // report links and "Open report" stop 404ing on S3/CloudFront.
+  var reportPrefix = '/tools/price-checker/reports/';
+  if (uri.indexOf(reportPrefix) === 0) {
+    var reportId = uri.slice(reportPrefix.length);
+    if (
+      reportId &&
+      reportId.indexOf('/') === -1 &&
+      reportId !== '[reportId]'
+    ) {
+      request.uri = reportPrefix + '[reportId].html';
+      return request;
+    }
+  }
+
+  var accessPrefix = '/access/';
+  if (uri.indexOf(accessPrefix) === 0) {
+    var accessToken = uri.slice(accessPrefix.length);
+    if (
+      accessToken &&
+      accessToken.indexOf('/') === -1 &&
+      accessToken !== '[token]'
+    ) {
+      request.uri = accessPrefix + '[token].html';
+      return request;
+    }
   }
 
   // Extensionless app route → S3 .html object with route-specific SEO tags
