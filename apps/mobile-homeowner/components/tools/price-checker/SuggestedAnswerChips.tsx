@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { pc } from './theme';
 
 type Props = {
@@ -7,43 +7,65 @@ type Props = {
   allowUnknown?: boolean;
   onUnknown?: () => void;
   disabled?: boolean;
+  compact?: boolean;
 };
 
-export function SuggestedAnswerChips({ options, onSelect, allowUnknown, onUnknown, disabled }: Props) {
+export function SuggestedAnswerChips({
+  options,
+  onSelect,
+  allowUnknown,
+  onUnknown,
+  disabled,
+  compact = false,
+}: Props) {
   if (options.length === 0 && !allowUnknown) return null;
+
+  const chip = (label: string, onPress: () => void, emphasize?: boolean) => (
+    <Pressable
+      key={label}
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={{
+        minHeight: compact ? 36 : 44,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: emphasize ? pc.greenBorder : 'rgba(255,255,255,0.1)',
+        paddingHorizontal: compact ? 12 : 16,
+        paddingVertical: compact ? 6 : 8,
+        backgroundColor: emphasize ? 'rgba(5,150,105,0.12)' : 'rgba(255,255,255,0.06)',
+        opacity: disabled ? 0.5 : 1,
+        maxWidth: '100%',
+      }}
+    >
+      <Text
+        style={{
+          fontFamily: emphasize ? 'Poppins_600SemiBold' : 'Poppins_500Medium',
+          fontSize: compact ? 12 : 14,
+          color: emphasize ? '#6ee7b7' : '#fff',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+
   return (
-    <View className="mb-4">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-        {options.map((option) => (
-          <Pressable
-            key={option}
-            onPress={() => onSelect(option)}
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel={option}
-            className="min-h-[44px] items-center justify-center rounded-full border border-white/10 px-4"
-            style={{ backgroundColor: 'rgba(255,255,255,0.06)', opacity: disabled ? 0.5 : 1 }}
-          >
-            <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {option}
-            </Text>
-          </Pressable>
-        ))}
-        {allowUnknown && onUnknown ? (
-          <Pressable
-            onPress={onUnknown}
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel="I don't know"
-            className="min-h-[44px] items-center justify-center rounded-full border px-4"
-            style={{ borderColor: pc.greenBorder, backgroundColor: 'rgba(5,150,105,0.12)', opacity: disabled ? 0.5 : 1 }}
-          >
-            <Text className="text-sm" style={{ fontFamily: 'Poppins_600SemiBold', color: '#6ee7b7' }}>
-              I don’t know
-            </Text>
-          </Pressable>
-        ) : null}
-      </ScrollView>
+    <View
+      style={{
+        marginBottom: compact ? 10 : 16,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+        width: '100%',
+        maxWidth: '100%',
+      }}
+    >
+      {options.map((option) => chip(option, () => onSelect(option)))}
+      {allowUnknown && onUnknown ? chip("I don’t know", onUnknown, true) : null}
     </View>
   );
 }

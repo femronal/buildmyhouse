@@ -22,7 +22,7 @@ export function LocationPicker({ locations, onSelect, disabled }: Props) {
   }, [locations, query]);
 
   return (
-    <View className="mb-4">
+    <View style={{ marginBottom: 12, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
       <TextInput
         value={query}
         onChangeText={setQuery}
@@ -30,10 +30,22 @@ export function LocationPicker({ locations, onSelect, disabled }: Props) {
         placeholderTextColor="#64748b"
         editable={!disabled}
         accessibilityLabel="Search location"
-        className="mb-3 min-h-[44px] rounded-xl border border-white/10 px-4 text-base text-white"
-        style={{ backgroundColor: pc.charcoalDeep, fontFamily: 'Poppins_400Regular' }}
+        style={{
+          marginBottom: 10,
+          minHeight: 40,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.1)',
+          paddingHorizontal: 12,
+          fontSize: 14,
+          color: '#fff',
+          backgroundColor: pc.charcoalDeep,
+          fontFamily: 'Poppins_400Regular',
+          width: '100%',
+          maxWidth: '100%',
+        }}
       />
-      <ScrollView style={{ maxHeight: 180 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+      <ScrollView style={{ maxHeight: 160 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
         {filtered.map((loc) => (
           <Pressable
             key={loc.key}

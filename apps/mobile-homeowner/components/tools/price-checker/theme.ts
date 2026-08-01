@@ -23,6 +23,44 @@ export const pc = {
   ink: '#171717',
 } as const;
 
+/** Type + spacing scale for thin phones vs desktop conversation chrome. */
+export type PriceCheckerDensity = {
+  compact: boolean;
+  /** Extra-tight for ≤360px widths. */
+  narrow: boolean;
+  panelPad: number;
+  panelRadius: number;
+  titleSize: number;
+  titleLineHeight: number;
+  bodySize: number;
+  bodyLineHeight: number;
+  labelSize: number;
+  buttonTextSize: number;
+  buttonMinHeight: number;
+  timerDigitSize: number;
+  progressMb: number;
+};
+
+export function getPriceCheckerDensity(width: number): PriceCheckerDensity {
+  const compact = width < 900;
+  const narrow = width <= 360;
+  return {
+    compact,
+    narrow,
+    panelPad: narrow ? 12 : compact ? 14 : 28,
+    panelRadius: compact ? 18 : 32,
+    titleSize: narrow ? 18 : compact ? 20 : 24,
+    titleLineHeight: narrow ? 24 : compact ? 26 : 32,
+    bodySize: compact ? 13 : 14,
+    bodyLineHeight: compact ? 18 : 22,
+    labelSize: compact ? 10 : 12,
+    buttonTextSize: compact ? 14 : 16,
+    buttonMinHeight: compact ? 44 : 48,
+    timerDigitSize: compact ? 28 : 48,
+    progressMb: compact ? 12 : 24,
+  };
+}
+
 export function confidenceTone(label: string): { fg: string; bg: string; border: string } {
   switch (label) {
     case 'high':

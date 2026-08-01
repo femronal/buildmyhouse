@@ -7,27 +7,58 @@ type Props = {
   resetKey: string | null;
   /** Seed from backend elapsedSeconds when restoring a run. */
   seededSeconds?: number;
+  compact?: boolean;
 };
 
-export function ElapsedResearchTimer({ running, resetKey, seededSeconds = 0 }: Props) {
+export function ElapsedResearchTimer({ running, resetKey, seededSeconds = 0, compact = false }: Props) {
   const elapsed = useElapsedTimer(running, resetKey, seededSeconds);
   return (
     <View
-      className="mx-auto mb-6 w-full max-w-[240px] rounded-[1.5rem] border border-black/40 p-1.5"
-      style={{ backgroundColor: pc.charcoalSoft }}
+      style={{
+        marginBottom: compact ? 12 : 24,
+        width: '100%',
+        maxWidth: compact ? 180 : 240,
+        borderRadius: compact ? 16 : 24,
+        borderWidth: 1,
+        borderColor: 'rgba(0,0,0,0.4)',
+        padding: compact ? 4 : 6,
+        backgroundColor: pc.charcoalSoft,
+        alignSelf: 'center',
+      }}
       accessibilityRole="timer"
       accessibilityLabel={`Elapsed ${formatElapsed(elapsed)}`}
     >
       <View
-        className="items-center justify-center rounded-[1.25rem] border border-white/5 px-6 py-5"
-        style={{ backgroundColor: '#080b09' }}
+        style={{
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: compact ? 12 : 20,
+          borderWidth: 1,
+          borderColor: 'rgba(255,255,255,0.05)',
+          paddingHorizontal: compact ? 16 : 24,
+          paddingVertical: compact ? 10 : 20,
+          backgroundColor: '#080b09',
+        }}
       >
-        <Text className="mb-1 text-[10px] uppercase tracking-[0.2em] text-slate-500" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        <Text
+          style={{
+            fontFamily: 'Poppins_600SemiBold',
+            fontSize: compact ? 9 : 10,
+            letterSpacing: 2,
+            textTransform: 'uppercase',
+            color: '#64748b',
+            marginBottom: 2,
+          }}
+        >
           Elapsed
         </Text>
         <Text
-          className="text-5xl tracking-widest"
-          style={{ fontFamily: 'JetBrainsMono_500Medium', color: pc.green }}
+          style={{
+            fontFamily: 'JetBrainsMono_500Medium',
+            color: pc.green,
+            fontSize: compact ? 28 : 48,
+            letterSpacing: 2,
+          }}
         >
           {formatElapsed(elapsed)}
         </Text>

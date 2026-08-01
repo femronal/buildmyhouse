@@ -6,35 +6,49 @@ type Props = {
   disabled?: boolean;
   /** frank label when research is cancelled rather than truly paused */
   duringResearch?: boolean;
+  compact?: boolean;
 };
 
-export function PauseAndEditButton({ onPress, disabled, duringResearch }: Props) {
+export function PauseAndEditButton({ onPress, disabled, duringResearch, compact = false }: Props) {
   const label = duringResearch ? 'Stop and edit answers' : 'Pause and edit answers';
+  const size = compact ? 44 : 56;
   return (
-    <View className="mb-8 items-center">
+    <View style={{ marginBottom: compact ? 12 : 32, alignItems: 'center' }}>
       <Pressable
         onPress={onPress}
         disabled={disabled}
         accessibilityRole="button"
         accessibilityLabel={label}
-        className="h-14 w-14 items-center justify-center rounded-full border border-black/70"
         style={{
+          width: size,
+          height: size,
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderRadius: 999,
+          borderWidth: 1,
+          borderColor: 'rgba(0,0,0,0.7)',
           backgroundColor: pc.charcoalDeep,
-          minWidth: 56,
-          minHeight: 56,
           opacity: disabled ? 0.5 : 1,
         }}
       >
         <View
           style={{
-            width: 16,
-            height: 16,
+            width: compact ? 12 : 16,
+            height: compact ? 12 : 16,
             borderRadius: 3,
             backgroundColor: pc.red,
           }}
         />
       </Pressable>
-      <Text className="mt-2 text-xs text-slate-400" style={{ fontFamily: 'Poppins_500Medium' }}>
+      <Text
+        style={{
+          marginTop: 6,
+          fontFamily: 'Poppins_500Medium',
+          fontSize: compact ? 11 : 12,
+          color: '#94a3b8',
+          textAlign: 'center',
+        }}
+      >
         {label}
       </Text>
     </View>

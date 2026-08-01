@@ -8,26 +8,44 @@ import { pc } from './theme';
  * trusted, and the promise that a failed check is never wasted money.
  */
 
-export function PriceCheckerHeader() {
+export function PriceCheckerHeader({ compact = false }: { compact?: boolean }) {
   return (
-    <View className="mb-8 max-w-[720px]">
+    <View style={{ marginBottom: compact ? 14 : 32, maxWidth: 720, width: '100%' }}>
       <Text
-        className="mb-2 text-xs uppercase tracking-widest text-neutral-500"
-        style={{ fontFamily: 'Poppins_600SemiBold' }}
+        style={{
+          fontFamily: 'Poppins_600SemiBold',
+          fontSize: compact ? 10 : 12,
+          letterSpacing: 2,
+          textTransform: 'uppercase',
+          color: '#737373',
+          marginBottom: compact ? 4 : 8,
+        }}
       >
         Hiring, quotations &amp; budgeting
       </Text>
       <Text
-        className="mb-3 text-3xl text-neutral-900 md:text-4xl"
-        style={{ fontFamily: 'Poppins_600SemiBold' }}
+        style={{
+          fontFamily: 'Poppins_600SemiBold',
+          fontSize: compact ? 22 : 30,
+          lineHeight: compact ? 28 : 36,
+          color: '#171717',
+          marginBottom: compact ? 6 : 12,
+        }}
         accessibilityRole="header"
       >
         Price Checker
       </Text>
-      <Text className="text-base leading-relaxed text-neutral-600" style={{ fontFamily: 'Poppins_400Regular' }}>
-        Stop guessing what building materials should cost. Search a material, answer a few quick
-        questions, and get a price range built from real, traceable market listings — with a
-        confidence score that tells you exactly how much to trust it.
+      <Text
+        style={{
+          fontFamily: 'Poppins_400Regular',
+          fontSize: compact ? 13 : 16,
+          lineHeight: compact ? 18 : 24,
+          color: '#525252',
+        }}
+      >
+        {compact
+          ? 'Search a material, answer a few questions, and get a source-backed price range with a confidence score.'
+          : 'Stop guessing what building materials should cost. Search a material, answer a few quick questions, and get a price range built from real, traceable market listings — with a confidence score that tells you exactly how much to trust it.'}
       </Text>
     </View>
   );
@@ -35,14 +53,14 @@ export function PriceCheckerHeader() {
 
 function AboutCard({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
   return (
-    <View className="mb-4 rounded-2xl border border-neutral-200 bg-white p-5 md:p-6">
+    <View className="mb-3 rounded-2xl border border-neutral-200 bg-white p-4 md:mb-4 md:p-6">
       <Text
-        className="mb-1 text-[11px] uppercase tracking-widest text-neutral-500"
+        className="mb-1 text-[10px] uppercase tracking-widest text-neutral-500 md:text-[11px]"
         style={{ fontFamily: 'Poppins_600SemiBold' }}
       >
         {label}
       </Text>
-      <Text className="mb-3 text-lg text-neutral-900" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+      <Text className="mb-2 text-base text-neutral-900 md:mb-3 md:text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
         {title}
       </Text>
       {children}
@@ -71,9 +89,9 @@ function Bullet({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function PriceCheckerAbout() {
+export function PriceCheckerAbout({ compact = false }: { compact?: boolean }) {
   return (
-    <View className="mt-10 max-w-[720px]">
+    <View style={{ marginTop: compact ? 24 : 40, maxWidth: 720, width: '100%' }}>
       <AboutCard label="The problem it solves" title="Confirming a fair price in Nigeria is genuinely hard">
         <Body>
           You are quoted a price and have no honest way to know if it is fair. Contractors pad

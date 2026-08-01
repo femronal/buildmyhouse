@@ -206,6 +206,7 @@ export function PriceCheckerWorkspace() {
       cancelNotice={cancelNotice}
       unknownNotes={state.preview?.unknownNotes ?? []}
       liveRegionText={liveRegionText}
+      viewportWidth={width}
       quote={state.quote}
       paymentStatus={state.paymentStatus}
       paymentWelcomeBack={paymentWelcomeBack}
@@ -241,28 +242,61 @@ export function PriceCheckerWorkspace() {
     />
   );
 
+  const pagePadX = width <= 360 ? 12 : mobile ? 14 : 32;
+  const pagePadTop = mobile ? 12 : 32;
+
   return (
-    <View className="flex-1" style={{ backgroundColor: pc.pageBg }}>
+    <View
+      className="flex-1"
+      style={{
+        backgroundColor: pc.pageBg,
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+      }}
+    >
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 48 }}
+        contentContainerStyle={{ paddingBottom: mobile ? 28 : 48, flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="interactive"
+        keyboardDismissMode="on-drag"
+        // Avoid aggressive scroll-to-focus jumps that shove the tool off-screen on thin phones.
+        automaticallyAdjustKeyboardInsets={false}
+        style={{ width: '100%', maxWidth: '100%' }}
       >
-        <View className="mx-auto w-full max-w-[1100px] px-4 pt-8 md:px-8">
+        <View
+          style={{
+            marginHorizontal: 'auto',
+            width: '100%',
+            maxWidth: 1100,
+            paddingHorizontal: pagePadX,
+            paddingTop: pagePadTop,
+            overflow: 'hidden',
+          }}
+        >
           <Pressable
             onPress={() => (router.canGoBack() ? router.back() : router.push('/tools' as any))}
-            className="mb-6 h-11 w-11 items-center justify-center rounded-full border border-neutral-200 bg-white"
+            style={{
+              marginBottom: mobile ? 10 : 24,
+              height: mobile ? 40 : 44,
+              width: mobile ? 40 : 44,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 999,
+              borderWidth: 1,
+              borderColor: '#e5e5e5',
+              backgroundColor: '#fff',
+            }}
             accessibilityLabel="Go back"
           >
-            <ArrowLeft size={16} color="#171717" weight="bold" />
+            <ArrowLeft size={mobile ? 14 : 16} color="#171717" weight="bold" />
           </Pressable>
 
-          <PriceCheckerHeader />
+          <PriceCheckerHeader compact={mobile} />
 
           {!mobile ? (
-            <View className="flex-row gap-6">
-              <View className="w-[42%]">{conversation}</View>
-              <View className="flex-1 gap-6">
+            <View className="flex-row gap-6" style={{ width: '100%', maxWidth: '100%' }}>
+              <View style={{ width: '42%', maxWidth: '42%', overflow: 'hidden' }}>{conversation}</View>
+              <View className="flex-1 gap-6" style={{ minWidth: 0, overflow: 'hidden' }}>
                 <ProductUnderstandingPanel rows={derived.understanding} />
                 <EvidenceConfidencePanel
                   phase={state.phase}
@@ -273,29 +307,53 @@ export function PriceCheckerWorkspace() {
               </View>
             </View>
           ) : (
-            <View className="gap-4">
+            <View style={{ gap: 10, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
               {conversation}
               <Pressable
                 onPress={() => setMobileUnderstandOpen((v) => !v)}
-                className="min-h-[44px] flex-row items-center justify-between rounded-2xl border border-neutral-200 bg-white px-4"
+                style={{
+                  minHeight: 40,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: '#e5e5e5',
+                  backgroundColor: '#fff',
+                  paddingHorizontal: 12,
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Toggle what we understand"
               >
-                <Text style={{ fontFamily: 'Poppins_600SemiBold' }} className="text-neutral-900">
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#171717' }}>
                   What we understand
                 </Text>
-                <Text className="text-neutral-500">{mobileUnderstandOpen ? 'Hide' : 'Show'}</Text>
+                <Text style={{ fontSize: 13, color: '#737373' }}>
+                  {mobileUnderstandOpen ? 'Hide' : 'Show'}
+                </Text>
               </Pressable>
               {mobileUnderstandOpen ? <ProductUnderstandingPanel rows={derived.understanding} /> : null}
               <Pressable
                 onPress={() => setMobileEvidenceOpen((v) => !v)}
-                className="min-h-[44px] flex-row items-center justify-between rounded-2xl border border-neutral-200 bg-white px-4"
+                style={{
+                  minHeight: 40,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: '#e5e5e5',
+                  backgroundColor: '#fff',
+                  paddingHorizontal: 12,
+                }}
                 accessibilityRole="button"
               >
-                <Text style={{ fontFamily: 'Poppins_600SemiBold' }} className="text-neutral-900">
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: '#171717' }}>
                   Evidence and confidence
                 </Text>
-                <Text className="text-neutral-500">{mobileEvidenceOpen ? 'Hide' : 'Show'}</Text>
+                <Text style={{ fontSize: 13, color: '#737373' }}>
+                  {mobileEvidenceOpen ? 'Hide' : 'Show'}
+                </Text>
               </Pressable>
               {mobileEvidenceOpen ? (
                 <EvidenceConfidencePanel
@@ -308,7 +366,7 @@ export function PriceCheckerWorkspace() {
             </View>
           )}
 
-          <PriceCheckerAbout />
+          <PriceCheckerAbout compact={mobile} />
         </View>
       </ScrollView>
 

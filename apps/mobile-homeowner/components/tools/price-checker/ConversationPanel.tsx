@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import {
   CatalogueSearchResult,
@@ -21,7 +21,7 @@ import { ReportReadyPanel } from './ReportReadyPanel';
 import { InsufficientDataPanel } from './InsufficientDataPanel';
 import { PriceCheckerErrorPanel } from './PriceCheckerErrorPanel';
 import { PaidBatchConfirmation } from './PaidBatchConfirmation';
-import { pc } from './theme';
+import { getPriceCheckerDensity, pc, PriceCheckerDensity } from './theme';
 
 type Props = {
   phase: PriceCheckerPhase;
@@ -48,6 +48,8 @@ type Props = {
   paymentStatus?: PaymentStatusDto | null;
   paymentWelcomeBack?: boolean;
   startingPaidResearch?: boolean;
+  /** Viewport width — drives compact type + spacing for thin phones. */
+  viewportWidth?: number;
   onSetQuery: (q: string) => void;
   onSearch: (q: string) => void;
   onSelectProduct: (m: CatalogueSearchResult) => void;
@@ -82,6 +84,38 @@ function composerPlaceholder(phase: PriceCheckerPhase, question: ConsumerQuestio
   }
 }
 
+function Title({ density, children }: { density: PriceCheckerDensity; children: ReactNode }) {
+  return (
+    <Text
+      style={{
+        fontFamily: 'Poppins_500Medium',
+        color: '#fff',
+        fontSize: density.titleSize,
+        lineHeight: density.titleLineHeight,
+        marginBottom: density.compact ? 8 : 12,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function Body({ density, children, style }: { density: PriceCheckerDensity; children: ReactNode; style?: object }) {
+  return (
+    <Text
+      style={{
+        fontFamily: 'Poppins_400Regular',
+        color: '#94a3b8',
+        fontSize: density.bodySize,
+        lineHeight: density.bodyLineHeight,
+        ...style,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export function ConversationPanel(props: Props) {
   const {
     phase,
@@ -108,6 +142,7 @@ export function ConversationPanel(props: Props) {
     paymentStatus,
     paymentWelcomeBack,
     startingPaidResearch,
+    viewportWidth = 1024,
     onSetQuery,
     onSearch,
     onSelectProduct,
@@ -126,6 +161,9 @@ export function ConversationPanel(props: Props) {
     onReviewPaidDetails,
   } = props;
 
+  const density = getPriceCheckerDensity(viewportWidth);
+  const { compact } = density;
+
   const [draft, setDraft] = useState('');
   useEffect(() => {
     setDraft('');
@@ -137,14 +175,43 @@ export function ConversationPanel(props: Props) {
   const showTimer = asking || processing || phase === 'paused';
   const showQuestionBars = asking || phase === 'paused' || phase === 'reviewing_answers';
   const showResearchBars = processing;
+  const showComposer =
+    (phase === 'idle' || phase === 'product_search' || asking) && question?.type !== 'location';
+
+  const composer = showComposer ? (
+    <PriceCheckerComposer
+      compact={compact}
+      label={
+        phase === 'idle' || phase === 'product_search'
+          ? 'Search for a building material'
+          : question?.prompt ?? 'Your answer'
+      }
+      placeholder={composerPlaceholder(phase, question)}
+      value={phase === 'idle' || phase === 'product_search' ? query : draft}
+      onChangeText={phase === 'idle' || phase === 'product_search' ? onSetQuery : setDraft}
+      onSubmit={(v) => {
+        if (phase === 'idle' || phase === 'product_search') onSearch(v);
+        else onSubmitAnswer(v);
+      }}
+      loading={searching || phase === 'validating_answer'}
+      disabled={phase === 'validating_answer'}
+      multiline={question?.type === 'free_text'}
+    />
+  ) : null;
 
   return (
     <View
-      className="rounded-[2rem] border p-6 md:p-8"
       style={{
         backgroundColor: pc.charcoalSoft,
         borderColor: pc.panelBorder,
-        minHeight: 520,
+        borderWidth: 1,
+        borderRadius: density.panelRadius,
+        padding: density.panelPad,
+        // Desktop keeps a roomy panel; mobile sizes to content so the fold stays usable.
+        minHeight: compact ? undefined : 520,
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
       }}
     >
       <Text
@@ -154,34 +221,22 @@ export function ConversationPanel(props: Props) {
         {liveRegionText}
       </Text>
 
-      {/* Composer — green bubble */}
-      {(phase === 'idle' || phase === 'product_search' || asking) && question?.type !== 'location' ? (
-        <PriceCheckerComposer
-          label={
-            phase === 'idle' || phase === 'product_search'
-              ? 'Search for a building material'
-              : question?.prompt ?? 'Your answer'
-          }
-          placeholder={composerPlaceholder(phase, question)}
-          value={phase === 'idle' || phase === 'product_search' ? query : draft}
-          onChangeText={phase === 'idle' || phase === 'product_search' ? onSetQuery : setDraft}
-          onSubmit={(v) => {
-            if (phase === 'idle' || phase === 'product_search') onSearch(v);
-            else onSubmitAnswer(v);
-          }}
-          loading={searching || phase === 'validating_answer'}
-          disabled={phase === 'validating_answer'}
-          multiline={question?.type === 'free_text'}
-        />
-      ) : null}
+      {/* On mobile, copy first then composer near the thumb / keyboard. Desktop keeps search on top. */}
+      {!compact ? composer : null}
 
       {showQuestionBars ? (
-        <QuestionProgressBars mode="questions" answered={progress.answered} total={progress.total} />
+        <QuestionProgressBars
+          mode="questions"
+          answered={progress.answered}
+          total={progress.total}
+          compact={compact}
+        />
       ) : null}
       {showResearchBars ? (
         <QuestionProgressBars
           mode="research"
           currentStage={(researchStage as any) ?? null}
+          compact={compact}
         />
       ) : null}
 
@@ -190,55 +245,96 @@ export function ConversationPanel(props: Props) {
           running={asking || phase === 'processing' || phase === 'ready_to_generate'}
           resetKey={requestId ?? question?.id ?? 'session'}
           seededSeconds={elapsedSeed}
+          compact={compact}
         />
       ) : null}
 
       {(asking || processing) && phase !== 'ready_to_generate' ? (
-        <PauseAndEditButton onPress={onPause} duringResearch={processing} disabled={phase === 'cancelling'} />
+        <PauseAndEditButton
+          onPress={onPause}
+          duringResearch={processing}
+          disabled={phase === 'cancelling'}
+          compact={compact}
+        />
       ) : null}
 
-      <View className="mt-auto">
-        {/* IDLE */}
+      <View style={{ marginTop: compact ? 0 : 'auto', width: '100%', maxWidth: '100%' }}>
         {(phase === 'idle' || (phase === 'product_search' && matches.length === 0 && !searching)) && (
           <>
-            <Text className="mb-1 text-xs uppercase tracking-[0.18em]" style={{ fontFamily: 'Poppins_600SemiBold', color: '#6ee7b7' }}>
+            <Text
+              style={{
+                fontFamily: 'Poppins_600SemiBold',
+                color: '#6ee7b7',
+                fontSize: density.labelSize,
+                letterSpacing: 1.6,
+                textTransform: 'uppercase',
+                marginBottom: 4,
+              }}
+            >
               BuildMyHouse Price Checker
             </Text>
-            <Text className="mb-3 text-2xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              What building material do you want to price?
-            </Text>
-            <Text className="text-sm leading-relaxed text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Search for a product or describe what you need. We will ask only the questions required to compare the
-              right item.
-            </Text>
+            <Title density={density}>What building material do you want to price?</Title>
+            <Body density={density}>
+              {compact
+                ? 'Search a product. We ask only the questions needed for a fair comparison.'
+                : 'Search for a product or describe what you need. We will ask only the questions required to compare the right item.'}
+            </Body>
             {searchMessage ? (
-              <Text className="mt-4 text-sm text-amber-200" style={{ fontFamily: 'Poppins_400Regular' }} accessibilityLiveRegion="polite">
+              <Text
+                style={{
+                  marginTop: 12,
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: density.bodySize,
+                  color: '#fde68a',
+                }}
+                accessibilityLiveRegion="polite"
+              >
                 {searchMessage}
               </Text>
             ) : null}
           </>
         )}
 
-        {/* PRODUCT MATCHES */}
         {phase === 'product_search' && matches.length > 0 ? (
           <>
-            <Text className="mb-3 text-xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+            <Title density={density}>
               I found {matches.length} possible product{matches.length === 1 ? '' : 's'}. Which one are you pricing?
-            </Text>
-            <View className="gap-2">
+            </Title>
+            <View style={{ gap: compact ? 6 : 8 }}>
               {matches.map((m) => (
                 <Pressable
                   key={`${m.kind}:${m.key}`}
                   onPress={() => onSelectProduct(m)}
                   accessibilityRole="button"
                   accessibilityLabel={m.name}
-                  className="min-h-[52px] justify-center rounded-2xl border border-white/10 px-4 py-3"
-                  style={{ backgroundColor: pc.charcoalDeep }}
+                  style={{
+                    minHeight: compact ? 48 : 52,
+                    justifyContent: 'center',
+                    borderRadius: 14,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255,255,255,0.1)',
+                    paddingHorizontal: compact ? 12 : 16,
+                    paddingVertical: compact ? 10 : 12,
+                    backgroundColor: pc.charcoalDeep,
+                  }}
                 >
-                  <Text className="text-base text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins_600SemiBold',
+                      color: '#fff',
+                      fontSize: compact ? 14 : 16,
+                    }}
+                  >
                     {m.name}
                   </Text>
-                  <Text className="text-xs text-slate-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins_400Regular',
+                      color: '#64748b',
+                      fontSize: compact ? 11 : 12,
+                      marginTop: 2,
+                    }}
+                  >
                     {m.category}
                     {m.marketNames[0] ? ` · also called ${m.marketNames[0]}` : ''}
                   </Text>
@@ -249,29 +345,39 @@ export function ConversationPanel(props: Props) {
         ) : null}
 
         {searching ? (
-          <View className="mt-4 flex-row items-center gap-2">
+          <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <ActivityIndicator color={pc.green} />
-            <Text className="text-sm text-slate-400">Searching the catalogue…</Text>
+            <Body density={density}>Searching the catalogue…</Body>
           </View>
         ) : null}
 
-        {/* QUESTION */}
         {asking && question ? (
           <>
-            <Text className="mb-1 text-xs uppercase tracking-wide text-slate-500" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            <Text
+              style={{
+                fontFamily: 'Poppins_600SemiBold',
+                color: '#64748b',
+                fontSize: density.labelSize,
+                letterSpacing: 0.6,
+                textTransform: 'uppercase',
+                marginBottom: 4,
+              }}
+            >
               Question {Math.min(progress.answered + 1, progress.total)} of about {progress.total}
             </Text>
-            <Text className="mb-2 text-xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {question.prompt}
-            </Text>
+            <Title density={density}>{question.prompt}</Title>
             {question.whyItMatters ? (
-              <Text className="mb-4 text-sm leading-relaxed text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <Body density={density} style={{ marginBottom: compact ? 10 : 16 }}>
                 {question.whyItMatters}
-              </Text>
+              </Body>
             ) : null}
 
             {question.type === 'location' ? (
-              <LocationPicker locations={locations} onSelect={onSelectLocation} disabled={phase === 'validating_answer'} />
+              <LocationPicker
+                locations={locations}
+                onSelect={onSelectLocation}
+                disabled={phase === 'validating_answer'}
+              />
             ) : (
               <SuggestedAnswerChips
                 options={question.options}
@@ -279,26 +385,32 @@ export function ConversationPanel(props: Props) {
                 allowUnknown={question.allowUnknown}
                 onUnknown={onUnknown}
                 disabled={phase === 'validating_answer'}
+                compact={compact}
               />
             )}
 
             {clarification ? (
-              <Text className="mt-2 text-sm text-amber-200" style={{ fontFamily: 'Poppins_400Regular' }} accessibilityLiveRegion="polite">
+              <Text
+                style={{
+                  marginTop: 8,
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: density.bodySize,
+                  color: '#fde68a',
+                }}
+                accessibilityLiveRegion="polite"
+              >
                 {clarification}
               </Text>
             ) : null}
           </>
         ) : null}
 
-        {/* PAUSED */}
         {phase === 'paused' ? (
           <>
-            <Text className="mb-2 text-2xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Answers paused
-            </Text>
-            <Text className="mb-5 text-sm text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Title density={density}>Answers paused</Title>
+            <Body density={density} style={{ marginBottom: compact ? 12 : 20 }}>
               Your answers are saved. Edit any detail below, or continue where you left off.
-            </Text>
+            </Body>
             <AnswerReviewPanel
               rows={understanding}
               onEdit={onEdit}
@@ -309,7 +421,6 @@ export function ConversationPanel(props: Props) {
           </>
         ) : null}
 
-        {/* REVIEW */}
         {(phase === 'reviewing_answers' || phase === 'ready_to_generate') && (
           <AnswerReviewPanel
             rows={understanding}
@@ -323,20 +434,16 @@ export function ConversationPanel(props: Props) {
           />
         )}
 
-        {/* PAYMENT PENDING (after Paystack return) */}
         {phase === 'payment_pending' ? (
-          <View className="items-center py-6">
+          <View style={{ alignItems: 'center', paddingVertical: compact ? 16 : 24 }}>
             <ActivityIndicator color={pc.green} />
-            <Text className="mt-3 text-center text-xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              We’re confirming your payment
-            </Text>
-            <Text className="mt-2 text-center text-sm text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Title density={density}>We’re confirming your payment</Title>
+            <Body density={density} style={{ textAlign: 'center' }}>
               This normally takes a moment. Your materials and answers are still saved.
-            </Text>
+            </Body>
           </View>
         ) : null}
 
-        {/* PAYMENT CONFIRMED */}
         {phase === 'payment_confirmed' && onStartPaidResearch && onReviewPaidDetails ? (
           <PaidBatchConfirmation
             quote={quote ?? null}
@@ -349,38 +456,46 @@ export function ConversationPanel(props: Props) {
           />
         ) : null}
 
-        {/* PROCESSING */}
         {phase === 'processing' || phase === 'cancelling' ? (
           <>
-            <Text className="mb-2 text-2xl text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Checking current prices
-            </Text>
-            <Text className="mb-3 text-sm leading-relaxed text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
-              We are comparing recent sources that match your product, specification and location. You can stop if you
-              need to correct an answer.
-            </Text>
+            <Title density={density}>Checking current prices</Title>
+            <Body density={density} style={{ marginBottom: 10 }}>
+              We are comparing recent sources that match your product, specification and location. You can stop if
+              you need to correct an answer.
+            </Body>
             {researchStage ? (
-              <Text className="text-sm" style={{ fontFamily: 'Poppins_500Medium', color: '#6ee7b7' }} accessibilityLiveRegion="polite">
+              <Text
+                style={{ fontFamily: 'Poppins_500Medium', color: '#6ee7b7', fontSize: density.bodySize }}
+                accessibilityLiveRegion="polite"
+              >
                 {RESEARCH_STAGES.find((s) => s.code === researchStage)?.label ?? researchStage}
               </Text>
             ) : null}
             {connectionLost ? (
-              <Text className="mt-3 text-sm text-amber-200">We lost connection briefly. Retrying… Your answers are safe.</Text>
+              <Text
+                style={{
+                  marginTop: 10,
+                  fontFamily: 'Poppins_400Regular',
+                  fontSize: density.bodySize,
+                  color: '#fde68a',
+                }}
+              >
+                We lost connection briefly. Retrying… Your answers are safe.
+              </Text>
             ) : null}
           </>
         ) : null}
 
-        {/* REPORT READY */}
         {phase === 'report_ready' && reportSummary ? (
           <ReportReadyPanel
             summary={reportSummary}
             onOpenReport={onOpenReport}
             onDownloadPdf={onDownloadPdf}
             onStartAnother={onStartAnother}
+            compact={compact}
           />
         ) : null}
 
-        {/* INSUFFICIENT */}
         {phase === 'insufficient_data' ? (
           <InsufficientDataPanel
             report={reportSummary}
@@ -389,10 +504,10 @@ export function ConversationPanel(props: Props) {
             onEdit={onResume}
             onOpenReport={onOpenReport}
             onStartAnother={onStartAnother}
+            compact={compact}
           />
         ) : null}
 
-        {/* FAILED */}
         {phase === 'failed' && errorMessage ? (
           <PriceCheckerErrorPanel
             error={{ category: (errorCategory as any) ?? 'internal', message: errorMessage }}
@@ -403,6 +518,9 @@ export function ConversationPanel(props: Props) {
           />
         ) : null}
       </View>
+
+      {/* Mobile: composer after copy so the field sits nearer the keyboard without page jump. */}
+      {compact ? <View style={{ marginTop: showComposer ? 12 : 0 }}>{composer}</View> : null}
     </View>
   );
 }
