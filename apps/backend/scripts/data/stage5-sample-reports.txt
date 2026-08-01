@@ -1,0 +1,116 @@
+=== bm-cement-lagos (benchmark-results.json) ===
+
+PRODUCT
+50 kg branded cement in Lagos
+
+LOCATION
+Lagos
+Note: No accepted price was confirmed in the exact requested city; wider-area evidence was used.
+Note: Some seller locations could not be confirmed.
+
+LATEST OBSERVED RANGE
+NGN 9,500 – NGN 11,900 per bag_50kg
+
+TYPICAL OBSERVED PRICE
+NGN 11,300 per bag_50kg (median of accepted observations)
+
+WHAT THE PRICE APPEARS TO INCLUDE
+- Product only unless a listing states otherwise
+- Delivery not stated in some or all listings
+- VAT treatment not stated
+
+SOURCES CHECKED
+- Dirigible Building Products Ltd (Tier 3) — NGN 11,600 per bag_50kg — https://buildmart.dirigible.com.ng/product/dangote-3x-42-5r/ — checked 2026-07-30
+- Repton Group (Tier 3) — NGN 11,900 per bag_50kg — https://www.reptongroup.ng/collections/dangote-cement — checked 2026-07-30
+- Unnamed seller (Tier 3) — NGN 9,500 per bag_50kg — https://lagos.cool/pcm/building/cement — checked 2026-07-30
+- Unnamed seller (Tier 3) — NGN 11,000 per bag_50kg — https://opaindex.com/commodities/cement-dangote-nigeria — checked 2026-07-30
+
+CONFIDENCE
+MODERATE (70/100, policy price-confidence-v1)
++ 4 independent sources were accepted after validation.
++ The evidence is recent.
++ Observed prices were grouped within a relatively narrow range.
+− Most observations came from classified or informal listings (asking prices, often negotiable).
+− The closest available prices were from outside the requested area, or seller locations were unclear.
+− 3 price(s) far outside the cluster were excluded.
+− Some listings did not clearly state whether delivery was included.
+
+IMPORTANT CAUTION
+- Advertised prices in Nigerian markets are frequently negotiable; treat this as a research baseline, not a quotation.
+- Delivery was not stated on some listings — confirm delivery cost to your site before budgeting.
+- No accepted listing was confirmed in the exact requested city; local transport can change the delivered cost.
+- Some sources do not display a listing date; the "date checked" is when we verified the page, not proof the seller updated it that day.
+- Prices of building materials can move quickly; re-check before committing large purchases.
+
+BUILDMYHOUSE NEXT STEP
+Add this material to a project budget → /tools/price-checker/add-to-budget
+
+
+=== bm-obscure-insufficient (benchmark-final.json) ===
+
+PRODUCT
+Request that should legitimately return insufficient data
+
+LOCATION
+Lagos
+
+RESULT
+Insufficient reliable data
+Insufficient reliable data was available to produce a defensible market price range for "Request that should legitimately return insufficient data" in Lagos. 3 candidate observation(s) were checked and 3 were excluded after validation.
+
+WHAT WAS MISSING
+- Comparable full purchase prices for this exact specification.
+
+WHAT YOU CAN DO NEXT
+- Expand the location to a wider area.
+- Select a related, more commonly stocked specification.
+- Request a manual local market check.
+- Request BuildMyHouse procurement assistance.
+
+SOURCES CHECKED
+- 3 candidate source(s) were checked; none passed validation.
+
+CONFIDENCE
+INSUFFICIENT DATA (0/100, policy price-confidence-v1)
+
+IMPORTANT CAUTION
+- Advertised prices in Nigerian markets are frequently negotiable; treat this as a research baseline, not a quotation.
+- Prices of building materials can move quickly; re-check before committing large purchases.
+
+BUILDMYHOUSE NEXT STEP
+Request a verified local market check → /tools/price-checker/manual-check
+
+
+=== bm-window-lagos (benchmark-final.json) ===
+
+PRODUCT
+Aluminium window with dimensions and glass specification
+
+LOCATION
+Lagos
+
+RESULT
+Insufficient reliable data
+Insufficient reliable data was available to produce a defensible market price range for "Aluminium window with dimensions and glass specification" in Lagos. 6 candidate observation(s) were checked and 6 were excluded after validation.
+
+WHAT WAS MISSING
+- Comparable full purchase prices for this exact specification.
+
+WHAT YOU CAN DO NEXT
+- Expand the location to a wider area.
+- Select a related, more commonly stocked specification.
+- Request a manual local market check.
+- Request BuildMyHouse procurement assistance.
+
+SOURCES CHECKED
+- 6 candidate source(s) were checked; none passed validation.
+
+CONFIDENCE
+INSUFFICIENT DATA (0/100, policy price-confidence-v1)
+
+IMPORTANT CAUTION
+- Advertised prices in Nigerian markets are frequently negotiable; treat this as a research baseline, not a quotation.
+- Prices of building materials can move quickly; re-check before committing large purchases.
+
+BUILDMYHOUSE NEXT STEP
+Request a verified local market check → /tools/price-checker/manual-check

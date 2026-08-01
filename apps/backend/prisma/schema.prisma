@@ -52,55 +52,80 @@ enum ServicePageRegion {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String   // Hashed password
-  phone     String?
-  address   String?
-  city      String?
-  state     String?
-  country   String?
-  pictureUrl String?
-  fullName  String
-  role      String   // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
-  verified  Boolean  @default(false)
+  id                       String    @id @default(uuid())
+  email                    String    @unique
+  password                 String // Hashed password
+  phone                    String?
+  address                  String?
+  city                     String?
+  state                    String?
+  country                  String?
+  pictureUrl               String?
+  fullName                 String
+  role                     String // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
+  verified                 Boolean   @default(false)
   homeownerTermsAcceptedAt DateTime?
-  gcTermsAcceptedAt DateTime?
-  profileSetupCompleted Boolean @default(false)
-  managedParticipant Boolean @default(false)
-  accessClaimedAt DateTime?
-  adminDashboardAccess Boolean @default(false)
-  stripeCustomerId String? @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  gcTermsAcceptedAt        DateTime?
+  profileSetupCompleted    Boolean   @default(false)
+  managedParticipant       Boolean   @default(false)
+  accessClaimedAt          DateTime?
+  adminDashboardAccess     Boolean   @default(false)
+  stripeCustomerId         String?   @unique
+  /// Stage 8 — PI sub-permissions. Empty array = all PI permissions (backward compatible for admins).
+  priceIntelligencePermissions String[] @default([])
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   // Relations
-  homeownerProjects     Project[] @relation("HomeownerProjects")
-  contractorProjects    Project[] @relation("ContractorProjects")
-  sentMessages          Message[] @relation("SentMessages")
-  receivedConversations Conversation[] @relation("Participants")
-  vendorMaterials       Material[] @relation("VendorMaterials")
-  contractorProfile     Contractor? @relation("UserContractor")
-  orders                Order[] @relation("UserOrders")
-  reviews               Review[] @relation("UserReviews")
-  paymentMethods        PaymentMethod[]
-  createdDesigns        Design[] @relation("DesignCreatedBy")
-  reviewedDesigns       Design[] @relation("DesignReviewedByAdmin")
-  contractorProjectRequests ProjectRequest[] @relation("ProjectRequestContractor")
-  sentProjectRequests   ProjectRequest[] @relation("ProjectRequestSender")
-  houseViewingInterests HouseViewingInterest[] @relation("HomeownerViewingInterests")
-  landViewingInterests  LandViewingInterest[] @relation("HomeownerLandViewingInterests")
-  rentalViewingInterests RentalViewingInterest[] @relation("HomeownerRentalViewingInterests")
-  homeownerDisputes     ProjectStageDispute[] @relation("HomeownerDisputes")
-  gcDisputes            ProjectStageDispute[] @relation("GeneralContractorDisputes")
-  pushTokens            PushToken[]
-  notifications         Notification[]
-  passwordResetTokens   PasswordResetToken[]
-  projectAccessLinks    ProjectAccessLink[] @relation("ProjectAccessParticipant")
-  claimedAccessLinks    ProjectAccessLink[] @relation("ProjectAccessClaimed")
-  stageChangeRequestsSubmitted StageChangeRequest[] @relation("StageChangeRequestedBy")
-  stageChangeRequestsReviewed StageChangeRequest[] @relation("StageChangeReviewedBy")
-  
+  homeownerProjects            Project[]               @relation("HomeownerProjects")
+  contractorProjects           Project[]               @relation("ContractorProjects")
+  sentMessages                 Message[]               @relation("SentMessages")
+  receivedConversations        Conversation[]          @relation("Participants")
+  vendorMaterials              Material[]              @relation("VendorMaterials")
+  contractorProfile            Contractor?             @relation("UserContractor")
+  orders                       Order[]                 @relation("UserOrders")
+  reviews                      Review[]                @relation("UserReviews")
+  paymentMethods               PaymentMethod[]
+  createdDesigns               Design[]                @relation("DesignCreatedBy")
+  reviewedDesigns              Design[]                @relation("DesignReviewedByAdmin")
+  contractorProjectRequests    ProjectRequest[]        @relation("ProjectRequestContractor")
+  sentProjectRequests          ProjectRequest[]        @relation("ProjectRequestSender")
+  houseViewingInterests        HouseViewingInterest[]  @relation("HomeownerViewingInterests")
+  landViewingInterests         LandViewingInterest[]   @relation("HomeownerLandViewingInterests")
+  rentalViewingInterests       RentalViewingInterest[] @relation("HomeownerRentalViewingInterests")
+  homeownerDisputes            ProjectStageDispute[]   @relation("HomeownerDisputes")
+  gcDisputes                   ProjectStageDispute[]   @relation("GeneralContractorDisputes")
+  pushTokens                   PushToken[]
+  notifications                Notification[]
+  passwordResetTokens          PasswordResetToken[]
+  projectAccessLinks           ProjectAccessLink[]     @relation("ProjectAccessParticipant")
+  claimedAccessLinks           ProjectAccessLink[]     @relation("ProjectAccessClaimed")
+  stageChangeRequestsSubmitted StageChangeRequest[]    @relation("StageChangeRequestedBy")
+  stageChangeRequestsReviewed  StageChangeRequest[]    @relation("StageChangeReviewedBy")
+
+  // Price intelligence (Stage 3)
+  priceQueries           PriceQuery[]                 @relation("PriceQueries")
+  priceResearchRequests  PriceResearchRequest[]       @relation("PriceResearchRequests")
+  priceReports           PriceReport[]                @relation("PriceReports")
+  priceCreditEvents      PriceCreditLedger[]          @relation("PriceCreditEvents")
+  priceEvidenceUploads   PriceEvidenceDocument[]      @relation("PriceEvidenceUploader")
+  priceCustomRequests    PriceCustomProductRequest[]  @relation("PriceCustomRequests")
+  priceTaxonomyApprovals PriceTaxonomyChangeRequest[] @relation("PriceTaxonomyApprovals")
+  priceReviewApprovals   PriceProfessionalReview[]    @relation("PriceReviewApprovals")
+
+  // Price intelligence ops (Stage 8)
+  priceReviewCasesAssigned       PriceReviewCase[]              @relation("PriceReviewCaseAssignee")
+  priceReviewCaseEvents          PriceReviewCaseEvent[]         @relation("PriceReviewCaseEventActor")
+  priceObservationCorrections    PriceObservationCorrection[]   @relation("PriceObservationCorrectionCreator")
+  priceManualEntriesCreated      ManualPriceEntry[]             @relation("ManualPriceEntryCreator")
+  priceManualEntriesReviewed     ManualPriceEntry[]             @relation("ManualPriceEntryReviewer")
+  priceMerchantSubmissions       MerchantPriceSubmission[]      @relation("MerchantSubmissionCreator")
+  priceMerchantItemReviews       MerchantPriceSubmissionItem[]  @relation("MerchantItemReviewer")
+  priceSourcesDisabled           PriceSource[]                  @relation("PriceSourceDisabledBy")
+  priceReportRevisionsCreated    PriceReportRevision[]          @relation("PriceReportRevisionCreator")
+  priceIntelligenceAuditEntries  PriceIntelligenceAuditLog[]    @relation("PriceIntelligenceAuditActor")
+  priceIntelligenceReviewerProfile PriceIntelligenceReviewer?   @relation("PriceIntelligenceReviewerUser")
+
   @@map("users")
 }
 
@@ -120,14 +145,14 @@ model PasswordResetToken {
 }
 
 model PushToken {
-  id        String   @id @default(uuid())
-  userId    String
-  token     String   @unique
-  platform  String
-  app       String
-  deviceId  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(uuid())
+  userId     String
+  token      String   @unique
+  platform   String
+  app        String
+  deviceId   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   lastUsedAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -137,15 +162,15 @@ model PushToken {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid())
   userId    String
   type      String
   title     String
   message   String
   data      Json?
-  isRead    Boolean  @default(false)
+  isRead    Boolean   @default(false)
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -154,27 +179,27 @@ model Notification {
 }
 
 model CmsArticle {
-  id            String   @id @default(uuid())
-  slug          String   @unique
-  title         String
-  description   String
-  excerpt       String
-  coverImageUrl String
-  coverImageAlt String
-  readingMinutes Int     @default(5)
-  tags          String[] @default([])
-  authorName    String   @default("BuildMyHouse Editorial")
-  audience      ArticleAudience @default(homeowner)
-  canonicalPath String
-  content       Json
-  faqs          Json
-  internalLinks Json
-  resourceSectionKeys String[] @default([])
-  articlePillar String?
-  isPublished   Boolean  @default(false)
-  publishedAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String          @id @default(uuid())
+  slug                String          @unique
+  title               String
+  description         String
+  excerpt             String
+  coverImageUrl       String
+  coverImageAlt       String
+  readingMinutes      Int             @default(5)
+  tags                String[]        @default([])
+  authorName          String          @default("BuildMyHouse Editorial")
+  audience            ArticleAudience @default(homeowner)
+  canonicalPath       String
+  content             Json
+  faqs                Json
+  internalLinks       Json
+  resourceSectionKeys String[]        @default([])
+  articlePillar       String?
+  isPublished         Boolean         @default(false)
+  publishedAt         DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   @@index([isPublished, publishedAt, updatedAt])
   @@map("cms_articles")
@@ -214,72 +239,72 @@ model CmsServicePage {
 }
 
 model Project {
-  id                  String        @id @default(uuid())
-  name                String
-  address             String
-  street              String?
-  city                String?
-  state               String?
-  zipCode             String?
-  country             String?
-  latitude            Float?
-  longitude           Float?
-  homeownerId        String
-  generalContractorId String?
-  status              String        @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
-  riskLevel           ProjectRiskLevel @default(low)
-  projectType          ProjectType? @default(homebuilding)
-  reviewStatus         ProjectReviewStatus?
-  externalPaymentLink  String?
-  paymentDeclaredAt    DateTime?
-  paymentConfirmedAt   DateTime?
+  id                        String                    @id @default(uuid())
+  name                      String
+  address                   String
+  street                    String?
+  city                      String?
+  state                     String?
+  zipCode                   String?
+  country                   String?
+  latitude                  Float?
+  longitude                 Float?
+  homeownerId               String
+  generalContractorId       String?
+  status                    String                    @default("draft") // 'draft' | 'active' | 'paused' | 'completed' | 'cancelled'
+  riskLevel                 ProjectRiskLevel          @default(low)
+  projectType               ProjectType?              @default(homebuilding)
+  reviewStatus              ProjectReviewStatus?
+  externalPaymentLink       String?
+  paymentDeclaredAt         DateTime?
+  paymentConfirmedAt        DateTime?
   paymentConfirmationStatus PaymentConfirmationStatus @default(not_declared)
-  budget              Float
-  spent               Float         @default(0)
-  progress            Int           @default(0)
-  currentStage        String?
-  startDate           DateTime?
-  dueDate             DateTime?
-  aiAnalysis           Json?
-  aiProcessedAt        DateTime?
-  planFileName         String?
-  planPdfUrl           String?
-  archivedAt           DateTime?
-  managedByAdmin       Boolean  @default(false)
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  budget                    Float
+  spent                     Float                     @default(0)
+  progress                  Int                       @default(0)
+  currentStage              String?
+  startDate                 DateTime?
+  dueDate                   DateTime?
+  aiAnalysis                Json?
+  aiProcessedAt             DateTime?
+  planFileName              String?
+  planPdfUrl                String?
+  archivedAt                DateTime?
+  managedByAdmin            Boolean                   @default(false)
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
 
   // Relations
-  homeowner           User          @relation("HomeownerProjects", fields: [homeownerId], references: [id])
-  generalContractor   User?         @relation("ContractorProjects", fields: [generalContractorId], references: [id])
+  homeowner           User                  @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  generalContractor   User?                 @relation("ContractorProjects", fields: [generalContractorId], references: [id])
   stages              Stage[]
   payments            Payment[]
-  projectRequests      ProjectRequest[]
-  orders              Order[] @relation("ProjectOrders")
+  projectRequests     ProjectRequest[]
+  orders              Order[]               @relation("ProjectOrders")
   disputes            ProjectStageDispute[]
   stageChangeRequests StageChangeRequest[]
   reviews             Review[]
   accessLinks         ProjectAccessLink[]
-  
+
   @@map("projects")
 }
 
 model Stage {
-  id              String    @id @default(uuid())
-  projectId       String
-  name            String
-  status          String    @default("not_started") // 'not_started' | 'in_progress' | 'completed' | 'blocked'
-  order           Int
-  estimatedCost   Float
-  actualCost      Float?
+  id                String    @id @default(uuid())
+  projectId         String
+  name              String
+  status            String    @default("not_started") // 'not_started' | 'in_progress' | 'completed' | 'blocked'
+  order             Int
+  estimatedCost     Float
+  actualCost        Float?
   estimatedDuration String
-  startDate       DateTime?
-  completionDate  DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  startDate         DateTime?
+  completionDate    DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project         Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
   payments        Payment[]
   projectRequests ProjectRequest[]
   teamMembers     StageTeamMember[]
@@ -288,33 +313,33 @@ model Stage {
   documents       StageDocument[]
   disputes        ProjectStageDispute[]
   changeRequests  StageChangeRequest[]
-  
+
   @@map("stages")
 }
 
 model StageChangeRequest {
-  id                   String   @id @default(uuid())
-  projectId            String
-  stageId              String
-  requestedById        String
-  reviewedById         String?
-  status               StageChangeRequestStatus @default(pending)
-  requestTypes         String[] @default([])
-  additionalAmount     Float?
+  id                     String                   @id @default(uuid())
+  projectId              String
+  stageId                String
+  requestedById          String
+  reviewedById           String?
+  status                 StageChangeRequestStatus @default(pending)
+  requestTypes           String[]                 @default([])
+  additionalAmount       Float?
   additionalDurationDays Int?
-  requestedSiteChange  Boolean  @default(false)
-  siteChangeDetails    String?
-  reason               String
-  evidence             Json?
-  adminReviewNote      String?
-  reviewedAt           DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  requestedSiteChange    Boolean                  @default(false)
+  siteChangeDetails      String?
+  reason                 String
+  evidence               Json?
+  adminReviewNote        String?
+  reviewedAt             DateTime?
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
 
-  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stage        Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  requestedBy  User    @relation("StageChangeRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
-  reviewedBy   User?   @relation("StageChangeReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage       Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  requestedBy User    @relation("StageChangeRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy  User?   @relation("StageChangeReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([projectId, stageId, createdAt])
   @@index([status, createdAt])
@@ -322,24 +347,24 @@ model StageChangeRequest {
 }
 
 model ProjectStageDispute {
-  id                 String    @id @default(uuid())
-  projectId          String
-  stageId            String
-  homeownerId        String
+  id                  String    @id @default(uuid())
+  projectId           String
+  stageId             String
+  homeownerId         String
   generalContractorId String?
-  status             String    @default("open") // 'open' | 'in_review' | 'resolved'
-  reasons            String[]  @default([])
-  otherReason        String?
-  resolutionNotes    String?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  resolvedAt         DateTime?
-  inReviewAt         DateTime?
+  status              String    @default("open") // 'open' | 'in_review' | 'resolved'
+  reasons             String[]  @default([])
+  otherReason         String?
+  resolutionNotes     String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  resolvedAt          DateTime?
+  inReviewAt          DateTime?
 
-  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  stage              Stage     @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  homeowner          User      @relation("HomeownerDisputes", fields: [homeownerId], references: [id], onDelete: Cascade)
-  generalContractor  User?     @relation("GeneralContractorDisputes", fields: [generalContractorId], references: [id], onDelete: SetNull)
+  project           Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage             Stage   @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  homeowner         User    @relation("HomeownerDisputes", fields: [homeownerId], references: [id], onDelete: Cascade)
+  generalContractor User?   @relation("GeneralContractorDisputes", fields: [generalContractorId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([projectId, stageId, createdAt])
@@ -347,24 +372,24 @@ model ProjectStageDispute {
 }
 
 model Payment {
-  id            String   @id @default(uuid())
-  projectId     String?
-  stageId       String?
-  homeownerId   String?   // Set at creation; preserved when project deleted for orphan queries
-  amount        Float
-  status        String   @default("pending") // 'pending' | 'processing' | 'completed' | 'failed' | 'refunded'
-  method        String
-  transactionId String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                  String   @id @default(uuid())
+  projectId           String?
+  stageId             String?
+  homeownerId         String? // Set at creation; preserved when project deleted for orphan queries
+  amount              Float
+  status              String   @default("pending") // 'pending' | 'processing' | 'completed' | 'failed' | 'refunded'
+  method              String
+  transactionId       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   // Snapshot when paid (preserved when project deleted)
   snapshotProjectName String?
   snapshotStageName   String?
 
   // Relations
-  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  stage         Stage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
-  
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  stage   Stage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
+
   @@map("payments")
 }
 
@@ -375,93 +400,93 @@ model Conversation {
   updatedAt DateTime @updatedAt
 
   // Relations
-  participants User[] @relation("Participants")
+  participants User[]    @relation("Participants")
   messages     Message[]
-  
+
   @@map("conversations")
 }
 
 model Message {
-  id             String       @id @default(uuid())
+  id             String   @id @default(uuid())
   conversationId String
   senderId       String
   content        String
-  type           String       @default("text") // 'text' | 'image' | 'file'
-  read           Boolean      @default(false)
-  createdAt      DateTime     @default(now())
+  type           String   @default("text") // 'text' | 'image' | 'file'
+  read           Boolean  @default(false)
+  createdAt      DateTime @default(now())
 
   // Relations
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
-  
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id])
+
   @@map("messages")
 }
 
 model Material {
-  id        String   @id @default(uuid())
-  name      String
-  category  String
-  brand     String
+  id          String   @id @default(uuid())
+  name        String
+  category    String
+  brand       String
   description String?
-  price     Float
-  unit      String
-  rating    Float    @default(0)
-  reviews   Int      @default(0)
-  verified  Boolean  @default(false)
-  imageUrl  String?
-  stock     Int      @default(0)
-  vendorId  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  price       Float
+  unit        String
+  rating      Float    @default(0)
+  reviews     Int      @default(0)
+  verified    Boolean  @default(false)
+  imageUrl    String?
+  stock       Int      @default(0)
+  vendorId    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  vendor     User     @relation("VendorMaterials", fields: [vendorId], references: [id])
-  orderItems OrderItem[]
-  materialReviews Review[] @relation("MaterialReviews")
-  
+  vendor          User        @relation("VendorMaterials", fields: [vendorId], references: [id])
+  orderItems      OrderItem[]
+  materialReviews Review[]    @relation("MaterialReviews")
+
   @@map("materials")
 }
 
 model Contractor {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  name            String
-  specialty       String
-  specialtyCategory String?
-  specialtyTags   String[] @default([])
-  description     String?
-  location        String?
-  experienceYears Int?     // Years of experience (e.g. 15)
-  rating          Float    @default(5.0)
-  reviews         Int      @default(0)
-  projects        Int      @default(10)
-  verified        Boolean  @default(false)
-  imageUrl        String?
-  hiringFee       Float
-  type            String   // 'general_contractor' | 'subcontractor'
-  connectAccountId String?
-  professionalOnboardingCompleted Boolean @default(false)
-  professionalOnboardingSkipped Boolean @default(false)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                              String   @id @default(uuid())
+  userId                          String   @unique
+  name                            String
+  specialty                       String
+  specialtyCategory               String?
+  specialtyTags                   String[] @default([])
+  description                     String?
+  location                        String?
+  experienceYears                 Int? // Years of experience (e.g. 15)
+  rating                          Float    @default(5.0)
+  reviews                         Int      @default(0)
+  projects                        Int      @default(10)
+  verified                        Boolean  @default(false)
+  imageUrl                        String?
+  hiringFee                       Float
+  type                            String // 'general_contractor' | 'subcontractor'
+  connectAccountId                String?
+  professionalOnboardingCompleted Boolean  @default(false)
+  professionalOnboardingSkipped   Boolean  @default(false)
+  createdAt                       DateTime @default(now())
+  updatedAt                       DateTime @updatedAt
 
   // Relations
-  user         User          @relation("UserContractor", fields: [userId], references: [id], onDelete: Cascade)
-  contractorReviews Review[]  @relation("ContractorReviews")
-  bankAccounts BankAccount[]  @relation("ContractorBankAccounts")
-  certifications ContractorCertification[] @relation("ContractorCertifications")
-  
+  user              User                      @relation("UserContractor", fields: [userId], references: [id], onDelete: Cascade)
+  contractorReviews Review[]                  @relation("ContractorReviews")
+  bankAccounts      BankAccount[]             @relation("ContractorBankAccounts")
+  certifications    ContractorCertification[] @relation("ContractorCertifications")
+
   @@map("contractors")
 }
 
 model ContractorCertification {
-  id            String   @id @default(uuid())
-  contractorId  String
-  name          String   // Display name (user-renamed)
-  documentType  String?  // Optional required-verification document key
-  fileUrl       String   // Path to uploaded PDF/DOCX
-  expiryYear    String?  // Optional expiry year, e.g. "2026"
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  contractorId String
+  name         String // Display name (user-renamed)
+  documentType String? // Optional required-verification document key
+  fileUrl      String // Path to uploaded PDF/DOCX
+  expiryYear   String? // Optional expiry year, e.g. "2026"
+  createdAt    DateTime @default(now())
 
   contractor Contractor @relation("ContractorCertifications", fields: [contractorId], references: [id], onDelete: Cascade)
 
@@ -485,12 +510,12 @@ model BankAccount {
 }
 
 model Order {
-  id          String      @id @default(uuid())
-  userId      String
-  projectId   String?
-  type        String      // 'material' | 'contractor'
-  status      String      @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
-  totalAmount Float
+  id              String   @id @default(uuid())
+  userId          String
+  projectId       String?
+  type            String // 'material' | 'contractor'
+  status          String   @default("pending") // 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled'
+  totalAmount     Float
   deliveryAddress String?
   deliveryStreet  String?
   deliveryCity    String?
@@ -499,68 +524,68 @@ model Order {
   deliveryCountry String?
   deliveryLat     Float?
   deliveryLng     Float?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  user        User        @relation("UserOrders", fields: [userId], references: [id])
-  project     Project?    @relation("ProjectOrders", fields: [projectId], references: [id], onDelete: SetNull)
-  items       OrderItem[]
-  
+  user    User        @relation("UserOrders", fields: [userId], references: [id])
+  project Project?    @relation("ProjectOrders", fields: [projectId], references: [id], onDelete: SetNull)
+  items   OrderItem[]
+
   @@map("orders")
 }
 
 model OrderItem {
-  id        String   @id @default(uuid())
-  orderId   String
+  id         String   @id @default(uuid())
+  orderId    String
   materialId String?
-  quantity  Int
-  price     Float
-  createdAt DateTime @default(now())
+  quantity   Int
+  price      Float
+  createdAt  DateTime @default(now())
 
   // Relations
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  material  Material? @relation(fields: [materialId], references: [id])
-  
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  material Material? @relation(fields: [materialId], references: [id])
+
   @@map("order_items")
 }
 
 model Review {
-  id          String   @id @default(uuid())
-  userId      String
-  materialId  String?
+  id           String   @id @default(uuid())
+  userId       String
+  materialId   String?
   contractorId String?
-  projectId   String?
-  rating      Int      // 1-5
-  comment     String?
-  reasons     String[] @default([])
-  otherReason String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  projectId    String?
+  rating       Int // 1-5
+  comment      String?
+  reasons      String[] @default([])
+  otherReason  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  user        User     @relation("UserReviews", fields: [userId], references: [id])
-  material    Material? @relation("MaterialReviews", fields: [materialId], references: [id], onDelete: Cascade)
-  contractor  Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
-  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  
+  user       User        @relation("UserReviews", fields: [userId], references: [id])
+  material   Material?   @relation("MaterialReviews", fields: [materialId], references: [id], onDelete: Cascade)
+  contractor Contractor? @relation("ContractorReviews", fields: [contractorId], references: [id], onDelete: Cascade)
+  project    Project?    @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   @@unique([userId, contractorId, projectId])
   @@index([projectId])
   @@map("reviews")
 }
 
 model PaymentMethod {
-  id                   String   @id @default(uuid())
-  userId               String
-  brand                String
-  last4                String
+  id                    String   @id @default(uuid())
+  userId                String
+  brand                 String
+  last4                 String
   expMonth              Int
   expYear               Int
-  holderName           String?
-  isBackup             Boolean  @default(false)
+  holderName            String?
+  isBackup              Boolean  @default(false)
   stripePaymentMethodId String?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -568,37 +593,37 @@ model PaymentMethod {
 }
 
 model Design {
-  id                 String   @id @default(uuid())
-  name               String
-  description        String?
-  planType           ProjectType @default(homebuilding)
-  projectTypeTag     String?
-  projectTypeFilter  String?
-  createdById        String
-  bedrooms           Int
-  bathrooms          Int
-  squareFootage      Float
-  squareMeters       Float?
-  estimatedCost      Float
-  rating             Float    @default(0)
-  reviews            Int      @default(0)
-  isActive           Boolean  @default(true)
-  adminApprovalStatus String  @default("pending") // 'pending' | 'approved' | 'rejected'
-  adminReviewReason  String?
-  adminReviewedAt    DateTime?
-  adminReviewedById  String?
-  floors             Int?
-  estimatedDuration  String?
-  rooms              String[] @default([])
-  materials          String[] @default([])
-  features           String[] @default([])
-  constructionPhases Json?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  id                  String      @id @default(uuid())
+  name                String
+  description         String?
+  planType            ProjectType @default(homebuilding)
+  projectTypeTag      String?
+  projectTypeFilter   String?
+  createdById         String
+  bedrooms            Int
+  bathrooms           Int
+  squareFootage       Float
+  squareMeters        Float?
+  estimatedCost       Float
+  rating              Float       @default(0)
+  reviews             Int         @default(0)
+  isActive            Boolean     @default(true)
+  adminApprovalStatus String      @default("pending") // 'pending' | 'approved' | 'rejected'
+  adminReviewReason   String?
+  adminReviewedAt     DateTime?
+  adminReviewedById   String?
+  floors              Int?
+  estimatedDuration   String?
+  rooms               String[]    @default([])
+  materials           String[]    @default([])
+  features            String[]    @default([])
+  constructionPhases  Json?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  createdBy User          @relation("DesignCreatedBy", fields: [createdById], references: [id])
-  adminReviewedBy User?   @relation("DesignReviewedByAdmin", fields: [adminReviewedById], references: [id])
-  images    DesignImage[]
+  createdBy       User          @relation("DesignCreatedBy", fields: [createdById], references: [id])
+  adminReviewedBy User?         @relation("DesignReviewedByAdmin", fields: [adminReviewedById], references: [id])
+  images          DesignImage[]
 
   @@map("designs")
 }
@@ -617,31 +642,31 @@ model DesignImage {
 }
 
 model HouseForSale {
-  id               String   @id @default(uuid())
-  name             String
-  description      String?
+  id                  String   @id @default(uuid())
+  name                String
+  description         String?
   opportunityCategory String?
-  opportunityType  String?
-  location         String
-  price            Float
-  bedrooms         Int
-  bathrooms        Int
-  squareFootage    Float
-  squareMeters     Float?
-  propertyType     String?
-  yearBuilt        Int?
-  condition        String?
-  parking          Int?
-  documents        String[] @default([])
-  amenities        String[] @default([])
-  nearbyFacilities String[] @default([])
-  contactName      String?
-  contactPhone     String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  opportunityType     String?
+  location            String
+  price               Float
+  bedrooms            Int
+  bathrooms           Int
+  squareFootage       Float
+  squareMeters        Float?
+  propertyType        String?
+  yearBuilt           Int?
+  condition           String?
+  parking             Int?
+  documents           String[] @default([])
+  amenities           String[] @default([])
+  nearbyFacilities    String[] @default([])
+  contactName         String?
+  contactPhone        String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  images HouseForSaleImage[]
+  images           HouseForSaleImage[]
   viewingInterests HouseViewingInterest[]
 
   @@map("house_for_sale")
@@ -661,23 +686,23 @@ model HouseForSaleImage {
 }
 
 model HouseViewingInterest {
-  id             String   @id @default(uuid())
-  houseForSaleId String?
-  homeownerId    String
-  isRead         Boolean  @default(false)
-  readAt         DateTime?
-  outcomeStatus  String   @default("abandoned")
-  purchaseAmount Float?
+  id               String    @id @default(uuid())
+  houseForSaleId   String?
+  homeownerId      String
+  isRead           Boolean   @default(false)
+  readAt           DateTime?
+  outcomeStatus    String    @default("abandoned")
+  purchaseAmount   Float?
   purchaseMarkedAt DateTime?
-  createdAt      DateTime @default(now())
+  createdAt        DateTime  @default(now())
   // Snapshot when purchased (preserved when listing deleted)
-  snapshotName   String?
+  snapshotName     String?
   snapshotLocation String?
-  snapshotPrice  Float?
+  snapshotPrice    Float?
   snapshotImageUrl String?
 
   houseForSale HouseForSale? @relation(fields: [houseForSaleId], references: [id], onDelete: SetNull)
-  homeowner User @relation("HomeownerViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
+  homeowner    User          @relation("HomeownerViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([houseForSaleId, createdAt])
   @@index([isRead, createdAt])
@@ -685,27 +710,27 @@ model HouseViewingInterest {
 }
 
 model LandForSale {
-  id               String   @id @default(uuid())
-  name             String
-  description      String?
+  id                  String   @id @default(uuid())
+  name                String
+  description         String?
   opportunityCategory String?
-  opportunityType  String?
-  location         String
-  price            Float
-  sizeSqm          Float
-  titleDocument    String?
-  zoningType       String?
-  topography       String?
-  roadAccess       String?
-  ownershipType    String?
-  documents        String[] @default([])
-  nearbyLandmarks  String[] @default([])
-  restrictions     String[] @default([])
-  contactName      String?
-  contactPhone     String?
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  opportunityType     String?
+  location            String
+  price               Float
+  sizeSqm             Float
+  titleDocument       String?
+  zoningType          String?
+  topography          String?
+  roadAccess          String?
+  ownershipType       String?
+  documents           String[] @default([])
+  nearbyLandmarks     String[] @default([])
+  restrictions        String[] @default([])
+  contactName         String?
+  contactPhone        String?
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   images           LandForSaleImage[]
   viewingInterests LandViewingInterest[]
@@ -714,12 +739,12 @@ model LandForSale {
 }
 
 model LandForSaleImage {
-  id          String   @id @default(uuid())
+  id            String   @id @default(uuid())
   landForSaleId String
-  url         String
-  label       String?
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
+  url           String
+  label         String?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
 
   landForSale LandForSale @relation(fields: [landForSaleId], references: [id], onDelete: Cascade)
 
@@ -727,24 +752,24 @@ model LandForSaleImage {
 }
 
 model LandViewingInterest {
-  id             String   @id @default(uuid())
-  landForSaleId  String?
-  homeownerId    String
-  isRead         Boolean  @default(false)
-  readAt         DateTime?
-  outcomeStatus  String   @default("abandoned")
-  purchaseAmount Float?
+  id               String    @id @default(uuid())
+  landForSaleId    String?
+  homeownerId      String
+  isRead           Boolean   @default(false)
+  readAt           DateTime?
+  outcomeStatus    String    @default("abandoned")
+  purchaseAmount   Float?
   purchaseMarkedAt DateTime?
-  createdAt      DateTime @default(now())
+  createdAt        DateTime  @default(now())
   // Snapshot when purchased (preserved when listing deleted)
-  snapshotName   String?
+  snapshotName     String?
   snapshotLocation String?
-  snapshotPrice  Float?
-  snapshotSizeSqm Float?
+  snapshotPrice    Float?
+  snapshotSizeSqm  Float?
   snapshotImageUrl String?
 
   landForSale LandForSale? @relation(fields: [landForSaleId], references: [id], onDelete: SetNull)
-  homeowner   User @relation("HomeownerLandViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
+  homeowner   User         @relation("HomeownerLandViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([landForSaleId, createdAt])
   @@index([isRead, createdAt])
@@ -752,37 +777,37 @@ model LandViewingInterest {
 }
 
 model RentalListing {
-  id               String   @id @default(uuid())
-  title            String
-  description      String?
+  id                  String   @id @default(uuid())
+  title               String
+  description         String?
   opportunityCategory String?
-  opportunityType  String?
-  propertyType     String
-  location         String
-  annualRent       Float
-  serviceCharge    Float
-  cautionDeposit   Float
-  legalFeePercent  Float
-  agencyFeePercent Float    @default(2)
-  bedrooms         Int
-  bathrooms        Int
-  sizeSqm          Float
-  furnishing       String?
-  paymentPattern   String?
-  power            String?
-  water            String?
-  internet         String?
-  parking          String?
-  security         String?
-  rules            String?
-  inspectionWindow String?
-  proximity        String[] @default([])
-  verificationDocs String[] @default([])
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  opportunityType     String?
+  propertyType        String
+  location            String
+  annualRent          Float
+  serviceCharge       Float
+  cautionDeposit      Float
+  legalFeePercent     Float
+  agencyFeePercent    Float    @default(2)
+  bedrooms            Int
+  bathrooms           Int
+  sizeSqm             Float
+  furnishing          String?
+  paymentPattern      String?
+  power               String?
+  water               String?
+  internet            String?
+  parking             String?
+  security            String?
+  rules               String?
+  inspectionWindow    String?
+  proximity           String[] @default([])
+  verificationDocs    String[] @default([])
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
-  images RentalListingImage[]
+  images           RentalListingImage[]
   viewingInterests RentalViewingInterest[]
 
   @@map("rental_listings")
@@ -802,27 +827,27 @@ model RentalListingImage {
 }
 
 model RentalViewingInterest {
-  id              String   @id @default(uuid())
-  rentalListingId String?
-  homeownerId     String
-  isRead          Boolean  @default(false)
-  readAt          DateTime?
-  outcomeStatus   String   @default("abandoned")
-  purchaseAmount  Float?
-  purchaseMarkedAt DateTime?
-  createdAt       DateTime @default(now())
+  id                       String    @id @default(uuid())
+  rentalListingId          String?
+  homeownerId              String
+  isRead                   Boolean   @default(false)
+  readAt                   DateTime?
+  outcomeStatus            String    @default("abandoned")
+  purchaseAmount           Float?
+  purchaseMarkedAt         DateTime?
+  createdAt                DateTime  @default(now())
   // Snapshot when purchased (preserved when listing deleted)
-  snapshotTitle   String?
-  snapshotLocation String?
-  snapshotAnnualRent Float?
-  snapshotServiceCharge Float?
-  snapshotCautionDeposit Float?
-  snapshotLegalFeePercent Float?
+  snapshotTitle            String?
+  snapshotLocation         String?
+  snapshotAnnualRent       Float?
+  snapshotServiceCharge    Float?
+  snapshotCautionDeposit   Float?
+  snapshotLegalFeePercent  Float?
   snapshotAgencyFeePercent Float?
-  snapshotImageUrl String?
+  snapshotImageUrl         String?
 
   rentalListing RentalListing? @relation(fields: [rentalListingId], references: [id], onDelete: SetNull)
-  homeowner     User          @relation("HomeownerRentalViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
+  homeowner     User           @relation("HomeownerRentalViewingInterests", fields: [homeownerId], references: [id], onDelete: Cascade)
 
   @@index([rentalListingId, createdAt])
   @@index([isRead, createdAt])
@@ -830,25 +855,25 @@ model RentalViewingInterest {
 }
 
 model ProjectRequest {
-  id               String   @id @default(uuid())
-  projectId        String
-  contractorId     String
-  senderId         String?
-  stageId          String?
-  status           String   @default("pending") // 'pending' | 'accepted' | 'rejected'
-  estimatedBudget  Float?
-  monitoringFeeAmount Float?
+  id                    String    @id @default(uuid())
+  projectId             String
+  contractorId          String
+  senderId              String?
+  stageId               String?
+  status                String    @default("pending") // 'pending' | 'accepted' | 'rejected'
+  estimatedBudget       Float?
+  monitoringFeeAmount   Float?
   coordinationFeeAmount Float?
-  contingencyFeeAmount Float?
-  totalQuoteAmount Float?
-  estimatedDuration String?
-  estimatedStartDate DateTime?
-  gcNotes          String?
-  quoteGeneratedAt DateTime?
-  sentAt           DateTime @default(now())
-  respondedAt      DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  contingencyFeeAmount  Float?
+  totalQuoteAmount      Float?
+  estimatedDuration     String?
+  estimatedStartDate    DateTime?
+  gcNotes               String?
+  quoteGeneratedAt      DateTime?
+  sentAt                DateTime  @default(now())
+  respondedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   contractor User    @relation("ProjectRequestContractor", fields: [contractorId], references: [id])
@@ -859,21 +884,21 @@ model ProjectRequest {
 }
 
 model StageTeamMember {
-  id        String   @id @default(uuid())
-  stageId   String
-  name      String
-  role      String
-  phone     String?
-  email     String?
-  dailyRate Float?
-  rateType  String?
-  startDate DateTime?
-  endDate   DateTime?
-  photoUrl  String?
+  id         String    @id @default(uuid())
+  stageId    String
+  name       String
+  role       String
+  phone      String?
+  email      String?
+  dailyRate  Float?
+  rateType   String?
+  startDate  DateTime?
+  endDate    DateTime?
+  photoUrl   String?
   invoiceUrl String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
@@ -881,22 +906,22 @@ model StageTeamMember {
 }
 
 model StageMaterial {
-  id              String   @id @default(uuid())
-  stageId          String
-  name             String
-  brand            String?
-  quantity         Float
-  unit             String
-  unitPrice        Float
-  totalPrice       Float
-  supplier         String?
-  supplierContact  String?
-  receiptUrl       String?
-  photoUrl         String?
-  deliveryDate     DateTime?
-  notes            String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String    @id @default(uuid())
+  stageId         String
+  name            String
+  brand           String?
+  quantity        Float
+  unit            String
+  unitPrice       Float
+  totalPrice      Float
+  supplier        String?
+  supplierContact String?
+  receiptUrl      String?
+  photoUrl        String?
+  deliveryDate    DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
@@ -941,23 +966,23 @@ enum ProjectAccessRole {
 }
 
 model ProjectAccessLink {
-  id                  String            @id @default(uuid())
-  projectId           String
-  role                ProjectAccessRole
-  contactEmail        String
-  contactName         String?
-  contactPhone        String?
-  participantUserId   String
-  tokenHash           String            @unique
-  emailVerifiedAt     DateTime?
-  verificationCodeHash String?
+  id                    String            @id @default(uuid())
+  projectId             String
+  role                  ProjectAccessRole
+  contactEmail          String
+  contactName           String?
+  contactPhone          String?
+  participantUserId     String
+  tokenHash             String            @unique
+  emailVerifiedAt       DateTime?
+  verificationCodeHash  String?
   verificationExpiresAt DateTime?
-  termsAcceptedAt     DateTime?
-  claimedUserId       String?
-  revokedAt           DateTime?
-  lastAccessedAt      DateTime?
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
+  termsAcceptedAt       DateTime?
+  claimedUserId         String?
+  revokedAt             DateTime?
+  lastAccessedAt        DateTime?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   project         Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   participantUser User    @relation("ProjectAccessParticipant", fields: [participantUserId], references: [id], onDelete: Cascade)
@@ -969,17 +994,1332 @@ model ProjectAccessLink {
 }
 
 model ProjectTemplate {
-  id            String       @id @default(uuid())
+  id            String      @id @default(uuid())
   name          String
-  slug          String       @unique
-  projectType   ProjectType  @default(renovation)
+  slug          String      @unique
+  projectType   ProjectType @default(renovation)
   description   String?
   defaultBudget Float?
   stages        Json
-  isActive      Boolean      @default(true)
-  sortOrder     Int          @default(0)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  isActive      Boolean     @default(true)
+  sortOrder     Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@map("project_templates")
+}
+
+// ============================================================================
+// PRICE INTELLIGENCE (Stage 3) — docs/price-checker/LOGICAL_DATA_MODEL.md
+//
+// Separate namespace from the marketplace. `Material` = vendor-controlled
+// listing; `PriceObservation` = independently collected market evidence.
+// String state fields (not Prisma enums) follow the approved "taxonomy is
+// data" decision. Money uses Decimal; floats are prohibited for prices.
+// Tri-state inclusion fields use 'included'|'excluded'|'unknown'|
+// 'not_applicable' — a missing value never silently means excluded.
+// ============================================================================
+
+// ---------------------------------------------------------------------------
+// Permanent catalogue (admin-owned; never modified by temporary AI matrices)
+// ---------------------------------------------------------------------------
+
+model PriceCategory {
+  id        String    @id @default(uuid())
+  code      String    @unique // 'structural' | 'envelope' | 'finishes' | 'mep' | 'energy' | 'security'
+  name      String
+  sortOrder Int       @default(0)
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  families PriceProductFamily[]
+
+  @@map("price_categories")
+}
+
+model PriceProductFamily {
+  id         String @id @default(uuid())
+  key        String @unique // e.g. 'cement'
+  name       String
+  categoryId String
+  kind       String // 'product' | 'system' | 'accessory_set'
+  funnelRole String // 'free_traffic' | 'paid_research' | 'both'
+
+  /// Version bumps on any material matrix edit (drives review/staleness logic)
+  version Int @default(1)
+
+  normalizedUnitCode      String
+  normalizedUnitRationale String
+  sellerUnitCodes         Json // string[] of canonical unit codes
+  applicableConditions    Json // ProductCondition[]
+  /// Full Stage 2 matrix template: attributes, questions, matching rules,
+  /// inclusion checks, risk flags (schema-checked against the TS types).
+  definition              Json
+  definitionSchemaVersion Int    @default(1)
+
+  // Optional-escalation ownership (routing metadata, never a sign-off gate)
+  escalationPrimary   String
+  escalationSecondary String?
+  escalationReason    String
+
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  category          PriceCategory                  @relation(fields: [categoryId], references: [id])
+  normalizedUnit    PriceUnit                      @relation("FamilyNormalizedUnit", fields: [normalizedUnitCode], references: [code])
+  products          PriceProduct[]
+  aliases           PriceAlias[]
+  specDefs          PriceSpecificationDefinition[]
+  observations      PriceObservation[]
+  temporaryMatrices PriceTemporaryMatrix[]
+  terminologyChecks PriceTerminologyCheck[]
+  requestItems      PriceResearchRequestItem[]
+  queries           PriceQuery[]
+
+  @@index([categoryId])
+  @@index([funnelRole])
+  @@map("price_product_families")
+}
+
+/// Permanent named product within a family (Stage 2 "sub-products").
+model PriceProduct {
+  id            String    @id @default(uuid())
+  familyId      String
+  key           String // e.g. 'opc-425'
+  name          String
+  brandId       String?
+  specification Json? // fixed known spec values for this named product
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  family       PriceProductFamily @relation(fields: [familyId], references: [id])
+  brand        PriceBrand?        @relation(fields: [brandId], references: [id])
+  aliases      PriceAlias[]
+  observations PriceObservation[]
+
+  @@unique([familyId, key])
+  @@index([brandId])
+  @@map("price_products")
+}
+
+model PriceBrand {
+  id             String    @id @default(uuid())
+  name           String
+  normalizedName String    @unique
+  verified       Boolean   @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  products PriceProduct[]
+
+  @@map("price_brands")
+}
+
+/// Nigerian market names, aliases and misspellings (admin-editable data).
+model PriceAlias {
+  id              String    @id @default(uuid())
+  familyId        String
+  productId       String?
+  alias           String
+  normalizedAlias String
+  source          String    @default("stage2_taxonomy") // 'stage2_taxonomy' | 'spot_check' | 'admin' | 'demand_learning'
+  deletedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  family  PriceProductFamily @relation(fields: [familyId], references: [id])
+  product PriceProduct?      @relation(fields: [productId], references: [id])
+
+  @@unique([familyId, normalizedAlias])
+  @@index([normalizedAlias])
+  @@map("price_aliases")
+}
+
+/// Price-changing attribute definitions, normalised for query paths
+/// (full question trees stay inside PriceProductFamily.definition).
+model PriceSpecificationDefinition {
+  id            String    @id @default(uuid())
+  familyId      String
+  key           String // e.g. 'grade'
+  label         String
+  priceChanging Boolean
+  allowedValues Json? // string[] where enumerated
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  family PriceProductFamily @relation(fields: [familyId], references: [id])
+
+  @@unique([familyId, key])
+  @@map("price_specification_definitions")
+}
+
+model PriceUnit {
+  id        String    @id @default(uuid())
+  code      String    @unique // canonical machine code, e.g. 'bag_50kg'
+  label     String
+  dimension String // 'count' | 'mass' | 'area' | ...
+  aliases   Json // string[]
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  familiesNormalized     PriceProductFamily[]  @relation("FamilyNormalizedUnit")
+  conversionsFrom        PriceConversionRule[] @relation("ConversionFromUnit")
+  conversionsTo          PriceConversionRule[] @relation("ConversionToUnit")
+  observationsOriginal   PriceObservation[]    @relation("ObservationOriginalUnit")
+  observationsNormalized PriceObservation[]    @relation("ObservationNormalizedUnit")
+
+  @@map("price_units")
+}
+
+/// Whitelist of permitted conversions. AI can never insert rows here;
+/// factorSource 'assumed' does not exist by design.
+model PriceConversionRule {
+  id            String    @id @default(uuid())
+  fromUnitCode  String
+  toUnitCode    String
+  factorSource  String // 'fixed' | 'manufacturer_spec' | 'product_spec' | 'seller_stated'
+  fixedFactor   Decimal?  @db.Decimal(18, 6) // only when factorSource = 'fixed'
+  requiredInput String
+  note          String?
+  version       Int       @default(1)
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  fromUnit     PriceUnit          @relation("ConversionFromUnit", fields: [fromUnitCode], references: [code])
+  toUnit       PriceUnit          @relation("ConversionToUnit", fields: [toUnitCode], references: [code])
+  observations PriceObservation[]
+
+  @@unique([fromUnitCode, toUnitCode, factorSource])
+  @@map("price_conversion_rules")
+}
+
+model PriceServiceFamily {
+  id                  String    @id @default(uuid())
+  key                 String    @unique
+  name                String
+  pricingBasis        String // 'labour_only' | 'labour_and_material' | 'either'
+  definition          Json // marketNames, pricingUnits, scopeFactors, minimum job charge flag
+  escalationPrimary   String
+  escalationSecondary String?
+  escalationReason    String
+  deletedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@map("price_service_families")
+}
+
+model PriceLocation {
+  id             String    @id @default(uuid())
+  code           String    @unique // e.g. 'ng-lagos-ikeja'
+  name           String
+  type           String // 'country' | 'state' | 'city' | 'local_area' | 'market'
+  parentId       String?
+  launchPriority Boolean   @default(false)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  parent   PriceLocation?  @relation("LocationParent", fields: [parentId], references: [id])
+  children PriceLocation[] @relation("LocationParent")
+
+  sellers                  PriceSeller[]
+  observationsSeller       PriceObservation[]     @relation("ObservationSellerLocation")
+  observationsDelivery     PriceObservation[]     @relation("ObservationDeliveryLocation")
+  observationsSourceMarket PriceObservation[]     @relation("ObservationSourceMarketLocation")
+  researchRequests         PriceResearchRequest[]
+  queries                  PriceQuery[]
+
+  @@index([parentId])
+  @@index([type])
+  @@map("price_locations")
+}
+
+model PriceSource {
+  id           String    @id @default(uuid())
+  code         String    @unique // machine slug, e.g. 'jiji-ng'
+  name         String
+  tier         Int // evidence tier (1 = strongest)
+  accessStatus String // SourceAccessStatus values (ethics register)
+  accessNote   String?
+  baseUrl      String?
+  deletedAt    DateTime?
+  // Stage 8 — source health monitor
+  healthStatus         String    @default("unknown") // 'healthy' | 'degraded' | 'failing' | 'disabled' | 'unknown'
+  lastSuccessAt        DateTime?
+  lastFailureAt        DateTime?
+  consecutiveFailures  Int       @default(0)
+  successRate          Float?
+  parseSuccessRate     Float?
+  avgLatencyMs         Int?
+  disabledAt           DateTime?
+  disabledByAdminId    String?
+  disabledReason       String?
+  healthNote           String?
+  lastCheckedAt        DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sellers      PriceSeller[]
+  observations PriceObservation[]
+  healthSnapshots SourceHealthSnapshot[]
+  reviewCases  PriceReviewCase[]
+  disabledByAdmin User? @relation("PriceSourceDisabledBy", fields: [disabledByAdminId], references: [id])
+
+  @@index([tier])
+  @@index([healthStatus])
+  @@map("price_sources")
+}
+
+/// Seller identity. Contact fields are SENSITIVE (admin-only exposure).
+model PriceSeller {
+  id             String    @id @default(uuid())
+  name           String
+  normalizedName String
+  sourceId       String?
+  locationId     String?
+  /// Optional link to a marketplace vendor account — never required.
+  vendorUserId   String?
+  verified       Boolean   @default(false)
+  contactPhone   String? // sensitive
+  contactEmail   String? // sensitive
+  contactNote    String? // sensitive
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  source       PriceSource?       @relation(fields: [sourceId], references: [id])
+  location     PriceLocation?     @relation(fields: [locationId], references: [id])
+  observations PriceObservation[]
+
+  @@unique([normalizedName, sourceId])
+  @@index([sourceId])
+  @@index([locationId])
+  @@map("price_sellers")
+}
+
+// ---------------------------------------------------------------------------
+// Evidence (append-only observations; private documents)
+// ---------------------------------------------------------------------------
+
+/// Independently collected market evidence. APPEND-ONLY: corrections create
+/// superseding rows; valid history is never deleted or overwritten.
+model PriceObservation {
+  id        String  @id @default(uuid())
+  familyId  String
+  productId String?
+
+  sourceId String
+  sellerId String?
+
+  // Location separation (req. 9)
+  sellerLocationId       String?
+  deliveryLocationId     String?
+  sourceMarketLocationId String?
+
+  originalWording  String // seller's own product wording, verbatim
+  originalPrice    Decimal @db.Decimal(14, 2)
+  currencyCode     String  @default("NGN") @db.Char(3)
+  originalQuantity Decimal @default(1) @db.Decimal(14, 4)
+  originalUnitCode String
+
+  // Normalisation provenance (req. 6): rule + inputs + factor source + confidence
+  normalizedPrice        Decimal? @db.Decimal(14, 4)
+  normalizedUnitCode     String?
+  conversionRuleId       String?
+  conversionInputs       Json? // e.g. { sqmPerCarton: 1.44, statedBy: 'listing' }
+  conversionFactorSource String? // mirrors rule.factorSource at time of use
+  conversionConfidence   Float?
+
+  condition         String @default("new") // 'new' | 'used' | 'refurbished' | 'rental' | 'unknown'
+  availabilityState String @default("unknown") // 'in_stock' | 'out_of_stock' | 'on_request' | 'unknown'
+
+  // Tri-state inclusion fields (req. 5): 'included'|'excluded'|'unknown'|'not_applicable'
+  deliveryIncluded     String @default("unknown")
+  installationIncluded String @default("unknown")
+  vatIncluded          String @default("unknown")
+  accessoriesIncluded  String @default("unknown")
+  warrantyIncluded     String @default("unknown")
+
+  listingDate DateTime?
+  checkedDate DateTime
+  expiryDate  DateTime?
+
+  collectionMethod String // 'manual_research' | 'api' | 'merchant_feed' | 'structured_page' | 'user_upload' | 'admin_entry'
+  evidenceClass    String // EvidenceClass values (tiered)
+  confidence       Float
+  riskFlags        Json? // RiskFlag[]
+
+  evidenceDocumentId String?
+  /// Optional marketplace provenance (req. 8): set only when this observation
+  /// originated from a BuildMyHouse marketplace listing. One-way link.
+  materialId         String?
+
+  // Append-only lifecycle (req. 4)
+  status                    String  @default("active") // 'active' | 'stale' | 'superseded' | 'rejected' | 'duplicate'
+  duplicateFingerprint      String
+  supersededByObservationId String?
+  rejectionReason           String?
+  reviewStatus              String  @default("none") // 'none' | 'flagged' | 'verified'
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  family               PriceProductFamily          @relation(fields: [familyId], references: [id])
+  product              PriceProduct?               @relation(fields: [productId], references: [id])
+  source               PriceSource                 @relation(fields: [sourceId], references: [id])
+  seller               PriceSeller?                @relation(fields: [sellerId], references: [id])
+  sellerLocation       PriceLocation?              @relation("ObservationSellerLocation", fields: [sellerLocationId], references: [id])
+  deliveryLocation     PriceLocation?              @relation("ObservationDeliveryLocation", fields: [deliveryLocationId], references: [id])
+  sourceMarketLocation PriceLocation?              @relation("ObservationSourceMarketLocation", fields: [sourceMarketLocationId], references: [id])
+  originalUnit         PriceUnit                   @relation("ObservationOriginalUnit", fields: [originalUnitCode], references: [code])
+  normalizedUnit       PriceUnit?                  @relation("ObservationNormalizedUnit", fields: [normalizedUnitCode], references: [code])
+  conversionRule       PriceConversionRule?        @relation(fields: [conversionRuleId], references: [id])
+  evidenceDocument     PriceEvidenceDocument?      @relation(fields: [evidenceDocumentId], references: [id])
+  supersededBy         PriceObservation?           @relation("ObservationSupersession", fields: [supersededByObservationId], references: [id])
+  supersedes           PriceObservation[]          @relation("ObservationSupersession")
+  attributes           PriceObservationAttribute[]
+  correctionsAsOriginal  PriceObservationCorrection[] @relation("CorrectionOriginal")
+  correctionsAsCorrected PriceObservationCorrection[] @relation("CorrectionCorrected")
+  reviewCases            PriceReviewCase[]
+
+  @@index([familyId, status, checkedDate])
+  @@index([duplicateFingerprint])
+  @@index([sellerId])
+  @@index([sourceId])
+  @@index([checkedDate])
+  @@index([status])
+  @@map("price_observations")
+}
+
+model PriceObservationAttribute {
+  id            String   @id @default(uuid())
+  observationId String
+  key           String
+  value         String
+  createdAt     DateTime @default(now())
+
+  observation PriceObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+
+  @@unique([observationId, key])
+  @@index([key, value])
+  @@map("price_observation_attributes")
+}
+
+/// Uploaded receipts/invoices/quotations. PRIVATE by default (req. 11):
+/// original file, redacted file and extracted data are SEPARATE fields;
+/// public APIs may only ever read the redacted fields.
+model PriceEvidenceDocument {
+  id                String    @id @default(uuid())
+  uploadedByUserId  String?
+  researchRequestId String?
+  kind              String // 'receipt' | 'invoice' | 'quotation' | 'photo' | 'price_list'
+  state             String    @default("uploaded") // EvidenceDocumentState values
+  privateFileRef    String // original document — NEVER publicly exposed
+  redactedFileRef   String? // safe derivative
+  extractedData     Json? // raw structured extraction (may contain sensitive fields)
+  redactedExtract   Json? // extraction after SENSITIVE_EVIDENCE_FIELDS redaction
+  sensitive         Boolean   @default(true)
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  uploadedBy      User?                 @relation("PriceEvidenceUploader", fields: [uploadedByUserId], references: [id])
+  researchRequest PriceResearchRequest? @relation(fields: [researchRequestId], references: [id])
+  observations    PriceObservation[]
+  manualEntries   ManualPriceEntry[]
+  merchantSubmissions MerchantPriceSubmission[]
+
+  @@index([uploadedByUserId])
+  @@index([researchRequestId])
+  @@map("price_evidence_documents")
+}
+
+// ---------------------------------------------------------------------------
+// Research, reports, billing (req. 3 — separate entities, never one PriceQuery)
+// ---------------------------------------------------------------------------
+
+/// Ordinary search / analytics event ONLY. Never used for research execution,
+/// reports or billing.
+model PriceQuery {
+  id              String   @id @default(uuid())
+  userId          String?
+  rawQuery        String
+  normalizedQuery String
+  matchedFamilyId String?
+  matchType       String? // 'exact_alias' | 'partial' | 'none'
+  locationId      String?
+  channel         String   @default("search") // 'search' | 'free_daily_check' | 'landing_page'
+  createdAt       DateTime @default(now())
+
+  user          User?               @relation("PriceQueries", fields: [userId], references: [id])
+  matchedFamily PriceProductFamily? @relation(fields: [matchedFamilyId], references: [id])
+  location      PriceLocation?      @relation(fields: [locationId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([normalizedQuery])
+  @@map("price_queries")
+}
+
+model PriceResearchRequest {
+  id                  String   @id @default(uuid())
+  userId              String? // null for anonymous free-tier checks (Stage 6)
+  anonymousSessionId  String? // anonymous session identifier (Stage 6)
+  type                String // 'free_daily' | 'paid_report' | 'quotation_verification' | 'cache_refresh'
+  status              String   @default("draft") // 'draft' | 'awaiting_payment' | 'clarification' | 'researching' | 'completed' | 'failed' | 'cancelled'
+  requestedLocationId String?
+  paymentReference    String? // Paystack ref (paid requests)
+  /// Stage 7 — optional link to the one-time paid checkout that entitled this request
+  paymentOrderId      String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user              User?                      @relation("PriceResearchRequests", fields: [userId], references: [id])
+  requestedLocation PriceLocation?             @relation(fields: [requestedLocationId], references: [id])
+  paymentOrder      PriceCheckPaymentOrder?    @relation(fields: [paymentOrderId], references: [id])
+  items             PriceResearchRequestItem[]
+  runs              PriceResearchRun[]
+  report            PriceReport?
+  creditEvents      PriceCreditLedger[]
+  evidenceDocuments PriceEvidenceDocument[]
+  temporaryMatrices PriceTemporaryMatrix[]
+
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([anonymousSessionId, createdAt])
+  @@index([paymentOrderId])
+  @@map("price_research_requests")
+}
+
+model PriceResearchRequestItem {
+  id                     String   @id @default(uuid())
+  requestId              String
+  familyId               String? // null for Level 3 custom items
+  customProductRequestId String?
+  rawProductName         String
+  specification          Json? // answered attribute values
+  status                 String   @default("pending") // 'pending' | 'clarification' | 'researching' | 'successful' | 'insufficient_data' | 'failed' | 'cancelled'
+  /// Deterministic billing flag: only 'successful' items count (Stage 1 rules 7/8)
+  countsTowardAllowance  Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  request              PriceResearchRequest         @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  family               PriceProductFamily?          @relation(fields: [familyId], references: [id])
+  customProductRequest PriceCustomProductRequest?   @relation(fields: [customProductRequestId], references: [id])
+  runs                 PriceResearchRun[]
+  reportItem           PriceReportItem?
+  temporaryMatrices    PriceTemporaryMatrix[]
+  clarifications       PriceResearchClarification[]
+
+  @@index([requestId])
+  @@index([status])
+  @@map("price_research_request_items")
+}
+
+/// One attempt to collect and analyse data (retries create new runs).
+model PriceResearchRun {
+  id            String    @id @default(uuid())
+  requestId     String
+  requestItemId String?
+  attemptNumber Int       @default(1)
+  status        String    @default("running") // 'running' | 'completed' | 'failed' | 'aborted'
+  progressJson  Json? // Stage 6: last reported stage + evidence counters (refresh resilience)
+  engineVersion String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+  errorSummary  String?
+  costTokens    Int?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  request     PriceResearchRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestItem PriceResearchRequestItem? @relation(fields: [requestItemId], references: [id])
+
+  @@index([requestId])
+  @@index([requestItemId])
+  @@map("price_research_runs")
+}
+
+model PriceResearchClarification {
+  id            String   @id @default(uuid())
+  requestItemId String
+  questionJson  Json // MatrixClarificationQuestion shape
+  answerJson    Json?
+  status        String   @default("asked") // 'asked' | 'answered' | 'unknown' | 'skipped'
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  requestItem PriceResearchRequestItem @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
+
+  @@index([requestItemId])
+  @@map("price_research_clarifications")
+}
+
+/// Completed report delivered to the user. Original payload preserved via revisions.
+model PriceReport {
+  id                 String    @id @default(uuid())
+  requestId          String    @unique
+  userId             String? // null until an anonymous report is saved to an account (Stage 6)
+  anonymousSessionId String? // anonymous owner session (Stage 6)
+  accessToken        String?   @unique // secure random token for anonymous report access (Stage 6)
+  status             String // 'delivered' | 'partial' | 'failed'
+  payload            Json // current consumer-facing snapshot (original kept in revision 1)
+  /// Stage 8 — shown to customer when a material correction lands after delivery
+  customerUpdateNotice String?
+  currentVersion       Int      @default(1)
+  generatedAt        DateTime  @default(now())
+  expiresAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  request   PriceResearchRequest @relation(fields: [requestId], references: [id])
+  user      User?                @relation("PriceReports", fields: [userId], references: [id])
+  items     PriceReportItem[]
+  revisions PriceReportRevision[]
+  reviewCases PriceReviewCase[]
+
+  @@index([userId, createdAt])
+  @@index([anonymousSessionId, createdAt])
+  @@map("price_reports")
+}
+
+/// Append-only report revision history. Version 1 = original delivery snapshot.
+model PriceReportRevision {
+  id               String   @id @default(uuid())
+  reportId         String
+  version          Int
+  payload          Json
+  itemsSnapshot    Json
+  customerNotice   String?
+  materialChange   Boolean  @default(false)
+  createdByAdminId String?
+  reviewCaseId     String?
+  reason           String
+  createdAt        DateTime @default(now())
+
+  report         PriceReport      @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  createdByAdmin User?            @relation("PriceReportRevisionCreator", fields: [createdByAdminId], references: [id])
+  reviewCase     PriceReviewCase? @relation(fields: [reviewCaseId], references: [id])
+
+  @@unique([reportId, version])
+  @@index([reportId, createdAt])
+  @@map("price_report_revisions")
+}
+
+model PriceReportItem {
+  id            String @id @default(uuid())
+  reportId      String
+  requestItemId String @unique
+  outcome       String // 'priced' | 'insufficient_data' | 'failed'
+
+  // Money: Decimal only (req. 6)
+  rangeLow     Decimal? @db.Decimal(14, 2)
+  rangeHigh    Decimal? @db.Decimal(14, 2)
+  medianPrice  Decimal? @db.Decimal(14, 2)
+  typicalPrice Decimal? @db.Decimal(14, 2)
+  currencyCode String   @default("NGN") @db.Char(3)
+  unitCode     String?
+
+  sourceCount Int   @default(0)
+  confidence  Float @default(0)
+
+  // Location fallback provenance (req. 9)
+  locationMatchLevel String? // 'exact_local' | 'same_city' | 'same_state' | 'nearby_state' | 'national'
+  fallbackLevel      Int     @default(0) // 0 = exact, higher = wider fallback
+
+  payload   Json // per-item detail: observations used, exclusions, assumptions
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  report      PriceReport              @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  requestItem PriceResearchRequestItem @relation(fields: [requestItemId], references: [id])
+  reviewCases PriceReviewCase[]
+
+  @@index([reportId])
+  @@index([outcome])
+  @@map("price_report_items")
+}
+
+/// APPEND-ONLY credit accounting (req. 3). Balance = SUM(delta) per user.
+/// Never maintained as a mutable counter. Rows are never updated or deleted.
+model PriceCreditLedger {
+  id               String   @id @default(uuid())
+  userId           String
+  eventType        String // 'credit_purchased' | 'credit_reserved' | 'credit_consumed' | 'credit_released' | 'credit_refunded' | 'admin_adjustment'
+  /// Signed credit delta: purchases/releases/refunds positive; reservations/consumption negative.
+  delta            Int
+  requestId        String?
+  reportId         String?
+  paymentReference String?
+  reason           String
+  createdByAdminId String?
+  createdAt        DateTime @default(now())
+
+  user    User                  @relation("PriceCreditEvents", fields: [userId], references: [id])
+  request PriceResearchRequest? @relation(fields: [requestId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([requestId])
+  @@map("price_credit_ledger")
+}
+
+// ---------------------------------------------------------------------------
+// Temporary AI matrices (request-scoped; never permanent catalogue records)
+// ---------------------------------------------------------------------------
+
+/// AI-generated temporary specification matrix with FULL provenance (req. 2).
+/// Belongs to one request item. Cannot modify or publish permanent catalogue
+/// records — promotion happens only via PriceTaxonomyChangeRequest.
+model PriceTemporaryMatrix {
+  id            String @id @default(uuid())
+  requestId     String
+  requestItemId String
+
+  matchedFamilyId String?
+  rawInput        String // raw user input verbatim
+  matrixJson      Json // the generated matrix (schema-validated)
+
+  // Reproducibility / audit — never store the final JSON alone
+  modelName       String
+  modelResponseId String?
+  promptVersion   String
+  schemaVersion   Int
+  inputHash       String // hash of prompt inputs for reproducibility
+
+  validationStatus      String // 'valid' | 'invalid' | 'invalid_after_retry'
+  validationErrors      Json? // string[]
+  confidence            Float
+  uncertaintyReasons    Json? // string[]
+  readinessState        String // MatrixConfidenceState values
+  escalationRecommended Boolean @default(false)
+
+  generatedAt          DateTime  @default(now())
+  expiresAt            DateTime?
+  supersededByMatrixId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request       PriceResearchRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  requestItem   PriceResearchRequestItem @relation(fields: [requestItemId], references: [id], onDelete: Cascade)
+  matchedFamily PriceProductFamily?      @relation(fields: [matchedFamilyId], references: [id])
+  supersededBy  PriceTemporaryMatrix?    @relation("MatrixSupersession", fields: [supersededByMatrixId], references: [id])
+  supersedes    PriceTemporaryMatrix[]   @relation("MatrixSupersession")
+
+  @@index([requestItemId])
+  @@index([inputHash])
+  @@map("price_temporary_matrices")
+}
+
+// ---------------------------------------------------------------------------
+// Custom products, taxonomy change control, spot checks, optional reviews
+// ---------------------------------------------------------------------------
+
+/// Level 3 custom request: PRIVATE, request-specific candidate by default
+/// (req. 7). AI suggestions are proposals only; publication requires an
+/// approved PriceTaxonomyChangeRequest.
+model PriceCustomProductRequest {
+  id              String  @id @default(uuid())
+  userId          String?
+  rawQuery        String
+  normalizedQuery String
+  matchedFamilyId String?
+  isPrivate       Boolean @default(true)
+  status          String  @default("private_candidate") // 'private_candidate' | 'matched' | 'unsupported' | 'insufficiently_specified' | 'promotion_proposed' | 'promoted' | 'rejected'
+  approvalStatus  String  @default("none") // 'none' | 'proposed' | 'approved' | 'rejected'
+  aiSuggestion    Json? // { kind: 'existing_family_match'|'new_alias'|'new_product'|'new_family', payload }
+
+  // Demand learning
+  requestCount    Int      @default(1)
+  paidIntentCount Int      @default(0)
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user                   User?                        @relation("PriceCustomRequests", fields: [userId], references: [id])
+  requestItems           PriceResearchRequestItem[]
+  taxonomyChangeRequests PriceTaxonomyChangeRequest[]
+
+  @@index([approvalStatus])
+  @@index([normalizedQuery])
+  @@map("price_custom_product_requests")
+}
+
+/// The ONLY path by which anything becomes a permanent catalogue record.
+/// Admin-approved with audit history; decisions are append-only.
+model PriceTaxonomyChangeRequest {
+  id                     String    @id @default(uuid())
+  type                   String // 'new_family' | 'new_product' | 'new_alias' | 'family_edit' | 'promotion_from_custom'
+  payload                Json // proposed change (may be AI-drafted)
+  proposedBy             String // 'ai_suggestion' | 'demand_learning' | 'admin' | 'spot_check'
+  customProductRequestId String?
+  status                 String    @default("proposed") // 'proposed' | 'approved' | 'rejected'
+  approvedByAdminId      String?
+  decidedAt              DateTime?
+  decisionNote           String?
+  auditLog               Json? // append-only entries [{at, actor, action}]
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  approvedByAdmin      User?                      @relation("PriceTaxonomyApprovals", fields: [approvedByAdminId], references: [id])
+  customProductRequest PriceCustomProductRequest? @relation(fields: [customProductRequestId], references: [id])
+
+  @@index([status])
+  @@map("price_taxonomy_change_requests")
+}
+
+/// APPEND-ONLY GPT terminology spot-check records (never professional
+/// certification). Mirrors scripts/data/terminology-check-results.json.
+model PriceTerminologyCheck {
+  id                     String   @id @default(uuid())
+  familyId               String
+  modelName              String
+  modelResponseId        String?
+  sourceReference        String
+  dateChecked            DateTime
+  findings               Json
+  validationResult       String // 'valid' | 'invalid_after_retry' | 'call_failed' | 'dry_run'
+  confidence             Float?
+  adminCorrectionApplied Boolean  @default(false)
+  createdAt              DateTime @default(now())
+
+  family PriceProductFamily @relation(fields: [familyId], references: [id])
+
+  @@index([familyId])
+  @@map("price_terminology_checks")
+}
+
+/// OPTIONAL escalation review records only (founder decision 2026-07-28:
+/// no mandatory professional reviews). Append-only; versioned against the
+/// family version so stale approvals demote honestly.
+model PriceProfessionalReview {
+  id                    String   @id @default(uuid())
+  familyKey             String // family or service key
+  familyVersion         Int
+  reviewerName          String
+  reviewerProfession    String
+  relevantQualification String
+  reviewScope           String
+  outcome               String // 'approved' | 'approved_with_changes' | 'changes_requested'
+  notes                 String
+  evidenceAttachmentRef String?
+  adminApproverId       String?
+  reviewDate            DateTime
+  createdAt             DateTime @default(now())
+
+  adminApprover User? @relation("PriceReviewApprovals", fields: [adminApproverId], references: [id])
+
+  @@index([familyKey, familyVersion])
+  @@map("price_professional_reviews")
+}
+
+/// Idempotent-seed bookkeeping: records which seed versions have been applied.
+model PriceSeedMeta {
+  id        String   @id @default(uuid())
+  key       String   @unique // e.g. 'taxonomy_seed_version'
+  value     String
+  appliedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("price_seed_meta")
+}
+
+// ---------------------------------------------------------------------------
+// Stage 7 — guest Paystack payments (one-time fulfilment, NOT a credit wallet)
+// All money fields are integer kobo. PriceCreditLedger is unused by this flow.
+// ---------------------------------------------------------------------------
+
+/// Immutable server-side quote for a checkout attempt. Client never sets amounts.
+model PriceCheckPaymentQuote {
+  id                   String   @id @default(uuid())
+  sessionId            String // client Price Checker session id (same as anonymous session for guests)
+  anonymousSessionId   String?
+  userId               String?
+  email                String?
+  requestedItemCount   Int
+  freeItemCountApplied Int
+  chargeableItemCount  Int
+  unitPriceKobo        Int
+  subtotalKobo         Int
+  discountKobo         Int      @default(0)
+  totalKobo            Int
+  currency             String   @default("NGN") @db.Char(3)
+  pricingVersion       String
+  /// Immutable snapshot of requested items + per-line free/chargeable amounts (kobo).
+  itemsJson            Json
+  status               String   @default("ready") // 'ready' | 'payment_initialized' | 'paid' | 'expired' | 'cancelled'
+  expiresAt            DateTime
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  orders PriceCheckPaymentOrder[]
+
+  @@index([sessionId, createdAt])
+  @@index([anonymousSessionId, createdAt])
+  @@index([status, expiresAt])
+  @@map("price_check_payment_quotes")
+}
+
+/// One Paystack checkout. Entitlement is the paid order itself — never a reusable wallet.
+model PriceCheckPaymentOrder {
+  id                     String    @id @default(uuid())
+  quoteId                String
+  sessionId              String
+  anonymousSessionId     String?
+  userId                 String?
+  customerEmail          String
+  provider               String    @default("paystack")
+  providerReference      String    @unique
+  providerAccessCode     String?
+  providerTransactionId  String?
+  amountExpectedKobo     Int
+  amountPaidKobo         Int?
+  currency               String    @default("NGN") @db.Char(3)
+  status                 String    @default("initialized") // 'initialized' | 'pending' | 'success' | 'partially_refunded' | 'refunded' | 'failed' | 'abandoned'
+  fulfilmentStatus       String    @default("not_started") // 'not_started' | 'ready' | 'processing' | 'partially_complete' | 'complete' | 'technical_failure' | 'refunded'
+  initializedAt          DateTime  @default(now())
+  paidAt                 DateTime?
+  failedAt               DateTime?
+  refundedAmountKobo     Int       @default(0)
+  entitlementExpiresAt   DateTime?
+  recoveryTokenHash      String?   @unique
+  recoveryTokenExpiresAt DateTime?
+  metadataSafe           Json?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  quote            PriceCheckPaymentQuote      @relation(fields: [quoteId], references: [id])
+  lineItems        PriceCheckPaymentLineItem[]
+  events           PriceCheckPaymentEvent[]
+  refunds          PriceCheckRefund[]
+  unitEconomics    PriceCheckUnitEconomics[]
+  researchRequests PriceResearchRequest[]
+
+  @@index([quoteId])
+  @@index([sessionId, createdAt])
+  @@index([anonymousSessionId, createdAt])
+  @@index([status, fulfilmentStatus])
+  @@index([customerEmail])
+  @@map("price_check_payment_orders")
+}
+
+model PriceCheckPaymentLineItem {
+  id                      String    @id @default(uuid())
+  paymentOrderId          String
+  clientItemKey           String // stable key within the quote/order
+  familyKey               String
+  kind                    String // 'product' | 'service'
+  productLabel            String
+  locationKey             String
+  rawProductName          String
+  answersJson             Json
+  free                    Boolean   @default(false)
+  amountKobo              Int
+  researchRequestId       String?
+  reportId                String?
+  fulfilmentStatus        String    @default("pending") // 'pending' | 'ready' | 'processing' | 'fulfilled' | 'technical_failure' | 'refunded'
+  technicalFailureReason  String?
+  fulfilledAt             DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  paymentOrder  PriceCheckPaymentOrder   @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
+  unitEconomics PriceCheckUnitEconomics?
+
+  @@unique([paymentOrderId, clientItemKey])
+  @@index([paymentOrderId, fulfilmentStatus])
+  @@index([reportId])
+  @@map("price_check_payment_line_items")
+}
+
+/// Append-only provider webhook/callback events (idempotent via eventFingerprint).
+model PriceCheckPaymentEvent {
+  id                String    @id @default(uuid())
+  paymentOrderId    String?
+  providerEventType String
+  eventFingerprint  String    @unique
+  signatureValid    Boolean
+  processed         Boolean   @default(false)
+  safePayload       Json
+  receivedAt        DateTime  @default(now())
+  processedAt       DateTime?
+
+  paymentOrder PriceCheckPaymentOrder? @relation(fields: [paymentOrderId], references: [id])
+
+  @@index([paymentOrderId, receivedAt])
+  @@map("price_check_payment_events")
+}
+
+model PriceCheckRefund {
+  id               String    @id @default(uuid())
+  paymentOrderId   String
+  lineItemId       String?
+  providerRefundId String?
+  amountKobo       Int
+  reasonCode       String // 'technical_failure' | 'partial_technical_failure' | 'support_adjustment' | ...
+  status           String    @default("pending") // 'pending' | 'processing' | 'completed' | 'failed'
+  initiatedAt      DateTime  @default(now())
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  paymentOrder PriceCheckPaymentOrder @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
+
+  @@index([paymentOrderId])
+  @@index([status])
+  @@map("price_check_refunds")
+}
+
+/// Per paid line-item unit economics (integer kobo + optional USD research cost).
+model PriceCheckUnitEconomics {
+  id                    String   @id @default(uuid())
+  paymentOrderId        String
+  lineItemId            String   @unique
+  reportId              String?
+  grossRevenueKobo      Int
+  paymentFeeKobo        Int?
+  researchCostUsdMicros Int? // estimated research cost in USD micros (1e-6 USD)
+  searchCostKobo        Int      @default(0)
+  aiCostKobo            Int      @default(0)
+  extractionCostKobo    Int      @default(0)
+  pdfCostKobo           Int      @default(0)
+  storageCostKobo       Int      @default(0)
+  refundCostKobo        Int      @default(0)
+  totalVariableCostKobo Int
+  netRevenueKobo        Int
+  grossMarginKobo       Int
+  grossMarginBps        Int
+  costDataComplete      Boolean  @default(false)
+  calculatedAt          DateTime @default(now())
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  paymentOrder PriceCheckPaymentOrder     @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
+  lineItem     PriceCheckPaymentLineItem  @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+
+  @@index([paymentOrderId])
+  @@index([calculatedAt])
+  @@map("price_check_unit_economics")
+}
+
+// ---------------------------------------------------------------------------
+// Stage 8 — Price Intelligence operations (admin review cockpit)
+// Humans only for exceptions; normal reports stay auto-delivered.
+// Corrections NEVER overwrite original PriceObservation evidence.
+// ---------------------------------------------------------------------------
+
+model PriceReviewCase {
+  id                      String    @id @default(uuid())
+  caseType                String // 'low_confidence' | 'insufficient_data' | 'outlier' | 'source_failure' | 'manual_entry' | 'merchant_submission' | 'customer_dispute' | 'catalogue'
+  priority                String // 'critical' | 'high' | 'medium' | 'low'
+  priorityScore           Int
+  priorityReason          String
+  status                  String    @default("open") // review-state-machine statuses
+  triggerCode             String
+  triggerDetails          Json?
+  productFamilyKey        String?
+  productLabel            String?
+  locationKey             String?
+  confidenceLabel         String?
+  confidenceScore         Float?
+  reportId                String?
+  reportItemId            String?
+  observationId           String?
+  sourceId                String?
+  merchantSubmissionId    String?
+  manualEntryItemId       String?
+  customerImpactCount     Int       @default(1)
+  paidCustomerImpactCount Int       @default(0)
+  assignedReviewerId      String?
+  dueAt                   DateTime?
+  openedAt                DateTime  @default(now())
+  resolvedAt              DateTime?
+  closedAt                DateTime?
+  createdByType           String    @default("system") // 'system' | 'admin' | 'customer'
+  createdById             String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  report             PriceReport?              @relation(fields: [reportId], references: [id])
+  reportItem         PriceReportItem?          @relation(fields: [reportItemId], references: [id])
+  observation        PriceObservation?         @relation(fields: [observationId], references: [id])
+  source             PriceSource?              @relation(fields: [sourceId], references: [id])
+  merchantSubmission MerchantPriceSubmission?  @relation(fields: [merchantSubmissionId], references: [id])
+  manualEntryItem    ManualPriceEntryItem?     @relation(fields: [manualEntryItemId], references: [id])
+  assignedReviewer   User?                     @relation("PriceReviewCaseAssignee", fields: [assignedReviewerId], references: [id])
+  events             PriceReviewCaseEvent[]
+  corrections        PriceObservationCorrection[]
+  reportRevisions    PriceReportRevision[]
+
+  @@index([status, priorityScore])
+  @@index([status, dueAt])
+  @@index([assignedReviewerId, status])
+  @@index([caseType, status])
+  @@index([reportId])
+  @@index([productFamilyKey])
+  @@index([openedAt])
+  @@map("price_review_cases")
+}
+
+model PriceReviewCaseEvent {
+  id              String   @id @default(uuid())
+  caseId          String
+  eventType       String // 'created' | 'assigned' | 'transition' | 'note' | 'priority_override' | 'correction' | 'approval' | 'rejection'
+  fromStatus      String?
+  toStatus        String?
+  note            String?
+  metadata        Json?
+  actorAdminId    String?
+  createdAt       DateTime @default(now())
+
+  case  PriceReviewCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  actor User?           @relation("PriceReviewCaseEventActor", fields: [actorAdminId], references: [id])
+
+  @@index([caseId, createdAt])
+  @@map("price_review_case_events")
+}
+
+/// Links original observation to a superseding corrected observation (never overwrites).
+model PriceObservationCorrection {
+  id                     String   @id @default(uuid())
+  originalObservationId  String
+  correctedObservationId String
+  correctionType         String // 'price' | 'unit' | 'spec' | 'location' | 'inclusion' | 'rejection' | 'structured_fields'
+  changedFields          Json
+  reason                 String
+  reviewCaseId           String?
+  createdByAdminId       String
+  createdAt              DateTime @default(now())
+
+  originalObservation  PriceObservation @relation("CorrectionOriginal", fields: [originalObservationId], references: [id])
+  correctedObservation PriceObservation @relation("CorrectionCorrected", fields: [correctedObservationId], references: [id])
+  reviewCase           PriceReviewCase? @relation(fields: [reviewCaseId], references: [id])
+  createdBy            User             @relation("PriceObservationCorrectionCreator", fields: [createdByAdminId], references: [id])
+
+  @@index([originalObservationId])
+  @@index([reviewCaseId])
+  @@map("price_observation_corrections")
+}
+
+model ManualPriceEntry {
+  id               String    @id @default(uuid())
+  status           String    @default("draft") // 'draft' | 'submitted' | 'approved' | 'rejected' | 'partially_approved'
+  title            String
+  notes            String?
+  evidenceFileRef  String?
+  evidenceDocumentId String?
+  locationKey      String?
+  createdByAdminId String
+  reviewedByAdminId String?
+  reviewedAt       DateTime?
+  reviewNote       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  createdBy        User                   @relation("ManualPriceEntryCreator", fields: [createdByAdminId], references: [id])
+  reviewedBy       User?                  @relation("ManualPriceEntryReviewer", fields: [reviewedByAdminId], references: [id])
+  evidenceDocument PriceEvidenceDocument? @relation(fields: [evidenceDocumentId], references: [id])
+  items            ManualPriceEntryItem[]
+
+  @@index([status, createdAt])
+  @@index([createdByAdminId])
+  @@map("manual_price_entries")
+}
+
+model ManualPriceEntryItem {
+  id               String    @id @default(uuid())
+  entryId          String
+  familyKey        String?
+  productLabel     String
+  brandName        String?
+  originalWording  String
+  originalPrice    Decimal   @db.Decimal(14, 2)
+  currencyCode     String    @default("NGN") @db.Char(3)
+  originalUnitCode String
+  locationKey      String?
+  specification    Json?
+  status           String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  rejectionReason  String?
+  observationId    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  entry       ManualPriceEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  reviewCases PriceReviewCase[]
+
+  @@index([entryId, status])
+  @@map("manual_price_entry_items")
+}
+
+model PriceMerchant {
+  id                 String    @id @default(uuid())
+  businessName       String
+  tradingName        String?
+  sellerType         String    @default("retailer") // 'retailer' | 'wholesaler' | 'distributor' | 'manufacturer' | 'market_trader'
+  city               String?
+  state              String?
+  verificationStatus String    @default("unverified") // 'unverified' | 'pending' | 'verified' | 'rejected' | 'suspended'
+  sourceTier         Int       @default(3)
+  riskNotes          String?
+  contactPhone       String? // sensitive
+  contactEmail       String? // sensitive
+  deletedAt          DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  submissions MerchantPriceSubmission[]
+
+  @@index([verificationStatus])
+  @@index([state, city])
+  @@map("price_merchants")
+}
+
+model MerchantPriceSubmission {
+  id               String    @id @default(uuid())
+  merchantId       String?
+  status           String    @default("draft") // 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'partially_approved'
+  channel          String    @default("whatsapp") // 'whatsapp' | 'email' | 'upload' | 'admin'
+  title            String
+  notes            String?
+  evidenceFileRef  String?
+  evidenceDocumentId String?
+  createdByAdminId String?
+  submittedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  merchant         PriceMerchant?          @relation(fields: [merchantId], references: [id])
+  createdBy        User?                   @relation("MerchantSubmissionCreator", fields: [createdByAdminId], references: [id])
+  evidenceDocument PriceEvidenceDocument?  @relation(fields: [evidenceDocumentId], references: [id])
+  items            MerchantPriceSubmissionItem[]
+  reviewCases      PriceReviewCase[]
+
+  @@index([status, createdAt])
+  @@index([merchantId])
+  @@map("merchant_price_submissions")
+}
+
+model MerchantPriceSubmissionItem {
+  id               String    @id @default(uuid())
+  submissionId     String
+  familyKey        String?
+  productLabel     String
+  brandName        String?
+  originalWording  String
+  originalPrice    Decimal   @db.Decimal(14, 2)
+  currencyCode     String    @default("NGN") @db.Char(3)
+  originalUnitCode String
+  locationKey      String?
+  specification    Json?
+  status           String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  rejectionReason  String?
+  reviewedByAdminId String?
+  reviewedAt       DateTime?
+  observationId    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  submission MerchantPriceSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewedBy User?                   @relation("MerchantItemReviewer", fields: [reviewedByAdminId], references: [id])
+
+  @@index([submissionId, status])
+  @@map("merchant_price_submission_items")
+}
+
+model SourceHealthSnapshot {
+  id                   String   @id @default(uuid())
+  sourceId             String
+  healthStatus         String
+  successRate          Float?
+  parseSuccessRate     Float?
+  avgLatencyMs         Int?
+  consecutiveFailures  Int      @default(0)
+  checkType            String   @default("manual") // 'manual' | 'scheduled' | 'pipeline'
+  note                 String?
+  checkedByAdminId     String?
+  createdAt            DateTime @default(now())
+
+  source PriceSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([sourceId, createdAt])
+  @@map("source_health_snapshots")
+}
+
+/// Append-only audit log. No update/delete APIs.
+model PriceIntelligenceAuditLog {
+  id           String   @id @default(uuid())
+  action       String
+  entityType   String
+  entityId     String?
+  actorAdminId String?
+  beforeJson   Json?
+  afterJson    Json?
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  actor User? @relation("PriceIntelligenceAuditActor", fields: [actorAdminId], references: [id])
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorAdminId, createdAt])
+  @@index([action, createdAt])
+  @@map("price_intelligence_audit_log")
+}
+
+model PriceIntelligenceReviewer {
+  id                String   @id @default(uuid())
+  adminUserId       String   @unique
+  active            Boolean  @default(true)
+  categoryScope     Json? // string[] of family/category keys; null = all
+  availabilityNotes String?
+  maximumOpenCases  Int      @default(25)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  adminUser User @relation("PriceIntelligenceReviewerUser", fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([active])
+  @@map("price_intelligence_reviewers")
+}
+
+/// Singleton-style key-value settings (SLAs, thresholds, etc.).
+model PriceIntelligenceSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  valueJson Json
+  updatedByAdminId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("price_intelligence_settings")
+}
+
+/// Optional search-demand mapping for unmatched terms (aggregates may also use PriceQuery).
+model PriceUnmatchedTerm {
+  id              String   @id @default(uuid())
+  normalizedTerm  String   @unique
+  sampleRawQuery  String
+  requestCount    Int      @default(1)
+  paidIntentCount Int      @default(0)
+  lastSeenAt      DateTime @default(now())
+  firstSeenAt     DateTime @default(now())
+  suggestedFamilyKey String?
+  status          String   @default("open") // 'open' | 'mapped' | 'ignored'
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status, requestCount])
+  @@index([lastSeenAt])
+  @@map("price_unmatched_terms")
 }

@@ -1,0 +1,2683 @@
+{
+  "runAt": "2026-07-29T02:14:42.491Z",
+  "model": "gpt-5.6-sol",
+  "dryRun": false,
+  "familiesChecked": [
+    "cement",
+    "reinforcement-steel",
+    "concrete-blocks",
+    "sand",
+    "granite-aggregates",
+    "roofing",
+    "waterproofing",
+    "doors",
+    "aluminium-windows",
+    "tiles",
+    "paint",
+    "pop-ceilings",
+    "external-paving",
+    "kitchen-cabinets",
+    "sanitary-wares",
+    "electrical-cables",
+    "electrical-protection",
+    "plumbing-pipes",
+    "water-pumps",
+    "water-tanks",
+    "solar-panels",
+    "inverters",
+    "batteries",
+    "generators",
+    "cctv-security"
+  ],
+  "totals": {
+    "records": 52,
+    "valid": 52,
+    "failures": 0,
+    "promptTokens": 33958,
+    "completionTokens": 57496
+  },
+  "disclaimer": "AI spot checks are not professional certification. Sample listing prices are not market data.",
+  "records": [
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6npw92WnByrIMKdWkEoYGI2blAhj",
+      "productFamily": "cement",
+      "sourceReference": "Jiji.ng seller listing (Abuja, Idu Industrial) — https://jiji.ng/search?query=dangote+cement",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:57:26.839Z",
+      "termsDiscovered": [
+        "cement",
+        "Dangote Cement",
+        "Dangote 3X Cement",
+        "wholesale",
+        "Dangote",
+        "3X",
+        "3X"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "bag_weight"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.98,
+      "notes": "Dangote is already a known market name and 3X is already an alias for the block-master subproduct. The listing identifies the brand, variant and wholesale purchase type but does not state a formal grade, packaging weight, quantity or delivery terms.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 599,
+        "completionTokens": 715
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nq9b9WA1N8aHFdex7YsGw0gJ2HE",
+      "productFamily": "cement",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Eko Atlantic) — https://jiji.ng/search?query=dangote+cement",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:57:41.250Z",
+      "termsDiscovered": [
+        "Dangote Cement",
+        "Bua",
+        "Lafage",
+        "Lafarg",
+        "50kg cement",
+        "bulk prices",
+        "cement supplier",
+        "cement distributor",
+        "Dangote Cement",
+        "Bua",
+        "Lafage",
+        "Lafarg",
+        "Lafage",
+        "Lafarg",
+        "50kg"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Lafarge",
+          "Lafarge cement",
+          "Lafage",
+          "Lafarg"
+        ],
+        "attributes": [],
+        "questions": []
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.97,
+      "notes": "The definition captures cement, Dangote, BUA, bag weight and wholesale purchase type, but it does not explicitly capture Lafarge or the observed Lafage/Lafarg misspellings. The listing gives no cement grade and does not state a specific order quantity.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 629,
+        "completionTokens": 892
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nqPtykAQpSePdxnpA8A1DwEG6WE",
+      "productFamily": "cement",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ajah) — https://jiji.ng/search?query=dangote+cement",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:57:57.361Z",
+      "termsDiscovered": [
+        "Dangote Cement",
+        "large quantities",
+        "payment on delivery",
+        "free delivery",
+        "Dangote Cement",
+        "Fr€€ D€Livery"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "delivery_terms",
+          "payment_terms",
+          "minimum_order_quantity"
+        ],
+        "questions": [
+          "What minimum quantity qualifies for free delivery and payment on delivery?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The cement terminology is captured by the existing 'cement' and 'dangote' market names. The iron-rod sizes and per-tonne unit describe a separate product and were excluded from cement specifications. The listing does not indicate that cement and rods are sold as a bundle.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 613,
+        "completionTokens": 743
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nqfja9nwr7QzF5cfAkmlxlV3nwx",
+      "productFamily": "reinforcement-steel",
+      "sourceReference": "Jiji.ng seller listing (Lagos) — https://jiji.ng/search?query=iron+rod+12mm",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:58:12.766Z",
+      "termsDiscovered": [
+        "iron rod",
+        "reinforcement",
+        "rebar",
+        "TMT iron rod",
+        "reinforcement iron rod",
+        "rebar",
+        "TMT iron rod",
+        "Lci/LCI",
+        "LCI",
+        "TMT",
+        "12mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "TMT iron rod",
+          "TMT rod",
+          "TMT rebar"
+        ],
+        "attributes": [
+          "manufacturer_or_brand",
+          "pieces_per_tonne"
+        ],
+        "questions": [
+          "length_m",
+          "grade",
+          "manufacturer_or_brand"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.97,
+      "notes": "The existing family captures iron rod, reinforcement and rebar, but does not explicitly capture the common TMT terminology. The stated 93 pieces per tonne is a useful unit conversion but does not explicitly establish the individual bar length.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 619,
+        "completionTokens": 1598
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nr85vnwnIY5mXVrE0NIoerSz3W3",
+      "productFamily": "reinforcement-steel",
+      "sourceReference": "Jiji.ng seller listing (Oyo, Ibadan) — https://jiji.ng/search?query=iron+rod+12mm",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:58:42.261Z",
+      "termsDiscovered": [
+        "iron rod",
+        "reinforcement iron rods",
+        "local iron rod",
+        "TMT iron rod",
+        "per ton",
+        "iron rod",
+        "reinforcement iron rods",
+        "TMT iron rod",
+        "ton",
+        "TMT",
+        "PSL",
+        "mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "TMT iron rod",
+          "TMT rod"
+        ],
+        "attributes": [
+          "brand_or_manufacturer"
+        ],
+        "questions": [
+          "What bar length is required?",
+          "What steel grade or yield strength is required?",
+          "Which brand or manufacturer is required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The definition captures iron rod, reinforcement, diameters, local origin and tonne sales, but it does not explicitly capture the common TMT terminology or brand/manufacturer distinctions. Real, Monac, PSL and Lion appear to be brand or manufacturer names. TMT describes the thermo-mechanically treated bar type and does not by itself establish a precise steel grade.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 642,
+        "completionTokens": 951
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nrP33XNHs1qLNFefrtW1apnFY2P",
+      "productFamily": "reinforcement-steel",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ikeja) — https://jiji.ng/search?query=iron+rod+12mm",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:58:59.037Z",
+      "termsDiscovered": [
+        "Iron Rods",
+        "Rebar",
+        "iron rods",
+        "rebar",
+        "12mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "length_m",
+          "grade",
+          "bar_type"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.98,
+      "notes": "The product terms “iron rods” and “rebar” are already captured. However, the seller unit “piece” is not included in sellerUnits and should be added. No price information was used.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 592,
+        "completionTokens": 714
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nrbc2Talt8YUEoLl1KX3QcrtfcW",
+      "productFamily": "concrete-blocks",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ikeja) — https://jiji.ng/search?query=9+inch+vibrated+block",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:59:10.269Z",
+      "termsDiscovered": [
+        "vibrated blocks",
+        "stone dust based blocks",
+        "9-inch blocks",
+        "6-inch blocks",
+        "4-inch blocks",
+        "Vibrated Blocks",
+        "stone dust based blocks",
+        "block's",
+        "9inch",
+        "4 inchs"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "stone dust block",
+          "4 inch block"
+        ],
+        "attributes": [
+          "Material or aggregate composition",
+          "Compressive-strength grade"
+        ],
+        "questions": [
+          "What material or aggregate is the block made from?",
+          "Is a specified compressive-strength grade required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The definition captures blocks, common 6-inch and 9-inch sizing, and vibrated moulding, but it does not explicitly cover the listed 4-inch variant or stone-dust composition. The word 'strong' is promotional because no measurable strength grade is supplied.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 568,
+        "completionTokens": 822
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nrpJHs6YwjdIUqqXrEJkisjbJ5p",
+      "productFamily": "concrete-blocks",
+      "sourceReference": "Jiji.ng seller listing (Abuja, Central) — machine ad polluting block search — https://jiji.ng/search?query=9+inch+vibrated+block",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:59:25.342Z",
+      "termsDiscovered": [
+        "blocks",
+        "vibrated blocks",
+        "9 inches hollow",
+        "6 inches hollow",
+        "6 inches solid",
+        "5 inches",
+        "blocks moulding machine",
+        "blocks",
+        "vibrated blocks",
+        "9inches",
+        "6 inches",
+        "6inches",
+        "5inches"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": []
+      },
+      "itemNature": "accessory",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.98,
+      "notes": "The listing is for block-making machinery, not finished concrete blocks. Existing size, form and moulding attributes cover the relevant block specifications, including 5-inch as a size value, but machinery terminology should not be added as a concrete-block alias. The listing should be filtered or assigned to a separate block-making-machinery family.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 596,
+        "completionTokens": 989
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6ns7g30FQJ0IwiEN1rIi6S1t64y4",
+      "productFamily": "sand",
+      "sourceReference": "Jiji.ng seller listing (Ogun, Obafemi-Owode) — https://jiji.ng/search?query=sharp+sand+20+tons",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T01:59:42.926Z",
+      "termsDiscovered": [
+        "Sharp Sand",
+        "20 Ton",
+        "hranite (likely granite)",
+        "oron rods (likely iron rods)",
+        "Ton (singular form used for tonnes)"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "delivery_location"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The listing clearly identifies sharp sand and a 20-tonne load, both already covered by the family. Granite, laterite, iron rods, blocks and plaster appear to be unrelated products or services mentioned by the seller, not sand aliases.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 569,
+        "completionTokens": 955
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nsPxopfNXgaRDibB2IvNwbfyRKh",
+      "productFamily": "sand",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ogba) — https://jiji.ng/search?query=sharp+sand+20+tons",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:00:01.668Z",
+      "termsDiscovered": [
+        "sharp sand",
+        "laterite sand",
+        "stone dust",
+        "plaster sand",
+        "laterite sand",
+        "plaster samd",
+        "Full 20 Ton"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "laterite sand"
+        ],
+        "attributes": [
+          "delivery_location"
+        ],
+        "questions": [
+          "What is the delivery destination or site location?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The primary offer is a full 20-ton load of sharp sand; granite and the other materials appear to be separate inventory rather than a bundle. Existing coverage captures sharp sand, plaster sand and stone dust, but laterite sand should be added as a market alias for filling/erosion sand. Delivery is stated, but its destination is omitted.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 587,
+        "completionTokens": 1243
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nskLOp3v0EOM5CadWCdLUfeiPLG",
+      "productFamily": "granite-aggregates",
+      "sourceReference": "Jiji.ng seller listing (Ogun, Obafemi-Owode) — https://jiji.ng/search?query=sharp+sand+20+tons",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:00:22.596Z",
+      "termsDiscovered": [
+        "granite",
+        "stone dust",
+        "sharp sand",
+        "full 20 ton",
+        "srone dust",
+        "avaailabe",
+        "full 20 ton",
+        "20 tonnage"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "stone dust"
+        ],
+        "attributes": [],
+        "questions": []
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The main item is a 20-ton load of granite. Stone dust and sharp sand are mentioned as separately available products, not as aliases or components of a bundle. Granite and tonnage are captured, but stone dust is not represented explicitly. Sharp sand is better handled under a sand family rather than added as a granite alias.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 614,
+        "completionTokens": 1090
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nt4bLIeIWhitBdtHpFCWhAWaXWJ",
+      "productFamily": "granite-aggregates",
+      "sourceReference": "Jiji.ng seller listing (Ogun, Sagamu) — https://jiji.ng/search?query=sharp+sand+20+tons",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:00:41.762Z",
+      "termsDiscovered": [
+        "granite",
+        "sharp sand",
+        "30 ton",
+        "20 ton",
+        "bulk",
+        "granite",
+        "Grqnite"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "Is the requirement for granite, sharp sand, or both?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The listing combines granite with sharp sand. Granite is already captured by the family, while sharp sand is a separate material rather than a granite alias and should not be added as one. “Grqnite” is an apparent misspelling of granite.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 600,
+        "completionTokens": 773
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6ntIICOJGqFDCHcTVj3CjGKLzRcM",
+      "productFamily": "roofing",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ajah) — https://jiji.ng/search?query=stone+coated+roofing+sheet+0.55",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:00:55.773Z",
+      "termsDiscovered": [
+        "stone coated roofing sheet",
+        "Gerard",
+        "Bond",
+        "Shingle",
+        "Gerard",
+        "Bond",
+        "Shingle",
+        "stone coated",
+        "0.55 Mm",
+        "Mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "warranty_years"
+        ],
+        "questions": [
+          "profile",
+          "warranty_terms"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The taxonomy already captures stone-coated, Gerard, Bond and Shingle terminology. The listing is ambiguous about the exact profile because it describes the product as both Bond and Shingle. The 50-year warranty is stated, but its coverage and whether it is manufacturer-backed are unspecified.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 695,
+        "completionTokens": 1066
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6ntcG2nCqA5MpwEjHOlbIKUxsGic",
+      "productFamily": "roofing",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Gbagada) — https://jiji.ng/search?query=stone+coated+roofing+sheet+0.55",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:01:15.867Z",
+      "termsDiscovered": [
+        "0.55 gauge",
+        "stone coated roofing sheet",
+        "stone coated roofing tiles",
+        "long span roofing sheet",
+        "Coffee Classic",
+        "roofing system",
+        "stone coated roofing tiles",
+        "long span stone coated roofing sheet",
+        "Kristin roofing sheet",
+        "roofingtiles",
+        "newzealand",
+        "long span",
+        "0.55",
+        "0.55 gauge",
+        "AMB"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "stone coated roofing tiles"
+        ],
+        "attributes": [
+          "sheet_length_m",
+          "country_of_origin",
+          "warranty_years"
+        ],
+        "questions": [
+          "What exact brand and manufacturer applies to the quoted product?",
+          "What is the exact profile or design?",
+          "What are the overall dimensions and effective coverage per piece?",
+          "What is the confirmed country of manufacture?",
+          "Does the stated guarantee apply to the exact product offered, and what does it cover?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.88,
+      "notes": "The core stone-coated and long-span terminology is broadly represented, but the seller combines 'long span' with stone-coated tiles, creating a possible type conflict. 'Coffee' is likely the colour and 'Classic' likely the profile, while Kristin and AMB appear to be brand references. '0.55 gauge' is Nigerian seller shorthand for approximately 0.55 mm rather than a formal gauge designation.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 714,
+        "completionTokens": 1438
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nu9RRAMcZUf9QRVvm3leDWSxDvd",
+      "productFamily": "waterproofing",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Lagos Island) — https://jiji.ng/search?query=waterproofing+bitumen+membrane",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:01:49.029Z",
+      "termsDiscovered": [
+        "bitumen waterproof membrane",
+        "bitumen waterproofing membrane",
+        "bitumen felt",
+        "mineral bitumen felt",
+        "APP/SBS modified bitumen waterproofing membrane",
+        "Bitunil Felt",
+        "bitumen felt waterproof membrane",
+        "modified bitumen waterproofing membrane",
+        "green mineral bitumen felt",
+        "App used as a casing variant of APP",
+        "APP",
+        "SBS",
+        "mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "bitumen felt",
+          "bitumen waterproof membrane",
+          "modified bitumen membrane",
+          "mineral bitumen felt",
+          "APP membrane",
+          "SBS membrane"
+        ],
+        "attributes": [
+          "modifier_type",
+          "surface_finish",
+          "surface_colour",
+          "roll_dimensions",
+          "reinforcement_type",
+          "application_method"
+        ],
+        "questions": [
+          "What membrane thickness is required: 3 mm, 4 mm or 5 mm?",
+          "Is APP- or SBS-modified membrane required?",
+          "What roll dimensions or coverage per roll are required?",
+          "Is a mineral-surfaced or plain membrane required?",
+          "Is torch-on application required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The listing clearly maps to the bituminous-membrane subproduct. “Bitunil” may be a brand, trade name or seller spelling, so it should not be normalised as a misspelling without further evidence. APP and SBS are materially different modifier specifications, but the listing does not identify which applies to each offered roll.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 639,
+        "completionTokens": 1314
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nuW0bmlgwX71vwveyyqc9BPgMtM",
+      "productFamily": "waterproofing",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Mushin) — https://jiji.ng/search?query=waterproofing+bitumen+membrane",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:02:12.126Z",
+      "termsDiscovered": [
+        "waterproofing membrane",
+        "bitumen membrane",
+        "bitumen emulsion",
+        "bitumen felt",
+        "roofing felt",
+        "liquid-applied membrane",
+        "Pure Bitumen Emulsion Waterproofing Membrane",
+        "bitumen felt",
+        "roofing felt",
+        "20litre",
+        "3mm"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "bitumen emulsion",
+          "bitumen felt",
+          "roofing felt"
+        ],
+        "attributes": [
+          "pack_size",
+          "membrane_material",
+          "component_count",
+          "roll_dimensions"
+        ],
+        "questions": [
+          "What pack size or roll dimensions are required?",
+          "Is the requirement for liquid bitumen emulsion, bitumen felt, or a combined system?",
+          "How many coats or what finished membrane thickness is required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.93,
+      "notes": "The listing primarily describes Armorseal 200 as a liquid-applied bitumen-emulsion product but also mentions 3 mm bitumen/roofing felt. It is unclear whether the felt is a separate alternative product or part of the offered system; no explicit bundle or installation inclusion is stated.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 644,
+        "completionTokens": 924
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6numat8nYbSlOOonlHf9x99tXPrO",
+      "productFamily": "doors",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Magodo) — https://jiji.ng/search?query=turkish+security+door+900",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:02:28.342Z",
+      "termsDiscovered": [
+        "Turkish Security Door",
+        "Turkey Security Doors",
+        "Turkish Special Luxury Security Door",
+        "Turkish security door",
+        "Turkey security door",
+        "Turkish special luxury security door",
+        "900m by 2100m",
+        "Turkey Security Doors",
+        "mm",
+        "ft",
+        "3ft"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Turkey security door",
+          "Turkish special luxury security door"
+        ],
+        "attributes": [
+          "colour_or_finish",
+          "door_thickness_or_steel_gauge",
+          "opening_direction_or_handing",
+          "weather_resistance",
+          "accessory_package"
+        ],
+        "questions": [
+          "What exact accessories and locking components are included?",
+          "What are the door leaf thickness, frame thickness and steel gauge?",
+          "What opening direction or handing is required?",
+          "Please confirm that the stated dimensions are 900 mm × 2100 mm, not 900 m × 2100 m.",
+          "Is a specific colour or finish required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The existing Turkish security door alias captures the main seller terminology. 'Turkey security door' is a common grammatical variant worth adding. The first 900m × 2100m statement is almost certainly a unit typo because the listing separately gives 900mm × 2100mm and 3ft width. Accessories are mentioned vaguely, so bundle contents cannot be confirmed.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 668,
+        "completionTokens": 1187
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nv5GY3iO2GqZpC0X9XeFjnDRs3q",
+      "productFamily": "doors",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Orile) — https://jiji.ng/search?query=turkish+security+door+900",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:02:46.758Z",
+      "termsDiscovered": [
+        "Turkish Security Door",
+        "security door",
+        "exit door",
+        "entrance door",
+        "apartment door",
+        "Turkey Security Door",
+        "Turkish security door",
+        "Turkey security door",
+        "exit door",
+        "front entrance door",
+        "apartment door",
+        "Jiuhua Security Door",
+        "Turkey Security Door",
+        "900m likely intended as 900mm",
+        "front up entrance door likely intended as front entrance door",
+        "3ft X 7ft",
+        "9\" Frame",
+        "900 by 2100mm",
+        "526lsh"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Turkey security door",
+          "entrance door",
+          "front door",
+          "apartment door"
+        ],
+        "attributes": [
+          "frame_depth",
+          "colour_finish",
+          "brand_model",
+          "door_leaf_thickness",
+          "weather_water_resistance",
+          "accessories_included"
+        ],
+        "questions": [
+          "What is the frame depth or wall thickness compatibility?",
+          "Which accessories are included in the complete-accessories package?",
+          "What is the brand and exact model?",
+          "What is the door leaf or steel thickness?",
+          "Is the door rated for weather or water exposure?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.88,
+      "notes": "The core term Turkish security door is already covered. The text appears to combine several descriptions or variants, including Jiuhua, Turkey/Turkish, 526lsh, and inconsistent dimension notation. Complete accessories supports bundle classification but does not confirm exactly which frame or lock components are supplied.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 683,
+        "completionTokens": 1127
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nvOgsA9lxVisrgSwNZ1AeFxemfn",
+      "productFamily": "aluminium-windows",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Yaba) — https://jiji.ng/search?query=aluminium+sliding+window+with+net",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:03:05.979Z",
+      "termsDiscovered": [
+        "aluminium sliding window",
+        "Ghana sliding window",
+        "outside mosquito net",
+        "sliding net",
+        "grey colour",
+        "Ghana sliding window",
+        "sliding window with net",
+        "sliding window with outside mosquito net",
+        "sliding window with sliding net",
+        "aluminium",
+        "grey",
+        "colour"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Ghana sliding window",
+          "sliding net",
+          "outside mosquito net"
+        ],
+        "attributes": [
+          "Frame colour/finish",
+          "Net type/position",
+          "Panel or leaf configuration"
+        ],
+        "questions": [
+          "What aluminium profile or gauge is required?",
+          "What frame colour or finish is required?",
+          "Should the mosquito net be fixed, outside-mounted, or sliding?",
+          "How many sliding panels or leaves are required?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The listing is a sliding aluminium window bundled with a mosquito net. Core sliding-window and net terminology is covered, but the local term 'Ghana sliding window' and the sliding/outside net configuration are not explicitly represented. 'Ghana' may describe a locally recognised window style rather than confirmed country of origin.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 654,
+        "completionTokens": 1296
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nvj0wUNZOHSVHlZ5sCaWhClr3ib",
+      "productFamily": "aluminium-windows",
+      "sourceReference": "Jiji.ng seller listing (Lagos / Oyo, Ibadan) — https://jiji.ng/search?query=aluminium+sliding+window+with+net",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:03:26.858Z",
+      "termsDiscovered": [
+        "aluminium casement",
+        "sliding window",
+        "transom frameless",
+        "projected window",
+        "swing window",
+        "window with burglary and net",
+        "sliding net",
+        "mosquito net",
+        "double glazed aluminium casement windows",
+        "gray colour",
+        "Aluminium Window",
+        "Aluminum Window",
+        "aluminium casement",
+        "casement aluminium window",
+        "aluminium sliding",
+        "projected window",
+        "swing window",
+        "transom frameless window",
+        "Aluminum",
+        "wity",
+        "bulglary",
+        "Buglary",
+        "Alumni",
+        "misquote",
+        "gray"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "projected window",
+          "swing window",
+          "transom window",
+          "frameless window",
+          "double glazed aluminium window",
+          "aluminium window with burglary and net"
+        ],
+        "attributes": [
+          "frame_colour",
+          "glass_thickness",
+          "panel_configuration",
+          "net_type",
+          "burglary_protection_specification"
+        ],
+        "questions": [
+          "profile_gauge",
+          "frame_colour",
+          "glass_thickness",
+          "panel_configuration",
+          "net_type",
+          "burglary_protection_specification"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The listing combines several window types and bundled net/burglary options rather than describing one precise configuration. The current family captures casement, sliding, glass type, and inclusion booleans, but does not explicitly cover projected, swing, transom/frameless terminology or detailed net and burglary specifications. 'Alumni' appears to mean aluminium, 'misquote' appears to mean mosquito, and the burglary spellings are seller errors.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 679,
+        "completionTokens": 1128
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nw2LJuYs2eUr6XBD1j8iUDohjN6",
+      "productFamily": "tiles",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Orile) — https://jiji.ng/search?query=60x60+porcelain+tiles+carton",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:03:45.866Z",
+      "termsDiscovered": [
+        "floor tiles",
+        "India floor tiles",
+        "glazed floor tiles",
+        "Indian made glazed super polished floor tiles",
+        "India floor tiles",
+        "glazed floor tiles",
+        "super polished floor tiles",
+        "60*120",
+        "60x120",
+        "India floor tiles",
+        "Indian made floor tiles",
+        "sqm",
+        "cm",
+        "60x120"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "surface_finish",
+          "thickness_mm"
+        ],
+        "questions": [
+          "surface_finish",
+          "thickness_mm"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The family captures the core floor-tile and Indian-origin terminology, but it does not structurally capture glazed/super-polished finish or numerical thickness. The listing does not establish whether the tiles are ceramic or porcelain/vitrified, and 'standard thickness' is too vague to normalize.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 669,
+        "completionTokens": 898
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nwGA96vNMrZmIXhNUv3wv4HLJg7",
+      "productFamily": "tiles",
+      "sourceReference": "Jiji.ng seller listing (Rivers, Port-Harcourt / Lagos) — https://jiji.ng/search?query=60x60+porcelain+tiles+carton",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:04:00.202Z",
+      "termsDiscovered": [
+        "glazed tiles",
+        "Carrara white wall tiles",
+        "porcelain tiles",
+        "polished vitrified wall tiles",
+        "Calacatta white marble design",
+        "super glossy",
+        "super polish",
+        "compound tiles",
+        "Goodwill Porcelain Tiles",
+        "Goodwill Polished Vitrified Wall Tiles",
+        "compound tiles",
+        "super polish",
+        "1.44m",
+        "60 X 60",
+        "60x60",
+        "30x60",
+        "4pc",
+        "4pcs",
+        "1 carton"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "compound tiles"
+        ],
+        "attributes": [
+          "finish_surface",
+          "colour_design",
+          "thickness_mm",
+          "indoor_outdoor_suitability",
+          "slip_resistance"
+        ],
+        "questions": [
+          "Which specific tile variant is required?",
+          "What finish is required: glazed, polished, glossy or another finish?",
+          "What colour or design is required?",
+          "What tile thickness is required?",
+          "Is the tile for indoor or outdoor use?",
+          "Is a particular slip-resistance rating required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.93,
+      "notes": "The listing combines several distinct tile variants. Core porcelain, vitrified and wall-tile terminology is captured, but compound tiles and finish/design terminology are not. The stated “1.44m” likely means 1.44 m² per carton, but the unit is written ambiguously.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 728,
+        "completionTokens": 967
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nwWrXrNm3hbRFsJcj3tzsxXC1qx",
+      "productFamily": "paint",
+      "sourceReference": "Jiji.ng seller listing (Oyo, Ibadan) — https://jiji.ng/search?query=emulsion+paint+20+litres",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:04:16.651Z",
+      "termsDiscovered": [
+        "emulsion paint",
+        "matt emulsion",
+        "20 litres drum",
+        "original",
+        "all colors",
+        "emulsion paint",
+        "matt emulsion paint",
+        "colors (US spelling variant of colours)"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "matt emulsion",
+          "drum (local term for a large paint container, including 20-litre packs)"
+        ],
+        "attributes": [
+          "brand",
+          "colour"
+        ],
+        "questions": [
+          "exact_brand",
+          "colour",
+          "delivery_location"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The core product terminology is captured by the emulsion/matt subproduct, but the Nigerian seller term 'drum' is not represented among seller units. Value, Princess and Honey appear to be brands or product lines rather than generic aliases. Delivery is offered, not clearly included in the product price.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 641,
+        "completionTokens": 1329
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nwt9SSu6NF1qkuXKwsDFDi8SJuj",
+      "productFamily": "paint",
+      "sourceReference": "Jiji.ng seller listing (Rivers, Port-Harcourt) — https://jiji.ng/search?query=emulsion+paint+20+litres",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:04:39.353Z",
+      "termsDiscovered": [
+        "emulsion",
+        "hybrid emulsion",
+        "satin finish",
+        "satin (silk) finish emulsion",
+        "matt emulsion",
+        "silk paint",
+        "wall paint",
+        "water-based paint",
+        "20 litres pail",
+        "satin emulsion",
+        "silk emulsion",
+        "silk paint",
+        "matt emulsion",
+        "hybrid emulsion",
+        "20l",
+        "20ltrs",
+        "20 Litres",
+        "20 litres",
+        "20liters",
+        "litres/liters",
+        "20l",
+        "20ltrs"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "hybrid emulsion",
+          "satin emulsion",
+          "silk emulsion",
+          "silk paint",
+          "matt emulsion"
+        ],
+        "attributes": [
+          "brand",
+          "colour",
+          "interior_exterior_use",
+          "coverage_rate"
+        ],
+        "questions": [
+          "Which exact brand and product line is required?",
+          "What colour is required?",
+          "Is the paint for interior or exterior use?",
+          "What coverage rate or number of coats is required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The text combines several separate paint products or variants rather than a bundle. Existing emulsion and satin/silk categories provide semantic coverage, but explicit aliases for hybrid, satin and silk emulsion would improve seller-language matching. Vapour Paint and Clay Lux appear to be brand/product-line terminology, not generic aliases.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 680,
+        "completionTokens": 1642
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nxOOA0IpeG7h5NUR4JricxrwGop",
+      "productFamily": "pop-ceilings",
+      "sourceReference": "Jiji.ng seller listing (Abuja, Dei-Dei / Enugu) — https://jiji.ng/search?query=pop+cement+gypsum+ceiling",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:05:10.283Z",
+      "termsDiscovered": [
+        "gypsum POP cement",
+        "white POP cement",
+        "POP gypsum cement",
+        "gypsum white POP cement",
+        "gypsum POP cement",
+        "white POP cement",
+        "POP gypsum cement",
+        "moldings",
+        "mouldings",
+        "POP",
+        "ABS"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "gypsum POP cement",
+          "POP gypsum cement",
+          "white POP cement",
+          "gypsum white cement"
+        ],
+        "attributes": [
+          "bag_weight_kg",
+          "country_of_origin",
+          "grade"
+        ],
+        "questions": [
+          "brand",
+          "bag_weight_kg",
+          "grade"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The listing concerns POP/gypsum cement rather than boards or installed ceiling systems. The sub-product POP cement is captured, but the seller's common compound terms are not represented as aliases. Multiple brands are mentioned, so the exact offered brand is uncertain; ABS and Star Gips appear to be brand names rather than product specifications.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 647,
+        "completionTokens": 821
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nxiBKmQkNnYeMcFfa7Q1BbqwKHu",
+      "productFamily": "pop-ceilings",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Surulere / Victoria Island) — https://jiji.ng/search?query=pop+cement+gypsum+ceiling",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:05:29.829Z",
+      "termsDiscovered": [
+        "Pop Cement",
+        "Plaster of Paris",
+        "POP",
+        "Gypsum Board",
+        "Plaster Board",
+        "Ceiling Pop",
+        "cement board ceiling",
+        "screeding",
+        "Plaster of Paris",
+        "plaster board",
+        "Ceiling Pop",
+        "Pop",
+        "POP",
+        "POP"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "plaster board",
+          "ceiling POP"
+        ],
+        "attributes": [
+          "bag_weight_kg",
+          "board_material"
+        ],
+        "questions": [
+          "supply_or_installation_scope"
+        ]
+      },
+      "itemNature": "installation_inclusive",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.91,
+      "notes": "The text combines POP cement, board products, and installation/screeding services, so the exact quoted item is ambiguous. 'Cement board' may refer to a distinct fibre-cement board rather than gypsum board and should be clarified. The listing price must not be treated as product market data.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 656,
+        "completionTokens": 823
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nxyjGL5xEZHFI8RvWy9oI6sMDvC",
+      "productFamily": "external-paving",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Alimosho / Mushin) — https://jiji.ng/search?query=interlocking+stones",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:05:46.500Z",
+      "termsDiscovered": [
+        "interlocking stones",
+        "interlocking stone",
+        "pavers",
+        "T design",
+        "machine produced pavers",
+        "T design interlocking stones",
+        "stong"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "T design interlocking stone",
+          "T-shape paver",
+          "machine-produced paver"
+        ],
+        "attributes": [
+          "paver_shape_design",
+          "production_method",
+          "compressive_strength_grade",
+          "paver_dimensions",
+          "colour_finish"
+        ],
+        "questions": [
+          "What paver shape or design is required?",
+          "Should the pavers be machine-produced or manually moulded?",
+          "What concrete grade or compressive strength is required?",
+          "What paver dimensions are required?",
+          "What colour and surface finish are required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The family captures the broad interlocking-stone and paver terminology, but not the seller's T-design subtype or machine-production descriptor. 'Stong' is interpreted as a misspelling of 'strong'. No laying or installation bundle is stated.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 617,
+        "completionTokens": 741
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nyBxffUiwwQi9pIx5ohEPWpBIEg",
+      "productFamily": "external-paving",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ajah) — sales+installation service ad — https://jiji.ng/search?query=interlocking+stones",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:05:59.385Z",
+      "termsDiscovered": [
+        "interlocking stones",
+        "interlocking stone",
+        "laying",
+        "well vibrated interlocking stones",
+        "interlocking stone",
+        "interlocking stones"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "paver_shape_design",
+          "paver_colour_finish",
+          "concrete_strength_grade"
+        ],
+        "questions": [
+          "paver_shape_design",
+          "paver_colour_finish",
+          "concrete_strength_grade",
+          "site_location"
+        ]
+      },
+      "itemNature": "installation_inclusive",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The core seller terminology is already captured by “interlocking stones” and the interlocking-paver subproduct. “Well vibrated” is a quality claim rather than a measurable grade. Production and laying are offered, but the wording does not clearly establish whether installation is included in one quoted rate or charged separately.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 648,
+        "completionTokens": 810
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nyR9Pqg3Nh5rVD1bO8FK5FdbBO3",
+      "productFamily": "kitchen-cabinets",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Yaba / Oshodi) — https://jiji.ng/search?query=kitchen+cabinet+hdf",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:06:15.289Z",
+      "termsDiscovered": [
+        "kitchen cabinets",
+        "portable kitchen cabinet",
+        "ready-made kitchen cabinet",
+        "HDF kitchen cabinet",
+        "HDF Portable Kitchen Cabinet",
+        "Ready-Made Kitchen Cabinet",
+        "premium white kitchen cabinet",
+        "Highquality",
+        "HDF",
+        "ft"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "portable kitchen cabinet",
+          "ready-made kitchen cabinet",
+          "HDF kitchen cabinet"
+        ],
+        "attributes": [
+          "cabinet_dimensions",
+          "cabinet_configuration",
+          "construction_type",
+          "cabinet_colour"
+        ],
+        "questions": [
+          "cabinet_unit_type",
+          "cabinet_configuration",
+          "ready_made_or_custom"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The core term kitchen cabinet is already captured. The listing appears to combine multiple size descriptions, so it is unclear whether it describes one cabinet or several variants. HDF is stated, but whether it applies specifically to the carcass, doors, or both is not confirmed.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 686,
+        "completionTokens": 823
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nyfKRpjspIYolwHpOvzIUwyUtYo",
+      "productFamily": "kitchen-cabinets",
+      "sourceReference": "Jiji.ng seller listing (Imo / Lagos, Ajah) — https://jiji.ng/search?query=kitchen+cabinet+hdf",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:06:29.462Z",
+      "termsDiscovered": [
+        "marble top kitchen cabinet",
+        "HDF high gloss",
+        "kitchen cabinets HDF / high gloss",
+        "kitchen cabinet HDF board",
+        "custom fabrication jobs",
+        "Standard Marble Top Kitchen Cabinet",
+        "Kitchen Cabinets HDF / High Gloss",
+        "Kitchen Cabinet HDF Board",
+        "Hdf",
+        "HDF",
+        "HDF"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "marble top kitchen cabinet",
+          "HDF kitchen cabinet",
+          "high gloss kitchen cabinet",
+          "HDF board kitchen cabinet"
+        ],
+        "attributes": [
+          "cabinet_configuration",
+          "board_thickness",
+          "worktop_thickness",
+          "fabrication_type"
+        ],
+        "questions": [
+          "cabinet_configuration",
+          "door_finish",
+          "hardware_grade",
+          "pricing_basis",
+          "board_thickness",
+          "worktop_thickness"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.91,
+      "notes": "The existing material and finish attributes can represent HDF, high gloss and marble. However, the listing does not clarify whether HDF is used for the carcass, doors or both. It describes custom fabrication but does not explicitly confirm that installation is included.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 694,
+        "completionTokens": 1317
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nz1ynYGfbio40EfPE3sClP7wnCE",
+      "productFamily": "sanitary-wares",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Orile) — https://jiji.ng/search?query=twyford+wc+complete+set",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:06:51.054Z",
+      "termsDiscovered": [
+        "Water Closets",
+        "W.C",
+        "complete set",
+        "ceramic WC",
+        "W.C",
+        "w.c",
+        "WC",
+        "W.C",
+        "w.c",
+        "wc",
+        "W.C",
+        "w.c",
+        "WC"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "WC configuration",
+          "Flush mechanism",
+          "Trap or waste-outlet type",
+          "Model or series",
+          "Colour or finish"
+        ],
+        "questions": [
+          "What WC configuration or mounting type is required?",
+          "What components and fittings are included in the complete set?",
+          "What flush mechanism and flush volume are required?",
+          "What trap or waste-outlet configuration is required?",
+          "What model, colour and finish are required?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "\"Complete set\" appears to mean a bundled WC set, not a complete multi-item bathroom suite. The exact included components and WC configuration are not stated. Efficiency, affordability and reliability are unquantified marketing claims.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 672,
+        "completionTokens": 934
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nzJ0BILPYGYQZbAK3rRx8ESIr4z",
+      "productFamily": "sanitary-wares",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Amuwo-Odofin) — https://jiji.ng/search?query=twyford+wc+complete+set",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:07:08.762Z",
+      "termsDiscovered": [
+        "England Twyford",
+        "water closet",
+        "wash hand basin",
+        "complete set of accessories",
+        "water closet set",
+        "close-coupled toilet",
+        "toilet sink",
+        "top flush",
+        "WC luxury set",
+        "2 piece water closet",
+        "WC",
+        "toilet",
+        "wash hand basin",
+        "toilet sink",
+        "WC set",
+        "water closet set",
+        "luxury set",
+        "0riginal",
+        "2 piece",
+        "WC"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "wash hand basin",
+          "WC set",
+          "water closet set",
+          "toilet sink",
+          "2-piece WC"
+        ],
+        "attributes": [
+          "model_or_product_code",
+          "colour_finish",
+          "material_grade",
+          "outlet_trap_type",
+          "flush_type_capacity",
+          "dimensions",
+          "shape_style"
+        ],
+        "questions": [
+          "What exact accessories and components are included?",
+          "What is the WC outlet or trap type?",
+          "What flush mechanism and cistern capacity are supplied?",
+          "What are the colour, dimensions and shape?",
+          "What is the Twyford model or product code?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The listing describes a Twyford WC-and-basin bundle and also references close-coupled, two-piece variants. The exact bundle composition is unclear, and \"toilet sink\" appears to be ambiguous seller wording for either a basin or a combined toilet-and-basin set.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 713,
+        "completionTokens": 1083
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6nzb1h0vNpgujg463PbuIKCDItEu",
+      "productFamily": "electrical-cables",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ikeja) — https://jiji.ng/search?query=coleman+cable+2.5mm",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:07:26.846Z",
+      "termsDiscovered": [
+        "Coleman cable",
+        "single cable",
+        "single core",
+        "full roll",
+        "coil",
+        "pure copper",
+        "single cable",
+        "1core",
+        "full roll",
+        "Coleman/coleman",
+        "100 meters/100meters",
+        "2.5mm",
+        "1mm",
+        "100m",
+        "1core"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "single cable",
+          "1core",
+          "full roll"
+        ],
+        "attributes": [
+          "colour",
+          "insulation_material",
+          "voltage_rating",
+          "certification_standard"
+        ],
+        "questions": [
+          "cores",
+          "coil_length",
+          "colour",
+          "voltage_rating"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The family captures the main product class, Coleman brand, cable terminology and single-core concept, but not all seller wording. The listing conflicts on conductor size, stating both 2.5mm and 1mm; size_sqmm clarification is therefore essential. The seller uses mm as shorthand where mm² is technically expected.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 671,
+        "completionTokens": 1396
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o01YXZQpvesZaJSnQZnrakfXD1B",
+      "productFamily": "electrical-cables",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Lagos Island (Eko)) — https://jiji.ng/search?query=coleman+cable+2.5mm",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:07:52.899Z",
+      "termsDiscovered": [
+        "Coleman cable",
+        "original Coleman cable",
+        "factory Coleman cable",
+        "flexible cable",
+        "single cable",
+        "factory coil",
+        "single cable",
+        "Coleman flexible cable",
+        "meters",
+        "sizes stated as mm rather than mm²",
+        "3c",
+        "2.5mm × 3c"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "single cable",
+          "3c cable",
+          "factory coil"
+        ],
+        "attributes": [],
+        "questions": [
+          "cores",
+          "coil_length"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The definition broadly captures cable, Coleman, flexible and single-core terminology. The listing combines multiple variants, so the 3-core and 100-metre specifications clearly apply only to the 2.5mm flexible cable. Seller sizes written as mm are understood as the usual market shorthand for conductor cross-section in mm².",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 709,
+        "completionTokens": 878
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o0GFiWYW2YiJlk7RfRWEZ0SKLnq",
+      "productFamily": "electrical-protection",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ojo) — https://jiji.ng/search?query=changeover+switch+100a",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:08:08.672Z",
+      "termsDiscovered": [
+        "changeover switch",
+        "knife switch",
+        "automatic transfer switch",
+        "changeover fuse unit",
+        "fuse unit",
+        "knife changeover switch",
+        "knife switch",
+        "automatic transfer switch",
+        "changeover fuse unit",
+        "2pole",
+        "100a",
+        "100A",
+        "125A",
+        "2-pole"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "knife switch",
+          "knife changeover switch",
+          "automatic transfer switch",
+          "transfer switch",
+          "changeover fuse unit",
+          "fuse unit"
+        ],
+        "attributes": [
+          "operation_mode",
+          "pole_count",
+          "fuse_configuration",
+          "rated_voltage",
+          "breaking_capacity",
+          "mounting_or_enclosure_type"
+        ],
+        "questions": [
+          "Is the changeover manual/knife-operated or automatic?",
+          "How many poles are required?",
+          "For a fuse unit, what fuse type is required and are the fuses included?",
+          "What rated voltage and breaking capacity are required?",
+          "Which exact listed variant is required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.92,
+      "notes": "The text combines several alternative products rather than a bundle. The family covers changeovers and manual/automatic distinctions broadly, but it does not explicitly capture knife-switch, transfer-switch, or changeover fuse-unit terminology. 'Glow' may be a brand or product-line name, but the wording is ambiguous.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 657,
+        "completionTokens": 1235
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o0a2BF2LqLzzXSSCJPxi2vpweoy",
+      "productFamily": "electrical-protection",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Lagos Island (Eko)) — https://jiji.ng/search?query=changeover+switch+100a",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:08:28.462Z",
+      "termsDiscovered": [
+        "dual power changeover switch",
+        "automatic transfer switch",
+        "change over switch",
+        "changeover knife switch",
+        "Socomec changeover switch",
+        "Indoasia changeover switch",
+        "automatic transfer switch",
+        "ATS",
+        "dual power changeover switch",
+        "change over switch",
+        "changeover knife switch",
+        "change over",
+        "ATS",
+        "MCB",
+        "2P",
+        "4P",
+        "63A",
+        "100A",
+        "220V",
+        "400V"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "automatic transfer switch",
+          "ATS",
+          "dual power switch",
+          "dual power changeover switch",
+          "knife switch",
+          "changeover knife switch",
+          "change over switch"
+        ],
+        "attributes": [
+          "pole_count",
+          "operating_mode",
+          "rated_voltage"
+        ],
+        "questions": [
+          "pole_count",
+          "operating_mode",
+          "rated_voltage"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The listing combines several alternative changeover products rather than a bundle. The family captures the core changeover category and manual/automatic distinction, but it does not explicitly capture common seller terms such as ATS, automatic transfer switch, dual power switch, or knife switch. Exact model selection is unclear.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 664,
+        "completionTokens": 1556
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o11Y0escS3Xpd60WtVVeQNHb3jq",
+      "productFamily": "plumbing-pipes",
+      "sourceReference": "Jiji.ng seller listing (Abuja, Dei-Dei) — https://jiji.ng/search?query=ppr+pipe+3%2F4",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:08:55.431Z",
+      "termsDiscovered": [
+        "PPR pipe",
+        "PPR pipes",
+        "Turkey PPR pipe",
+        "connectors",
+        "PPR pipe and fittings",
+        "hot and cold water pipe",
+        "Turkey PPR pipe",
+        "PPR",
+        "3/4"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "PPR connectors",
+          "hot and cold water pipe"
+        ],
+        "attributes": [
+          "pipe_length",
+          "country_of_origin",
+          "wall_thickness_or_series"
+        ],
+        "questions": [
+          "What pressure class or PN rating is required?",
+          "What pipe length is required?",
+          "Is the offer for pipe only, or are connectors/fittings included?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.93,
+      "notes": "The family captures PPR pipes and fittings well. The listing appears to advertise a pipe rather than a definite bundle; connectors and fittings may be separate product options. Turkey may indicate origin or merely a seller description, and the exact offered brand is unclear because both Sanica and Polytech are mentioned.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 651,
+        "completionTokens": 930
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o1GG4RV23kREv7s5U3EqVYkYI0p",
+      "productFamily": "plumbing-pipes",
+      "sourceReference": "Jiji.ng seller listing (Rivers, Port-Harcourt) — https://jiji.ng/search?query=ppr+pipe+3%2F4",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:09:10.283Z",
+      "termsDiscovered": [
+        "PVC pipes",
+        "PVC pipe fittings",
+        "PPR pipe",
+        "IPS PPR pipe",
+        "hot and cold water pipes",
+        "7 bar pipe",
+        "pipes",
+        "PVC pipe fittings",
+        "PPR pipes",
+        "IPS",
+        "Ips",
+        "PVC",
+        "PPR",
+        "IPS",
+        "7 bar",
+        "4\"",
+        "3\"",
+        "2\"",
+        "3/4"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "IPS",
+          "IPS PPR pipe"
+        ],
+        "attributes": [
+          "pipe_length",
+          "fitting_type",
+          "wall_thickness_or_schedule"
+        ],
+        "questions": [
+          "pressure_class",
+          "pipe_length",
+          "fitting_type"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.91,
+      "notes": "The definition captures PVC, PPR, pressure pipes and fittings, but does not explicitly capture IPS. IPS likely denotes a brand, although the wording is ambiguous. The seller calls 7 bar a thickness; technically it is a pressure rating. Multiple sizes and product variants are offered, but there is no indication they form a single bundle.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 661,
+        "completionTokens": 1009
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o1XLAVtG0inyrKSyqhcMRyKKolg",
+      "productFamily": "water-pumps",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Orile) — https://jiji.ng/search?query=pedrollo+pump+1hp",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:09:27.562Z",
+      "termsDiscovered": [
+        "water pump",
+        "Pedrollo",
+        "stainless pump",
+        "self-priming water pump",
+        "surface pump",
+        "flat head",
+        "stainless pump",
+        "self-priming water pump",
+        "flat head surface pump",
+        "1hp",
+        "1.5hp",
+        "Q",
+        "l/min"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "self-priming pump",
+          "flat head pump",
+          "stainless pump"
+        ],
+        "attributes": [
+          "flow_rate_l_min",
+          "construction_material",
+          "priming_type",
+          "water_application",
+          "model_number",
+          "voltage_phase",
+          "inlet_outlet_size"
+        ],
+        "questions": [
+          "What pumping head is required?",
+          "What flow rate is required?",
+          "What voltage and electrical phase are required?",
+          "What inlet and outlet connection sizes are required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The listing combines two distinct Pedrollo pump variants, so the stainless, self-priming and clean-water details may apply only to the 1 hp item, while the 30-120 l/min flow range and flat-head surface description apply to the 1.5 hp item. Existing terminology covers water pump, surface pump and Pedrollo, but not the seller terms self-priming, flat head and stainless pump.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 646,
+        "completionTokens": 1577
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o1wuaxsrSC5UQSs0L8XcUFGECnr",
+      "productFamily": "water-pumps",
+      "sourceReference": "Jiji.ng seller listing (Abuja, Dei-Dei / Rivers, Port-Harcourt) — https://jiji.ng/search?query=pedrollo+pump+1hp",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:09:51.953Z",
+      "termsDiscovered": [
+        "Pedrollo",
+        "submersible pump",
+        "surface pump",
+        "sewage pump",
+        "Italian pump",
+        "copper coil",
+        "Made in Italy",
+        "stainless",
+        "Italian pump",
+        "1hp",
+        "1HP",
+        "0.5hp",
+        "3hp",
+        "hp",
+        "stainless",
+        "copper coil"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Italian pump"
+        ],
+        "attributes": [
+          "pump_application",
+          "flow_rate",
+          "voltage_phase",
+          "inlet_outlet_size",
+          "body_material",
+          "winding_material",
+          "country_of_origin",
+          "solids_handling_size"
+        ],
+        "questions": [
+          "Is the pump intended for clean water, dirty water or sewage?",
+          "What flow rate is required?",
+          "What voltage and electrical phase are required?",
+          "What inlet and outlet sizes are required?",
+          "Is a stainless-steel body required?",
+          "Is a copper winding required?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The definition captures Pedrollo, surface and submersible terminology, but not the sewage application subtype or material shorthand such as stainless and copper coil. The text describes several separate pump variants rather than one bundle.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 652,
+        "completionTokens": 1112
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o2HsFGTbL1ay1sfFHTjmeATW9f7",
+      "productFamily": "water-tanks",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Surulere / Oyo, Ibadan) — https://jiji.ng/search?query=geepee+tank+2000+litres",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:10:12.289Z",
+      "termsDiscovered": [
+        "Geepee Water Tank",
+        "Water Storage Tanks",
+        "Storex",
+        "Geepee",
+        "water tank",
+        "water storage tank",
+        "water storages",
+        "water storages",
+        "L"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "layers",
+          "tank_type"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.98,
+      "notes": "The title identifies a 2000-litre Geepee tank, while the description advertises multiple capacities and both Geepee and Storex brands. 'Water storages' is nonstandard seller wording for water-storage tanks. Existing family names and the brand attribute adequately capture the terminology.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 620,
+        "completionTokens": 966
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o2ZkzoQSa8x7PXRKpdYhyipDWFN",
+      "productFamily": "water-tanks",
+      "sourceReference": "Jiji.ng seller listing (Rivers, Port-Harcourt / Lagos, Ajah) — https://jiji.ng/search?query=geepee+tank+2000+litres",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:10:31.543Z",
+      "termsDiscovered": [
+        "Gee Pee Tank",
+        "Geepee Tank",
+        "water tank",
+        "water storage tank",
+        "cylindrical water storage tank",
+        "rubber tank",
+        "Gee Pee Tank",
+        "Geepee Tank",
+        "GP tank",
+        "rubber tank",
+        "Gee Pee",
+        "Geepee",
+        "TopTank",
+        "GP tank"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Gee Pee tank",
+          "GP tank",
+          "rubber tank"
+        ],
+        "attributes": [
+          "shape",
+          "orientation_or_tank_type"
+        ],
+        "questions": [
+          "What layer construction is required?",
+          "Is the tank vertical, horizontal/loft or underground?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The capacity and Geepee brand are explicit. 'Rubber' appears to be seller terminology for the tank material, but the precise technical material is not confirmed. 'TopTank' appears to be a spacing or transcription variant rather than a clearly separate product term.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 614,
+        "completionTokens": 1274
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o2wD1JSzlViKFK23107dcOyyunG",
+      "productFamily": "solar-panels",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ojo) — https://jiji.ng/search?query=550w+mono+solar+panel",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:10:53.829Z",
+      "termsDiscovered": [
+        "550w Mono Solar Panel",
+        "Canadian Solar Panel",
+        "Halfcut Solar Panels",
+        "Monocrystalline solar panel",
+        "144 Cells",
+        "Canadian Halfcut Solar Panels Mono",
+        "Canadian Solar Panel Halfcut Mono",
+        "550w Mono Solar Panel",
+        "Halfcut",
+        "Half Cut",
+        "half cut",
+        "144cells",
+        "144 Cells",
+        "550w",
+        "650w",
+        "700w",
+        "Mono"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "half-cut solar panel",
+          "halfcut solar panel",
+          "144-cell solar panel"
+        ],
+        "attributes": [
+          "cell_count",
+          "cell_configuration",
+          "face_type"
+        ],
+        "questions": [
+          "What is the cell count?",
+          "Is the panel half-cut or full-cell?",
+          "Is the panel monofacial or bifacial?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.97,
+      "notes": "The definition captures solar panel, mono/monocrystalline, wattage and Canadian Solar terminology, but it does not capture the seller's half-cut and 144-cell terminology. The listing principally describes a 550W panel while mentioning 650W and 700W alternatives; Canadian Solar appears to be the brand for at least the repeated variants.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 616,
+        "completionTokens": 940
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o3H931KVIttywjJjDzRayIQfldw",
+      "productFamily": "solar-panels",
+      "sourceReference": "Jiji.ng seller listing (Lagos / Edo, Egor) — https://jiji.ng/search?query=550w+mono+solar+panel",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:11:13.231Z",
+      "termsDiscovered": [
+        "550W mono solar panels",
+        "Jinko 550W",
+        "144 cell Tiger panels",
+        "solar power combo deal",
+        "front and back charger",
+        "bifacial",
+        "mono solar panels",
+        "Tiger panels",
+        "front and back charger",
+        "MSP",
+        "550W",
+        "x8",
+        "144 cell",
+        "Canadian"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "bifacial panel",
+          "front and back charger",
+          "MSP"
+        ],
+        "attributes": [
+          "bifacial",
+          "cell_count",
+          "model_series"
+        ],
+        "questions": [
+          "Is the panel bifacial or single-sided?",
+          "What is the panel cell count?",
+          "What is the exact model or series?",
+          "What warranty applies to the used panels?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The listing describes a bundle of eight used 550W monocrystalline panels. Jinko appears to be the primary brand, but the reference to Canadian is ambiguous and may indicate Canadian Solar as an alternative. MSP is treated as seller shorthand, although its intended expansion is uncertain.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 608,
+        "completionTokens": 1240
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o3b5OVfKutOB7Q6wlkw2HqknrNv",
+      "productFamily": "inverters",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ojo / Anambra) — https://jiji.ng/search?query=5kva+hybrid+inverter",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:11:35.614Z",
+      "termsDiscovered": [
+        "hybrid inverter",
+        "battery independent inverter",
+        "transformation based hybrid inverter",
+        "battery independent inverter",
+        "transformation based hybrid inverter",
+        "avaliable",
+        "transformation based",
+        "5kva",
+        "7.5KVA",
+        "1.5kva",
+        "24v",
+        "48V",
+        "5000W",
+        "SPL",
+        "12months"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "battery-independent inverter",
+          "transformer-based hybrid inverter"
+        ],
+        "attributes": [
+          "transformer topology",
+          "batteryless or battery-independent operation",
+          "rated output power (W)",
+          "warranty period"
+        ],
+        "questions": [
+          "Is an MPPT charge controller built in?",
+          "What waveform does the inverter produce?",
+          "Is the inverter transformer-based or transformerless?",
+          "Can the inverter operate without a battery?",
+          "What is the warranty period?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.94,
+      "notes": "The text combines four inverter offers rather than one SKU. Existing coverage captures hybrid, capacity, voltage, and major brands Growatt and Felicity, but not the seller's battery-independent and transformer-topology terminology. 'Transformation based' is interpreted as a variant or error for 'transformer-based'; SPL appears to be model or series shorthand.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 675,
+        "completionTokens": 1090
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o3sqbbDHHdkeiA65CAMy19VkhbS",
+      "productFamily": "inverters",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Lekki) — bundle ad — https://jiji.ng/search?query=5kva+hybrid+inverter",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:11:52.419Z",
+      "termsDiscovered": [
+        "hybrid inverter",
+        "lithium battery",
+        "solar panel",
+        "all in one",
+        "solar connection",
+        "All in One",
+        "kva/KVA",
+        "kwh/KWH",
+        "All in One",
+        "6kva",
+        "7.5kwh",
+        "450w",
+        "10pcs",
+        "4KWH",
+        "1.5KVA",
+        "10kwh",
+        "6.5kva"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "all-in-one inverter",
+          "all-in-one inverter system"
+        ],
+        "attributes": [
+          "battery_capacity_kwh",
+          "battery_chemistry",
+          "solar_panel_wattage",
+          "solar_panel_quantity",
+          "installation_included"
+        ],
+        "questions": [
+          "waveform",
+          "mppt_included",
+          "battery_capacity_kwh",
+          "battery_chemistry",
+          "solar_panel_wattage",
+          "solar_panel_quantity"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The text combines several inverter-system examples rather than one unambiguous configuration. The main advertised configuration is a bundle comprising a 6 kVA hybrid inverter, 7.5 kWh lithium battery and ten 450 W panels. Installation is mentioned for a previous customer but is not clearly included in the current offer. The family captures hybrid inverters and system bundles, but not the seller term 'All in One' or key bundle-component specifications.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 698,
+        "completionTokens": 972
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o493M0EkYI3ug329pysg3uT93Xg",
+      "productFamily": "batteries",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ikeja) — https://jiji.ng/search?query=220ah+tubular+battery",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:12:09.167Z",
+      "termsDiscovered": [
+        "220Ah tubular battery",
+        "tubular battery",
+        "tall tubular inverter battery",
+        "inverter battery",
+        "deep-cycle battery",
+        "220Ah tubular battery",
+        "tall tubular inverter battery",
+        "tubler batteries",
+        "12V",
+        "220Ah",
+        "220AH"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [],
+        "questions": [
+          "brand",
+          "warranty_months",
+          "bundle_state"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.97,
+      "notes": "The definition captures tubular, tall, inverter-battery and 220Ah terminology. “Tubler” is a misspelling of “tubular.” The text appears to combine two battery offers or alternatives; the stated one-year warranty applies explicitly only to Nexus.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 666,
+        "completionTokens": 1293
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o4Zc1KTSTfQLC5GkCDEyXSmRZ29",
+      "productFamily": "batteries",
+      "sourceReference": "Jiji.ng seller listing (Oyo, Ibadan / Lagos, Victoria Island) — https://jiji.ng/search?query=220ah+tubular+battery",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:12:35.695Z",
+      "termsDiscovered": [
+        "battery",
+        "220Ah battery",
+        "tubular battery",
+        "tall tubular battery",
+        "complete cell battery",
+        "tall tubular battery",
+        "complete cell battery",
+        "Mecury",
+        "inverlast",
+        "220ah",
+        "220 Ah",
+        "12v220ah",
+        "Ah",
+        "V",
+        "220ah",
+        "12v",
+        "12v220ah"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [],
+        "attributes": [
+          "model_series",
+          "country_of_origin"
+        ],
+        "questions": [
+          "brand",
+          "model_series",
+          "warranty_months",
+          "bundle_state"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": true,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.95,
+      "notes": "The text combines several 220Ah tubular-battery offers. Existing terminology covers battery, tubular battery, 220Ah battery and the tall tubular form. 'Complete cell battery' is vague seller wording and is not recommended as a canonical alias. 'Mecury' is likely a misspelling of Mercury.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 685,
+        "completionTokens": 1491
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o52RvNAPnSnRqklBFlSWr1BSOgh",
+      "productFamily": "generators",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ajah) — https://jiji.ng/search?query=10kva+silent+diesel+generator",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:13:04.327Z",
+      "termsDiscovered": [
+        "10kva Silent Diesel Generator",
+        "Perkins generator",
+        "semi silent generator",
+        "soundproof generator",
+        "pure copper coil",
+        "keystart",
+        "Senci diesel generator",
+        "silent canopy",
+        "silent diesel generator",
+        "semi silent soundproof generator",
+        "silent canopy generator",
+        "10kva",
+        "10.6kva",
+        "keystart",
+        "perkins",
+        "kVA",
+        "10kva",
+        "10.6kva",
+        "SCD18000E"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "semi silent generator",
+          "soundproof generator",
+          "silent canopy generator",
+          "Perkins generator",
+          "Senci generator"
+        ],
+        "attributes": [
+          "model",
+          "engine_make_model",
+          "winding_material",
+          "start_method",
+          "phase",
+          "rated_vs_max_output",
+          "noise_level",
+          "ats_included"
+        ],
+        "questions": [
+          "Is the stated kVA value rated/prime output or maximum output?",
+          "Is the generator single-phase or three-phase?",
+          "What is the exact model and engine model?",
+          "Is an ATS or manual changeover included?",
+          "Does it use a full silent canopy or a semi-silent enclosure?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The listing appears to mention two alternative diesel-generator offerings: a Perkins 10 kVA semi-silent unit and a Senci SCD18000E silent-canopy unit. The definition captures the core diesel, silent, brand, condition, and kVA concepts, but not common enclosure variants, winding material, starting method, model, phase, or rated-versus-maximum output terminology.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 662,
+        "completionTokens": 1076
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o5J5UDJt0wpFjTTfIaZoarP97QU",
+      "productFamily": "generators",
+      "sourceReference": "Jiji.ng seller listing (Lagos) — https://jiji.ng/search?query=10kva+silent+diesel+generator",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:13:20.128Z",
+      "termsDiscovered": [
+        "10kVA silent diesel generator",
+        "diesel soundproof generator",
+        "100% copper coil",
+        "three phase",
+        "backup power",
+        "Firman",
+        "Elepaq",
+        "Perkins",
+        "Kipor",
+        "silent diesel generator",
+        "soundproof generator",
+        "10kva",
+        "10KVA",
+        "10kVA",
+        "kVA",
+        "KVA",
+        "kva"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "soundproof generator",
+          "Kipor generator"
+        ],
+        "attributes": [
+          "model",
+          "phase_configuration",
+          "winding_material",
+          "output_rating_basis"
+        ],
+        "questions": [
+          "What exact brand and model is being offered?",
+          "Is the generator single-phase or three-phase?",
+          "Is the stated kVA rating continuous/rated or maximum/standby output?",
+          "Is the alternator winding copper or aluminium?"
+        ]
+      },
+      "itemNature": "product_only",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.96,
+      "notes": "The text appears to combine or keyword-list four different 10 kVA generator brands rather than describe one unambiguous unit. Silent and soundproof refer to the enclosure; copper coil and three-phase apply only to specifically named units.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 672,
+        "completionTokens": 1675
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o5pv4phnkemHQ870LKukgSMxqRI",
+      "productFamily": "cctv-security",
+      "sourceReference": "Jiji.ng seller listing (Lagos, Ikeja) — https://jiji.ng/search?query=hikvision+4+camera+cctv+kit",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:13:53.018Z",
+      "termsDiscovered": [
+        "CCTV Camera Kit",
+        "Hikvision Turbo HD",
+        "8 camera kit",
+        "8 channel DVR",
+        "4 Channel Complete Kit",
+        "AHD",
+        "indoor camera",
+        "outdoor camera",
+        "4 way power supply",
+        "BNC connector",
+        "CCTV Camera Kit",
+        "Turbo HD camera kit",
+        "Complete Kit",
+        "AHD camera kit",
+        "8channel",
+        "8 channel",
+        "4 Channel",
+        "4 channel",
+        "CCTV",
+        "DVR",
+        "AHD",
+        "BNC",
+        "100m",
+        "8pcs",
+        "1 x"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "Turbo HD",
+          "AHD",
+          "complete CCTV kit",
+          "8-channel camera kit",
+          "4-channel camera kit"
+        ],
+        "attributes": [
+          "recorder_channel_count",
+          "camera_environment",
+          "cable_length_m",
+          "storage_included",
+          "cable_type",
+          "installation_included",
+          "warranty_period"
+        ],
+        "questions": [
+          "Is a hard drive included, and what is its storage capacity?",
+          "How many cameras are indoor versus outdoor?",
+          "What recording resolution does the DVR support?",
+          "What cable type and length are included?",
+          "Is installation included or separately priced?"
+        ]
+      },
+      "itemNature": "bundle",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.97,
+      "notes": "The text combines two distinct Hikvision analogue bundles: an 8-camera Turbo HD kit and a 4-camera AHD complete kit. The current family broadly covers analogue kits and DVRs, but it does not explicitly capture AHD, Turbo HD, recorder channel count, indoor/outdoor composition, or cable-length terminology.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 732,
+        "completionTokens": 1018
+      }
+    },
+    {
+      "modelUsed": "gpt-5.6-sol",
+      "modelResponseId": "chatcmpl-E6o68V67JuBDbbXyJd0slv3BRQw9z",
+      "productFamily": "cctv-security",
+      "sourceReference": "Jiji.ng seller listing (Lagos / Enugu) — https://jiji.ng/search?query=hikvision+4+camera+cctv+kit",
+      "sourceType": "public_marketplace_listing",
+      "dateChecked": "2026-07-29T02:14:12.641Z",
+      "termsDiscovered": [
+        "CCTV camera system",
+        "complete camera kit",
+        "complete Hikvision kit",
+        "Turbo HD",
+        "4-way power box",
+        "hard drive",
+        "accessories and installation",
+        "CCTV security camera system",
+        "complete camera kit",
+        "4 channel CCTV camera system",
+        "Hikvision Turbo HD system",
+        "Dvr",
+        "hikvision",
+        "4pcs",
+        "1pcs",
+        "CCTV",
+        "DVR",
+        "4ch",
+        "2MP",
+        "pcs",
+        "305m",
+        "1TB"
+      ],
+      "proposedMatrixCorrections": {
+        "aliases": [
+          "CCTV camera system",
+          "complete camera kit",
+          "Turbo HD CCTV kit",
+          "4 channel CCTV system",
+          "complete Hikvision kit"
+        ],
+        "attributes": [
+          "recorder_channel_count",
+          "installation_included",
+          "camera_form_factor",
+          "lens_focal_length_mm",
+          "night_vision_range_m",
+          "cable_length_m",
+          "warranty"
+        ],
+        "questions": [
+          "What recorder channel capacity is required?",
+          "Is a hard drive included, and what capacity is it?",
+          "Do you require bullet cameras, dome cameras, or a mixture?",
+          "What night-vision range is required?",
+          "Which exact bundle is required: the 4-channel kit or the 16-channel kit?"
+        ]
+      },
+      "itemNature": "installation_inclusive",
+      "matrixCapturesTerminology": false,
+      "validationResult": "valid",
+      "validationErrors": [],
+      "confidence": 0.91,
+      "notes": "The text appears to combine a four-camera/four-channel package with a separate 16-channel kit. Hikvision Turbo HD strongly indicates an analogue HD-TVI system, but the exact selected bundle and whether installation applies to every option are unclear.",
+      "adminCorrectionApplied": false,
+      "usage": {
+        "promptTokens": 744,
+        "completionTokens": 1615
+      }
+    }
+  ]
+}

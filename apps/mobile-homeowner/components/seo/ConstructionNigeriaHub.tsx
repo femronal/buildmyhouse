@@ -27,7 +27,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
     router.push(href as any);
   };
 
-  const LinkPills = ({ links }: { links?: Array<{ label: string; href: string }> }) => {
+  const LinkPills = ({ links }: { links?: { label: string; href: string }[] }) => {
     if (!links?.length) return null;
     return (
       <View className="flex-row flex-wrap gap-2 mt-3">
@@ -56,7 +56,7 @@ export default function ConstructionNigeriaHub({ content }: Props) {
     title: string;
     paragraphs: string[];
     bullets?: string[];
-    links?: Array<{ label: string; href: string }>;
+    links?: { label: string; href: string }[];
     variant?: 'plain' | 'card';
   }) => (
     <View

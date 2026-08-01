@@ -16,7 +16,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermsConditionsScreen() {
   const router = useRouter();
-  const sections: Array<{ title: string; body: string }> = [
+  const sections: { title: string; body: string }[] = [
     {
       title: "BuildMyHouse Terms of Service & Platform Policies",
       body: "Last Updated: May 2026\n\nThese Terms of Service and Platform Policies (\"Terms\") govern the use of BuildMyHouse by all users, including homeowners, property owners, clients, contractors, subcontractors, interior designers, renovation specialists, consultants, and all other users accessing the platform.\n\nBy accessing, registering for, or using BuildMyHouse, you agree to be legally bound by these Terms.",

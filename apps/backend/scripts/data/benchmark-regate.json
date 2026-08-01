@@ -1,0 +1,409 @@
+{
+  "runAt": "2026-07-31T00:01:13.202Z",
+  "model": "gpt-5.6-sol",
+  "config": {
+    "extractionModel": "gpt-5.6-sol",
+    "planningModel": "gpt-5.6-sol",
+    "searchProvider": "openai_web_search",
+    "pageRetriever": "direct_public",
+    "browserFallbackEnabled": false,
+    "maxSearchQueries": 6,
+    "maxSourcesPerItem": 12,
+    "researchTimeoutMs": 240000,
+    "sourceCacheTtlHours": 72,
+    "maxPageBytes": 3000000,
+    "pageFetchTimeoutMs": 15000,
+    "pageFetchMaxRetries": 2,
+    "userAgent": "BuildMyHousePriceChecker/1.0 (+https://buildmyhouse.app/price-checker; research bot; contact: support@buildmyhouse.app)"
+  },
+  "summary": {
+    "items": 3,
+    "priced": 1,
+    "insufficientData": 1,
+    "failed": 1,
+    "withThreePlusIndependent": 1,
+    "discoverySuccessRate": 0.6666666666666666,
+    "retrievalSuccessRate": 0.6111111111111112,
+    "extractionSuccessRate": 0.9090909090909091,
+    "avgLatencyMs": 112103,
+    "totalEstimatedUsd": 0,
+    "costPerSuccessfulItemUsd": 0,
+    "pricingKnown": false,
+    "totalUngroundedObservations": 0,
+    "failuresByRetrievalOutcome": {
+      "no_useful_content": 1,
+      "login_required": 2,
+      "unsafe_url_rejected": 3,
+      "fetch_failed": 1
+    }
+  },
+  "perItem": [
+    {
+      "id": "bm-tiling-labour-lagos",
+      "description": "Tiling labour per square metre in a selected city",
+      "expectation": "Labelled \"observed advertised/quoted service range\"; scopes not mixed.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        500,
+        3200
+      ],
+      "median": 1500,
+      "unit": "sqm",
+      "independentSources": 5,
+      "discoveredUrls": [
+        "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+        "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+        "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+        "https://nigeriabuildingcost.ng/blog/cost-of-tiling-a-house-in-nigeria",
+        "https://hustlam.com/construction.php",
+        "https://www.pronearme.ng/best-tiler-in-ilasamaja",
+        "https://buildwithease.com.ng/2026/04/30/labour-cost-for-building-a-house-in-nigeria-2026/",
+        "https://floornigeria.com/floor-tiles/",
+        "https://jiji.ng/lagos-island-west/building-and-trades-services/tilling-job-boBodFJ9pjRnUGufXCuQYYZE.html",
+        "https://jiji.ng/ajah/building-and-trades-services/pop-installation-and-tiling-installation-5tzn7eK8D3adraXxRsT8raeC.html",
+        "https://jiji.ng/eko-atlantic/building-and-trades-services/30x30-floor-and-wall-tiles-zPScpbiGztCWzeKJyFOptOoX.html"
+      ],
+      "retrieval": [
+        {
+          "url": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "finalUrl": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "finalUrl": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+          "finalUrl": "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-of-tiling-a-house-in-nigeria",
+          "finalUrl": "https://nigeriabuildingcost.ng/blog/cost-of-tiling-a-house-in-nigeria",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://hustlam.com/construction.php",
+          "finalUrl": "https://hustlam.com/construction.php",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.pronearme.ng/best-tiler-in-ilasamaja",
+          "finalUrl": "https://www.pronearme.ng/tiler-in-ilasamaja",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://buildwithease.com.ng/2026/04/30/labour-cost-for-building-a-house-in-nigeria-2026/",
+          "finalUrl": "https://buildwithease.com.ng/2026/04/30/labour-cost-for-building-a-house-in-nigeria-2026/",
+          "outcome": "no_useful_content",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://floornigeria.com/floor-tiles/",
+          "finalUrl": "https://floornigeria.com/floor-tiles/",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 401"
+        },
+        {
+          "url": "https://jiji.ng/lagos-island-west/building-and-trades-services/tilling-job-boBodFJ9pjRnUGufXCuQYYZE.html",
+          "finalUrl": "https://jiji.ng/lagos-island-west/building-and-trades-services/tilling-job-boBodFJ9pjRnUGufXCuQYYZE.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://jiji.ng/ajah/building-and-trades-services/pop-installation-and-tiling-installation-5tzn7eK8D3adraXxRsT8raeC.html",
+          "finalUrl": "https://jiji.ng/ajah/building-and-trades-services/pop-installation-and-tiling-installation-5tzn7eK8D3adraXxRsT8raeC.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://jiji.ng/eko-atlantic/building-and-trades-services/30x30-floor-and-wall-tiles-zPScpbiGztCWzeKJyFOptOoX.html",
+          "finalUrl": "https://jiji.ng/eko-atlantic/building-and-trades-services/30x30-floor-and-wall-tiles-zPScpbiGztCWzeKJyFOptOoX.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "seller": null,
+          "price": 600,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 600,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:56:54.002Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 1800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 1800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:57:32.872Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2070,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2070,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:57:32.872Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2160,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2160,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:57:32.872Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2340,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2340,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:57:32.872Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+          "seller": "African Land",
+          "price": 500,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 500,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:58:11.576Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-of-tiling-a-house-in-nigeria",
+          "seller": "Nigeria Building Cost Team",
+          "price": 1500,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 1500,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:58:37.347Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-of-tiling-a-house-in-nigeria",
+          "seller": "Nigeria Building Cost Team",
+          "price": 2200,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2200,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:58:37.347Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://hustlam.com/construction.php",
+          "seller": "Hustlam",
+          "price": 3200,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 3200,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:59:14.599Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 6,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 11,
+        "browserFallbacks": 0,
+        "inputTokens": 70577,
+        "outputTokens": 14229,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6821,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-custom-screed-pump",
+      "description": "Level 3 custom physical product with a specific brand/model",
+      "expectation": "Custom item; matrix generated from scratch; may be low confidence.",
+      "outcome": "insufficient_data",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [
+        "https://machineryline.ng/-/construction-equipment/PUTZMEISTER/MP-25--c85tm3325m954",
+        "https://machineryline.ng/-/plastering-machines/Putzmeister--c102tm3325",
+        "https://machineryline.ng/-/surface-finishing-equipment/Putzmeister/MP-25--c2443tm3325m954",
+        "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+        "https://www.sio365.com/marketplace/construction/putzmeister-mp-25/",
+        "https://www.lectura-specs.com/en/model/structural-and-civil-engineering-equipment/mortar-mixing-pumps-putzmeister/mp-25-11738181",
+        "https://www.pmmortar.com/ja/product-detail/-/product/318/mp-25"
+      ],
+      "retrieval": [
+        {
+          "url": "https://machineryline.ng/-/construction-equipment/PUTZMEISTER/MP-25--c85tm3325m954",
+          "finalUrl": "https://machineryline.ng/-/construction-equipment/Putzmeister/MP-25--c85tm3325m954",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://machineryline.ng/-/plastering-machines/Putzmeister--c102tm3325",
+          "finalUrl": "https://machineryline.ng/-/plastering-machines/Putzmeister--c102tm3325",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://machineryline.ng/-/surface-finishing-equipment/Putzmeister/MP-25--c2443tm3325m954",
+          "finalUrl": "https://machineryline.ng/-/surface-finishing-equipment/Putzmeister/MP-25--c2443tm3325m954",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+          "finalUrl": "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.sio365.com/marketplace/construction/putzmeister-mp-25/",
+          "finalUrl": "https://www.sio365.com/marketplace/construction/putzmeister-mp-25/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.lectura-specs.com/en/model/structural-and-civil-engineering-equipment/mortar-mixing-pumps-putzmeister/mp-25-11738181",
+          "finalUrl": "https://www.lectura-specs.com/en/model/structural-and-civil-engineering-equipment/mortar-mixing-pumps-putzmeister/mp-25-11738181",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.pmmortar.com/ja/product-detail/-/product/318/mp-25",
+          "finalUrl": "https://www.pmmortar.com/ja/product-detail/-/product/318/mp-25",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://machineryline.ng/-/construction-equipment/Putzmeister/MP-25--c85tm3325m954",
+          "seller": null,
+          "price": 6829000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 6829000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-31T00:00:23.885Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "No comparable public evidence found."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 5,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 7,
+        "browserFallbacks": 0,
+        "inputTokens": 36316,
+        "outputTokens": 4351,
+        "cachedTokens": 4395,
+        "reasoningTokens": 2004,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-obscure-insufficient",
+      "description": "Request that should legitimately return insufficient data",
+      "expectation": "Should return INSUFFICIENT DATA, not a fabricated price.",
+      "outcome": "failed",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [],
+      "retrieval": [],
+      "acceptedSources": [],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Search planning failed: 429 You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+      ],
+      "cost": {
+        "searchCalls": 0,
+        "extractionCalls": 0,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 0,
+        "browserFallbacks": 0,
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cachedTokens": 0,
+        "reasoningTokens": 0,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    }
+  ]
+}

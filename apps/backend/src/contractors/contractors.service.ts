@@ -1187,259 +1187,255 @@ export class ContractorsService {
     estimatedDuration?: string,
     gcNotes?: string,
   ) {
-    try {
-      // Verify the request belongs to this contractor
-      const request = await this.prisma.projectRequest.findFirst({
-        where: {
-          id: requestId,
-          contractorId,
-          status: 'pending',
-        },
-        include: {
-          project: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-              homeownerId: true,
-              homeowner: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  email: true,
-                },
+    // Verify the request belongs to this contractor
+    const request = await this.prisma.projectRequest.findFirst({
+      where: {
+        id: requestId,
+        contractorId,
+        status: 'pending',
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            homeownerId: true,
+            homeowner: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
               },
             },
           },
         },
-      });
+      },
+    });
 
-      if (!request) {
-        console.error('❌ [ContractorsService] Request not found or already processed');
-        console.error('  Request ID:', requestId);
-        console.error('  Contractor ID:', contractorId);
-        throw new Error('Request not found or already processed');
+    if (!request) {
+      console.error('❌ [ContractorsService] Request not found or already processed');
+      console.error('  Request ID:', requestId);
+      console.error('  Contractor ID:', contractorId);
+      throw new Error('Request not found or already processed');
+    }
+
+
+    // Get contractor info to determine role
+    const contractor = await this.prisma.user.findUnique({
+      where: { id: contractorId },
+      select: { role: true },
+    });
+
+    // Backend guardrail: for GC project-level accept, ensure edited analysis is complete
+    // and phase costs sum exactly to estimatedBudget. GC Notes (free text) is optional.
+    if (contractor?.role === 'general_contractor' && !request.stageId) {
+      if (!estimatedDuration || !String(estimatedDuration).trim()) {
+        throw new BadRequestException('estimatedDuration is required');
       }
-
-
-      // Get contractor info to determine role
-      const contractor = await this.prisma.user.findUnique({
-        where: { id: contractorId },
-        select: { role: true },
-      });
-
-      // Backend guardrail: for GC project-level accept, ensure edited analysis is complete
-      // and phase costs sum exactly to estimatedBudget. GC Notes (free text) is optional.
-      if (contractor?.role === 'general_contractor' && !request.stageId) {
-        if (!estimatedDuration || !String(estimatedDuration).trim()) {
-          throw new BadRequestException('estimatedDuration is required');
-        }
-        const editedAnalysis = this.extractEditedAnalysisFromNotes(gcNotes);
-        if (!editedAnalysis) {
-          throw new BadRequestException('Edited project analysis is required');
-        }
-        this.validateEditedProjectAnalysisOrThrow(editedAnalysis, estimatedBudget);
+      const editedAnalysis = this.extractEditedAnalysisFromNotes(gcNotes);
+      if (!editedAnalysis) {
+        throw new BadRequestException('Edited project analysis is required');
       }
+      this.validateEditedProjectAnalysisOrThrow(editedAnalysis, estimatedBudget);
+    }
 
-      const quoteGeneratedAt = new Date();
-      const quoteBreakdown =
-        contractor?.role === 'general_contractor' && !request.stageId && Number(estimatedBudget || 0) > 0
-          ? this.calculateBmhQuoteBreakdown(Number(estimatedBudget || 0))
-          : null;
+    const quoteGeneratedAt = new Date();
+    const quoteBreakdown =
+      contractor?.role === 'general_contractor' && !request.stageId && Number(estimatedBudget || 0) > 0
+        ? this.calculateBmhQuoteBreakdown(Number(estimatedBudget || 0))
+        : null;
 
-      // Update request
-      const updatedRequest = await this.prisma.projectRequest.update({
-        where: { id: requestId },
+    // Update request
+    const updatedRequest = await this.prisma.projectRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'accepted',
+        respondedAt: new Date(),
+        estimatedBudget,
+        monitoringFeeAmount: quoteBreakdown?.monitoringFeeAmount,
+        coordinationFeeAmount: quoteBreakdown?.coordinationFeeAmount,
+        contingencyFeeAmount: quoteBreakdown?.contingencyFeeAmount,
+        totalQuoteAmount: quoteBreakdown?.totalQuoteAmount,
+        quoteGeneratedAt: quoteBreakdown ? quoteGeneratedAt : null,
+        estimatedDuration,
+        gcNotes,
+      },
+      include: {
+        project: {
+          include: {
+            generalContractor: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
+        contractor: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            contractorProfile: {
+              select: {
+                id: true,
+                name: true,
+                specialty: true,
+                imageUrl: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Only update project generalContractorId if the contractor accepting is a GC
+    // (This happens when a GC accepts a homeowner's request)
+    // For subcontractors accepting GC requests, we don't change the project's GC
+    if (contractor?.role === 'general_contractor') {
+      // If this is a project-level request (not a single stage request), persist the edited analysis
+      // to the project so the homeowner can see it even if they left the AI summary screen.
+      const editedAnalysis = !request.stageId ? this.extractEditedAnalysisFromNotes(gcNotes) : null;
+
+      const updatedProject = await this.prisma.project.update({
+        where: { id: request.projectId },
         data: {
-          status: 'accepted',
-          respondedAt: new Date(),
-          estimatedBudget,
-          monitoringFeeAmount: quoteBreakdown?.monitoringFeeAmount,
-          coordinationFeeAmount: quoteBreakdown?.coordinationFeeAmount,
-          contingencyFeeAmount: quoteBreakdown?.contingencyFeeAmount,
-          totalQuoteAmount: quoteBreakdown?.totalQuoteAmount,
-          quoteGeneratedAt: quoteBreakdown ? quoteGeneratedAt : null,
-          estimatedDuration,
-          gcNotes,
-        },
-        include: {
-          project: {
-            include: {
-              generalContractor: {
-                select: {
-                  id: true,
-                  fullName: true,
-                  email: true,
-                  phone: true,
-                },
-              },
-            },
-          },
-          contractor: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              contractorProfile: {
-                select: {
-                  id: true,
-                  name: true,
-                  specialty: true,
-                  imageUrl: true,
-                  type: true,
-                },
-              },
-            },
-          },
+          generalContractorId: contractorId,
+          // Update budget if GC provided one
+          ...(estimatedBudget && { budget: estimatedBudget }),
+          // Move project into "awaiting payment" once GC has reviewed/accepted
+          ...( !request.stageId && { status: 'pending_payment' } ),
+          // Persist edited analysis for homeowner visibility (and future stage generation)
+          ...(editedAnalysis && { aiAnalysis: editedAnalysis, aiProcessedAt: new Date() }),
         },
       });
-
-      // Only update project generalContractorId if the contractor accepting is a GC
-      // (This happens when a GC accepts a homeowner's request)
-      // For subcontractors accepting GC requests, we don't change the project's GC
-      if (contractor?.role === 'general_contractor') {
-        // If this is a project-level request (not a single stage request), persist the edited analysis
-        // to the project so the homeowner can see it even if they left the AI summary screen.
-        const editedAnalysis = !request.stageId ? this.extractEditedAnalysisFromNotes(gcNotes) : null;
-
-        const updatedProject = await this.prisma.project.update({
-          where: { id: request.projectId },
+      // Emit real-time update to homeowner that GC has accepted
+      this.wsService.emitProjectUpdate(request.projectId, {
+        type: 'status_change',
+        data: {
+          event: 'gc_accepted',
+          projectId: request.projectId,
+          generalContractorId: contractorId,
+          message: 'A General Contractor has accepted your project request',
+        },
+      });
+      
+      // Also send notification to homeowner
+      if (request.project?.homeownerId) {
+        const quoteTotalText = quoteBreakdown
+          ? ` Total payable: ${this.formatNaira(quoteBreakdown.totalQuoteAmount)}.`
+          : '';
+        this.wsService.sendNotification(request.project.homeownerId, {
+          type: 'gc_accepted',
+          title: 'Project Request Accepted!',
+          message: `A contractor has accepted your project: ${request.project.name}.${quoteTotalText}`,
           data: {
-            generalContractorId: contractorId,
-            // Update budget if GC provided one
-            ...(estimatedBudget && { budget: estimatedBudget }),
-            // Move project into "awaiting payment" once GC has reviewed/accepted
-            ...( !request.stageId && { status: 'pending_payment' } ),
-            // Persist edited analysis for homeowner visibility (and future stage generation)
-            ...(editedAnalysis && { aiAnalysis: editedAnalysis, aiProcessedAt: new Date() }),
-          },
-        });
-        // Emit real-time update to homeowner that GC has accepted
-        this.wsService.emitProjectUpdate(request.projectId, {
-          type: 'status_change',
-          data: {
-            event: 'gc_accepted',
             projectId: request.projectId,
-            generalContractorId: contractorId,
-            message: 'A General Contractor has accepted your project request',
+            requestId: updatedRequest.id,
+            quoteBreakdown: quoteBreakdown || undefined,
           },
         });
-        
-        // Also send notification to homeowner
-        if (request.project?.homeownerId) {
-          const quoteTotalText = quoteBreakdown
-            ? ` Total payable: ${this.formatNaira(quoteBreakdown.totalQuoteAmount)}.`
-            : '';
-          this.wsService.sendNotification(request.project.homeownerId, {
-            type: 'gc_accepted',
-            title: 'Project Request Accepted!',
-            message: `A contractor has accepted your project: ${request.project.name}.${quoteTotalText}`,
-            data: {
-              projectId: request.projectId,
-              requestId: updatedRequest.id,
-              quoteBreakdown: quoteBreakdown || undefined,
-            },
+      }
+
+      if (quoteBreakdown && request.project?.homeowner?.email) {
+        const homeownerName = request.project?.homeowner?.fullName || 'Homeowner';
+        const quoteReference = `BMH-${request.projectId.slice(0, 8).toUpperCase()}-${updatedRequest.id
+          .slice(0, 6)
+          .toUpperCase()}`;
+        const projectNameForFile = this.sanitizeFileNameSegment(request.project.name);
+        const quotePdfFileName = `buildmyhouse-quote-${projectNameForFile}-${quoteReference
+          .toLowerCase()
+          .replace(/[^a-z0-9-]/g, '')}.pdf`;
+
+        try {
+          const quotePdfBuffer = await this.generateHomeownerQuotePdfBuffer({
+            quoteReference,
+            generatedAt: quoteGeneratedAt,
+            projectName: request.project.name,
+            projectAddress: request.project.address,
+            homeownerName,
+            contractorName:
+              updatedRequest.contractor?.contractorProfile?.name ||
+              updatedRequest.contractor?.fullName ||
+              'General Contractor',
+            estimatedDuration: estimatedDuration || null,
+            baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
+            monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
+            coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
+            contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
+            totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
           });
-        }
 
-        if (quoteBreakdown && request.project?.homeowner?.email) {
-          const homeownerName = request.project?.homeowner?.fullName || 'Homeowner';
-          const quoteReference = `BMH-${request.projectId.slice(0, 8).toUpperCase()}-${updatedRequest.id
-            .slice(0, 6)
-            .toUpperCase()}`;
-          const projectNameForFile = this.sanitizeFileNameSegment(request.project.name);
-          const quotePdfFileName = `buildmyhouse-quote-${projectNameForFile}-${quoteReference
-            .toLowerCase()
-            .replace(/[^a-z0-9-]/g, '')}.pdf`;
-
-          try {
-            const quotePdfBuffer = await this.generateHomeownerQuotePdfBuffer({
-              quoteReference,
-              generatedAt: quoteGeneratedAt,
-              projectName: request.project.name,
-              projectAddress: request.project.address,
-              homeownerName,
-              contractorName:
-                updatedRequest.contractor?.contractorProfile?.name ||
-                updatedRequest.contractor?.fullName ||
-                'General Contractor',
-              estimatedDuration: estimatedDuration || null,
-              baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
-              monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
-              coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
-              contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
-              totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
-            });
-
-            const quoteEmailSent = await this.emailService.sendHomeownerQuoteEmail({
-              to: request.project.homeowner.email,
-              homeownerName,
-              projectName: request.project.name,
-              projectAddress: request.project.address,
-              contractorName:
-                updatedRequest.contractor?.contractorProfile?.name ||
-                updatedRequest.contractor?.fullName ||
-                'General Contractor',
-              estimatedDuration: estimatedDuration || null,
-              baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
-              monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
-              coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
-              contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
-              totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
-              quotePdfBuffer,
-              quotePdfFileName,
-            });
-            if (!quoteEmailSent) {
-              this.logger.warn(
-                `Homeowner quote email not delivered for request ${requestId}. Check Resend configuration/domain verification.`,
-              );
-            }
-          } catch (emailError: any) {
+          const quoteEmailSent = await this.emailService.sendHomeownerQuoteEmail({
+            to: request.project.homeowner.email,
+            homeownerName,
+            projectName: request.project.name,
+            projectAddress: request.project.address,
+            contractorName:
+              updatedRequest.contractor?.contractorProfile?.name ||
+              updatedRequest.contractor?.fullName ||
+              'General Contractor',
+            estimatedDuration: estimatedDuration || null,
+            baseQuoteAmount: quoteBreakdown.baseBudgetAmount,
+            monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
+            coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
+            contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
+            totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
+            quotePdfBuffer,
+            quotePdfFileName,
+          });
+          if (!quoteEmailSent) {
             this.logger.warn(
-              `Failed to send homeowner quote email for request ${requestId}: ${
-                emailError?.message || 'unknown error'
-              }`,
+              `Homeowner quote email not delivered for request ${requestId}. Check Resend configuration/domain verification.`,
             );
           }
+        } catch (emailError: any) {
+          this.logger.warn(
+            `Failed to send homeowner quote email for request ${requestId}: ${
+              emailError?.message || 'unknown error'
+            }`,
+          );
         }
-      } else {
-        // Non-GC accept: do not modify project generalContractorId.
       }
+    } else {
+      // Non-GC accept: do not modify project generalContractorId.
+    }
 
-      // Notifications intentionally deferred for MVP.
+    // Notifications intentionally deferred for MVP.
 
-      // Get project with GC info for response (ensure we have the GC)
-      let projectWithGC = await this.prisma.project.findUnique({
-        where: { id: request.projectId },
-        include: {
-          generalContractor: {
-            select: {
-              id: true,
-              fullName: true,
-              email: true,
-              phone: true,
-              pictureUrl: true,
-            },
+    // Get project with GC info for response (ensure we have the GC)
+    const projectWithGC = await this.prisma.project.findUnique({
+      where: { id: request.projectId },
+      include: {
+        generalContractor: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+            pictureUrl: true,
           },
         },
-      });
+      },
+    });
 
-      // If project doesn't have a GC but the request was sent by a GC, try to find who sent it
-      // This can happen if the project GC wasn't set when the request was sent
-      if (!projectWithGC?.generalContractor) {
-        // For now, we'll return what we have - the GC should be set when sending requests
-      }
-
-      return {
-        success: true,
-        message: 'Project request accepted successfully',
-        request: updatedRequest,
-        project: projectWithGC,
-      };
-    } catch (error) {
-      throw error;
+    // If project doesn't have a GC but the request was sent by a GC, try to find who sent it
+    // This can happen if the project GC wasn't set when the request was sent
+    if (!projectWithGC?.generalContractor) {
+      // For now, we'll return what we have - the GC should be set when sending requests
     }
+
+    return {
+      success: true,
+      message: 'Project request accepted successfully',
+      request: updatedRequest,
+      project: projectWithGC,
+    };
   }
 
   /**

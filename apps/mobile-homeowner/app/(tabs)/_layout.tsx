@@ -17,23 +17,25 @@ export default function TabsLayout() {
   const isDesktopTab = width >= 768;
 
   const renderIcon = (Icon: any) =>
-    ({ color, focused }: { color: string; focused: boolean }) => (
-      <View
-        className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
-        style={{
-          width: isDesktopTab ? 32 : undefined,
-          height: isDesktopTab ? 32 : undefined,
-          paddingVertical: isDesktopTab ? 0 : 6,
-          paddingHorizontal: isDesktopTab ? 0 : 8,
-        }}
-      >
-        <Icon
-          size={isCompact ? 22 : 24}
-          color={focused ? '#FFFFFF' : color}
-          weight={focused ? 'fill' : 'regular'}
-        />
-      </View>
-    );
+    function TabIcon({ color, focused }: { color: string; focused: boolean }) {
+      return (
+        <View
+          className={`rounded-xl items-center justify-center ${focused ? 'bg-black' : 'bg-transparent'}`}
+          style={{
+            width: isDesktopTab ? 32 : undefined,
+            height: isDesktopTab ? 32 : undefined,
+            paddingVertical: isDesktopTab ? 0 : 6,
+            paddingHorizontal: isDesktopTab ? 0 : 8,
+          }}
+        >
+          <Icon
+            size={isCompact ? 22 : 24}
+            color={focused ? '#FFFFFF' : color}
+            weight={focused ? 'fill' : 'regular'}
+          />
+        </View>
+      );
+    };
 
   return (
     <Tabs

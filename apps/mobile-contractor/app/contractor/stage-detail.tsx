@@ -112,13 +112,13 @@ export default function GCStageDetailScreen() {
   const [renameValue, setRenameValue] = useState('');
   const [pendingFileData, setPendingFileData] = useState<{ uri: string; fileName: string; file?: File; mimeType?: string } | null>(null);
   const [stageChangeForm, setStageChangeForm] = useState({
-    requestTypes: [] as Array<'additional_funding' | 'additional_timing' | 'change_of_site'>,
+    requestTypes: [] as ('additional_funding' | 'additional_timing' | 'change_of_site')[],
     additionalAmount: '',
     additionalDurationDays: '',
     siteChangeDetails: '',
     reason: '',
-    documentEvidence: [] as Array<{ uri: string; name: string; mimeType?: string; file?: File | null }>,
-    mediaEvidence: [] as Array<{ uri: string; name: string; mimeType?: string; file?: File | null }>,
+    documentEvidence: [] as { uri: string; name: string; mimeType?: string; file?: File | null }[],
+    mediaEvidence: [] as { uri: string; name: string; mimeType?: string; file?: File | null }[],
   });
 
   const isComplete = status === 'complete' || status === 'completed';
@@ -660,7 +660,7 @@ export default function GCStageDetailScreen() {
         throw new Error('At least one proof file is required');
       }
 
-      const uploadedEvidence = [] as Array<{ url: string; type: string; label?: string }>;
+      const uploadedEvidence = [] as { url: string; type: string; label?: string }[];
       for (const evidence of totalEvidence) {
         const mimeType = String(evidence.mimeType || '').toLowerCase();
         const uploadType =

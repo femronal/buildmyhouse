@@ -2,6 +2,7 @@
 node_modules/
 .pnp
 .pnp.js
+.pnpm-store/
 
 # Testing
 coverage/
@@ -19,6 +20,7 @@ out/
 *.pem
 *.log
 .env
+.env.bak*
 .env.local
 .env.development.local
 .env.test.local

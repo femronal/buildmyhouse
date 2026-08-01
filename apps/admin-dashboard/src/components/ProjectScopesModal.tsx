@@ -510,12 +510,12 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                 <p className="mt-3 text-sm leading-6 text-gray-300">
                   {confirmAction.type === 'publish' ? (
                     <>
-                      You are about to publish <span className="font-medium text-white">"{confirmAction.scope.name}"</span> for homeowners.
+                      You are about to publish <span className="font-medium text-white">&ldquo;{confirmAction.scope.name}&rdquo;</span> for homeowners.
                       Make sure edits are final and scope details are complete.
                     </>
                   ) : (
                     <>
-                      You are about to permanently delete <span className="font-medium text-white">"{confirmAction.scope.name}"</span>.
+                      You are about to permanently delete <span className="font-medium text-white">&ldquo;{confirmAction.scope.name}&rdquo;</span>.
                       This action is irreversible and removes the scope from BuildMyHouse.
                     </>
                   )}

@@ -26,6 +26,7 @@ import { ArticlesModule } from './articles/articles.module';
 import { ResourceSectionsModule } from './resource-sections/resource-sections.module';
 import { ServicePagesModule } from './service-pages/service-pages.module';
 import { ProjectAccessModule } from './project-access/project-access.module';
+import { PriceIntelligenceModule } from './price-intelligence/price-intelligence.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ProjectAccessModule } from './project-access/project-access.module';
     ResourceSectionsModule,
     ServicePagesModule,
     ProjectAccessModule,
+    PriceIntelligenceModule,
   ],
   controllers: [],
   providers: [

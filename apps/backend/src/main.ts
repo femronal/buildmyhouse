@@ -22,12 +22,15 @@ async function bootstrap() {
     bodyParser: false, // We add custom body parser to support Stripe webhook raw body
   });
 
-  // Raw body for Stripe webhook signature verification (must be before JSON parser)
-  const webhookPath = '/api/payments/webhooks/stripe';
+  // Raw body for Stripe + Paystack webhook signature verification (before JSON parser)
+  const webhookPaths = new Set([
+    '/api/payments/webhooks/stripe',
+    '/api/payments/paystack/webhook',
+  ]);
   app.use(
     express.json({
       verify: (req: any, _res, buf: Buffer, encoding: BufferEncoding) => {
-        if (req.originalUrl === webhookPath && buf?.length) {
+        if (webhookPaths.has(req.originalUrl) && buf?.length) {
           req.rawBody = buf.toString(encoding || 'utf8');
         }
       },

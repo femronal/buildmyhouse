@@ -1,0 +1,190 @@
+{
+  "runAt": "2026-07-30T23:12:04.640Z",
+  "model": "gpt-5.6-sol",
+  "config": {
+    "extractionModel": "gpt-5.6-sol",
+    "planningModel": "gpt-5.6-sol",
+    "searchProvider": "openai_web_search",
+    "pageRetriever": "direct_public",
+    "browserFallbackEnabled": false,
+    "maxSearchQueries": 6,
+    "maxSourcesPerItem": 12,
+    "researchTimeoutMs": 120000,
+    "sourceCacheTtlHours": 72,
+    "maxPageBytes": 3000000,
+    "pageFetchTimeoutMs": 15000,
+    "pageFetchMaxRetries": 2,
+    "userAgent": "BuildMyHousePriceChecker/1.0 (+https://buildmyhouse.app/price-checker; research bot; contact: support@buildmyhouse.app)"
+  },
+  "summary": {
+    "items": 1,
+    "priced": 1,
+    "insufficientData": 0,
+    "failed": 0,
+    "withThreePlusIndependent": 0,
+    "discoverySuccessRate": 1,
+    "retrievalSuccessRate": 0.5833333333333334,
+    "extractionSuccessRate": 0.42857142857142855,
+    "avgLatencyMs": 129615,
+    "totalEstimatedUsd": 0,
+    "costPerSuccessfulItemUsd": 0,
+    "pricingKnown": false,
+    "totalUngroundedObservations": 0,
+    "failuresByRetrievalOutcome": {
+      "login_required": 2,
+      "unsafe_url_rejected": 1,
+      "fetch_failed": 1,
+      "timeout": 1
+    }
+  },
+  "perItem": [
+    {
+      "id": "bm-cement-lagos",
+      "description": "50 kg branded cement in Lagos",
+      "expectation": "Should find >=3 independent Lagos listings; high/moderate confidence.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        11900,
+        11900
+      ],
+      "median": 11900,
+      "unit": "bag_50kg",
+      "independentSources": 2,
+      "discoveredUrls": [
+        "https://jiji.ng/yaba/building-materials/dangote-cement-42-5r-3x-available-for-sale-at-companysprice-wpeyG6nRZ75fda4JtzcK4pWu.html",
+        "https://rehmie.com.ng/p/dangote-cement-425-grade-3x-50kg-92413",
+        "https://www.reptongroup.ng/collections/dangote-cement",
+        "https://buildingmaterialng.com/",
+        "https://store.structurecity.com/product/dangote-cement-bulk-purchase/",
+        "https://www.marketplace.ng/lagos-mainland/dangote-cement-promo-price-bulk-supply-available/76427",
+        "https://jiji.ng/ha/ajah/building-materials/50kg-dangote-cement-mlQa8GY7GupZq3jOsNiSomIY.html",
+        "https://opaindex.com/commodities/cement-dangote-nigeria",
+        "https://shop.weconstructhub.com/marketplace/",
+        "https://dangotecement-webapp.azurewebsites.net/authorised-distributors-contacts/",
+        "https://dangotecement.com/distributors/",
+        "https://lagos.cool/building/cement"
+      ],
+      "retrieval": [
+        {
+          "url": "https://jiji.ng/yaba/building-materials/dangote-cement-42-5r-3x-available-for-sale-at-companysprice-wpeyG6nRZ75fda4JtzcK4pWu.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://rehmie.com.ng/p/dangote-cement-425-grade-3x-50kg-92413",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://www.reptongroup.ng/collections/dangote-cement",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://buildingmaterialng.com/",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://store.structurecity.com/product/dangote-cement-bulk-purchase/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.marketplace.ng/lagos-mainland/dangote-cement-promo-price-bulk-supply-available/76427",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/ha/ajah/building-materials/50kg-dangote-cement-mlQa8GY7GupZq3jOsNiSomIY.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://opaindex.com/commodities/cement-dangote-nigeria",
+          "outcome": "timeout",
+          "usedBrowserFallback": false,
+          "restrictionReason": "timeout after 15000ms"
+        },
+        {
+          "url": "https://shop.weconstructhub.com/marketplace/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://dangotecement-webapp.azurewebsites.net/authorised-distributors-contacts/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://dangotecement.com/distributors/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://lagos.cool/building/cement",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://www.reptongroup.ng/collections/dangote-cement",
+          "seller": "Repton Group",
+          "price": 11900,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 11900,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:10:36.532Z",
+          "comparable": true
+        },
+        {
+          "url": "https://store.structurecity.com/product/dangote-cement-bulk-purchase/",
+          "seller": "Structurecity",
+          "price": 12100,
+          "currency": "NGN",
+          "unit": "bag",
+          "normalizedPrice": 12100,
+          "normalizedUnit": "bag",
+          "dateChecked": "2026-07-30T23:10:54.799Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.marketplace.ng/lagos-mainland/dangote-cement-promo-price-bulk-supply-available/76427",
+          "seller": "James Marsden",
+          "price": 5900,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 5900,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:11:38.276Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 2 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 7,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 29115,
+        "outputTokens": 6667,
+        "cachedTokens": 4395,
+        "reasoningTokens": 2820,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    }
+  ]
+}

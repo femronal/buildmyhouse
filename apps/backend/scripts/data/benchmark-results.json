@@ -1,0 +1,2092 @@
+{
+  "runAt": "2026-07-30T23:52:27.844Z",
+  "model": "gpt-5.6-sol",
+  "config": {
+    "extractionModel": "gpt-5.6-sol",
+    "planningModel": "gpt-5.6-sol",
+    "searchProvider": "openai_web_search",
+    "pageRetriever": "direct_public",
+    "browserFallbackEnabled": false,
+    "maxSearchQueries": 6,
+    "maxSourcesPerItem": 12,
+    "researchTimeoutMs": 240000,
+    "sourceCacheTtlHours": 72,
+    "maxPageBytes": 3000000,
+    "pageFetchTimeoutMs": 15000,
+    "pageFetchMaxRetries": 2,
+    "userAgent": "BuildMyHousePriceChecker/1.0 (+https://buildmyhouse.app/price-checker; research bot; contact: support@buildmyhouse.app)"
+  },
+  "summary": {
+    "items": 12,
+    "priced": 11,
+    "insufficientData": 1,
+    "failed": 0,
+    "withThreePlusIndependent": 6,
+    "discoverySuccessRate": 1,
+    "retrievalSuccessRate": 0.5887096774193549,
+    "extractionSuccessRate": 1,
+    "avgLatencyMs": 198180,
+    "totalEstimatedUsd": 0,
+    "costPerSuccessfulItemUsd": 0,
+    "pricingKnown": false,
+    "totalUngroundedObservations": 3,
+    "failuresByRetrievalOutcome": {
+      "login_required": 32,
+      "fetch_failed": 7,
+      "robots_or_policy_restricted": 5,
+      "unsafe_url_rejected": 6,
+      "unsupported_content": 1
+    }
+  },
+  "perItem": [
+    {
+      "id": "bm-cement-lagos",
+      "description": "50 kg branded cement in Lagos",
+      "expectation": "Should find >=3 independent Lagos listings; high/moderate confidence.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        9500,
+        11900
+      ],
+      "median": 11300,
+      "unit": "bag_50kg",
+      "independentSources": 7,
+      "discoveredUrls": [
+        "https://jiji.ng/yaba/building-materials/dangote-cement-42-5r-3x-available-for-sale-at-companysprice-wpeyG6nRZ75fda4JtzcK4pWu.html",
+        "https://buildmart.dirigible.com.ng/product/dangote-3x-42-5r/",
+        "https://buildingmaterialng.com/",
+        "https://www.reptongroup.ng/collections/dangote-cement",
+        "https://rehmie.com.ng/p/dangote-cement-425-grade-3x-50kg-92413",
+        "https://rehmie.com.ng/p/dangote-cement-50kg-83573",
+        "https://opor.ng/en/board/m-131499/",
+        "https://opor.ng/en/board/m-141679/",
+        "https://lagos.cool/pcm/building/cement",
+        "https://opaindex.com/commodities/cement-dangote-nigeria",
+        "https://awajis.com/price-of-cement/",
+        "https://www.cutstruct.com/blog/dangote-cement-3x-price-durability-and-value-for-construction-in-nigeria"
+      ],
+      "retrieval": [
+        {
+          "url": "https://jiji.ng/yaba/building-materials/dangote-cement-42-5r-3x-available-for-sale-at-companysprice-wpeyG6nRZ75fda4JtzcK4pWu.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://buildmart.dirigible.com.ng/product/dangote-3x-42-5r/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://buildingmaterialng.com/",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://www.reptongroup.ng/collections/dangote-cement",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://rehmie.com.ng/p/dangote-cement-425-grade-3x-50kg-92413",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://rehmie.com.ng/p/dangote-cement-50kg-83573",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opor.ng/en/board/m-131499/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opor.ng/en/board/m-141679/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://lagos.cool/pcm/building/cement",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opaindex.com/commodities/cement-dangote-nigeria",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://awajis.com/price-of-cement/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.cutstruct.com/blog/dangote-cement-3x-price-durability-and-value-for-construction-in-nigeria",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://buildmart.dirigible.com.ng/product/dangote-3x-42-5r/",
+          "seller": "Dirigible Building Products Ltd",
+          "price": 11600,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 11600,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:13:36.811Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.reptongroup.ng/collections/dangote-cement",
+          "seller": "Repton Group",
+          "price": 11900,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 11900,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:13:57.186Z",
+          "comparable": true
+        },
+        {
+          "url": "https://rehmie.com.ng/p/dangote-cement-425-grade-3x-50kg-92413",
+          "seller": "Rehmie.com.ng",
+          "price": 1049400,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 1049400,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:14:17.122Z",
+          "comparable": true
+        },
+        {
+          "url": "https://rehmie.com.ng/p/dangote-cement-50kg-83573",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": "bag_50kg",
+          "normalizedPrice": null,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:14:51.553Z",
+          "comparable": false
+        },
+        {
+          "url": "https://opor.ng/en/board/m-131499/",
+          "seller": "Okechi Jose",
+          "price": 3100,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 3100,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:15:19.049Z",
+          "comparable": true
+        },
+        {
+          "url": "https://opor.ng/en/board/m-141679/",
+          "seller": "Stargate Microsystems Limited",
+          "price": 5040,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 5040,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:15:42.959Z",
+          "comparable": true
+        },
+        {
+          "url": "https://lagos.cool/pcm/building/cement",
+          "seller": null,
+          "price": 9500,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 9500,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:15:58.850Z",
+          "comparable": true
+        },
+        {
+          "url": "https://opaindex.com/commodities/cement-dangote-nigeria",
+          "seller": null,
+          "price": 11000,
+          "currency": "NGN",
+          "unit": "bag_50kg",
+          "normalizedPrice": 11000,
+          "normalizedUnit": "bag_50kg",
+          "dateChecked": "2026-07-30T23:16:35.548Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "3 outlier price(s) excluded (robust MAD filter)."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 10,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 42600,
+        "outputTokens": 13899,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6588,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-rebar-abuja",
+      "description": "12 mm reinforcement bar in Abuja",
+      "expectation": "Rebar priced per length or per tonne; conversion provenance required.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        950000,
+        1010000
+      ],
+      "median": 980000,
+      "unit": "tonne",
+      "independentSources": 2,
+      "discoveredUrls": [
+        "https://jisglobalinvestment.com/product/12mm-iron-rod-high-tensile-steel-reinforcement-bar/",
+        "https://jiji.ng/abuja/165-rods/12mm",
+        "https://jiji.ng/abuja/building-materials/local-reinforcement-iron-rod-rebar-distributor-q0USnbGsjCQSmBjkCxxzj5oF.html",
+        "https://jiji.ng/dei-dei/building-materials/reinforcement-bars-iron-rods-uEE2AmH9G6Pxztkh3wm08Wip.html",
+        "https://www.konga.com/product/12mm-iron-rod-6925833",
+        "https://nkemjikabuild.com/prices",
+        "https://ong.ng/a-BxjtWRG4epmsSykakOkEwxP4OfJx-reinforcement-bar-y10-y12-y16-y20-y25-y32-tmt-quarter-rod.html",
+        "https://mypricespot.com.ng/steel-and-iron-rod-suppliers-in-abuja/",
+        "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+        "https://www.nairaland.com/post/133231775"
+      ],
+      "retrieval": [
+        {
+          "url": "https://jisglobalinvestment.com/product/12mm-iron-rod-high-tensile-steel-reinforcement-bar/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/abuja/165-rods/12mm",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/abuja/building-materials/local-reinforcement-iron-rod-rebar-distributor-q0USnbGsjCQSmBjkCxxzj5oF.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/dei-dei/building-materials/reinforcement-bars-iron-rods-uEE2AmH9G6Pxztkh3wm08Wip.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.konga.com/product/12mm-iron-rod-6925833",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://nkemjikabuild.com/prices",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://ong.ng/a-BxjtWRG4epmsSykakOkEwxP4OfJx-reinforcement-bar-y10-y12-y16-y20-y25-y32-tmt-quarter-rod.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://mypricespot.com.ng/steel-and-iron-rod-suppliers-in-abuja/",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.nairaland.com/post/133231775",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://jisglobalinvestment.com/cgi-sys/suspendedpage.cgi",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:17:31.765Z",
+          "comparable": false
+        },
+        {
+          "url": "https://nkemjikabuild.com/prices",
+          "seller": "Nkemjika Build",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:17:46.747Z",
+          "comparable": false
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "seller": null,
+          "price": 1010000,
+          "currency": "NGN",
+          "unit": "tonne",
+          "normalizedPrice": 1010000,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-30T23:18:05.845Z",
+          "comparable": true
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "seller": null,
+          "price": 950000,
+          "currency": "NGN",
+          "unit": "tonne",
+          "normalizedPrice": 950000,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-30T23:18:05.845Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 2 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 3,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 10,
+        "browserFallbacks": 0,
+        "inputTokens": 36081,
+        "outputTokens": 6374,
+        "cachedTokens": 4395,
+        "reasoningTokens": 2485,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-cable-lagos",
+      "description": "Specified electrical cable in Lagos",
+      "expectation": "Copper vs CCA must not be compared as equivalent.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        20200,
+        20200
+      ],
+      "median": 20200,
+      "unit": "roll_100m",
+      "independentSources": 1,
+      "discoveredUrls": [
+        "https://chifrando.com/product/lagostar-single-core-copper-electrical-cable-1mm-25mm-house-wiring",
+        "https://jiji.ng/lagos/297-electrical-cables/coil",
+        "https://www.u-buy.com.ng/productuk/QICPK4EFI-ali-s-diy-1-5-mm-single-core-conduit-cable-6491x-blue-brown-yellow-green-100-metre-full-roll",
+        "https://jiji.ng/297-electrical-cables/coil",
+        "https://www.konga.com/product/coleman-1-5mm-single-core-electricity-copper-cable-black-5354968",
+        "https://jiji.ng/kosofe/power-equipments/coleman-single-cables-1-5mm-wire-swG1fZ2KJ4v1x2sH41HU3dPB.html?indexPosition=19",
+        "https://www.jumia.com.ng/coleman-cable-1.5mm-single-core-electric-cable-419435782.html",
+        "https://store.structurecity.com/product/nigerchin-single-core-copper-wire-1-5mm-16mm/",
+        "https://www.konga.com/product/single-core-copper-wire-1-5mm-black-4081223"
+      ],
+      "retrieval": [
+        {
+          "url": "https://chifrando.com/product/lagostar-single-core-copper-electrical-cable-1mm-25mm-house-wiring",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/lagos/297-electrical-cables/coil",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.u-buy.com.ng/productuk/QICPK4EFI-ali-s-diy-1-5-mm-single-core-conduit-cable-6491x-blue-brown-yellow-green-100-metre-full-roll",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/297-electrical-cables/coil",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.konga.com/product/coleman-1-5mm-single-core-electricity-copper-cable-black-5354968",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://jiji.ng/kosofe/power-equipments/coleman-single-cables-1-5mm-wire-swG1fZ2KJ4v1x2sH41HU3dPB.html?indexPosition=19",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.jumia.com.ng/coleman-cable-1.5mm-single-core-electric-cable-419435782.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://store.structurecity.com/product/nigerchin-single-core-copper-wire-1-5mm-16mm/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.konga.com/product/single-core-copper-wire-1-5mm-black-4081223",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://chifrando.com/product/lagostar-single-core-copper-electrical-cable-1mm-25mm-house-wiring",
+          "seller": "Chifrando",
+          "price": 20200,
+          "currency": "NGN",
+          "unit": "roll_100m",
+          "normalizedPrice": 20200,
+          "normalizedUnit": "roll_100m",
+          "dateChecked": "2026-07-30T23:20:06.619Z",
+          "comparable": true
+        },
+        {
+          "url": "https://store.structurecity.com/product/nigerchin-single-core-copper-wire-1-5mm-16mm/",
+          "seller": "Structurecity",
+          "price": null,
+          "currency": "NGN",
+          "unit": "coil",
+          "normalizedPrice": null,
+          "normalizedUnit": "coil",
+          "dateChecked": "2026-07-30T23:20:44.970Z",
+          "comparable": false
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 1 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 2,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 9,
+        "browserFallbacks": 0,
+        "inputTokens": 66564,
+        "outputTokens": 7585,
+        "cachedTokens": 4395,
+        "reasoningTokens": 3913,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-pump-benin",
+      "description": "Water pump in Benin City (weaker online coverage)",
+      "expectation": "May fall back to same-state/national; confidence should reflect it.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        58000,
+        80000
+      ],
+      "median": 78000,
+      "unit": "unit",
+      "independentSources": 3,
+      "discoveredUrls": [
+        "https://www.konga.com/product/1hp-surface-water-pump-6424367",
+        "https://newcoolmex.com/product/speroni-1hp-surface-water-pump/",
+        "https://interdabproductslimited.com/product-category/pump/?product-page=6",
+        "https://jiji.ng/lagos-island-west/plumbing-and-water-supply/1hp-surface-water-pumps-sL3zRanhcdrWNqv57gyHnrc8.html",
+        "https://jiji.ng/port-harcourt/plumbing-and-water-supply/1hp-surface-pump-iLAJ4ZlEAA64yCvsbDp0gvFU.html",
+        "https://jiji.ng/oredo/296-water-pumps",
+        "https://www.jumia.com.ng/generic-1hp-surface-water-pump-pressure-control-booster-401651265.html",
+        "https://www.konga.com/product/bosch-1hp-surface-water-pump-750w-pressure-control-boosters-6688654",
+        "https://duwellglobalresources.com.ng/product/interdab-1hp-surface-pump/",
+        "https://rehmie.com.ng/p/1hp-surface-water-pumping-machine-482044",
+        "https://rehmie.com.ng/p/atlas-surface-water-pumping-machine-1hp-pressure-control-floating-switch-i-115171",
+        "https://www.jumia.com.ng/mlp-surface-water-pump/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://www.konga.com/product/1hp-surface-water-pump-6424367",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://newcoolmex.com/product/speroni-1hp-surface-water-pump/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://interdabproductslimited.com/product-category/pump/?product-page=6",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/lagos-island-west/plumbing-and-water-supply/1hp-surface-water-pumps-sL3zRanhcdrWNqv57gyHnrc8.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/port-harcourt/plumbing-and-water-supply/1hp-surface-pump-iLAJ4ZlEAA64yCvsbDp0gvFU.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/oredo/296-water-pumps",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.jumia.com.ng/generic-1hp-surface-water-pump-pressure-control-booster-401651265.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.konga.com/product/bosch-1hp-surface-water-pump-750w-pressure-control-boosters-6688654",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://duwellglobalresources.com.ng/product/interdab-1hp-surface-pump/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://rehmie.com.ng/p/1hp-surface-water-pumping-machine-482044",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://rehmie.com.ng/p/atlas-surface-water-pumping-machine-1hp-pressure-control-floating-switch-i-115171",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.jumia.com.ng/mlp-surface-water-pump/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://newcoolmex.com/product/speroni-1hp-surface-water-pump/",
+          "seller": "Newcoolmex",
+          "price": 58000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 58000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:21:53.889Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.jumia.com.ng/generic-1hp-surface-water-pump-pressure-control-booster-401651265.html",
+          "seller": "Gozmok",
+          "price": 126000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 126000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:22:21.446Z",
+          "comparable": false
+        },
+        {
+          "url": "https://duwellglobalresources.com.ng/product/interdab-1hp-surface-pump/",
+          "seller": "Du-well",
+          "price": 80000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 80000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:22:45.745Z",
+          "comparable": true
+        },
+        {
+          "url": "https://rehmie.com.ng/p/1hp-surface-water-pumping-machine-482044",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:23:02.596Z",
+          "comparable": false
+        },
+        {
+          "url": "https://rehmie.com.ng/p/atlas-surface-water-pumping-machine-1hp-pressure-control-floating-switch-i-115171",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:23:23.860Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.jumia.com.ng/mlp-surface-water-pump/",
+          "seller": null,
+          "price": 78000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 78000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:23:55.925Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 6,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 43356,
+        "outputTokens": 9952,
+        "cachedTokens": 4395,
+        "reasoningTokens": 4394,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-inverter-lagos",
+      "description": "Inverter in Lagos",
+      "expectation": "Bundle (inverter+battery) must be separated from inverter-only.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        330000,
+        385000
+      ],
+      "median": 354000,
+      "unit": "unit",
+      "independentSources": 4,
+      "discoveredUrls": [
+        "https://solarmall.ng/product/prag-3-5kva-24v-inverter/",
+        "https://naturesolar.ng/product/sunfit-3-6kva-24v-inverter/",
+        "https://nextpowertechnology.com/",
+        "https://zel.ng/product/grovolt-ricco-plus-3-5kva-24v-inverter/",
+        "https://jiji.ng/ikeja/power-equipments/3-5kva-24v-afriipower-inverter-19srnLKYNo5CFjXlM9PhrhvP.html",
+        "https://jiji.ng/ikeja/power-equipments/ricco-3-5kva-24v-inverter-rWmBuJiGE2Ew4BbBMTokqakk.html",
+        "https://jiji.ng/ikeja/power-equipments/kartel-inverter-3-5kva-24v-3wAtnt0WUJpPikXFXF0UJhgd.html",
+        "https://www.jumia.com.ng/mlp-3-5kva-24v-inverter/",
+        "https://tegra.ng/off-grid-and-hybrid-inverters/1280-35kva-24v-ss-power-inverter.html",
+        "https://zit.ng/products/inverters-original-soccer-power-inverter-3-5kva-24v/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://solarmall.ng/product/prag-3-5kva-24v-inverter/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://naturesolar.ng/product/sunfit-3-6kva-24v-inverter/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://nextpowertechnology.com/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://zel.ng/product/grovolt-ricco-plus-3-5kva-24v-inverter/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/ikeja/power-equipments/3-5kva-24v-afriipower-inverter-19srnLKYNo5CFjXlM9PhrhvP.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/ikeja/power-equipments/ricco-3-5kva-24v-inverter-rWmBuJiGE2Ew4BbBMTokqakk.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/ikeja/power-equipments/kartel-inverter-3-5kva-24v-3wAtnt0WUJpPikXFXF0UJhgd.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.jumia.com.ng/mlp-3-5kva-24v-inverter/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://tegra.ng/off-grid-and-hybrid-inverters/1280-35kva-24v-ss-power-inverter.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://zit.ng/products/inverters-original-soccer-power-inverter-3-5kva-24v/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://solarmall.ng/product/prag-3-5kva-24v-inverter/",
+          "seller": "Solar Mall",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:24:53.794Z",
+          "comparable": false
+        },
+        {
+          "url": "https://naturesolar.ng/product/sunfit-3-6kva-24v-inverter/",
+          "seller": "Nature Solar Global Enterprises",
+          "price": 330000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 330000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:25:13.576Z",
+          "comparable": true
+        },
+        {
+          "url": "https://nextpowertechnology.com/",
+          "seller": "Nextpower Technology Limited",
+          "price": 1200000,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 1200000,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:25:40.931Z",
+          "comparable": true
+        },
+        {
+          "url": "https://zel.ng/product/grovolt-ricco-plus-3-5kva-24v-inverter/",
+          "seller": "Zeus Electrical Limited",
+          "price": 354000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 354000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:25:57.479Z",
+          "comparable": true
+        },
+        {
+          "url": "https://tegra.ng/off-grid-and-hybrid-inverters/1280-35kva-24v-ss-power-inverter.html",
+          "seller": "Tegra Mobile",
+          "price": 385000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 385000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:27:28.766Z",
+          "comparable": true
+        },
+        {
+          "url": "https://zit.ng/products/inverters-original-soccer-power-inverter-3-5kva-24v/",
+          "seller": "Zit",
+          "price": 510000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 510000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:27:50.953Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "1 outlier price(s) excluded (robust MAD filter)."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 7,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 10,
+        "browserFallbacks": 0,
+        "inputTokens": 46288,
+        "outputTokens": 16354,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6502,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-battery-lagos",
+      "description": "Lithium battery with stated capacity",
+      "expectation": "Chemistry must gate comparison (lithium vs tubular never mixed).",
+      "outcome": "successful",
+      "confidence": "high",
+      "range": [
+        900000,
+        1800000
+      ],
+      "median": 1459000,
+      "unit": "unit",
+      "independentSources": 8,
+      "discoveredUrls": [
+        "https://jiji.ng/ojo/power-equipments/lvtopsun-5kwh-48v-100ah-lithium-battery-51-2v-lifepo4-nAFuH5krrqSYmJ89TSkIO6in.html",
+        "https://solar.topship.com.ng/products/price-of-felicity-solar-lux-x-48100lcg01-us-48v-100ah-48kwh-lithium-battery-in-nigeria/f2747c26-622d-11f1-b185-b6728cb118b8",
+        "https://jiji.ng/surulere/power-equipments/felicity-flh-48100ug1-5-12kwh-48v-100ah-lifepo4-lithium-battery-fDZPIVjinBQYG5SEZbEVpBpC.html",
+        "https://www.esodora.com/product/details/480/5kwh-48v-lithium-battery",
+        "https://growmarketplus.com/product/royal-wall-mounted-lithium-battery-lp16-48100/",
+        "https://www.rightclickng.com/product/huawei-esm-48100a7-5kwh-lithium-battery/?v=68b897715b50",
+        "https://www.felicitysolar.ng/products/felicity-solar-batteries/felicity-flh-48100ug1-48v-100ah-lifepo4-battery-module-5-12kwh-29",
+        "https://roisolar.com.ng/pages/products/details/felicity-solar-48v-100ah-5kwh-lithiumlifepo4battery",
+        "https://kara.com.ng/smk-solar-51-2v-100ah-5kwh-lifep04-lithium",
+        "https://innovateenergy.com.ng/product/lithium-battery-energy-storage-eos-series/",
+        "https://bluegateproduct.com.ng/lithium-battery-5-12kWh.html",
+        "https://imperium.ng/product/54ec53be-87c6-4add-8a41-818bcdcebe48"
+      ],
+      "retrieval": [
+        {
+          "url": "https://jiji.ng/ojo/power-equipments/lvtopsun-5kwh-48v-100ah-lithium-battery-51-2v-lifepo4-nAFuH5krrqSYmJ89TSkIO6in.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://solar.topship.com.ng/products/price-of-felicity-solar-lux-x-48100lcg01-us-48v-100ah-48kwh-lithium-battery-in-nigeria/f2747c26-622d-11f1-b185-b6728cb118b8",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/surulere/power-equipments/felicity-flh-48100ug1-5-12kwh-48v-100ah-lifepo4-lithium-battery-fDZPIVjinBQYG5SEZbEVpBpC.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.esodora.com/product/details/480/5kwh-48v-lithium-battery",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://growmarketplus.com/product/royal-wall-mounted-lithium-battery-lp16-48100/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.rightclickng.com/product/huawei-esm-48100a7-5kwh-lithium-battery/?v=68b897715b50",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.felicitysolar.ng/products/felicity-solar-batteries/felicity-flh-48100ug1-48v-100ah-lifepo4-battery-module-5-12kwh-29",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://roisolar.com.ng/pages/products/details/felicity-solar-48v-100ah-5kwh-lithiumlifepo4battery",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://kara.com.ng/smk-solar-51-2v-100ah-5kwh-lifep04-lithium",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://innovateenergy.com.ng/product/lithium-battery-energy-storage-eos-series/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://bluegateproduct.com.ng/lithium-battery-5-12kWh.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://imperium.ng/product/54ec53be-87c6-4add-8a41-818bcdcebe48",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://solar.topship.com.ng/products/price-of-felicity-solar-lux-x-48100lcg01-us-48v-100ah-48kwh-lithium-battery-in-nigeria/f2747c26-622d-11f1-b185-b6728cb118b8",
+          "seller": "Megah Plaza",
+          "price": 1035000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1035000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:28:58.119Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.esodora.com/product/details/480/5kwh-48v-lithium-battery",
+          "seller": "Esodora",
+          "price": 1800000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1800000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:29:14.337Z",
+          "comparable": true
+        },
+        {
+          "url": "https://growmarketplus.com/product/royal-wall-mounted-lithium-battery-lp16-48100/",
+          "seller": "Grow Market Plus",
+          "price": 1513541,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1513541,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:29:32.006Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.rightclickng.com/product/huawei-esm-48100a7-5kwh-lithium-battery/?v=68b897715b50",
+          "seller": "Right Click Technologies Ltd",
+          "price": 2578710,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 2578710,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:29:53.696Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.felicitysolar.ng/products/felicity-solar-batteries/felicity-flh-48100ug1-48v-100ah-lifepo4-battery-module-5-12kwh-29",
+          "seller": "Felicity Solar Nigeria",
+          "price": 1296540,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1296540,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:30:08.878Z",
+          "comparable": true
+        },
+        {
+          "url": "https://roisolar.com.ng/pages/products/details/felicity-solar-48v-100ah-5kwh-lithiumlifepo4battery",
+          "seller": "Roisolar",
+          "price": 1650000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1650000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:30:27.594Z",
+          "comparable": true
+        },
+        {
+          "url": "https://innovateenergy.com.ng/product/lithium-battery-energy-storage-eos-series/",
+          "seller": "Innovate Synergy Limited",
+          "price": 1459000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 1459000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:30:53.723Z",
+          "comparable": true
+        },
+        {
+          "url": "https://bluegateproduct.com.ng/lithium-battery-5-12kWh.html",
+          "seller": "Bluegate Direct Venture",
+          "price": 900000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 900000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:31:20.661Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "1 outlier price(s) excluded (robust MAD filter)."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 8,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 40876,
+        "outputTokens": 13856,
+        "cachedTokens": 4395,
+        "reasoningTokens": 5861,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-roofing-lagos",
+      "description": "Roofing sheet with thickness and profile",
+      "expectation": "Priced per metre or per sqm; conversion provenance required.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        5800,
+        6800
+      ],
+      "median": 5800,
+      "unit": "sqm",
+      "independentSources": 5,
+      "discoveredUrls": [
+        "https://www.godspromisealuminiumroofing.com/blog/055mm-long-span-aluminium-roofing-sheet-price-lagos",
+        "https://jumacaluminiumroofing.com/aluminium-roofing-price/",
+        "https://idealroofingsystem.com/price-of-aluminium-roofing-sheets-in-2026/",
+        "https://jiji.ng/agege/building-materials/blue-colour-aluminium-roofing-sheets-long-sparn-design-0-55mm-5AOm2SDjzuKyzQ5smGL6TZtB.html",
+        "https://opor.ng/en/board/m-144881/",
+        "https://shop.weconstructhub.com/category/building-materials/roofing-materials/",
+        "https://buildingmaterialng.com/",
+        "https://jumia.one/cost-of-aluminium-roofing-sheets-in-nigeria/",
+        "https://www.godspromisealuminiumroofing.com/blog/aluminium-roofing-price-trend-nigeria",
+        "https://topkenroofing.com/stone-coated-roofing-prices",
+        "https://opaindex.com/commodities/roofing-stone-coated-nigeria",
+        "https://idealroofingsystem.com/price-of-stone-coated-gerard-in-lagos-2025/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/055mm-long-span-aluminium-roofing-sheet-price-lagos",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jumacaluminiumroofing.com/aluminium-roofing-price/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://idealroofingsystem.com/price-of-aluminium-roofing-sheets-in-2026/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/agege/building-materials/blue-colour-aluminium-roofing-sheets-long-sparn-design-0-55mm-5AOm2SDjzuKyzQ5smGL6TZtB.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://opor.ng/en/board/m-144881/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://shop.weconstructhub.com/category/building-materials/roofing-materials/",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 404"
+        },
+        {
+          "url": "https://buildingmaterialng.com/",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://jumia.one/cost-of-aluminium-roofing-sheets-in-nigeria/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/aluminium-roofing-price-trend-nigeria",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://topkenroofing.com/stone-coated-roofing-prices",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opaindex.com/commodities/roofing-stone-coated-nigeria",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://idealroofingsystem.com/price-of-stone-coated-gerard-in-lagos-2025/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/055mm-long-span-aluminium-roofing-sheet-price-lagos",
+          "seller": "Gods Promise Aluminium Concept Limited",
+          "price": 5800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 5800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:32:38.691Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/055mm-long-span-aluminium-roofing-sheet-price-lagos",
+          "seller": "Gods Promise Aluminium Concept Limited",
+          "price": 6000,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 6000,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:32:38.691Z",
+          "comparable": true
+        },
+        {
+          "url": "https://jumacaluminiumroofing.com/aluminium-roofing-price/",
+          "seller": "Jumac-J Aluminium Ventures",
+          "price": 6800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 6800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:33:23.326Z",
+          "comparable": true
+        },
+        {
+          "url": "https://jumacaluminiumroofing.com/aluminium-roofing-price/",
+          "seller": "Jumac-J Aluminium Ventures",
+          "price": 7500,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 7500,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:33:23.326Z",
+          "comparable": true
+        },
+        {
+          "url": "https://jumacaluminiumroofing.com/aluminium-roofing-price/",
+          "seller": "Jumac-J Aluminium Ventures",
+          "price": 12800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 12800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:33:23.326Z",
+          "comparable": true
+        },
+        {
+          "url": "https://idealroofingsystem.com/price-of-aluminium-roofing-sheets-in-2026/",
+          "seller": "Ideal Roofing System",
+          "price": 8100,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 8100,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:34:10.860Z",
+          "comparable": true
+        },
+        {
+          "url": "https://idealroofingsystem.com/price-of-aluminium-roofing-sheets-in-2026/",
+          "seller": "Ideal Roofing System",
+          "price": 13200,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 13200,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:34:10.860Z",
+          "comparable": true
+        },
+        {
+          "url": "https://opor.ng/en/board/m-144881/",
+          "seller": "Edeki Aluminium",
+          "price": 4900,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 4900,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:34:36.941Z",
+          "comparable": true
+        },
+        {
+          "url": "https://jumia.one/cost-of-aluminium-roofing-sheets-in-nigeria/",
+          "seller": null,
+          "price": 3850,
+          "currency": "NGN",
+          "unit": "metre",
+          "normalizedPrice": 3850,
+          "normalizedUnit": "metre",
+          "dateChecked": "2026-07-30T23:35:02.069Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/aluminium-roofing-price-trend-nigeria",
+          "seller": "Gods Promise Aluminium",
+          "price": 5800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 5800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:35:21.074Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.godspromisealuminiumroofing.com/blog/aluminium-roofing-price-trend-nigeria",
+          "seller": "Gods Promise Aluminium",
+          "price": 6500,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 6500,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:35:21.074Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "1 outlier price(s) excluded (robust MAD filter)."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 9,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 43862,
+        "outputTokens": 15375,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6174,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-window-lagos",
+      "description": "Aluminium window with dimensions and glass specification",
+      "expectation": "Custom sizing means moderate confidence at best.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        70000,
+        70000
+      ],
+      "median": 70000,
+      "unit": "unit",
+      "independentSources": 1,
+      "discoveredUrls": [
+        "https://jiji.ng/lagos-abule-egba/windows/ghana-sliding-window-with-net-7LqLwmHDmGzec0eA2fit5aO5.html",
+        "https://jiji.ng/ikorodu/other-services/sliding-window-4-by-4-zpmq4uwiyp135J8ogPDUoGCs.html",
+        "https://davanne-building-materials-warehouse-company-ltd.noja.app/",
+        "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+        "https://ojaluminum.com.ng/types-of-aluminium-windows-and-prices/",
+        "https://opor.ng/en/board/m-206350/",
+        "https://jiji.ng/ikeja/windows/white-frameless-casement-window-BPEv21tbumUTMeJD0Me87WgR.html",
+        "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+        "https://thebuildingestimator.com/applicable-material-labour-price",
+        "https://www.scribd.com/document/953161841/Group-5-Market-Survey-103858"
+      ],
+      "retrieval": [
+        {
+          "url": "https://jiji.ng/lagos-abule-egba/windows/ghana-sliding-window-with-net-7LqLwmHDmGzec0eA2fit5aO5.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/ikorodu/other-services/sliding-window-4-by-4-zpmq4uwiyp135J8ogPDUoGCs.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://davanne-building-materials-warehouse-company-ltd.noja.app/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://ojaluminum.com.ng/types-of-aluminium-windows-and-prices/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opor.ng/en/board/m-206350/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/ikeja/windows/white-frameless-casement-window-BPEv21tbumUTMeJD0Me87WgR.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://thebuildingestimator.com/applicable-material-labour-price",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.scribd.com/document/953161841/Group-5-Market-Survey-103858",
+          "outcome": "unsupported_content",
+          "usedBrowserFallback": false,
+          "restrictionReason": "body 9329082 exceeds cap"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://davanne-building-materials-warehouse-company-ltd.noja.app/",
+          "seller": "Davanne Building Materials Warehouse Company Ltd",
+          "price": 55000,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 55000,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:36:42.702Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+          "seller": "Abraham John Ajiboye",
+          "price": 130000,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 130000,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:36:56.359Z",
+          "comparable": true
+        },
+        {
+          "url": "https://ojaluminum.com.ng/types-of-aluminium-windows-and-prices/",
+          "seller": "OJ Aluminum Fabrication",
+          "price": 70000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 70000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:37:18.453Z",
+          "comparable": true
+        },
+        {
+          "url": "https://opor.ng/en/board/m-206350/",
+          "seller": "Kass Aluminium Concepts",
+          "price": 60000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 60000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:37:55.521Z",
+          "comparable": false
+        },
+        {
+          "url": "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+          "seller": "TilesNg",
+          "price": 100000,
+          "currency": "NGN",
+          "unit": "set",
+          "normalizedPrice": 100000,
+          "normalizedUnit": "set",
+          "dateChecked": "2026-07-30T23:38:14.311Z",
+          "comparable": false
+        },
+        {
+          "url": "https://thebuildingestimator.com/applicable-material-labour-price",
+          "seller": "Building Estimator",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:38:35.362Z",
+          "comparable": false
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 1 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 6,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 10,
+        "browserFallbacks": 0,
+        "inputTokens": 41433,
+        "outputTokens": 11432,
+        "cachedTokens": 4395,
+        "reasoningTokens": 5419,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-cctv-bundle-lagos",
+      "description": "CCTV package with camera count and installation (bundle)",
+      "expectation": "Bundle contents must be captured; not compared to single-camera prices.",
+      "outcome": "insufficient_data",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [
+        "https://basecafrica.com/collections/hikvision-cctv-cameras/products/4-channel-hikvision-2mp-1080p-cctv-camera-with-installation-kits-indoor",
+        "https://jiji.ng/victoria-island/security-and-surveillance/4-channel-cctv-camera-system-with-accessories-installation-53i0VW2tCYR4OA1priMzHvZi.html",
+        "https://jiji.ng/ojodu/security-and-surveillance/4-channel-dvr-with-4-cameras-installation-yx5UZiByF5Di5pEdhAzW6D9I.html",
+        "https://jiji.ng/lekki/security-and-surveillance/dahua-4-channel-complete-combo-with-installation-n9bZHoX8hisnrD2RrClGvGzo.html",
+        "https://rehmie.com.ng/p/4-channel-dvr-1080p-2-outdoor-and-2-indoor-surveillance-cameras-kit-577572",
+        "https://tektins.com/solution/electronic-safety-security/security-camera-company/",
+        "https://kara.com.ng/index.php/security-camera-installation-repair"
+      ],
+      "retrieval": [
+        {
+          "url": "https://basecafrica.com/collections/hikvision-cctv-cameras/products/4-channel-hikvision-2mp-1080p-cctv-camera-with-installation-kits-indoor",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/victoria-island/security-and-surveillance/4-channel-cctv-camera-system-with-accessories-installation-53i0VW2tCYR4OA1priMzHvZi.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/ojodu/security-and-surveillance/4-channel-dvr-with-4-cameras-installation-yx5UZiByF5Di5pEdhAzW6D9I.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/lekki/security-and-surveillance/dahua-4-channel-complete-combo-with-installation-n9bZHoX8hisnrD2RrClGvGzo.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://rehmie.com.ng/p/4-channel-dvr-1080p-2-outdoor-and-2-indoor-surveillance-cameras-kit-577572",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://tektins.com/solution/electronic-safety-security/security-camera-company/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://kara.com.ng/index.php/security-camera-installation-repair",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://basecafrica.com/collections/hikvision-cctv-cameras/products/4-channel-hikvision-2mp-1080p-cctv-camera-with-installation-kits-indoor",
+          "seller": "Basec Africa",
+          "price": 230000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 230000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-30T23:39:41.446Z",
+          "comparable": false
+        },
+        {
+          "url": "https://tektins.com/solution/electronic-safety-security/security-camera-company/",
+          "seller": "Tektins Nigeria Ltd",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:40:05.494Z",
+          "comparable": false
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "No comparable public evidence found."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 2,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 7,
+        "browserFallbacks": 0,
+        "inputTokens": 29126,
+        "outputTokens": 5459,
+        "cachedTokens": 4395,
+        "reasoningTokens": 2221,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-tiling-labour-lagos",
+      "description": "Tiling labour per square metre in a selected city",
+      "expectation": "Labelled \"observed advertised/quoted service range\"; scopes not mixed.",
+      "outcome": "successful",
+      "confidence": "high",
+      "range": [
+        1200,
+        2340
+      ],
+      "median": 2070,
+      "unit": "sqm",
+      "independentSources": 6,
+      "discoveredUrls": [
+        "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+        "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+        "https://www.pronearme.ng/near-me-tiler-in-magodo-phase-2",
+        "https://massodihplans.com/cost-of-building-a-4-bedroom-duplex-in-lagos-complete-guide/",
+        "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+        "https://lagos.cool/building",
+        "https://landsofnigeria.com/2025-nigerian-construction-cost-index-cement-labor-material-prices/",
+        "https://jiji.ng/lekki/construction-and-skilled-trade-jobs/skilled-tiler-needed-BDedo2nDs9Z8YDcdX76bAlAm.html"
+      ],
+      "retrieval": [
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.pronearme.ng/near-me-tiler-in-magodo-phase-2",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://massodihplans.com/cost-of-building-a-4-bedroom-duplex-in-lagos-complete-guide/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://african.land/blog/article/tile-installation-lagos-nigeria-cost-materials-services-b2075",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://lagos.cool/building",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://landsofnigeria.com/2025-nigerian-construction-cost-index-cement-labor-material-prices/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/lekki/construction-and-skilled-trade-jobs/skilled-tiler-needed-BDedo2nDs9Z8YDcdX76bAlAm.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 1800,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 1800,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:14.850Z",
+          "comparable": true
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2070,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2070,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:14.850Z",
+          "comparable": true
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2160,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2160,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:14.850Z",
+          "comparable": true
+        },
+        {
+          "url": "https://nigeriabuildingcost.ng/blog/cost-to-plaster-tile-paint-house-nigeria-2026",
+          "seller": null,
+          "price": 2340,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 2340,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:14.850Z",
+          "comparable": true
+        },
+        {
+          "url": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "seller": null,
+          "price": 600,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 600,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:48.431Z",
+          "comparable": true
+        },
+        {
+          "url": "https://mypricespot.com.ng/tiling-contractors-in-lagos/",
+          "seller": null,
+          "price": 1200,
+          "currency": "NGN",
+          "unit": "sqm",
+          "normalizedPrice": 1200,
+          "normalizedUnit": "sqm",
+          "dateChecked": "2026-07-30T23:41:48.431Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.pronearme.ng/tiler-in-magodo-phase-2",
+          "seller": "PronearMe",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:42:30.000Z",
+          "comparable": false
+        },
+        {
+          "url": "https://massodihplans.com/cost-of-building-a-4-bedroom-duplex-in-lagos-complete-guide/",
+          "seller": "MassodihPlans",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:42:52.575Z",
+          "comparable": false
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "1 outlier price(s) excluded (robust MAD filter)."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 7,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 8,
+        "browserFallbacks": 0,
+        "inputTokens": 46767,
+        "outputTokens": 10640,
+        "cachedTokens": 4395,
+        "reasoningTokens": 4242,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-custom-screed-pump",
+      "description": "Level 3 custom physical product with a specific brand/model",
+      "expectation": "Custom item; matrix generated from scratch; may be low confidence.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        2850,
+        2850
+      ],
+      "median": 2850,
+      "unit": "unit",
+      "independentSources": 1,
+      "discoveredUrls": [
+        "https://machineryline.ng/-/sale/plastering-machines/PFT/G4-putzmeister-mp25-vr6-m-tec--23062513511361340400",
+        "https://machineryline.ng/-/construction-equipment/PUTZMEISTER/MP-25--c85tm3325m954",
+        "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+        "https://www.lectura-specs.com/en/model/structural-and-civil-engineering-equipment/mortar-mixing-pumps-putzmeister/mp-25-11738181",
+        "https://www.pmmortar.com/ja/product-detail/-/product/318/mp-25",
+        "https://www.putzmeister.com/es/web/far-east/product-detail/-/product/318/mp-25",
+        "https://prod-seo.govdeals.com/en/asset/149/23050",
+        "https://www.machines4u.com.au/view/advert/MP-25-MORTAR-PUMP/905669/",
+        "https://www.kleinanzeigen.de/s-putzmeister-25/k0",
+        "https://latinafy.com/products/putzmeister-mp-25-versatile-3-in-1-plaster-sprayer/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://machineryline.ng/-/sale/plastering-machines/PFT/G4-putzmeister-mp25-vr6-m-tec--23062513511361340400",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://machineryline.ng/-/construction-equipment/PUTZMEISTER/MP-25--c85tm3325m954",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.lectura-specs.com/en/model/structural-and-civil-engineering-equipment/mortar-mixing-pumps-putzmeister/mp-25-11738181",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.pmmortar.com/ja/product-detail/-/product/318/mp-25",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://www.putzmeister.com/es/web/far-east/product-detail/-/product/318/mp-25",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://prod-seo.govdeals.com/en/asset/149/23050",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.machines4u.com.au/view/advert/MP-25-MORTAR-PUMP/905669/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.kleinanzeigen.de/s-putzmeister-25/k0",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://latinafy.com/products/putzmeister-mp-25-versatile-3-in-1-plaster-sprayer/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://machineryline.ng/-/sale/plastering-machines/PFT/G4-putzmeister-mp25-vr6-m-tec--23062513511361340400",
+          "seller": "Baun Bauservice",
+          "price": 12130000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 12130000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:45:11.684Z",
+          "comparable": false
+        },
+        {
+          "url": "https://machineryline.ng/-/construction-equipment/Putzmeister/MP-25--c85tm3325m954",
+          "seller": null,
+          "price": 6829000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 6829000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:45:41.969Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.putzparts24.com/products/putzmeister-mp-25-mp25",
+          "seller": "Putzparts24",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:45:59.891Z",
+          "comparable": false
+        },
+        {
+          "url": "https://prod-seo.govdeals.com/en/asset/149/23050",
+          "seller": "Seller 23050 - EDIINC",
+          "price": 300,
+          "currency": "USD",
+          "unit": "unit",
+          "normalizedPrice": 300,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:46:42.922Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.machines4u.com.au/view/advert/MP-25-MORTAR-PUMP/905669/",
+          "seller": "Putzmeister Oceania Pty Ltd",
+          "price": 14160,
+          "currency": "AUD",
+          "unit": "unit",
+          "normalizedPrice": 14160,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:47:03.308Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.kleinanzeigen.de/s-putzmeister-25/k0",
+          "seller": null,
+          "price": 2850,
+          "currency": "EUR",
+          "unit": "unit",
+          "normalizedPrice": 2850,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-30T23:47:26.659Z",
+          "comparable": true
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 1 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 7,
+        "planningCalls": 1,
+        "retries": 1,
+        "pageRetrievals": 10,
+        "browserFallbacks": 0,
+        "inputTokens": 56155,
+        "outputTokens": 13129,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6731,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-obscure-insufficient",
+      "description": "Request that should legitimately return insufficient data",
+      "expectation": "Should return INSUFFICIENT DATA, not a fabricated price.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        1700,
+        1700
+      ],
+      "median": 1700,
+      "unit": "piece",
+      "independentSources": 1,
+      "discoveredUrls": [
+        "https://sweets.construction.com/manufacturer/stairways--inc-nst2754/products/wood-spiral-stairs-nst562487-p",
+        "https://www.made-in-china.com/factory/wooden-stair.html",
+        "https://www.alibaba.com/showroom/stainless-steel-wood-spiral-staircase-price.html",
+        "https://www.mikasafloors.com/spiral-staircase",
+        "https://www.salterspiralstair.com/spiral-stairs/products/wood-spiral/",
+        "https://www.mylenstairs.com/spiral-stairs/wood/",
+        "https://ezeja.com/about/",
+        "https://www.daibau.ng/professionals/wooden_staircase/port_harcourt",
+        "https://www.daibau.ng/nobech",
+        "https://www.finelib.com/listing/Eyesight-Fabricators-Nigeria-Ltd/75675/",
+        "https://jiji.ng/ajah/building-materials/high-quality-spiral-stairs-1uxKgS2IqtDtutWd25VIn69F.html",
+        "https://www.dolle.com/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://sweets.construction.com/manufacturer/stairways--inc-nst2754/products/wood-spiral-stairs-nst562487-p",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.made-in-china.com/factory/wooden-stair.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.alibaba.com/showroom/stainless-steel-wood-spiral-staircase-price.html",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 410"
+        },
+        {
+          "url": "https://www.mikasafloors.com/spiral-staircase",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.salterspiralstair.com/spiral-stairs/products/wood-spiral/",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.mylenstairs.com/spiral-stairs/wood/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://ezeja.com/about/",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 404"
+        },
+        {
+          "url": "https://www.daibau.ng/professionals/wooden_staircase/port_harcourt",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.daibau.ng/nobech",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.finelib.com/listing/Eyesight-Fabricators-Nigeria-Ltd/75675/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/ajah/building-materials/high-quality-spiral-stairs-1uxKgS2IqtDtutWd25VIn69F.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.dolle.com/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://sweets.construction.com/manufacturer/stairways--inc-nst2754/products/wood-spiral-stairs-nst562487-p",
+          "seller": "Stairways, Inc.",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:49:58.413Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.made-in-china.com/factory/wooden-stair.html",
+          "seller": "Xinghua Panyue Metal Technology Co., Ltd.",
+          "price": 1700,
+          "currency": "USD",
+          "unit": "piece",
+          "normalizedPrice": 1700,
+          "normalizedUnit": "piece",
+          "dateChecked": "2026-07-30T23:50:18.272Z",
+          "comparable": true
+        },
+        {
+          "url": "https://www.mikasafloors.com/spiral-staircase",
+          "seller": "Mikasa Floors",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:50:36.779Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.mylenstairs.com/spiral-stairs/wood/",
+          "seller": "Mylen Stairs",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:51:01.700Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.finelib.com/listing/Eyesight-Fabricators-Nigeria-Ltd/75675/",
+          "seller": "Eyesight Fabricators Nigeria Ltd",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:51:43.745Z",
+          "comparable": false
+        },
+        {
+          "url": "https://www.dolle.com/",
+          "seller": "DOLLE",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-30T23:52:09.409Z",
+          "comparable": false
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 1 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 6,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 12,
+        "browserFallbacks": 0,
+        "inputTokens": 62006,
+        "outputTokens": 12102,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6037,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    }
+  ]
+}

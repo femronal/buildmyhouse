@@ -1,0 +1,417 @@
+{
+  "_readme": "Real Nigerian public marketplace listing texts captured manually from public Jiji.ng search-result pages on 2026-07-28 for terminology spot checks. Captured by reading public pages (no login, no CAPTCHA bypass, no bulk scraping). Texts are seller titles/description snippets verbatim, including misspellings. Listing prices shown in source pages are NOT market data and are excluded where possible.",
+  "cement": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Abuja, Idu Industrial)",
+      "sourceRef": "https://jiji.ng/search?query=dangote+cement",
+      "dateSeen": "2026-07-28",
+      "text": "A Major Cement Distributor of Dangote Cement — Original Dangote 3X Cement for sale. Wholesale price. Message now for current price."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Eko Atlantic)",
+      "sourceRef": "https://jiji.ng/search?query=dangote+cement",
+      "dateSeen": "2026-07-28",
+      "text": "Lafage); Dangote Cement Supplier — By your best and quality building material here at affordable price with no extra charges. 50kg Dangote Cement, top dangote distributor. Bua Lafarg Dangote Cement and Others, I supply for all osun state, bulk prices."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ajah)",
+      "sourceRef": "https://jiji.ng/search?query=dangote+cement",
+      "dateSeen": "2026-07-28",
+      "text": "Fr€€ D€Livery of Dangote Cement — we supply all kinds of reinforcement iron rods. standard local iron rod 6mm -16mm per tonne. Payment on delivery only on large quantities."
+    }
+  ],
+  "reinforcement-steel": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos)",
+      "sourceRef": "https://jiji.ng/search?query=iron+rod+12mm",
+      "dateSeen": "2026-07-28",
+      "text": "12mm Land Craft Industry (Lci) Reinforcement Iron Rod Rebar — 12mm Land Craft Industry (LCI) TMT iron Rod reinforcement rebar. 93 pieces in a tonne of 12mm."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Oyo, Ibadan)",
+      "sourceRef": "https://jiji.ng/search?query=iron+rod+12mm",
+      "dateSeen": "2026-07-28",
+      "text": "12mm Real TMT Iron Rod Per Ton — we supply all kinds of reinforcement iron rods. standard local iron rod 6mm -16mm: per ton. Also 12mm Monac TMT Iron Rod Per Ton, 12mm PSL TMT Iron Rod Per Ton, 12mm TMT Lion Iron Rod Per Ton."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ikeja)",
+      "sourceRef": "https://jiji.ng/search?query=iron+rod+12mm",
+      "dateSeen": "2026-07-28",
+      "text": "12mm Iron Rods — Rebar for concrete casting and building. Per piece price."
+    }
+  ],
+  "concrete-blocks": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ikeja)",
+      "sourceRef": "https://jiji.ng/search?query=9+inch+vibrated+block",
+      "dateSeen": "2026-07-28",
+      "text": "Vibrated Blocks — Stone dust based strong block's,,9inch 6 inches and 4 inchs. Per unit price."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Abuja, Central) — machine ad polluting block search",
+      "sourceRef": "https://jiji.ng/search?query=9+inch+vibrated+block",
+      "dateSeen": "2026-07-28",
+      "text": "Vibrated Blocks Moulding Machine — Vibrated Blocks Moulding Machine handles 9inches Hollow, 6 inches hollow, 6inches solid and 5inches. (Note: this is a block-making MACHINE listing that appears in block searches.)"
+    }
+  ],
+  "sand": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Ogun, Obafemi-Owode)",
+      "sourceRef": "https://jiji.ng/search?query=sharp+sand+20+tons",
+      "dateSeen": "2026-07-28",
+      "text": "Sharp Sand 20 Ton — Sharp sand ,,hranite laterite,,oron rods,,block, plaster etc note we deliver before payment, contact us."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ogba)",
+      "sourceRef": "https://jiji.ng/search?query=sharp+sand+20+tons",
+      "dateSeen": "2026-07-28",
+      "text": "Sharp Sand 20 Ton and Granite — Granite , sharp sand , laterite sand, stone dust,block , plaster samd ,iron rod and.cement are all available. Sharp Sand Full 20 Ton, delivering to your door steps."
+    }
+  ],
+  "granite-aggregates": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Ogun, Obafemi-Owode)",
+      "sourceRef": "https://jiji.ng/search?query=sharp+sand+20+tons",
+      "dateSeen": "2026-07-28",
+      "text": "Granite Full 20 Ton — Granite full 20 tonnage, and sharp sand ,srone dust. 20 Tons Granite: Granite ,stone dust ,sharp sand are all avaailabe, contact property mart."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Ogun, Sagamu)",
+      "sourceRef": "https://jiji.ng/search?query=sharp+sand+20+tons",
+      "dateSeen": "2026-07-28",
+      "text": "Granite and Sharp Sand — Grqnite and sharp sand 30 ton , 20 ton are available in different sizes and tons. Bulk prices."
+    }
+  ],
+  "roofing": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ajah)",
+      "sourceRef": "https://jiji.ng/search?query=stone+coated+roofing+sheet+0.55",
+      "dateSeen": "2026-07-28",
+      "text": "Solid 0.55 Mm Bond Stone Coated Roofing Sheet With Warranty — We sell original super quality Gerard Stone coated roofing sheet. durable Gerard weather-resistant. Shingle Stone Coated Roofing Sheet 0.55 Mm with 50 years warranty."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Gbagada)",
+      "sourceRef": "https://jiji.ng/search?query=stone+coated+roofing+sheet+0.55",
+      "dateSeen": "2026-07-28",
+      "text": "0.55 Gauge Coffee Classic Stone Coated Roofing Sheet — dealer of quality Kristin roofing sheet with 50 years guarantee on product. Also 0.55 Best Stone Coated Roofing Sheets, Amb stone coated roofingtiles best quality lowest price newzealand korea roofing system. 0.55mm Original Long Span Stone Coated Roofing Sheet."
+    }
+  ],
+  "waterproofing": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Lagos Island)",
+      "sourceRef": "https://jiji.ng/search?query=waterproofing+bitumen+membrane",
+      "dateSeen": "2026-07-28",
+      "text": "3mm Bitunil Felt Bitumen Waterproof Membrane. Also: 4mm Roll of App/SBS Modified Bitumen Waterproofing Membrane — Bitumen waterproofing membrane is available in any size 3mm, 4mm, 5mm & available in any quantity. 3mm Green Mineral Bitumen Felt Waterproof Membrane."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Mushin)",
+      "sourceRef": "https://jiji.ng/search?query=waterproofing+bitumen+membrane",
+      "dateSeen": "2026-07-28",
+      "text": "Armorseal 200 Pure Bitumen Emulsion Waterproofing Membrane — Armorseal 200 20litre covers 30 to 40 square meters. Armorseal 200 is a liquid-applied, one component Bitumen membrane for Waterproofing with excellent adhesion. Also 3mm bitumen felt is primarily used for waterproofing roofs, roofing felt."
+    }
+  ],
+  "doors": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Magodo)",
+      "sourceRef": "https://jiji.ng/search?query=turkish+security+door+900",
+      "dateSeen": "2026-07-28",
+      "text": "900m By 2100m Turkish Security Door. Also: 900mm by 2100mm Black and Grey Turkey Security Doors — Top notch quality, top notch accessories, perfect for your building. We deliver nationwide. 3ft Turkish Special Luxury Security Door, weather resistant."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Orile)",
+      "sourceRef": "https://jiji.ng/search?query=turkish+security+door+900",
+      "dateSeen": "2026-07-28",
+      "text": "Luxury 3ft X 7ft Turkish Security Door. (526lsh) — Exit door/ front up entrance door/ apartment. Comes with complete accessories. Also 900m Jiuhua Security Door 9\" Frame, Black Turkey Security Door 3ft 900 by 7ft 2100mm, top notch water friendly security door."
+    }
+  ],
+  "aluminium-windows": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Yaba)",
+      "sourceRef": "https://jiji.ng/search?query=aluminium+sliding+window+with+net",
+      "dateSeen": "2026-07-28",
+      "text": "Aluminium Sliding Window With Net Lagos — Aluminium sliding window with outside mosquito net (good for residential). Also Ghana sliding window for your house, hotel and school. Aluminium Sliding Window With Sliding Net Grey Colour."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos / Oyo, Ibadan)",
+      "sourceRef": "https://jiji.ng/search?query=aluminium+sliding+window+with+net",
+      "dateSeen": "2026-07-28",
+      "text": "Original Aluminium Window for Sale — Aluminium casement, sliding, transom frameless, projected, swing, window wity bulglary and net. Aluminum Window With Buglary And Net — Casement aluminium window with burglary and sliding net. Alumni sliding gray colour with misquote net. Premium Double Glazed Aluminium Casement Windows."
+    }
+  ],
+  "tiles": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Orile)",
+      "sourceRef": "https://jiji.ng/search?query=60x60+porcelain+tiles+carton",
+      "dateSeen": "2026-07-28",
+      "text": "60*120 Floor Tiles — 60*120 India floor tiles 1.44sqm In a carton. Also 60x120 Glazed Floor Tiles: These are Indian made glazed super polished floor tiles, size 60x120cm with standard thickness."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Rivers, Port-Harcourt / Lagos)",
+      "sourceRef": "https://jiji.ng/search?query=60x60+porcelain+tiles+carton",
+      "dateSeen": "2026-07-28",
+      "text": "60 X 60 Glazed Carrara White Wall Tiles — Best quality tile. Suited for kitchen and bathroom wall. 4pc of 1 carton. Super glossy. Also 60x60 Goodwill Porcelain Tiles built for strength and durability; Goodwill 30x60 Polished Vitrified Wall Tiles featuring high-gloss Calacatta white marble design; 60 X 60 Black Colour Super Polish; Newly Compound Tiles 60cm*60cm suitable for outdoor usage, 1.44m 4pcs in a carton."
+    }
+  ],
+  "paint": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Oyo, Ibadan)",
+      "sourceRef": "https://jiji.ng/search?query=emulsion+paint+20+litres",
+      "dateSeen": "2026-07-28",
+      "text": "Value Emulsion Paint 20 Litres and Delivery — Value Emulsion Paint 20 litres Drum, we can deliver to anywhere you need it. Also 20 Litres Original Princess and Honey Matt Emulsion, Original Honey Matt Emulsion Paints, All colors Available."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Rivers, Port-Harcourt)",
+      "sourceRef": "https://jiji.ng/search?query=emulsion+paint+20+litres",
+      "dateSeen": "2026-07-28",
+      "text": "Berger Clinstay Superior Hybrid Emulsion (Dove Grey) 20l — premium interior wall paint with a satin finish, 20ltrs Pail. Also Satin (Silk) Finish Emulsion 20 Litres — a water-based paint known for its smooth, washable finish. Matt Emulsion 20 litres — water-based paint that provides a smooth non-reflective finish. Vapour paint Clay Lux 20liters premium silk paint."
+    }
+  ],
+  "pop-ceilings": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Abuja, Dei-Dei / Enugu)",
+      "sourceRef": "https://jiji.ng/search?query=pop+cement+gypsum+ceiling",
+      "dateSeen": "2026-07-28",
+      "text": "Top Gypsum Pop White Cement Made in Turkey — Top gypsum white pop cement best quality. Also Abs Pop Gypsum Cement for ceilings, screeding and moldings; Star Gips gypsum pop cement; Sea White quality gypsum pop cement for ceiling, screeding and mouldings."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Surulere / Victoria Island)",
+      "sourceRef": "https://jiji.ng/search?query=pop+cement+gypsum+ceiling",
+      "dateSeen": "2026-07-28",
+      "text": "Pop Cement (Good Quality Pop Cement Bags) — Plaster of Paris (POP) is one of the building materials that is mainly used for coating walls. Also: Gypsum Board Plaster Board Ceiling Pop — cement board ceiling installation and screeding, per service. (Note: installation-service ads mix into product searches.)"
+    }
+  ],
+  "external-paving": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Alimosho / Mushin)",
+      "sourceRef": "https://jiji.ng/search?query=interlocking+stones",
+      "dateSeen": "2026-07-28",
+      "text": "Interlocking Stones — Our T design, very stong for home use and road, per piece. Interlocking Stones — Machine produced pavers, bulk prices. Sandcrete blocks and interlocking stone available for sales."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ajah) — sales+installation service ad",
+      "sourceRef": "https://jiji.ng/search?query=interlocking+stones",
+      "dateSeen": "2026-07-28",
+      "text": "Well Vibrated Quality Interlocking Stones — Well vibrated interlocking stone, we produce and install at your site when you buy the needed quantity, per service. Interlocking Stone Man — Interlocking Stone Sales and installation is my job. Production and Laying of Quality long lasting Interlocking stones at a cheap rate. (Note: most paving ads are installation-inclusive services.)"
+    }
+  ],
+  "kitchen-cabinets": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Yaba / Oshodi)",
+      "sourceRef": "https://jiji.ng/search?query=kitchen+cabinet+hdf",
+      "dateSeen": "2026-07-28",
+      "text": "Premium HDF 4ft Kitchen Cabinets — Our Premium Kitchen cabinets are the absolute best because they are crafted to perfection. HDF Portable Kitchen Cabinet 3ft Size, brand new. HDF Highquality 4ft by 3ft Ready-Made Kitchen Cabinet, premium white kitchen cabinet."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Imo / Lagos, Ajah)",
+      "sourceRef": "https://jiji.ng/search?query=kitchen+cabinet+hdf",
+      "dateSeen": "2026-07-28",
+      "text": "Standard Marble Top Kitchen Cabinet (Hdf High Gloss). Kitchen Cabinets HDF / High Gloss — No matter how small your kitchen may be our experts will construct a design. Kitchen Cabinet HDF Board — Made with good quality materials, payment on delivery to all state. (Note: some ads are custom fabrication jobs, not fixed products.)"
+    }
+  ],
+  "sanitary-wares": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Orile)",
+      "sourceRef": "https://jiji.ng/search?query=twyford+wc+complete+set",
+      "dateSeen": "2026-07-28",
+      "text": "Twyford Water Closets (W.C) Complete Set — Complete set twyford w.c efficiency, affordable and reliable ceramic wc."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Amuwo-Odofin)",
+      "sourceRef": "https://jiji.ng/search?query=twyford+wc+complete+set",
+      "dateSeen": "2026-07-28",
+      "text": "Pure 0riginal England Twyford (Wc) Warehouse — Pure Real England twyford water closet with wash hand basin with full complete set of accessories. Also Twyford Water Closet Set – Close-Coupled Toilet Sink with top flush. Wc Luxury Set — Luxury 2 piece curve & square shapes complete water closet."
+    }
+  ],
+  "electrical-cables": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ikeja)",
+      "sourceRef": "https://jiji.ng/search?query=coleman+cable+2.5mm",
+      "dateSeen": "2026-07-28",
+      "text": "Coleman Cable 2.5mm — coleman 1mm single cable – 100 meters complete. length: 100m full roll | type: single core. Brand New. Also Coleman cable 2.5mm 1core black and red; 100% pure copper Full diameter 100meters in a coil."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Lagos Island (Eko))",
+      "sourceRef": "https://jiji.ng/search?query=coleman+cable+2.5mm",
+      "dateSeen": "2026-07-28",
+      "text": "All Sizes 1.5mm. 2.5mm3c 4mm 6mm Factory Coleman Cable — All sizes if cable Available 1mm 1.5mm 2.5mm 4mm 6mm 10mm 16mm 25mm 35mm original Coleman cable. Also 2.5mm × 3c Coleman Flexible Cable, 2.5mm 3 core flexible cable by 100 meters. Original factory coil 2.5mm single cable."
+    }
+  ],
+  "electrical-protection": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ojo)",
+      "sourceRef": "https://jiji.ng/search?query=changeover+switch+100a",
+      "dateSeen": "2026-07-28",
+      "text": "Changeover Switch 100A — 100A changeover switch 2pole single phase knife. Brand New. Also 100A Changeover Switch Knife — Knife switch single phase transparent 100A; Automatic transfer switch 2pole 125A & 100A; Changeover 100A Glow Fuse Unit, 100a fuse units proudly made in india."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Lagos Island (Eko))",
+      "sourceRef": "https://jiji.ng/search?query=changeover+switch+100a",
+      "dateSeen": "2026-07-28",
+      "text": "Dual Power Changeover Switch 2p to 4p 63a/100a Automatic Generator — 4P 63A 220V 400V ATS MCB Type Dual Power Automatic Transfer Switch Change Over Switch. Also Socomec 100a Changeover Switch rated 220V; 100a 3 Pole Changeover Knife Switch; 100a Indoasia Changeover Switch."
+    }
+  ],
+  "plumbing-pipes": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Abuja, Dei-Dei)",
+      "sourceRef": "https://jiji.ng/search?query=ppr+pipe+3%2F4",
+      "dateSeen": "2026-07-28",
+      "text": "3/4 PPR Pipe — Suitable for hot and cold water. Sanica PPR pipes are high-quality, durable pipes used for hot and cold water supply systems. Turkey PPR pipe and connectors. Polytech PPR pipe and fittings, bulk prices."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Rivers, Port-Harcourt)",
+      "sourceRef": "https://jiji.ng/search?query=ppr+pipe+3%2F4",
+      "dateSeen": "2026-07-28",
+      "text": "PVC Pipes 7 Bar 4\" 3\" 2\" Different Sizes — PVC pipe fittings PPR Original brands 7 bar thickness 4\", 3\" 2\" different sizes available. Also Ips 3/4 PPR Pipe — Ips and PPR pipes for hot and cold water."
+    }
+  ],
+  "water-pumps": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Orile)",
+      "sourceRef": "https://jiji.ng/search?query=pedrollo+pump+1hp",
+      "dateSeen": "2026-07-28",
+      "text": "1hp Pedrollo Stainless Pump — It is a self-priming water pump suitable for clean water. Also 1.5hp Flat Head Pedrollo Surface Pump Q 30-120 l/min — Flow rate: it can pump 30 to 120 litres per minute depending on head."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Abuja, Dei-Dei / Rivers, Port-Harcourt)",
+      "sourceRef": "https://jiji.ng/search?query=pedrollo+pump+1hp",
+      "dateSeen": "2026-07-28",
+      "text": "Pedrollo 1hp Submersible Pump. Italian Pump 0.5hp Pedrollo Surface Pump. 1HP Pedrollo surface pump Copper coil Made in Italy. Pedrollo submersible sewage pump 3hp. (Sellers distinguish surface pump, submersible pump, sewage pump, stainless.)"
+    }
+  ],
+  "water-tanks": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Surulere / Oyo, Ibadan)",
+      "sourceRef": "https://jiji.ng/search?query=geepee+tank+2000+litres",
+      "dateSeen": "2026-07-28",
+      "text": "2000 Litres Geepee Water Tank — High Quality Geepee Water tanks available in all sizes and Large quantities. Storex and Geepee Water Storage Tanks — Water storages available 500 litres 1000 litres 1500L 2000L 2500L 3000L 4000L 5000L 10,000L."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Rivers, Port-Harcourt / Lagos, Ajah)",
+      "sourceRef": "https://jiji.ng/search?query=geepee+tank+2000+litres",
+      "dateSeen": "2026-07-28",
+      "text": "Gee Pee Tank 2000 Litres — 2,000 litres Geepee Tank is a containers used for storing and supply of water. Geepee tank, also known as a GP tank. 2000 Litres Geepee Tank - Rubber TopTank Cylindrical Water Storage Tank. 2000 Litres Water Tank Rubber."
+    }
+  ],
+  "solar-panels": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ojo)",
+      "sourceRef": "https://jiji.ng/search?query=550w+mono+solar+panel",
+      "dateSeen": "2026-07-28",
+      "text": "550w Mono Solar Panel 144 Cells Half Cut — we are major distributors in solar products. Also 550w Canadian Halfcut Solar Panels Mono; 550w Canadian Solar Panel Halfcut Mono 144cells; this is a 550w Monocrystalline solar panel half cut, also available in 650w and 700w."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos / Edo, Egor)",
+      "sourceRef": "https://jiji.ng/search?query=550w+mono+solar+panel",
+      "dateSeen": "2026-07-28",
+      "text": "Jinko 550W Mono MSP Solar Panels — jinko 550w solar power combo deal – x8 jinko 550w 144 cell tiger panels. 550w Mono Solar Panels Canadian Available — Used condition. 550w Mono Solar Panels Front And Back Charger (bifacial)."
+    }
+  ],
+  "inverters": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ojo / Anambra)",
+      "sourceRef": "https://jiji.ng/search?query=5kva+hybrid+inverter",
+      "dateSeen": "2026-07-28",
+      "text": "5kva Hybrid Inverter SMS — This is SMS 5kva hybrid inverter 24v avaliable. Growatt 5kva Hybrid Inverter — Growatt 48V SPL 5000W Hybrid inverter available. Felicity 7.5KVA transformation based Hybrid inverter. 1.5kva Luxsun battery independent inverter, 12months warranty."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Lekki) — bundle ad",
+      "sourceRef": "https://jiji.ng/search?query=5kva+hybrid+inverter",
+      "dateSeen": "2026-07-28",
+      "text": "6kva Hybrid Inverter 7.5kwh Lithium Battery and 450w Solar Panel 10pcs — Tested and trusted products, Brand New. Also Haisic All in One (4KWH Lithium + 1.5KVA Hybrid Inverter) for your 2rooms apartment. 10kwh Lithium Battery, 6.5kva Hybrid Inverter Solar Connection, successfully sold and installed for a customer. (Note: many inverter ads are full-system bundles.)"
+    }
+  ],
+  "batteries": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ikeja)",
+      "sourceRef": "https://jiji.ng/search?query=220ah+tubular+battery",
+      "dateSeen": "2026-07-28",
+      "text": "220ah Tubular Battery (Super Speed) — Super Speed 12V 220Ah Tall Tubular Inverter Battery. Deep-Cycle Performance. Also Nexus 220AH Tubular Battery (1 Year Warranty) — Nexus tubular batteries are the best tubler batteries one can get in the nigerian market."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Oyo, Ibadan / Lagos, Victoria Island)",
+      "sourceRef": "https://jiji.ng/search?query=220ah+tubular+battery",
+      "dateSeen": "2026-07-28",
+      "text": "Glow Energy 220ah Tubular Battery — 220ah glow energy tall tubular battery 100% in india battery. Gpower 12v 220ah Tubular Battery — battery has 1 year warranty, payment on delivery. Luminous inverlast 220ah tubular battery. Mecury 12v220ah tall tubular battery with warranty. 220 Ah Tubular Battery — complete cell battery."
+    }
+  ],
+  "generators": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ajah)",
+      "sourceRef": "https://jiji.ng/search?query=10kva+silent+diesel+generator",
+      "dateSeen": "2026-07-28",
+      "text": "10kva Silent Diesel Generator Perkins — High quality perkins semi silent soundproof generator 10kva, 100% pure copper coil keystart. Brand New. Also Senci SCD18000E 10kva / 10.6kva Diesel Generator, Silent Canopy."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos)",
+      "sourceRef": "https://jiji.ng/search?query=10kva+silent+diesel+generator",
+      "dateSeen": "2026-07-28",
+      "text": "Firman 10kva Silent Diesel Generator – Powerful Good Serving Reliable — Firman 10KVA diesel soundproof generator built for homes, offices, shops. Elepaq 10kva with 100% copper coil. Perkins 10KVA diesel generator three phase built for durability. Kipor 10kVA Diesel Generator dependable backup power."
+    }
+  ],
+  "cctv-security": [
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos, Ikeja)",
+      "sourceRef": "https://jiji.ng/search?query=hikvision+4+camera+cctv+kit",
+      "dateSeen": "2026-07-28",
+      "text": "Hikvision 8channel CCTV Camera Kit — Hikvision turbo hd 8 camera kit contains the following: 1 x hikvision turbo hd 8 channel dvr, cameras, power supply, cable. Also Hikvision 4 Channel Complete Kit With 100m Cable — AHD 2 indoor and 2 outdoor camera, 4 channel dvr, 4 way power supply, 100m cable, 8pcs BNC connector."
+    },
+    {
+      "sourceType": "public_marketplace_listing",
+      "sourceName": "Jiji.ng seller listing (Lagos / Enugu)",
+      "sourceRef": "https://jiji.ng/search?query=hikvision+4+camera+cctv+kit",
+      "dateSeen": "2026-07-28",
+      "text": "4 Channel CCTV Camera System With Accessories+Installation — Items included: 1) 4pcs Cameras 2) 1pcs 4ch Dvr 3) 305m cable 4) 4-way power box 5) storage. The complete hikvision 4ch turbo hd 2mp cctv security camera system includes (1) hikvision DVR. Hikvision 16 Channel Complete Camera Kit With Router, hard drive 1TB. (Note: some kits are installation-inclusive.)"
+    }
+  ]
+}

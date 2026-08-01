@@ -60,7 +60,7 @@ export default function ServiceExperiencePage({ content }: ServiceExperiencePage
 
         {content.reviews.map((review) => (
           <View key={review.quote} className="rounded-[28px] border p-5 mb-3" style={{ borderColor: 'rgba(243,240,232,.1)', backgroundColor: 'rgba(255,255,255,.035)' }}>
-            <Text className="text-base leading-7 text-[#f3f0e8] mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>"{review.quote}"</Text>
+            <Text className="text-base leading-7 text-[#f3f0e8] mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>&ldquo;{review.quote}&rdquo;</Text>
             <Text className="text-sm" style={{ color: 'rgba(243,240,232,.72)', fontFamily: 'Poppins_600SemiBold' }}>{review.name}</Text>
           </View>
         ))}

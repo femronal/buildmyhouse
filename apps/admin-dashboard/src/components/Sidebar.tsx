@@ -13,10 +13,11 @@ import {
   Scale,
   LandPlot,
   Home,
-  FileText,
-  Shield,
-  LogOut,
-  X
+  FileText, 
+  Shield, 
+  LogOut, 
+  X,
+  Wrench,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 
@@ -30,10 +31,20 @@ const menuItems = [
   { href: '/land', label: 'Land', icon: LandPlot },
   { href: '/houses', label: 'Houses', icon: Home },
   { href: '/rentals', label: 'Rentals', icon: Building },
+  { href: '/tools', label: 'Tools', icon: Wrench },
   { href: '/articles', label: 'Content', icon: FileText },
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/admin-access', label: 'Admin Access', icon: Shield },
 ];
+
+function isToolsPath(pathname: string): boolean {
+  return (
+    pathname === '/tools' ||
+    pathname.startsWith('/tools/') ||
+    pathname.startsWith('/price-intelligence') ||
+    pathname === '/price-checker-revenue'
+  );
+}
 
 type SidebarProps = {
   isMobile?: boolean;
@@ -77,7 +88,10 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
           const isActive =
             pathname === item.href ||
             (item.href === '/articles' && pathname.startsWith('/service-pages')) ||
-            (item.href !== '/dashboard' && pathname.startsWith(`${item.href}/`));
+            (item.href === '/tools' && isToolsPath(pathname)) ||
+            (item.href !== '/dashboard' &&
+              item.href !== '/tools' &&
+              pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
           return (
             <Link

@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthService } from './jwt-auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './optional-jwt-auth.guard';
 import { RolesGuard } from './rbac.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { WebSocketModule } from '../websocket/websocket.module';
@@ -37,10 +38,11 @@ import { PrismaModule } from '../prisma/prisma.module';
     AuthService,
     JwtAuthService,
     JwtAuthGuard,
+    OptionalJwtAuthGuard,
     RolesGuard,
     GoogleStrategy,
     S3UploadService,
   ],
-  exports: [AuthService, JwtAuthService, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtAuthService, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

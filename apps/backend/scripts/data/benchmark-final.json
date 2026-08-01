@@ -1,0 +1,886 @@
+{
+  "runAt": "2026-07-31T00:31:07.024Z",
+  "model": "gpt-5.6-sol",
+  "config": {
+    "extractionModel": "gpt-5.6-sol",
+    "planningModel": "gpt-5.6-sol",
+    "searchProvider": "openai_web_search",
+    "pageRetriever": "direct_public",
+    "browserFallbackEnabled": false,
+    "maxSearchQueries": 6,
+    "maxSourcesPerItem": 12,
+    "researchTimeoutMs": 240000,
+    "sourceCacheTtlHours": 72,
+    "maxPageBytes": 3000000,
+    "pageFetchTimeoutMs": 15000,
+    "pageFetchMaxRetries": 2,
+    "userAgent": "BuildMyHousePriceChecker/1.0 (+https://buildmyhouse.app/price-checker; research bot; contact: support@buildmyhouse.app)"
+  },
+  "summary": {
+    "items": 5,
+    "priced": 2,
+    "insufficientData": 3,
+    "failed": 0,
+    "withThreePlusIndependent": 1,
+    "discoverySuccessRate": 1,
+    "retrievalSuccessRate": 0.46511627906976744,
+    "extractionSuccessRate": 1.2,
+    "avgLatencyMs": 154231,
+    "totalEstimatedUsd": 0,
+    "costPerSuccessfulItemUsd": 0,
+    "pricingKnown": false,
+    "totalUngroundedObservations": 0,
+    "failuresByRetrievalOutcome": {
+      "unsafe_url_rejected": 5,
+      "robots_or_policy_restricted": 3,
+      "login_required": 12,
+      "timeout": 1,
+      "fetch_failed": 2
+    }
+  },
+  "perItem": [
+    {
+      "id": "bm-rebar-abuja",
+      "description": "12 mm reinforcement bar in Abuja",
+      "expectation": "Rebar priced per length or per tonne; conversion provenance required.",
+      "outcome": "successful",
+      "confidence": "moderate",
+      "range": [
+        950000,
+        1120000
+      ],
+      "median": 1010000,
+      "unit": "tonne",
+      "independentSources": 3,
+      "discoveredUrls": [
+        "https://truecostsolution.com/",
+        "https://jiji.ng/abuja/165-rods/12mm",
+        "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+        "https://www.konga.com/product/12mm-iron-rod-6925833",
+        "https://jiji.ng/dei-dei/building-materials/12mm-abuja-tmt-per-ton-poaNwxz58LoIhHApneQZiXzo.html",
+        "https://jiji.ng/abuja/hardware-and-fasteners/iron-rod-distributor-standard-tmt-and-local-iron-rod-rebar-85nHcwZ7aDsGMtaQ2Ylvjoco.html",
+        "https://buildingsandmoreng.com/products/seg-12mm-iron-rods-per-ton-24c930ea-4d30-4c01-a68b-45b09314e46b",
+        "https://jisglobalinvestment.com/product/12mm-iron-rod-high-tensile-steel-reinforcement-bar/",
+        "https://ong.ng/a-BxjtzSrWO4GNedTb5blkXvMtnGUw-reinforcing-bar-steel-rods.html"
+      ],
+      "retrieval": [
+        {
+          "url": "https://truecostsolution.com/",
+          "finalUrl": "https://truecostsolution.com/",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/abuja/165-rods/12mm",
+          "finalUrl": "https://jiji.ng/abuja/165-rods/12mm",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "finalUrl": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.konga.com/product/12mm-iron-rod-6925833",
+          "finalUrl": "https://www.konga.com/product/12mm-iron-rod-6925833",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://jiji.ng/dei-dei/building-materials/12mm-abuja-tmt-per-ton-poaNwxz58LoIhHApneQZiXzo.html",
+          "finalUrl": "https://jiji.ng/dei-dei/building-materials/12mm-abuja-tmt-per-ton-poaNwxz58LoIhHApneQZiXzo.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://jiji.ng/abuja/hardware-and-fasteners/iron-rod-distributor-standard-tmt-and-local-iron-rod-rebar-85nHcwZ7aDsGMtaQ2Ylvjoco.html",
+          "finalUrl": "https://jiji.ng/abuja/hardware-and-fasteners/iron-rod-distributor-standard-tmt-and-local-iron-rod-rebar-85nHcwZ7aDsGMtaQ2Ylvjoco.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://buildingsandmoreng.com/products/seg-12mm-iron-rods-per-ton-24c930ea-4d30-4c01-a68b-45b09314e46b",
+          "finalUrl": "https://buildingsandmoreng.com/products/seg-12mm-iron-rods-per-ton-24c930ea-4d30-4c01-a68b-45b09314e46b",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jisglobalinvestment.com/product/12mm-iron-rod-high-tensile-steel-reinforcement-bar/",
+          "finalUrl": "https://jisglobalinvestment.com/cgi-sys/suspendedpage.cgi",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://ong.ng/a-BxjtzSrWO4GNedTb5blkXvMtnGUw-reinforcing-bar-steel-rods.html",
+          "finalUrl": "https://ong.ng/a-BxjtzSrWO4GNedTb5blkXvMtnGUw-reinforcing-bar-steel-rods.html",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://truecostsolution.com/",
+          "seller": null,
+          "price": 1120000,
+          "currency": "NGN",
+          "unit": "tonne",
+          "normalizedPrice": 1120000,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-31T00:18:55.090Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "seller": null,
+          "price": 1010000,
+          "currency": "NGN",
+          "unit": "tonne",
+          "normalizedPrice": 1010000,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-31T00:19:13.026Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://naijasabi.com.ng/iron-rod-price-nigeria-2026/",
+          "seller": null,
+          "price": 950000,
+          "currency": "NGN",
+          "unit": "tonne",
+          "normalizedPrice": 950000,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-31T00:19:13.026Z",
+          "specMatchLevel": "exact",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://buildingsandmoreng.com/products/seg-12mm-iron-rods-per-ton-24c930ea-4d30-4c01-a68b-45b09314e46b",
+          "seller": "Buildings and more",
+          "price": null,
+          "currency": null,
+          "unit": "tonne",
+          "normalizedPrice": null,
+          "normalizedUnit": "tonne",
+          "dateChecked": "2026-07-31T00:19:37.913Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://jisglobalinvestment.com/cgi-sys/suspendedpage.cgi",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-31T00:19:54.563Z",
+          "specMatchLevel": "partial",
+          "comparable": false,
+          "comparabilityNotes": []
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 4,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 9,
+        "browserFallbacks": 0,
+        "inputTokens": 27886,
+        "outputTokens": 7323,
+        "cachedTokens": 4395,
+        "reasoningTokens": 2459,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-cable-lagos",
+      "description": "Specified electrical cable in Lagos",
+      "expectation": "Copper vs CCA must not be compared as equivalent.",
+      "outcome": "successful",
+      "confidence": "low",
+      "range": [
+        46500,
+        46500
+      ],
+      "median": 46500,
+      "unit": "roll_100m",
+      "independentSources": 1,
+      "discoveredUrls": [
+        "https://www.alabastore.com/product/coleman-1-5mm-single-core-100m/",
+        "https://jiji.ng/kosofe/power-equipments/coleman-single-cables-1-5mm-wire-swG1fZ2KJ4v1x2sH41HU3dPB.html?indexPosition=6",
+        "https://jiji.ng/victoria-island/power-tools/nigerchin-1-5mm-single-core-copper-wire-red-hszFsWlY53OQawBGzW4ZRTPI.html",
+        "https://jiji.ng/lagos-island-west/power-equipments/1-5mm-single-core-ixz16X93HdIbpQ6dCao0YgDG.html",
+        "https://www.konga.com/product/coleman-1-5mm-single-core-electricity-copper-cable-red-5345518?cid=7937",
+        "https://www.konga.com/product/single-core-copper-wire-1-5mm-black-4081223",
+        "https://www.jumia.com.ng/coleman-cable-1.5mm-coleman-single-ac-wire-419773390.html",
+        "https://store.structurecity.com/product/kabel-metal-1-5mm-16mm-1-core-cable/",
+        "https://me3energy.ng/electrical-cables/single-core-cables.html"
+      ],
+      "retrieval": [
+        {
+          "url": "https://www.alabastore.com/product/coleman-1-5mm-single-core-100m/",
+          "finalUrl": "https://www.alabastore.com/product/coleman-1-5mm-single-core-100m/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/kosofe/power-equipments/coleman-single-cables-1-5mm-wire-swG1fZ2KJ4v1x2sH41HU3dPB.html?indexPosition=6",
+          "finalUrl": "https://jiji.ng/kosofe/power-equipments/coleman-single-cables-1-5mm-wire-swG1fZ2KJ4v1x2sH41HU3dPB.html?indexPosition=6",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/victoria-island/power-tools/nigerchin-1-5mm-single-core-copper-wire-red-hszFsWlY53OQawBGzW4ZRTPI.html",
+          "finalUrl": "https://jiji.ng/victoria-island/power-tools/nigerchin-1-5mm-single-core-copper-wire-red-hszFsWlY53OQawBGzW4ZRTPI.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/lagos-island-west/power-equipments/1-5mm-single-core-ixz16X93HdIbpQ6dCao0YgDG.html",
+          "finalUrl": "https://jiji.ng/lagos-island-west/power-equipments/1-5mm-single-core-ixz16X93HdIbpQ6dCao0YgDG.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.konga.com/product/coleman-1-5mm-single-core-electricity-copper-cable-red-5345518?cid=7937",
+          "finalUrl": "https://www.konga.com/product/coleman-1-5mm-single-core-electricity-copper-cable-red-5345518?cid=7937",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://www.konga.com/product/single-core-copper-wire-1-5mm-black-4081223",
+          "finalUrl": "https://www.konga.com/product/single-core-copper-wire-1-5mm-black-4081223",
+          "outcome": "robots_or_policy_restricted",
+          "usedBrowserFallback": false,
+          "restrictionReason": "Konga: direct fetch not permitted (discovery only)"
+        },
+        {
+          "url": "https://www.jumia.com.ng/coleman-cable-1.5mm-coleman-single-ac-wire-419773390.html",
+          "finalUrl": "https://www.jumia.com.ng/coleman-cable-1.5mm-coleman-single-ac-wire-419773390.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://store.structurecity.com/product/kabel-metal-1-5mm-16mm-1-core-cable/",
+          "finalUrl": "https://store.structurecity.com/product/kabel-metal-1-5mm-16mm-1-core-cable/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://me3energy.ng/electrical-cables/single-core-cables.html",
+          "finalUrl": "https://me3energy.ng/electrical-cables/single-core-cables.html",
+          "outcome": "timeout",
+          "usedBrowserFallback": false,
+          "restrictionReason": "timeout after 15000ms"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://www.alabastore.com/product/coleman-1-5mm-single-core-100m/",
+          "seller": "Alabastore.com",
+          "price": 46500,
+          "currency": "NGN",
+          "unit": "roll_100m",
+          "normalizedPrice": 46500,
+          "normalizedUnit": "roll_100m",
+          "dateChecked": "2026-07-31T00:20:59.964Z",
+          "specMatchLevel": "close",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://www.jumia.com.ng/coleman-cable-1.5mm-coleman-single-ac-wire-419773390.html",
+          "seller": "F1968 up",
+          "price": 74800,
+          "currency": "NGN",
+          "unit": "pair_bundle",
+          "normalizedPrice": 74800,
+          "normalizedUnit": "pair_bundle",
+          "dateChecked": "2026-07-31T00:21:33.170Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://store.structurecity.com/product/kabel-metal-1-5mm-16mm-1-core-cable/",
+          "seller": "Structurecity",
+          "price": null,
+          "currency": "NGN",
+          "unit": "coil",
+          "normalizedPrice": null,
+          "normalizedUnit": "coil",
+          "dateChecked": "2026-07-31T00:22:03.851Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": []
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "Only 1 independent credible source(s) found; fewer than 3."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 3,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 9,
+        "browserFallbacks": 0,
+        "inputTokens": 42117,
+        "outputTokens": 7818,
+        "cachedTokens": 4395,
+        "reasoningTokens": 3665,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-window-lagos",
+      "description": "Aluminium window with dimensions and glass specification",
+      "expectation": "Custom sizing means moderate confidence at best.",
+      "outcome": "insufficient_data",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [
+        "https://opor.ng/en/board/m-203813/",
+        "https://opor.ng/en/board/m-188931/",
+        "https://jiji.ng/shomolu/windows/aluminium-sliding-window-w4QusGAPt9inN32k191Ju3jY.html",
+        "https://jiji.ng/agege/windows/high-quality-aluminium-windows-with-security-bars-net-perfect-hbLxgjLdGVSm2KIMVf1vYZuF.html",
+        "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+        "https://jiji.ng/ikeja/windows/white-frameless-casement-window-BPEv21tbumUTMeJD0Me87WgR.html",
+        "https://opor.ng/en/board/m-206350/",
+        "https://ong.ng/a-BxjuoIyt8TfDkGnqxHSlya64sMGC-aluminum-casement-window-with-inner-net-and-burglary-00012.html",
+        "https://kusnap.com/product/5633270-aluminum-casement-window",
+        "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+        "https://kalcowebstore.in/kalco-readymade-aluminium-window-single-side-sliding-window-in-matt-grey-colour-width-4ft-height-4ft-delhi-noida-ghaziabad-bengaluru-chennai-all-india.html%3Fsrsltid%3DAfmBOopwrPRJa5klHO-RFfxhdfVvPgUVSTmQz4BCM8K5DEfF_Q9Ew5eB"
+      ],
+      "retrieval": [
+        {
+          "url": "https://opor.ng/en/board/m-203813/",
+          "finalUrl": "https://opor.ng/en/board/m-203813/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://opor.ng/en/board/m-188931/",
+          "finalUrl": "https://opor.ng/en/board/m-188931/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/shomolu/windows/aluminium-sliding-window-w4QusGAPt9inN32k191Ju3jY.html",
+          "finalUrl": "https://jiji.ng/shomolu/windows/aluminium-sliding-window-w4QusGAPt9inN32k191Ju3jY.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/agege/windows/high-quality-aluminium-windows-with-security-bars-net-perfect-hbLxgjLdGVSm2KIMVf1vYZuF.html",
+          "finalUrl": "https://jiji.ng/agege/windows/high-quality-aluminium-windows-with-security-bars-net-perfect-hbLxgjLdGVSm2KIMVf1vYZuF.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+          "finalUrl": "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/ikeja/windows/white-frameless-casement-window-BPEv21tbumUTMeJD0Me87WgR.html",
+          "finalUrl": "https://jiji.ng/ikeja/windows/white-frameless-casement-window-BPEv21tbumUTMeJD0Me87WgR.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://opor.ng/en/board/m-206350/",
+          "finalUrl": "https://opor.ng/en/board/m-206350/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://ong.ng/a-BxjuoIyt8TfDkGnqxHSlya64sMGC-aluminum-casement-window-with-inner-net-and-burglary-00012.html",
+          "finalUrl": "https://ong.ng/a-BxjuoIyt8TfDkGnqxHSlya64sMGC-aluminum-casement-window-with-inner-net-and-burglary-00012.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://kusnap.com/product/5633270-aluminum-casement-window",
+          "finalUrl": "https://kusnap.com/product/5633270-aluminum-casement-window",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+          "finalUrl": "https://www.marketplace.ng/alimosho/aluminum-casement-windows-and-sliding-windows/78297",
+          "outcome": "unsafe_url_rejected",
+          "usedBrowserFallback": false,
+          "restrictionReason": "SSRF guard: DNS lookup failed"
+        },
+        {
+          "url": "https://kalcowebstore.in/kalco-readymade-aluminium-window-single-side-sliding-window-in-matt-grey-colour-width-4ft-height-4ft-delhi-noida-ghaziabad-bengaluru-chennai-all-india.html%3Fsrsltid%3DAfmBOopwrPRJa5klHO-RFfxhdfVvPgUVSTmQz4BCM8K5DEfF_Q9Ew5eB",
+          "finalUrl": "https://kalcowebstore.in/kalco-readymade-aluminium-window-single-side-sliding-window-in-matt-grey-colour-width-4ft-height-4ft-delhi-noida-ghaziabad-bengaluru-chennai-all-india.html%3Fsrsltid%3DAfmBOopwrPRJa5klHO-RFfxhdfVvPgUVSTmQz4BCM8K5DEfF_Q9Ew5eB",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://opor.ng/en/board/m-203813/",
+          "seller": "Wasiu Ayo",
+          "price": 70000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 70000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-31T00:23:35.877Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://opor.ng/en/board/m-188931/",
+          "seller": "De- Crown projects",
+          "price": 35000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 35000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-31T00:24:09.253Z",
+          "specMatchLevel": "close",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://tilesng.com/index.php/property/aluminum-casement-window-for-sale/",
+          "seller": "TilesNg",
+          "price": 100000,
+          "currency": "NGN",
+          "unit": "set",
+          "normalizedPrice": 100000,
+          "normalizedUnit": "set",
+          "dateChecked": "2026-07-31T00:24:31.285Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://opor.ng/en/board/m-206350/",
+          "seller": "Kass Aluminium Concepts",
+          "price": 60000,
+          "currency": "NGN",
+          "unit": "unit",
+          "normalizedPrice": 60000,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-31T00:24:52.181Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://kusnap.com/product/5633270-aluminum-casement-window",
+          "seller": "M S Aratumi Ventures Aluminum",
+          "price": 120000,
+          "currency": "NGN",
+          "unit": null,
+          "normalizedPrice": 120000,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-31T00:25:12.878Z",
+          "specMatchLevel": "close",
+          "comparable": true,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://kalcowebstore.in/kalco-readymade-aluminium-window-single-side-sliding-window-in-matt-grey-colour-width-4ft-height-4ft-delhi-noida-ghaziabad-bengaluru-chennai-all-india.html%3Fsrsltid%3DAfmBOopwrPRJa5klHO-RFfxhdfVvPgUVSTmQz4BCM8K5DEfF_Q9Ew5eB",
+          "seller": "KALCO",
+          "price": 16659.24,
+          "currency": "INR",
+          "unit": "unit",
+          "normalizedPrice": 16659.24,
+          "normalizedUnit": "unit",
+          "dateChecked": "2026-07-31T00:25:38.055Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "listed in INR, not NGN; kept as evidence only"
+          ]
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "No comparable public evidence found."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 6,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 11,
+        "browserFallbacks": 0,
+        "inputTokens": 33847,
+        "outputTokens": 13659,
+        "cachedTokens": 4395,
+        "reasoningTokens": 6767,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-cctv-bundle-lagos",
+      "description": "CCTV package with camera count and installation (bundle)",
+      "expectation": "Bundle contents must be captured; not compared to single-camera prices.",
+      "outcome": "insufficient_data",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [
+        "https://basecafrica.com/products/4-channel-hikvision-cctv-camera-with-installation-kits-indoor-and-outdoor",
+        "https://jiji.ng/central-business-district/building-and-trades-services/cctv-camera-sales-installation-4-channel-6qwhbOlC9LaFkEbvFEXxMF0c.html",
+        "https://jiji.ng/ojodu/security-and-surveillance/4-channel-dvr-with-4-cameras-installation-yx5UZiByF5Di5pEdhAzW6D9I.html",
+        "https://jiji.ng/victoria-island/security-and-surveillance/4-channel-cctv-camera-system-with-accessories-installation-53i0VW2tCYR4OA1priMzHvZi.html",
+        "https://securenow.ng/products",
+        "https://www.colonytechnologies.com.ng/smart-home-devices-tuya-nigeria",
+        "https://www.pronearme.ng/same-day-cctv-installation-in-parkview",
+        "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/"
+      ],
+      "retrieval": [
+        {
+          "url": "https://basecafrica.com/products/4-channel-hikvision-cctv-camera-with-installation-kits-indoor-and-outdoor",
+          "finalUrl": "https://basecafrica.com/products/4-channel-hikvision-cctv-camera-with-installation-kits-indoor-and-outdoor",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/central-business-district/building-and-trades-services/cctv-camera-sales-installation-4-channel-6qwhbOlC9LaFkEbvFEXxMF0c.html",
+          "finalUrl": "https://jiji.ng/central-business-district/building-and-trades-services/cctv-camera-sales-installation-4-channel-6qwhbOlC9LaFkEbvFEXxMF0c.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/ojodu/security-and-surveillance/4-channel-dvr-with-4-cameras-installation-yx5UZiByF5Di5pEdhAzW6D9I.html",
+          "finalUrl": "https://jiji.ng/ojodu/security-and-surveillance/4-channel-dvr-with-4-cameras-installation-yx5UZiByF5Di5pEdhAzW6D9I.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://jiji.ng/victoria-island/security-and-surveillance/4-channel-cctv-camera-system-with-accessories-installation-53i0VW2tCYR4OA1priMzHvZi.html",
+          "finalUrl": "https://jiji.ng/victoria-island/security-and-surveillance/4-channel-cctv-camera-system-with-accessories-installation-53i0VW2tCYR4OA1priMzHvZi.html",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://securenow.ng/products",
+          "finalUrl": "https://securenow.ng/products",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "fetch failed"
+        },
+        {
+          "url": "https://www.colonytechnologies.com.ng/smart-home-devices-tuya-nigeria",
+          "finalUrl": "https://www.colonytechnologies.com.ng/cgi-sys/suspendedpage.cgi",
+          "outcome": "readable_text_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.pronearme.ng/same-day-cctv-installation-in-parkview",
+          "finalUrl": "https://www.pronearme.ng/cctv-installation-in-parkview",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "finalUrl": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://basecafrica.com/products/4-channel-hikvision-cctv-camera-with-installation-kits-indoor-and-outdoor",
+          "seller": "Basec Africa",
+          "price": 230000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 230000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-31T00:26:45.981Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://www.colonytechnologies.com.ng/cgi-sys/suspendedpage.cgi",
+          "seller": null,
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-31T00:27:19.135Z",
+          "specMatchLevel": "partial",
+          "comparable": false,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://www.pronearme.ng/cctv-installation-in-parkview",
+          "seller": "PronearMe",
+          "price": null,
+          "currency": null,
+          "unit": null,
+          "normalizedPrice": null,
+          "normalizedUnit": null,
+          "dateChecked": "2026-07-31T00:27:34.963Z",
+          "specMatchLevel": "partial",
+          "comparable": false,
+          "comparabilityNotes": []
+        },
+        {
+          "url": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "seller": "SecureTech Lagos",
+          "price": 85000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 85000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-31T00:28:00.858Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "seller": "Guardian Security",
+          "price": 80000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 80000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-31T00:28:00.858Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "seller": "Lagos CCTV Pros",
+          "price": 90000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 90000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-31T00:28:00.858Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        },
+        {
+          "url": "https://housesolutions.com.ng/how-much-does-a-professional-cctv-installation-cost-in-lagos/",
+          "seller": "MetroSafe",
+          "price": 78000,
+          "currency": "NGN",
+          "unit": "package",
+          "normalizedPrice": 78000,
+          "normalizedUnit": "package",
+          "dateChecked": "2026-07-31T00:28:00.858Z",
+          "specMatchLevel": "exact",
+          "comparable": false,
+          "comparabilityNotes": [
+            "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)"
+          ]
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "No comparable public evidence found."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 4,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 8,
+        "browserFallbacks": 0,
+        "inputTokens": 35057,
+        "outputTokens": 11157,
+        "cachedTokens": 4395,
+        "reasoningTokens": 4356,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    },
+    {
+      "id": "bm-obscure-insufficient",
+      "description": "Request that should legitimately return insufficient data",
+      "expectation": "Should return INSUFFICIENT DATA, not a fabricated price.",
+      "outcome": "insufficient_data",
+      "confidence": "insufficient_data",
+      "range": null,
+      "median": null,
+      "unit": null,
+      "independentSources": 0,
+      "discoveredUrls": [
+        "https://www.dhanasmetaldesigns.com/spiral-staircase.html",
+        "https://www.salterspiralstair.com/spiral-stairs/products/wood-spiral/",
+        "https://www.alibaba.com/showroom/a-teak-staircase.html",
+        "https://www.dhanasmetaldesigns.com/residential-staircase.html",
+        "https://www.dhanasmetaldesigns.com/staircase-railing.html",
+        "https://jiji.ng/port-harcourt/165-staircase"
+      ],
+      "retrieval": [
+        {
+          "url": "https://www.dhanasmetaldesigns.com/spiral-staircase.html",
+          "finalUrl": "https://www.dhanasmetaldesigns.com/spiral-staircase.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.salterspiralstair.com/spiral-stairs/products/wood-spiral/",
+          "finalUrl": "https://www.salterspiralstair.com/spiral-stairs/products/wood-spiral/",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        },
+        {
+          "url": "https://www.alibaba.com/showroom/a-teak-staircase.html",
+          "finalUrl": "https://www.alibaba.com/showroom/a-teak-staircase.html",
+          "outcome": "fetch_failed",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 410"
+        },
+        {
+          "url": "https://www.dhanasmetaldesigns.com/residential-staircase.html",
+          "finalUrl": "https://www.dhanasmetaldesigns.com/residential-staircase.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://www.dhanasmetaldesigns.com/staircase-railing.html",
+          "finalUrl": "https://www.dhanasmetaldesigns.com/staircase-railing.html",
+          "outcome": "structured_data_found",
+          "usedBrowserFallback": false
+        },
+        {
+          "url": "https://jiji.ng/port-harcourt/165-staircase",
+          "finalUrl": "https://jiji.ng/port-harcourt/165-staircase",
+          "outcome": "login_required",
+          "usedBrowserFallback": false,
+          "restrictionReason": "HTTP 403"
+        }
+      ],
+      "acceptedSources": [
+        {
+          "url": "https://www.dhanasmetaldesigns.com/spiral-staircase.html",
+          "seller": "Dhanas Metal Designs",
+          "price": 4900,
+          "currency": "INR",
+          "unit": "foot",
+          "normalizedPrice": 4900,
+          "normalizedUnit": "foot",
+          "dateChecked": "2026-07-31T00:29:54.536Z",
+          "specMatchLevel": "close",
+          "comparable": false,
+          "comparabilityNotes": [
+            "listed in INR, not NGN; kept as evidence only"
+          ]
+        },
+        {
+          "url": "https://www.dhanasmetaldesigns.com/residential-staircase.html",
+          "seller": "Dhanas Metal Designs",
+          "price": 999,
+          "currency": "INR",
+          "unit": "foot",
+          "normalizedPrice": 999,
+          "normalizedUnit": "foot",
+          "dateChecked": "2026-07-31T00:30:24.417Z",
+          "specMatchLevel": "close",
+          "comparable": false,
+          "comparabilityNotes": [
+            "listed in INR, not NGN; kept as evidence only"
+          ]
+        },
+        {
+          "url": "https://www.dhanasmetaldesigns.com/staircase-railing.html",
+          "seller": "Dhanas Metal Designs",
+          "price": 99,
+          "currency": "INR",
+          "unit": "sq_ft",
+          "normalizedPrice": 99,
+          "normalizedUnit": "sq_ft",
+          "dateChecked": "2026-07-31T00:30:44.714Z",
+          "specMatchLevel": "close",
+          "comparable": false,
+          "comparabilityNotes": [
+            "listed in INR, not NGN; kept as evidence only"
+          ]
+        }
+      ],
+      "rejectedExtractions": [],
+      "reasons": [
+        "No comparable public evidence found."
+      ],
+      "cost": {
+        "searchCalls": 1,
+        "extractionCalls": 3,
+        "planningCalls": 1,
+        "retries": 0,
+        "pageRetrievals": 6,
+        "browserFallbacks": 0,
+        "inputTokens": 68511,
+        "outputTokens": 6878,
+        "cachedTokens": 4395,
+        "reasoningTokens": 3695,
+        "estimatedUsd": 0,
+        "pricingKnown": false
+      }
+    }
+  ]
+}

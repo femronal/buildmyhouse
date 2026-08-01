@@ -38,6 +38,15 @@ test.describe('Navigation', () => {
     await expect(page.getByText(/Dispute Resolution/i)).toBeVisible();
   });
 
+  test('should navigate to tools hub then price checker ops', async ({ page }) => {
+    await page.getByRole('link', { name: /^Tools$/i }).click();
+    await expect(page).toHaveURL(/\/tools/);
+    await expect(page.getByRole('heading', { name: /Check all tools/i })).toBeVisible();
+    await page.getByRole('link', { name: /Price Checker/i }).click();
+    await expect(page).toHaveURL(/\/price-intelligence/);
+    await expect(page.getByRole('heading', { name: /Price Intelligence/i })).toBeVisible();
+  });
+
   test('should highlight active menu item', async ({ page }) => {
     // Dashboard should be active by default
     const dashboardLink = page.getByRole('link', { name: /Dashboard/i });

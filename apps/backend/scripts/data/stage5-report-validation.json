@@ -1,0 +1,743 @@
+{
+  "generatedAt": "2026-07-31T01:01:17.681Z",
+  "totalQueries": 12,
+  "passed": 12,
+  "failed": 0,
+  "liveSpend": "none — stored Stage 4 evidence only",
+  "records": [
+    {
+      "queryId": "bm-battery-lagos",
+      "sourceRun": "benchmark-results.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 7,
+      "independentSourceCount": 7,
+      "observedRange": {
+        "low": 900000,
+        "high": 1800000,
+        "unit": "unit"
+      },
+      "typicalPrice": 1459000,
+      "singleSourcePrice": null,
+      "confidenceScore": 67,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 17.13,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 12
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-battery-lagos:3",
+          "originalPrice": 2578710,
+          "normalizedPrice": 2578710,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "a0c0d16e46b6605d8efcff9b1efee38441056f791f28d04f4f12406f87d9d619",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-cable-lagos",
+      "sourceRun": "benchmark-final.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "single_source",
+      "acceptedObservationCount": 1,
+      "independentSourceCount": 1,
+      "observedRange": null,
+      "typicalPrice": null,
+      "singleSourcePrice": 46500,
+      "confidenceScore": 51,
+      "confidenceLabel": "low",
+      "components": {
+        "sourceQuality": 13.38,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [
+        "Only 1 independent source — below the 2-source minimum for a market range."
+      ],
+      "excludedObservations": [
+        {
+          "observationId": "bm-cable-lagos:1",
+          "originalPrice": 74800,
+          "normalizedPrice": 74800,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cable-lagos:2",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "ecd241f28e1283948c780cbb7a4882823655d2f5394c25f41b5a0ee9a663f6f9",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-cctv-bundle-lagos",
+      "sourceRun": "benchmark-final.json",
+      "stage4Outcome": "insufficient_data",
+      "reportStatus": "insufficient_data",
+      "acceptedObservationCount": 0,
+      "independentSourceCount": 0,
+      "observedRange": null,
+      "typicalPrice": null,
+      "singleSourcePrice": null,
+      "confidenceScore": 0,
+      "confidenceLabel": "insufficient_data",
+      "components": {
+        "sourceQuality": 0,
+        "recency": 0,
+        "specificationMatch": 0,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [
+        "No accepted comparable observations."
+      ],
+      "excludedObservations": [
+        {
+          "observationId": "bm-cctv-bundle-lagos:0",
+          "originalPrice": 230000,
+          "normalizedPrice": 230000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:1",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:2",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:3",
+          "originalPrice": 85000,
+          "normalizedPrice": 85000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:4",
+          "originalPrice": 80000,
+          "normalizedPrice": 80000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:5",
+          "originalPrice": 90000,
+          "normalizedPrice": 90000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cctv-bundle-lagos:6",
+          "originalPrice": 78000,
+          "normalizedPrice": 78000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "518f754430747e18f5426ecd024622a6ba803a90526875219bbabb6c2b3bad02",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-cement-lagos",
+      "sourceRun": "benchmark-results.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 4,
+      "independentSourceCount": 4,
+      "observedRange": {
+        "low": 9500,
+        "high": 11900,
+        "unit": "bag_50kg"
+      },
+      "typicalPrice": 11300,
+      "singleSourcePrice": null,
+      "confidenceScore": 70,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 17.13,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 15
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-cement-lagos:3",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cement-lagos:2",
+          "originalPrice": 1049400,
+          "normalizedPrice": 1049400,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cement-lagos:4",
+          "originalPrice": 3100,
+          "normalizedPrice": 3100,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-cement-lagos:5",
+          "originalPrice": 5040,
+          "normalizedPrice": 5040,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "5fe23ee298ccb69d8b427fc48c09f48bb2c9ad8da24a1f12646731e29b963ebe",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-custom-screed-pump",
+      "sourceRun": "benchmark-regate.json",
+      "stage4Outcome": "insufficient_data",
+      "reportStatus": "insufficient_data",
+      "acceptedObservationCount": 0,
+      "independentSourceCount": 0,
+      "observedRange": null,
+      "typicalPrice": null,
+      "singleSourcePrice": null,
+      "confidenceScore": 0,
+      "confidenceLabel": "insufficient_data",
+      "components": {
+        "sourceQuality": 0,
+        "recency": 0,
+        "specificationMatch": 0,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [
+        "No accepted comparable observations."
+      ],
+      "excludedObservations": [
+        {
+          "observationId": "bm-custom-screed-pump:0",
+          "originalPrice": 6829000,
+          "normalizedPrice": 6829000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "19f863b4c01e254667e0be3d00efa4bb6f2b2db21e3f18b64b3fafac187c10db",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-inverter-lagos",
+      "sourceRun": "benchmark-results.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 3,
+      "independentSourceCount": 3,
+      "observedRange": {
+        "low": 330000,
+        "high": 385000,
+        "unit": "unit"
+      },
+      "typicalPrice": 354000,
+      "singleSourcePrice": null,
+      "confidenceScore": 68,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 15.88,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 15
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-inverter-lagos:0",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-inverter-lagos:2",
+          "originalPrice": 1200000,
+          "normalizedPrice": 1200000,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-inverter-lagos:5",
+          "originalPrice": 510000,
+          "normalizedPrice": 510000,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "6b4938d32c1fc3c0c335708efc3fb38bc58f002f1f84ca50bd7999d3d2688b88",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-obscure-insufficient",
+      "sourceRun": "benchmark-final.json",
+      "stage4Outcome": "insufficient_data",
+      "reportStatus": "insufficient_data",
+      "acceptedObservationCount": 0,
+      "independentSourceCount": 0,
+      "observedRange": null,
+      "typicalPrice": null,
+      "singleSourcePrice": null,
+      "confidenceScore": 0,
+      "confidenceLabel": "insufficient_data",
+      "components": {
+        "sourceQuality": 0,
+        "recency": 0,
+        "specificationMatch": 0,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [
+        "No accepted comparable observations."
+      ],
+      "excludedObservations": [
+        {
+          "observationId": "bm-obscure-insufficient:0",
+          "originalPrice": 4900,
+          "normalizedPrice": 4900,
+          "reason": "listed in INR, not NGN; kept as evidence only",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-obscure-insufficient:1",
+          "originalPrice": 999,
+          "normalizedPrice": 999,
+          "reason": "listed in INR, not NGN; kept as evidence only",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-obscure-insufficient:2",
+          "originalPrice": 99,
+          "normalizedPrice": 99,
+          "reason": "listed in INR, not NGN; kept as evidence only",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "7cf817bd6730bce5f697e233f43b9b26da81bd4b634a9e336fef8f35711e8cbb",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-pump-benin",
+      "sourceRun": "benchmark-results.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 3,
+      "independentSourceCount": 3,
+      "observedRange": {
+        "low": 58000,
+        "high": 80000,
+        "unit": "unit"
+      },
+      "typicalPrice": 78000,
+      "singleSourcePrice": null,
+      "confidenceScore": 72,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 19.63,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 15
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-pump-benin:1",
+          "originalPrice": 126000,
+          "normalizedPrice": 126000,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-pump-benin:3",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-pump-benin:4",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "6401eaeab5097c09a0415a948457560a156a5699ec047244f6f62c0809b5f215",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-rebar-abuja",
+      "sourceRun": "benchmark-final.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 2,
+      "independentSourceCount": 2,
+      "observedRange": {
+        "low": 1010000,
+        "high": 1120000,
+        "unit": "tonne"
+      },
+      "typicalPrice": 1065000,
+      "singleSourcePrice": null,
+      "confidenceScore": 75,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 14.63,
+        "recency": 20,
+        "specificationMatch": 25,
+        "locationMatch": 0,
+        "clusterTightness": 15
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-rebar-abuja:3",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-rebar-abuja:4",
+          "originalPrice": null,
+          "normalizedPrice": null,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-rebar-abuja:2",
+          "originalPrice": 950000,
+          "normalizedPrice": 950000,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "891845d72a735262643d7b2ad39d50c636f6c0c3358e182676fce068ee809f4f",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-roofing-lagos",
+      "sourceRun": "benchmark-results.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 3,
+      "independentSourceCount": 3,
+      "observedRange": {
+        "low": 5800,
+        "high": 6800,
+        "unit": "sqm"
+      },
+      "typicalPrice": 5800,
+      "singleSourcePrice": null,
+      "confidenceScore": 68,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 15.04,
+        "recency": 20,
+        "specificationMatch": 17.5,
+        "locationMatch": 0,
+        "clusterTightness": 15
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-roofing-lagos:7",
+          "originalPrice": 4900,
+          "normalizedPrice": 4900,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:8",
+          "originalPrice": 3850,
+          "normalizedPrice": 3850,
+          "reason": "Unit 'metre' cannot join the 'sqm' comparison.",
+          "rule": "unit_not_comparable",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:1",
+          "originalPrice": 6000,
+          "normalizedPrice": 6000,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:3",
+          "originalPrice": 7500,
+          "normalizedPrice": 7500,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:4",
+          "originalPrice": 12800,
+          "normalizedPrice": 12800,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:6",
+          "originalPrice": 13200,
+          "normalizedPrice": 13200,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:10",
+          "originalPrice": 6500,
+          "normalizedPrice": 6500,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-roofing-lagos:5",
+          "originalPrice": 8100,
+          "normalizedPrice": 8100,
+          "reason": "Beyond 3.5× median absolute deviation.",
+          "rule": "statistical_outlier",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "7d1a0cfa528e580b88808d4c66968889f7979d15da7044f8b94479c7cc5678b0",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-tiling-labour-lagos",
+      "sourceRun": "benchmark-regate.json",
+      "stage4Outcome": "successful",
+      "reportStatus": "complete",
+      "acceptedObservationCount": 5,
+      "independentSourceCount": 5,
+      "observedRange": {
+        "low": 500,
+        "high": 3200,
+        "unit": "sqm"
+      },
+      "typicalPrice": 1500,
+      "singleSourcePrice": null,
+      "confidenceScore": 62,
+      "confidenceLabel": "moderate",
+      "components": {
+        "sourceQuality": 16.63,
+        "recency": 20,
+        "specificationMatch": 25,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [],
+      "excludedObservations": [
+        {
+          "observationId": "bm-tiling-labour-lagos:2",
+          "originalPrice": 2070,
+          "normalizedPrice": 2070,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-tiling-labour-lagos:3",
+          "originalPrice": 2160,
+          "normalizedPrice": 2160,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-tiling-labour-lagos:4",
+          "originalPrice": 2340,
+          "normalizedPrice": 2340,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-tiling-labour-lagos:7",
+          "originalPrice": 2200,
+          "normalizedPrice": 2200,
+          "reason": "Same seller/source group as another accepted listing.",
+          "rule": "duplicate_seller_listing",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "d0430f548cc7441c8ac7ffdc6208df39e44ebb1430e228d9546e48ea4e977a0d",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    },
+    {
+      "queryId": "bm-window-lagos",
+      "sourceRun": "benchmark-final.json",
+      "stage4Outcome": "insufficient_data",
+      "reportStatus": "insufficient_data",
+      "acceptedObservationCount": 0,
+      "independentSourceCount": 0,
+      "observedRange": null,
+      "typicalPrice": null,
+      "singleSourcePrice": null,
+      "confidenceScore": 0,
+      "confidenceLabel": "insufficient_data",
+      "components": {
+        "sourceQuality": 0,
+        "recency": 0,
+        "specificationMatch": 0,
+        "locationMatch": 0,
+        "clusterTightness": 0
+      },
+      "hardGateFailures": [
+        "No accepted comparable observations."
+      ],
+      "excludedObservations": [
+        {
+          "observationId": "bm-window-lagos:0",
+          "originalPrice": 70000,
+          "normalizedPrice": 70000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-window-lagos:1",
+          "originalPrice": 35000,
+          "normalizedPrice": 35000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-window-lagos:2",
+          "originalPrice": 100000,
+          "normalizedPrice": 100000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-window-lagos:3",
+          "originalPrice": 60000,
+          "normalizedPrice": 60000,
+          "reason": "not a comparable full purchase price (bundle/accessory/used/rental/instalment/deposit)",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-window-lagos:4",
+          "originalPrice": 120000,
+          "normalizedPrice": 120000,
+          "reason": "Not a comparable full purchase price.",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        },
+        {
+          "observationId": "bm-window-lagos:5",
+          "originalPrice": 16659.24,
+          "normalizedPrice": 16659.24,
+          "reason": "listed in INR, not NGN; kept as evidence only",
+          "rule": "not_comparable_full_price",
+          "scoringVersion": "price-confidence-v1"
+        }
+      ],
+      "inputHash": "f0336e0d5175c232df61e2334df826b9ea54b692ab7787d7499b65cf017b3ec2",
+      "scoringVersion": "price-confidence-v1",
+      "allClaimsTraceable": true,
+      "pass": true,
+      "failureReason": null
+    }
+  ]
+}

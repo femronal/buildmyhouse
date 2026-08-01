@@ -1288,7 +1288,7 @@ export default function VerificationPage() {
           <div className="w-full max-w-lg rounded-2xl border border-blue-900 bg-[#0A1628] p-6 shadow-2xl">
             <h3 className="text-xl font-semibold text-white">Confirm Go Live</h3>
             <p className="mt-3 text-sm leading-6 text-gray-300">
-              You are about to approve and publish <span className="text-white font-medium">"{selectedDesignForGoLive.name}"</span>.
+              You are about to approve and publish <span className="text-white font-medium">&ldquo;{selectedDesignForGoLive.name}&rdquo;</span>.
             </p>
             <p className="mt-3 text-sm leading-6 text-gray-300">
               The GC will get a success message. Please remind the GC that the project goes live only after the GC verifies the project meets required standards before it can be shown to real people.
@@ -1317,7 +1317,7 @@ export default function VerificationPage() {
           <div className="w-full max-w-lg rounded-2xl border border-blue-900 bg-[#0A1628] p-6 shadow-2xl">
             <h3 className="text-xl font-semibold text-white">Reject Plan</h3>
             <p className="mt-3 text-sm leading-6 text-gray-300">
-              Tell the GC why <span className="text-white font-medium">"{selectedDesignForReject.name}"</span> is not approved yet.
+              Tell the GC why <span className="text-white font-medium">&ldquo;{selectedDesignForReject.name}&rdquo;</span> is not approved yet.
             </p>
             <textarea
               value={rejectReason}
