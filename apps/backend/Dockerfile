@@ -47,13 +47,16 @@ RUN pnpm --filter @buildmyhouse/backend... install --prod --no-frozen-lockfile
 # Copy built application and Prisma files
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
+# Reuse the Prisma Client generated in the builder (avoids OOM on small Fargate tasks).
+COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/.modules.yaml ./node_modules/.modules.yaml
 
 WORKDIR /app/apps/backend
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
-# Skip prisma generate here; it runs at container startup.
 
 # Expose port
 EXPOSE 3001
 
-# Generate client in workspace context, run migrations, then start the application
-CMD ["sh", "-c", "pnpm prisma:generate && npx prisma migrate deploy && node dist/src/main.js"]
+# Migrations + start only — Prisma Client is baked into the image at build time.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]

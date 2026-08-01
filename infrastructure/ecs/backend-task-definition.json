@@ -2,8 +2,8 @@
   "family": "buildmyhouse-backend",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::399095821429:role/ecsTaskExecutionRole-buildmyhouse",
   "taskRoleArn": "arn:aws:iam::399095821429:role/ecsTaskExecutionRole-buildmyhouse",
   "containerDefinitions": [
@@ -56,7 +56,7 @@
         "interval": 30,
         "timeout": 10,
         "retries": 3,
-        "startPeriod": 120
+        "startPeriod": 240
       }
     }
   ]
