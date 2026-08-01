@@ -41,7 +41,8 @@
         { "name": "OPENAI_API_KEY", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/openai-api-key" },
         { "name": "RESEND_API_KEY", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/resend-api-key" },
         { "name": "EMAIL_FROM", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/email-from" },
-        { "name": "ADMIN_DASHBOARD_ALLOWED_EMAILS", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/admin-dashboard-allowed-emails" }
+        { "name": "ADMIN_DASHBOARD_ALLOWED_EMAILS", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/admin-dashboard-allowed-emails" },
+        { "name": "PAYSTACK_SECRET_KEY", "valueFrom": "arn:aws:ssm:eu-north-1:399095821429:parameter/buildmyhouse/production/paystack-secret-key" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
