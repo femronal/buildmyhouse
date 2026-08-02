@@ -3,11 +3,13 @@ import {
   Alert,
   Image,
   Modal,
+  Platform,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  type ViewProps,
 } from 'react-native';
 import {
   AlertTriangle,
@@ -197,6 +199,7 @@ export default function ProjectMonitoringDemoPhone({
   const [disputeOpen, setDisputeOpen] = useState(false);
   const [disputeSelected, setDisputeSelected] = useState<string[]>([]);
   const [autoplayPaused, setAutoplayPaused] = useState(false);
+  const autoplayPausedRef = useRef(false);
   const dashboardScrollRef = useRef<ScrollView>(null);
   const dashboardScrollMax = useRef(0);
   const dashboardViewportHeight = useRef(innerHeight);
@@ -234,6 +237,8 @@ export default function ProjectMonitoringDemoPhone({
     const speed = 0.55;
 
     const tick = () => {
+      // Hover/click can pause mid-frame; ref stops the loop immediately.
+      if (autoplayPausedRef.current) return;
       const maxScroll = dashboardScrollMax.current;
       if (maxScroll > 0) {
         scrollY += direction * speed;
@@ -253,12 +258,32 @@ export default function ProjectMonitoringDemoPhone({
     return () => cancelAnimationFrame(raf);
   }, [autoplay, autoplayPaused, route.name]);
 
+  /** Permanently stops autoplay until a full page refresh remounts this demo. */
   const pauseAutoplay = useCallback(() => {
-    if (autoplay) setAutoplayPaused(true);
+    if (!autoplay || autoplayPausedRef.current) return;
+    autoplayPausedRef.current = true;
+    setAutoplayPaused(true);
   }, [autoplay]);
 
   const flashDemoPress = useCallback(() => {
     pauseAutoplay();
+  }, [pauseAutoplay]);
+
+  const interactionPauseProps = useMemo(() => {
+    const props: ViewProps & Record<string, unknown> = {
+      onTouchStart: pauseAutoplay,
+      onStartShouldSetResponder: () => {
+        pauseAutoplay();
+        return false;
+      },
+    };
+    if (Platform.OS === 'web') {
+      props.onMouseEnter = pauseAutoplay;
+      props.onMouseDown = pauseAutoplay;
+      props.onPointerDown = pauseAutoplay;
+      props.onWheel = pauseAutoplay;
+    }
+    return props;
   }, [pauseAutoplay]);
 
   const renderFloatingChat = () => (
@@ -396,6 +421,7 @@ export default function ProjectMonitoringDemoPhone({
         <ScrollView
           ref={dashboardScrollRef}
           showsVerticalScrollIndicator={false}
+          onScrollBeginDrag={pauseAutoplay}
           onLayout={(event) => {
             dashboardViewportHeight.current = event.nativeEvent.layout.height;
           }}
@@ -1123,7 +1149,7 @@ export default function ProjectMonitoringDemoPhone({
     <View
       className="bmh-demo-phone"
       style={{ flex: 1, minHeight: 0, position: 'relative' }}
-      onTouchStart={pauseAutoplay}
+      {...interactionPauseProps}
     >
       <View style={{ flex: 1, minHeight: 0, height: innerHeight }}>{renderPhoneScreen()}</View>
 

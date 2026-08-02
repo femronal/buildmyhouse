@@ -420,7 +420,7 @@ export default function HomeLandingPage() {
               style={{
                 flex: isDesktop ? 7 : undefined,
                 width: isDesktop ? undefined : '100%',
-                marginTop: isDesktop ? 0 : 48,
+                marginTop: isDesktop ? 0 : width < 768 ? 20 : 36,
                 paddingTop: isDesktop ? 8 : 0,
               }}
             >
