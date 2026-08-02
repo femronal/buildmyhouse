@@ -1,11 +1,13 @@
 import { Text, View, useWindowDimensions } from 'react-native';
 import { BatteryFull, CellSignalFull, WifiHigh } from 'phosphor-react-native';
-import ProjectMonitoringDemoPhone from '@/components/demo/ProjectMonitoringDemoPhone';
+import ProjectMonitoringDemoPhone, {
+  DEMO_DESIGN_HEIGHT,
+  DEMO_DESIGN_WIDTH,
+} from '@/components/demo/ProjectMonitoringDemoPhone';
 
 /** Intrinsic desktop phone proportions (bezel + screen). */
 const DESKTOP_PHONE_WIDTH = 340;
 const DESKTOP_PHONE_HEIGHT = 740;
-const DESKTOP_INNER_HEIGHT = 620;
 
 function phoneMetrics(width: number, height: number) {
   const isDesktop = width >= 1024;
@@ -17,7 +19,8 @@ function phoneMetrics(width: number, height: number) {
       isMobile,
       phoneWidth: DESKTOP_PHONE_WIDTH,
       phoneHeight: DESKTOP_PHONE_HEIGHT,
-      innerHeight: DESKTOP_INNER_HEIGHT,
+      innerHeight: DEMO_DESIGN_HEIGHT,
+      contentScale: 1,
       bezel: 8,
       radiusOuter: 55,
       radiusInner: 48,
@@ -34,18 +37,20 @@ function phoneMetrics(width: number, height: number) {
     };
   }
 
-  // Fit the full phone chrome inside one viewport on thinner screens.
-  // Leave room for the caption under the device.
-  const maxByViewport = height * (isMobile ? 0.46 : 0.55);
-  const maxByWidth = width * (isMobile ? 1.35 : 1.5);
+  // Larger readable frame on phones, still within one viewport with caption.
+  const maxByViewport = height * (isMobile ? 0.56 : 0.6);
+  const maxByWidth = width * (isMobile ? 1.55 : 1.65);
   const phoneHeight = Math.round(
-    Math.min(isMobile ? 400 : 560, Math.max(isMobile ? 280 : 420, Math.min(maxByViewport, maxByWidth))),
+    Math.min(isMobile ? 520 : 600, Math.max(isMobile ? 360 : 440, Math.min(maxByViewport, maxByWidth))),
   );
   const phoneWidth = Math.round(phoneHeight * (DESKTOP_PHONE_WIDTH / DESKTOP_PHONE_HEIGHT));
-  const statusH = isMobile ? 40 : 48;
+  const statusH = isMobile ? 42 : 50;
   const homeReserve = isMobile ? 14 : 18;
-  const bezel = isMobile ? 4 : 6;
-  const innerHeight = Math.max(200, phoneHeight - statusH - homeReserve);
+  const bezel = isMobile ? 5 : 6;
+  const contentWidth = phoneWidth - bezel * 2;
+  const innerHeight = Math.max(220, phoneHeight - statusH - homeReserve);
+  // Scale the authored desktop UI into the smaller glass so type/icons stay proportional.
+  const contentScale = Math.min(1, contentWidth / DEMO_DESIGN_WIDTH);
 
   return {
     isDesktop,
@@ -53,17 +58,18 @@ function phoneMetrics(width: number, height: number) {
     phoneWidth,
     phoneHeight,
     innerHeight,
+    contentScale,
     bezel,
-    radiusOuter: isMobile ? 34 : 44,
-    radiusInner: isMobile ? 30 : 38,
+    radiusOuter: isMobile ? 38 : 46,
+    radiusInner: isMobile ? 34 : 40,
     statusH,
-    islandW: isMobile ? 72 : 92,
-    islandH: isMobile ? 20 : 26,
+    islandW: isMobile ? 78 : 96,
+    islandH: isMobile ? 22 : 26,
     timeSize: isMobile ? 11 : 13,
     iconSignal: isMobile ? 12 : 14,
     iconWifi: isMobile ? 12 : 14,
-    iconBattery: isMobile ? 14 : 18,
-    homeBarW: isMobile ? 72 : 100,
+    iconBattery: isMobile ? 15 : 18,
+    homeBarW: isMobile ? 80 : 104,
     captionMt: isMobile ? 10 : 14,
     captionSize: isMobile ? 11 : 12,
   };
@@ -83,9 +89,9 @@ export default function PhoneDashboardMockup() {
           borderWidth: 1,
           borderColor: 'rgba(255,255,255,0.1)',
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: m.isMobile ? 12 : 25 },
+          shadowOffset: { width: 0, height: m.isMobile ? 14 : 25 },
           shadowOpacity: 0.35,
-          shadowRadius: m.isMobile ? 24 : 50,
+          shadowRadius: m.isMobile ? 28 : 50,
           elevation: m.isMobile ? 10 : 16,
         }}
       >
@@ -162,6 +168,7 @@ export default function PhoneDashboardMockup() {
               homeRoute={{ name: 'dashboard' }}
               autoplay={m.isDesktop}
               innerHeight={m.innerHeight}
+              contentScale={m.contentScale}
             />
           </View>
 

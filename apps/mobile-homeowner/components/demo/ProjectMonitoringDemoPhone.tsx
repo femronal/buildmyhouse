@@ -177,15 +177,43 @@ function FileRowIcon(fileType: 'image' | 'video' | 'pdf') {
   return <FileText size={20} color="#FFFFFF" strokeWidth={2} />;
 }
 
+/** Design canvas the demo UI was authored against (desktop phone content box). */
+export const DEMO_DESIGN_WIDTH = 320;
+export const DEMO_DESIGN_HEIGHT = 620;
+
 export type ProjectMonitoringDemoPhoneProps = {
   initialRoute?: DemoRoute;
   homeRoute?: DemoRoute;
   autoplay?: boolean;
   hintText?: string;
   innerHeight?: number;
+  /**
+   * Uniform scale for the in-phone UI (fonts, padding, icons).
+   * Use values below 1 on smaller phone frames so content stays proportional and does not clip.
+   */
+  contentScale?: number;
 };
 
 const DEFAULT_HOME_ROUTE: DemoRoute = { name: 'home' };
+
+function scaledCanvasStyle(scale: number, designW: number, designH: number) {
+  if (Platform.OS === 'web') {
+    return {
+      width: designW,
+      height: designH,
+      transform: [{ scale }],
+      transformOrigin: 'top left' as const,
+    };
+  }
+  // RN defaults to center origin — shift so the scaled canvas stays top-left.
+  const shiftX = -(designW * (1 - scale)) / 2;
+  const shiftY = -(designH * (1 - scale)) / 2;
+  return {
+    width: designW,
+    height: designH,
+    transform: [{ translateX: shiftX }, { translateY: shiftY }, { scale }],
+  };
+}
 
 export default function ProjectMonitoringDemoPhone({
   initialRoute = DEFAULT_HOME_ROUTE,
@@ -193,6 +221,7 @@ export default function ProjectMonitoringDemoPhone({
   autoplay = false,
   hintText,
   innerHeight = DEMO_DEVICE_INNER_HEIGHT,
+  contentScale = 1,
 }: ProjectMonitoringDemoPhoneProps) {
   const [route, setRoute] = useState<DemoRoute>(initialRoute);
   const [stageTab, setStageTab] = useState<StageTab>('materials');
@@ -1145,13 +1174,32 @@ export default function ProjectMonitoringDemoPhone({
     }
   };
 
+  const scale = Math.max(0.55, Math.min(contentScale, 1));
+  const useScaledCanvas = scale < 0.995;
+
   return (
     <View
       className="bmh-demo-phone"
       style={{ flex: 1, minHeight: 0, position: 'relative' }}
       {...interactionPauseProps}
     >
-      <View style={{ flex: 1, minHeight: 0, height: innerHeight }}>{renderPhoneScreen()}</View>
+      {useScaledCanvas ? (
+        <View
+          style={{
+            width: '100%',
+            height: innerHeight,
+            overflow: 'hidden',
+          }}
+        >
+          <View style={scaledCanvasStyle(scale, DEMO_DESIGN_WIDTH, DEMO_DESIGN_HEIGHT)}>
+            <View style={{ flex: 1, minHeight: 0, height: DEMO_DESIGN_HEIGHT, width: DEMO_DESIGN_WIDTH }}>
+              {renderPhoneScreen()}
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={{ flex: 1, minHeight: 0, height: innerHeight }}>{renderPhoneScreen()}</View>
+      )}
 
       {hintText ? (
         <View
