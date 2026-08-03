@@ -197,8 +197,8 @@ export const diasporaRenovateNigeriaFromAbroadPageContent = {
   proofOfProcess: {
     title: "What Real Renovation Control Looks Like",
     paragraphs: [
-      "Most competitors promise updates. Very few show what real remote renovation control looks like.",
-      "BuildMyHouse can show structured stage tracking, project communication, item visibility, payment logic, and a workflow where progression is not left entirely to pressure.",
+      "Many other platforms promise updates. Very few show what real remote renovation control looks like.",
+      "BuildMyHouse shows structured stage tracking, project communication, item visibility, payment logic, and a workflow where progression is not left entirely to pressure.",
       "That matters because remote renovation is safer when the homeowner can watch, understand, and decide with more confidence instead of approving from a place of uncertainty.",
     ],
     items: [
@@ -213,9 +213,9 @@ export const diasporaRenovateNigeriaFromAbroadPageContent = {
   publicDemoTeaser: {
     title: "Preview What Safer Remote Renovation Feels Like",
     paragraphs: [
-      "BuildMyHouse is also building a public monitoring demo so diaspora homeowners can experience what structured project visibility feels like before signing up.",
-      "Instead of just hearing promises about updates and transparency, visitors will be able to preview stage tracking, communication flow, materials, and progression logic in a realistic project-style demo.",
-      "That helps turn trust from a marketing promise into something more tangible.",
+      "Before you sign up, you can preview what structured project visibility feels like on BuildMyHouse.",
+      "Instead of just hearing promises about updates and transparency, you can see stage tracking, communication flow, materials, and progression logic in a realistic project-style demo.",
+      "That turns trust from a vague promise into something you can actually see.",
     ],
     primaryCta: {
       label: "See the Monitoring Demo",

@@ -112,8 +112,8 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     title: "Permits and Compliance Matter More Than Many Diaspora Homeowners Realize",
     paragraphs: [
       "If you are building in Lagos, permits and stage inspections are not side issues. They are part of how serious building control works.",
-      "That is one of the biggest gaps in competitor content. Many people talk about building safely from abroad, but very few explain how approvals, authorization to commence construction, and stage oversight fit into the actual execution process.",
-      "That is why BuildMyHouse will also anchor trust around real compliance guidance, not just generic contractor promises.",
+      "This is one of the biggest issues with other platforms and informal arrangements many diaspora homeowners rely on. Plenty of people talk about building safely from abroad, but very few explain how approvals, authorization to commence construction, and stage oversight fit into the actual execution process.",
+      "BuildMyHouse builds trust around real compliance guidance — not just generic contractor promises — so permits and inspections stay part of how the project is run.",
     ],
     primaryLink: {
       label: "Read the Lagos permits and stage inspections guide",
@@ -140,7 +140,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     sectionTitle: "Why BuildMyHouse Is Safer for Building From Abroad",
     paragraphs: [
       "BuildMyHouse gives diaspora homeowners a more structured way to manage projects in Nigeria without reducing everything to trust, guesswork, and scattered updates.",
-      "The platform already supports project workflows, stages, payments, chat, contractor processes, disputes, and operational oversight. That means the value is not just in what is promised. It is in the structure already built into the system.",
+      "You get project workflows, stages, payments, chat, contractor processes, disputes, and operational oversight in one place — so the value is not just what is promised, but the structure you can actually use.",
       "A homeowner can watch stage progress, receive notifications when new items or updates are added, and follow project activity without needing to micromanage every move on site.",
       "At the same time, stage progression and payment flow are not left entirely to informal pressure. The GC drives execution, but the homeowner’s satisfaction still matters before the next stage payment flow continues.",
     ],
@@ -149,8 +149,8 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
   proofOfProcess: {
     title: "What Real Project Control Looks Like",
     paragraphs: [
-      "Most competitors say things like 'weekly updates,' 'milestone payments,' or 'transparent supervision.' Very few show what that actually means.",
-      "BuildMyHouse can show a real project flow: a build timeline, stage order, stage durations, stage budgets, materials added by the GC, stage-based communication, and homeowner notifications when something new happens.",
+      "Many other platforms and agents promise things like 'weekly updates,' 'milestone payments,' or 'transparent supervision.' Very few show what that actually means in practice.",
+      "BuildMyHouse shows a real project flow: a build timeline, stage order, stage durations, stage budgets, materials added by the GC, stage-based communication, and homeowner notifications when something new happens.",
       "Most importantly, the workflow is not simply 'send money and hope.' The GC handles execution, but stage completion and continued payment flow depend on the homeowner’s satisfaction being confirmed through the platform process.",
       "That matters because the safest building process is not the one with the nicest promises. It is the one with the clearest proof.",
     ],
@@ -166,10 +166,10 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
   publicDemoTeaser: {
     title: "Preview How Remote Project Monitoring Works",
     paragraphs: [
-      "Before you even sign up, BuildMyHouse can let you preview what structured remote project monitoring looks like.",
-      "You will be able to see a realistic project flow with stage tracking, stage budgets, active materials, chat updates from the GC, and homeowner visibility into what is happening on site.",
-      "The demo is designed to show something competitors rarely make tangible: the homeowner watches progress, gets notified when new items or updates are added, and stays in control of the payment flow while the GC drives execution.",
-      "This is part of what makes BuildMyHouse different. We do not just want to say the process is structured. We want visitors to experience the structure before they commit.",
+      "Before you even sign up, you can preview what structured remote project monitoring looks like on BuildMyHouse.",
+      "You will see a realistic project flow with stage tracking, stage budgets, active materials, chat updates from the GC, and homeowner visibility into what is happening on site.",
+      "That is something too many other platforms leave vague. On BuildMyHouse, the homeowner watches progress, gets notified when new items or updates are added, and stays in control of the payment flow while the GC drives execution.",
+      "This is part of what makes BuildMyHouse different: you do not just hear that the process is structured — you can experience the structure before you commit.",
     ],
     primaryCta: {
       label: "See the Monitoring Demo",

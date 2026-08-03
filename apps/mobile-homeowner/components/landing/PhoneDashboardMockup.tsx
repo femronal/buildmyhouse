@@ -37,19 +37,25 @@ function phoneMetrics(width: number, height: number) {
     };
   }
 
-  // Larger readable frame on phones, still within one viewport with caption.
-  const maxByViewport = height * (isMobile ? 0.56 : 0.6);
-  const maxByWidth = width * (isMobile ? 1.55 : 1.65);
-  const phoneHeight = Math.round(
-    Math.min(isMobile ? 520 : 600, Math.max(isMobile ? 360 : 440, Math.min(maxByViewport, maxByWidth))),
+  // Size primarily by width so the phone fills the mobile hero (not a tiny island).
+  // Then clamp height so the full device + caption still fits one viewport.
+  const aspect = DESKTOP_PHONE_HEIGHT / DESKTOP_PHONE_WIDTH;
+  const widthTarget = Math.round(
+    Math.min(isMobile ? 300 : 320, Math.max(isMobile ? 250 : 260, width * (isMobile ? 0.82 : 0.72))),
   );
-  const phoneWidth = Math.round(phoneHeight * (DESKTOP_PHONE_WIDTH / DESKTOP_PHONE_HEIGHT));
-  const statusH = isMobile ? 42 : 50;
+  const maxHeight = Math.round(height * (isMobile ? 0.68 : 0.64));
+  let phoneWidth = widthTarget;
+  let phoneHeight = Math.round(phoneWidth * aspect);
+  if (phoneHeight > maxHeight) {
+    phoneHeight = maxHeight;
+    phoneWidth = Math.round(phoneHeight / aspect);
+  }
+  const statusH = isMobile ? 44 : 50;
   const homeReserve = isMobile ? 14 : 18;
   const bezel = isMobile ? 5 : 6;
   const contentWidth = phoneWidth - bezel * 2;
-  const innerHeight = Math.max(220, phoneHeight - statusH - homeReserve);
-  // Scale the authored desktop UI into the smaller glass so type/icons stay proportional.
+  const innerHeight = Math.max(240, phoneHeight - statusH - homeReserve);
+  // Scale the authored desktop UI into the glass so type/icons stay proportional.
   const contentScale = Math.min(1, contentWidth / DEMO_DESIGN_WIDTH);
 
   return {
