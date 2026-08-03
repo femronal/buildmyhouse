@@ -371,12 +371,22 @@ export const FAQ_ITEMS = [
   {
     question: 'What is BuildMyHouse?',
     answer:
-      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps owners define scope, connect with verified workers, track stages, and make payment decisions with better evidence. We are also shipping free property tools — price checks, quote comparison, land risk checks, repair triage, and more — so you can make better decisions before and during a project.',
+      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps homeowners and diaspora owners define scope, hire verified contractors, track stages, and approve payments with evidence. Free decision tools like the Nigeria building material Price Checker help you confirm fair market prices before money moves.',
   },
   {
     question: 'What free tools does BuildMyHouse offer?',
     answer:
-      'Start with Price Checker for directional Nigeria repair ranges. Next on the roadmap are Construction Scam Red-Flag Checker, Contractor Quote Comparison, Nigeria Building Cost Planner, Property Repair Triage Assistant, and Land Purchase Risk Checker — plus a fuller catalog under Check all tools.',
+      'BuildMyHouse Price Checker is live today at buildmyhouse.app/tools/price-checker. Search Nigerian building materials — cement, reinforcement steel, roofing sheets, tiles, paint, plumbing, electrical cables, solar, and more — answer a few clarifying questions, and get a source-backed price range for your location with a confidence score. Free daily checks are included; additional reports are available when you need them. More free tools are on the roadmap, including Construction Scam Red-Flag Checker, Contractor Quote Comparison, Nigeria Building Cost Planner, Property Repair Triage Assistant, and Land Purchase Risk Checker. Browse the full catalog under Tools.',
+  },
+  {
+    question: 'How does the BuildMyHouse Price Checker work?',
+    answer:
+      'Open Price Checker, search the material you want to price, and confirm details like brand, specification, unit, quantity, and location (for example Lagos, Abuja, Ogun, or Edo). BuildMyHouse researches current market listings, removes weak or duplicate evidence, and returns an observed price range, typical price, source dates, and plain-language confidence. If online evidence is not strong enough, the tool says so clearly instead of inventing a number — and you can request a verified local market check. It is built for homeowners, contractors, landlords, and Nigerians abroad who need defensible material prices before paying a quotation.',
+  },
+  {
+    question: 'Can I check cement and other building material prices in Nigeria online?',
+    answer:
+      'Yes. Use BuildMyHouse Price Checker to check current cement prices in Nigeria and other common materials such as iron rods, blocks, sand, granite, roofing, tiles, and finishes. Results are based on traceable listings with confidence scoring, so you can compare a contractor quote or market price with clearer evidence instead of guesswork.',
   },
   {
     question: 'Can I use BuildMyHouse if I live in Nigeria?',
