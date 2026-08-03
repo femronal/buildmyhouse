@@ -53,7 +53,7 @@ export const buildInNigeriaFromUkPageContent = {
     paragraphs: [
       "The biggest problem with building in Lagos, Nigeria from the UK is not distance by itself.",
       "The real problem is losing control from a distance.",
-      "That is the core insight behind BuildMyHouse: diaspora homeowners do not mainly suffer from lack of contractors. They suffer from weak project control, unclear scope, poor updates, payment pressure, and uncertainty about whether activity on site actually equals progress. :contentReference[oaicite:2]{index=2}",
+      "That is the core insight behind BuildMyHouse: diaspora homeowners do not mainly suffer from lack of contractors. They suffer from weak project control, unclear scope, poor updates, payment pressure, and uncertainty about whether activity on site actually equals progress.",
       "This page is here to help a UK-based visitor understand that quickly — and see why BuildMyHouse is a better fit than trying to manage the whole project through hope, relatives, and raw transfers.",
     ],
   },
@@ -86,7 +86,7 @@ export const buildInNigeriaFromUkPageContent = {
     title: "What BuildMyHouse Actually Is",
     paragraphs: [
       "BuildMyHouse is not just a contractor directory. It is not just a marketplace. And it is not simply 'Uber for artisans.'",
-      "BuildMyHouse is a remote property project management platform designed to help Nigerians abroad manage property work in Lagos, Nigeria with more structure, visibility, and control. :contentReference[oaicite:3]{index=3}",
+      "BuildMyHouse is a remote property project management platform designed to help Nigerians abroad manage property work in Lagos, Nigeria with more structure, visibility, and control.",
       "In practical terms, BMH sits between the homeowner abroad, the contractor on ground, the project scope, the current stage, and the money being released.",
     ],
   },
@@ -102,7 +102,7 @@ export const buildInNigeriaFromUkPageContent = {
       {
         heading: "2. Work with more structured contractor trust",
         text:
-          "Contractor onboarding, verification, requests, and project workflows are part of the real BMH system, not just marketing language. :contentReference[oaicite:4]{index=4}",
+          "Contractor onboarding, verification, requests, and project workflows are part of the real BMH system, not just marketing language.",
       },
       {
         heading: "3. Track work stage by stage",
@@ -112,7 +112,7 @@ export const buildInNigeriaFromUkPageContent = {
       {
         heading: "4. Keep communication and updates tied to the project",
         text:
-          "Chat, notifications, and project workflows already exist in the product foundation, which supports a more visible remote-building experience. :contentReference[oaicite:5]{index=5}",
+          "Chat, notifications, and project workflows already exist in the product foundation, which supports a more visible remote-building experience.",
       },
       {
         heading: "5. Make payment decisions with more discipline",
@@ -126,8 +126,8 @@ export const buildInNigeriaFromUkPageContent = {
     title: "Why BuildMyHouse Is More Convincing Than a Referral-Only Process",
     paragraphs: [
       "The strongest BMH advantage is not just that it says 'we are transparent.'",
-      "It is that the platform is built around proof of process: clearer project setup, stage-based control, communication flow, evidence-backed progression, and stronger homeowner visibility. :contentReference[oaicite:6]{index=6}",
-      "The actual product foundation already includes homeowner and contractor apps, an admin dashboard, backend project logic, stages, payments, chat, notifications, disputes, and verification-related workflows. :contentReference[oaicite:7]{index=7}",
+      "It is that the platform is built around proof of process: clearer project setup, stage-based control, communication flow, evidence-backed progression, and stronger homeowner visibility.",
+      "The actual product foundation already includes homeowner and contractor apps, an admin dashboard, backend project logic, stages, payments, chat, notifications, disputes, and verification-related workflows.",
       "That means BMH is better positioned to operationalize trust instead of just talking about it.",
     ],
     items: [
@@ -206,7 +206,7 @@ export const buildInNigeriaFromUkPageContent = {
       {
         question: "What makes BuildMyHouse different from just hiring a contractor through family?",
         answer:
-          "Family can introduce someone, but BuildMyHouse adds structure: project setup, stages, communication, notifications, contractor workflows, and clearer visibility into what is happening. :contentReference[oaicite:8]{index=8}",
+          "Family can introduce someone, but BuildMyHouse adds structure: project setup, stages, communication, notifications, contractor workflows, and clearer visibility into what is happening.",
       },
       {
         question: "Can I start directly from this page?",

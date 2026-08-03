@@ -8,8 +8,15 @@ import ProjectMonitoringDemoPhone, {
 /** Intrinsic desktop phone proportions (bezel + screen). */
 const DESKTOP_PHONE_WIDTH = 340;
 const DESKTOP_PHONE_HEIGHT = 740;
+const PHONE_ASPECT = DESKTOP_PHONE_HEIGHT / DESKTOP_PHONE_WIDTH;
 
-function phoneMetrics(width: number, height: number) {
+/** Safe defaults when window metrics are 0 during SSR / first paint. */
+const FALLBACK_WIDTH = 390;
+const FALLBACK_HEIGHT = 844;
+
+function phoneMetrics(rawWidth: number, rawHeight: number) {
+  const width = rawWidth > 0 ? rawWidth : FALLBACK_WIDTH;
+  const height = rawHeight > 0 ? rawHeight : FALLBACK_HEIGHT;
   const isDesktop = width >= 1024;
   const isMobile = width < 768;
 
@@ -37,26 +44,32 @@ function phoneMetrics(width: number, height: number) {
     };
   }
 
-  // Size primarily by width so the phone fills the mobile hero (not a tiny island).
-  // Then clamp height so the full device + caption still fits one viewport.
-  const aspect = DESKTOP_PHONE_HEIGHT / DESKTOP_PHONE_WIDTH;
+  // Size primarily by width so the phone fills the mobile hero.
+  // Clamp height so the full device + caption still fits one viewport.
+  // Never allow a 0 clamp from unset window height (that collapsed the demo to a dot).
   const widthTarget = Math.round(
     Math.min(isMobile ? 300 : 320, Math.max(isMobile ? 250 : 260, width * (isMobile ? 0.82 : 0.72))),
   );
-  const maxHeight = Math.round(height * (isMobile ? 0.68 : 0.64));
+  const maxHeight = Math.max(
+    isMobile ? 420 : 480,
+    Math.round(height * (isMobile ? 0.68 : 0.64)),
+  );
   let phoneWidth = widthTarget;
-  let phoneHeight = Math.round(phoneWidth * aspect);
+  let phoneHeight = Math.round(phoneWidth * PHONE_ASPECT);
   if (phoneHeight > maxHeight) {
     phoneHeight = maxHeight;
-    phoneWidth = Math.round(phoneHeight / aspect);
+    phoneWidth = Math.round(phoneHeight / PHONE_ASPECT);
   }
+  // Absolute floors so the frame can never collapse on a bad metric pass.
+  phoneWidth = Math.max(phoneWidth, isMobile ? 240 : 260);
+  phoneHeight = Math.max(phoneHeight, Math.round(phoneWidth * PHONE_ASPECT));
+
   const statusH = isMobile ? 44 : 50;
   const homeReserve = isMobile ? 14 : 18;
   const bezel = isMobile ? 5 : 6;
   const contentWidth = phoneWidth - bezel * 2;
   const innerHeight = Math.max(240, phoneHeight - statusH - homeReserve);
-  // Scale the authored desktop UI into the glass so type/icons stay proportional.
-  const contentScale = Math.min(1, contentWidth / DEMO_DESIGN_WIDTH);
+  const contentScale = Math.min(1, Math.max(0.55, contentWidth / DEMO_DESIGN_WIDTH));
 
   return {
     isDesktop,
@@ -86,9 +99,17 @@ export default function PhoneDashboardMockup() {
   const m = phoneMetrics(width, height);
 
   return (
-    <View style={{ width: '100%', maxWidth: m.phoneWidth, alignSelf: m.isDesktop ? 'flex-end' : 'center' }}>
+    <View
+      style={{
+        width: '100%',
+        maxWidth: m.phoneWidth,
+        minWidth: m.phoneWidth,
+        alignSelf: m.isDesktop ? 'flex-end' : 'center',
+      }}
+    >
       <View
         style={{
+          width: m.phoneWidth,
           backgroundColor: '#000',
           borderRadius: m.radiusOuter,
           padding: m.bezel,
@@ -103,6 +124,7 @@ export default function PhoneDashboardMockup() {
       >
         <View
           style={{
+            width: m.phoneWidth - m.bezel * 2,
             backgroundColor: '#fff',
             borderRadius: m.radiusInner,
             overflow: 'hidden',
@@ -168,7 +190,7 @@ export default function PhoneDashboardMockup() {
             />
           </View>
 
-          <View style={{ paddingTop: m.statusH, flex: 1, height: m.phoneHeight }}>
+          <View style={{ paddingTop: m.statusH, width: '100%', height: m.phoneHeight - m.statusH }}>
             <ProjectMonitoringDemoPhone
               initialRoute={{ name: 'dashboard' }}
               homeRoute={{ name: 'dashboard' }}
@@ -203,6 +225,7 @@ export default function PhoneDashboardMockup() {
           marginTop: m.captionMt,
           paddingHorizontal: 8,
           lineHeight: m.captionSize + 6,
+          width: '100%',
         }}
       >
         Tap around — this is project tracking on BuildMyHouse.

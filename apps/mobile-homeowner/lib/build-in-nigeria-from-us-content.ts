@@ -55,7 +55,7 @@ export const buildInNigeriaFromUsPageContent = {
       "The biggest issue with building in Nigeria from the US is not only distance.",
       "The real issue is lack of project control.",
       "Many diaspora homeowners already know how the story goes: the project starts with excitement, then updates become vague, costs start changing, payment requests become urgent, and the homeowner abroad is left trying to judge a construction site through WhatsApp messages.",
-      "That is why BuildMyHouse is not trying to be just another contractor directory. BMH is designed as a remote property project management platform for Nigerians abroad, helping homeowners manage property work in Nigeria with clearer scope, verified contractors, stage-based workflows, communication, notifications, and better visibility. :contentReference[oaicite:2]{index=2}",
+      "That is why BuildMyHouse is not trying to be just another contractor directory. BMH is designed as a remote property project management platform for Nigerians abroad, helping homeowners manage property work in Nigeria with clearer scope, verified contractors, stage-based workflows, communication, notifications, and better visibility.",
     ],
   },
 
@@ -121,7 +121,7 @@ export const buildInNigeriaFromUsPageContent = {
       "BuildMyHouse is not just a list of contractors.",
       "It is not a construction company pretending to be software.",
       "It is not an open marketplace where anyone can casually appear and collect diaspora money.",
-      "BuildMyHouse is a remote property project management platform for Nigerians abroad. It helps connect the homeowner, contractor, project scope, stage progress, communication, and payment discipline into a more structured workflow. :contentReference[oaicite:3]{index=3}",
+      "BuildMyHouse is a remote property project management platform for Nigerians abroad. It helps connect the homeowner, contractor, project scope, stage progress, communication, and payment discipline into a more structured workflow.",
     ],
   },
 
@@ -136,7 +136,7 @@ export const buildInNigeriaFromUsPageContent = {
       {
         heading: "2. Work with contractor workflows, not just contractor claims",
         text:
-          "The platform already supports contractor onboarding, verification, requests, project and stage work, chat, notifications, and admin oversight across the actual product system. :contentReference[oaicite:4]{index=4}",
+          "The platform already supports contractor onboarding, verification, requests, project and stage work, chat, notifications, and admin oversight across the actual product system.",
       },
       {
         heading: "3. Track the project stage by stage",
@@ -146,7 +146,7 @@ export const buildInNigeriaFromUsPageContent = {
       {
         heading: "4. Keep updates tied to the project",
         text:
-          "BMH’s product foundation includes project tracking, communication, notifications, and stage-related workflows, making it easier to understand what is happening without chasing scattered updates. :contentReference[oaicite:5]{index=5}",
+          "BMH’s product foundation includes project tracking, communication, notifications, and stage-related workflows, making it easier to understand what is happening without chasing scattered updates.",
       },
       {
         heading: "5. Make payment decisions with more discipline",
@@ -173,7 +173,7 @@ export const buildInNigeriaFromUsPageContent = {
     title: "Contractor Trust Should Not Be Based on Sweet Talk Alone",
     paragraphs: [
       "A contractor may be respectful, confident, and recommended by someone you know. That still does not mean the project should run without verification and structure.",
-      "BuildMyHouse is built around curated contractor workflows, verification, project requests, admin monitoring, and documented project activity. The point is to make contractor trust more traceable and less emotional. :contentReference[oaicite:6]{index=6}",
+      "BuildMyHouse is built around curated contractor workflows, verification, project requests, admin monitoring, and documented project activity. The point is to make contractor trust more traceable and less emotional.",
     ],
     primaryLink: {
       label: "Read the Contractor Vetting Guide",
@@ -194,8 +194,8 @@ export const buildInNigeriaFromUsPageContent = {
     title: "Why BuildMyHouse Is More Convincing Than a Referral-Only Process",
     paragraphs: [
       "Referral-only building is fragile because it depends heavily on personal trust.",
-      "BuildMyHouse is stronger because it turns trust into a workflow: project setup, contractor verification, stage progression, chat, notifications, payments, disputes, and admin visibility all exist as part of the broader platform foundation. :contentReference[oaicite:7]{index=7}",
-      "That is why BMH’s business direction is not just finding contractors. It is building the trust and workflow layer for diaspora property execution in Nigeria. :contentReference[oaicite:8]{index=8}",
+      "BuildMyHouse is stronger because it turns trust into a workflow: project setup, contractor verification, stage progression, chat, notifications, payments, disputes, and admin visibility all exist as part of the broader platform foundation.",
+      "That is why BMH’s business direction is not just finding contractors. It is building the trust and workflow layer for diaspora property execution in Nigeria.",
     ],
     items: [
       "Clearer project setup",
@@ -290,7 +290,7 @@ export const buildInNigeriaFromUsPageContent = {
       {
         question: "Is BuildMyHouse only for full construction?",
         answer:
-          "No. BuildMyHouse supports the broader remote property work ladder: repairs, upgrades, renovations, interiors, and full builds. The business strategy is to earn trust through smaller scoped jobs and expand into larger projects over time. :contentReference[oaicite:9]{index=9}",
+          "No. BuildMyHouse supports the broader remote property work ladder: repairs, upgrades, renovations, interiors, and full builds. The business strategy is to earn trust through smaller scoped jobs and expand into larger projects over time.",
       },
     ],
   },

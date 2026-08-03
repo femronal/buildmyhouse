@@ -200,7 +200,7 @@ export const finishAbandonedHouseNigeriaFromAbroadPageContent = {
     ],
     sectionTitle: "Why BuildMyHouse Is Useful for Abandoned House Restarts",
     paragraphs: [
-      "BuildMyHouse is well positioned for restart projects because the platform already supports project stages, payments, communication, notifications, disputes, and project workflows in the real system. :contentReference[oaicite:3]{index=3}",
+      "BuildMyHouse is well positioned for restart projects because the platform already supports project stages, payments, communication, notifications, disputes, and project workflows in the real system.",
       "That matters because an abandoned house does not need only labour. It needs structure, visibility, and stronger control around what happens next.",
       "The goal is not just to restart building. The goal is to restart the project in a way that does not create the same old confusion again.",
     ],
@@ -274,7 +274,7 @@ export const finishAbandonedHouseNigeriaFromAbroadPageContent = {
       {
         question: "How does BuildMyHouse help with restart projects?",
         answer:
-          "BuildMyHouse supports stages, payments, communication, notifications, disputes, and project workflows that help make a restart more structured and easier to control from abroad. :contentReference[oaicite:4]{index=4}",
+          "BuildMyHouse supports stages, payments, communication, notifications, disputes, and project workflows that help make a restart more structured and easier to control from abroad.",
       },
     ],
   },

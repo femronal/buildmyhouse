@@ -163,7 +163,7 @@ export const ukRenovateParentsHousePageContent = {
     paragraphs: [
       "BuildMyHouse helps bring scope, stages, communication, notifications, and payment discipline into one clearer workflow.",
       "That matters because a parents-home renovation needs more than labour. It needs control, especially when the homeowner is not physically present in Nigeria.",
-      "BMH’s real product foundation already includes project setup, stages, payments, chat, notifications, contractor workflows, and admin oversight, which makes it a much stronger fit for this problem than ordinary content or referral-only solutions. :contentReference[oaicite:2]{index=2}",
+      "BMH’s real product foundation already includes project setup, stages, payments, chat, notifications, contractor workflows, and admin oversight, which makes it a much stronger fit for this problem than ordinary content or referral-only solutions.",
       "The goal is simple: let the homeowner abroad think and approve with more confidence instead of reacting to pressure.",
     ],
   },
@@ -172,7 +172,7 @@ export const ukRenovateParentsHousePageContent = {
     title: "What Safer Remote Renovation Should Feel Like",
     paragraphs: [
       "The strongest BuildMyHouse message is not just 'we help you renovate.'",
-      "It is that remote property work should be managed with clarity. That means clearer scope, clearer stage progression, clearer evidence, and clearer approval discipline. :contentReference[oaicite:3]{index=3}",
+      "It is that remote property work should be managed with clarity. That means clearer scope, clearer stage progression, clearer evidence, and clearer approval discipline.",
       "This page exists to make that practical for one of the most emotional use cases in the business: renovating a parents’ occupied home from abroad.",
     ],
     items: [
@@ -240,7 +240,7 @@ export const ukRenovateParentsHousePageContent = {
       {
         question: "How does BuildMyHouse help with this type of renovation?",
         answer:
-          "BuildMyHouse helps connect the project scope, stages, communication, notifications, payments, and contractor workflow into a clearer system, which is safer for a homeowner managing the renovation from the UK. :contentReference[oaicite:4]{index=4}",
+          "BuildMyHouse helps connect the project scope, stages, communication, notifications, payments, and contractor workflow into a clearer system, which is safer for a homeowner managing the renovation from the UK.",
       },
     ],
   },

@@ -12,17 +12,26 @@ import { trackWebEvent } from '@/lib/analytics';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { diasporaBuildNigeriaFromAbroadPageContent as content } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
 import { PILLAR_COVER_SOURCES } from '@/lib/published-content-catalog';
+import { stripContentArtifacts } from '@/lib/strip-content-artifacts';
 
 const sectionBodyClass = seoContentTypography.bodyParagraph;
 
 function ParagraphBlock({ paragraphs }: { paragraphs: readonly string[] }) {
   return (
     <>
-      {paragraphs.map((paragraph) => (
-        <Text key={paragraph} className={sectionBodyClass} style={{ fontFamily: 'Poppins_400Regular' }}>
-          {paragraph}
-        </Text>
-      ))}
+      {paragraphs.map((paragraph, index) => {
+        const clean = stripContentArtifacts(paragraph);
+        return (
+          <Text
+            key={`${index}:${clean.slice(0, 48)}`}
+            className={sectionBodyClass}
+            style={{ fontFamily: 'Poppins_400Regular' }}
+            selectable={false}
+          >
+            {clean}
+          </Text>
+        );
+      })}
     </>
   );
 }
