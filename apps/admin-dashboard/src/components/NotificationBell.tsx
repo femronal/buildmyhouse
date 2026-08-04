@@ -17,9 +17,9 @@ function getNotificationLink(item: NotificationItem): string | null {
   if (data.disputeId || (data.projectId && item.type?.includes('dispute')))
     return '/disputes';
   if (data.projectId) return '/projects';
-  if (data.interestId || data.rentalListingId) return '/rentals';
-  if (data.houseForSaleId || item.type === 'house_viewing_request') return '/houses';
-  if (data.landForSaleId || item.type === 'land_viewing_request') return '/land';
+  if (data.interestId || data.rentalListingId) return '/opportunities?tab=rentals';
+  if (data.houseForSaleId || item.type === 'house_viewing_request') return '/opportunities?tab=houses';
+  if (data.landForSaleId || item.type === 'land_viewing_request') return '/opportunities?tab=land';
   if (item.type === 'manual_payment_declared') return '/projects';
   return null;
 }

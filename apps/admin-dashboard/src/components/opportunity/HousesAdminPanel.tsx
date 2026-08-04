@@ -1,0 +1,693 @@
+'use client';
+
+import { useState, useRef } from 'react';
+import { FileUp, Home, X, Plus, Trash2, User, Mail, Phone, Clock3, Pencil } from 'lucide-react';
+import { useHouses, type CreateHousePayload, type HouseForSale, type UpdateHousePayload } from '@/hooks/useHouses';
+import { useHouseViewingInterests } from '@/hooks/useHouseViewingInterests';
+import { api } from '@/lib/api';
+import { getBackendAssetUrl } from '@/lib/image';
+import {
+  BUILD_OPPORTUNITY_CATEGORY_OPTIONS,
+  BUILD_OPPORTUNITY_TYPE_OPTIONS,
+  type BuildOpportunityCategoryKey,
+} from '@/lib/build-opportunity-taxonomy';
+import { buildHousePayloadFields } from '@/lib/opportunity-listing-payload';
+import { OpportunityListingModal } from '@/components/opportunity/OpportunityListingModal';
+
+export default function HousesAdminPanel() {
+  const { houses, isLoading, createHouse, isCreating, deleteHouse, updateHouse, isUpdating, refetch } = useHouses();
+  const { interests, markAllRead, updateOutcome } = useHouseViewingInterests();
+  const [selectedId, setSelectedId] = useState<string | null>(houses[0]?.id ?? null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [pendingDeleteHouseId, setPendingDeleteHouseId] = useState<string | null>(null);
+  const [interestHouseId, setInterestHouseId] = useState<string | null>(null);
+  const [pendingPurchaseInterestId, setPendingPurchaseInterestId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    opportunityCategory: 'residential' as BuildOpportunityCategoryKey,
+    opportunityType: '',
+    opportunityTypeCustom: '',
+    location: '',
+    price: '',
+    bedrooms: '',
+    bathrooms: '',
+    squareFootage: '',
+    squareMeters: '',
+    propertyType: '',
+    yearBuilt: '',
+    condition: '',
+    parking: '',
+    documents: '',
+    amenities: '',
+    nearbyFacilities: '',
+    contactName: '',
+    contactPhone: '',
+  });
+  const [images, setImages] = useState<{ file?: File; url?: string; label: string; preview: string }[]>([]);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const getTypeOptions = (category: BuildOpportunityCategoryKey) =>
+    BUILD_OPPORTUNITY_TYPE_OPTIONS[category] ?? [];
+
+  const validateOpportunityType = () => {
+    if (!form.opportunityType) {
+      setUploadError('Please select a specific filter for this build category');
+      return false;
+    }
+    if (form.opportunityType === '__custom__' && !form.opportunityTypeCustom.trim()) {
+      setUploadError('Please enter a custom filter name');
+      return false;
+    }
+    return true;
+  };
+
+  const selected = houses.find((h) => h.id === selectedId) ?? houses[0];
+
+  const resetForm = () => {
+    setForm({
+      name: '',
+      description: '',
+      opportunityCategory: 'residential',
+      opportunityType: '',
+      opportunityTypeCustom: '',
+      location: '',
+      price: '',
+      bedrooms: '',
+      bathrooms: '',
+      squareFootage: '',
+      squareMeters: '',
+      propertyType: '',
+      yearBuilt: '',
+      condition: '',
+      parking: '',
+      documents: '',
+      amenities: '',
+      nearbyFacilities: '',
+      contactName: '',
+      contactPhone: '',
+    });
+  };
+
+  const resetImages = () => {
+    setImages((prev) => {
+      prev.forEach((img) => {
+        if (img.file) URL.revokeObjectURL(img.preview);
+      });
+      return [];
+    });
+  };
+
+  const handleAddImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const newImages = files.map((file) => ({
+      file,
+      label: file.name.replace(/\.[^/.]+$/, '') || 'Image',
+      preview: URL.createObjectURL(file),
+    }));
+    setImages((prev) => [...prev, ...newImages]);
+    e.target.value = '';
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => {
+      const next = [...prev];
+      if (next[index].file) URL.revokeObjectURL(next[index].preview);
+      next.splice(index, 1);
+      return next;
+    });
+  };
+
+  const startEditHouse = (house: HouseForSale) => {
+    const category = (house.opportunityCategory || 'residential') as BuildOpportunityCategoryKey;
+    const categoryOptions = getTypeOptions(category);
+    const matchedOption = categoryOptions.find((option) => option.value === house.opportunityType);
+    const usingCustom = !!house.opportunityType && !matchedOption;
+    setEditingId(house.id);
+    setForm({
+      name: house.name,
+      description: house.description || '',
+      opportunityCategory: category,
+      opportunityType: usingCustom ? '__custom__' : (house.opportunityType || ''),
+      opportunityTypeCustom: usingCustom ? String(house.opportunityType) : '',
+      location: house.location,
+      price: String(house.price ?? ''),
+      bedrooms: String(house.bedrooms ?? ''),
+      bathrooms: String(house.bathrooms ?? ''),
+      squareFootage: String(house.squareFootage ?? ''),
+      squareMeters: house.squareMeters !== null && house.squareMeters !== undefined ? String(house.squareMeters) : '',
+      propertyType: house.propertyType || '',
+      yearBuilt: house.yearBuilt !== null && house.yearBuilt !== undefined ? String(house.yearBuilt) : '',
+      condition: house.condition || '',
+      parking: house.parking !== null && house.parking !== undefined ? String(house.parking) : '',
+      documents: (house.documents || []).join(', '),
+      amenities: (house.amenities || []).join(', '),
+      nearbyFacilities: (house.nearbyFacilities || []).join(', '),
+      contactName: house.contactName || '',
+      contactPhone: house.contactPhone || '',
+    });
+    resetImages();
+    setImages(
+      (house.images || []).map((img) => ({
+        url: img.url,
+        label: img.label || 'Image',
+        preview: getBackendAssetUrl(img.url) || img.url,
+      })),
+    );
+    setShowEditModal(true);
+  };
+
+  const handleDeleteHouse = async (houseId: string) => {
+    try {
+      setDeletingId(houseId);
+      await deleteHouse(houseId);
+      if (selectedId === houseId) {
+        const fallback = houses.find((h) => h.id !== houseId);
+        setSelectedId(fallback?.id ?? null);
+      }
+      await refetch();
+    } catch (err: any) {
+      window.alert(err?.message || 'Failed to delete house');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadError(null);
+    if (!validateOpportunityType()) return;
+    if (images.length === 0) {
+      setUploadError('Please add at least one photo');
+      return;
+    }
+    try {
+      const uploadedImages: { url: string; label: string; order: number }[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const imageFile = images[i].file;
+        if (!imageFile) {
+          throw new Error('Please re-add all selected photos before uploading');
+        }
+        const { url } = await api.uploadFile(imageFile);
+        uploadedImages.push({
+          url,
+          label: images[i].label || `Image ${i + 1}`,
+          order: i,
+        });
+      }
+
+      const payload: CreateHousePayload = {
+        ...buildHousePayloadFields(form),
+        images: uploadedImages,
+      };
+
+      await createHouse(payload);
+      setShowUploadModal(false);
+      resetForm();
+      resetImages();
+      refetch();
+    } catch (err: any) {
+      setUploadError(err?.message || 'Upload failed');
+    }
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+    setUploadError(null);
+    if (!validateOpportunityType()) return;
+    if (images.length === 0) {
+      setUploadError('Please keep at least one photo');
+      return;
+    }
+    try {
+      const uploadedImages: { url: string; label: string; order: number }[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        let url = img.url || '';
+        if (img.file) {
+          const uploaded = await api.uploadFile(img.file);
+          url = uploaded.url;
+        }
+        uploadedImages.push({
+          url,
+          label: img.label || `Image ${i + 1}`,
+          order: i,
+        });
+      }
+
+      const payload: UpdateHousePayload = {
+        ...buildHousePayloadFields(form),
+        images: uploadedImages,
+      };
+
+      await updateHouse({ id: editingId, payload });
+      await refetch();
+      setShowEditModal(false);
+      setEditingId(null);
+      resetForm();
+      resetImages();
+    } catch (err: any) {
+      setUploadError(err?.message || 'Update failed');
+    }
+  };
+
+  const primaryImage = (h: typeof selected) =>
+    h?.images?.[0]?.url ? getBackendAssetUrl(h.images[0].url) : null;
+
+  const getHouseInterests = (houseId: string) =>
+    interests.filter((interest) => interest.houseForSale.id === houseId);
+
+  const getHouseUnreadCount = (houseId: string) =>
+    getHouseInterests(houseId).filter((interest) => !interest.isRead).length;
+
+  const openHouseInterests = async (houseId: string) => {
+    setInterestHouseId(houseId);
+    if (getHouseUnreadCount(houseId) > 0) {
+      await markAllRead();
+    }
+  };
+
+  const selectedInterestHouse = houses.find((house) => house.id === interestHouseId) ?? null;
+  const selectedHouseInterests = selectedInterestHouse
+    ? getHouseInterests(selectedInterestHouse.id)
+    : [];
+  const pendingDeleteHouse = houses.find((house) => house.id === pendingDeleteHouseId) ?? null;
+  const pendingPurchaseInterest =
+    selectedHouseInterests.find((interest) => interest.id === pendingPurchaseInterestId) ?? null;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-end gap-4">
+        <button
+          onClick={() => setShowUploadModal(true)}
+          className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm flex items-center gap-2"
+        >
+          <FileUp className="w-4 h-4" />
+          Upload house
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 bg-white rounded-xl shadow">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Houses for sale</h2>
+            <span className="text-xs text-gray-400">{houses.length} total</span>
+          </div>
+          {isLoading ? (
+            <div className="p-8 text-center text-gray-500">Loading...</div>
+          ) : houses.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <Home className="w-12 h-12 mx-auto mb-2 opacity-50" />
+              <p>No houses listed yet. Upload your first house to get started.</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {houses.map((house) => (
+                <div key={house.id} className="relative">
+                  <button
+                    onClick={() => setSelectedId(house.id)}
+                    className={`w-full text-left p-4 pr-32 hover:bg-gray-50 flex gap-3 ${
+                      selectedId === house.id ? 'bg-gray-50' : ''
+                    }`}
+                  >
+                    {primaryImage(house) && (
+                      <img
+                        src={primaryImage(house)!}
+                        alt=""
+                        className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold flex items-center gap-2">
+                        <Home className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        {house.name}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {house.location} • {house.bedrooms} bed, {house.bathrooms} bath
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        {house.opportunityCategory ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                            {house.opportunityCategory.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                        {house.opportunityType ? (
+                          <span className="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">
+                            {house.opportunityType.replace(/_/g, ' ')}
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        ₦{house.price.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        Listed {new Date(house.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </button>
+                  <div className="absolute right-4 bottom-3 flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startEditHouse(house);
+                      }}
+                      className="inline-flex items-center gap-1 text-xs text-gray-700 hover:text-gray-900"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void openHouseInterests(house.id);
+                      }}
+                      className="relative w-7 h-7 rounded-full border border-gray-300 bg-white flex items-center justify-center hover:bg-gray-50"
+                      title="View scheduled homeowners"
+                    >
+                      <User className="w-3.5 h-3.5 text-gray-700" />
+                      {getHouseUnreadCount(house.id) > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[14px] font-semibold text-center">
+                          {getHouseUnreadCount(house.id) > 9
+                            ? '9+'
+                            : getHouseUnreadCount(house.id)}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingDeleteHouseId(house.id);
+                      }}
+                      disabled={deletingId === house.id}
+                      className="inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-700 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      {deletingId === house.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          {selected ? (
+            <>
+              <h3 className="text-xl font-semibold">{selected.name}</h3>
+              {primaryImage(selected) && (
+                <img
+                  src={primaryImage(selected)!}
+                  alt=""
+                  className="w-full h-40 rounded-lg object-cover"
+                />
+              )}
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <p className="text-gray-500">Location</p>
+                  <p className="font-medium">{selected.location}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Price</p>
+                  <p className="font-medium">₦{selected.price.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Category</p>
+                  <p className="font-medium">{selected.opportunityCategory?.replace(/_/g, ' ') || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Filter</p>
+                  <p className="font-medium">{selected.opportunityType?.replace(/_/g, ' ') || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Bedrooms</p>
+                  <p className="font-medium">{selected.bedrooms}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Bathrooms</p>
+                  <p className="font-medium">{selected.bathrooms}</p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Area</p>
+                  <p className="font-medium">
+                    {selected.squareMeters ?? selected.squareFootage} m²
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-500">Condition</p>
+                  <p className="font-medium">{selected.condition || '—'}</p>
+                </div>
+              </div>
+              {selected.description && (
+                <p className="text-sm text-gray-600">{selected.description}</p>
+              )}
+            </>
+          ) : (
+            <div className="text-center text-gray-500 py-8">
+              <Home className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              Select a house listing to view details.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {interestHouseId && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-xl bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">
+                  Viewing requests for {selectedInterestHouse?.name}
+                </h3>
+                <p className="text-xs text-gray-500">
+                  {selectedHouseInterests.length} homeowner
+                  {selectedHouseInterests.length === 1 ? '' : 's'} interested
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInterestHouseId(null)}
+                className="p-1 rounded hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[65vh] overflow-y-auto divide-y">
+              {selectedHouseInterests.length === 0 ? (
+                <div className="p-6 text-sm text-gray-500">
+                  No homeowner has scheduled a viewing for this house yet.
+                </div>
+              ) : (
+                selectedHouseInterests.map((interest) => {
+                  const avatarUrl = getBackendAssetUrl(interest.homeowner.pictureUrl);
+                  return (
+                    <div key={interest.id} className="p-4 flex gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-4 h-4 text-gray-500" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <p className="font-semibold text-sm text-gray-900">
+                          {interest.homeowner.fullName}
+                        </p>
+                        <p className="text-xs text-gray-600 flex items-center gap-1">
+                          <Mail className="w-3.5 h-3.5" />
+                          <span className="truncate">{interest.homeowner.email}</span>
+                        </p>
+                        {interest.homeowner.phone && (
+                          <p className="text-xs text-gray-600 flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>{interest.homeowner.phone}</span>
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 flex items-center gap-1">
+                          <Clock3 className="w-3.5 h-3.5" />
+                          <span>{new Date(interest.createdAt).toLocaleString()}</span>
+                        </p>
+                        <div className="flex items-center gap-4 pt-2">
+                          <label className="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`house-outcome-${interest.id}`}
+                              checked={interest.outcomeStatus !== 'purchased'}
+                              onChange={async () => {
+                                await updateOutcome({
+                                  interestId: interest.id,
+                                  outcomeStatus: 'abandoned',
+                                });
+                              }}
+                            />
+                            Abandoned
+                          </label>
+                          <label className="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`house-outcome-${interest.id}`}
+                              checked={interest.outcomeStatus === 'purchased'}
+                              onChange={() => setPendingPurchaseInterestId(interest.id)}
+                            />
+                            Purchased
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingPurchaseInterestId && pendingPurchaseInterest && (
+        <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Confirm purchase tag</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Mark <span className="font-semibold text-gray-700">{pendingPurchaseInterest.homeowner.fullName}</span> as
+                a successful buyer for <span className="font-semibold text-gray-700">{selectedInterestHouse?.name}</span>?
+              </p>
+            </div>
+            <div className="px-6 py-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingPurchaseInterestId(null)}
+                className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  await updateOutcome({
+                    interestId: pendingPurchaseInterestId,
+                    outcomeStatus: 'purchased',
+                  });
+                  setPendingPurchaseInterestId(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800"
+              >
+                Confirm Purchase
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pendingDeleteHouseId && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-white rounded-xl shadow-lg">
+            <div className="px-6 py-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Delete house listing</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Are you sure you want to delete{' '}
+                <span className="font-semibold text-gray-700">
+                  {pendingDeleteHouse?.name || 'this house'}
+                </span>
+                ? This action cannot be undone.
+              </p>
+            </div>
+            <div className="px-6 py-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPendingDeleteHouseId(null)}
+                className="px-4 py-2 rounded-lg border text-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!pendingDeleteHouseId) return;
+                  const houseId = pendingDeleteHouseId;
+                  setPendingDeleteHouseId(null);
+                  await handleDeleteHouse(houseId);
+                }}
+                disabled={deletingId === pendingDeleteHouseId}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white text-sm hover:bg-red-700 disabled:opacity-50"
+              >
+                {deletingId === pendingDeleteHouseId ? 'Deleting...' : 'Delete House'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUploadModal && (
+        <OpportunityListingModal
+          title="Upload house for sale"
+          entity="house"
+          form={form}
+          setForm={setForm}
+          images={images}
+          fileInputRef={fileInputRef}
+          uploadError={uploadError}
+          isSubmitting={isCreating}
+          submitLabel="Upload house"
+          onClose={() => {
+            setShowUploadModal(false);
+            setUploadError(null);
+            resetForm();
+            resetImages();
+          }}
+          onSubmit={handleSubmit}
+          onAddImages={handleAddImages}
+          onRemoveImage={removeImage}
+          onLabelChange={(index, label) =>
+            setImages((prev) => {
+              const next = [...prev];
+              next[index] = { ...next[index], label };
+              return next;
+            })
+          }
+        />
+      )}
+
+      {showEditModal && (
+        <OpportunityListingModal
+          title="Edit house listing"
+          entity="house"
+          form={form}
+          setForm={setForm}
+          images={images}
+          fileInputRef={fileInputRef}
+          uploadError={uploadError}
+          isSubmitting={isUpdating}
+          submitLabel="Save changes"
+          photoAddLabel="Add more photos"
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingId(null);
+            setUploadError(null);
+            resetForm();
+            resetImages();
+          }}
+          onSubmit={handleEditSubmit}
+          onAddImages={handleAddImages}
+          onRemoveImage={removeImage}
+          onLabelChange={(index, label) =>
+            setImages((prev) => {
+              const next = [...prev];
+              next[index] = { ...next[index], label };
+              return next;
+            })
+          }
+        />
+      )}
+    </div>
+  );
+}
