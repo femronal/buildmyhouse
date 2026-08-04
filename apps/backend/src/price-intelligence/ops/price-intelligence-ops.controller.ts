@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   ForbiddenException,
@@ -21,6 +22,7 @@ import { ReviewQueueService } from './review-queue.service';
 import { ReviewCaseService } from './review-case.service';
 import { ManualEntryService } from './manual-entry.service';
 import { MerchantSubmissionService } from './merchant-submission.service';
+import { MerchantListExtractorService } from './merchant-list-extractor.service';
 import { SourceHealthService } from './source-health.service';
 import { CatalogueWriteService } from './catalogue-write.service';
 import { SearchDemandService } from './search-demand.service';
@@ -42,6 +44,7 @@ export class PriceIntelligenceOpsController {
     private readonly cases: ReviewCaseService,
     private readonly manualEntries: ManualEntryService,
     private readonly merchants: MerchantSubmissionService,
+    private readonly merchantListExtractor: MerchantListExtractorService,
     private readonly sources: SourceHealthService,
     private readonly catalogue: CatalogueWriteService,
     private readonly demand: SearchDemandService,
@@ -368,6 +371,22 @@ export class PriceIntelligenceOpsController {
       skip ? Number(skip) : 0,
       status,
     );
+  }
+
+  @Post('merchant-submissions/extract-from-image')
+  async extractMerchantListFromImage(
+    @Req() req: AuthedRequest,
+    @Body() body: { imageUrl: string; hintTitle?: string },
+  ) {
+    requirePiPermission(await this.perms(req), 'ENTRY');
+    if (!body?.imageUrl?.trim()) {
+      throw new BadRequestException('imageUrl is required');
+    }
+    return this.merchantListExtractor.extractFromImage({
+      imageUrl: body.imageUrl.trim(),
+      hintTitle: body.hintTitle,
+      actorAdminId: adminId(req.user),
+    });
   }
 
   @Get('merchant-submissions/:id')

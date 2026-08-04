@@ -53,6 +53,7 @@ export default function MerchantSubmissionsPage() {
   });
   const [items, setItems] = useState<LineItem[]>([emptyItem()]);
   const [uploading, setUploading] = useState(false);
+  const [extracting, setExtracting] = useState(false);
 
   const createMerchant = useMutation({
     mutationFn: () =>
@@ -122,11 +123,51 @@ export default function MerchantSubmissionsPage() {
     try {
       const url = await priceIntelligenceApi.uploadEvidence(file);
       setSubForm((s) => ({ ...s, evidenceFileRef: url }));
-      setMessage({ tone: 'ok', text: 'Evidence uploaded' });
+      setMessage({ tone: 'ok', text: 'Evidence uploaded — you can extract items with AI next' });
     } catch (e) {
       setMessage({ tone: 'err', text: e instanceof Error ? e.message : 'Upload failed' });
     } finally {
       setUploading(false);
+    }
+  };
+
+  const onExtractWithAi = async () => {
+    if (!subForm.evidenceFileRef) {
+      setMessage({ tone: 'err', text: 'Upload a price-list image first' });
+      return;
+    }
+    setExtracting(true);
+    try {
+      const result = await priceIntelligenceApi.extractMerchantListFromImage({
+        imageUrl: subForm.evidenceFileRef,
+        hintTitle: subForm.title || undefined,
+      });
+      if (result.items.length === 0) {
+        setMessage({
+          tone: 'err',
+          text: result.warnings[0] || 'No items extracted — enter them manually',
+        });
+        return;
+      }
+      setItems(
+        result.items.map((it) => ({
+          productLabel: it.productLabel,
+          familyKey: it.familyKey ?? '',
+          originalWording: it.originalWording,
+          originalPrice: String(it.originalPrice),
+          originalUnitCode: it.originalUnitCode,
+          brandName: it.brandName ?? '',
+        })),
+      );
+      const warn = result.warnings.length ? ` Warnings: ${result.warnings.slice(0, 2).join(' ')}` : '';
+      setMessage({
+        tone: 'ok',
+        text: `Extracted ${result.items.length} draft item(s) with ${result.model}. Review before submit.${warn}`,
+      });
+    } catch (e) {
+      setMessage({ tone: 'err', text: e instanceof Error ? e.message : 'Extraction failed' });
+    } finally {
+      setExtracting(false);
     }
   };
 
@@ -137,7 +178,7 @@ export default function MerchantSubmissionsPage() {
     <div className="space-y-6">
       <PiPageHeader
         title="Merchant Submissions"
-        description="WhatsApp / price-list intake: create merchants, capture evidence, approve items."
+        description="Upload a merchant price list → AI drafts line items → you review → approve into observations. Consumer checks use these before live web research when enough evidence exists."
       />
 
       {message ? (
@@ -228,7 +269,20 @@ export default function MerchantSubmissionsPage() {
             />
           </label>
           {subForm.evidenceFileRef ? (
-            <p className="truncate text-xs text-gray-500">{subForm.evidenceFileRef}</p>
+            <div className="flex flex-col gap-2">
+              <p className="truncate text-xs text-gray-500">{subForm.evidenceFileRef}</p>
+              <button
+                type="button"
+                disabled={extracting}
+                onClick={() => void onExtractWithAi()}
+                className="rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 disabled:opacity-50"
+              >
+                {extracting ? 'Extracting with AI…' : 'Extract items with AI (draft)'}
+              </button>
+              <p className="text-[11px] text-gray-500">
+                AI drafts rows only. You still edit family keys and approve items before they affect consumer prices.
+              </p>
+            </div>
           ) : null}
 
           <div className="space-y-2">

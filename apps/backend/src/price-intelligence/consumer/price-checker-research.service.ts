@@ -35,12 +35,16 @@ import { researchItem, Planner, PipelineDeps, PipelineProgress, ResearchItemResu
 import { generateSearchPlan, PlanTarget } from '../research/planner';
 import { toScoringObservations } from '../reports/bridge';
 import { generateReport, ReportRequest, PriceCheckerReport, REPORT_GENERATOR_VERSION } from '../reports/report';
+import { ScoringObservation } from '../reports/confidence';
 import { Answers } from '../taxonomy';
 import { PriceCheckerCatalogueService } from './price-checker-catalogue.service';
 import { PriceCheckerUsageService, UsageIdentity } from './price-checker-usage.service';
 import { ResearchStageCode, ResearchStatusDto, ResearchJobStatus } from './price-checker.types';
 import { PriceCheckerFulfilmentService } from '../payments/fulfilment.service';
 import { ExceptionIntakeService } from '../ops/exception-intake.service';
+import { InternalObservationService } from '../research/internal-observation.service';
+import { mergeScoringObservations } from '../research/internal-observations';
+import { CostAccumulator } from '../research/cost';
 
 export interface StartResearchInput {
   familyKey: string;
@@ -93,6 +97,7 @@ export class PriceCheckerResearchService implements OnModuleDestroy {
     private readonly prisma: PrismaService,
     private readonly catalogue: PriceCheckerCatalogueService,
     private readonly usage: PriceCheckerUsageService,
+    private readonly internalObservations: InternalObservationService,
     @Optional()
     @Inject(forwardRef(() => PriceCheckerFulfilmentService))
     private readonly fulfilment: PriceCheckerFulfilmentService | null,
@@ -352,13 +357,79 @@ export class PriceCheckerResearchService implements OnModuleDestroy {
         locationKey: input.locationKey,
       });
 
-      const result = await researchItem(target, deps, job.controller.signal);
+      // Merchant / admin observations first (structured DB lookup — not re-reading images).
+      setStage('searching_sources');
+      const brand =
+        typeof input.answers['brand'] === 'string' && input.answers['brand']
+          ? input.answers['brand']
+          : target.brand;
+      const internal =
+        input.kind === 'product'
+          ? await this.internalObservations.lookupForResearch({
+              familyKey: input.familyKey,
+              brand,
+            })
+          : {
+              observations: [] as ScoringObservation[],
+              independentGroupCount: 0,
+              sufficientForRange: false,
+              skipLiveResearch: false,
+              reasons: ['Service research uses live web sources only.'],
+            };
+
+      let result: ResearchItemResult;
+      let liveScoring: ScoringObservation[] = [];
+
+      if (internal.skipLiveResearch) {
+        this.logger.log(
+          `Research ${job.requestId}: skipping live web — ${internal.reasons.join(' ')}`,
+        );
+        job.counters.discoveredSourceCount = internal.observations.length;
+        job.counters.retrievedPageCount = 0;
+        job.counters.acceptedObservationCount = internal.observations.length;
+        const cost = new CostAccumulator(deps.pricing ?? {});
+        result = {
+          requestItemId,
+          outcome: 'successful',
+          result: {
+            outcome: 'priced',
+            confidence: 'moderate',
+            confidenceScore: 0,
+            independentSourceCount: internal.independentGroupCount,
+            usedSourceCount: internal.observations.length,
+            rangeLow: null,
+            rangeHigh: null,
+            median: null,
+            typical: null,
+            unit: target.preferredComparisonUnit,
+            excludedOutliers: 0,
+            reasons: internal.reasons,
+          },
+          acceptedObservations: [],
+          retrievalDiagnostics: [],
+          searchQueries: [],
+          discoveredUrls: [],
+          rejectedExtractions: [],
+          cost: cost.summary(),
+          reasons: internal.reasons,
+        };
+      } else {
+        result = await researchItem(target, deps, job.controller.signal);
+        liveScoring = toScoringObservations(result.acceptedObservations, requestItemId);
+        if (internal.observations.length > 0) {
+          result = {
+            ...result,
+            reasons: [...internal.reasons, ...result.reasons],
+          };
+        }
+      }
+
       if (timer) clearTimeout(timer);
       if ((job.status as ResearchJobStatus) === 'cancelled') return;
 
-      // Stage 5 — deterministic scoring + report generation (fast, real stages).
+      // Stage 5 — merge internal + live evidence, then score.
       setStage('removing_duplicates');
-      const scoringObservations = toScoringObservations(result.acceptedObservations, requestItemId);
+      const scoringObservations = mergeScoringObservations(internal.observations, liveScoring);
       setStage('scoring_confidence');
 
       const requestedCondition = this.requestedCondition(input.answers);
@@ -373,13 +444,35 @@ export class PriceCheckerResearchService implements OnModuleDestroy {
         requestedCondition,
         generatedAtIso: new Date().toISOString(),
       };
-      const report = generateReport(reportRequest, scoringObservations);
+      let report = generateReport(reportRequest, scoringObservations);
+      if (internal.observations.length > 0) {
+        const internalNote =
+          internal.skipLiveResearch
+            ? 'Price evidence includes approved merchant/admin price lists (live web research was not required).'
+            : 'Price evidence includes approved merchant/admin price lists merged with live online sources.';
+        report = {
+          ...report,
+          cautions: [internalNote, ...report.cautions],
+        };
+      }
       job.counters.independentSourceCount = report.pricing.independentSourceCount;
       job.counters.acceptedObservationCount = report.pricing.acceptedObservationCount;
 
       setStage('preparing_report');
       const accessToken = randomBytes(24).toString('base64url');
-      await this.persistReport({ job, requestItemId, report, result, accessToken });
+      await this.persistReport({
+        job,
+        requestItemId,
+        report,
+        result,
+        accessToken,
+        evidenceMeta: {
+          internalObservationCount: internal.observations.length,
+          liveWebObservationCount: liveScoring.length,
+          liveWebSkipped: internal.skipLiveResearch,
+          internalReasons: internal.reasons,
+        },
+      });
 
       job.reportId = reportId;
       job.reportAccessToken = accessToken;
@@ -464,8 +557,14 @@ export class PriceCheckerResearchService implements OnModuleDestroy {
     report: PriceCheckerReport;
     result: ResearchItemResult;
     accessToken: string;
+    evidenceMeta?: {
+      internalObservationCount: number;
+      liveWebObservationCount: number;
+      liveWebSkipped: boolean;
+      internalReasons: string[];
+    };
   }): Promise<void> {
-    const { job, requestItemId, report, result, accessToken } = args;
+    const { job, requestItemId, report, result, accessToken, evidenceMeta } = args;
     const priced = report.status !== 'insufficient_data';
     const countsTowardAllowance = priced || this.usage.countInsufficientData;
 
@@ -495,6 +594,7 @@ export class PriceCheckerResearchService implements OnModuleDestroy {
                 cost: result.cost,
                 searchQueries: result.searchQueries,
                 reasons: result.reasons,
+                evidenceChannels: evidenceMeta ?? null,
               } as Prisma.InputJsonValue,
             },
           },

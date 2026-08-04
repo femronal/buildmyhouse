@@ -26,6 +26,7 @@ import { ReviewQueueService } from './ops/review-queue.service';
 import { ReviewCaseService } from './ops/review-case.service';
 import { ManualEntryService } from './ops/manual-entry.service';
 import { MerchantSubmissionService } from './ops/merchant-submission.service';
+import { MerchantListExtractorService } from './ops/merchant-list-extractor.service';
 import { SourceHealthService } from './ops/source-health.service';
 import { CatalogueWriteService } from './ops/catalogue-write.service';
 import { SearchDemandService } from './ops/search-demand.service';
@@ -33,6 +34,7 @@ import { PriceIntelligenceSettingsService } from './ops/settings.service';
 import { PriceIntelligenceReviewerService } from './ops/reviewer.service';
 import { ReportCorrectionService } from './ops/report-correction.service';
 import { ExceptionIntakeService } from './ops/exception-intake.service';
+import { InternalObservationService } from './research/internal-observation.service';
 
 @Module({
   imports: [AuthModule],
@@ -67,6 +69,8 @@ import { ExceptionIntakeService } from './ops/exception-intake.service';
     ReviewCaseService,
     ManualEntryService,
     MerchantSubmissionService,
+    MerchantListExtractorService,
+    InternalObservationService,
     SourceHealthService,
     CatalogueWriteService,
     SearchDemandService,

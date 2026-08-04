@@ -205,7 +205,8 @@ export class MerchantSubmissionService {
         originalUnitCode: item.originalUnitCode,
         currencyCode: item.currencyCode,
         collectionMethod: 'merchant_feed',
-        evidenceClass: 'merchant_submission',
+        // Align with taxonomy EvidenceClass (tier 2 label family); source tier stays 3 for WhatsApp.
+        evidenceClass: 'merchant_confirmed',
         evidenceDocumentId: submission.evidenceDocumentId,
         sourceCode: MERCHANT_WHATSAPP_SOURCE_CODE,
       });

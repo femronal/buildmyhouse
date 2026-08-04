@@ -450,6 +450,24 @@ export const priceIntelligenceApi = {
     }>;
   }) => api.post<MerchantSubmission>(`${BASE}/merchant-submissions`, body),
 
+  extractMerchantListFromImage: (body: { imageUrl: string; hintTitle?: string }) =>
+    api.post<{
+      items: Array<{
+        productLabel: string;
+        familyKey: string | null;
+        brandName: string | null;
+        originalWording: string;
+        originalPrice: number;
+        originalUnitCode: string;
+        currencyCode: string;
+        confidence: number;
+        notes: string | null;
+      }>;
+      model: string;
+      warnings: string[];
+      rawItemCount: number;
+    }>(`${BASE}/merchant-submissions/extract-from-image`, body),
+
   submitMerchantSubmission: (id: string) =>
     api.post(`${BASE}/merchant-submissions/${id}/submit`, {}),
 

@@ -35,7 +35,7 @@ export async function ensureOpsSource(
   const meta =
     code === ADMIN_MANUAL_SOURCE_CODE
       ? { name: 'Admin manual entry', tier: 2, accessStatus: 'allowed_manual' }
-      : { name: 'Merchant WhatsApp feed', tier: 3, accessStatus: 'allowed_merchant' };
+      : { name: 'Merchant WhatsApp / price-list feed', tier: 3, accessStatus: 'allowed_merchant' };
 
   return prisma.priceSource.upsert({
     where: { code },
