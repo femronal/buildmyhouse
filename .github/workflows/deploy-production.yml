@@ -87,6 +87,14 @@ jobs:
       - name: Build backend
         run: pnpm --filter @buildmyhouse/backend build
 
+      - name: Free disk space before Docker build
+        run: |
+          # GitHub runners are tight on disk; prune unused images/caches first.
+          df -h
+          docker system prune -af || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc || true
+          df -h
+
       - name: Build and push Docker image
         run: |
           docker build --platform linux/amd64 \
@@ -95,10 +103,11 @@ jobs:
             -f apps/backend/Dockerfile \
             --build-arg NODE_ENV=production \
             .
+          docker images
           docker push $ECR_REGISTRY/$ECR_REPO:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPO:latest
 
-      # Keeps ECS container start command in sync with apps/backend/Dockerfile (prisma generate + migrate).
+      # Keeps ECS container start command in sync with apps/backend/Dockerfile (migrate + start).
       - name: Register ECS task definition (backend)
         id: backend-taskdef
         run: |

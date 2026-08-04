@@ -44,19 +44,19 @@ COPY packages/*/package.json ./packages/*/
 # Install production deps for backend workspace only (ensures express is present at runtime)
 RUN pnpm --filter @buildmyhouse/backend... install --prod --no-frozen-lockfile
 
-# Copy built application and Prisma files
+# Copy built application and Prisma schema/migrations
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/prisma ./apps/backend/prisma
-# Reuse the Prisma Client generated in the builder (avoids OOM on small Fargate tasks).
-COPY --from=builder /app/node_modules/.pnpm ./node_modules/.pnpm
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/.modules.yaml ./node_modules/.modules.yaml
 
+# Generate Prisma Client in the production image.
+# Do NOT copy builder node_modules/.pnpm — that layer is multi‑GB (includes
+# devDependencies) and has been breaking GHA docker build/push since 89d3e88.
 WORKDIR /app/apps/backend
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+RUN pnpm prisma:generate
 
 # Expose port
 EXPOSE 3001
 
-# Migrations + start only — Prisma Client is baked into the image at build time.
+# Migrations + start — Prisma Client is already baked into the image.
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
