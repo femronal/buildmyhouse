@@ -52,29 +52,29 @@ enum ServicePageRegion {
 }
 
 model User {
-  id                       String    @id @default(uuid())
-  email                    String    @unique
-  password                 String // Hashed password
-  phone                    String?
-  address                  String?
-  city                     String?
-  state                    String?
-  country                  String?
-  pictureUrl               String?
-  fullName                 String
-  role                     String // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
-  verified                 Boolean   @default(false)
-  homeownerTermsAcceptedAt DateTime?
-  gcTermsAcceptedAt        DateTime?
-  profileSetupCompleted    Boolean   @default(false)
-  managedParticipant       Boolean   @default(false)
-  accessClaimedAt          DateTime?
-  adminDashboardAccess     Boolean   @default(false)
-  stripeCustomerId         String?   @unique
+  id                           String    @id @default(uuid())
+  email                        String    @unique
+  password                     String // Hashed password
+  phone                        String?
+  address                      String?
+  city                         String?
+  state                        String?
+  country                      String?
+  pictureUrl                   String?
+  fullName                     String
+  role                         String // 'homeowner' | 'general_contractor' | 'subcontractor' | 'vendor' | 'admin'
+  verified                     Boolean   @default(false)
+  homeownerTermsAcceptedAt     DateTime?
+  gcTermsAcceptedAt            DateTime?
+  profileSetupCompleted        Boolean   @default(false)
+  managedParticipant           Boolean   @default(false)
+  accessClaimedAt              DateTime?
+  adminDashboardAccess         Boolean   @default(false)
+  stripeCustomerId             String?   @unique
   /// Stage 8 — PI sub-permissions. Empty array = all PI permissions (backward compatible for admins).
-  priceIntelligencePermissions String[] @default([])
-  createdAt                DateTime  @default(now())
-  updatedAt                DateTime  @updatedAt
+  priceIntelligencePermissions String[]  @default([])
+  createdAt                    DateTime  @default(now())
+  updatedAt                    DateTime  @updatedAt
 
   // Relations
   homeownerProjects            Project[]               @relation("HomeownerProjects")
@@ -114,17 +114,30 @@ model User {
   priceReviewApprovals   PriceProfessionalReview[]    @relation("PriceReviewApprovals")
 
   // Price intelligence ops (Stage 8)
-  priceReviewCasesAssigned       PriceReviewCase[]              @relation("PriceReviewCaseAssignee")
-  priceReviewCaseEvents          PriceReviewCaseEvent[]         @relation("PriceReviewCaseEventActor")
-  priceObservationCorrections    PriceObservationCorrection[]   @relation("PriceObservationCorrectionCreator")
-  priceManualEntriesCreated      ManualPriceEntry[]             @relation("ManualPriceEntryCreator")
-  priceManualEntriesReviewed     ManualPriceEntry[]             @relation("ManualPriceEntryReviewer")
-  priceMerchantSubmissions       MerchantPriceSubmission[]      @relation("MerchantSubmissionCreator")
-  priceMerchantItemReviews       MerchantPriceSubmissionItem[]  @relation("MerchantItemReviewer")
-  priceSourcesDisabled           PriceSource[]                  @relation("PriceSourceDisabledBy")
-  priceReportRevisionsCreated    PriceReportRevision[]          @relation("PriceReportRevisionCreator")
-  priceIntelligenceAuditEntries  PriceIntelligenceAuditLog[]    @relation("PriceIntelligenceAuditActor")
-  priceIntelligenceReviewerProfile PriceIntelligenceReviewer?   @relation("PriceIntelligenceReviewerUser")
+  priceReviewCasesAssigned         PriceReviewCase[]             @relation("PriceReviewCaseAssignee")
+  priceReviewCaseEvents            PriceReviewCaseEvent[]        @relation("PriceReviewCaseEventActor")
+  priceObservationCorrections      PriceObservationCorrection[]  @relation("PriceObservationCorrectionCreator")
+  priceManualEntriesCreated        ManualPriceEntry[]            @relation("ManualPriceEntryCreator")
+  priceManualEntriesReviewed       ManualPriceEntry[]            @relation("ManualPriceEntryReviewer")
+  priceMerchantSubmissions         MerchantPriceSubmission[]     @relation("MerchantSubmissionCreator")
+  priceMerchantItemReviews         MerchantPriceSubmissionItem[] @relation("MerchantItemReviewer")
+  priceSourcesDisabled             PriceSource[]                 @relation("PriceSourceDisabledBy")
+  priceReportRevisionsCreated      PriceReportRevision[]         @relation("PriceReportRevisionCreator")
+  priceIntelligenceAuditEntries    PriceIntelligenceAuditLog[]   @relation("PriceIntelligenceAuditActor")
+  priceIntelligenceReviewerProfile PriceIntelligenceReviewer?    @relation("PriceIntelligenceReviewerUser")
+
+  // People & HR
+  staffProfile                StaffProfile?         @relation("StaffProfileUser")
+  managedStaff                StaffProfile[]        @relation("StaffManager")
+  headedDepartments           Department[]          @relation("DepartmentHead")
+  hrDocumentsUploaded         HrDocument[]          @relation("HrDocumentUploader")
+  hrCommunicationsSent        HrCommunication[]     @relation("HrCommunicationSender")
+  hrPoliciesCreated           HrPolicy[]            @relation("HrPolicyCreator")
+  hrPoliciesUpdated           HrPolicy[]            @relation("HrPolicyUpdater")
+  hrAuditEntries              HrAuditLog[]          @relation("HrAuditActor")
+  onboardingTasksCompleted    OnboardingTask[]      @relation("OnboardingTaskCompleter")
+  staffRoleAssignmentsGranted StaffRoleAssignment[] @relation("StaffRoleAssignmentGranter")
+  hiringManagerCandidates     Candidate[]           @relation("CandidateHiringManager")
 
   @@map("users")
 }
@@ -1243,35 +1256,35 @@ model PriceLocation {
 }
 
 model PriceSource {
-  id           String    @id @default(uuid())
-  code         String    @unique // machine slug, e.g. 'jiji-ng'
-  name         String
-  tier         Int // evidence tier (1 = strongest)
-  accessStatus String // SourceAccessStatus values (ethics register)
-  accessNote   String?
-  baseUrl      String?
-  deletedAt    DateTime?
+  id                  String    @id @default(uuid())
+  code                String    @unique // machine slug, e.g. 'jiji-ng'
+  name                String
+  tier                Int // evidence tier (1 = strongest)
+  accessStatus        String // SourceAccessStatus values (ethics register)
+  accessNote          String?
+  baseUrl             String?
+  deletedAt           DateTime?
   // Stage 8 — source health monitor
-  healthStatus         String    @default("unknown") // 'healthy' | 'degraded' | 'failing' | 'disabled' | 'unknown'
-  lastSuccessAt        DateTime?
-  lastFailureAt        DateTime?
-  consecutiveFailures  Int       @default(0)
-  successRate          Float?
-  parseSuccessRate     Float?
-  avgLatencyMs         Int?
-  disabledAt           DateTime?
-  disabledByAdminId    String?
-  disabledReason       String?
-  healthNote           String?
-  lastCheckedAt        DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  healthStatus        String    @default("unknown") // 'healthy' | 'degraded' | 'failing' | 'disabled' | 'unknown'
+  lastSuccessAt       DateTime?
+  lastFailureAt       DateTime?
+  consecutiveFailures Int       @default(0)
+  successRate         Float?
+  parseSuccessRate    Float?
+  avgLatencyMs        Int?
+  disabledAt          DateTime?
+  disabledByAdminId   String?
+  disabledReason      String?
+  healthNote          String?
+  lastCheckedAt       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  sellers      PriceSeller[]
-  observations PriceObservation[]
+  sellers         PriceSeller[]
+  observations    PriceObservation[]
   healthSnapshots SourceHealthSnapshot[]
-  reviewCases  PriceReviewCase[]
-  disabledByAdmin User? @relation("PriceSourceDisabledBy", fields: [disabledByAdminId], references: [id])
+  reviewCases     PriceReviewCase[]
+  disabledByAdmin User?                  @relation("PriceSourceDisabledBy", fields: [disabledByAdminId], references: [id])
 
   @@index([tier])
   @@index([healthStatus])
@@ -1372,20 +1385,20 @@ model PriceObservation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  family               PriceProductFamily          @relation(fields: [familyId], references: [id])
-  product              PriceProduct?               @relation(fields: [productId], references: [id])
-  source               PriceSource                 @relation(fields: [sourceId], references: [id])
-  seller               PriceSeller?                @relation(fields: [sellerId], references: [id])
-  sellerLocation       PriceLocation?              @relation("ObservationSellerLocation", fields: [sellerLocationId], references: [id])
-  deliveryLocation     PriceLocation?              @relation("ObservationDeliveryLocation", fields: [deliveryLocationId], references: [id])
-  sourceMarketLocation PriceLocation?              @relation("ObservationSourceMarketLocation", fields: [sourceMarketLocationId], references: [id])
-  originalUnit         PriceUnit                   @relation("ObservationOriginalUnit", fields: [originalUnitCode], references: [code])
-  normalizedUnit       PriceUnit?                  @relation("ObservationNormalizedUnit", fields: [normalizedUnitCode], references: [code])
-  conversionRule       PriceConversionRule?        @relation(fields: [conversionRuleId], references: [id])
-  evidenceDocument     PriceEvidenceDocument?      @relation(fields: [evidenceDocumentId], references: [id])
-  supersededBy         PriceObservation?           @relation("ObservationSupersession", fields: [supersededByObservationId], references: [id])
-  supersedes           PriceObservation[]          @relation("ObservationSupersession")
-  attributes           PriceObservationAttribute[]
+  family                 PriceProductFamily           @relation(fields: [familyId], references: [id])
+  product                PriceProduct?                @relation(fields: [productId], references: [id])
+  source                 PriceSource                  @relation(fields: [sourceId], references: [id])
+  seller                 PriceSeller?                 @relation(fields: [sellerId], references: [id])
+  sellerLocation         PriceLocation?               @relation("ObservationSellerLocation", fields: [sellerLocationId], references: [id])
+  deliveryLocation       PriceLocation?               @relation("ObservationDeliveryLocation", fields: [deliveryLocationId], references: [id])
+  sourceMarketLocation   PriceLocation?               @relation("ObservationSourceMarketLocation", fields: [sourceMarketLocationId], references: [id])
+  originalUnit           PriceUnit                    @relation("ObservationOriginalUnit", fields: [originalUnitCode], references: [code])
+  normalizedUnit         PriceUnit?                   @relation("ObservationNormalizedUnit", fields: [normalizedUnitCode], references: [code])
+  conversionRule         PriceConversionRule?         @relation(fields: [conversionRuleId], references: [id])
+  evidenceDocument       PriceEvidenceDocument?       @relation(fields: [evidenceDocumentId], references: [id])
+  supersededBy           PriceObservation?            @relation("ObservationSupersession", fields: [supersededByObservationId], references: [id])
+  supersedes             PriceObservation[]           @relation("ObservationSupersession")
+  attributes             PriceObservationAttribute[]
   correctionsAsOriginal  PriceObservationCorrection[] @relation("CorrectionOriginal")
   correctionsAsCorrected PriceObservationCorrection[] @relation("CorrectionCorrected")
   reviewCases            PriceReviewCase[]
@@ -1431,10 +1444,10 @@ model PriceEvidenceDocument {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  uploadedBy      User?                 @relation("PriceEvidenceUploader", fields: [uploadedByUserId], references: [id])
-  researchRequest PriceResearchRequest? @relation(fields: [researchRequestId], references: [id])
-  observations    PriceObservation[]
-  manualEntries   ManualPriceEntry[]
+  uploadedBy          User?                     @relation("PriceEvidenceUploader", fields: [uploadedByUserId], references: [id])
+  researchRequest     PriceResearchRequest?     @relation(fields: [researchRequestId], references: [id])
+  observations        PriceObservation[]
+  manualEntries       ManualPriceEntry[]
   merchantSubmissions MerchantPriceSubmission[]
 
   @@index([uploadedByUserId])
@@ -1565,25 +1578,25 @@ model PriceResearchClarification {
 
 /// Completed report delivered to the user. Original payload preserved via revisions.
 model PriceReport {
-  id                 String    @id @default(uuid())
-  requestId          String    @unique
-  userId             String? // null until an anonymous report is saved to an account (Stage 6)
-  anonymousSessionId String? // anonymous owner session (Stage 6)
-  accessToken        String?   @unique // secure random token for anonymous report access (Stage 6)
-  status             String // 'delivered' | 'partial' | 'failed'
-  payload            Json // current consumer-facing snapshot (original kept in revision 1)
+  id                   String    @id @default(uuid())
+  requestId            String    @unique
+  userId               String? // null until an anonymous report is saved to an account (Stage 6)
+  anonymousSessionId   String? // anonymous owner session (Stage 6)
+  accessToken          String?   @unique // secure random token for anonymous report access (Stage 6)
+  status               String // 'delivered' | 'partial' | 'failed'
+  payload              Json // current consumer-facing snapshot (original kept in revision 1)
   /// Stage 8 — shown to customer when a material correction lands after delivery
   customerUpdateNotice String?
-  currentVersion       Int      @default(1)
-  generatedAt        DateTime  @default(now())
-  expiresAt          DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  currentVersion       Int       @default(1)
+  generatedAt          DateTime  @default(now())
+  expiresAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  request   PriceResearchRequest @relation(fields: [requestId], references: [id])
-  user      User?                @relation("PriceReports", fields: [userId], references: [id])
-  items     PriceReportItem[]
-  revisions PriceReportRevision[]
+  request     PriceResearchRequest  @relation(fields: [requestId], references: [id])
+  user        User?                 @relation("PriceReports", fields: [userId], references: [id])
+  items       PriceReportItem[]
+  revisions   PriceReportRevision[]
   reviewCases PriceReviewCase[]
 
   @@index([userId, createdAt])
@@ -1915,24 +1928,24 @@ model PriceCheckPaymentOrder {
 }
 
 model PriceCheckPaymentLineItem {
-  id                      String    @id @default(uuid())
-  paymentOrderId          String
-  clientItemKey           String // stable key within the quote/order
-  familyKey               String
-  kind                    String // 'product' | 'service'
-  productLabel            String
-  locationKey             String
-  rawProductName          String
-  answersJson             Json
-  free                    Boolean   @default(false)
-  amountKobo              Int
-  researchRequestId       String?
-  reportId                String?
-  fulfilmentStatus        String    @default("pending") // 'pending' | 'ready' | 'processing' | 'fulfilled' | 'technical_failure' | 'refunded'
-  technicalFailureReason  String?
-  fulfilledAt             DateTime?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+  id                     String    @id @default(uuid())
+  paymentOrderId         String
+  clientItemKey          String // stable key within the quote/order
+  familyKey              String
+  kind                   String // 'product' | 'service'
+  productLabel           String
+  locationKey            String
+  rawProductName         String
+  answersJson            Json
+  free                   Boolean   @default(false)
+  amountKobo             Int
+  researchRequestId      String?
+  reportId               String?
+  fulfilmentStatus       String    @default("pending") // 'pending' | 'ready' | 'processing' | 'fulfilled' | 'technical_failure' | 'refunded'
+  technicalFailureReason String?
+  fulfilledAt            DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
   paymentOrder  PriceCheckPaymentOrder   @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
   unitEconomics PriceCheckUnitEconomics?
@@ -2005,8 +2018,8 @@ model PriceCheckUnitEconomics {
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
-  paymentOrder PriceCheckPaymentOrder     @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
-  lineItem     PriceCheckPaymentLineItem  @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
+  paymentOrder PriceCheckPaymentOrder    @relation(fields: [paymentOrderId], references: [id], onDelete: Cascade)
+  lineItem     PriceCheckPaymentLineItem @relation(fields: [lineItemId], references: [id], onDelete: Cascade)
 
   @@index([paymentOrderId])
   @@index([calculatedAt])
@@ -2051,13 +2064,13 @@ model PriceReviewCase {
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
-  report             PriceReport?              @relation(fields: [reportId], references: [id])
-  reportItem         PriceReportItem?          @relation(fields: [reportItemId], references: [id])
-  observation        PriceObservation?         @relation(fields: [observationId], references: [id])
-  source             PriceSource?              @relation(fields: [sourceId], references: [id])
-  merchantSubmission MerchantPriceSubmission?  @relation(fields: [merchantSubmissionId], references: [id])
-  manualEntryItem    ManualPriceEntryItem?     @relation(fields: [manualEntryItemId], references: [id])
-  assignedReviewer   User?                     @relation("PriceReviewCaseAssignee", fields: [assignedReviewerId], references: [id])
+  report             PriceReport?                 @relation(fields: [reportId], references: [id])
+  reportItem         PriceReportItem?             @relation(fields: [reportItemId], references: [id])
+  observation        PriceObservation?            @relation(fields: [observationId], references: [id])
+  source             PriceSource?                 @relation(fields: [sourceId], references: [id])
+  merchantSubmission MerchantPriceSubmission?     @relation(fields: [merchantSubmissionId], references: [id])
+  manualEntryItem    ManualPriceEntryItem?        @relation(fields: [manualEntryItemId], references: [id])
+  assignedReviewer   User?                        @relation("PriceReviewCaseAssignee", fields: [assignedReviewerId], references: [id])
   events             PriceReviewCaseEvent[]
   corrections        PriceObservationCorrection[]
   reportRevisions    PriceReportRevision[]
@@ -2073,15 +2086,15 @@ model PriceReviewCase {
 }
 
 model PriceReviewCaseEvent {
-  id              String   @id @default(uuid())
-  caseId          String
-  eventType       String // 'created' | 'assigned' | 'transition' | 'note' | 'priority_override' | 'correction' | 'approval' | 'rejection'
-  fromStatus      String?
-  toStatus        String?
-  note            String?
-  metadata        Json?
-  actorAdminId    String?
-  createdAt       DateTime @default(now())
+  id           String   @id @default(uuid())
+  caseId       String
+  eventType    String // 'created' | 'assigned' | 'transition' | 'note' | 'priority_override' | 'correction' | 'approval' | 'rejection'
+  fromStatus   String?
+  toStatus     String?
+  note         String?
+  metadata     Json?
+  actorAdminId String?
+  createdAt    DateTime @default(now())
 
   case  PriceReviewCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
   actor User?           @relation("PriceReviewCaseEventActor", fields: [actorAdminId], references: [id])
@@ -2113,19 +2126,19 @@ model PriceObservationCorrection {
 }
 
 model ManualPriceEntry {
-  id               String    @id @default(uuid())
-  status           String    @default("draft") // 'draft' | 'submitted' | 'approved' | 'rejected' | 'partially_approved'
-  title            String
-  notes            String?
-  evidenceFileRef  String?
+  id                 String    @id @default(uuid())
+  status             String    @default("draft") // 'draft' | 'submitted' | 'approved' | 'rejected' | 'partially_approved'
+  title              String
+  notes              String?
+  evidenceFileRef    String?
   evidenceDocumentId String?
-  locationKey      String?
-  createdByAdminId String
-  reviewedByAdminId String?
-  reviewedAt       DateTime?
-  reviewNote       String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  locationKey        String?
+  createdByAdminId   String
+  reviewedByAdminId  String?
+  reviewedAt         DateTime?
+  reviewNote         String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   createdBy        User                   @relation("ManualPriceEntryCreator", fields: [createdByAdminId], references: [id])
   reviewedBy       User?                  @relation("ManualPriceEntryReviewer", fields: [reviewedByAdminId], references: [id])
@@ -2138,22 +2151,22 @@ model ManualPriceEntry {
 }
 
 model ManualPriceEntryItem {
-  id               String    @id @default(uuid())
+  id               String   @id @default(uuid())
   entryId          String
   familyKey        String?
   productLabel     String
   brandName        String?
   originalWording  String
-  originalPrice    Decimal   @db.Decimal(14, 2)
-  currencyCode     String    @default("NGN") @db.Char(3)
+  originalPrice    Decimal  @db.Decimal(14, 2)
+  currencyCode     String   @default("NGN") @db.Char(3)
   originalUnitCode String
   locationKey      String?
   specification    Json?
-  status           String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  status           String   @default("pending") // 'pending' | 'approved' | 'rejected'
   rejectionReason  String?
   observationId    String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   entry       ManualPriceEntry  @relation(fields: [entryId], references: [id], onDelete: Cascade)
   reviewCases PriceReviewCase[]
@@ -2186,22 +2199,22 @@ model PriceMerchant {
 }
 
 model MerchantPriceSubmission {
-  id               String    @id @default(uuid())
-  merchantId       String?
-  status           String    @default("draft") // 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'partially_approved'
-  channel          String    @default("whatsapp") // 'whatsapp' | 'email' | 'upload' | 'admin'
-  title            String
-  notes            String?
-  evidenceFileRef  String?
+  id                 String    @id @default(uuid())
+  merchantId         String?
+  status             String    @default("draft") // 'draft' | 'submitted' | 'in_review' | 'approved' | 'rejected' | 'partially_approved'
+  channel            String    @default("whatsapp") // 'whatsapp' | 'email' | 'upload' | 'admin'
+  title              String
+  notes              String?
+  evidenceFileRef    String?
   evidenceDocumentId String?
-  createdByAdminId String?
-  submittedAt      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdByAdminId   String?
+  submittedAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  merchant         PriceMerchant?          @relation(fields: [merchantId], references: [id])
-  createdBy        User?                   @relation("MerchantSubmissionCreator", fields: [createdByAdminId], references: [id])
-  evidenceDocument PriceEvidenceDocument?  @relation(fields: [evidenceDocumentId], references: [id])
+  merchant         PriceMerchant?                @relation(fields: [merchantId], references: [id])
+  createdBy        User?                         @relation("MerchantSubmissionCreator", fields: [createdByAdminId], references: [id])
+  evidenceDocument PriceEvidenceDocument?        @relation(fields: [evidenceDocumentId], references: [id])
   items            MerchantPriceSubmissionItem[]
   reviewCases      PriceReviewCase[]
 
@@ -2211,24 +2224,24 @@ model MerchantPriceSubmission {
 }
 
 model MerchantPriceSubmissionItem {
-  id               String    @id @default(uuid())
-  submissionId     String
-  familyKey        String?
-  productLabel     String
-  brandName        String?
-  originalWording  String
-  originalPrice    Decimal   @db.Decimal(14, 2)
-  currencyCode     String    @default("NGN") @db.Char(3)
-  originalUnitCode String
-  locationKey      String?
-  specification    Json?
-  status           String    @default("pending") // 'pending' | 'approved' | 'rejected'
-  rejectionReason  String?
+  id                String    @id @default(uuid())
+  submissionId      String
+  familyKey         String?
+  productLabel      String
+  brandName         String?
+  originalWording   String
+  originalPrice     Decimal   @db.Decimal(14, 2)
+  currencyCode      String    @default("NGN") @db.Char(3)
+  originalUnitCode  String
+  locationKey       String?
+  specification     Json?
+  status            String    @default("pending") // 'pending' | 'approved' | 'rejected'
+  rejectionReason   String?
   reviewedByAdminId String?
-  reviewedAt       DateTime?
-  observationId    String?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  reviewedAt        DateTime?
+  observationId     String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   submission MerchantPriceSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   reviewedBy User?                   @relation("MerchantItemReviewer", fields: [reviewedByAdminId], references: [id])
@@ -2238,17 +2251,17 @@ model MerchantPriceSubmissionItem {
 }
 
 model SourceHealthSnapshot {
-  id                   String   @id @default(uuid())
-  sourceId             String
-  healthStatus         String
-  successRate          Float?
-  parseSuccessRate     Float?
-  avgLatencyMs         Int?
-  consecutiveFailures  Int      @default(0)
-  checkType            String   @default("manual") // 'manual' | 'scheduled' | 'pipeline'
-  note                 String?
-  checkedByAdminId     String?
-  createdAt            DateTime @default(now())
+  id                  String   @id @default(uuid())
+  sourceId            String
+  healthStatus        String
+  successRate         Float?
+  parseSuccessRate    Float?
+  avgLatencyMs        Int?
+  consecutiveFailures Int      @default(0)
+  checkType           String   @default("manual") // 'manual' | 'scheduled' | 'pipeline'
+  note                String?
+  checkedByAdminId    String?
+  createdAt           DateTime @default(now())
 
   source PriceSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
 
@@ -2295,31 +2308,433 @@ model PriceIntelligenceReviewer {
 
 /// Singleton-style key-value settings (SLAs, thresholds, etc.).
 model PriceIntelligenceSetting {
-  id        String   @id @default(uuid())
-  key       String   @unique
-  valueJson Json
+  id               String   @id @default(uuid())
+  key              String   @unique
+  valueJson        Json
   updatedByAdminId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("price_intelligence_settings")
 }
 
 /// Optional search-demand mapping for unmatched terms (aggregates may also use PriceQuery).
 model PriceUnmatchedTerm {
-  id              String   @id @default(uuid())
-  normalizedTerm  String   @unique
-  sampleRawQuery  String
-  requestCount    Int      @default(1)
-  paidIntentCount Int      @default(0)
-  lastSeenAt      DateTime @default(now())
-  firstSeenAt     DateTime @default(now())
+  id                 String   @id @default(uuid())
+  normalizedTerm     String   @unique
+  sampleRawQuery     String
+  requestCount       Int      @default(1)
+  paidIntentCount    Int      @default(0)
+  lastSeenAt         DateTime @default(now())
+  firstSeenAt        DateTime @default(now())
   suggestedFamilyKey String?
-  status          String   @default("open") // 'open' | 'mapped' | 'ignored'
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  status             String   @default("open") // 'open' | 'mapped' | 'ignored'
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([status, requestCount])
   @@index([lastSeenAt])
   @@map("price_unmatched_terms")
+}
+
+// =============================================================================
+// People & HR
+// =============================================================================
+
+model Department {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  headUserId  String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  head       User?          @relation("DepartmentHead", fields: [headUserId], references: [id])
+  positions  Position[]
+  staff      StaffProfile[]
+  candidates Candidate[]
+
+  @@index([archivedAt])
+  @@map("hr_departments")
+}
+
+model Position {
+  id                    String   @id @default(uuid())
+  departmentId          String
+  name                  String
+  description           String?
+  purpose               String?
+  responsibilities      String[] @default([])
+  requiredSkills        String[] @default([])
+  reportsToPositionId   String?
+  allowedWorkforceTypes String[] @default([])
+  kpiDefinitions        Json?
+  compensationMin       Decimal? @db.Decimal(14, 2)
+  compensationMax       Decimal? @db.Decimal(14, 2)
+  currencyCode          String   @default("NGN") @db.Char(3)
+  active                Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  department        Department     @relation(fields: [departmentId], references: [id])
+  reportsToPosition Position?      @relation("PositionReporting", fields: [reportsToPositionId], references: [id])
+  directReports     Position[]     @relation("PositionReporting")
+  staff             StaffProfile[]
+  candidates        Candidate[]
+
+  @@unique([departmentId, name])
+  @@index([departmentId, active])
+  @@map("hr_positions")
+}
+
+model StaffProfile {
+  id                      String    @id @default(uuid())
+  userId                  String?   @unique
+  candidateId             String?   @unique
+  firstName               String
+  lastName                String
+  fullName                String
+  email                   String
+  phone                   String?
+  pictureUrl              String?
+  address                 String?
+  location                String?
+  emergencyContact        String?
+  emergencyPhone          String?
+  workforceType           String // employee | fixed_term | consultant | independent_contractor | intern | freelancer | executive | temporary
+  departmentId            String?
+  positionId              String?
+  managerUserId           String?
+  workLocation            String?
+  startDate               DateTime?
+  endDate                 DateTime?
+  probationEndDate        DateTime?
+  employmentStatus        String    @default("onboarding") // onboarding | active | probation | leave | suspended | exited
+  // Compensation — restricted; never return without hr.compensation.view
+  baseCompensation        Decimal?  @db.Decimal(14, 2)
+  transportAllowance      Decimal?  @db.Decimal(14, 2)
+  communicationAllowance  Decimal?  @db.Decimal(14, 2)
+  otherAllowances         Decimal?  @db.Decimal(14, 2)
+  bonusNotes              String?
+  paymentFrequency        String? // monthly | weekly | per_project | retainer
+  currencyCode            String    @default("NGN") @db.Char(3)
+  // Offboarding
+  exitDate                DateTime?
+  exitReason              String?
+  finalHandoverNotes      String?
+  companyPropertyReturned Boolean   @default(false)
+  accountDisabledAt       DateTime?
+  permissionsRevokedAt    DateTime?
+  documentsArchivedAt     DateTime?
+  exitNotes               String?
+  notes                   String?
+  archivedAt              DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  user               User?                   @relation("StaffProfileUser", fields: [userId], references: [id])
+  candidate          Candidate?              @relation("HiredCandidate", fields: [candidateId], references: [id])
+  department         Department?             @relation(fields: [departmentId], references: [id])
+  position           Position?               @relation(fields: [positionId], references: [id])
+  manager            User?                   @relation("StaffManager", fields: [managerUserId], references: [id])
+  roleAssignments    StaffRoleAssignment[]
+  documents          HrDocument[]
+  onboardingTasks    OnboardingTask[]
+  performanceGoals   StaffPerformanceGoal[]
+  performanceReviews PerformanceReview[]
+  communications     HrCommunication[]
+  policyAcks         PolicyAcknowledgement[]
+
+  @@index([employmentStatus])
+  @@index([departmentId])
+  @@index([workforceType])
+  @@index([email])
+  @@map("hr_staff_profiles")
+}
+
+model Candidate {
+  id                     String    @id @default(uuid())
+  firstName              String
+  lastName               String
+  fullName               String
+  email                  String
+  phone                  String?
+  location               String?
+  departmentId           String?
+  positionId             String?
+  cvUrl                  String?
+  applicationDate        DateTime  @default(now())
+  source                 String?
+  stage                  String    @default("applied") // applied | screening | interview | assessment | paid_pilot | reference_check | offer | hired | rejected | withdrawn
+  hiringManagerUserId    String?
+  interviewDate          DateTime?
+  interviewNotes         String?
+  interviewScore         Float?
+  assessmentInstructions String?
+  assessmentSubmission   String?
+  assessmentScore        Float?
+  pilotNotes             String?
+  referencesJson         Json?
+  referenceCheckNotes    String?
+  offerDetails           String?
+  rejectionReason        String?
+  internalNotes          String?
+  archivedAt             DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  department     Department?           @relation(fields: [departmentId], references: [id])
+  position       Position?             @relation(fields: [positionId], references: [id])
+  hiringManager  User?                 @relation("CandidateHiringManager", fields: [hiringManagerUserId], references: [id])
+  hiredStaff     StaffProfile?         @relation("HiredCandidate")
+  stageEvents    CandidateStageEvent[]
+  documents      HrDocument[]
+  communications HrCommunication[]
+
+  @@index([stage])
+  @@index([departmentId, positionId])
+  @@index([email])
+  @@map("hr_candidates")
+}
+
+model CandidateStageEvent {
+  id          String   @id @default(uuid())
+  candidateId String
+  fromStage   String?
+  toStage     String
+  note        String?
+  actorUserId String?
+  createdAt   DateTime @default(now())
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId, createdAt])
+  @@map("hr_candidate_stage_events")
+}
+
+model AdminPermission {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  groupLabel  String
+  description String?
+  createdAt   DateTime @default(now())
+
+  rolePermissions AdminRolePermission[]
+
+  @@index([groupLabel])
+  @@map("hr_admin_permissions")
+}
+
+model AdminRole {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  name        String
+  description String?
+  isSystem    Boolean   @default(false)
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  permissions AdminRolePermission[]
+  assignments StaffRoleAssignment[]
+
+  @@map("hr_admin_roles")
+}
+
+model AdminRolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       AdminRole       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission AdminPermission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("hr_admin_role_permissions")
+}
+
+model StaffRoleAssignment {
+  id              String    @id @default(uuid())
+  staffProfileId  String
+  roleId          String
+  grantedByUserId String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  staffProfile StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+  role         AdminRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  grantedBy    User?        @relation("StaffRoleAssignmentGranter", fields: [grantedByUserId], references: [id])
+
+  @@index([staffProfileId, revokedAt])
+  @@index([roleId])
+  @@map("hr_staff_role_assignments")
+}
+
+model HrDocument {
+  id               String    @id @default(uuid())
+  category         String // cv | id | employment_contract | consultancy_agreement | nda | offer_letter | reference | probation_letter | performance_warning | promotion_letter | termination_letter | other
+  staffProfileId   String?
+  candidateId      String?
+  fileUrl          String
+  fileName         String?
+  uploadedByUserId String?
+  effectiveDate    DateTime?
+  expiryDate       DateTime?
+  signatureStatus  String    @default("unsigned") // unsigned | pending | signed
+  notes            String?
+  archivedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  staffProfile StaffProfile? @relation(fields: [staffProfileId], references: [id])
+  candidate    Candidate?    @relation(fields: [candidateId], references: [id])
+  uploadedBy   User?         @relation("HrDocumentUploader", fields: [uploadedByUserId], references: [id])
+
+  @@index([staffProfileId])
+  @@index([candidateId])
+  @@index([expiryDate])
+  @@index([category])
+  @@map("hr_documents")
+}
+
+model OnboardingTask {
+  id                String    @id @default(uuid())
+  staffProfileId    String
+  key               String
+  title             String
+  status            String    @default("pending") // pending | completed | waived
+  completedAt       DateTime?
+  completedByUserId String?
+  sortOrder         Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  staffProfile StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+  completedBy  User?        @relation("OnboardingTaskCompleter", fields: [completedByUserId], references: [id])
+
+  @@unique([staffProfileId, key])
+  @@index([staffProfileId, status])
+  @@map("hr_onboarding_tasks")
+}
+
+model StaffPerformanceGoal {
+  id                 String   @id @default(uuid())
+  staffProfileId     String
+  kpi                String
+  target             String
+  period             String // e.g. 2026-08 or Q3-2026
+  actualResult       String?
+  status             String   @default("open") // open | on_track | at_risk | met | missed
+  managerComments    String?
+  reviewType         String   @default("monthly") // monthly | probation | performance_review | improvement_plan
+  bonusEligibleNotes String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  staffProfile StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+
+  @@index([staffProfileId, period])
+  @@map("hr_staff_performance_goals")
+}
+
+model PerformanceReview {
+  id              String   @id @default(uuid())
+  staffProfileId  String
+  reviewType      String // probation | performance_review | improvement_plan
+  period          String?
+  summary         String?
+  rating          String?
+  managerComments String?
+  reviewedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  staffProfile StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+
+  @@index([staffProfileId, reviewedAt])
+  @@map("hr_performance_reviews")
+}
+
+model HrCommunication {
+  id             String    @id @default(uuid())
+  templateKey    String?
+  subject        String
+  bodyText       String?
+  bodyHtml       String?
+  recipientEmail String
+  staffProfileId String?
+  candidateId    String?
+  status         String    @default("queued") // queued | sent | failed
+  sentByUserId   String?
+  providerId     String?
+  errorMessage   String?
+  sentAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  staffProfile StaffProfile? @relation(fields: [staffProfileId], references: [id])
+  candidate    Candidate?    @relation(fields: [candidateId], references: [id])
+  sentBy       User?         @relation("HrCommunicationSender", fields: [sentByUserId], references: [id])
+
+  @@index([candidateId, createdAt])
+  @@index([staffProfileId, createdAt])
+  @@index([status, createdAt])
+  @@map("hr_communications")
+}
+
+model HrPolicy {
+  id                 String    @id @default(uuid())
+  title              String
+  category           String // employment | conduct_ethics | human_resources | operations | sales | marketing | finance_expenses | compliance | data_security | communication | health_safety | leave_attendance
+  content            String
+  version            String    @default("1.0")
+  effectiveDate      DateTime?
+  status             String    @default("draft") // draft | active | archived
+  appliesCompanyWide Boolean   @default(true)
+  departmentIds      String[]  @default([])
+  positionIds        String[]  @default([])
+  createdByUserId    String?
+  updatedByUserId    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  createdBy        User?                   @relation("HrPolicyCreator", fields: [createdByUserId], references: [id])
+  updatedBy        User?                   @relation("HrPolicyUpdater", fields: [updatedByUserId], references: [id])
+  acknowledgements PolicyAcknowledgement[]
+
+  @@index([status, category])
+  @@map("hr_policies")
+}
+
+model PolicyAcknowledgement {
+  id             String   @id @default(uuid())
+  policyId       String
+  staffProfileId String
+  version        String
+  acknowledgedAt DateTime @default(now())
+
+  policy       HrPolicy     @relation(fields: [policyId], references: [id], onDelete: Cascade)
+  staffProfile StaffProfile @relation(fields: [staffProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([policyId, staffProfileId, version])
+  @@index([policyId])
+  @@map("hr_policy_acknowledgements")
+}
+
+model HrAuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?
+  action      String
+  entityType  String
+  entityId    String?
+  summary     String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation("HrAuditActor", fields: [actorUserId], references: [id])
+
+  @@index([entityType, entityId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("hr_audit_log")
 }

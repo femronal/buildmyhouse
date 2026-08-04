@@ -777,6 +777,13 @@ async function main() {
 
   console.log('✅ Database seed completed successfully!');
   console.log('\n📝 Test Credentials:');
+  try {
+    const { seedPeopleHr } = await import('./seeds/people-hr.seed');
+    await seedPeopleHr();
+  } catch (hrSeedError) {
+    console.warn('⚠️  People & HR seed skipped or failed:', hrSeedError);
+  }
+
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('Homeowner:');
   console.log('  Email: homeowner@example.com');

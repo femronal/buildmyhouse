@@ -38,6 +38,12 @@ test.describe('Navigation', () => {
     await expect(page.getByText(/Dispute Resolution/i)).toBeVisible();
   });
 
+  test('should navigate to People & HR', async ({ page }) => {
+    await page.getByRole('link', { name: /People & HR/i }).click();
+    await expect(page).toHaveURL(/\/people/);
+    await expect(page.getByRole('heading', { name: /People & HR/i })).toBeVisible();
+  });
+
   test('should navigate to tools hub then price checker ops', async ({ page }) => {
     await page.getByRole('link', { name: /^Tools$/i }).click();
     await expect(page).toHaveURL(/\/tools/);

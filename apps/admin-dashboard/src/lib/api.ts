@@ -144,10 +144,14 @@ export const api = {
     return response.json();
   },
   
-  uploadFile: async (file: File): Promise<{ url: string }> => {
+  uploadFile: async (
+    file: File,
+    options?: { endpoint?: '/upload/image' | '/upload/file' | '/upload/document' },
+  ): Promise<{ url: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${API_BASE_URL}/upload/image`, {
+    const endpoint = options?.endpoint || '/upload/image';
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       method: 'POST',
       headers: getHeadersForFormData(),
       body: formData,

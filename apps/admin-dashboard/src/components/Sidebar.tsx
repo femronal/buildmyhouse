@@ -16,6 +16,7 @@ import {
   LogOut, 
   X,
   Wrench,
+  UserCog,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 
@@ -30,6 +31,7 @@ const menuItems = [
   { href: '/tools', label: 'Tools', icon: Wrench },
   { href: '/articles', label: 'Content', icon: FileText },
   { href: '/emails', label: 'Emails', icon: Mail },
+  { href: '/people', label: 'People & HR', icon: UserCog },
   { href: '/admin-access', label: 'Admin Access', icon: Shield },
 ];
 

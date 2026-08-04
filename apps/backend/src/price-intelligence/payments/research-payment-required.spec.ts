@@ -29,6 +29,7 @@ describe('research.start payment_required', () => {
       catalogue as any,
       usage as any,
       null,
+      null,
     );
 
     await expect(
