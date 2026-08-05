@@ -117,12 +117,22 @@ export class AdminAccessService {
     roleKey?: string;
     q?: string;
     relationship?: string;
+    /** When true, include revoked rows even if status is unset. Default: hide revoked. */
+    includeRevoked?: boolean;
   }) {
     await this.ensureMigratedProfiles();
 
     const q = String(filters?.q || '').trim().toLowerCase();
     const profileFilter: Record<string, unknown> = {};
-    if (filters?.status) profileFilter.status = filters.status;
+    const status = String(filters?.status || '').trim();
+    if (status === 'blocked') {
+      profileFilter.status = { in: ['suspended', 'revoked'] };
+    } else if (status) {
+      profileFilter.status = status;
+    } else if (!filters?.includeRevoked) {
+      // Default: keep revoked accounts out of the main directory.
+      profileFilter.status = { not: 'revoked' };
+    }
     if (filters?.relationship) profileFilter.accessRelationship = filters.relationship;
     if (filters?.roleKey) {
       profileFilter.roleAssignments = {

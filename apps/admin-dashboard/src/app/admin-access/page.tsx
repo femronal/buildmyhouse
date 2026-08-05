@@ -53,6 +53,7 @@ export default function AdminAccessPage() {
     TABS.some((t) => t.id === initialTab) ? initialTab : 'accounts',
   );
   const [filters, setFilters] = useState<AccountFilters>({});
+  const [showRevoked, setShowRevoked] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(
     searchParams.get('user'),
@@ -62,10 +63,18 @@ export default function AdminAccessPage() {
   const { notify, feedbackModal } = useHrFeedback();
 
   const { data: stats } = useAccessStats();
-  const { data: accounts = [], isLoading, error } = useAccessAccounts({
-    ...filters,
-    q: search || undefined,
-  });
+  const accountFilters = useMemo<AccountFilters>(() => {
+    const next: AccountFilters = {
+      ...filters,
+      q: search || undefined,
+    };
+    // Explicit status filters (e.g. blocked/revoked) already control visibility.
+    if (!filters.status && showRevoked) {
+      next.includeRevoked = true;
+    }
+    return next;
+  }, [filters, search, showRevoked]);
+  const { data: accounts = [], isLoading, error } = useAccessAccounts(accountFilters);
   const { data: roles = [] } = useAccessRoles();
   const { data: permissions = [] } = useAccessPermissions();
   const { data: requests = [] } = useAccessRequests();
@@ -110,37 +119,55 @@ export default function AdminAccessPage() {
         key: 'total',
         label: 'Total Access Accounts',
         value: stats?.total ?? 0,
-        onClick: () => setFilters({}),
+        onClick: () => {
+          setShowRevoked(false);
+          setFilters({});
+        },
       },
       {
         key: 'active',
         label: 'Active Accounts',
         value: stats?.active ?? 0,
-        onClick: () => setFilters({ status: 'active' }),
+        onClick: () => {
+          setShowRevoked(false);
+          setFilters({ status: 'active' });
+        },
       },
       {
         key: 'limited',
         label: 'Limited Access',
         value: stats?.limited ?? 0,
-        onClick: () => setFilters({ status: 'active' }),
+        onClick: () => {
+          setShowRevoked(false);
+          setFilters({ status: 'active' });
+        },
       },
       {
         key: 'super',
         label: 'Super Admins',
         value: stats?.superAdmins ?? 0,
-        onClick: () => setFilters({ roleKey: 'super_admin', status: 'active' }),
+        onClick: () => {
+          setShowRevoked(false);
+          setFilters({ roleKey: 'super_admin', status: 'active' });
+        },
       },
       {
         key: 'blocked',
         label: 'Suspended / Revoked',
         value: (stats?.suspended ?? 0) + (stats?.revoked ?? 0),
-        onClick: () => setFilters({ status: 'suspended' }),
+        onClick: () => {
+          setShowRevoked(true);
+          setFilters({ status: 'blocked' });
+        },
       },
       {
         key: 'expiring',
         label: 'Temporary Access Expiring Soon',
         value: stats?.expiringSoon ?? 0,
-        onClick: () => setFilters({ status: 'active' }),
+        onClick: () => {
+          setShowRevoked(false);
+          setFilters({ status: 'active' });
+        },
       },
     ],
     [stats],
@@ -219,15 +246,45 @@ export default function AdminAccessPage() {
 
       {tab === 'accounts' && (
         <div className="space-y-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              className="w-full rounded-xl border bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm"
-              placeholder="Search by name, email, role…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative min-w-[240px] flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                className="w-full rounded-xl border bg-white py-2.5 pl-10 pr-3 text-sm shadow-sm"
+                placeholder="Search by name, email, role…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            {!filters.status && (
+              <label className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 shadow-sm">
+                <input
+                  type="checkbox"
+                  checked={showRevoked}
+                  onChange={(e) => setShowRevoked(e.target.checked)}
+                />
+                Show revoked
+              </label>
+            )}
+            {(filters.status || filters.roleKey || showRevoked) && (
+              <button
+                type="button"
+                className="rounded-xl border bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+                onClick={() => {
+                  setFilters({});
+                  setShowRevoked(false);
+                }}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
+          {!filters.status && !showRevoked && (
+            <p className="text-xs text-gray-500">
+              Revoked accounts are hidden by default. Use “Show revoked” or the Suspended /
+              Revoked card to view them.
+            </p>
+          )}
 
           <div className="overflow-hidden rounded-xl bg-white shadow">
             {isLoading ? (

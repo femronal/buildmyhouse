@@ -126,6 +126,8 @@ export type AccountFilters = {
   roleKey?: string;
   q?: string;
   relationship?: string;
+  /** Default false — revoked accounts are hidden unless explicitly requested. */
+  includeRevoked?: boolean;
 };
 
 export type GrantAccessPayload = {
@@ -164,6 +166,7 @@ export const useAccessAccounts = (filters: AccountFilters = {}) =>
       if (filters.roleKey) params.set('roleKey', filters.roleKey);
       if (filters.q) params.set('q', filters.q);
       if (filters.relationship) params.set('relationship', filters.relationship);
+      if (filters.includeRevoked) params.set('includeRevoked', 'true');
       const qs = params.toString();
       return api.get<AccessAccountListItem[]>(`/admin/access/accounts${qs ? `?${qs}` : ''}`);
     },

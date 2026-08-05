@@ -52,8 +52,15 @@ export class AdminAccessController {
     @Query('roleKey') roleKey?: string,
     @Query('q') q?: string,
     @Query('relationship') relationship?: string,
+    @Query('includeRevoked') includeRevoked?: string,
   ) {
-    return this.access.listAccounts({ status, roleKey, q, relationship });
+    return this.access.listAccounts({
+      status,
+      roleKey,
+      q,
+      relationship,
+      includeRevoked: includeRevoked === 'true' || includeRevoked === '1',
+    });
   }
 
   @Get('accounts/:userId')
