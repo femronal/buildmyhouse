@@ -6,6 +6,8 @@ export interface JWTPayload {
   sub: string; // userId
   email: string;
   role: string;
+  /** Admin access version — session revoked when it diverges from User.adminAccessVersion */
+  aav?: number;
   iat?: number;
   exp?: number;
 }
@@ -40,11 +42,18 @@ export class JwtAuthService {
   /**
    * Issue a signed JWT for an authenticated user session.
    */
-  async generateToken(userId: string, email: string, role: string, expiresIn = '30d'): Promise<string> {
+  async generateToken(
+    userId: string,
+    email: string,
+    role: string,
+    expiresIn = '30d',
+    aav?: number,
+  ): Promise<string> {
     const payload: JWTPayload = {
       sub: userId,
       email,
       role,
+      ...(role === 'admin' && aav !== undefined ? { aav } : {}),
     };
 
     const secret = this.configService.get<string>('JWT_SECRET');
@@ -77,6 +86,3 @@ export class JwtAuthService {
     return null;
   }
 }
-
-
-

@@ -20,7 +20,12 @@ export class OptionalJwtAuthGuard implements CanActivate {
     const token = parts.length === 2 && parts[0] === 'Bearer' ? parts[1] : authHeader;
     try {
       const payload: JWTPayload = await this.jwtAuthService.verifyToken(token);
-      request.user = { sub: payload.sub, email: payload.email, role: payload.role };
+      request.user = {
+        sub: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        aav: payload.aav,
+      };
     } catch {
       // Invalid/expired token → proceed anonymously; protected actions still
       // require real auth via JwtAuthGuard.

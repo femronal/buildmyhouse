@@ -24,7 +24,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isLoginPage = pathname === '/login';
+  const isPublicPage = pathname === '/login' || pathname === '/accept-invite';
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -34,7 +34,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${poppins.variable} antialiased bg-gray-100 font-poppins`}>
         <QueryClientProvider client={queryClient}>
-          {isLoginPage ? (
+          {isPublicPage ? (
             children
           ) : (
             <ProtectedRoute>

@@ -780,8 +780,10 @@ async function main() {
   try {
     const { seedPeopleHr } = await import('./seeds/people-hr.seed');
     await seedPeopleHr();
+    const { seedAdminAccess } = await import('./seeds/admin-access.seed');
+    await seedAdminAccess({ seedRolesFirst: false });
   } catch (hrSeedError) {
-    console.warn('⚠️  People & HR seed skipped or failed:', hrSeedError);
+    console.warn('⚠️  People & HR / Admin Access seed skipped or failed:', hrSeedError);
   }
 
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

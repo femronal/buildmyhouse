@@ -24,6 +24,7 @@
     "prisma:seed": "ts-node prisma/seed.ts",
     "prisma:seed:price": "ts-node prisma/seeds/price-intelligence.seed.ts",
     "prisma:seed:hr": "ts-node prisma/seeds/people-hr.seed.ts",
+    "prisma:seed:admin-access": "ts-node prisma/seeds/admin-access.seed.ts",
     "prisma:delete-projects": "ts-node prisma/delete-projects.ts",
     "prisma:delete-test-reviews": "ts-node prisma/delete-test-reviews.ts",
     "prisma:backfill-gc-contractors": "ts-node prisma/backfill-gc-contractors.ts",

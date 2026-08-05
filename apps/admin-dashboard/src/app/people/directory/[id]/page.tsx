@@ -70,8 +70,10 @@ export default function PersonDetailPage() {
             onClick={() =>
               askConfirm({
                 title: 'Offboard staff member',
-                message: `Offboard ${person.fullName}? Their dashboard access will be disabled and permissions revoked. Historical records are kept.`,
-                confirmLabel: 'Offboard',
+                message: person.user
+                  ? `${person.fullName} currently has BuildMyHouse system access. Offboarding will revoke access by default (recommended). Historical records are kept.`
+                  : `Offboard ${person.fullName}? Historical records are kept.`,
+                confirmLabel: 'Offboard & revoke access',
                 danger: true,
                 onConfirm: async () => {
                   try {
@@ -84,7 +86,11 @@ export default function PersonDetailPage() {
                         revokePermissions: true,
                       },
                     });
-                    notify('success', 'Staff offboarded', `${person.fullName} has been exited and access revoked.`);
+                    notify(
+                      'success',
+                      'Staff offboarded',
+                      `${person.fullName} has been exited${person.user ? ' and system access revoked' : ''}.`,
+                    );
                   } catch (err: any) {
                     notify('error', 'Offboard failed', err?.message || 'Could not offboard this person.');
                     throw err;
@@ -159,6 +165,40 @@ export default function PersonDetailPage() {
                   </select>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl bg-white p-4 shadow md:col-span-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="font-semibold">System Access</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  {person.user
+                    ? 'This person has a linked BuildMyHouse admin login. Manage roles and permissions in Admin Access Control.'
+                    : 'No Admin Access — this person cannot sign in to internal systems.'}
+                </p>
+                {person.user && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Linked login · Dashboard access:{' '}
+                    {person.user.adminDashboardAccess ? 'enabled' : 'disabled'}
+                  </p>
+                )}
+              </div>
+              {person.user?.id ? (
+                <Link
+                  href={`/admin-access?user=${person.user.id}`}
+                  className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Manage Admin Access
+                </Link>
+              ) : (
+                <Link
+                  href="/admin-access"
+                  className="rounded-lg border px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  Grant Admin Access
+                </Link>
+              )}
             </div>
           </div>
         </div>

@@ -1,8 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import {
-  HR_MANAGER_ROLE_KEY,
   HR_PERMISSION_CATALOG,
-  PDE_ROLE_KEY,
+  SYSTEM_ROLE_DEFS,
   SUPER_ADMIN_ROLE_KEY,
 } from '../../src/hr/permissions/permission-catalog';
 
@@ -33,10 +32,16 @@ async function upsertPermissions() {
   for (const perm of HR_PERMISSION_CATALOG) {
     await prisma.adminPermission.upsert({
       where: { key: perm.key },
-      create: perm,
+      create: {
+        key: perm.key,
+        groupLabel: perm.groupLabel,
+        description: perm.description,
+        isCritical: !!perm.isCritical,
+      },
       update: {
         groupLabel: perm.groupLabel,
         description: perm.description,
+        isCritical: !!perm.isCritical,
       },
     });
   }
@@ -57,67 +62,30 @@ async function setRolePermissions(roleId: string, keys: string[]) {
 async function upsertRoles() {
   const allKeys = HR_PERMISSION_CATALOG.map((p) => p.key);
 
-  const superAdmin = await prisma.adminRole.upsert({
-    where: { key: SUPER_ADMIN_ROLE_KEY },
-    create: {
-      key: SUPER_ADMIN_ROLE_KEY,
-      name: 'Super Admin',
-      description: 'Full BuildMyHouse admin access (backward compatible).',
-      isSystem: true,
-    },
-    update: {
-      name: 'Super Admin',
-      description: 'Full BuildMyHouse admin access (backward compatible).',
-      isSystem: true,
-    },
-  });
-  await setRolePermissions(superAdmin.id, allKeys);
+  for (const def of SYSTEM_ROLE_DEFS) {
+    const role = await prisma.adminRole.upsert({
+      where: { key: def.key },
+      create: {
+        key: def.key,
+        name: def.name,
+        description: def.description,
+        isSystem: true,
+      },
+      update: {
+        name: def.name,
+        description: def.description,
+        isSystem: true,
+        archivedAt: null,
+      },
+    });
 
-  const hrManager = await prisma.adminRole.upsert({
-    where: { key: HR_MANAGER_ROLE_KEY },
-    create: {
-      key: HR_MANAGER_ROLE_KEY,
-      name: 'HR Manager',
-      description: 'Manage people, candidates, documents, compensation, and policies.',
-      isSystem: true,
-    },
-    update: {
-      name: 'HR Manager',
-      isSystem: true,
-    },
-  });
-  await setRolePermissions(hrManager.id, [
-    'hr.view',
-    'hr.candidates.manage',
-    'hr.people.manage',
-    'hr.compensation.view',
-    'hr.documents.manage',
-    'hr.performance.manage',
-    'hr.policies.manage',
-    'emails.view',
-    'emails.send',
-  ]);
+    const permissionKeys =
+      def.key === SUPER_ADMIN_ROLE_KEY || !def.permissionKeys
+        ? allKeys
+        : def.permissionKeys;
 
-  const pde = await prisma.adminRole.upsert({
-    where: { key: PDE_ROLE_KEY },
-    create: {
-      key: PDE_ROLE_KEY,
-      name: 'Partnership Development Executive',
-      description:
-        'Partnership CRM and approved communications. No payroll, payments, or admin management.',
-      isSystem: true,
-    },
-    update: {
-      name: 'Partnership Development Executive',
-      isSystem: true,
-    },
-  });
-  await setRolePermissions(pde.id, [
-    'hr.view',
-    'emails.view',
-    'emails.send',
-    'content.view',
-  ]);
+    await setRolePermissions(role.id, permissionKeys);
+  }
 }
 
 async function upsertDepartmentsAndPdePosition() {

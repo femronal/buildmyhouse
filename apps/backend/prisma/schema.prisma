@@ -70,6 +70,13 @@ model User {
   managedParticipant           Boolean   @default(false)
   accessClaimedAt              DateTime?
   adminDashboardAccess         Boolean   @default(false)
+  /// Bumped on suspend/revoke/session revoke so existing JWTs stop working.
+  adminAccessVersion           Int       @default(0)
+  forcePasswordReset           Boolean   @default(false)
+  lastLoginAt                  DateTime?
+  lastPasswordChangeAt         DateTime?
+  failedLoginCount             Int       @default(0)
+  lastFailedLoginAt            DateTime?
   stripeCustomerId             String?   @unique
   /// Stage 8 — PI sub-permissions. Empty array = all PI permissions (backward compatible for admins).
   priceIntelligencePermissions String[]  @default([])
@@ -138,6 +145,18 @@ model User {
   onboardingTasksCompleted    OnboardingTask[]      @relation("OnboardingTaskCompleter")
   staffRoleAssignmentsGranted StaffRoleAssignment[] @relation("StaffRoleAssignmentGranter")
   hiringManagerCandidates     Candidate[]           @relation("CandidateHiringManager")
+
+  // Admin Access Control
+  adminAccessProfile              AdminAccessProfile?           @relation("AdminAccessProfileUser")
+  adminAccessProfilesCreated      AdminAccessProfile[]          @relation("AdminAccessProfileCreator")
+  adminAccessProfilesSponsored    AdminAccessProfile[]          @relation("AdminAccessProfileSponsor")
+  adminUserRolesGranted           AdminUserRoleAssignment[]     @relation("AdminUserRoleGranter")
+  adminPermissionOverridesGranted AdminPermissionOverride[]     @relation("AdminPermissionOverrideGranter")
+  adminInvitationsCreated         AdminInvitation[]             @relation("AdminInvitationCreator")
+  adminAccessRequestsSubmitted    AdminAccessRequest[]          @relation("AdminAccessRequestSubmitter")
+  adminAccessRequestsReviewed     AdminAccessRequest[]          @relation("AdminAccessRequestReviewer")
+  adminAccessAuditActorEntries    AdminAccessAuditLog[]         @relation("AdminAccessAuditActor")
+  adminAccessAuditTargetEntries   AdminAccessAuditLog[]         @relation("AdminAccessAuditTarget")
 
   @@map("users")
 }
@@ -2445,6 +2464,7 @@ model StaffProfile {
   performanceReviews PerformanceReview[]
   communications     HrCommunication[]
   policyAcks         PolicyAcknowledgement[]
+  adminAccessProfile AdminAccessProfile?     @relation("AdminAccessProfileStaff")
 
   @@index([employmentStatus])
   @@index([departmentId])
@@ -2518,9 +2538,12 @@ model AdminPermission {
   key         String   @unique
   groupLabel  String
   description String?
+  isCritical  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   rolePermissions AdminRolePermission[]
+  overrides       AdminPermissionOverride[]
+  accessRequests  AdminAccessRequest[]
 
   @@index([groupLabel])
   @@map("hr_admin_permissions")
@@ -2536,8 +2559,9 @@ model AdminRole {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  permissions AdminRolePermission[]
-  assignments StaffRoleAssignment[]
+  permissions      AdminRolePermission[]
+  assignments      StaffRoleAssignment[]
+  userAssignments  AdminUserRoleAssignment[]
 
   @@map("hr_admin_roles")
 }
@@ -2737,4 +2761,143 @@ model HrAuditLog {
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
   @@map("hr_audit_log")
+}
+
+/// System access identity — separate from employment (StaffProfile).
+model AdminAccessProfile {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  staffProfileId    String?   @unique
+  /// employee | consultant | executive | external | auditor | technical_partner | service_account | test_account
+  accessRelationship String   @default("external")
+  /// invited | active | suspended | revoked | expired
+  status            String    @default("invited")
+  organisation      String?
+  accessReason      String?
+  sponsorUserId     String?
+  accessStartsAt    DateTime?
+  accessExpiresAt   DateTime?
+  suspendedAt       DateTime?
+  suspendedUntil    DateTime?
+  suspendReason     String?
+  revokedAt         DateTime?
+  revokeReason      String?
+  createdByUserId   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user         User                      @relation("AdminAccessProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  staffProfile StaffProfile?             @relation("AdminAccessProfileStaff", fields: [staffProfileId], references: [id], onDelete: SetNull)
+  sponsor      User?                     @relation("AdminAccessProfileSponsor", fields: [sponsorUserId], references: [id], onDelete: SetNull)
+  createdBy    User?                     @relation("AdminAccessProfileCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  roleAssignments AdminUserRoleAssignment[]
+  overrides    AdminPermissionOverride[]
+  invitations  AdminInvitation[]
+
+  @@index([status])
+  @@index([accessExpiresAt])
+  @@index([accessRelationship])
+  @@map("admin_access_profiles")
+}
+
+model AdminUserRoleAssignment {
+  id              String    @id @default(uuid())
+  accessProfileId String
+  roleId          String
+  grantedByUserId String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  accessProfile AdminAccessProfile @relation(fields: [accessProfileId], references: [id], onDelete: Cascade)
+  role          AdminRole          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  grantedBy     User?              @relation("AdminUserRoleGranter", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([accessProfileId, revokedAt])
+  @@index([roleId])
+  @@unique([accessProfileId, roleId])
+  @@map("admin_user_role_assignments")
+}
+
+/// Explicit grant/deny. Priority: deny > grant > role > default deny.
+model AdminPermissionOverride {
+  id              String    @id @default(uuid())
+  accessProfileId String
+  permissionId    String
+  /// grant | deny
+  effect          String
+  reason          String?
+  grantedByUserId String?
+  revokedAt       DateTime?
+  createdAt       DateTime  @default(now())
+
+  accessProfile AdminAccessProfile @relation(fields: [accessProfileId], references: [id], onDelete: Cascade)
+  permission    AdminPermission    @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  grantedBy     User?              @relation("AdminPermissionOverrideGranter", fields: [grantedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([accessProfileId, revokedAt])
+  @@index([permissionId])
+  @@unique([accessProfileId, permissionId, effect])
+  @@map("admin_permission_overrides")
+}
+
+model AdminInvitation {
+  id              String    @id @default(uuid())
+  accessProfileId String
+  email           String
+  tokenHash       String    @unique
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+
+  accessProfile AdminAccessProfile @relation(fields: [accessProfileId], references: [id], onDelete: Cascade)
+  createdBy     User?              @relation("AdminInvitationCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([accessProfileId, expiresAt])
+  @@index([email])
+  @@map("admin_invitations")
+}
+
+model AdminAccessRequest {
+  id                  String    @id @default(uuid())
+  requestingUserId    String
+  permissionId        String?
+  permissionKey       String
+  businessReason      String
+  requestedDuration   String?
+  status              String    @default("pending") // pending | approved | rejected | cancelled
+  reviewerUserId      String?
+  decisionNotes       String?
+  decidedAt           DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  requestingUser User             @relation("AdminAccessRequestSubmitter", fields: [requestingUserId], references: [id], onDelete: Cascade)
+  reviewer       User?            @relation("AdminAccessRequestReviewer", fields: [reviewerUserId], references: [id], onDelete: SetNull)
+  permission     AdminPermission? @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([requestingUserId, createdAt])
+  @@map("admin_access_requests")
+}
+
+model AdminAccessAuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String?
+  targetUserId String?
+  action       String
+  summary      String?
+  previousValue Json?
+  newValue     Json?
+  reason       String?
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  actor  User? @relation("AdminAccessAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  target User? @relation("AdminAccessAuditTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([targetUserId, createdAt])
+  @@index([actorUserId, createdAt])
+  @@index([action, createdAt])
+  @@map("admin_access_audit_log")
 }

@@ -20,12 +20,13 @@ export class JwtAuthGuard implements CanActivate {
 
     try {
       const payload: JWTPayload = await this.jwtAuthService.verifyToken(token);
-      
-      // Attach user payload to request for use in controllers
+
+      // Attach user payload to request for use in controllers / session guards
       request.user = {
         sub: payload.sub, // userId
         email: payload.email,
         role: payload.role,
+        aav: payload.aav,
       };
 
       return true;
@@ -50,6 +51,3 @@ export class JwtAuthGuard implements CanActivate {
     return authHeader;
   }
 }
-
-
-

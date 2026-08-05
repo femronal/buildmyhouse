@@ -19,6 +19,8 @@ import {
   UserCog,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
+import { useMyPermissions } from '@/hooks/useMyPermissions';
+import { NAV_PERMISSION_MAP } from '@/lib/admin-access/nav-permissions';
 
 const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -52,6 +54,15 @@ type SidebarProps = {
 
 export default function Sidebar({ isMobile = false, onNavigate, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { isSuperAdmin, permissions, hasPermission } = useMyPermissions();
+
+  const visibleItems = menuItems.filter((item) => {
+    if (isSuperAdmin || permissions?.includes('*')) return true;
+    if (!permissions) return true;
+    const required = NAV_PERMISSION_MAP[item.href];
+    if (!required) return true;
+    return hasPermission(required);
+  });
 
   const handleLogout = () => {
     onNavigate?.();
@@ -82,7 +93,7 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
       </div>
 
       <nav className="space-y-2 flex-1">
-        {menuItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href === '/articles' && pathname.startsWith('/service-pages')) ||

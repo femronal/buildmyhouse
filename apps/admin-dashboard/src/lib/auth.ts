@@ -21,6 +21,17 @@ export interface CurrentUser {
   fullName: string;
   role: string;
   verified: boolean;
+  adminDashboardAccess?: boolean;
+  adminAccessVersion?: number;
+  forcePasswordReset?: boolean;
+  lastLoginAt?: string | null;
+  permissions?: {
+    isSuperAdmin: boolean;
+    permissions: string[];
+    roleKeys: string[];
+    accessAllowed: boolean;
+    accessStatus: string | null;
+  };
 }
 
 export const login = async (credentials: LoginCredentials): Promise<AuthResponse> => {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, UseGuards, Request, Param, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
 import { AdminService } from './admin.service';
@@ -30,40 +30,7 @@ export class AdminController {
     return this.adminService.getEmailHealth();
   }
 
-  @Get('access/full-admins')
-  getFullAdminAccessAccounts() {
-    return this.adminService.getFullAdminAccessAccounts();
-  }
-
-  @Patch('access/full-admins/:adminUserId')
-  setAdminDashboardAccess(
-    @Request() req: any,
-    @Param('adminUserId') adminUserId: string,
-    @Body() body: { enabled?: boolean },
-  ) {
-    if (typeof body?.enabled !== 'boolean') {
-      throw new BadRequestException('enabled must be a boolean value.');
-    }
-
-    return this.adminService.setAdminDashboardAccess({
-      actorUserId: req.user?.sub,
-      targetUserId: adminUserId,
-      enabled: body.enabled,
-    });
-  }
-
-  @Post('access/full-admins')
-  createAdminAccount(
-    @Request() req: any,
-    @Body() body: { email?: string; password?: string; fullName?: string },
-  ) {
-    return this.adminService.createAdminAccount({
-      actorUserId: req.user?.sub,
-      email: String(body?.email || ''),
-      password: String(body?.password || ''),
-      fullName: String(body?.fullName || ''),
-    });
-  }
+  // full-admins routes moved to AdminAccessController (admin/access/full-admins)
 
   @Get('emails/audience-counts')
   getEmailAudienceCounts() {

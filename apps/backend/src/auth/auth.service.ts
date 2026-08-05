@@ -4,6 +4,9 @@ import {
   ConflictException,
   BadRequestException,
   ForbiddenException,
+  Inject,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,6 +23,8 @@ import { WebSocketService } from '../websocket/websocket.service';
 import { EmailService } from '../email/email.service';
 import { HOMEOWNER_WELCOME_EMAIL_TEMPLATE } from '../email/templates/homeowner-welcome.template';
 import { GC_WELCOME_EMAIL_TEMPLATE } from '../email/templates/gc-welcome.template';
+import { AdminAccessGateService } from '../admin-access/admin-access-gate.service';
+import { AdminAccessPermissionsService } from '../admin-access/admin-access-permissions.service';
 
 @Injectable()
 export class AuthService {
@@ -41,6 +46,12 @@ export class AuthService {
     private readonly jwtAuthService: JwtAuthService,
     private readonly wsService: WebSocketService,
     private readonly emailService: EmailService,
+    @Optional()
+    @Inject(forwardRef(() => AdminAccessGateService))
+    private readonly adminAccessGate?: AdminAccessGateService,
+    @Optional()
+    @Inject(forwardRef(() => AdminAccessPermissionsService))
+    private readonly adminAccessPermissions?: AdminAccessPermissionsService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -230,18 +241,64 @@ export class AuthService {
   }
 
   async loginAdmin(loginDto: LoginDto) {
-    const user = await this.validateEmailPassword(loginDto);
+    const email = String(loginDto.email || '').trim().toLowerCase();
+    const password = String(loginDto.password || '');
 
-    if (user.role !== 'admin') {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user || user.role !== 'admin') {
       throw new UnauthorizedException('Only approved admin accounts can sign in here.');
     }
 
-    const hasDashboardAccess = await this.hasAdminDashboardAccess(user.email);
-    if (!hasDashboardAccess) {
-      throw new UnauthorizedException('Your admin dashboard access is currently restricted.');
+    if (!user.password) {
+      throw new UnauthorizedException('User account not properly configured');
     }
 
-    return this.buildAuthResponse(user);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          failedLoginCount: { increment: 1 },
+          lastFailedLoginAt: new Date(),
+        },
+      });
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (this.adminAccessGate) {
+      const gate = await this.adminAccessGate.assertAdminSession({
+        userId: user.id,
+        email: user.email,
+        skipVersionCheck: true,
+      });
+      if (gate.ok === false) {
+        throw new UnauthorizedException(
+          gate.reason || 'Your admin dashboard access is currently restricted.',
+        );
+      }
+    } else {
+      const hasDashboardAccess = await this.hasAdminDashboardAccess(user.email);
+      if (!hasDashboardAccess) {
+        throw new UnauthorizedException('Your admin dashboard access is currently restricted.');
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        failedLoginCount: 0,
+      },
+    });
+
+    const refreshed = await this.prisma.user.findUniqueOrThrow({
+      where: { id: user.id },
+    });
+
+    return this.buildAuthResponse(refreshed);
   }
 
   private async validateEmailPassword(loginDto: LoginDto) {
@@ -277,11 +334,18 @@ export class AuthService {
     verified: boolean;
     profileSetupCompleted?: boolean;
     managedParticipant?: boolean;
+    adminAccessVersion?: number;
+    adminDashboardAccess?: boolean;
+    forcePasswordReset?: boolean;
   }) {
-    // Generate JWT token
-    const token = await this.generateToken(user.id, user.email, user.role);
+    const token = await this.generateToken(
+      user.id,
+      user.email,
+      user.role,
+      user.role === 'admin' ? user.adminAccessVersion ?? 0 : undefined,
+    );
 
-    return {
+    const response: Record<string, unknown> = {
       token,
       user: {
         id: user.id,
@@ -292,8 +356,17 @@ export class AuthService {
         verified: user.verified,
         profileSetupCompleted: !!user.profileSetupCompleted,
         managedParticipant: !!user.managedParticipant,
+        ...(user.role === 'admin'
+          ? {
+              adminDashboardAccess: !!user.adminDashboardAccess,
+              forcePasswordReset: !!user.forcePasswordReset,
+              aav: user.adminAccessVersion ?? 0,
+            }
+          : {}),
       },
     };
+
+    return response;
   }
 
   private getAdminDashboardAllowedEmails() {
@@ -359,12 +432,30 @@ export class AuthService {
         country: true,
         homeownerTermsAcceptedAt: true,
         gcTermsAcceptedAt: true,
+        adminDashboardAccess: true,
+        adminAccessVersion: true,
+        forcePasswordReset: true,
+        lastLoginAt: true,
         createdAt: true,
       },
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
+    }
+
+    if (user.role === 'admin' && this.adminAccessPermissions) {
+      const effective = await this.adminAccessPermissions.getEffectivePermissions(userId);
+      return {
+        ...user,
+        permissions: {
+          isSuperAdmin: effective.isSuperAdmin,
+          permissions: effective.permissions,
+          roleKeys: effective.roleKeys,
+          accessAllowed: effective.accessAllowed,
+          accessStatus: effective.accessStatus,
+        },
+      };
     }
 
     return user;
@@ -682,7 +773,12 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const token = await this.generateToken(user.id, user.email, user.role);
+    const token = await this.generateToken(
+      user.id,
+      user.email,
+      user.role,
+      user.role === 'admin' ? (user as { adminAccessVersion?: number }).adminAccessVersion ?? 0 : undefined,
+    );
 
     return {
       token,
@@ -899,11 +995,17 @@ export class AuthService {
       .replace(/'/g, '&#039;');
   }
 
-  private async generateToken(userId: string, email: string, role: string): Promise<string> {
+  private async generateToken(
+    userId: string,
+    email: string,
+    role: string,
+    aav?: number,
+  ): Promise<string> {
     const payload: JWTPayload = {
       sub: userId,
       email,
       role,
+      ...(role === 'admin' && aav !== undefined ? { aav } : {}),
     };
 
     const secret = this.configService.get<string>('JWT_SECRET');
@@ -916,6 +1018,7 @@ export class AuthService {
     });
   }
 }
+
 
 
 

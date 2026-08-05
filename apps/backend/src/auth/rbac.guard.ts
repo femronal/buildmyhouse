@@ -4,10 +4,14 @@ import {
   ExecutionContext,
   SetMetadata,
   ForbiddenException,
+  Inject,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { AdminAccessGateService } from '../admin-access/admin-access-gate.service';
 
 /**
  * Roles decorator to specify which roles can access an endpoint
@@ -21,11 +25,17 @@ export class RolesGuard implements CanActivate {
     private reflector: Reflector,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
+    @Optional()
+    @Inject(forwardRef(() => AdminAccessGateService))
+    private readonly adminAccessGate?: AdminAccessGateService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
-    
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
     // If no roles are specified, allow access (endpoint is public or role-checked elsewhere)
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
@@ -49,7 +59,11 @@ export class RolesGuard implements CanActivate {
     }
 
     if (user.role === 'admin' && requiredRoles.includes('admin')) {
-      const hasAccess = await this.hasAdminDashboardAccess(String(user.email || ''));
+      const hasAccess = await this.hasAdminDashboardAccess(
+        String(user.sub || ''),
+        String(user.email || ''),
+        user.aav !== undefined && user.aav !== null ? Number(user.aav) : null,
+      );
       if (!hasAccess) {
         throw new ForbiddenException('Admin access is restricted for this account.');
       }
@@ -72,7 +86,21 @@ export class RolesGuard implements CanActivate {
     return new Set(emails);
   }
 
-  private async hasAdminDashboardAccess(email: string) {
+  private async hasAdminDashboardAccess(
+    userId: string,
+    email: string,
+    tokenAccessVersion?: number | null,
+  ) {
+    if (this.adminAccessGate && userId) {
+      const result = await this.adminAccessGate.assertAdminSession({
+        userId,
+        email,
+        tokenAccessVersion,
+      });
+      return result.ok;
+    }
+
+    // Fallback when AdminAccessGateService is not available (e.g. unit tests)
     const normalizedEmail = String(email || '').trim().toLowerCase();
     if (!normalizedEmail) {
       return false;
@@ -104,7 +132,3 @@ export class RolesGuard implements CanActivate {
 
 // Note: Import JwtAuthGuard separately when using
 // Usage: @UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin')
-
-
-
-

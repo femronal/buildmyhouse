@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import PermissionGate from '@/components/PermissionGate';
 import { auth } from '@/lib/api';
 import { getCurrentUser, logout } from '@/lib/auth';
 
@@ -27,6 +28,10 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
         const currentUser = await getCurrentUser();
         const isAdmin = currentUser?.role === 'admin';
         if (!isAdmin) {
+          logout();
+          return;
+        }
+        if (currentUser?.permissions && currentUser.permissions.accessAllowed === false) {
           logout();
           return;
         }
@@ -57,7 +62,7 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     return null;
   }
 
-  return <>{children}</>;
+  return <PermissionGate>{children}</PermissionGate>;
 }
 
 

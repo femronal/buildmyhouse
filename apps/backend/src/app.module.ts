@@ -28,6 +28,7 @@ import { ServicePagesModule } from './service-pages/service-pages.module';
 import { ProjectAccessModule } from './project-access/project-access.module';
 import { PriceIntelligenceModule } from './price-intelligence/price-intelligence.module';
 import { HrModule } from './hr/hr.module';
+import { AdminAccessModule } from './admin-access/admin-access.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { HrModule } from './hr/hr.module';
     ProjectAccessModule,
     PriceIntelligenceModule,
     HrModule,
+    AdminAccessModule,
   ],
   controllers: [],
   providers: [

@@ -15,6 +15,8 @@ import { SetDefaultPaymentMethodDto } from '../dto/set-default-payment-method.dt
 import { CreateSetupCheckoutSessionDto } from '../dto/create-setup-checkout-session.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../../auth/rbac.guard';
+import { PermissionsGuard } from '../../hr/permissions/permissions.guard';
+import { RequirePermissions } from '../../hr/permissions/require-permissions.decorator';
 
 @Controller('payments')
 export class PaymentsController {
@@ -105,8 +107,9 @@ export class PaymentsController {
   }
 
   @Post('payout')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
   @Roles('admin', 'vendor')
+  @RequirePermissions('payments.payout')
   createPayout(@Body() createPayoutDto: CreatePayoutDto) {
     return this.paymentsService.createPayout(createPayoutDto);
   }

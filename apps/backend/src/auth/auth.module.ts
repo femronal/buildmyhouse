@@ -12,12 +12,14 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { S3UploadService } from '../upload/s3-upload.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AdminAccessModule } from '../admin-access/admin-access.module';
 
 @Module({
   imports: [
     PassportModule,
     PrismaModule,
     forwardRef(() => WebSocketModule),
+    forwardRef(() => AdminAccessModule),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
