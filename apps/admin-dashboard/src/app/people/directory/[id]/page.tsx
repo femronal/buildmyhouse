@@ -4,6 +4,11 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
+  AddKpiModal,
+  useHrConfirm,
+  useHrFeedback,
+} from '@/components/people/HrDialogs';
+import {
   useAssignStaffRole,
   useCreatePerformanceGoal,
   useHrPerson,
@@ -30,8 +35,11 @@ export default function PersonDetailPage() {
   const offboard = useOffboardStaff();
   const assignRole = useAssignStaffRole();
   const createGoal = useCreatePerformanceGoal();
+  const { notify, feedbackModal } = useHrFeedback();
+  const { askConfirm, confirmModal } = useHrConfirm();
   const [tab, setTab] = useState<(typeof TABS)[number]>('Overview');
   const [roleId, setRoleId] = useState('');
+  const [showAddKpi, setShowAddKpi] = useState(false);
 
   const pendingOnboarding = useMemo(
     () => (person?.onboardingTasks || []).filter((t) => t.status === 'pending').length,
@@ -59,22 +67,31 @@ export default function PersonDetailPage() {
           <button
             type="button"
             className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50"
-            onClick={async () => {
-              if (!window.confirm(`Offboard ${person.fullName}? Permissions will be revoked.`)) return;
-              try {
-                await offboard.mutateAsync({
-                  id: person.id,
-                  payload: {
-                    exitDate: new Date().toISOString(),
-                    exitReason: 'Offboarded from admin',
-                    disableAccount: true,
-                    revokePermissions: true,
-                  },
-                });
-              } catch (err: any) {
-                window.alert(err?.message || 'Offboard failed');
-              }
-            }}
+            onClick={() =>
+              askConfirm({
+                title: 'Offboard staff member',
+                message: `Offboard ${person.fullName}? Their dashboard access will be disabled and permissions revoked. Historical records are kept.`,
+                confirmLabel: 'Offboard',
+                danger: true,
+                onConfirm: async () => {
+                  try {
+                    await offboard.mutateAsync({
+                      id: person.id,
+                      payload: {
+                        exitDate: new Date().toISOString(),
+                        exitReason: 'Offboarded from admin',
+                        disableAccount: true,
+                        revokePermissions: true,
+                      },
+                    });
+                    notify('success', 'Staff offboarded', `${person.fullName} has been exited and access revoked.`);
+                  } catch (err: any) {
+                    notify('error', 'Offboard failed', err?.message || 'Could not offboard this person.');
+                    throw err;
+                  }
+                },
+              })
+            }
           >
             Offboard
           </button>
@@ -180,22 +197,7 @@ export default function PersonDetailPage() {
           <button
             type="button"
             className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white"
-            onClick={async () => {
-              const kpi = window.prompt('KPI name');
-              const target = window.prompt('Target');
-              const period = window.prompt('Period (e.g. 2026-08)');
-              if (!kpi || !target || !period) return;
-              try {
-                await createGoal.mutateAsync({
-                  staffProfileId: person.id,
-                  kpi,
-                  target,
-                  period,
-                });
-              } catch (err: any) {
-                window.alert(err?.message || 'Failed to create goal');
-              }
-            }}
+            onClick={() => setShowAddKpi(true)}
           >
             Add KPI
           </button>
@@ -261,8 +263,9 @@ export default function PersonDetailPage() {
                 try {
                   await assignRole.mutateAsync({ staffId: person.id, roleId });
                   setRoleId('');
+                  notify('success', 'Role assigned', 'The permission role was added to this staff profile.');
                 } catch (err: any) {
-                  window.alert(err?.message || 'Assign failed');
+                  notify('error', 'Assign failed', err?.message || 'Could not assign this role.');
                 }
               }}
             >
@@ -287,6 +290,27 @@ export default function PersonDetailPage() {
           {person.notes || 'No notes.'}
         </div>
       )}
+
+      <AddKpiModal
+        open={showAddKpi}
+        busy={createGoal.isPending}
+        onClose={() => setShowAddKpi(false)}
+        onSubmit={async (values) => {
+          try {
+            await createGoal.mutateAsync({
+              staffProfileId: person.id,
+              ...values,
+            });
+            setShowAddKpi(false);
+            notify('success', 'KPI added', `${values.kpi} was saved for ${person.fullName}.`);
+          } catch (err: any) {
+            notify('error', 'Could not add KPI', err?.message || 'Failed to create goal.');
+          }
+        }}
+      />
+
+      {feedbackModal}
+      {confirmModal}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { useHrFeedback } from '@/components/people/HrDialogs';
 import {
   useHrCandidates,
   useHrCommunications,
@@ -15,6 +16,7 @@ export default function CommunicationsPage() {
   const { data: candidates = [] } = useHrCandidates();
   const { data: people = [] } = useHrPeople();
   const send = useSendHrCommunication();
+  const { notify, feedbackModal } = useHrFeedback();
   const [form, setForm] = useState({
     templateKey: 'interview_invitation',
     recipientEmail: '',
@@ -45,9 +47,13 @@ export default function CommunicationsPage() {
         candidateId: form.candidateId || undefined,
         staffProfileId: form.staffProfileId || undefined,
       });
-      window.alert('Communication sent (or queued if email provider unavailable).');
+      notify(
+        'success',
+        'Communication sent',
+        'The message was sent, or queued if the email provider is unavailable.',
+      );
     } catch (err: any) {
-      window.alert(err?.message || 'Send failed');
+      notify('error', 'Send failed', err?.message || 'Could not send the communication.');
     }
   };
 
@@ -166,6 +172,8 @@ export default function CommunicationsPage() {
           </div>
         )}
       </div>
+
+      {feedbackModal}
     </div>
   );
 }

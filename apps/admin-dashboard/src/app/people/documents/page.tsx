@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useHrFeedback } from '@/components/people/HrDialogs';
 import { api } from '@/lib/api';
 import {
   useCreateDocument,
@@ -29,6 +30,7 @@ export default function DocumentsPage() {
   const { data: people = [] } = useHrPeople();
   const { data: candidates = [] } = useHrCandidates();
   const createDoc = useCreateDocument();
+  const { notify, feedbackModal } = useHrFeedback();
   const [form, setForm] = useState({
     category: 'employment_contract',
     staffProfileId: '',
@@ -44,8 +46,9 @@ export default function DocumentsPage() {
     try {
       const uploaded = await api.uploadFile(file, { endpoint: '/upload/file' });
       setForm((p) => ({ ...p, fileUrl: uploaded.url, fileName: file.name }));
+      notify('success', 'File uploaded', `${file.name} is ready to save.`);
     } catch (err: any) {
-      window.alert(err?.message || 'Upload failed');
+      notify('error', 'Upload failed', err?.message || 'Could not upload the file.');
     } finally {
       setUploading(false);
     }
@@ -54,7 +57,7 @@ export default function DocumentsPage() {
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.fileUrl) {
-      window.alert('Upload a file first');
+      notify('info', 'Upload a file first', 'Choose a file and wait for the upload to finish before saving.');
       return;
     }
     try {
@@ -74,8 +77,9 @@ export default function DocumentsPage() {
         fileName: '',
         expiryDate: '',
       });
+      notify('success', 'Document saved', 'The document was added to the HR library.');
     } catch (err: any) {
-      window.alert(err?.message || 'Failed to save document');
+      notify('error', 'Could not save document', err?.message || 'Please try again.');
     }
   };
 
@@ -181,6 +185,8 @@ export default function DocumentsPage() {
           </table>
         )}
       </div>
+
+      {feedbackModal}
     </div>
   );
 }

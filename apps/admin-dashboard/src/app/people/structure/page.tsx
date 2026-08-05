@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useHrFeedback } from '@/components/people/HrDialogs';
 import {
   useCreateDepartment,
   useCreatePosition,
@@ -13,6 +14,7 @@ export default function StructurePage() {
   const { data: positions = [] } = useHrPositions();
   const createDept = useCreateDepartment();
   const createPos = useCreatePosition();
+  const { notify, feedbackModal } = useHrFeedback();
   const [deptName, setDeptName] = useState('');
   const [posForm, setPosForm] = useState({
     departmentId: '',
@@ -25,8 +27,9 @@ export default function StructurePage() {
     try {
       await createDept.mutateAsync({ name: deptName });
       setDeptName('');
+      notify('success', 'Department created', `${deptName} was added to the organisation structure.`);
     } catch (err: any) {
-      window.alert(err?.message || 'Failed');
+      notify('error', 'Could not create department', err?.message || 'Please try again.');
     }
   };
 
@@ -34,9 +37,10 @@ export default function StructurePage() {
     e.preventDefault();
     try {
       await createPos.mutateAsync(posForm);
+      notify('success', 'Position created', `${posForm.name} was added.`);
       setPosForm({ departmentId: '', name: '', description: '' });
     } catch (err: any) {
-      window.alert(err?.message || 'Failed');
+      notify('error', 'Could not create position', err?.message || 'Please try again.');
     }
   };
 
@@ -127,6 +131,8 @@ export default function StructurePage() {
           </ul>
         </div>
       </div>
+
+      {feedbackModal}
     </div>
   );
 }

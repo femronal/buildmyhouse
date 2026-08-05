@@ -3,6 +3,7 @@
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
+import { useHrFeedback } from '@/components/people/HrDialogs';
 import { useCreateStaff, useHrDepartments, useHrPeople, useHrPositions } from '@/hooks/usePeopleHr';
 
 const WORKFORCE_TYPES = [
@@ -22,6 +23,7 @@ export default function PeopleDirectoryPage() {
   const { data: departments = [] } = useHrDepartments();
   const { data: positions = [] } = useHrPositions();
   const createStaff = useCreateStaff();
+  const { notify, feedbackModal } = useHrFeedback();
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
     firstName: '',
@@ -45,7 +47,7 @@ export default function PeopleDirectoryPage() {
       setShowAdd(false);
       window.location.href = `/people/directory/${person.id}`;
     } catch (err: any) {
-      window.alert(err?.message || 'Failed to create staff profile');
+      notify('error', 'Could not create profile', err?.message || 'Failed to create staff profile.');
     }
   };
 
@@ -206,6 +208,8 @@ export default function PeopleDirectoryPage() {
           </form>
         </div>
       )}
+
+      {feedbackModal}
     </div>
   );
 }

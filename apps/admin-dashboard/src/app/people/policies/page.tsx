@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useState } from 'react';
+import { useHrFeedback } from '@/components/people/HrDialogs';
 import { useCreatePolicy, useHrPolicies } from '@/hooks/usePeopleHr';
 import { api } from '@/lib/api';
 
@@ -22,6 +23,7 @@ const CATEGORIES = [
 export default function PoliciesPage() {
   const { data: policies = [], isLoading } = useHrPolicies();
   const createPolicy = useCreatePolicy();
+  const { notify, feedbackModal } = useHrFeedback();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detail, setDetail] = useState<any>(null);
   const [form, setForm] = useState({
@@ -37,7 +39,7 @@ export default function PoliciesPage() {
       const data = await api.get(`/admin/hr/policies/${id}`);
       setDetail(data);
     } catch (err: any) {
-      window.alert(err?.message || 'Failed to load policy');
+      notify('error', 'Could not load policy', err?.message || 'Please try again.');
     }
   };
 
@@ -45,10 +47,12 @@ export default function PoliciesPage() {
     e.preventDefault();
     try {
       const created = await createPolicy.mutateAsync(form);
+      const title = form.title;
       setForm({ title: '', category: 'human_resources', content: '', status: 'draft' });
       await openPolicy((created as any).id);
+      notify('success', 'Policy created', `${title} was saved.`);
     } catch (err: any) {
-      window.alert(err?.message || 'Failed');
+      notify('error', 'Could not create policy', err?.message || 'Please try again.');
     }
   };
 
@@ -142,6 +146,8 @@ export default function PoliciesPage() {
           )}
         </div>
       </div>
+
+      {feedbackModal}
     </div>
   );
 }

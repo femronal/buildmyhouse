@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Plus, Table2, Columns3 } from 'lucide-react';
+import { useHrConfirm, useHrFeedback } from '@/components/people/HrDialogs';
 import {
   useChangeCandidateStage,
   useCreateCandidate,
@@ -44,6 +45,8 @@ export default function RecruitmentPage() {
   const updateCandidate = useUpdateCandidate();
   const hireCandidate = useHireCandidate();
   const sendComm = useSendHrCommunication();
+  const { notify, feedbackModal } = useHrFeedback();
+  const { askConfirm, confirmModal } = useHrConfirm();
 
   const [view, setView] = useState<ViewMode>('kanban');
   const [showAdd, setShowAdd] = useState(false);
@@ -77,7 +80,7 @@ export default function RecruitmentPage() {
       const uploaded = await api.uploadFile(file, { endpoint: '/upload/file' });
       setForm((prev) => ({ ...prev, cvUrl: uploaded.url }));
     } catch (err: any) {
-      window.alert(err?.message || 'CV upload failed');
+      notify('error', 'CV upload failed', err?.message || 'Could not upload this file.');
     } finally {
       setUploading(false);
     }
@@ -95,8 +98,9 @@ export default function RecruitmentPage() {
       setShowAdd(false);
       setSelectedId(created.id);
       setForm(emptyForm);
+      notify('success', 'Candidate added', `${created.fullName} is now in the recruitment pipeline.`);
     } catch (err: any) {
-      window.alert(err?.message || 'Failed to create candidate');
+      notify('error', 'Could not create candidate', err?.message || 'Please try again.');
     }
   };
 
@@ -104,7 +108,7 @@ export default function RecruitmentPage() {
     try {
       await changeStage.mutateAsync({ id: candidate.id, stage });
     } catch (err: any) {
-      window.alert(err?.message || 'Failed to update stage');
+      notify('error', 'Stage update failed', err?.message || 'Could not move this candidate.');
     }
   };
 
@@ -250,8 +254,9 @@ export default function RecruitmentPage() {
           onSave={async (payload) => {
             try {
               await updateCandidate.mutateAsync({ id: selected.id, payload });
+              notify('success', 'Candidate updated', 'Notes and scores were saved.');
             } catch (err: any) {
-              window.alert(err?.message || 'Update failed');
+              notify('error', 'Update failed', err?.message || 'Could not save candidate changes.');
             }
           }}
           onSend={async (templateKey) => {
@@ -263,23 +268,36 @@ export default function RecruitmentPage() {
                 name: selected.firstName,
                 position: selected.position?.name || 'the role',
               });
-              window.alert('Email queued/sent');
+              notify('success', 'Email sent', 'The message was queued or delivered via Resend.');
             } catch (err: any) {
-              window.alert(err?.message || 'Send failed');
+              notify('error', 'Send failed', err?.message || 'Could not send this email.');
             }
           }}
-          onHire={async () => {
-            if (!window.confirm(`Hire ${selected.fullName} and create a staff profile?`)) return;
-            try {
-              const staff = await hireCandidate.mutateAsync({
-                id: selected.id,
-                payload: { workforceType: 'fixed_term' },
-              });
-              window.alert('Hired. Opening staff profile…');
-              window.location.href = `/people/directory/${staff.id}`;
-            } catch (err: any) {
-              window.alert(err?.message || 'Hire failed');
-            }
+          onHire={() => {
+            askConfirm({
+              title: 'Hire candidate',
+              message: `Hire ${selected.fullName} and create a staff profile with onboarding checklist?`,
+              confirmLabel: 'Hire candidate',
+              onConfirm: async () => {
+                try {
+                  const staff = await hireCandidate.mutateAsync({
+                    id: selected.id,
+                    payload: { workforceType: 'fixed_term' },
+                  });
+                  notify(
+                    'success',
+                    'Candidate hired',
+                    `${selected.fullName} now has a staff profile. Opening it…`,
+                  );
+                  window.setTimeout(() => {
+                    window.location.href = `/people/directory/${staff.id}`;
+                  }, 600);
+                } catch (err: any) {
+                  notify('error', 'Hire failed', err?.message || 'Could not hire this candidate.');
+                  throw err;
+                }
+              },
+            });
           }}
         />
       )}
@@ -397,6 +415,9 @@ export default function RecruitmentPage() {
           </form>
         </div>
       )}
+
+      {feedbackModal}
+      {confirmModal}
     </div>
   );
 }
@@ -414,7 +435,7 @@ function CandidateDrawer({
   onStage: (stage: string) => void;
   onSave: (payload: Record<string, unknown>) => Promise<void>;
   onSend: (templateKey: string) => Promise<void>;
-  onHire: () => Promise<void>;
+  onHire: () => void;
 }) {
   const [interviewNotes, setInterviewNotes] = useState(candidate.interviewNotes || '');
   const [interviewScore, setInterviewScore] = useState(
@@ -545,7 +566,7 @@ function CandidateDrawer({
         {candidate.stage !== 'hired' && !candidate.hiredStaff && (
           <button
             type="button"
-            onClick={() => void onHire()}
+            onClick={onHire}
             className="w-full rounded-lg bg-blue-600 px-3 py-2 font-medium text-white"
           >
             Mark hired → create staff profile
