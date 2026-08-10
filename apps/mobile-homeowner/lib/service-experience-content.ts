@@ -73,6 +73,11 @@ const SHARED_ARTICLES = [
   { label: 'How to choose a contractor in Nigeria', href: '/how-to-choose-a-general-contractor-in-nigeria' },
 ] as const;
 
+const WINDOW_CASE_STUDY_ARTICLE = {
+  label: 'Case study: aluminium window repair in Egbeda (repair, not replace)',
+  href: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study',
+} as const;
+
 /**
  * Service page images — edit IMAGE_SETS below to swap placeholders.
  * The 7th argument in each imageSet() call is workMask (photo inside the "04" typography).
@@ -389,19 +394,23 @@ const SERVICE_KIND_COPY: Record<
     headline: 'Windows',
     heroLead:
       'Repair aluminium windows, glass panels, and sliding fittings in Lagos with verified specialists and staged approvals.',
-    heroMeta: 'Hinges, locks, glass replacement, and frame alignment — scoped before work begins.',
+    heroMeta: 'Inspect before replace — hinges, locks, glass, sealing, and frame alignment scoped before work begins.',
     pillars: [
-      { title: 'Measure twice', body: 'Dimensions and hardware specs are agreed before fabrication or replacement.' },
+      { title: 'Inspect first', body: 'Diagnosis decides whether sealing, securing, or full replacement is actually needed.' },
       { title: 'Verified installers', body: 'Match aluminium and glazing work to the right specialists.' },
-      { title: 'Stage the fix', body: 'Removal, replacement, and finishing each produce evidence.' },
+      { title: 'Stage the fix', body: 'Materials, execution, and finishing each produce evidence.' },
       { title: 'Safer spend', body: 'Approve materials and labour separately when needed.' },
     ],
     fieldNotes: [
-      { number: '01', title: 'Photograph the full frame.', body: 'Warped tracks and broken locks need context for accurate quotes.' },
-      { number: '02', title: 'Confirm glass specs.', body: 'Thickness and tint should be approved before ordering.' },
+      {
+        number: '01',
+        title: 'Inspect before you replace.',
+        body: 'Rainwater and dirt entry often need sealing and securing — not an automatic new window.',
+      },
+      { number: '02', title: 'Confirm glass and frame specs.', body: 'Thickness, tint, and fittings should be approved before ordering.' },
       { number: '03', title: 'Test movement at completion.', body: 'Sliding, locking, and sealing should be verified on site.' },
     ],
-    reviewDetail: 'Window repair in Yaba',
+    reviewDetail: 'Window repair in Egbeda',
   },
   'pumping-machine-repair': {
     headline: 'Pumping',
@@ -621,7 +630,10 @@ function buildContent(kind: ServiceKind, region: 'lagos' | 'nigeria', canonicalP
         answer: 'No. Payment follows approved stages with evidence at each checkpoint.',
       },
     ],
-    articleLinks: [...SHARED_ARTICLES],
+    articleLinks:
+      kind === 'window-repair'
+        ? [WINDOW_CASE_STUDY_ARTICLE, ...SHARED_ARTICLES]
+        : [...SHARED_ARTICLES],
     images: { ...IMAGE_SETS[kind], strip: BMH_WHY_STRIP_IMAGE },
     primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
     secondaryCta: { label: 'Browse Verified Plans', href: '/location?mode=explore' },

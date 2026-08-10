@@ -1,4 +1,5 @@
 import { Text, View } from 'react-native';
+import EgbedaWindowCaseStudyCard from '@/components/blog/EgbedaWindowCaseStudyCard';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { COMPARISON_ROWS, LANDING_BORDER, LANDING_INK, LANDING_MUTED, TRUST_POINTS } from '@/lib/home-landing-content';
 
@@ -12,6 +13,10 @@ export default function TrustSection() {
         Not just referrals. Not just WhatsApp updates. BuildMyHouse is designed to reduce confusion, improve visibility,
         and support better decision-making with evidence and stage control.
       </Text>
+
+      <View className="mb-8">
+        <EgbedaWindowCaseStudyCard />
+      </View>
 
       <View className="flex-row flex-wrap">
         {TRUST_POINTS.map((point) => (

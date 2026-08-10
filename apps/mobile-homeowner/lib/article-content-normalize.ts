@@ -14,11 +14,36 @@ function textNode(text: string, marks?: JsonObject[]): JsonObject {
   return node;
 }
 
+/** Supports markdown-style links: [label](/path) inside legacy paragraph/bullet/quote text. */
 function paragraphFromText(text: string): JsonObject {
-  return {
-    type: 'paragraph',
-    content: text.trim() ? [textNode(text)] : [],
-  };
+  const raw = String(text || '');
+  if (!raw.trim()) {
+    return { type: 'paragraph', content: [] };
+  }
+
+  const content: JsonObject[] = [];
+  const linkRe = /\[([^\]]+)\]\(([^)\s]+)\)/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  while ((match = linkRe.exec(raw)) !== null) {
+    if (match.index > lastIndex) {
+      content.push(textNode(raw.slice(lastIndex, match.index)));
+    }
+    content.push(
+      textNode(match[1], [
+        {
+          type: 'link',
+          attrs: { href: match[2], target: '_blank' },
+        },
+      ]),
+    );
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < raw.length) {
+    content.push(textNode(raw.slice(lastIndex)));
+  }
+
+  return { type: 'paragraph', content };
 }
 
 export function legacyBlocksToTipTapNodes(blocks: unknown[]): JsonObject[] {
@@ -66,6 +91,12 @@ export function legacyBlocksToTipTapNodes(blocks: unknown[]): JsonObject[] {
                 ]
               : []),
           ],
+        });
+        break;
+      case 'callout':
+        out.push({
+          type: 'callout',
+          content: [paragraphFromText(String(b.text || ''))],
         });
         break;
       case 'image':

@@ -97,6 +97,11 @@ export const RESOURCE_SIDEBAR_TOPICS: ResourceSidebarTopic[] = [
     hint: 'Vetting, updates, and accountability',
   },
   {
+    key: 'case-studies',
+    label: 'Real project stories',
+    hint: 'Completed BuildMyHouse repairs and tracked projects',
+  },
+  {
     key: 'product',
     label: 'See the product',
     hint: 'Demos and how tracking works',
@@ -189,6 +194,16 @@ function inferTopicsForPublishedItem(item: PublishedIndexItem): ResourceTopicKey
   }
 
   if (item.href.includes('contractor') || item.href.includes('weekly-site')) {
+    topics.push('trust');
+  }
+
+  const tagBlob = `${item.title} ${(item.tags || []).join(' ')}`.toLowerCase();
+  if (
+    tagBlob.includes('case study') ||
+    tagBlob.includes('real project') ||
+    item.href.includes('case-study')
+  ) {
+    topics.push('case-studies');
     topics.push('trust');
   }
 

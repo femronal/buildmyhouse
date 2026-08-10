@@ -1,6 +1,7 @@
 import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
+import EgbedaWindowCaseStudyCard from '@/components/blog/EgbedaWindowCaseStudyCard';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
@@ -290,6 +291,10 @@ export default function DiasporaRenovateNigeriaFromAbroadPage() {
         </View>
 
         <CollapsibleFaqSection title={content.faq.title} items={[...content.faq.items]} className="mb-7" />
+
+        <View className="mb-7">
+          <EgbedaWindowCaseStudyCard />
+        </View>
 
         <LeadMagnetCard />
 

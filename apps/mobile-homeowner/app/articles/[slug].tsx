@@ -53,7 +53,7 @@ export default function ArticleDetailPage() {
   const article = useMemo(() => localArticle || remoteArticle, [localArticle, remoteArticle]);
 
   useWebSeo({
-    title: article?.title || 'BuildMyHouse Article',
+    title: article?.seoTitle || article?.title || 'BuildMyHouse Article',
     description: article?.description || 'BuildMyHouse educational content for homeowners and diaspora users.',
     canonicalPath: article?.canonicalPath || '/articles',
     robots: article ? 'index,follow' : 'noindex,nofollow',

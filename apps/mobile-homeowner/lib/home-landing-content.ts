@@ -254,6 +254,13 @@ export type PlatformCard = {
 
 export const PLATFORM_CARDS: PlatformCard[] = [
   {
+    title: 'She thought the window needed replacement',
+    description:
+      'Inspection showed repair was enough. Read the Egbeda case study on scope, materials, and staged payment.',
+    href: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study',
+    image: require('@/assets/images/man-repairing-window-with-screwdriver-inside-a-hom-2026-03-24-07-43-18-utc.jpg'),
+  },
+  {
     title: 'Roof leak repair with stage approvals',
     description:
       'See inspection updates, material evidence, and homeowner approvals before payment release.',

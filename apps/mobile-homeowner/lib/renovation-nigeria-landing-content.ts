@@ -442,6 +442,10 @@ export const renovationNigeriaLandingPageContent = {
       { label: 'Milestone payment schedule builder', href: '/tools/milestone-payment-schedule' },
       { label: 'Renovate in Nigeria from abroad', href: '/diaspora/renovate-in-nigeria-from-abroad' },
       { label: "UK guide: renovate parents' house", href: '/diaspora/uk/renovate-parents-house' },
+      {
+        label: 'Real project: Egbeda aluminium window repair case study',
+        href: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study',
+      },
     ],
   },
 } as const;

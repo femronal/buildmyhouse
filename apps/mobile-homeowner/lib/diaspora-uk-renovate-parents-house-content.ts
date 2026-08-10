@@ -257,6 +257,10 @@ export const ukRenovateParentsHousePageContent = {
         href: "/renovation/nigeria",
       },
       {
+        label: "Real Lagos repair case study: Egbeda aluminium window",
+        href: "/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study",
+      },
+      {
         label: "Download the renovation worksheet",
         href: "/downloads/remote-renovation-scope-worksheet",
       },

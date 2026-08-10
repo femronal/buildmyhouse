@@ -243,6 +243,10 @@ export const milestonePaymentScheduleBuilderPageContent = {
         href: "/diaspora/renovate-in-nigeria-from-abroad",
       },
       {
+        label: "Real-world staged payment example: Egbeda window repair",
+        href: "/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study",
+      },
+      {
         label: "Lagos building permits and stage inspections",
         href: "/guides/lagos-building-permits-and-stage-inspections",
       },

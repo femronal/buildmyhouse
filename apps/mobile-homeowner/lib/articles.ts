@@ -1,5 +1,6 @@
 import { InternalLinkItem } from '@/components/seo/InternalLinksBlock';
 import { api } from '@/lib/api';
+import { egbedaWindowCaseStudySeed } from '@/lib/aluminium-window-repair-egbeda-case-study';
 import {
   extractYoutubeVideoIdsFromContent,
   normalizeStoredArticleContent,
@@ -17,6 +18,7 @@ export type ArticleBlock =
   | { type: 'paragraph'; text: string }
   | { type: 'bullets'; items: string[] }
   | { type: 'quote'; text: string; author?: string }
+  | { type: 'callout'; text: string }
   | { type: 'image'; src: string; alt: string; caption?: string }
   | { type: 'youtube'; videoId: string; title: string; caption?: string }
   | { type: 'cta'; label: string; href: string; note?: string };
@@ -29,6 +31,10 @@ export type ArticleFaqItem = {
 export type Article = {
   slug: string;
   title: string;
+  /** Document / Open Graph title when it should differ from the on-page H1. */
+  seoTitle?: string;
+  /** On-page deck under the H1; falls back to description when omitted. */
+  subtitle?: string;
   description: string;
   excerpt: string;
   coverImageUrl: string;
@@ -56,6 +62,8 @@ type RemoteArticle = {
   id: string;
   slug: string;
   title: string;
+  seoTitle?: string | null;
+  subtitle?: string | null;
   description: string;
   excerpt: string;
   coverImageUrl: string;
@@ -209,12 +217,16 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
     internalLinks: [
       { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
       { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+      {
+        label: 'Egbeda aluminium window repair case study',
+        href: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study',
+      },
       { label: 'Talk to BuildMyHouse', href: '/location?mode=explore' },
     ],
     blocks: [
       {
         type: 'paragraph',
-        text: 'Renovation projects fail mostly from unclear scope, weak coordination, and delayed decisions. A checklist-driven process helps you avoid chaos.',
+        text: 'Renovation projects fail mostly from unclear scope, weak coordination, and delayed decisions. A checklist-driven process helps you avoid chaos. For a real small-repair example of inspection before replacement, read the [Egbeda aluminium window repair case study](/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study).',
       },
       { type: 'heading', text: 'Before work starts' },
       {
@@ -287,11 +299,15 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
       { label: 'Build in Nigeria from the UK', href: '/diaspora/build-in-nigeria-from-uk' },
       { label: 'Build in Nigeria from USA/Canada', href: '/diaspora/build-in-nigeria-from-usa-canada' },
       { label: 'Build in Nigeria from UAE', href: '/diaspora/build-in-nigeria-from-uae' },
+      {
+        label: 'Egbeda aluminium window repair case study',
+        href: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study',
+      },
     ],
     blocks: [
       {
         type: 'paragraph',
-        text: 'Remote projects are possible, but trust alone is not a process. You need clear milestones, verifiable updates, and disciplined payment controls.',
+        text: 'Remote projects are possible, but trust alone is not a process. You need clear milestones, verifiable updates, and disciplined payment controls. A compact real example is the [Egbeda aluminium window repair case study](/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study) — inspection, scope, material evidence, and homeowner confirmation on a Lagos repair.',
       },
       { type: 'heading', text: 'Remote-control framework' },
       {
@@ -325,6 +341,7 @@ const articleSeeds: (Omit<Article, 'content'> & { blocks: ArticleBlock[] })[] = 
       },
     ],
   },
+  egbedaWindowCaseStudySeed,
 ];
 
 export const articles: Article[] = articleSeeds.map(({ blocks, ...rest }) => ({
@@ -334,9 +351,13 @@ export const articles: Article[] = articleSeeds.map(({ blocks, ...rest }) => ({
 
 function normalizeRemoteArticle(input: RemoteArticle): Article {
   const slug = String(input.slug || '').trim();
+  const seoTitle = String(input.seoTitle || '').trim();
+  const subtitle = String(input.subtitle || '').trim();
   return {
     slug,
     title: String(input.title || '').trim(),
+    seoTitle: seoTitle || undefined,
+    subtitle: subtitle || undefined,
     description: String(input.description || '').trim(),
     excerpt: String(input.excerpt || '').trim(),
     coverImageUrl: String(input.coverImageUrl || '').trim(),
@@ -391,6 +412,7 @@ export function getArticlePaths() {
 export function getArticleSchema(article: Article) {
   const articleUrl = `${WEB_URL}${article.canonicalPath}`;
   const videoBlocks = extractYoutubeVideoIdsFromContent(article.content);
+  const headline = article.seoTitle || article.title;
 
   const schema: Record<string, any>[] = [
     organizationSchema,
@@ -398,7 +420,7 @@ export function getArticleSchema(article: Article) {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       mainEntityOfPage: articleUrl,
-      headline: article.title,
+      headline,
       description: article.description,
       image: [article.coverImageUrl],
       datePublished: article.publishedAt,
@@ -409,12 +431,36 @@ export function getArticleSchema(article: Article) {
       },
       publisher: {
         '@type': 'Organization',
-        name: 'BuildMyHouse',
+        name: 'BuildMyHouse Technologies',
         logo: {
           '@type': 'ImageObject',
           url: `${WEB_URL}/assets/images/icon.png`,
         },
       },
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: WEB_URL,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Articles',
+          item: `${WEB_URL}/articles`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: headline,
+          item: articleUrl,
+        },
+      ],
     },
     {
       '@context': 'https://schema.org',

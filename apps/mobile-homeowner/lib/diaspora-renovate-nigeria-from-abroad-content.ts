@@ -305,6 +305,10 @@ export const diasporaRenovateNigeriaFromAbroadPageContent = {
         href: "/diaspora/build-in-nigeria-from-abroad",
       },
       {
+        label: "Real project story: aluminium window repair in Egbeda",
+        href: "/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study",
+      },
+      {
         label: "Lagos building permits and stage inspections",
         href: "/guides/lagos-building-permits-and-stage-inspections",
       },

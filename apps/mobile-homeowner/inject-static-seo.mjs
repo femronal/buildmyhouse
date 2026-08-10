@@ -225,6 +225,13 @@ const SEO_PAGES = {
     description:
       'A practical diaspora guide to building in Nigeria from abroad with clearer stages, contractor accountability, and remote visibility.',
   },
+  '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study': {
+    title:
+      'How BuildMyHouse Repaired a Leaking Aluminium Window in Lagos Without Replacing It',
+    description:
+      'Real aluminium window repair in Egbeda, Lagos: BuildMyHouse inspected first, reduced replacement to sealing and securing, documented materials, used staged payment, and confirmed completion with the homeowner.',
+    ogType: 'article',
+  },
   '/blog': {
     title: 'BuildMyHouse Blog | Founder Stories & Property Guides',
     description:

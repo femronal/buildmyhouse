@@ -331,6 +331,10 @@ export const contractorVettingNigeriaDiasporaPageContent = {
         href: "/tools/milestone-payment-schedule",
       },
       {
+        label: "Real project: Egbeda aluminium window repair case study",
+        href: "/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study",
+      },
+      {
         label: "Lagos building permits and stage inspections",
         href: "/guides/lagos-building-permits-and-stage-inspections",
       },

@@ -3,6 +3,7 @@ import { Image, Text, View } from 'react-native';
 import { Clock3, Tag } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
 import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
+import EgbedaWindowProcessTimeline from '@/components/blog/EgbedaWindowProcessTimeline';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import {
   SeoContentBackButton,
@@ -11,6 +12,7 @@ import {
 } from '@/components/seo/SeoContentLayout';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
+import { EGBEDA_WINDOW_CASE_STUDY_SLUG } from '@/lib/aluminium-window-repair-egbeda-case-study';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { Article } from '@/lib/articles';
@@ -28,6 +30,9 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
     const date = new Date(article.publishedAt);
     return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
   }, [article.publishedAt]);
+
+  const deck = article.subtitle || article.description;
+  const showEgbedaTimeline = article.slug === EGBEDA_WINDOW_CASE_STUDY_SLUG;
 
   const readingAids = useMemo(
     () =>
@@ -53,7 +58,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
         <SeoContentBackButton />
 
         <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          BuildMyHouse Articles
+          {showEgbedaTimeline ? 'BuildMyHouse Case Study' : 'BuildMyHouse Articles'}
         </Text>
 
         <SeoHeading
@@ -65,7 +70,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
         </SeoHeading>
 
         <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
-          {article.description}
+          {deck}
         </Text>
 
         <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 mb-4">
@@ -111,6 +116,7 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
 
       <SeoContentColumn narrow>
         {html ? <ArticleHtmlBody htmlFragment={html} /> : null}
+        {showEgbedaTimeline ? <EgbedaWindowProcessTimeline /> : null}
       </SeoContentColumn>
 
       {article.faqs.length > 0 ? (
