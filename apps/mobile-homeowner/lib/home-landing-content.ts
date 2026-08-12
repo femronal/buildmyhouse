@@ -7,9 +7,9 @@ export const LANDING_SURFACE = '#F5F5F5';
 export const LANDING_ACCENT = '#000000';
 
 export const HOMEPAGE_META = {
-  title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
+  title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
   description:
-    'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+    'Manage repairs, renovations, and property work in Nigeria from abroad with verified workers, clearer scope, stage evidence, and more control over when work — and money — moves forward.',
   canonicalPath: '/',
 } as const;
 
@@ -63,24 +63,41 @@ export type HeroAudienceContent = {
   /** Shown before the slider on the homeowner tab only. */
   headlineLead?: string;
   headlineSuffix: string;
+  /** When set, replaces the rotating-keyword headline entirely. */
+  staticHeadline?: string;
+  eyebrow?: string;
   subheadline: string;
   searchPlaceholder: string;
   primaryCta: { label: string; href: string };
   secondaryCta: { label: string; href: string };
+  reassurance?: string;
   tertiaryLink?: { label: string; href: string };
 };
 
 export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceContent> = {
+  diaspora: {
+    rotatingKeywords: DIASPORA_HERO_KEYWORDS,
+    staticHeadline: "You shouldn't have to fly home to know what's happening to your property.",
+    eyebrow: 'Property work in Nigeria — managed from anywhere',
+    headlineSuffix: 'from abroad.',
+    subheadline:
+      "Whether you're fixing your parents' home, renovating a property or building from the ground up, BuildMyHouse gives you verified workers, clearer scope, stage-by-stage evidence and more control over when work — and money — moves forward.",
+    searchPlaceholder: 'What property work are you managing remotely?',
+    primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+    secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
+    reassurance: 'Repairs, upgrades, renovations and full builds.',
+  },
   'need-worker': {
     rotatingKeywords: HERO_KEYWORDS,
     headlineLead: 'Find verified',
     headlineSuffix: 'in Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
-    primaryCta: { label: 'Start a Tracked Repair', href: '/book-repair' },
-    secondaryCta: { label: 'Hire a Verified Worker', href: '/location?mode=explore' },
+    primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+    secondaryCta: { label: 'Find a Verified Worker', href: '/location?mode=explore' },
+    reassurance: 'Repairs, upgrades, renovations and full builds.',
     tertiaryLink: {
-      label: 'Managing from abroad? Start a tracked project',
+      label: 'Managing from abroad? Stay in control remotely',
       href: '/diaspora/build-in-nigeria-from-abroad',
     },
   },
@@ -89,27 +106,29 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'and get hired on BuildMyHouse.',
     subheadline: CONTRACTOR_HERO_SUBHEADLINE,
     searchPlaceholder: 'What kind of projects do you take on?',
-    primaryCta: { label: 'Get Hired on BuildMyHouse', href: '/for-contractors' },
+    primaryCta: { label: 'Get Verified on BuildMyHouse', href: '/for-contractors' },
     secondaryCta: { label: 'See How Verification Works', href: '#how-it-works' },
-  },
-  diaspora: {
-    rotatingKeywords: DIASPORA_HERO_KEYWORDS,
-    headlineSuffix: 'from abroad.',
-    subheadline: DIASPORA_HERO_SUBHEADLINE,
-    searchPlaceholder: 'What property work are you managing remotely?',
-    primaryCta: { label: 'Start a Tracked Project', href: '/diaspora/build-in-nigeria-from-abroad' },
-    secondaryCta: { label: 'Find a Verified Worker', href: '/location?mode=explore' },
   },
 };
 
+/** Diaspora first — homepage dream buyer. */
 export const AUDIENCE_TABS: AudienceTab[] = [
   {
+    key: 'diaspora',
+    label: 'Managing from abroad',
+    title: 'Track scope, stage updates, evidence, communication, and payment decisions from wherever you live.',
+    description:
+      'Use BuildMyHouse as your control layer so distance does not become loss of visibility.',
+    ctaLabel: 'Start a Tracked Project',
+    ctaHref: '/book-repair',
+  },
+  {
     key: 'need-worker',
-    label: 'I need a worker',
+    label: 'I need work done',
     title: 'Find verified repairers and contractors for property work in Nigeria.',
     description:
       'Start with repairs, then move into upgrades, renovations, interiors, and larger projects with better structure.',
-    ctaLabel: 'Hire a Verified Worker',
+    ctaLabel: 'Find a Verified Worker',
     ctaHref: '/location?mode=explore',
   },
   {
@@ -118,29 +137,115 @@ export const AUDIENCE_TABS: AudienceTab[] = [
     title: 'Join BuildMyHouse as a verified artisan, repairer, renovator, or general contractor.',
     description:
       'Receive clearer briefs, documented workflow expectations, and project requests from homeowners who value organized execution.',
-    ctaLabel: 'Get Hired on BuildMyHouse',
+    ctaLabel: 'Get Verified on BuildMyHouse',
     ctaHref: '/for-contractors',
-  },
-  {
-    key: 'diaspora',
-    label: 'Managing from abroad',
-    title: 'Track scope, stage updates, evidence, communication, and payment decisions from wherever you live.',
-    description:
-      'Use BuildMyHouse as your control layer so distance does not become loss of visibility.',
-    ctaLabel: 'Manage a Project From Abroad',
-    ctaHref: '/diaspora/build-in-nigeria-from-abroad',
   },
 ];
 
 export const NAV_ITEMS = [
-  { label: 'Find Workers', href: '/location?mode=explore' },
+  { label: 'How It Works', href: '#how-it-works' },
   { label: 'Repairs', href: '#services' },
   { label: 'Renovations', href: '#services' },
-  { label: 'Tools', href: '#tools' },
   { label: 'Build From Abroad', href: '#diaspora' },
+  { label: 'Tools', href: '#tools' },
   { label: 'For Contractors', href: '#contractors' },
-  { label: 'How It Works', href: '#how-it-works' },
 ] as const;
+
+export const CONTROL_PROMISE = {
+  heading: 'The BuildMyHouse Control Promise',
+  supporting:
+    'Clearer scope before work starts. Evidence as stages progress. You stay involved in the decisions that move your project forward.',
+  points: [
+    { label: 'Verified Workers', key: 'verified' },
+    { label: 'Scope Before Work', key: 'scope' },
+    { label: 'Evidence Before Payment', key: 'evidence' },
+    { label: 'Dispute Support', key: 'dispute' },
+  ],
+} as const;
+
+export const COMPARISON_SECTION = {
+  heading: 'Stop managing property work with scattered WhatsApp messages.',
+  supporting:
+    'WhatsApp is good for conversation. It was never designed to manage scope, evidence, stages and money.',
+  oldHeading: 'Managing from WhatsApp',
+  newHeading: 'Managing with BuildMyHouse',
+} as const;
+
+export const PROMISED_LAND = {
+  heading: 'Imagine managing your property in Nigeria without chasing anyone for updates.',
+  supporting:
+    'You open BuildMyHouse and see what is being done, what stage the work is in, what evidence has been submitted, what has been spent and what needs your attention next.',
+  caption: 'This is what control looks like from abroad.',
+} as const;
+
+export const PRODUCT_LADDER_SECTION = {
+  heading: 'Start with the job you need done now.',
+  supporting:
+    "Fix one leaking pipe. Renovate your parents' bathroom. Upgrade a rental. Or manage a complete build. BuildMyHouse is designed to grow with the size of the work.",
+  primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+  secondaryCta: { label: 'Browse Services', href: '/services/home-renovation-nigeria' },
+} as const;
+
+export const OFFER_SECTION = {
+  heading: 'Before you send another payment to Nigeria, get the project clear.',
+  supporting:
+    'Start by showing BuildMyHouse what needs to be fixed, upgraded, renovated or built. We help turn the request into something more structured before the work gets out of control.',
+  components: [
+    {
+      title: 'Project intake',
+      description: 'Describe the work and upload supporting photos.',
+    },
+    {
+      title: 'Verified matching',
+      description: 'Connect the scope with appropriate verified supply.',
+    },
+    {
+      title: 'Stage-based tracking',
+      description: 'Follow progress as the work moves.',
+    },
+    {
+      title: 'Evidence-based visibility',
+      description: 'Keep project evidence and communication together.',
+    },
+  ],
+  primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+} as const;
+
+export const WORKSHEET_SECTION = {
+  eyebrow: 'Not ready to hire anyone yet?',
+  heading: 'Define the renovation before money starts moving.',
+  supporting:
+    "Download BuildMyHouse's Remote Renovation Scope Worksheet for Nigerians Abroad and clarify repairs, upgrades, rooms, stages and payment checkpoints before work begins.",
+  cta: {
+    label: 'Get the Free Worksheet',
+    href: '/downloads/remote-renovation-scope-worksheet',
+  },
+} as const;
+
+export const TOOLS_SECTION = {
+  eyebrow: 'Property decision tools',
+  heading: 'Make better property decisions before sending money.',
+  supporting:
+    'BuildMyHouse tools are designed to help you question prices, quotes, risks and project decisions before they become expensive mistakes.',
+  primaryCta: { label: 'Check a Building Material Price', href: '/tools/price-checker' },
+  secondaryCta: { label: 'See All Tools', href: '/tools' },
+} as const;
+
+export const TESTIMONIALS_SECTION = {
+  kicker: 'Real property work. Real evidence.',
+  heading: "Don't take our word for it. See how the work was handled.",
+  supporting:
+    'For repairs, renovations, and builds in Nigeria — whether you are on site or monitoring from abroad. Verified workers, staged updates, and evidence before you pay.',
+} as const;
+
+export const FOOTER_CLOSE = {
+  line1: 'Your property is in Nigeria.',
+  line2: "Your control doesn't have to be.",
+  supporting:
+    'From the first repair to a complete renovation or build, manage the work through clearer scope, verified supply, stage evidence and better visibility.',
+  ctaLabel: 'Start Your Project',
+  ctaHref: '/book-repair',
+} as const;
 
 export type PopularChip = {
   label: string;
@@ -311,24 +416,24 @@ export type HowStep = {
 
 export const HOW_IT_WORKS_STEPS: HowStep[] = [
   {
-    title: 'Tell us what you need',
+    title: 'Tell us what is happening',
     description:
-      'Upload photos, describe the issue, location, urgency, and expected outcome.',
+      'Upload photos or videos, describe the property, location, problem and outcome you want.',
   },
   {
-    title: 'Get matched',
+    title: 'Get matched with verified supply',
     description:
-      'BuildMyHouse connects you with suitable verified repairers, artisans, or contractors.',
+      'BuildMyHouse helps coordinate an appropriate verified artisan, repairer or contractor for the scope.',
   },
   {
-    title: 'Track the work',
+    title: 'Follow the work remotely',
     description:
-      'Follow progress through scope, stages, updates, photos, videos, and messages.',
+      'See stages, updates, photos, videos, materials and project communication without being on site.',
   },
   {
-    title: 'Approve with evidence',
+    title: 'Review before progression',
     description:
-      'Move forward when the stage is clear, not because someone is pressuring you.',
+      'Understand what has been completed and the evidence available before the project moves forward.',
   },
 ];
 
@@ -344,11 +449,34 @@ export const TRUST_POINTS = [
 ] as const;
 
 export const COMPARISON_ROWS = [
-  { oldWay: 'Random referrals from neighbors', platformWay: 'Verified supply of artisans and contractors' },
-  { oldWay: 'Vague updates and "I am on it sir"', platformWay: 'Clearer scope defined before work starts' },
-  { oldWay: 'Pressure to send money without progress', platformWay: 'Work broken down into trackable stages' },
-  { oldWay: 'No clear record of what was agreed', platformWay: 'Evidence required before approval' },
-  { oldWay: 'Photos sent without context', platformWay: 'Better visibility for owners at home or abroad' },
+  {
+    oldWay: 'Random contractor referrals from relatives',
+    platformWay: 'Verified workers matched to the work',
+  },
+  {
+    oldWay: '"Oga, we need more money" without clear stage context',
+    platformWay: 'Scope clarified before work progresses',
+  },
+  {
+    oldWay: 'Photos and videos scattered across chats',
+    platformWay: 'Photos, videos and documentation attached to progress',
+  },
+  {
+    oldWay: 'Scope changing after work begins',
+    platformWay: 'Work broken into visible stages',
+  },
+  {
+    oldWay: 'Money moving because someone sounds urgent',
+    platformWay: 'Better visibility before approvals',
+  },
+  {
+    oldWay: 'No reliable record of what was agreed',
+    platformWay: 'Project history kept in one workflow',
+  },
+  {
+    oldWay: 'Flying home or calling family just to understand what is happening',
+    platformWay: 'Dispute support when something goes wrong',
+  },
 ] as const;
 
 export const WORKER_CATEGORIES = [
@@ -376,69 +504,64 @@ export const DIASPORA_USE_CASES = [
 
 export const FAQ_ITEMS = [
   {
-    question: 'What is BuildMyHouse?',
-    answer:
-      'BuildMyHouse is a trust-and-workflow platform for property work in Nigeria. It helps homeowners and diaspora owners define scope, hire verified contractors, track stages, and approve payments with evidence. Free decision tools like the Nigeria building material Price Checker help you confirm fair market prices before money moves.',
-  },
-  {
-    question: 'What free tools does BuildMyHouse offer?',
-    answer:
-      'BuildMyHouse Price Checker is live today at buildmyhouse.app/tools/price-checker. Search Nigerian building materials — cement, reinforcement steel, roofing sheets, tiles, paint, plumbing, electrical cables, solar, and more — answer a few clarifying questions, and get a source-backed price range for your location with a confidence score. Free daily checks are included; additional reports are available when you need them. More free tools are on the roadmap, including Construction Scam Red-Flag Checker, Contractor Quote Comparison, Nigeria Building Cost Planner, Property Repair Triage Assistant, and Land Purchase Risk Checker. Browse the full catalog under Tools.',
-  },
-  {
-    question: 'How does the BuildMyHouse Price Checker work?',
-    answer:
-      'Open Price Checker, search the material you want to price, and confirm details like brand, specification, unit, quantity, and location (for example Lagos, Abuja, Ogun, or Edo). BuildMyHouse researches current market listings, removes weak or duplicate evidence, and returns an observed price range, typical price, source dates, and plain-language confidence. If online evidence is not strong enough, the tool says so clearly instead of inventing a number — and you can request a verified local market check. It is built for homeowners, contractors, landlords, and Nigerians abroad who need defensible material prices before paying a quotation.',
-  },
-  {
-    question: 'Can I check cement and other building material prices in Nigeria online?',
-    answer:
-      'Yes. Use BuildMyHouse Price Checker to check current cement prices in Nigeria and other common materials such as iron rods, blocks, sand, granite, roofing, tiles, and finishes. Results are based on traceable listings with confidence scoring, so you can compare a contractor quote or market price with clearer evidence instead of guesswork.',
-  },
-  {
-    question: 'Can I use BuildMyHouse if I live in Nigeria?',
-    answer:
-      'Yes — absolutely. BuildMyHouse was built first for diaspora Nigerians who need to manage projects in Nigeria remotely, with structured workflows and staged payments between you and your contractor. If you live in Nigeria, you can use it to find verified contractors for repairs, upgrades, renovations, or full builds — and you’re free to work with them on or off the app. It’s also a strong fit if you’re busy on the ground: landlords, property managers, estate managers, and companies who want someone else handling the monitoring while they focus on everything else.',
-  },
-  {
     question: 'Can I use BuildMyHouse if I live abroad?',
     answer:
-      'Yes. BuildMyHouse is built to help diaspora users monitor scope, stage updates, communication, and evidence while managing property work in Nigeria from abroad.',
+      'Yes. BuildMyHouse is built for Nigerians in the UK, US, Canada, UAE, Europe and elsewhere who need to manage property work in Nigeria from abroad — with clearer scope, stage updates, evidence and communication in one workflow.',
+  },
+  {
+    question: 'How can I monitor property work in Nigeria from abroad?',
+    answer:
+      'You can follow stage updates, media evidence, materials and communication records in one project workflow instead of scattered WhatsApp chats, voice notes and family phone calls.',
+  },
+  {
+    question: 'How are BuildMyHouse workers verified?',
+    answer:
+      "Verification starts at the contractor's workshop — where they actually work. A BuildMyHouse agent visits to confirm the site, and a follow-up check verifies the tools on hand and that work has been carried out there for at least three years. We also collect CAC registration, a valid government ID, and any relevant professional documents where available.",
+  },
+  {
+    question: 'How does BuildMyHouse handle progress evidence?',
+    answer:
+      'Work is broken into stages. Photos, videos and documentation can be attached to progress so you can review what has been completed before the project moves forward — instead of paying because someone sounds urgent.',
+  },
+  {
+    question: 'Can I use BuildMyHouse for small repairs?',
+    answer:
+      'Yes. You can start with repair-focused jobs like plumbing, electrical issues, roof leaks, drainage, windows, painting and bathroom fixes. Many diaspora projects begin with one urgent repair.',
+  },
+  {
+    question: 'Can BuildMyHouse manage renovations?',
+    answer:
+      'Yes. Renovation work can be structured into stages with clearer scope, updates and approvals — useful for parents’ homes, inherited houses, rentals and room-by-room upgrades.',
   },
   {
     question: 'Does BuildMyHouse only handle full construction?',
     answer:
-      'No. The wedge starts with repairs and upgrades, then expands to renovations, interiors, and larger builds.',
+      'No. The wedge starts with repairs and upgrades, then expands to renovations, interiors and larger builds. You do not need to start with a full house project.',
   },
   {
-    question: 'Can I find repairers on BuildMyHouse?',
+    question: 'What happens if I disagree with work completed on a stage?',
     answer:
-      'Yes. You can start with repair-focused jobs like plumbing, electrical issues, roof leaks, drainage, painting, and bathroom fixes.',
+      'BuildMyHouse provides dispute support and keeps project history, evidence and communication in one place so disagreements can be reviewed against what was agreed and what was submitted — not against memory and scattered chats.',
   },
   {
-    question: 'How are workers verified?',
+    question: 'Can I check Nigerian building-material prices online?',
     answer:
-      'Verification starts at the contractor’s workshop — where they actually work. A BuildMyHouse agent visits to confirm the site, and a follow-up check verifies the tools on hand and that work has been carried out there for at least three years. We also collect CAC registration, a valid government ID, and any relevant professional documents where available.',
+      'Yes. Use BuildMyHouse Price Checker to research current market prices for materials such as cement, iron rods, roofing, tiles and finishes, with source-backed ranges and confidence scoring instead of guesswork.',
   },
   {
-    question: 'Can I monitor a project from abroad?',
+    question: 'Can people living in Nigeria also use BuildMyHouse?',
     answer:
-      'Yes. You can follow stage updates, media evidence, and communication records in one workflow instead of scattered chats.',
-  },
-  {
-    question: 'Can I use BuildMyHouse for renovations?',
-    answer:
-      'Yes. Renovation work can be structured into stages with clearer scope, updates, and approvals.',
+      'Yes. If you live in Nigeria, you can use the same system to find verified workers and manage repairs, upgrades and renovations with better documentation. It is also useful for busy landlords and property managers who cannot be on every site daily.',
   },
   {
     question: 'Is BuildMyHouse a construction company?',
     answer:
-      'No. BuildMyHouse is a software and operations coordination platform designed to improve visibility, accountability, and owner control.',
+      'No. BuildMyHouse is a software and operations coordination platform designed to improve visibility, accountability and owner control — the control layer between homeowner, scope, verified worker, stage, evidence, approval and money.',
   },
   {
     question: 'How do contractors join BuildMyHouse?',
     answer:
-      'Contractors and artisans can apply through the contractor onboarding flow, complete verification steps, and start receiving project opportunities.',
+      'Contractors and artisans can apply through the contractor onboarding flow, complete verification steps, and become eligible for structured project opportunities. We do not promise guaranteed leads.',
   },
 ] as const;
 
@@ -450,10 +573,11 @@ export type LandingTestimonial = {
   tagDetail: string;
 };
 
+/** Process-focused proof points — avoid inventing user/project counts. */
 export const LANDING_TESTIMONIAL_STATS = [
-  { value: '3+', label: 'Years verified minimum' },
-  { value: '1001+', label: 'Projects completed' },
-  { value: 'Nigeria', label: 'Primary service area' },
+  { value: 'Scope', label: 'Cleared before work starts' },
+  { value: 'Evidence', label: 'Attached to each stage' },
+  { value: 'Abroad', label: 'Built for remote owners' },
 ] as const;
 
 export const LANDING_TESTIMONIALS: LandingTestimonial[] = [

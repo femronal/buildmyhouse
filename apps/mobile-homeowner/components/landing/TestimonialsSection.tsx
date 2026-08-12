@@ -1,7 +1,13 @@
 import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { ArrowRight, Star } from 'phosphor-react-native';
-import { LANDING_TESTIMONIALS, LANDING_TESTIMONIAL_STATS, type LandingTestimonial } from '@/lib/home-landing-content';
+import {
+  LANDING_TESTIMONIALS,
+  LANDING_TESTIMONIAL_STATS,
+  TESTIMONIALS_SECTION,
+  type LandingTestimonial,
+} from '@/lib/home-landing-content';
+import { trackWebEvent } from '@/lib/analytics';
 
 type TestimonialsSectionProps = {
   onHowItWorksPress?: () => void;
@@ -63,11 +69,11 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
         <View className="border border-white/10 rounded-3xl p-6 md:p-8">
           <View className="flex-row items-center gap-4 md:gap-6">
             <Text className="text-3xl md:text-4xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Testimonials
+              Proof
             </Text>
             <View className="w-px h-8 md:h-10 bg-white/10" />
-            <Text className="text-sm text-slate-400 lowercase" style={{ fontFamily: 'Poppins_400Regular' }}>
-              real project stories
+            <Text className="text-sm text-slate-400" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {TESTIMONIALS_SECTION.kicker}
             </Text>
           </View>
 
@@ -79,14 +85,13 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
                 className="text-[36px] md:text-5xl lg:text-6xl text-white leading-tight tracking-tight"
                 style={{ fontFamily: 'Poppins_600SemiBold' }}
               >
-                When WhatsApp is not enough
+                {TESTIMONIALS_SECTION.heading}
               </Text>
               <Text
                 className="mt-3 text-sm md:text-base text-slate-400 max-w-xl leading-relaxed"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                For repairs, renovations, and builds in Nigeria — whether you are on site or monitoring from abroad.
-                Verified workers, staged updates, and evidence before you pay.
+                {TESTIMONIALS_SECTION.supporting}
               </Text>
 
               <View className="mt-6 flex-row flex-wrap gap-3">
@@ -117,23 +122,32 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               <View className="h-px bg-white/10 mt-6" />
 
               <View className="flex-row flex-wrap items-center gap-3 mt-5">
-                <Link href={'/location?mode=explore' as any} asChild>
+                <Link href={'/book-repair' as any} asChild>
                   <Pressable
+                    onPress={() =>
+                      trackWebEvent('homepage_primary_cta_clicked', {
+                        placement: 'testimonials',
+                        href: '/book-repair',
+                      })
+                    }
                     className="h-12 px-6 rounded-lg bg-white justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="link"
                   >
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Start a tracked project
+                      Start a Tracked Project
                     </Text>
                   </Pressable>
                 </Link>
                 <Pressable
-                  onPress={onHowItWorksPress}
+                  onPress={() => {
+                    trackWebEvent('testimonial_engaged', { action: 'see_how_it_works' });
+                    onHowItWorksPress?.();
+                  }}
                   className="h-12 px-6 rounded-lg border border-white/15 bg-white/5 flex-row items-center gap-2 bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="button"
                 >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    See how it works
+                    See How It Works
                   </Text>
                   <ArrowRight size={16} color="#ffffff" weight="regular" />
                 </Pressable>

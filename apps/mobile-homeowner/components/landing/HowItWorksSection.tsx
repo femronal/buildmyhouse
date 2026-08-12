@@ -7,13 +7,14 @@ const STEP_ICONS: Icon[] = [Camera, User, ClipboardText, ShieldCheck];
 
 type HowItWorksSectionProps = {
   onLayout?: (event: LayoutChangeEvent) => void;
+  nativeID?: string;
 };
 
-export default function HowItWorksSection({ onLayout }: HowItWorksSectionProps) {
+export default function HowItWorksSection({ onLayout, nativeID }: HowItWorksSectionProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   return (
-    <View className="py-24 bg-white" onLayout={onLayout}>
+    <View nativeID={nativeID} className="py-24 bg-white" onLayout={onLayout}>
       <View className="max-w-7xl w-full self-center px-6 md:px-12">
         <Text
           className="text-3xl md:text-4xl text-black mb-16 text-center tracking-tight"

@@ -12,10 +12,12 @@ import { Link } from 'expo-router';
 import { Image } from 'expo-image';
 import { ArrowUpRight, ArrowSquareOut } from 'phosphor-react-native';
 import { SeoHeading } from '@/components/seo/SeoHeading';
-import { PLATFORM_LADDER_GALLERY } from '@/lib/home-landing-content';
+import { PLATFORM_LADDER_GALLERY, PRODUCT_LADDER_SECTION } from '@/lib/home-landing-content';
+import { trackWebEvent } from '@/lib/analytics';
 
 type PlatformGallerySectionProps = {
   onLayout?: (event: LayoutChangeEvent) => void;
+  nativeID?: string;
 };
 
 function GalleryHeadline() {
@@ -27,15 +29,7 @@ function GalleryHeadline() {
           'mx-auto max-w-3xl text-center bmh-gallery-fade-in text-3xl sm:text-5xl lg:text-6xl leading-[1.08] tracking-tight text-white',
         style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
       },
-      'What can you do on ',
-      createElement(
-        'span',
-        {
-          className: 'block bmh-platform-gradient-text',
-          style: { fontFamily: 'Poppins_600SemiBold' },
-        },
-        'BuildMyHouse?',
-      ),
+      PRODUCT_LADDER_SECTION.heading,
     );
   }
 
@@ -46,7 +40,7 @@ function GalleryHeadline() {
         className="text-3xl leading-tight tracking-tight text-white text-center"
         style={{ fontFamily: 'Poppins_600SemiBold' }}
       >
-        What can you do on BuildMyHouse?
+        {PRODUCT_LADDER_SECTION.heading}
       </SeoHeading>
     </View>
   );
@@ -63,7 +57,7 @@ function CardLabel({ title }: { title: string }) {
   );
 }
 
-export default function PlatformGallerySection({ onLayout }: PlatformGallerySectionProps) {
+export default function PlatformGallerySection({ onLayout, nativeID }: PlatformGallerySectionProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const isTablet = width >= 768 && width < 1024;
@@ -125,7 +119,7 @@ export default function PlatformGallerySection({ onLayout }: PlatformGallerySect
   };
 
   return (
-    <View className="bg-black py-20 md:py-28" onLayout={onLayout}>
+    <View nativeID={nativeID} className="bg-black py-20 md:py-28" onLayout={onLayout}>
       <View className="max-w-7xl w-full self-center px-6 md:px-12">
         <GalleryHeadline />
 
@@ -150,27 +144,39 @@ export default function PlatformGallerySection({ onLayout }: PlatformGallerySect
           className="mx-auto mt-8 max-w-xl text-center text-base text-neutral-400 leading-relaxed bmh-gallery-fade-in-late"
           style={{ fontFamily: 'Poppins_500Medium' }}
         >
-          From urgent Friday evening plumbing disasters to full ground-up builds. Start small, build trust, scale up.
+          {PRODUCT_LADDER_SECTION.supporting}
         </Text>
 
         <View className="mt-8 flex-row flex-wrap items-center justify-center gap-3 bmh-gallery-fade-in-late">
-          <Link href={'/location?mode=explore' as any} asChild>
+          <Link href={PRODUCT_LADDER_SECTION.primaryCta.href as any} asChild>
             <Pressable
+              onPress={() =>
+                trackWebEvent('homepage_primary_cta_clicked', {
+                  placement: 'product_ladder',
+                  href: PRODUCT_LADDER_SECTION.primaryCta.href,
+                })
+              }
               className="h-11 px-6 rounded-full bg-white justify-center min-w-[180px] bmh-platform-primary-cta"
               accessibilityRole="link"
             >
               <Text className="text-sm text-black text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Find a Verified Worker
+                {PRODUCT_LADDER_SECTION.primaryCta.label}
               </Text>
             </Pressable>
           </Link>
-          <Link href={'/services/home-renovation-nigeria' as any} asChild>
+          <Link href={PRODUCT_LADDER_SECTION.secondaryCta.href as any} asChild>
             <Pressable
+              onPress={() =>
+                trackWebEvent('homepage_secondary_cta_clicked', {
+                  placement: 'product_ladder',
+                  href: PRODUCT_LADDER_SECTION.secondaryCta.href,
+                })
+              }
               className="h-11 px-5 rounded-full border border-white/15 justify-center flex-row items-center gap-2 bmh-platform-secondary-cta"
               accessibilityRole="link"
             >
               <Text className="text-sm text-neutral-100" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Browse service guides
+                {PRODUCT_LADDER_SECTION.secondaryCta.label}
               </Text>
               <ArrowSquareOut size={15} color="#e5e5e5" weight="regular" />
             </Pressable>

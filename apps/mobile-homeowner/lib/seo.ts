@@ -266,9 +266,9 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/') {
     return {
-      title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria',
+      title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
       description:
-        'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+        'Manage repairs, renovations, and property work in Nigeria from abroad with verified workers, clearer scope, stage evidence, and more control over when work — and money — moves forward.',
       canonicalPath,
       robots: 'index,follow',
     };

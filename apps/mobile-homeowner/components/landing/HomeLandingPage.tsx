@@ -32,13 +32,20 @@ import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
 import {
   AUDIENCE_TABS,
   COMPARISON_ROWS,
+  COMPARISON_SECTION,
+  CONTROL_PROMISE,
   FAQ_ITEMS,
+  FOOTER_CLOSE,
   HERO_AUDIENCE_CONTENT,
   NAV_ITEMS,
+  OFFER_SECTION,
+  PROMISED_LAND,
+  WORKSHEET_SECTION,
   BUILDMYHOUSE_CONTACT,
   BUILDMYHOUSE_SOCIALS,
   type AudienceTab,
 } from '@/lib/home-landing-content';
+import { trackWebEvent } from '@/lib/analytics';
 
 function WebWordSlider({
   words,
@@ -65,6 +72,29 @@ function WebWordSlider({
 function HeroHeadlineBlock({ audience }: { audience: AudienceTab['key'] }) {
   const hero = HERO_AUDIENCE_CONTENT[audience];
   const emphasizeRotate = audience !== 'need-worker';
+
+  if (hero.staticHeadline) {
+    if (Platform.OS === 'web') {
+      return createElement(
+        'h1',
+        {
+          className:
+            'text-4xl md:text-5xl lg:text-6xl font-semibold tracking-tight text-black leading-[1.1]',
+          style: { fontFamily: 'Poppins_600SemiBold', margin: 0 },
+        },
+        hero.staticHeadline,
+      );
+    }
+    return (
+      <Text
+        accessibilityRole="header"
+        className="text-4xl text-black leading-tight"
+        style={{ fontFamily: 'Poppins_600SemiBold' }}
+      >
+        {hero.staticHeadline}
+      </Text>
+    );
+  }
 
   if (Platform.OS === 'web') {
     const children: ReactNode[] = [];
@@ -130,9 +160,9 @@ function AudienceTabBar({
   isDesktop: boolean;
 }) {
   const mobileLabels: Record<AudienceTab['key'], string> = {
-    'need-worker': 'Need a worker',
-    'get-hired': 'Get hired',
     diaspora: 'From abroad',
+    'need-worker': 'Need work done',
+    'get-hired': 'Get hired',
   };
 
   const renderTab = (tab: AudienceTab, compact?: boolean) => {
@@ -201,11 +231,11 @@ function FooterHeadline() {
     return createElement(
       'h2',
       { className: 'bmh-footer-headline', style: { fontFamily: 'Poppins_600SemiBold' } },
-      createElement('span', { key: 'l1', style: { display: 'block' } }, 'Ready to fix, upgrade,'),
+      createElement('span', { key: 'l1', style: { display: 'block' } }, FOOTER_CLOSE.line1),
       createElement(
         'span',
         { key: 'l2', style: { display: 'block', color: 'rgba(255,255,255,0.6)' } },
-        'renovate, or build?',
+        FOOTER_CLOSE.line2,
       ),
     );
   }
@@ -215,8 +245,9 @@ function FooterHeadline() {
       className="text-white"
       style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 40, lineHeight: 42, letterSpacing: -1 }}
     >
-      Ready to fix, upgrade,{'\n'}
-      <Text style={{ color: 'rgba(255,255,255,0.6)' }}>renovate, or build?</Text>
+      {FOOTER_CLOSE.line1}
+      {'\n'}
+      <Text style={{ color: 'rgba(255,255,255,0.6)' }}>{FOOTER_CLOSE.line2}</Text>
     </Text>
   );
 }
@@ -244,7 +275,7 @@ export default function HomeLandingPage() {
   const showTabletNav = width >= 768 && width < 1024;
   const scrollRef = useRef<ScrollView>(null);
   const sectionOffsets = useRef<Record<string, number>>({});
-  const [audience, setAudience] = useState<AudienceTab['key']>('need-worker');
+  const [audience, setAudience] = useState<AudienceTab['key']>('diaspora');
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ_ITEMS[0]?.question ?? null);
   const heroContent = HERO_AUDIENCE_CONTENT[audience];
   const { popularLinks, popularChips } = useLandingServiceLinks();
@@ -259,6 +290,22 @@ export default function HomeLandingPage() {
     if (typeof y === 'number') {
       scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: true });
     }
+  };
+
+  const selectAudience = (key: AudienceTab['key']) => {
+    setAudience(key);
+    trackWebEvent('diaspora_tab_selected', { audience: key });
+  };
+
+  const trackPrimaryCta = (placement: string, href: string) => {
+    trackWebEvent('homepage_primary_cta_clicked', { placement, href });
+    if (href.includes('book-repair') || href.includes('diaspora')) {
+      trackWebEvent('homepage_project_started', { placement, href });
+    }
+  };
+
+  const trackSecondaryCta = (placement: string, href: string) => {
+    trackWebEvent('homepage_secondary_cta_clicked', { placement, href });
   };
 
   return (
@@ -302,7 +349,7 @@ export default function HomeLandingPage() {
                   </Text>
                 </Pressable>
               </Link>
-              {/* Mobile: Login → app auth. Desktop: Get Started → explore flow. */}
+              {/* Mobile: Login → app auth. Desktop: primary homeowner CTA. */}
               <Link href={'/email-login' as any} asChild>
                 <Pressable
                   className="md:hidden bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark"
@@ -314,13 +361,14 @@ export default function HomeLandingPage() {
                   </Text>
                 </Pressable>
               </Link>
-              <Link href={'/location?mode=explore' as any} asChild>
+              <Link href={'/book-repair' as any} asChild>
                 <Pressable
+                  onPress={() => trackPrimaryCta('header', '/book-repair')}
                   className="hidden md:flex bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="link"
                 >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Get Started
+                    Start a Project
                   </Text>
                 </Pressable>
               </Link>
@@ -334,7 +382,7 @@ export default function HomeLandingPage() {
         <View className="pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="mb-6 md:mb-8">
-              <AudienceTabBar audience={audience} onSelect={setAudience} isDesktop={isDesktop} />
+              <AudienceTabBar audience={audience} onSelect={selectAudience} isDesktop={isDesktop} />
             </View>
 
             <View
@@ -347,6 +395,14 @@ export default function HomeLandingPage() {
             >
             <View className="bmh-hero-left z-10 gap-8 w-full" style={{ flex: isDesktop ? 5 : undefined }}>
               <View className="gap-6">
+                {heroContent.eyebrow ? (
+                  <Text
+                    className="text-[11px] uppercase tracking-[0.18em] text-slate-500"
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    {heroContent.eyebrow}
+                  </Text>
+                ) : null}
                 <HeroHeadlineBlock audience={audience} />
 
                 <Text className="text-base md:text-lg text-slate-500 leading-relaxed max-w-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -376,7 +432,11 @@ export default function HomeLandingPage() {
 
               <View className="flex-col sm:flex-row gap-4 pt-4">
                 <Link href={heroContent.primaryCta.href as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-black items-center justify-center bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
+                  <Pressable
+                    onPress={() => trackPrimaryCta('hero', heroContent.primaryCta.href)}
+                    className="h-12 px-6 rounded-lg bg-black items-center justify-center bmh-glass-btn bmh-glass-btn-dark"
+                    accessibilityRole="link"
+                  >
                     <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                       {heroContent.primaryCta.label}
                     </Text>
@@ -384,7 +444,10 @@ export default function HomeLandingPage() {
                 </Link>
                 {heroContent.secondaryCta.href.startsWith('#') ? (
                   <Pressable
-                    onPress={() => navPress(heroContent.secondaryCta.href)}
+                    onPress={() => {
+                      trackSecondaryCta('hero', heroContent.secondaryCta.href);
+                      navPress(heroContent.secondaryCta.href);
+                    }}
                     className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="button"
                   >
@@ -394,7 +457,11 @@ export default function HomeLandingPage() {
                   </Pressable>
                 ) : (
                   <Link href={heroContent.secondaryCta.href as any} asChild>
-                    <Pressable className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
+                    <Pressable
+                      onPress={() => trackSecondaryCta('hero', heroContent.secondaryCta.href)}
+                      className="h-12 px-6 rounded-lg bg-white border border-slate-200 items-center justify-center bmh-glass-btn bmh-glass-btn-light"
+                      accessibilityRole="link"
+                    >
                       <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                         {heroContent.secondaryCta.label}
                       </Text>
@@ -402,6 +469,12 @@ export default function HomeLandingPage() {
                   </Link>
                 )}
               </View>
+
+              {heroContent.reassurance ? (
+                <Text className="text-xs text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  {heroContent.reassurance}
+                </Text>
+              ) : null}
 
               {heroContent.tertiaryLink ? (
                 <Link href={heroContent.tertiaryLink.href as any} asChild>
@@ -424,17 +497,32 @@ export default function HomeLandingPage() {
                 paddingTop: isDesktop ? 8 : 0,
               }}
             >
+              <Text
+                className="text-xs uppercase tracking-[0.16em] text-slate-400 mb-3 self-center lg:self-end"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                {PROMISED_LAND.caption}
+              </Text>
               <PhoneDashboardMockup />
             </View>
             </View>
           </View>
         </View>
 
-        {/* Trust bar */}
+        {/* Control Promise */}
         <View className="border-y border-slate-100 bg-slate-50 py-10">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <Text className="text-xs text-center text-slate-500 mb-6 uppercase tracking-widest" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Built to help property owners move from unclear promises to structured property work
+            <Text
+              className="text-xs text-center text-slate-500 mb-2 uppercase tracking-widest"
+              style={{ fontFamily: 'Poppins_600SemiBold' }}
+            >
+              {CONTROL_PROMISE.heading}
+            </Text>
+            <Text
+              className="text-sm text-center text-slate-500 mb-6 max-w-2xl self-center leading-relaxed"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+            >
+              {CONTROL_PROMISE.supporting}
             </Text>
             <View className="flex-row flex-wrap justify-center gap-6 md:gap-12">
               {[
@@ -444,8 +532,8 @@ export default function HomeLandingPage() {
                 { icon: Lifebuoy, label: 'Dispute Support' },
               ].map(({ icon: Icon, label }) => (
                 <View key={label} className="flex-row items-center gap-2">
-                  <Icon size={20} color="#94a3b8" weight="regular" />
-                  <Text className="text-sm text-slate-400" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  <Icon size={20} color="#16a34a" weight="regular" />
+                  <Text className="text-sm text-slate-600" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {label}
                   </Text>
                 </View>
@@ -454,31 +542,28 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* Service ladder gallery */}
-        <PlatformGallerySection onLayout={(e) => recordSectionOffset('services', e.nativeEvent.layout.y)} />
-
-        {/* WhatsApp comparison */}
-        <View className="py-24 bg-slate-50 border-y border-slate-100">
+        {/* WhatsApp comparison — early in the argument */}
+        <View className="py-24 bg-white border-b border-slate-100">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="max-w-3xl self-center mb-16">
               <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
-                Stop managing property work with scattered WhatsApp messages.
+                {COMPARISON_SECTION.heading}
               </SectionHeading>
               <Text className="text-base text-slate-500 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
-                WhatsApp is useful for talking. But when money, scope, stages, materials, and approvals are involved, you need more structure.
+                {COMPARISON_SECTION.supporting}
               </Text>
             </View>
             <View className="flex-row flex-wrap gap-8 max-w-5xl self-center">
-              <View className="w-full md:w-[47%] bg-white rounded-2xl p-8 border border-slate-200">
+              <View className="w-full md:w-[47%] bg-slate-50 rounded-2xl p-8 border border-slate-200">
                 <View className="flex-row items-center gap-3 mb-6 pb-6 border-b border-slate-100">
                   <View className="w-10 h-10 rounded-full bg-red-50 items-center justify-center">
                     <XCircle size={20} color="#ef4444" weight="fill" />
                   </View>
                   <Text className="text-xl text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    The Old Way
+                    {COMPARISON_SECTION.oldHeading}
                   </Text>
                 </View>
-                {COMPARISON_ROWS.slice(0, 5).map((row) => (
+                {COMPARISON_ROWS.map((row) => (
                   <View key={row.oldWay} className="flex-row items-start gap-3 mb-4">
                     <XCircle size={18} color="#f87171" weight="fill" style={{ marginTop: 2 }} />
                     <Text className="text-sm text-slate-600 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -493,7 +578,7 @@ export default function HomeLandingPage() {
                     <CheckCircle size={20} color="#fff" weight="fill" />
                   </View>
                   <Text className="text-xl text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    The BuildMyHouse Way
+                    {COMPARISON_SECTION.newHeading}
                   </Text>
                 </View>
                 {COMPARISON_ROWS.map((row) => (
@@ -509,38 +594,47 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* How it works */}
-        <HowItWorksSection onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)} />
+        {/* Promised land / product proof */}
+        <View className="py-20 bg-slate-50 border-b border-slate-100">
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="max-w-3xl self-center mb-10">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+                {PROMISED_LAND.heading}
+              </SectionHeading>
+              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {PROMISED_LAND.supporting}
+              </Text>
+            </View>
+            <View className="items-center">
+              <PhoneDashboardMockup />
+            </View>
+          </View>
+        </View>
 
-        {/* Dual audience */}
-        <View className="py-24 bg-black border-y border-white/10">
+        {/* Service ladder gallery */}
+        <PlatformGallerySection
+          nativeID="services"
+          onLayout={(e) => recordSectionOffset('services', e.nativeEvent.layout.y)}
+        />
+
+        {/* How it works */}
+        <HowItWorksSection
+          nativeID="how-it-works"
+          onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)}
+        />
+
+        {/* Dual audience — diaspora first */}
+        <View
+          nativeID="diaspora"
+          className="py-24 bg-black border-y border-white/10"
+          onLayout={(e) => recordSectionOffset('diaspora', e.nativeEvent.layout.y)}
+        >
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-16 text-center">
-              Built for Nigerians at home and abroad
+              Built for Nigerians abroad — and useful at home too.
             </SectionHeading>
             <View className="flex-row flex-wrap gap-6">
               <View className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10">
-                <View className="w-12 h-12 rounded-xl bg-white/10 items-center justify-center mb-6">
-                  <MapPin size={24} color="#fff" weight="regular" />
-                </View>
-                <Text className="text-2xl text-white mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Need a reliable repairer without stories?
-                </Text>
-                <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Use BuildMyHouse to find verified workers for repairs, upgrades, renovations, and property fixes across Nigeria.
-                </Text>
-                <Link href={'/location?mode=explore' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
-                    <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Find a Verified Worker
-                    </Text>
-                  </Pressable>
-                </Link>
-              </View>
-              <View
-                className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10"
-                onLayout={(e) => recordSectionOffset('diaspora', e.nativeEvent.layout.y)}
-              >
                 <View className="w-12 h-12 rounded-xl bg-white/10 items-center justify-center mb-6">
                   <Airplane size={24} color="#fff" weight="regular" />
                 </View>
@@ -548,12 +642,38 @@ export default function HomeLandingPage() {
                   Managing property work from abroad?
                 </Text>
                 <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  If you live in the UK, US, Canada, UAE, or Europe, distance should not mean losing control. Track stages, evidence, and communication in one place.
+                  Whether you&apos;re in London, Toronto, Houston, Dubai or elsewhere, distance should not mean surrendering control. Keep scope, stages, evidence and project communication in one structured workflow.
                 </Text>
-                <Link href={'/diaspora/build-in-nigeria-from-abroad' as any} asChild>
-                  <Pressable className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light" accessibilityRole="link">
+                <Link href={'/book-repair' as any} asChild>
+                  <Pressable
+                    onPress={() => trackPrimaryCta('diaspora_card', '/book-repair')}
+                    className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light"
+                    accessibilityRole="link"
+                  >
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                       Start a Tracked Project
+                    </Text>
+                  </Pressable>
+                </Link>
+              </View>
+              <View className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10">
+                <View className="w-12 h-12 rounded-xl bg-white/10 items-center justify-center mb-6">
+                  <MapPin size={24} color="#fff" weight="regular" />
+                </View>
+                <Text className="text-2xl text-white mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Already in Nigeria?
+                </Text>
+                <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Use the same system to find verified workers and manage repairs, upgrades and renovations with better documentation.
+                </Text>
+                <Link href={'/location?mode=explore' as any} asChild>
+                  <Pressable
+                    onPress={() => trackSecondaryCta('local_card', '/location?mode=explore')}
+                    className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light"
+                    accessibilityRole="link"
+                  >
+                    <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      Find a Verified Worker
                     </Text>
                   </Pressable>
                 </Link>
@@ -562,33 +682,85 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
-
-        <TrustpilotReviewSection />
-
-        {/* Contractor CTA */}
-        <View className="py-24 bg-white" onLayout={(e) => recordSectionOffset('contractors', e.nativeEvent.layout.y)}>
+        {/* Offer */}
+        <View className="py-24 bg-white border-b border-slate-100">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="bg-slate-50 rounded-3xl p-8 md:p-16 border border-slate-200 max-w-4xl self-center items-center">
-              <View className="w-16 h-16 rounded-2xl bg-white border border-slate-200 items-center justify-center mb-6">
-                <Hammer size={28} color="#000000" weight="regular" />
-              </View>
+            <View className="max-w-3xl self-center mb-12">
               <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
-                Are you a skilled artisan, repairer, renovator, or contractor?
+                {OFFER_SECTION.heading}
               </SectionHeading>
-              <Text className="text-base text-slate-500 max-w-2xl mb-8 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Join BuildMyHouse, get verified, receive better project requests, and build trust with homeowners who value documented work.
+              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {OFFER_SECTION.supporting}
               </Text>
-              <Link href={'/for-contractors' as any} asChild>
-                <Pressable className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark" accessibilityRole="link">
+            </View>
+            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center mb-10">
+              {OFFER_SECTION.components.map((item, index) => (
+                <View
+                  key={item.title}
+                  className="w-full sm:w-[47%] lg:w-[23%] lg:flex-1 rounded-2xl border border-slate-200 bg-slate-50 p-5"
+                >
+                  <Text className="text-xs text-slate-400 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {String(index + 1).padStart(2, '0')}
+                  </Text>
+                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {item.title}
+                  </Text>
+                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {item.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View className="items-center">
+              <Link href={OFFER_SECTION.primaryCta.href as any} asChild>
+                <Pressable
+                  onPress={() => trackPrimaryCta('offer', OFFER_SECTION.primaryCta.href)}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Get Hired on BuildMyHouse
+                    {OFFER_SECTION.primaryCta.label}
                   </Text>
                 </Pressable>
               </Link>
             </View>
           </View>
         </View>
+
+        {/* Free worksheet */}
+        <View className="py-20 bg-slate-50 border-b border-slate-100">
+          <View className="max-w-3xl w-full self-center px-6 md:px-12 items-center">
+            <Text
+              className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3"
+              style={{ fontFamily: 'Poppins_600SemiBold' }}
+            >
+              {WORKSHEET_SECTION.eyebrow}
+            </Text>
+            <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+              {WORKSHEET_SECTION.heading}
+            </SectionHeading>
+            <Text className="text-base text-slate-500 text-center leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
+              {WORKSHEET_SECTION.supporting}
+            </Text>
+            <Link href={WORKSHEET_SECTION.cta.href as any} asChild>
+              <Pressable
+                onPress={() => trackWebEvent('worksheet_clicked', { href: WORKSHEET_SECTION.cta.href })}
+                className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                accessibilityRole="link"
+              >
+                <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  {WORKSHEET_SECTION.cta.label}
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+        </View>
+
+        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
+
+        <TrustpilotReviewSection />
+
+        <AgentToolsSection onLayout={(e) => recordSectionOffset('tools', e.nativeEvent.layout.y)} />
 
         {/* Popular services */}
         <View className="py-16 border-t border-slate-100 bg-white">
@@ -599,7 +771,10 @@ export default function HomeLandingPage() {
             <View className="flex-row flex-wrap gap-y-4 gap-x-8">
               {popularLinks.map((link) => (
                 <Link key={link.href} href={link.href as any} asChild>
-                  <Pressable accessibilityRole="link">
+                  <Pressable
+                    onPress={() => trackWebEvent('service_category_clicked', { href: link.href })}
+                    accessibilityRole="link"
+                  >
                     <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
                       {link.label}
                     </Text>
@@ -610,7 +785,37 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        <AgentToolsSection />
+        {/* Contractor CTA — lower importance */}
+        <View
+          nativeID="contractors"
+          className="py-24 bg-white"
+          onLayout={(e) => recordSectionOffset('contractors', e.nativeEvent.layout.y)}
+        >
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="bg-slate-50 rounded-3xl p-8 md:p-16 border border-slate-200 max-w-4xl self-center items-center">
+              <View className="w-16 h-16 rounded-2xl bg-white border border-slate-200 items-center justify-center mb-6">
+                <Hammer size={28} color="#000000" weight="regular" />
+              </View>
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+                Are you a skilled artisan, repairer, renovator, or contractor?
+              </SectionHeading>
+              <Text className="text-base text-slate-500 max-w-2xl mb-8 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Join BuildMyHouse, get verified and become eligible for structured project opportunities.
+              </Text>
+              <Link href={'/for-contractors' as any} asChild>
+                <Pressable
+                  onPress={() => trackWebEvent('contractor_cta_clicked', { href: '/for-contractors' })}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Get Verified on BuildMyHouse
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
+          </View>
+        </View>
 
         {/* FAQ */}
         <View className="py-24 bg-slate-50 border-t border-slate-100">
@@ -624,7 +829,11 @@ export default function HomeLandingPage() {
                 return (
                   <View key={item.question} className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                     <Pressable
-                      onPress={() => setOpenFaq(open ? null : item.question)}
+                      onPress={() => {
+                        const next = open ? null : item.question;
+                        setOpenFaq(next);
+                        if (next) trackWebEvent('faq_opened', { question: item.question });
+                      }}
                       className="flex-row justify-between items-center p-5"
                       accessibilityRole="button"
                       accessibilityState={{ expanded: open }}
@@ -658,7 +867,7 @@ export default function HomeLandingPage() {
               <FooterHeadline />
 
               <Text className="text-sm md:text-base text-white/60 mt-5 max-w-xl" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Verified workers. Staged payments. Evidence before you pay. Start with BuildMyHouse.
+                {FOOTER_CLOSE.supporting}
               </Text>
 
               <View className="flex-row flex-wrap gap-8 mt-10">
@@ -678,15 +887,16 @@ export default function HomeLandingPage() {
 
                 <View className="w-full md:w-[30%]">
                   <Text className="text-sm text-white/60" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Get Started
+                    Next step
                   </Text>
-                  <Link href={'/location?mode=explore' as any} asChild>
+                  <Link href={FOOTER_CLOSE.ctaHref as any} asChild>
                     <Pressable
+                      onPress={() => trackPrimaryCta('footer', FOOTER_CLOSE.ctaHref)}
                       className="self-start flex-row items-center gap-2 bg-white rounded-full px-5 py-3 mt-2 bmh-glass-btn bmh-glass-btn-light"
                       accessibilityRole="link"
                     >
                       <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Start Your Project
+                        {FOOTER_CLOSE.ctaLabel}
                       </Text>
                       <ArrowRight size={16} color="#000000" weight="bold" />
                     </Pressable>
