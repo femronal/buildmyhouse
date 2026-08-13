@@ -205,7 +205,7 @@ export default function LandingServiceSearchBar({
           ) : (
             <View className="px-4 py-4">
               <Text className="text-sm text-slate-600 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Not listed yet — chat on WhatsApp and we&apos;ll help you request it.
+                Not listed yet? Chat on WhatsApp and we&apos;ll help you request it.
               </Text>
               <Pressable
                 onPress={() => void openWhatsApp()}

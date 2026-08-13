@@ -15,7 +15,6 @@ import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import { getBackendAssetUrl } from '@/lib/image';
 import { api } from '@/lib/api';
-import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
 import { trackRedditProjectRequestSubmitted } from '@/lib/analytics';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -163,14 +162,6 @@ export default function HouseSummaryScreen() {
       void (async () => {
         await setPostAuthReturnPath(buildReturnPath());
         router.replace('/login');
-      })();
-      return;
-    }
-
-    if (needsHomeownerIntroOnboarding(currentUser)) {
-      void (async () => {
-        await setPostAuthReturnPath(buildReturnPath());
-        router.replace('/onboarding-intro');
       })();
       return;
     }

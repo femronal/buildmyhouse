@@ -2,7 +2,6 @@ import { View, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
 import { getPostAuthReturnPath, clearPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import HomeLandingScreen from '@/components/HomeLandingScreen';
 
@@ -15,11 +14,6 @@ export default function StartScreen() {
     if (!currentUser) return;
 
     void (async () => {
-      if (needsHomeownerIntroOnboarding(currentUser)) {
-        router.replace('/onboarding-intro');
-        return;
-      }
-
       const returnPath = await getPostAuthReturnPath();
       if (returnPath) {
         await clearPostAuthReturnPath();

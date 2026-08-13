@@ -104,7 +104,7 @@ export default function PhoneDashboardMockup() {
         width: '100%',
         maxWidth: m.phoneWidth,
         minWidth: m.phoneWidth,
-        alignSelf: m.isDesktop ? 'flex-end' : 'center',
+        alignSelf: 'center',
       }}
     >
       <View
@@ -228,7 +228,7 @@ export default function PhoneDashboardMockup() {
           width: '100%',
         }}
       >
-        Tap around — this is project tracking on BuildMyHouse.
+        Tap around. This is project tracking on BuildMyHouse.
       </Text>
     </View>
   );

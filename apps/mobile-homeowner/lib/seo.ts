@@ -268,7 +268,7 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     return {
       title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
       description:
-        'Manage repairs, renovations, and property work in Nigeria from abroad with verified workers, clearer scope, stage evidence, and more control over when work — and money — moves forward.',
+        'Manage repairs, renovations, and property work in Nigeria from abroad with verified workers, clearer scope, stage evidence, and more control over when work and money move forward.',
       canonicalPath,
       robots: 'index,follow',
     };

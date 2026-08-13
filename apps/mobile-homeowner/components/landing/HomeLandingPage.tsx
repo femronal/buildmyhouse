@@ -17,6 +17,7 @@ import {
 } from 'phosphor-react-native';
 import LogoText from '@/components/LogoText';
 import PhoneDashboardMockup from '@/components/landing/PhoneDashboardMockup';
+import HeroNestLottie from '@/components/landing/HeroNestLottie';
 import LandingMobileNav from '@/components/landing/LandingMobileNav';
 import SEOJsonLd from '@/components/landing/SEOJsonLd';
 import SocialBrandIcon, { type SocialBrandId } from '@/components/landing/SocialBrandIcon';
@@ -31,11 +32,14 @@ import WebLandmark from '@/components/seo/WebLandmark';
 import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
 import {
   AUDIENCE_TABS,
+  BENEFITS_SECTION,
   COMPARISON_ROWS,
   COMPARISON_SECTION,
-  CONTROL_PROMISE,
+  CREDENTIALS_SECTION,
   FAQ_ITEMS,
   FOOTER_CLOSE,
+  CONTROL_PROMISE,
+  GUARANTEE_SECTION,
   HERO_AUDIENCE_CONTENT,
   NAV_ITEMS,
   OFFER_SECTION,
@@ -489,27 +493,22 @@ export default function HomeLandingPage() {
             </View>
 
             <View
-              className="bmh-hero-right items-center lg:items-end justify-center"
+              className="bmh-hero-right items-center lg:items-center justify-center"
               style={{
-                flex: isDesktop ? 7 : undefined,
+                flex: isDesktop ? 6 : undefined,
                 width: isDesktop ? undefined : '100%',
-                marginTop: isDesktop ? 0 : width < 768 ? 20 : 36,
+                marginTop: isDesktop ? 0 : width < 768 ? 28 : 36,
                 paddingTop: isDesktop ? 8 : 0,
+                minHeight: isDesktop ? 560 : undefined,
               }}
             >
-              <Text
-                className="text-xs uppercase tracking-[0.16em] text-slate-400 mb-3 self-center lg:self-end"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                {PROMISED_LAND.caption}
-              </Text>
-              <PhoneDashboardMockup />
+              <HeroNestLottie />
             </View>
             </View>
           </View>
         </View>
 
-        {/* Control Promise */}
+        {/* Control Promise stripe */}
         <View className="border-y border-slate-100 bg-slate-50 py-10">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <Text
@@ -525,25 +524,23 @@ export default function HomeLandingPage() {
               {CONTROL_PROMISE.supporting}
             </Text>
             <View className="flex-row flex-wrap justify-center gap-6 md:gap-12">
-              {[
-                { icon: ShieldCheck, label: 'Verified Workers' },
-                { icon: ClipboardText, label: 'Scope Before Work' },
-                { icon: Camera, label: 'Evidence Before Payment' },
-                { icon: Lifebuoy, label: 'Dispute Support' },
-              ].map(({ icon: Icon, label }) => (
-                <View key={label} className="flex-row items-center gap-2">
-                  <Icon size={20} color="#16a34a" weight="regular" />
-                  <Text className="text-sm text-slate-600" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {label}
-                  </Text>
-                </View>
-              ))}
+              {CONTROL_PROMISE.points.map((point, index) => {
+                const Icon = [ShieldCheck, ClipboardText, Camera, Lifebuoy][index] ?? ShieldCheck;
+                return (
+                  <View key={point.key} className="flex-row items-center gap-2">
+                    <Icon size={20} color="#16a34a" weight="regular" />
+                    <Text className="text-sm text-slate-600" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {point.label}
+                    </Text>
+                  </View>
+                );
+              })}
             </View>
           </View>
         </View>
 
-        {/* WhatsApp comparison — early in the argument */}
-        <View className="py-24 bg-white border-b border-slate-100">
+        {/* Problem :  Old Way vs BuildMyHouse Way */}
+        <View className="py-24 bg-white border-y border-slate-100">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="max-w-3xl self-center mb-16">
               <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
@@ -591,13 +588,38 @@ export default function HomeLandingPage() {
                 ))}
               </View>
             </View>
+            <View className="items-center mt-12">
+              <Link href={'/book-repair' as any} asChild>
+                <Pressable
+                  onPress={() => trackPrimaryCta('comparison', '/book-repair')}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Start a Tracked Project
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
           </View>
         </View>
 
-        {/* Promised land / product proof */}
-        <View className="py-20 bg-slate-50 border-b border-slate-100">
+        {/* How it works */}
+        <HowItWorksSection
+          nativeID="how-it-works"
+          onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)}
+        />
+
+        {/* Product demo :  centered phone showcase */}
+        <View className="py-24 bg-slate-50 border-y border-slate-100">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="max-w-3xl self-center mb-10">
+            <View className="max-w-3xl self-center mb-4">
+              <Text
+                className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3 text-center"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                {PROMISED_LAND.intrigue}
+              </Text>
               <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
                 {PROMISED_LAND.heading}
               </SectionHeading>
@@ -605,8 +627,219 @@ export default function HomeLandingPage() {
                 {PROMISED_LAND.supporting}
               </Text>
             </View>
-            <View className="items-center">
+            <View className="items-center justify-center w-full mt-10 self-center">
               <PhoneDashboardMockup />
+            </View>
+            <View className="items-center mt-10">
+              <Link href={'/book-repair' as any} asChild>
+                <Pressable
+                  onPress={() => trackPrimaryCta('product_demo', '/book-repair')}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Start a Tracked Project
+                  </Text>
+                </Pressable>
+              </Link>
+            </View>
+          </View>
+        </View>
+
+        {/* Benefits */}
+        <View className="py-24 bg-white border-b border-slate-100">
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="max-w-3xl self-center mb-12">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+                {BENEFITS_SECTION.heading}
+              </SectionHeading>
+              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {BENEFITS_SECTION.supporting}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center">
+              {BENEFITS_SECTION.items.map((item) => (
+                <View
+                  key={item.title}
+                  className="w-full sm:w-[47%] lg:w-[31%] rounded-2xl border border-slate-200 bg-slate-50 p-6"
+                >
+                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {item.title}
+                  </Text>
+                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {item.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* Credentials */}
+        <View className="py-24 bg-black border-y border-white/10">
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="max-w-3xl self-center mb-12">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-4 text-center">
+                {CREDENTIALS_SECTION.heading}
+              </SectionHeading>
+              <Text className="text-base text-slate-400 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {CREDENTIALS_SECTION.supporting}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center">
+              {CREDENTIALS_SECTION.points.map((point, index) => {
+                const Icon = [ShieldCheck, ClipboardText, Camera, Lifebuoy][index] ?? ShieldCheck;
+                return (
+                  <View
+                    key={point.title}
+                    className="w-full md:w-[47%] rounded-2xl border border-white/10 bg-white/[0.04] p-6"
+                  >
+                    <View className="flex-row items-center gap-3 mb-3">
+                      <Icon size={22} color="#4ade80" weight="regular" />
+                      <Text className="text-lg text-white flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {point.title}
+                      </Text>
+                    </View>
+                    <Text className="text-sm text-slate-400 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {point.description}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        </View>
+
+        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
+
+        <TrustpilotReviewSection />
+
+        {/* Godfather offer + bonuses + scarcity */}
+        <View className="py-24 bg-white border-b border-slate-100">
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="max-w-3xl self-center mb-12">
+              <Text
+                className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3 text-center"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                {OFFER_SECTION.eyebrow}
+              </Text>
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+                {OFFER_SECTION.heading}
+              </SectionHeading>
+              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {OFFER_SECTION.supporting}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center mb-10">
+              {OFFER_SECTION.components.map((item, index) => (
+                <View
+                  key={item.title}
+                  className="w-full sm:w-[47%] rounded-2xl border border-slate-200 bg-slate-50 p-6"
+                >
+                  <Text className="text-xs text-[#16a34a] mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Bonus {String(index + 1).padStart(2, '0')}
+                  </Text>
+                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {item.title}
+                  </Text>
+                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {item.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <View className="max-w-3xl self-center mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-6">
+              <Text className="text-sm text-black mb-3 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                {OFFER_SECTION.bonusesHeading}
+              </Text>
+              {OFFER_SECTION.bonuses.map((bonus) => (
+                <View key={bonus} className="flex-row items-start gap-2 mb-2">
+                  <CheckCircle size={16} color="#16a34a" weight="fill" style={{ marginTop: 2 }} />
+                  <Text className="text-sm text-slate-600 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {bonus}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Text
+              className="text-sm text-slate-500 text-center max-w-2xl self-center mb-8 leading-relaxed"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+            >
+              {OFFER_SECTION.scarcity}
+            </Text>
+            <View className="flex-col sm:flex-row gap-3 items-center justify-center">
+              <Link href={OFFER_SECTION.primaryCta.href as any} asChild>
+                <Pressable
+                  onPress={() => trackPrimaryCta('godfather_offer', OFFER_SECTION.primaryCta.href)}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {OFFER_SECTION.primaryCta.label}
+                  </Text>
+                </Pressable>
+              </Link>
+              <Pressable
+                onPress={() => {
+                  trackSecondaryCta('godfather_offer', OFFER_SECTION.secondaryCta.href);
+                  navPress(OFFER_SECTION.secondaryCta.href);
+                }}
+                className="h-12 px-8 rounded-lg bg-white border border-slate-200 justify-center"
+                accessibilityRole="button"
+              >
+                <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  {OFFER_SECTION.secondaryCta.label}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        {/* Risk reversal / guarantee */}
+        <View className="py-24 bg-slate-50 border-b border-slate-100">
+          <View className="max-w-7xl w-full self-center px-6 md:px-12">
+            <View className="max-w-3xl self-center mb-12">
+              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
+                {GUARANTEE_SECTION.heading}
+              </SectionHeading>
+              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {GUARANTEE_SECTION.supporting}
+              </Text>
+            </View>
+            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center mb-8">
+              {GUARANTEE_SECTION.points.map((point) => (
+                <View
+                  key={point.title}
+                  className="w-full md:w-[47%] rounded-2xl border border-slate-200 bg-white p-6"
+                >
+                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {point.title}
+                  </Text>
+                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {point.description}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Text
+              className="text-xs text-slate-400 text-center max-w-2xl self-center mb-8 leading-relaxed"
+              style={{ fontFamily: 'Poppins_500Medium' }}
+            >
+              {GUARANTEE_SECTION.footnote}
+            </Text>
+            <View className="items-center">
+              <Link href={GUARANTEE_SECTION.primaryCta.href as any} asChild>
+                <Pressable
+                  onPress={() => trackPrimaryCta('guarantee', GUARANTEE_SECTION.primaryCta.href)}
+                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {GUARANTEE_SECTION.primaryCta.label}
+                  </Text>
+                </Pressable>
+              </Link>
             </View>
           </View>
         </View>
@@ -617,13 +850,7 @@ export default function HomeLandingPage() {
           onLayout={(e) => recordSectionOffset('services', e.nativeEvent.layout.y)}
         />
 
-        {/* How it works */}
-        <HowItWorksSection
-          nativeID="how-it-works"
-          onLayout={(e) => recordSectionOffset('how-it-works', e.nativeEvent.layout.y)}
-        />
-
-        {/* Dual audience — diaspora first */}
+        {/* Dual audience :  diaspora first */}
         <View
           nativeID="diaspora"
           className="py-24 bg-black border-y border-white/10"
@@ -631,7 +858,7 @@ export default function HomeLandingPage() {
         >
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-16 text-center">
-              Built for Nigerians abroad — and useful at home too.
+              Built for Nigerians abroad, and useful at home too.
             </SectionHeading>
             <View className="flex-row flex-wrap gap-6">
               <View className="w-full md:w-[48%] bg-black rounded-2xl p-10 border border-white/10">
@@ -682,51 +909,6 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* Offer */}
-        <View className="py-24 bg-white border-b border-slate-100">
-          <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="max-w-3xl self-center mb-12">
-              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
-                {OFFER_SECTION.heading}
-              </SectionHeading>
-              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {OFFER_SECTION.supporting}
-              </Text>
-            </View>
-            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center mb-10">
-              {OFFER_SECTION.components.map((item, index) => (
-                <View
-                  key={item.title}
-                  className="w-full sm:w-[47%] lg:w-[23%] lg:flex-1 rounded-2xl border border-slate-200 bg-slate-50 p-5"
-                >
-                  <Text className="text-xs text-slate-400 mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {String(index + 1).padStart(2, '0')}
-                  </Text>
-                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {item.title}
-                  </Text>
-                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {item.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <View className="items-center">
-              <Link href={OFFER_SECTION.primaryCta.href as any} asChild>
-                <Pressable
-                  onPress={() => trackPrimaryCta('offer', OFFER_SECTION.primaryCta.href)}
-                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
-                  accessibilityRole="link"
-                >
-                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {OFFER_SECTION.primaryCta.label}
-                  </Text>
-                </Pressable>
-              </Link>
-            </View>
-          </View>
-        </View>
-
         {/* Free worksheet */}
         <View className="py-20 bg-slate-50 border-b border-slate-100">
           <View className="max-w-3xl w-full self-center px-6 md:px-12 items-center">
@@ -756,10 +938,6 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
-
-        <TrustpilotReviewSection />
-
         <AgentToolsSection onLayout={(e) => recordSectionOffset('tools', e.nativeEvent.layout.y)} />
 
         {/* Popular services */}
@@ -785,7 +963,7 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        {/* Contractor CTA — lower importance */}
+        {/* Contractor CTA :  lower importance */}
         <View
           nativeID="contractors"
           className="py-24 bg-white"
@@ -857,7 +1035,7 @@ export default function HomeLandingPage() {
 
         </WebLandmark>
 
-        {/* Footer — dark CTA card */}
+        {/* Footer :  dark CTA card */}
         <WebLandmark tag="footer" className="py-10 md:py-16 bg-white border-t border-slate-100 px-4 sm:px-6">
           <View className="max-w-7xl w-full self-center">
             <View
@@ -989,7 +1167,7 @@ export default function HomeLandingPage() {
               </Link>
 
               <Text className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'Poppins_500Medium' }}>
-                © {new Date().getFullYear()} BuildMyHouse — Built with care in Lagos, Nigeria
+                © {new Date().getFullYear()} BuildMyHouse. Built with care in Lagos, Nigeria.
               </Text>
             </View>
           </View>

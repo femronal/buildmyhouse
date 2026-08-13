@@ -183,7 +183,7 @@ export default function PlatformGallerySection({ onLayout, nativeID }: PlatformG
           </Link>
         </View>
 
-        {/* Crawlable text links for SEO — compact, not a second grid */}
+        {/* Crawlable text links for SEO :  compact, not a second grid */}
         <View className="mt-10 flex-row flex-wrap justify-center gap-x-5 gap-y-2 px-2">
           {PLATFORM_LADDER_GALLERY.map((item) => (
             <Link key={`seo-${item.href}`} href={item.href as any} asChild>

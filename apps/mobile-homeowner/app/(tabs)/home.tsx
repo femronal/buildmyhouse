@@ -18,7 +18,6 @@ import {
   getScreenHorizontalPadding,
   getTabContentBottomPadding,
 } from "@/lib/responsive-layout";
-import { needsHomeownerIntroOnboarding } from "@/lib/onboarding";
 
 const CARD_BG = '#151515';
 
@@ -59,13 +58,6 @@ export default function HomeScreen() {
   const [headerImageFailed, setHeaderImageFailed] = useState(false);
 
   const userPicture = currentUser?.pictureUrl;
-
-  useEffect(() => {
-    if (userLoading) return;
-    if (needsHomeownerIntroOnboarding(currentUser)) {
-      router.replace('/onboarding-intro');
-    }
-  }, [currentUser, router, userLoading]);
 
   useEffect(() => {
     setHeaderImageFailed(false);

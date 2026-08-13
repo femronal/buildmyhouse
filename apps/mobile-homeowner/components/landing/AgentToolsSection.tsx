@@ -62,7 +62,7 @@ function ToolCard({ tool, index }: { tool: PropertyTool; index: number }) {
         }}
         className="bmh-pricing-card group h-full"
         accessibilityRole="link"
-        accessibilityLabel={`${title} — ${statusLabel}`}
+        accessibilityLabel={`${title}. ${statusLabel}`}
       >
         <View className="flex-row items-center justify-between">
           <Text className="bmh-pricing-card-index text-[11px] text-neutral-400" style={{ fontFamily: 'Poppins_400Regular' }}>

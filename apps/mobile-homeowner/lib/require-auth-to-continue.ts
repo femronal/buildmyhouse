@@ -1,6 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import type { Router } from 'expo-router';
-import { needsHomeownerIntroOnboarding, type HomeownerUserLike } from '@/lib/onboarding';
+import type { HomeownerUserLike } from '@/lib/onboarding';
 import { showAuthContinueModal } from '@/lib/auth-continue-modal-store';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 
@@ -24,11 +24,6 @@ export async function requireAuthToContinue({
   if (userLoading) return false;
 
   if (currentUser) {
-    if (needsHomeownerIntroOnboarding(currentUser)) {
-      await setPostAuthReturnPath(destinationPath);
-      router.push('/onboarding-intro');
-      return false;
-    }
     return true;
   }
 

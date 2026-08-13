@@ -1,5 +1,5 @@
 import type { Router } from 'expo-router';
-import { needsHomeownerIntroOnboarding, type HomeownerUserLike } from '@/lib/onboarding';
+import type { HomeownerUserLike } from '@/lib/onboarding';
 
 const POST_AUTH_RETURN_PATH_KEY = 'bmh_post_auth_return_path';
 
@@ -26,12 +26,7 @@ export async function clearPostAuthReturnPath() {
   await storage.removeItem(POST_AUTH_RETURN_PATH_KEY);
 }
 
-export async function navigateAfterAuth(router: Router, user: HomeownerUserLike) {
-  if (needsHomeownerIntroOnboarding(user)) {
-    router.replace('/onboarding-intro');
-    return;
-  }
-
+export async function navigateAfterAuth(router: Router, _user: HomeownerUserLike) {
   const returnPath = await getPostAuthReturnPath();
   await clearPostAuthReturnPath();
 

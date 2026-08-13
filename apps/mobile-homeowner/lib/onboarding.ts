@@ -3,8 +3,12 @@ export type HomeownerUserLike = {
   managedParticipant?: boolean | null;
 };
 
-export function needsHomeownerIntroOnboarding(user?: HomeownerUserLike | null): boolean {
-  if (!user) return false;
-  if (user.managedParticipant) return false;
-  return !user.profileSetupCompleted;
+/**
+ * Forced profile onboarding is disabled.
+ * New users should reach the home screen immediately after sign-in
+ * so they can explore (e.g. Start Building) without filling forms first.
+ * Profile details remain available later via Personal Information.
+ */
+export function needsHomeownerIntroOnboarding(_user?: HomeownerUserLike | null): boolean {
+  return false;
 }
