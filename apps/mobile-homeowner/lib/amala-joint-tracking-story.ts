@@ -11,42 +11,36 @@ export const AMALA_JOINT_TRACKING_STORY_LEGACY_PATHS = [
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
 
 export const amalaJointTrackingStorySeo = {
-  title: 'Track Building Projects in Nigeria from Abroad | BuildMyHouse',
+  title: 'Why I Built BuildMyHouse | Femi Okunola Founder Story',
   description:
-    'See how BuildMyHouse helps Nigerians abroad monitor repairs, renovations and construction projects in Nigeria through clear stages, verified professionals and progress evidence.',
+    'Okunola Femi shares why he built BuildMyHouse: from a cold night in Istanbul to Amala Joint, and a system for Nigerians abroad to manage property work in Nigeria with evidence, stages and control.',
   canonicalPath: AMALA_JOINT_TRACKING_STORY_PATH,
   ogImage: `${WEB_URL}/engineer-at-buildmyhouse.png`,
   publishedAt: '2026-07-26',
-  updatedAt: '2026-07-26',
+  updatedAt: '2026-08-14',
   authorName: 'Femi Okunola',
-  readingMinutes: 11,
+  readingMinutes: 14,
 } as const;
 
 export const amalaJointTrackingStoryHero = {
-  amalaLabel: 'FROM YOUR AMALA JOINT ORDER TRACKER',
+  amalaLabel: 'A FOUNDER STORY',
   organicLabel: 'A FOUNDER STORY',
-  h1: 'What Tracking Your Food Taught Me About Building in Nigeria',
+  h1: 'Why I Built BuildMyHouse',
   introduction:
-    'If you can see when your meal starts, moves from one stage to another and becomes ready for handoff, why should a building project disappear from view after payment?',
+    'A cold night in Istanbul. A decision about trust and evidence. And the long road that led to BuildMyHouse.',
   authorName: 'Femi Okunola',
   authorDescription: 'Founder of Amala Joint and BuildMyHouse',
-  supportingLine: 'A founder story about food, construction and what customers deserve after they pay.',
-  primaryCta: 'Read the story',
-  secondaryCta: 'See how BuildMyHouse works',
+  supportingLine: 'Read the full story. Then decide whether the system deserves your trust.',
+  primaryCta: 'Keep reading',
+  secondaryCta: 'Explore BuildMyHouse',
 } as const;
 
+/** Soft note for Amala Joint visitors. Kept product-light on purpose. */
 export const amalaJointTrackingStoryAmalaNote =
-  'You came here from your Amala Joint order tracker. Here is why the two products are connected.';
+  'You came from Amala Joint. This is the founder’s story.';
 
-export type TrackingComparisonColumn = {
-  title: string;
-  steps: readonly string[];
-};
-
-export const trackingPrincipleComparison: {
-  amala: TrackingComparisonColumn;
-  buildMyHouse: TrackingComparisonColumn;
-} = {
+/** Kept for legacy components; not rendered on the rewritten story page. */
+export const trackingPrincipleComparison = {
   amala: {
     title: 'Amala Joint',
     steps: ['Order received', 'Preparation started', 'Items progressing', 'Ready for handoff'],
@@ -61,8 +55,9 @@ export const trackingPrincipleComparison: {
       'Completion',
     ],
   },
-};
+} as const;
 
+/** Kept for legacy components; not rendered on the rewritten story page. */
 export const moweCaseStudy = {
   heading: 'A small repair. A complete process.',
   location: 'Mowe, Ogun State',
@@ -76,94 +71,46 @@ export const moweCaseStudy = {
     'This project is presented as an example of the process. Prices vary by location, materials, scope and site conditions.',
 } as const;
 
-export const howBuildMyHouseWorksSteps = [
-  {
-    title: 'Tell us what is happening',
-    body: 'Share the property location, problem, photos, videos or project plans.',
-  },
-  {
-    title: 'Inspect and define the scope',
-    body: 'Where necessary, an inspection or professional assessment is arranged before pricing and execution.',
-  },
-  {
-    title: 'Match the right professional',
-    body: 'BuildMyHouse considers the project type, location, experience and verification status.',
-  },
-  {
-    title: 'Agree on stages',
-    body: 'The work, expectations, payment terms and evidence requirements are documented.',
-  },
-  {
-    title: 'Follow the work',
-    body: 'Progress records, photos, videos, receipts and relevant updates are organised around the project.',
-  },
-  {
-    title: 'Review before progression',
-    body: 'The homeowner can understand what has been completed before the project moves to the next agreed stage.',
-  },
+export const amalaJointTrackingStoryCtas = {
+  ctaHeading: 'Curious what BuildMyHouse looks like in practice?',
+  ctaBody:
+    'Start with a small repair or renovation request. See the process for yourself before you commit to anything larger.',
+  primaryLabel: 'Start a Tracked Project',
+  primaryHref: '/book-repair',
+  secondaryLabel: 'See How It Works',
+  secondaryHref: '/demo/project-monitoring',
+  servicesLabel: 'Browse repair and renovation services',
+  servicesHref: '/services',
+} as const;
+
+export const amalaJointTrackingStoryInternalLinks = [
+  { label: 'BuildMyHouse homepage', href: '/' },
+  { label: 'Start a tracked project', href: '/book-repair' },
+  { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
 ] as const;
+
+export const amalaJointTrackingStoryFounder = {
+  heading: 'About the founder',
+  body: 'Femi Okunola is the founder of Amala Joint and BuildMyHouse. Amala Joint serves Nigerian food in Istanbul. BuildMyHouse helps homeowners manage property work in Nigeria with clearer scope, stages and evidence.',
+} as const;
 
 export const amalaJointTrackingStoryFaqs = [
   {
     question: 'Can I manage a building project in Nigeria while living abroad?',
     answer:
-      'Yes, but distance makes structure, documentation and communication especially important. BuildMyHouse is designed to help homeowners organise inspections, scopes, professionals, project stages and progress evidence without relying only on informal verbal updates.',
+      'Yes. Distance makes structure, documentation and communication especially important. BuildMyHouse is designed to help homeowners organise scopes, professionals, project stages and progress evidence without relying only on informal verbal updates.',
   },
   {
     question: 'Does BuildMyHouse build houses itself?',
     answer:
-      'BuildMyHouse coordinates property projects through suitable professionals and contractors. Depending on the project, architects, engineers, quantity surveyors, artisans, contractors or other specialists may be required. BuildMyHouse does not replace regulated professionals.',
+      'BuildMyHouse coordinates property projects through suitable professionals and contractors. It does not replace regulated professionals. The goal is visibility and control around the work.',
   },
   {
-    question: 'How does BuildMyHouse verify contractors and professionals?',
+    question: 'Should I trust BuildMyHouse blindly?',
     answer:
-      'The verification process may include identity information, business documents, portfolio and experience evidence, relevant certifications, operating information and a live video interview. Verification reduces uncertainty but does not guarantee that no professional will ever make a mistake.',
-  },
-  {
-    question: 'Can BuildMyHouse handle small repairs?',
-    answer:
-      'Yes. BuildMyHouse is intended for ordinary property needs such as plumbing, electrical work, drainage problems, roof leaks, windows, property maintenance and other repairs, as well as renovations and larger building projects.',
-  },
-  {
-    question: 'How are payments handled?',
-    answer:
-      'Payment arrangements depend on the project and the platform’s current terms. Projects are structured around documented stages, and homeowners are encouraged to review progress evidence before approving the next stage or releasing the next payment through the platform workflow. BuildMyHouse is not a bank; payment processing uses approved providers and platform fees may apply.',
-  },
-  {
-    question: 'Where does BuildMyHouse currently operate?',
-    answer:
-      'BuildMyHouse’s primary service area is Nigeria, with strong focus on Lagos and surrounding markets, while supporting homeowners who manage property work from Nigeria or from abroad.',
+      'No. Examine how contractors are verified, how work is documented, what evidence you receive, and how disputes are handled. Then decide whether the system deserves your trust.',
   },
 ] as const;
-
-export const amalaJointTrackingStoryInternalLinks = [
-  { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
-  { label: 'Contractor verification for diaspora homeowners', href: '/guides/contractor-vetting-nigeria-diaspora' },
-  { label: 'Plumbing repair in Nigeria', href: '/services/plumbing-repair-nigeria' },
-  { label: 'Drainage repair in Nigeria', href: '/services/drainage-repair-nigeria' },
-  { label: 'Electrical repair in Nigeria', href: '/services/electrical-repair-nigeria' },
-  { label: 'Home renovation in Nigeria', href: '/renovation/nigeria' },
-  { label: 'House construction in Nigeria', href: '/construction/nigeria' },
-  { label: 'Remote project monitoring demo', href: '/demo/project-monitoring' },
-  { label: 'Start a tracked repair', href: '/start-repair' },
-] as const;
-
-export const amalaJointTrackingStoryCtas = {
-  primaryHref: '/location?mode=explore',
-  secondaryHref: '/demo/project-monitoring',
-  servicesHref: '/property-projects-nigeria',
-  primaryLabel: 'Tell us about the project',
-  secondaryLabel: 'See how BuildMyHouse works',
-  servicesLabel: 'Explore BuildMyHouse services',
-  ctaHeading: 'Do you have property work waiting in Nigeria?',
-  ctaBody:
-    'Tell BuildMyHouse what needs to be repaired, renovated or built. Start with the property location and any photos or videos you already have. The team will review the request and explain the appropriate next step.',
-} as const;
-
-export const amalaJointTrackingStoryFounder = {
-  heading: 'About the founder',
-  body: 'Femi Okunola is the founder of Amala Joint and BuildMyHouse. Amala Joint serves Nigerian food in Istanbul, while BuildMyHouse is building a more structured way for homeowners to manage property projects in Nigeria. Both companies reflect the same operating principle: customers deserve visibility into what happens after they pay.',
-} as const;
 
 /** Article body sections used by the page renderer. */
 export type StoryBlock =
@@ -173,311 +120,1044 @@ export type StoryBlock =
   | { type: 'pull'; text: string }
   | { type: 'list'; items: readonly string[] }
   | { type: 'numbered'; items: readonly string[] }
-  | { type: 'comparison' }
-  | { type: 'before-after-videos' }
-  | { type: 'case-study' }
-  | { type: 'process' };
+  | {
+      type: 'closing';
+      before: string;
+      linkText: string;
+      href: string;
+    };
 
 export const amalaJointTrackingStoryBlocks: readonly StoryBlock[] = [
   {
     type: 'p',
-    text: 'This is not a random advertisement placed on your food order.',
+    text: "There was a night in Istanbul when I had nowhere to sleep.",
   },
   {
     type: 'p',
-    text: 'You arrived here because, a few moments ago, you were watching something happen inside a kitchen you could not see.',
+    text: "I had just lost my job.",
   },
   {
     type: 'p',
-    text: 'Perhaps your meal had not started. Perhaps it was being prepared. Perhaps every item had become ready for handoff.',
+    text: "The Turkish man I worked for had fired me after an altercation with another worker who had been racist toward me. The accommodation connected to the job disappeared with the job.",
   },
   {
     type: 'p',
-    text: 'You were not standing beside the chef. You did not need to call repeatedly. You did not have to enter the kitchen to ask whether anyone had started working.',
+    text: "So there I was.",
   },
   {
     type: 'p',
-    text: 'The tracking page gave you a simple answer: this is where your order is right now.',
+    text: "Outside. Cold. Angry. Uncertain about what would happen next.",
   },
   {
     type: 'p',
-    text: 'That experience is the reason you are reading this.',
+    text: "And that night, I made a decision that would eventually lead to BuildMyHouse.",
   },
   {
     type: 'p',
-    text: 'My name is Femi Okunola. I founded Amala Joint in Istanbul, and I also founded BuildMyHouse in Nigeria.',
-  },
-  {
-    type: 'p',
-    text: 'The businesses are very different. One prepares Nigerian food. The other helps people structure and monitor property projects.',
+    text: "I told myself:",
   },
   {
     type: 'pull',
-    text: 'After a customer pays, the work should not disappear from view.',
+    text: "Femi, you have spent too much of your life putting your future in other people's hands.",
+  },
+  {
+    type: 'p',
+    text: "From now on, trust people. But never trust blindly.",
+  },
+  {
+    type: 'p',
+    text: "Ask for evidence.",
+  },
+  {
+    type: 'p',
+    text: "And whenever something is important enough to determine your future, build a system around it.",
+  },
+  {
+    type: 'p',
+    text: "That idea sounds simple today.",
+  },
+  {
+    type: 'p',
+    text: "At the time, it changed the direction of my life.",
   },
   {
     type: 'h2',
-    id: 'uncertainty-after-payment',
-    text: 'The uncertainty that begins after payment',
+    id: 'it-didnt-begin-in-istanbul',
+    text: "It didn't begin in Istanbul",
   },
   {
     type: 'p',
-    text: 'When someone orders food, the amount involved may be relatively small compared with a construction project. But the emotional problem is familiar.',
+    text: "My name is Okunola Femi. I am the founder and CEO of BuildMyHouse Technologies.",
   },
   {
     type: 'p',
-    text: 'The customer has paid. The work is happening somewhere else. The customer cannot see the people doing it. The customer does not know whether the process has started.',
+    text: "But to understand why I built BuildMyHouse, you have to go further back.",
   },
   {
     type: 'p',
-    text: 'Without clear information, even a short delay feels longer than it really is.',
+    text: "When I was about thirteen or fourteen, I was a student at International School, University of Lagos.",
   },
   {
     type: 'p',
-    text: 'That is why Amala Joint created an order-tracking experience. It does not cook the food faster. It does something equally important: it removes unnecessary uncertainty. It shows what has started, what is in progress and what is ready.',
+    text: "Secondary school was difficult for me.",
   },
   {
     type: 'p',
-    text: 'Then I began thinking about a much larger version of the same problem. What happens when the customer is not waiting for a plate of food, but for work on a house in Nigeria?',
+    text: "I regularly got into trouble with older students, teachers and classmates. I was unhappy enough that eventually I had to leave.",
+  },
+  {
+    type: 'p',
+    text: "Football was the thing I loved.",
+  },
+  {
+    type: 'p',
+    text: "I found a football school online and convinced my mother to take me there. I imagined that moving schools would put me closer to the life I wanted.",
+  },
+  {
+    type: 'p',
+    text: "Things did not work out exactly as I had imagined.",
+  },
+  {
+    type: 'p',
+    text: "That would become a recurring lesson.",
+  },
+  {
+    type: 'p',
+    text: "Later, I entered the University of Lagos to study English.",
+  },
+  {
+    type: 'p',
+    text: "But my mind was somewhere else.",
+  },
+  {
+    type: 'p',
+    text: "I wanted to become a professional footballer, and university felt painfully slow. Strikes interrupted academic calendars. A course that was supposed to have a predictable timeline could suddenly stretch much longer.",
+  },
+  {
+    type: 'p',
+    text: "I remember feeling as though my future was constantly being controlled by circumstances I could not control.",
+  },
+  {
+    type: 'p',
+    text: "Then an opportunity appeared.",
+  },
+  {
+    type: 'p',
+    text: "I won a place in an Erasmus exchange programme that allowed me to travel to Turkey.",
+  },
+  {
+    type: 'p',
+    text: "For me, it felt enormous.",
+  },
+  {
+    type: 'p',
+    text: "I was young, ambitious and convinced that leaving Nigeria might finally give me the room to chase the future I had imagined for myself.",
+  },
+  {
+    type: 'p',
+    text: "I arrived in Turkey with hope.",
+  },
+  {
+    type: 'p',
+    text: "Reality was considerably harder.",
+  },
+  {
+    type: 'p',
+    text: "I struggled.",
+  },
+  {
+    type: 'p',
+    text: "I worked.",
+  },
+  {
+    type: 'p',
+    text: "I experienced moments of racism and exploitation.",
+  },
+  {
+    type: 'p',
+    text: "And eventually came that night outside in the cold.",
+  },
+  {
+    type: 'p',
+    text: "That night forced me to confront something.",
+  },
+  {
+    type: 'p',
+    text: "For years, I had expected institutions, people or circumstances to behave according to my expectations.",
+  },
+  {
+    type: 'p',
+    text: "A school.",
+  },
+  {
+    type: 'p',
+    text: "A university calendar.",
+  },
+  {
+    type: 'p',
+    text: "An employer.",
+  },
+  {
+    type: 'p',
+    text: "A person promising to help.",
+  },
+  {
+    type: 'p',
+    text: "Again and again, reality reminded me that another human being could change their mind. An institution could fail. Circumstances could change.",
+  },
+  {
+    type: 'p',
+    text: "I couldn't build my future on hope alone.",
+  },
+  {
+    type: 'p',
+    text: "I needed systems.",
   },
   {
     type: 'h2',
-    id: 'building-back-home',
-    text: 'Building back home often means paying before you can see',
+    id: 'trust-but-demand-evidence',
+    text: "Trust, but demand evidence",
   },
   {
     type: 'p',
-    text: 'A Nigerian living in Istanbul, London, Toronto, New York, Johannesburg or Dubai may want to repair a leaking roof, fix a drainage problem, renovate a family property, complete an abandoned building, prepare a house before returning home, build rental units, or start a new house from the ground up.',
+    text: "I didn't walk away from that night suddenly successful.",
   },
   {
     type: 'p',
-    text: 'The owner may not be physically present. Money is sent. Someone says materials have been purchased. Another person says the workers are on site. A photograph appears in WhatsApp, but it is unclear what stage the picture represents.',
+    text: "Life doesn't work like that.",
   },
   {
     type: 'p',
-    text: 'The scope changes. The price changes. Another payment is requested. The owner is left trying to manage a physical project through calls, promises and scattered messages.',
+    text: "What changed was the way I thought.",
   },
   {
     type: 'p',
-    text: 'The problem is not always that every contractor is dishonest. The deeper problem is that the process itself is often poorly structured.',
-  },
-  {
-    type: 'list',
-    items: [
-      'No properly documented starting condition',
-      'No clear scope',
-      'No agreed definition of completion',
-      'No understandable stages',
-      'No organised evidence',
-      'No central project history',
-      'No clear separation between what was planned, what changed and what was actually completed',
-    ],
-  },
-  {
-    type: 'p',
-    text: 'Distance makes all of this harder. But even homeowners living in Lagos can experience the same uncertainty while working, travelling or managing several responsibilities.',
-  },
-  {
-    type: 'h2',
-    id: 'question-that-became-buildmyhouse',
-    text: 'The question that became BuildMyHouse',
+    text: "I began asking a different question whenever I wanted to accomplish something:",
   },
   {
     type: 'pull',
-    text: 'Why should someone be able to track a meal more clearly than a property project worth millions of naira?',
+    text: "How can I create a system that still works when one person disappoints me?",
   },
   {
     type: 'p',
-    text: 'That question became part of the thinking behind BuildMyHouse.',
+    text: "That principle became extremely important when I started my first serious business in Istanbul.",
   },
   {
     type: 'p',
-    text: 'BuildMyHouse is designed to help property owners bring more structure and visibility to repairs, renovations and construction projects in Nigeria. It is not simply a place where someone selects a contractor from a list. The objective is to create a clearer process around the work itself.',
+    text: "I began selling Nigerian food.",
   },
   {
     type: 'p',
-    text: 'Depending on the project, that process can include:',
-  },
-  {
-    type: 'numbered',
-    items: [
-      'Understanding the homeowner’s request',
-      'Reviewing photos, videos and location information',
-      'Arranging an inspection or diagnosis',
-      'Documenting the scope of work',
-      'Preparing or reviewing the quotation',
-      'Assigning an appropriate verified professional',
-      'Dividing work into understandable stages',
-      'Collecting photos, videos, receipts and progress evidence',
-      'Allowing the homeowner to understand what has happened',
-      'Progressing according to the agreed project and payment terms',
-    ],
+    text: "At first, it was simple. Cook food. Find customers. Deliver it.",
   },
   {
     type: 'p',
-    text: 'The construction work still happens in the physical world. BuildMyHouse does not replace the workers, architects, engineers, quantity surveyors or other professionals a project may require. It creates a digital operating layer around the work so the homeowner is not completely dependent on verbal updates.',
-  },
-  {
-    type: 'h2',
-    id: 'kitchen-to-building-stages',
-    text: 'From kitchen stages to building stages',
+    text: "That business became Amala Joint.",
   },
   {
     type: 'p',
-    text: 'The comparison is not perfect, because construction is much more complicated than food preparation. But the principle is similar.',
-  },
-  { type: 'comparison' },
-  {
-    type: 'p',
-    text: 'The value is not merely seeing a progress bar. The value is understanding what that stage means and what evidence supports it.',
-  },
-  {
-    type: 'h2',
-    id: 'mowe-case-study',
-    text: 'A small repair that explains the larger idea',
+    text: "Demand grew.",
   },
   {
     type: 'p',
-    text: 'One of the earliest BuildMyHouse projects involved a homeowner in Mowe, Ogun State.',
+    text: "Eventually, Amala Joint expanded into multiple locations.",
   },
   {
     type: 'p',
-    text: 'The reported problems included a faulty backyard tap and a defective waste connection affecting two areas of the property.',
+    text: "And one of the reasons I believe we were able to grow was that I refused to design the business around one indispensable person.",
   },
   {
     type: 'p',
-    text: 'The initial estimate was ₦66,000. After inspection and discussion, the professional’s price was negotiated to ₦55,000. The total amount paid by the client was ₦60,500, including BuildMyHouse’s coordination fee for that project.',
+    text: "Processes mattered.",
   },
   {
     type: 'p',
-    text: 'The work did not begin as one unexplained lump-sum request. The first stage covered inspection, materials and transportation. Receipts and project evidence were collected. Before-and-after videos were provided. The homeowner reviewed the result and confirmed satisfaction before the final professional payment was completed.',
-  },
-  { type: 'before-after-videos' },
-  { type: 'case-study' },
-  {
-    type: 'p',
-    text: 'This was not a mansion. It was not a glamorous luxury development. It was a normal property problem that needed to be solved properly. That is precisely why the project matters.',
+    text: "Roles mattered.",
   },
   {
     type: 'p',
-    text: 'Trust in construction is not built only through large projects. It is built by creating a process people can understand, even for a leaking pipe, broken window, blocked drainage system or faulty electrical connection.',
+    text: "Checks mattered.",
   },
   {
     type: 'p',
-    text: 'Note: This case study describes one completed project. Its pricing should not be treated as a quotation for another property or service.',
-  },
-  {
-    type: 'h2',
-    id: 'what-verified-means',
-    text: 'What “verified” means—and what it does not mean',
+    text: "Systems mattered.",
   },
   {
     type: 'p',
-    text: 'BuildMyHouse requires professionals to pass a verification process before they are treated as verified professionals on the platform.',
+    text: "The business gave me something else too: a measure of independence.",
   },
   {
     type: 'p',
-    text: 'Depending on the professional category, verification may include identity information, business documents, experience and portfolio evidence, professional certifications where applicable, address or operating information, a live video interview, and administrative review.',
+    text: "I was no longer entirely dependent on a Turkish employer to decide whether I could earn an income.",
   },
   {
     type: 'p',
-    text: 'Verification is not magic. It cannot promise that no professional will ever make a mistake. It does not remove the need for proper scopes, inspections, documentation and professional supervision.',
+    text: "That felt like freedom.",
   },
   {
     type: 'p',
-    text: 'Its purpose is to reduce uncertainty and help BuildMyHouse understand who is being considered for a homeowner’s project. The stronger protection comes from combining professional verification with a structured project process.',
-  },
-  {
-    type: 'h2',
-    id: 'not-promising-perfection',
-    text: 'BuildMyHouse is not promising perfection',
-  },
-  {
-    type: 'p',
-    text: 'Construction is complicated. Unexpected site conditions can appear. Material prices can change. A wall can reveal a hidden problem. An inspection can show that the original diagnosis was incomplete. A homeowner can request additional work.',
-  },
-  {
-    type: 'p',
-    text: 'BuildMyHouse does not pretend these realities do not exist. The purpose is to make them visible.',
-  },
-  {
-    type: 'p',
-    text: 'When something changes, the homeowner can understand what changed, why it changed, what it may cost, who recommended it, what evidence exists, and whether it should become part of the agreed scope.',
+    text: "But then another question started bothering me:",
   },
   {
     type: 'pull',
-    text: 'Transparency does not mean nothing will go wrong. It means problems do not have to remain hidden until the money is gone.',
+    text: "Was I actually free?",
   },
   {
     type: 'h2',
-    id: 'who-buildmyhouse-is-for',
-    text: 'Who BuildMyHouse is for',
+    id: 'the-diaspora-paradox',
+    text: "The diaspora paradox",
   },
   {
     type: 'p',
-    text: 'BuildMyHouse may be relevant to you if:',
-  },
-  {
-    type: 'list',
-    items: [
-      'You live outside Nigeria and need property work completed back home',
-      'You own a rental or family property',
-      'You are preparing to return to Nigeria',
-      'You inherited a property that needs attention',
-      'You are renovating or upgrading a house',
-      'You need a small repair but do not know whom to trust',
-      'You are beginning a full building project',
-      'You are busy and cannot remain physically present on site',
-      'You want a more structured record of what is happening',
-    ],
+    text: "At one point, an issue with my residence status forced me to confront how fragile life abroad can become.",
   },
   {
     type: 'p',
-    text: 'You do not need to be building a mansion. You may simply need someone to inspect a problem properly before money starts moving.',
-  },
-  {
-    type: 'h2',
-    id: 'why-amala-joint-introduced-you',
-    text: 'Why Amala Joint introduced you to BuildMyHouse',
+    text: "And I began thinking about the wider Nigerian diaspora.",
   },
   {
     type: 'p',
-    text: 'Amala Joint is not turning your food-tracking page into an advertising board. The connection exists because you were already using the idea.',
+    text: "You can live in London.",
   },
   {
     type: 'p',
-    text: 'You paid for work happening somewhere you could not see. Instead of leaving you to guess, the product showed you the current stage.',
+    text: "New York.",
   },
   {
     type: 'p',
-    text: 'BuildMyHouse is an attempt to apply that same customer principle to a much more difficult industry. The amounts are larger. The timelines are longer. The work is more complex. The consequences of poor communication are much more serious.',
+    text: "Toronto.",
+  },
+  {
+    type: 'p',
+    text: "Johannesburg.",
+  },
+  {
+    type: 'p',
+    text: "Dubai.",
+  },
+  {
+    type: 'p',
+    text: "Istanbul.",
+  },
+  {
+    type: 'p',
+    text: "You can have a great career.",
+  },
+  {
+    type: 'p',
+    text: "You can even own a successful business.",
+  },
+  {
+    type: 'p',
+    text: "But you are still living inside another country's system.",
+  },
+  {
+    type: 'p',
+    text: "Governments change.",
+  },
+  {
+    type: 'p',
+    text: "Immigration rules change.",
+  },
+  {
+    type: 'p',
+    text: "Economic conditions change.",
+  },
+  {
+    type: 'p',
+    text: "Policies change.",
+  },
+  {
+    type: 'p',
+    text: "And foreigners rarely have the same security as citizens.",
+  },
+  {
+    type: 'p',
+    text: "That doesn't mean living abroad is bad.",
+  },
+  {
+    type: 'p',
+    text: "It means something else:",
   },
   {
     type: 'pull',
-    text: 'After a customer pays, they deserve more than silence.',
+    text: "True independence requires options.",
+  },
+  {
+    type: 'p',
+    text: "I began to believe that one of the strongest options a Nigerian abroad could create was something valuable back home.",
+  },
+  {
+    type: 'p',
+    text: "A property.",
+  },
+  {
+    type: 'p',
+    text: "A business.",
+  },
+  {
+    type: 'p',
+    text: "Infrastructure.",
+  },
+  {
+    type: 'p',
+    text: "An income-producing asset.",
+  },
+  {
+    type: 'p',
+    text: "Something that exists independently of your visa, your foreign employer or another country's immigration policy.",
+  },
+  {
+    type: 'p',
+    text: "I asked myself:",
+  },
+  {
+    type: 'p',
+    text: "If I could build a business in Istanbul, a country where I had arrived as a foreigner, why couldn't I gradually build something substantial in the country I understood best?",
+  },
+  {
+    type: 'p',
+    text: "Nigeria.",
+  },
+  {
+    type: 'p',
+    text: "Then came the obvious problem.",
+  },
+  {
+    type: 'pull',
+    text: "With whom?",
+  },
+  {
+    type: 'p',
+    text: "That question changed everything.",
   },
   {
     type: 'h2',
-    id: 'how-buildmyhouse-works',
-    text: 'How BuildMyHouse brings structure to property work',
+    id: 'who-can-i-trust-back-home',
+    text: "Who can I trust back home?",
   },
-  { type: 'process' },
+  {
+    type: 'p',
+    text: "Many Nigerians abroad know this question.",
+  },
+  {
+    type: 'p',
+    text: "You want to repair your parents' house.",
+  },
+  {
+    type: 'p',
+    text: "Someone recommends a plumber.",
+  },
+  {
+    type: 'p',
+    text: "You want to renovate a property.",
+  },
+  {
+    type: 'p',
+    text: "A relative says they know somebody.",
+  },
+  {
+    type: 'p',
+    text: "You want to start building.",
+  },
+  {
+    type: 'p',
+    text: "Suddenly, five people have opinions about the contractor, materials and price.",
+  },
+  {
+    type: 'p',
+    text: "Money begins moving.",
+  },
+  {
+    type: 'p',
+    text: "Pictures begin arriving on WhatsApp.",
+  },
+  {
+    type: 'p',
+    text: "Then another request comes.",
+  },
+  {
+    type: 'p',
+    text: "\"We need another ₦300,000.\"",
+  },
+  {
+    type: 'p',
+    text: "\"For what?\"",
+  },
+  {
+    type: 'p',
+    text: "\"Materials have increased.\"",
+  },
+  {
+    type: 'p',
+    text: "\"Show me what the previous money completed.\"",
+  },
+  {
+    type: 'p',
+    text: "Silence.",
+  },
+  {
+    type: 'p',
+    text: "Or more pictures.",
+  },
+  {
+    type: 'p',
+    text: "Or more explanations.",
+  },
+  {
+    type: 'p',
+    text: "And because you are thousands of kilometres away, eventually the entire project depends on one dangerous ingredient:",
+  },
+  {
+    type: 'pull',
+    text: "trust.",
+  },
+  {
+    type: 'p',
+    text: "I understood that problem personally because of the lesson I had learned years earlier.",
+  },
+  {
+    type: 'p',
+    text: "People are not necessarily evil.",
+  },
+  {
+    type: 'p',
+    text: "But human beings make mistakes.",
+  },
+  {
+    type: 'p',
+    text: "People exaggerate.",
+  },
+  {
+    type: 'p',
+    text: "People forget.",
+  },
+  {
+    type: 'p',
+    text: "People have incentives.",
+  },
+  {
+    type: 'p',
+    text: "People become desperate.",
+  },
+  {
+    type: 'p',
+    text: "People misunderstand instructions.",
+  },
+  {
+    type: 'p',
+    text: "People can also deceive you.",
+  },
+  {
+    type: 'p',
+    text: "So the solution cannot simply be:",
+  },
+  {
+    type: 'pull',
+    text: "Find a trustworthy person.",
+  },
+  {
+    type: 'p',
+    text: "My experience had taught me something different:",
+  },
+  {
+    type: 'pull',
+    text: "Build a trustworthy system.",
+  },
   {
     type: 'h2',
-    id: 'next-time-property-work',
-    text: 'The next time you think about property work in Nigeria',
+    id: 'i-searched-for-one',
+    text: "I searched for one",
   },
   {
     type: 'p',
-    text: 'You may not need BuildMyHouse today. Your meal may be the only thing you are waiting for.',
+    text: "Before deciding to build anything myself, I searched online.",
   },
   {
     type: 'p',
-    text: 'But perhaps in six months, you will need to repair a parent’s home. Perhaps next year, you will begin a renovation. Perhaps you are already sending money towards a project and wondering whether there is a clearer way to manage it.',
+    text: "Surely somebody had already solved this.",
   },
   {
     type: 'p',
-    text: 'When that moment comes, remember the experience that brought you here: you did not need to enter the kitchen to know what was happening. You should not need to live permanently on a construction site to understand what is happening there either.',
+    text: "I found a few companies and platforms making promises that sounded similar.",
+  },
+  {
+    type: 'p',
+    text: "I contacted one.",
+  },
+  {
+    type: 'p',
+    text: "No meaningful response came.",
+  },
+  {
+    type: 'p',
+    text: "Months passed.",
+  },
+  {
+    type: 'p',
+    text: "And I kept returning to the same thought:",
+  },
+  {
+    type: 'p',
+    text: "There must be millions of Nigerians abroad who want to build, repair, renovate or invest back home but hesitate for the same reason.",
+  },
+  {
+    type: 'p',
+    text: "They cannot see what is happening.",
+  },
+  {
+    type: 'p',
+    text: "They cannot independently verify every claim.",
+  },
+  {
+    type: 'p',
+    text: "And they don't want their life savings controlled by WhatsApp messages and goodwill.",
+  },
+  {
+    type: 'p',
+    text: "That's when the idea behind BuildMyHouse became serious.",
+  },
+  {
+    type: 'h2',
+    id: 'buildmyhouse-is-not-really-about-houses',
+    text: "BuildMyHouse is not really about houses",
+  },
+  {
+    type: 'p',
+    text: "The name is BuildMyHouse.",
+  },
+  {
+    type: 'p',
+    text: "But the deeper idea is not construction.",
+  },
+  {
+    type: 'p',
+    text: "It is control.",
+  },
+  {
+    type: 'p',
+    text: "BuildMyHouse is being designed to give a homeowner visibility over property work in Nigeria even when that homeowner cannot physically stand on the site.",
+  },
+  {
+    type: 'p',
+    text: "The principle is simple:",
+  },
+  {
+    type: 'p',
+    text: "Don't merely tell the homeowner that something happened.",
+  },
+  {
+    type: 'pull',
+    text: "Show evidence.",
+  },
+  {
+    type: 'p',
+    text: "Don't allow a project to exist as one confusing stream of activity.",
+  },
+  {
+    type: 'pull',
+    text: "Break it into stages.",
+  },
+  {
+    type: 'p',
+    text: "Don't let money move simply because somebody says the next payment is urgent.",
+  },
+  {
+    type: 'pull',
+    text: "Connect progression to evidence and approval.",
+  },
+  {
+    type: 'p',
+    text: "Don't make a homeowner depend entirely on one contractor's version of events.",
+  },
+  {
+    type: 'pull',
+    text: "Create a documented system around the contractor, project, communication and work.",
+  },
+  {
+    type: 'p',
+    text: "That does not mean people stop mattering.",
+  },
+  {
+    type: 'p',
+    text: "Contractors matter enormously.",
+  },
+  {
+    type: 'p',
+    text: "Engineers matter.",
+  },
+  {
+    type: 'p',
+    text: "Artisans matter.",
+  },
+  {
+    type: 'p',
+    text: "Homeowners matter.",
+  },
+  {
+    type: 'p',
+    text: "What changes is that nobody should have to rely completely on somebody else's word.",
+  },
+  {
+    type: 'p',
+    text: "The system should preserve evidence.",
+  },
+  {
+    type: 'h2',
+    id: 'but-the-vision-became-much-bigger',
+    text: "But the vision became much bigger",
+  },
+  {
+    type: 'p',
+    text: "As I thought about the problem, I realised something else.",
+  },
+  {
+    type: 'p',
+    text: "This was not only about protecting one Nigerian in London from losing money on a renovation in Lagos.",
+  },
+  {
+    type: 'p',
+    text: "Nigeria has an enormous diaspora.",
+  },
+  {
+    type: 'p',
+    text: "These are Nigerians working as doctors, nurses, engineers, entrepreneurs, drivers, bankers, developers and professionals around the world.",
+  },
+  {
+    type: 'p',
+    text: "They earn capital outside Nigeria.",
+  },
+  {
+    type: 'p',
+    text: "Many want to invest some of it back home.",
+  },
+  {
+    type: 'p',
+    text: "But distrust creates friction.",
+  },
+  {
+    type: 'p',
+    text: "And when people don't trust the process, capital stays away.",
+  },
+  {
+    type: 'p',
+    text: "A Nigerian abroad may want to build apartments.",
+  },
+  {
+    type: 'p',
+    text: "A school.",
+  },
+  {
+    type: 'p',
+    text: "A small factory.",
+  },
+  {
+    type: 'p',
+    text: "A restaurant.",
+  },
+  {
+    type: 'p',
+    text: "A farm.",
+  },
+  {
+    type: 'p',
+    text: "A clinic.",
+  },
+  {
+    type: 'p',
+    text: "A warehouse.",
+  },
+  {
+    type: 'p',
+    text: "Or simply renovate their parents' house.",
+  },
+  {
+    type: 'p',
+    text: "Every one of those projects creates economic activity.",
+  },
+  {
+    type: 'p',
+    text: "Someone supplies the blocks.",
+  },
+  {
+    type: 'p',
+    text: "Someone installs the electrical system.",
+  },
+  {
+    type: 'p',
+    text: "Someone drives the materials.",
+  },
+  {
+    type: 'p',
+    text: "Someone paints.",
+  },
+  {
+    type: 'p',
+    text: "Someone welds.",
+  },
+  {
+    type: 'p',
+    text: "Someone manages the site.",
+  },
+  {
+    type: 'p',
+    text: "Someone eventually works inside the finished building.",
+  },
+  {
+    type: 'p',
+    text: "That is when BuildMyHouse stopped looking to me like merely a construction platform.",
+  },
+  {
+    type: 'p',
+    text: "I began seeing trust infrastructure.",
+  },
+  {
+    type: 'p',
+    text: "If Nigerians abroad can invest back home with greater visibility and control, more people may be willing to build.",
+  },
+  {
+    type: 'p',
+    text: "If more people build, more infrastructure exists.",
+  },
+  {
+    type: 'p',
+    text: "More businesses can exist.",
+  },
+  {
+    type: 'p',
+    text: "More jobs can exist.",
+  },
+  {
+    type: 'p',
+    text: "More wealth can circulate.",
+  },
+  {
+    type: 'p',
+    text: "I believe the Nigerian diaspora can become one of the most powerful forces in Nigeria's development.",
+  },
+  {
+    type: 'p',
+    text: "But before people commit their savings, they need to believe that distance does not automatically mean helplessness.",
+  },
+  {
+    type: 'h2',
+    id: 'start-very-small',
+    text: "Start very small",
+  },
+  {
+    type: 'p',
+    text: "That is the grand vision.",
+  },
+  {
+    type: 'p',
+    text: "But grand visions are dangerous when founders try to build them all at once.",
+  },
+  {
+    type: 'p',
+    text: "So BuildMyHouse is starting small.",
+  },
+  {
+    type: 'p',
+    text: "Very small.",
+  },
+  {
+    type: 'p',
+    text: "A leaking pipe.",
+  },
+  {
+    type: 'p',
+    text: "A damaged window.",
+  },
+  {
+    type: 'p',
+    text: "Electrical work.",
+  },
+  {
+    type: 'p',
+    text: "A roof problem.",
+  },
+  {
+    type: 'p',
+    text: "A bathroom repair.",
+  },
+  {
+    type: 'p',
+    text: "A small renovation.",
+  },
+  {
+    type: 'p',
+    text: "Because if we cannot create accountability around a small repair, we have no business asking somebody to trust the same system with a multimillion-naira construction project.",
+  },
+  {
+    type: 'p',
+    text: "We have to earn that right.",
+  },
+  {
+    type: 'p',
+    text: "One project at a time.",
+  },
+  {
+    type: 'p',
+    text: "One contractor at a time.",
+  },
+  {
+    type: 'p',
+    text: "One stage at a time.",
+  },
+  {
+    type: 'p',
+    text: "One piece of evidence at a time.",
+  },
+  {
+    type: 'p',
+    text: "Eventually, a person who trusted BuildMyHouse to repair their mother's window might trust us with their bathroom.",
+  },
+  {
+    type: 'p',
+    text: "Then their renovation.",
+  },
+  {
+    type: 'p',
+    text: "Then perhaps their house.",
+  },
+  {
+    type: 'p',
+    text: "And eventually something much bigger.",
+  },
+  {
+    type: 'p',
+    text: "That is how I believe trust should grow.",
+  },
+  {
+    type: 'p',
+    text: "Not through promises.",
+  },
+  {
+    type: 'p',
+    text: "Through evidence.",
+  },
+  {
+    type: 'h2',
+    id: 'dont-trust-buildmyhouse-blindly-either',
+    text: "Don't trust BuildMyHouse blindly either",
+  },
+  {
+    type: 'p',
+    text: "This is perhaps the most important thing I can tell you.",
+  },
+  {
+    type: 'p',
+    text: "I am not asking you to trust BuildMyHouse because I am Femi.",
+  },
+  {
+    type: 'p',
+    text: "I am not asking you to trust us because our website looks good.",
+  },
+  {
+    type: 'p',
+    text: "And I am certainly not asking you to trust us because we say the word \"transparent.\"",
+  },
+  {
+    type: 'p',
+    text: "That would contradict the very reason I built the company.",
+  },
+  {
+    type: 'pull',
+    text: "Don't trust us blindly.",
+  },
+  {
+    type: 'p',
+    text: "Examine the system.",
+  },
+  {
+    type: 'p',
+    text: "Ask how contractors are verified.",
+  },
+  {
+    type: 'p',
+    text: "Ask how work is documented.",
+  },
+  {
+    type: 'p',
+    text: "Ask what happens before a stage progresses.",
+  },
+  {
+    type: 'p',
+    text: "Ask what evidence you receive.",
+  },
+  {
+    type: 'p',
+    text: "Ask how disputes are handled.",
+  },
+  {
+    type: 'p',
+    text: "Ask what happens when something goes wrong.",
+  },
+  {
+    type: 'p',
+    text: "Then decide whether the system deserves your trust.",
+  },
+  {
+    type: 'p',
+    text: "That is what that younger version of me learned outside in the cold in Istanbul.",
+  },
+  {
+    type: 'p',
+    text: "Trust is too important to be based entirely on promises.",
+  },
+  {
+    type: 'p',
+    text: "People need systems.",
+  },
+  {
+    type: 'p',
+    text: "People need evidence.",
+  },
+  {
+    type: 'p',
+    text: "And when money, property and years of someone's life are involved, they deserve visibility.",
+  },
+  {
+    type: 'p',
+    text: "That principle eventually became BuildMyHouse.",
+  },
+  {
+    type: 'p',
+    text: "And although today we may be starting with a leaking pipe or a broken window, the ambition behind it is much larger.",
+  },
+  {
+    type: 'p',
+    text: "I want Nigerians anywhere in the world to be able to look back home and say:",
+  },
+  {
+    type: 'pull',
+    text: "I can build there.",
+  },
+  {
+    type: 'pull',
+    text: "I can invest there.",
+  },
+  {
+    type: 'pull',
+    text: "I can see what is happening.",
+  },
+  {
+    type: 'pull',
+    text: "I can verify before I proceed.",
+  },
+  {
+    type: 'p',
+    text: "And ultimately:",
+  },
+  {
+    type: 'pull',
+    text: "Distance does not mean I have to lose control.",
+  },
+  {
+    type: 'closing',
+    before: "That is why I built ",
+    linkText: "BuildMyHouse",
+    href: "/",
   },
 ];
 

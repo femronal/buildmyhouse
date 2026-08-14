@@ -39,10 +39,11 @@ describe('blog reading chrome helpers', () => {
     const aids = buildStoryReadingAids(amalaJointTrackingStoryBlocks);
     expect(aids.toc.length).toBeGreaterThanOrEqual(4);
     expect(aids.toc[0]).toMatchObject({
-      id: 'uncertainty-after-payment',
-      title: 'The uncertainty that begins after payment',
+      id: 'it-didnt-begin-in-istanbul',
+      title: "It didn't begin in Istanbul",
     });
-    expect(aids.takeaways[0]).toContain('should not disappear from view');
+    expect(aids.takeaways.length).toBeGreaterThanOrEqual(1);
+    expect(aids.takeaways[0]).toMatch(/Femi|trust|system|evidence/i);
   });
 
   it('clamps reading progress between 0 and 1', () => {

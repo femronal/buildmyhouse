@@ -20,11 +20,9 @@ describe('amala joint tracking story SEO', () => {
     expect(AMALA_JOINT_TRACKING_STORY_PATH).toBe(
       '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
     );
-    expect(amalaJointTrackingStorySeo.title).toContain('Track Building Projects in Nigeria from Abroad');
+    expect(amalaJointTrackingStorySeo.title).toContain('Why I Built BuildMyHouse');
     expect(amalaJointTrackingStorySeo.canonicalPath).toBe(AMALA_JOINT_TRACKING_STORY_PATH);
-    expect(amalaJointTrackingStoryHero.h1).toBe(
-      'What Tracking Your Food Taught Me About Building in Nigeria',
-    );
+    expect(amalaJointTrackingStoryHero.h1).toBe('Why I Built BuildMyHouse');
   });
 
   it('builds BlogPosting + FAQ JSON-LD that matches visible FAQs', () => {

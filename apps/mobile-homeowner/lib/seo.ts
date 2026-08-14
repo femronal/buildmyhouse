@@ -368,9 +368,9 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     normalized === '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria'
   ) {
     return {
-      title: 'Track Building Projects in Nigeria from Abroad | BuildMyHouse',
+      title: 'Why I Built BuildMyHouse | Femi Okunola Founder Story',
       description:
-        'See how BuildMyHouse helps Nigerians abroad monitor repairs, renovations and construction projects in Nigeria through clear stages, verified professionals and progress evidence.',
+        'Okunola Femi shares why he built BuildMyHouse: from a cold night in Istanbul to Amala Joint, and a system for Nigerians abroad to manage property work in Nigeria with evidence, stages and control.',
       canonicalPath,
       robots: 'index,follow',
     };

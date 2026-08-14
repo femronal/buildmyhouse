@@ -238,9 +238,9 @@ const SEO_PAGES = {
       'Founder stories and practical guides on tracking repairs, renovations and construction projects in Nigeria from home or abroad.',
   },
   '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria': {
-    title: 'Track Building Projects in Nigeria from Abroad | BuildMyHouse',
+    title: 'Why I Built BuildMyHouse | Femi Okunola Founder Story',
     description:
-      'See how BuildMyHouse helps Nigerians abroad monitor repairs, renovations and construction projects in Nigeria through clear stages, verified professionals and progress evidence.',
+      'Okunola Femi shares why he built BuildMyHouse: from a cold night in Istanbul to Amala Joint, and a system for Nigerians abroad to manage property work in Nigeria with evidence, stages and control.',
     ogType: 'article',
   },
   '/construction/nigeria': {
