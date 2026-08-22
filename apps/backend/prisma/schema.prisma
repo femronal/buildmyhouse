@@ -51,6 +51,148 @@ enum ServicePageRegion {
   nigeria
 }
 
+// ---------------------------------------------------------------------------
+// Vendor Directory V1 (Phase B)
+// Public discovery + verification + supplier intelligence. Distinct from
+// marketplace Material listings and Price Checker PriceMerchant sources.
+// Locked decisions: listed ≠ verified; taxonomy via familyKey; Material.vendorId
+// remains User; internal_only supported; claim invites for admin-created rows.
+// ---------------------------------------------------------------------------
+
+enum VendorListingStatus {
+  draft
+  submitted
+  under_review
+  clarification_required
+  listed
+  rejected
+  suspended
+  internal_only
+}
+
+enum VendorVerificationStatus {
+  unverified
+  partial
+  verified
+  expired
+  revoked
+}
+
+enum VendorClaimStatus {
+  unclaimed
+  invite_sent
+  claim_pending_admin
+  claimed
+}
+
+enum VendorAcquisitionSource {
+  vendor_self_signup
+  admin_manual
+  whatsapp
+  project_supplier
+  contractor_referral
+  customer_referral
+  field_team
+  imported
+  other
+}
+
+enum VendorProcurementRelationship {
+  never_contacted
+  contacted
+  quoted
+  purchased_from
+  preferred
+  do_not_use
+}
+
+enum VendorDocumentType {
+  cac_certificate
+  government_id
+  proof_of_address
+  storefront_photo
+  warehouse_photo
+  price_list
+  tax_id
+  bank_account_proof
+  logo
+  other
+}
+
+enum VendorDocumentReviewStatus {
+  pending
+  approved
+  rejected
+  expired
+}
+
+/// Checklist keys shown publicly only when status = passed (or not_applicable).
+enum VendorVerificationCheckKey {
+  business_identity
+  business_registration
+  representative_identity
+  phone
+  location_evidence
+  product_categories
+  supporting_evidence
+}
+
+enum VendorVerificationCheckStatus {
+  not_started
+  pending
+  passed
+  failed
+  not_applicable
+  expired
+}
+
+enum VendorActivityType {
+  contacted
+  quotation_requested
+  quotation_received
+  purchase_completed
+  verification_call
+  profile_correction
+  clarification_requested
+  clarification_received
+  complaint
+  suspension
+  restoration
+  note
+  invitation_sent
+  claim_accepted
+  listing_approved
+  verification_completed
+  other
+}
+
+enum VendorChangeRequestStatus {
+  pending
+  approved
+  rejected
+  applied
+  withdrawn
+}
+
+enum VendorPreferredContactMethod {
+  phone
+  whatsapp
+  email
+}
+
+enum VendorQuoteRequestStatus {
+  new
+  notified
+  closed
+  spam
+}
+
+enum VendorAddressVisibility {
+  public_city_state_only
+  public_full_address
+  private
+}
+
 model User {
   id                           String    @id @default(uuid())
   email                        String    @unique
@@ -89,6 +231,17 @@ model User {
   sentMessages                 Message[]               @relation("SentMessages")
   receivedConversations        Conversation[]          @relation("Participants")
   vendorMaterials              Material[]              @relation("VendorMaterials")
+  vendorProfile                VendorProfile?          @relation("UserVendorProfile")
+  vendorProfilesCreated        VendorProfile[]         @relation("VendorProfileCreatedByAdmin")
+  vendorProfilesApproved       VendorProfile[]         @relation("VendorProfileApprovedByAdmin")
+  vendorProfilesVerified       VendorProfile[]         @relation("VendorProfileVerifiedByAdmin")
+  vendorDocumentsReviewed      VendorDocument[]        @relation("VendorDocumentReviewer")
+  vendorVerificationChecks     VendorVerificationCheck[] @relation("VendorVerificationCheckReviewer")
+  vendorAdminNotesAuthored     VendorAdminNote[]       @relation("VendorAdminNoteAuthor")
+  vendorActivitiesAuthored     VendorActivity[]        @relation("VendorActivityActor")
+  vendorClaimInvitesCreated    VendorClaimInvite[]     @relation("VendorClaimInviteCreator")
+  vendorChangeRequests         VendorProfileChangeRequest[] @relation("VendorChangeRequestRequester")
+  vendorChangeRequestsReviewed VendorProfileChangeRequest[] @relation("VendorChangeRequestReviewer")
   contractorProfile            Contractor?             @relation("UserContractor")
   orders                       Order[]                 @relation("UserOrders")
   reviews                      Review[]                @relation("UserReviews")
@@ -317,6 +470,7 @@ model Project {
   stageChangeRequests StageChangeRequest[]
   reviews             Review[]
   accessLinks         ProjectAccessLink[]
+  vendorActivities    VendorActivity[]
 
   @@map("projects")
 }
@@ -2900,4 +3054,401 @@ model AdminAccessAuditLog {
   @@index([actorUserId, createdAt])
   @@index([action, createdAt])
   @@map("admin_access_audit_log")
+}
+
+// ===========================================================================
+// Vendor Directory V1
+// ===========================================================================
+
+/// Canonical supplier identity. Distinct from marketplace Material and PI PriceMerchant.
+model VendorProfile {
+  id String @id @default(uuid())
+
+  /// Null until claimed or self-signup completes account binding.
+  userId String? @unique
+
+  slug        String  @unique
+  tradingName String
+  legalName   String?
+  description String? @db.Text
+  logoUrl     String?
+
+  yearEstablished Int?
+  /// retailer | wholesaler | distributor | manufacturer | importer | fabricator | authorised_dealer | installer_supplier | rental_supplier
+  businessTypes   String[] @default([])
+
+  listingStatus      VendorListingStatus      @default(draft)
+  verificationStatus VendorVerificationStatus @default(unverified)
+  claimStatus        VendorClaimStatus        @default(unclaimed)
+
+  /// Deterministic 0–100 completeness. Never treated as trust/verification.
+  profileCompleteness Int @default(0)
+
+  applicationReference String? @unique
+  acquisitionSource    VendorAcquisitionSource @default(admin_manual)
+  acquisitionNote      String?
+
+  /// Public contact channels (only show when corresponding show* flag is true).
+  publicPhone              String?
+  publicWhatsApp           String?
+  publicEmail              String?
+  showPublicPhone          Boolean @default(true)
+  showPublicWhatsApp       Boolean @default(true)
+  showPublicEmail          Boolean @default(false)
+  websiteUrl               String?
+  /// Optional social map, e.g. { "instagram": "...", "facebook": "..." }
+  socialLinks              Json?
+  preferredContactMethod   VendorPreferredContactMethod?
+
+  salesContactName       String?
+  procurementContactName String?
+  quotationEmail         String?
+  businessHours          String?
+  afterHoursAvailable    Boolean @default(false)
+
+  /// Capability flags (vendor-level defaults; offerings may refine).
+  acceptsSmallOrders       Boolean @default(true)
+  acceptsBulkOrders        Boolean @default(true)
+  acceptsProjectQuotations Boolean @default(true)
+  canSupplyBoqQuotations   Boolean @default(false)
+  canSourceUnstocked       Boolean @default(false)
+  deliveryFleetAvailable   Boolean @default(false)
+  thirdPartyDelivery       Boolean @default(false)
+  pickupAvailable          Boolean @default(true)
+  interstateDelivery       Boolean @default(false)
+  installationAvailable    Boolean @default(false)
+  afterSalesSupport        Boolean @default(false)
+  warrantyHandling         Boolean @default(false)
+  nationwideDelivery       Boolean @default(false)
+
+  /// Payment / quote defaults (vendor claims, not market estimates).
+  paymentMethodsAccepted   String[] @default([])
+  depositRequired          Boolean?
+  creditTermsNotes         String?
+  priceListAvailable       Boolean  @default(false)
+  priceListUrl             String?
+  priceListUpdatedAt       DateTime?
+  typicalQuoteResponseHours Int?
+  pricesNegotiable         Boolean  @default(true)
+
+  country              String  @default("NG")
+  /// Prefer Price Checker location keys where possible (e.g. ng-lagos).
+  stateKey             String?
+  stateLabel           String?
+  cityKey              String?
+  cityLabel            String?
+  lgaLabel             String?
+  localAreaLabel       String?
+  publicAddress        String?
+  privateBusinessAddress String?
+  addressVisibility    VendorAddressVisibility @default(public_city_state_only)
+  latitude             Float?
+  longitude            Float?
+
+  /// Private verification identity (never exposed on public APIs).
+  cacRegistrationStatus String? // registered | not_registered | unknown | not_applicable
+  cacNumber             String?
+  taxIdentificationNumber String?
+  bankAccountName       String?
+
+  /// Duplicate-detection helpers (normalized, not shown publicly).
+  normalizedTradingName String?
+  normalizedPhone       String?
+  normalizedWhatsApp    String?
+  normalizedEmail       String?
+  websiteDomain         String?
+
+  clarificationMessage String? @db.Text
+  rejectionReason      String? @db.Text
+  suspensionReason     String? @db.Text
+
+  procurementRelationship VendorProcurementRelationship @default(never_contacted)
+  previouslyUsedByBmh     Boolean @default(false)
+
+  createdByAdminId String?
+  approvedByAdminId String?
+  verifiedByAdminId String?
+  approvedAt       DateTime?
+  verifiedAt       DateTime?
+  submittedAt      DateTime?
+  lastReviewedAt   DateTime?
+  listedAt         DateTime?
+  suspendedAt      DateTime?
+  deletedAt        DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user           User? @relation("UserVendorProfile", fields: [userId], references: [id], onDelete: SetNull)
+  createdByAdmin User? @relation("VendorProfileCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  approvedByAdmin User? @relation("VendorProfileApprovedByAdmin", fields: [approvedByAdminId], references: [id], onDelete: SetNull)
+  verifiedByAdmin User? @relation("VendorProfileVerifiedByAdmin", fields: [verifiedByAdminId], references: [id], onDelete: SetNull)
+
+  representatives   VendorRepresentative[]
+  offerings         VendorOffering[]
+  serviceAreas      VendorServiceArea[]
+  documents         VendorDocument[]
+  verificationChecks VendorVerificationCheck[]
+  adminNotes        VendorAdminNote[]
+  activities        VendorActivity[]
+  claimInvites      VendorClaimInvite[]
+  quoteRequests     VendorQuoteRequest[]
+  changeRequests    VendorProfileChangeRequest[]
+
+  @@index([listingStatus, verificationStatus])
+  @@index([listingStatus, stateKey])
+  @@index([claimStatus])
+  @@index([acquisitionSource])
+  @@index([procurementRelationship])
+  @@index([normalizedPhone])
+  @@index([normalizedWhatsApp])
+  @@index([normalizedEmail])
+  @@index([cacNumber])
+  @@index([websiteDomain])
+  @@index([submittedAt])
+  @@index([createdAt])
+  @@map("vendor_profiles")
+}
+
+model VendorRepresentative {
+  id              String   @id @default(uuid())
+  vendorProfileId String
+  name            String
+  role            String?
+  phone           String?
+  email           String?
+  showPublicly    Boolean  @default(false)
+  isPrimary       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId, isPrimary])
+  @@map("vendor_representatives")
+}
+
+/// What the vendor sells — references Price Checker family keys when possible.
+model VendorOffering {
+  id              String @id @default(uuid())
+  vendorProfileId String
+
+  /// PriceProductFamily.key (e.g. cement, reinforcement-steel). Null when custom/other.
+  familyKey           String?
+  /// PriceCategory.code (structural, envelope, finishes, mep, energy, security).
+  categoryCode        String?
+  customCategoryLabel String?
+  productTypes        String[] @default([])
+  brands              String[] @default([])
+
+  sellsRetail    Boolean @default(true)
+  sellsWholesale Boolean @default(false)
+  normalUnit     String?
+  minimumOrderQuantity Float?
+  minimumOrderUnit     String?
+  stockedNormally Boolean @default(true)
+  specialOrder    Boolean @default(false)
+
+  deliveryAvailable     Boolean @default(false)
+  installationAvailable Boolean @default(false)
+  acceptsQuotations     Boolean @default(true)
+
+  /// Pricing-policy fields for this offering (vendor claims only).
+  quantityBreakNotes   String?
+  pricesNegotiable     Boolean @default(true)
+  deliveryIncluded     Boolean?
+  deliveryPricingMethod String? // flat | per_km | per_trip | quote | unknown
+  installationIncluded Boolean?
+  vatStatus            String? // included | excluded | unknown
+  priceValidityNotes   String?
+  /// Optional illustrative price — NEVER feeds Price Checker estimates.
+  examplePriceAmount   Decimal? @db.Decimal(14, 2)
+  examplePriceCurrency String   @default("NGN") @db.Char(3)
+  examplePriceUnit     String?
+  examplePriceNotes    String?
+
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([familyKey])
+  @@index([categoryCode])
+  @@map("vendor_offerings")
+}
+
+model VendorServiceArea {
+  id              String  @id @default(uuid())
+  vendorProfileId String
+  /// Price Checker location key when known (ng-lagos, ng-ogun-mowe-ibafo, …).
+  locationKey     String?
+  stateKey        String?
+  stateLabel      String?
+  cityKey         String?
+  cityLabel       String?
+  /// delivery | service | both
+  coverageType    String  @default("delivery")
+  notes           String?
+  createdAt       DateTime @default(now())
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@index([stateKey])
+  @@index([locationKey])
+  @@map("vendor_service_areas")
+}
+
+/// Private verification / evidence documents (S3 refs). Never public.
+model VendorDocument {
+  id              String                     @id @default(uuid())
+  vendorProfileId String
+  documentType    VendorDocumentType
+  label           String?
+  /// S3 object key or private file ref — not a long-lived public URL.
+  fileRef         String
+  mimeType        String?
+  fileSizeBytes   Int?
+  reviewStatus    VendorDocumentReviewStatus @default(pending)
+  rejectionReason String?
+  expiresAt       DateTime?
+  reviewedByAdminId String?
+  reviewedAt      DateTime?
+  uploadedByUserId String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  reviewedBy    User?         @relation("VendorDocumentReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, documentType])
+  @@index([reviewStatus])
+  @@map("vendor_documents")
+}
+
+model VendorVerificationCheck {
+  id              String                         @id @default(uuid())
+  vendorProfileId String
+  checkKey        VendorVerificationCheckKey
+  status          VendorVerificationCheckStatus  @default(not_started)
+  evidenceDocumentId String?
+  notes           String?                        @db.Text
+  failureReason   String?
+  reviewedByAdminId String?
+  reviewedAt      DateTime?
+  expiresAt       DateTime?
+  reverifyAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  reviewedBy    User?         @relation("VendorVerificationCheckReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@unique([vendorProfileId, checkKey])
+  @@index([status])
+  @@map("vendor_verification_checks")
+}
+
+model VendorAdminNote {
+  id              String   @id @default(uuid())
+  vendorProfileId String
+  authorAdminId   String?
+  body            String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  author        User?         @relation("VendorAdminNoteAuthor", fields: [authorAdminId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, createdAt])
+  @@map("vendor_admin_notes")
+}
+
+model VendorActivity {
+  id              String             @id @default(uuid())
+  vendorProfileId String
+  type            VendorActivityType
+  summary         String?
+  note            String?            @db.Text
+  projectId       String?
+  actorAdminId    String?
+  metadata        Json?
+  createdAt       DateTime           @default(now())
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  actor         User?         @relation("VendorActivityActor", fields: [actorAdminId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, createdAt])
+  @@index([type, createdAt])
+  @@index([projectId])
+  @@map("vendor_activities")
+}
+
+model VendorClaimInvite {
+  id               String    @id @default(uuid())
+  vendorProfileId  String
+  tokenHash        String    @unique
+  email            String?
+  phone            String?
+  invitedByAdminId String?
+  expiresAt        DateTime
+  usedAt           DateTime?
+  createdAt        DateTime  @default(now())
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  invitedBy     User?         @relation("VendorClaimInviteCreator", fields: [invitedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, expiresAt])
+  @@index([email])
+  @@map("vendor_claim_invites")
+}
+
+model VendorQuoteRequest {
+  id               String                   @id @default(uuid())
+  vendorProfileId  String
+  product          String
+  specification    String?
+  quantity         String?
+  deliveryLocation String?
+  buyerName        String
+  buyerEmail       String?
+  buyerPhone       String?
+  projectId        String?
+  note             String?                  @db.Text
+  status           VendorQuoteRequestStatus @default(new)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId, createdAt])
+  @@index([status, createdAt])
+  @@map("vendor_quote_requests")
+}
+
+/// Sensitive field-group edits that require admin review before going public.
+model VendorProfileChangeRequest {
+  id                String                     @id @default(uuid())
+  vendorProfileId   String
+  requestedByUserId String?
+  /// identity | registration | representative | location | documents | other
+  fieldGroup        String
+  proposedPayload   Json
+  currentPayload    Json?
+  status            VendorChangeRequestStatus  @default(pending)
+  reviewedByAdminId String?
+  reviewedAt        DateTime?
+  reviewNote        String?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  requestedBy   User?         @relation("VendorChangeRequestRequester", fields: [requestedByUserId], references: [id], onDelete: SetNull)
+  reviewedBy    User?         @relation("VendorChangeRequestReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([vendorProfileId, status])
+  @@index([status, createdAt])
+  @@map("vendor_profile_change_requests")
 }

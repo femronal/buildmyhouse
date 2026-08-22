@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   HardHat,
+  Store,
   Users, 
   Building2, 
   Briefcase,
@@ -26,6 +27,7 @@ const menuItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/homeowners', label: 'Homeowners', icon: Users },
   { href: '/contractors', label: 'Contractors', icon: HardHat },
+  { href: '/vendors', label: 'Vendors', icon: Store },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },
   { href: '/disputes', label: 'Disputes', icon: Scale },

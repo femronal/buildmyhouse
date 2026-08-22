@@ -67,8 +67,10 @@
     "/contractors/lagos/plumbing-repair",
     "/contractors/lagos/electrical-repair",
     "/contractors/lagos/roof-leak-repair",
+    "/vendors",
+    "/vendors/apply",
     "/privacy-security",
     "/terms-conditions"
   ],
-  "prefixes": ["/articles/", "/blog/", "/services/", "/contractors/"]
+  "prefixes": ["/articles/", "/blog/", "/services/", "/contractors/", "/vendors/"]
 }

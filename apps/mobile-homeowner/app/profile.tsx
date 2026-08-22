@@ -186,7 +186,25 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Vendor features removed for MVP */}
+        {(userRole === 'vendor' || userRole === 'admin') && (
+          <TouchableOpacity
+            onPress={() => router.push('/vendors/manage' as any)}
+            className="bg-black rounded-2xl p-6 mb-6 flex-row items-center"
+          >
+            <View className="w-12 h-12 bg-white rounded-full items-center justify-center">
+              <Briefcase size={24} color="#000000" strokeWidth={2.5} />
+            </View>
+            <View className="flex-1 ml-4">
+              <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Vendor listing
+              </Text>
+              <Text className="text-gray-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Update contacts, offerings & documents
+              </Text>
+            </View>
+            <ChevronRight size={24} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+        )}
         {/* Profile Card */}
         <View className="bg-black rounded-3xl p-6 mb-6 flex-row items-center">
           <TouchableOpacity

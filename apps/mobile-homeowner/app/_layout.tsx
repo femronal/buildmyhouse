@@ -167,6 +167,11 @@ export default function RootLayout() {
           <Stack.Screen name="downloads/remote-renovation-scope-worksheet" options={{ headerShown: false }} />
           <Stack.Screen name="downloads/lagos-permit-starter-checklist" options={{ headerShown: false }} />
           <Stack.Screen name="tools/index" options={{ headerShown: false }} />
+          <Stack.Screen name="vendors/index" options={{ headerShown: false }} />
+          <Stack.Screen name="vendors/apply" options={{ headerShown: false }} />
+          <Stack.Screen name="vendors/manage" options={{ headerShown: false }} />
+          <Stack.Screen name="vendors/claim/[token]" options={{ headerShown: false }} />
+          <Stack.Screen name="vendors/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="tools/price-checker/index" options={{ headerShown: false }} />
           <Stack.Screen name="tools/price-checker/reports/[reportId]" options={{ headerShown: false }} />
           <Stack.Screen name="tools/[slug]" options={{ headerShown: false }} />

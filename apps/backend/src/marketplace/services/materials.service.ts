@@ -13,7 +13,7 @@ export class MaterialsService {
       data: {
         ...createMaterialDto,
         vendorId,
-        verified: true, // Auto-verify for testing (in production, admin would verify)
+        verified: false,
       },
       include: {
         vendor: {

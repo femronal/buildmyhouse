@@ -45,6 +45,8 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/choose-project-type',
   '/location',
   '/onboarding-intro',
+  '/vendors/manage',
+  '/vendors/claim',
 ];
 
 const SEO_PAGES = {
@@ -182,6 +184,16 @@ const SEO_PAGES = {
     title: 'Verified Contractors in Lagos | BuildMyHouse Directory',
     description:
       'Browse verified contractors in Lagos for plumbing, electrical, roof leak repairs, and property maintenance.',
+  },
+  '/vendors': {
+    title: 'Building Material Vendors in Nigeria | BuildMyHouse',
+    description:
+      'Discover listed building-material suppliers by category, location, brands, and BuildMyHouse verification status.',
+  },
+  '/vendors/apply': {
+    title: 'List your building-material business on BuildMyHouse',
+    description:
+      'Tell BuildMyHouse what you sell, prove who you are, and become easier for serious buyers to find. Submission does not guarantee approval.',
   },
   '/contractors/lagos/plumbing-repair': {
     title: 'Plumbing Repair Contractors in Lagos | BuildMyHouse',
