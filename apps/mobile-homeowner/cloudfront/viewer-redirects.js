@@ -92,6 +92,41 @@ function handler(event) {
     }
   }
 
+  // Vendor claim invites: /vendors/claim/<token> → claim/[token].html
+  var vendorClaimPrefix = '/vendors/claim/';
+  if (uri.indexOf(vendorClaimPrefix) === 0) {
+    var claimToken = uri.slice(vendorClaimPrefix.length);
+    if (
+      claimToken &&
+      claimToken.indexOf('/') === -1 &&
+      claimToken !== '[token]'
+    ) {
+      request.uri = vendorClaimPrefix + '[token].html';
+      return request;
+    }
+  }
+
+  // Vendor public profiles: /vendors/<slug> → vendors/[slug].html
+  // Keep static vendor routes (apply/manage/claim) on their own .html objects.
+  var vendorsPrefix = '/vendors/';
+  if (uri.indexOf(vendorsPrefix) === 0) {
+    var vendorSegment = uri.slice(vendorsPrefix.length);
+    var reservedVendorRoutes = {
+      apply: true,
+      manage: true,
+      claim: true,
+    };
+    if (
+      vendorSegment &&
+      vendorSegment.indexOf('/') === -1 &&
+      vendorSegment !== '[slug]' &&
+      !reservedVendorRoutes[vendorSegment]
+    ) {
+      request.uri = vendorsPrefix + '[slug].html';
+      return request;
+    }
+  }
+
   // Extensionless app route → S3 .html object with route-specific SEO tags
   request.uri = uri + '.html';
   return request;
