@@ -75,6 +75,7 @@ export type ManagedVendorProfile = {
   showPublicWhatsApp: boolean;
   showPublicEmail: boolean;
   websiteUrl: string | null;
+  logoUrl: string | null;
   paymentMethodsAccepted: string[];
   pricesNegotiable: boolean;
   pickupAvailable: boolean;
@@ -100,6 +101,7 @@ export type VendorManageUpdatePayload = {
   showPublicWhatsApp?: boolean;
   showPublicEmail?: boolean;
   websiteUrl?: string;
+  logoUrl?: string;
   paymentMethodsAccepted?: string[];
   pricesNegotiable?: boolean;
   pickupAvailable?: boolean;

@@ -1051,6 +1051,7 @@ export class VendorsService {
         showPublicWhatsApp: dto.showPublicWhatsApp,
         showPublicEmail: dto.showPublicEmail,
         websiteUrl: dto.websiteUrl,
+        logoUrl: dto.logoUrl,
         socialLinks: dto.socialLinks,
         paymentMethodsAccepted: dto.paymentMethodsAccepted,
         pricesNegotiable: dto.pricesNegotiable,

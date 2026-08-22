@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Platform,
   Pressable,
   Text,
@@ -19,6 +20,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
+import { getBackendAssetUrl } from '@/lib/image';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import {
@@ -127,6 +129,7 @@ export default function VendorManagePage() {
   const [showPublicWhatsApp, setShowPublicWhatsApp] = useState(true);
   const [showPublicEmail, setShowPublicEmail] = useState(false);
   const [websiteUrl, setWebsiteUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [pricesNegotiable, setPricesNegotiable] = useState(true);
   const [pickupAvailable, setPickupAvailable] = useState(true);
@@ -170,6 +173,7 @@ export default function VendorManagePage() {
     setShowPublicWhatsApp(data.showPublicWhatsApp);
     setShowPublicEmail(data.showPublicEmail);
     setWebsiteUrl(data.websiteUrl || '');
+    setLogoUrl(data.logoUrl || '');
     setPaymentMethods(data.paymentMethodsAccepted || []);
     setPricesNegotiable(data.pricesNegotiable);
     setPickupAvailable(data.pickupAvailable);
@@ -287,6 +291,7 @@ export default function VendorManagePage() {
         showPublicWhatsApp,
         showPublicEmail,
         websiteUrl: websiteUrl.trim() || undefined,
+        logoUrl: logoUrl.trim() || undefined,
         paymentMethodsAccepted: paymentMethods,
         pricesNegotiable,
         pickupAvailable,
@@ -341,6 +346,49 @@ export default function VendorManagePage() {
       setError(e?.message || 'Unable to submit change request.');
     } finally {
       setSensitiveBusy(false);
+    }
+  };
+
+  const handleUploadLogo = async () => {
+    if (!profile || readOnly) return;
+    setUploading(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const picked = await DocumentPicker.getDocumentAsync({
+        type: ['image/*'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+      if (picked.canceled || !picked.assets?.length) {
+        setUploading(false);
+        return;
+      }
+      const asset = picked.assets[0];
+      const formData = new FormData();
+      if (Platform.OS === 'web') {
+        const response = await fetch(asset.uri);
+        const blob = await response.blob();
+        formData.append('file', blob, asset.name || 'vendor-logo.jpg');
+      } else {
+        formData.append('file', {
+          uri: asset.uri,
+          name: asset.name || `vendor-logo-${Date.now()}.jpg`,
+          type: asset.mimeType || 'image/jpeg',
+        } as any);
+      }
+
+      const uploadRes = await api.post('/upload/image', formData);
+      const url = String(uploadRes?.url || '').trim();
+      if (!url) throw new Error('Upload succeeded but no image URL was returned.');
+
+      const updated = await updateManagedVendorProfile({ logoUrl: url });
+      hydrate(updated);
+      setNotice('Logo updated on your public profile.');
+    } catch (e: any) {
+      setError(e?.message || 'Unable to upload logo.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -495,6 +543,37 @@ export default function VendorManagePage() {
         ) : null}
 
         <Section title="Public contact & hours">
+          <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
+            Logo (shown on your public website)
+          </Text>
+          <View className="flex-row items-center mb-4 gap-3">
+            <View
+              className="w-16 h-16 items-center justify-center overflow-hidden"
+              style={{ borderWidth: 1, borderColor: LANDING_BORDER, backgroundColor: '#000' }}
+            >
+              {logoUrl ? (
+                <Image
+                  source={{ uri: getBackendAssetUrl(logoUrl) }}
+                  style={{ width: 64, height: 64 }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Text style={{ fontFamily: 'Poppins_700Bold', color: '#fff' }}>
+                  {(profile.tradingName || 'V').slice(0, 1).toUpperCase()}
+                </Text>
+              )}
+            </View>
+            <Pressable
+              onPress={handleUploadLogo}
+              disabled={uploading || readOnly}
+              className="rounded-full border px-4 py-2"
+              style={{ borderColor: LANDING_BORDER }}
+            >
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                {uploading ? 'Uploading…' : logoUrl ? 'Replace logo' : 'Upload logo'}
+              </Text>
+            </Pressable>
+          </View>
           <Field label="Description" value={description} onChangeText={setDescription} multiline />
           <Field
             label="Business hours"

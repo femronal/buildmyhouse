@@ -358,6 +358,7 @@ export class VendorManageUpdateDto {
   @IsOptional() @IsBoolean() showPublicWhatsApp?: boolean;
   @IsOptional() @IsBoolean() showPublicEmail?: boolean;
   @IsOptional() @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @IsString() logoUrl?: string;
   @IsOptional() @IsObject() socialLinks?: Record<string, string>;
   @IsOptional() @IsArray() @IsString({ each: true }) paymentMethodsAccepted?: string[];
   @IsOptional() @IsBoolean() pricesNegotiable?: boolean;

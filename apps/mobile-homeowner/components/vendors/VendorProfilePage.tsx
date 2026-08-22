@@ -1,15 +1,9 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link } from 'expo-router';
-import { Linking, Pressable, Text, TextInput, View } from 'react-native';
+import { Image, Linking, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
+import { getBackendAssetUrl } from '@/lib/image';
 import {
   fetchPublicVendorBySlug,
   submitVendorQuoteRequest,
@@ -20,16 +14,107 @@ import { useWebSeo } from '@/lib/seo';
 
 type Props = { slug: string };
 
+const INK = '#000000';
+const PAPER = '#FFFFFF';
+const RULE = '#000000';
+
+function Rule({ heavy = false }: { heavy?: boolean }) {
+  return (
+    <View
+      style={{
+        height: heavy ? 4 : 1,
+        backgroundColor: RULE,
+        width: '100%',
+      }}
+    />
+  );
+}
+
+function Label({ children }: { children: string }) {
+  return (
+    <Text
+      className="text-[11px] mb-1 uppercase"
+      style={{
+        fontFamily: 'JetBrainsMono_500Medium',
+        color: INK,
+        letterSpacing: 2,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+function Value({ children }: { children: string }) {
+  return (
+    <Text
+      className="text-lg md:text-xl leading-snug mb-5"
+      style={{ fontFamily: 'Poppins_700Bold', color: INK }}
+    >
+      {children}
+    </Text>
+  );
+}
+
 function Info({ label, value }: { label: string; value?: string | null }) {
   if (!value) return null;
   return (
-    <View className="mb-3">
-      <Text className="text-xs mb-0.5" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
+    <View>
+      <Label>{label}</Label>
+      <Value>{value}</Value>
+    </View>
+  );
+}
+
+function BrutalButton({
+  label,
+  onPress,
+  filled = false,
+  disabled,
+}: {
+  label: string;
+  onPress: () => void;
+  filled?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      className="px-5 py-3 mr-2 mb-2"
+      style={{
+        backgroundColor: filled ? INK : PAPER,
+        borderWidth: 2,
+        borderColor: INK,
+        opacity: disabled ? 0.45 : 1,
+      }}
+    >
+      <Text
+        className="text-sm uppercase"
+        style={{
+          fontFamily: 'Poppins_800ExtraBold',
+          color: filled ? PAPER : INK,
+          letterSpacing: 1,
+        }}
+      >
         {label}
       </Text>
-      <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_INK }}>
-        {value}
-      </Text>
+    </Pressable>
+  );
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <View className="py-10 md:py-14">
+      <SeoHeading
+        level={2}
+        className="text-3xl md:text-5xl leading-none mb-8 uppercase"
+        style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
+      >
+        {title}
+      </SeoHeading>
+      {children}
     </View>
   );
 }
@@ -80,6 +165,7 @@ export default function VendorProfilePage({ slug }: Props) {
 
   const whatsappHref = vendorWhatsAppHref(vendor?.publicWhatsApp || vendor?.publicPhone);
   const location = [vendor?.cityLabel, vendor?.stateLabel].filter(Boolean).join(', ');
+  const logoSrc = getBackendAssetUrl(vendor?.logoUrl);
 
   const sendQuote = async () => {
     setQuoteStatus(null);
@@ -107,91 +193,172 @@ export default function VendorProfilePage({ slug }: Props) {
     }
   };
 
+  const inputStyle = {
+    borderWidth: 2,
+    borderColor: INK,
+    fontFamily: 'Poppins_400Regular' as const,
+    color: INK,
+    backgroundColor: PAPER,
+    outlineStyle: 'none' as any,
+  };
+
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
-      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
-        <SeoContentBackButton fallbackHref="/vendors" />
+    <ScrollView
+      className="flex-1"
+      style={{ backgroundColor: PAPER }}
+      contentContainerStyle={{ paddingBottom: 48 }}
+      keyboardShouldPersistTaps="handled"
+    >
+      <View className="w-full max-w-[1040px] self-center px-5 md:px-8 pt-8 pb-16">
+        <Link href={'/vendors' as any} asChild>
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Back to vendors"
+            className="w-12 h-12 items-center justify-center mb-8"
+            style={{ borderWidth: 2, borderColor: INK, backgroundColor: PAPER }}
+          >
+            <Text style={{ fontFamily: 'Poppins_800ExtraBold', color: INK, fontSize: 22 }}>←</Text>
+          </Pressable>
+        </Link>
 
         {isLoading ? (
-          <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+          <Text className="text-base uppercase" style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK }}>
             Loading vendor…
           </Text>
         ) : null}
 
         {notFound ? (
-          <View className="border rounded-3xl p-6" style={{ borderColor: LANDING_BORDER }}>
-            <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
+          <View>
+            <Rule heavy />
+            <SeoHeading
+              level={1}
+              className="text-5xl md:text-7xl leading-none my-8 uppercase"
+              style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
+            >
               Vendor not available
             </SeoHeading>
-            <Text className="text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+            <Text className="text-lg mb-8" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
               This profile is not publicly listed. It may be awaiting review, suspended, or internal-only.
             </Text>
             <Link href={'/vendors' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mt-4 bg-black self-start" accessibilityRole="link">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+              <Pressable
+                className="px-5 py-3 self-start mb-8"
+                style={{ backgroundColor: INK, borderWidth: 2, borderColor: INK }}
+                accessibilityRole="link"
+              >
+                <Text
+                  className="text-sm uppercase"
+                  style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER, letterSpacing: 1 }}
+                >
                   Browse vendors
                 </Text>
               </Pressable>
             </Link>
+            <Rule heavy />
           </View>
         ) : null}
 
         {isError && !notFound ? (
-          <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+          <Text className="text-base" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
             Unable to load this vendor right now.
           </Text>
         ) : null}
 
         {vendor ? (
           <>
-            <View className="border rounded-3xl p-6 mb-5" style={{ borderColor: LANDING_BORDER }}>
-              <View className="flex-row flex-wrap items-center gap-2 mb-2">
-                {vendor.isBuildMyHouseVerified ? (
-                  <Pressable
-                    onPress={() => setShowVerifiedHelp((v) => !v)}
-                    className="rounded-full px-2.5 py-1 bg-black"
+            {/* Hero */}
+            <Rule heavy />
+            <View className="py-10 md:py-14">
+              <View className="flex-row flex-wrap items-stretch gap-6 mb-8">
+                {logoSrc ? (
+                  <View
+                    className="w-28 h-28 md:w-40 md:h-40 overflow-hidden"
+                    style={{ borderWidth: 3, borderColor: INK, backgroundColor: INK }}
                   >
-                    <Text className="text-[10px] text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      BuildMyHouse Verified
-                    </Text>
-                  </Pressable>
+                    <Image
+                      source={{ uri: logoSrc }}
+                      style={{ width: '100%', height: '100%' }}
+                      resizeMode="cover"
+                      accessibilityLabel={`${vendor.tradingName} logo`}
+                    />
+                  </View>
                 ) : (
-                  <View className="rounded-full px-2.5 py-1 border" style={{ borderColor: LANDING_BORDER }}>
-                    <Text className="text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_MUTED }}>
-                      Listed
+                  <View
+                    className="w-28 h-28 md:w-40 md:h-40 items-center justify-center"
+                    style={{ backgroundColor: INK }}
+                  >
+                    <Text
+                      className="text-4xl md:text-5xl"
+                      style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER }}
+                    >
+                      {(vendor.tradingName || 'V').slice(0, 1).toUpperCase()}
                     </Text>
                   </View>
                 )}
-                <Pressable onPress={() => setShowVerifiedHelp((v) => !v)}>
-                  <Text className="text-xs underline" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-                    What does verified mean?
-                  </Text>
-                </Pressable>
-              </View>
 
-              <SeoHeading
-                level={1}
-                className={seoContentTypography.title}
-                style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-              >
-                {title}
-              </SeoHeading>
+                <View className="flex-1 min-w-[220px]">
+                  <View className="flex-row flex-wrap items-center gap-3 mb-4">
+                    {vendor.isBuildMyHouseVerified ? (
+                      <Pressable
+                        onPress={() => setShowVerifiedHelp((v) => !v)}
+                        className="px-3 py-1"
+                        style={{ backgroundColor: INK }}
+                      >
+                        <Text
+                          className="text-[10px] uppercase"
+                          style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER, letterSpacing: 1 }}
+                        >
+                          BuildMyHouse Verified
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View className="px-3 py-1" style={{ borderWidth: 2, borderColor: INK }}>
+                        <Text
+                          className="text-[10px] uppercase"
+                          style={{ fontFamily: 'Poppins_800ExtraBold', color: INK, letterSpacing: 1 }}
+                        >
+                          Listed
+                        </Text>
+                      </View>
+                    )}
+                    <Pressable onPress={() => setShowVerifiedHelp((v) => !v)}>
+                      <Text
+                        className="text-xs uppercase underline"
+                        style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK }}
+                      >
+                        What does verified mean?
+                      </Text>
+                    </Pressable>
+                  </View>
+
+                  <SeoHeading
+                    level={1}
+                    className="text-4xl md:text-7xl leading-[0.95] uppercase"
+                    style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
+                  >
+                    {title}
+                  </SeoHeading>
+                </View>
+              </View>
 
               {vendor.description ? (
                 <Text
-                  className={seoContentTypography.description}
-                  style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
+                  className="text-lg md:text-2xl leading-snug mb-8 max-w-[46rem]"
+                  style={{ fontFamily: 'Poppins_400Regular', color: INK }}
                 >
                   {vendor.description}
                 </Text>
               ) : null}
 
               {showVerifiedHelp ? (
-                <View className="mt-3 rounded-2xl border p-4" style={{ borderColor: LANDING_BORDER, backgroundColor: '#FAFAFA' }}>
-                  <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                <View className="mb-8 p-5" style={{ borderWidth: 2, borderColor: INK }}>
+                  <Text
+                    className="text-sm uppercase mb-3"
+                    style={{ fontFamily: 'Poppins_800ExtraBold', color: INK, letterSpacing: 1 }}
+                  >
                     What BuildMyHouse Verified means
                   </Text>
-                  <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                  <Text className="text-base leading-6" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
                     BuildMyHouse completed defined checks such as business identity, registration where applicable,
                     representative identity, phone reachability, and location evidence. It does not mean the vendor is
                     scam-proof, or that every product is guaranteed genuine.
@@ -199,119 +366,87 @@ export default function VendorProfilePage({ slug }: Props) {
                 </View>
               ) : null}
 
-              <View className="flex-row flex-wrap mt-4">
+              <View className="flex-row flex-wrap">
                 {vendor.publicPhone ? (
-                  <Pressable
+                  <BrutalButton
+                    label="Call vendor"
+                    filled
                     onPress={() => Linking.openURL(`tel:${vendor.publicPhone}`)}
-                    className="rounded-full px-4 py-2.5 mr-2 mb-2 bg-black"
-                  >
-                    <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      Call vendor
-                    </Text>
-                  </Pressable>
+                  />
                 ) : null}
                 {whatsappHref ? (
-                  <Pressable
-                    onPress={() => Linking.openURL(whatsappHref)}
-                    className="rounded-full px-4 py-2.5 mr-2 mb-2 border"
-                    style={{ borderColor: LANDING_BORDER }}
-                  >
-                    <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                      WhatsApp
-                    </Text>
-                  </Pressable>
+                  <BrutalButton label="WhatsApp" onPress={() => Linking.openURL(whatsappHref)} />
                 ) : null}
                 {vendor.publicEmail ? (
-                  <Pressable
+                  <BrutalButton
+                    label="Email"
                     onPress={() => Linking.openURL(`mailto:${vendor.publicEmail}`)}
-                    className="rounded-full px-4 py-2.5 mr-2 mb-2 border"
-                    style={{ borderColor: LANDING_BORDER }}
-                  >
-                    <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                      Email
-                    </Text>
-                  </Pressable>
+                  />
                 ) : null}
                 {vendor.websiteUrl ? (
-                  <Pressable
-                    onPress={() => Linking.openURL(vendor.websiteUrl!)}
-                    className="rounded-full px-4 py-2.5 mr-2 mb-2 border"
-                    style={{ borderColor: LANDING_BORDER }}
-                  >
-                    <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                      Website
-                    </Text>
-                  </Pressable>
+                  <BrutalButton label="Website" onPress={() => Linking.openURL(vendor.websiteUrl!)} />
                 ) : null}
-                <Pressable
+                <BrutalButton
+                  label="Request a quote"
                   onPress={() => setQuoteOpen((v) => !v)}
-                  className="rounded-full px-4 py-2.5 mb-2 border"
-                  style={{ borderColor: LANDING_BORDER }}
-                >
-                  <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                    Request a quote
-                  </Text>
-                </Pressable>
+                />
               </View>
 
               {quoteStatus ? (
-                <Text className="text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                <Text className="text-sm mt-4" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
                   {quoteStatus}
                 </Text>
               ) : null}
 
               {quoteOpen ? (
-                <View className="mt-4 border-t pt-4" style={{ borderColor: LANDING_BORDER }}>
-                  <Text className="text-sm mb-3" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                <View className="mt-8 pt-8" style={{ borderTopWidth: 2, borderTopColor: INK }}>
+                  <Text
+                    className="text-xl uppercase mb-5"
+                    style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
+                  >
                     Request a quote
                   </Text>
-                  {[
-                    ['Product / material *', quoteProduct, setQuoteProduct],
-                    ['Quantity', quoteQty, setQuoteQty],
-                    ['Delivery location', quoteLocation, setQuoteLocation],
-                    ['Your name *', buyerName, setBuyerName],
-                    ['Phone', buyerPhone, setBuyerPhone],
-                    ['Email', buyerEmail, setBuyerEmail],
-                  ].map(([label, value, setter]) => (
-                    <View key={String(label)} className="mb-2">
-                      <Text className="text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
-                        {String(label)}
-                      </Text>
+                  {(
+                    [
+                      ['Product / material *', quoteProduct, setQuoteProduct],
+                      ['Quantity', quoteQty, setQuoteQty],
+                      ['Delivery location', quoteLocation, setQuoteLocation],
+                      ['Your name *', buyerName, setBuyerName],
+                      ['Phone', buyerPhone, setBuyerPhone],
+                      ['Email', buyerEmail, setBuyerEmail],
+                    ] as const
+                  ).map(([label, value, setter]) => (
+                    <View key={label} className="mb-3">
+                      <Label>{label}</Label>
                       <TextInput
-                        value={String(value)}
-                        onChangeText={setter as (t: string) => void}
-                        className="border rounded-xl px-3 py-2 text-sm"
-                        style={{ borderColor: LANDING_BORDER, fontFamily: 'Poppins_400Regular', color: LANDING_INK, outlineStyle: 'none' as any }}
+                        value={value}
+                        onChangeText={setter}
+                        className="px-3 py-3 text-base"
+                        style={inputStyle}
                       />
                     </View>
                   ))}
-                  <Text className="text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
-                    Note
-                  </Text>
+                  <Label>Note</Label>
                   <TextInput
                     value={quoteNote}
                     onChangeText={setQuoteNote}
                     multiline
-                    className="border rounded-xl px-3 py-2 text-sm mb-3 min-h-[72px]"
-                    style={{ borderColor: LANDING_BORDER, fontFamily: 'Poppins_400Regular', color: LANDING_INK, outlineStyle: 'none' as any }}
+                    className="px-3 py-3 text-base mb-4 min-h-[88px]"
+                    style={inputStyle}
                   />
-                  <Pressable
-                    onPress={sendQuote}
+                  <BrutalButton
+                    label={quoteBusy ? 'Sending…' : 'Send quote request'}
+                    filled
                     disabled={quoteBusy}
-                    className="rounded-full px-4 py-2.5 bg-black self-start"
-                  >
-                    <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      {quoteBusy ? 'Sending…' : 'Send quote request'}
-                    </Text>
-                  </Pressable>
+                    onPress={sendQuote}
+                  />
                 </View>
               ) : null}
             </View>
 
-            <View className="border rounded-3xl p-6 mb-5" style={{ borderColor: LANDING_BORDER }}>
-              <SeoHeading level={2} className={seoContentTypography.sectionHeading} style={{ fontFamily: 'Poppins_700Bold' }}>
-                Who they are
-              </SeoHeading>
+            <Rule heavy />
+
+            <Section title="Who they are">
               <Info label="Location" value={location} />
               <Info label="Business types" value={vendor.businessTypes.join(', ')} />
               <Info
@@ -339,28 +474,40 @@ export default function VendorProfilePage({ slug }: Props) {
                   .filter(Boolean)
                   .join(' · ')}
               />
-            </View>
+            </Section>
 
-            <View className="border rounded-3xl p-6 mb-5" style={{ borderColor: LANDING_BORDER }}>
-              <SeoHeading level={2} className={seoContentTypography.sectionHeading} style={{ fontFamily: 'Poppins_700Bold' }}>
-                What they sell
-              </SeoHeading>
+            <Rule heavy />
+
+            <Section title="What they sell">
               {(vendor.offerings || []).length === 0 ? (
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                <Text className="text-lg" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
                   Categories will appear once the vendor completes their profile.
                 </Text>
               ) : (
                 vendor.offerings.map((o, idx) => (
-                  <View key={idx} className="mb-4 pb-4 border-b" style={{ borderColor: LANDING_BORDER }}>
-                    <Text className="text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                  <View
+                    key={idx}
+                    className="mb-6 pb-6"
+                    style={{
+                      borderBottomWidth: idx === vendor.offerings.length - 1 ? 0 : 2,
+                      borderBottomColor: INK,
+                    }}
+                  >
+                    <Text
+                      className="text-2xl md:text-3xl uppercase mb-2"
+                      style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
+                    >
                       {o.customCategoryLabel || o.familyKey || 'Materials'}
                     </Text>
                     {o.brands.length ? (
-                      <Text className="text-sm" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                      <Text className="text-base mb-2" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
                         Brands: {o.brands.join(', ')}
                       </Text>
                     ) : null}
-                    <Text className="text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                    <Text
+                      className="text-xs uppercase"
+                      style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK, letterSpacing: 1 }}
+                    >
                       {[
                         o.sellsRetail ? 'Retail' : null,
                         o.sellsWholesale ? 'Wholesale' : null,
@@ -376,7 +523,7 @@ export default function VendorProfilePage({ slug }: Props) {
                         .join(' · ')}
                     </Text>
                     {o.examplePriceAmount ? (
-                      <Text className="text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                      <Text className="text-sm mt-3" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
                         Example price (vendor claim): ₦{o.examplePriceAmount}
                         {o.examplePriceUnit ? ` / ${o.examplePriceUnit}` : ''}. {o.examplePriceDisclaimer}
                       </Text>
@@ -384,36 +531,52 @@ export default function VendorProfilePage({ slug }: Props) {
                   </View>
                 ))
               )}
-            </View>
+            </Section>
 
-            <View className="border rounded-3xl p-6 mb-5" style={{ borderColor: LANDING_BORDER }}>
-              <SeoHeading level={2} className={seoContentTypography.sectionHeading} style={{ fontFamily: 'Poppins_700Bold' }}>
-                Transparency
-              </SeoHeading>
+            <Rule heavy />
+
+            <Section title="Transparency">
               <Info label="Vendor status" value={vendor.transparency.verificationLabel} />
-              <Info label="Information last updated" value={new Date(vendor.lastUpdatedAt).toLocaleDateString()} />
+              <Info
+                label="Information last updated"
+                value={new Date(vendor.lastUpdatedAt).toLocaleDateString()}
+              />
               <Info label="Business identity" value={vendor.transparency.businessIdentity} />
               <Info label="Location evidence" value={vendor.transparency.locationEvidence} />
               <Info label="Registration" value={vendor.transparency.registration} />
               <Info label="Pricing" value={vendor.transparency.pricingDisclaimer} />
               <Info label="BuildMyHouse relationship" value={vendor.transparency.bmhRelationship} />
-            </View>
+            </Section>
 
-            <View className="border rounded-3xl p-6" style={{ borderColor: LANDING_BORDER }}>
-              <Text className="text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+            <Rule heavy />
+
+            <View className="py-10 md:py-14">
+              <Text
+                className="text-lg md:text-xl mb-6 max-w-[36rem]"
+                style={{ fontFamily: 'Poppins_400Regular', color: INK }}
+              >
                 Before contacting a supplier, you can compare independent market-price research.
               </Text>
               <Link href={'/tools/price-checker' as any} asChild>
-                <Pressable className="rounded-full px-4 py-2.5 bg-black self-start" accessibilityRole="link">
-                  <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+                <Pressable
+                  className="px-5 py-3 self-start"
+                  style={{ backgroundColor: INK, borderWidth: 2, borderColor: INK }}
+                  accessibilityRole="link"
+                >
+                  <Text
+                    className="text-sm uppercase"
+                    style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER, letterSpacing: 1 }}
+                  >
                     Check the market price
                   </Text>
                 </Pressable>
               </Link>
             </View>
+
+            <Rule heavy />
           </>
         ) : null}
-      </SeoContentColumn>
-    </SeoContentShell>
+      </View>
+    </ScrollView>
   );
 }
