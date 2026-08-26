@@ -1,0 +1,23 @@
+---
+description: Keep BuildMyHouse IDE scoped to BuildMyHouse only; refuse Amala Joint / management work here
+alwaysApply: true
+---
+
+# Workspace focus: BuildMyHouse only
+
+This Cursor workspace is **BuildMyHouse** (`/Users/mac/Desktop/Entrepreneurship/BuildMyHouse`).
+
+## Hard rule
+
+- Do **not** edit, search, commit, push, or debug code outside this repo (especially `AmalaJoint`, `food_del`, or other products).
+- Do **not** treat sibling folders under `Entrepreneurship/` as in-scope just because they are reachable from this IDE.
+
+## When the user asks for Amala Joint / management work
+
+1. Stop before making changes.
+2. Tell them clearly: they are in the **BuildMyHouse** IDE, and this task belongs in the **management / Amala Joint** IDE (or that product’s own Cursor window).
+3. Offer to continue only after they open the correct workspace — do not proceed on Amala Joint files from here.
+
+## In scope here
+
+BuildMyHouse app, backend, frontend, and docs inside this repository only.

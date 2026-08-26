@@ -22,7 +22,7 @@ export default function BlogLottieCover({ className = 'mb-8' }: BlogLottieCoverP
 
   return (
     <View
-      className={`overflow-hidden rounded-3xl border border-gray-200 bg-[#f4f6f4] ${className}`.trim()}
+      className={`overflow-hidden rounded-3xl border border-gray-200 bg-[#f3f0e8] ${className}`.trim()}
       accessibilityLabel="Construction worker building a wall illustration"
       accessibilityRole="image"
     >
