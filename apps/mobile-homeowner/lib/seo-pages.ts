@@ -269,48 +269,49 @@ export function getSeoPageContent(pageKey: string): SeoPageContent {
       ],
     },
     landVerificationNigeriaGuide: {
-      title: 'Land Verification in Nigeria: Practical Guide | BuildMyHouse',
+      title: 'How to Verify Land in Nigeria From Abroad (2026 Guide) | BuildMyHouse',
       description:
-        'Verify Nigerian land before you pay: title checks, encumbrances, survey alignment, and red flags — especially for diaspora buyers.',
+        'Step-by-step remote land verification for Nigerians abroad: documents to demand, lawyers and surveyors to verify, government searches, CTC checks, state portals, red flags, and what to receive before you send money.',
       canonicalPath: '/land-verification-in-nigeria-guide',
-      eyebrow: 'Land',
-      heroTitle: 'Land Verification in Nigeria — What to Check First',
+      eyebrow: 'Land verification',
+      heroTitle: 'How to Verify Land in Nigeria From Abroad Without Coming Home: The Step-by-Step 2026 Guide',
       heroDescription:
-        'Land disputes destroy budgets. Start with documentation, not vibes: confirm ownership chain, survey consistency, and government records where applicable before you fund construction.',
+        'The practical land-verification recipe for Nigerians abroad: the exact documents to demand, government websites to check, professionals to verify, offices to contact, searches to run, and evidence to receive before you send money.',
       preWhySections: [
         {
-          heading: 'Core verification steps',
+          heading: 'BuildMyHouse remote verification rule',
           bullets: [
-            'Confirm seller identity and relationship to title',
-            'Request and review survey plan vs. on-ground boundaries',
-            'Check for encumbrances, litigation, or duplicate sales',
-            'Use qualified surveyors and legal review for high-value plots',
+            'Never let the seller control your lawyer, surveyor, registry search, and site inspection',
+            'Demand a full verification pack plus coordinates before any serious payment',
+            'Cross-check government records, independent survey, physical possession, and litigation/probate until the checks agree',
+            'Use the correct state land registry or GIS authority — Nigeria has no single national land registry website',
           ],
         },
       ],
       bullets: [
-        'Reduce fraud risk with structured documentation expectations',
-        'Pair legal/survey checks with your construction workflow',
-        'Build only after title risk is tolerable for your budget',
+        'Verify the seller’s legal right to sell the exact physical parcel, not whether a PDF looks genuine',
+        'Separate buyer-side professionals from the seller’s information chain',
+        'Pause major payment until independent checks agree',
       ],
       processSteps: [
-        'Pause major building payments until land checks are satisfactory',
-        'Align your build plan with verified plot details',
-        'Continue with milestone-based construction on BuildMyHouse',
+        'Collect the seller verification pack and coordinates',
+        'Appoint independent lawyer and SURCON-registered surveyor',
+        'Run government search, CTC, survey, possession, and litigation checks before paying',
       ],
       faqs: [
         {
-          question: 'Can I verify land remotely?',
+          question: 'Can I verify land in Nigeria from abroad without coming home?',
           answer:
-            'You can start document review remotely, but high-value plots usually need professional survey and legal support on the ground.',
+            'Yes for most of the process. You can demand documents, independently appoint professionals, request registry searches through your team, and receive geotagged site evidence. Some state processes may still require an authorised representative on the ground.',
         },
         {
-          question: 'What if the price is “too good”?',
-          answer: 'Treat it as a red flag until documentation clears professional review.',
+          question: 'Is a Certificate of Occupancy enough proof to buy land?',
+          answer:
+            'No. A C of O is important but is only prima facie evidence. Proper verification investigates the root and chain of title, government records, survey correspondence to the physical parcel, and any litigation or inheritance issues.',
         },
       ],
       internalLinks: [
-        { label: 'Diaspora building hub', href: '/construction/nigeria' },
+        { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
         { label: 'Common diaspora mistakes', href: '/mistakes-nigerians-in-diaspora-make-when-building' },
         { label: 'Lagos permit guide', href: '/building-permit-in-lagos-nigeria-guide' },
         ...crossLinks,

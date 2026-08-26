@@ -139,6 +139,34 @@ h3[id] {
   color: #2563eb;
   text-decoration: underline;
 }
+.article-html-host .bmx-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  -webkit-overflow-scrolling: touch;
+}
+.article-html-host table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.article-html-host th,
+.article-html-host td {
+  border: 1px solid #e5e7eb;
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+}
+.article-html-host th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #111827;
+}
+.article-html-host tr:nth-child(even) td {
+  background: #fcfcfd;
+}
 
 /* BuildMyHouse landing page */
 .bmh-landing-root {

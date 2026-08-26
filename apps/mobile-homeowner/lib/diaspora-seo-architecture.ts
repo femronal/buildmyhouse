@@ -31,7 +31,7 @@ type SeoPageArchitecture = {
 const relatedGuides: InternalLinkItem[] = [
   { label: 'Lagos Building Permits & Stage Inspections', href: '/guides/lagos-building-permits-and-stage-inspections' },
   { label: 'How to Choose a General Contractor in Nigeria', href: '/how-to-choose-a-general-contractor-in-nigeria' },
-  { label: 'Land Verification in Nigeria Guide', href: '/land-verification-in-nigeria-guide' },
+  { label: 'How to Verify Land in Nigeria From Abroad', href: '/land-verification-in-nigeria-guide' },
 ];
 
 const relatedTools: InternalLinkItem[] = [

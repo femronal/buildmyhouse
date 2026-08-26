@@ -9,6 +9,7 @@ import { articleToIndexItem, type ArticleIndexItem, type ArticlePillarKey } from
 import { diasporaBuildNigeriaFromAbroadPageContent as buildPillar } from '@/lib/diaspora-build-nigeria-from-abroad-pillar';
 import { diasporaRenovateNigeriaFromAbroadPageContent as renovatePillar } from '@/lib/diaspora-renovate-nigeria-from-abroad-content';
 import { lagosBuildingPermitsAndStageInspectionsPageContent as lagosGuide } from '@/lib/lagos-building-permits-and-stage-inspections-content';
+import { landVerificationInNigeriaGuideContent as landGuide } from '@/lib/land-verification-in-nigeria-guide-content';
 import { getSeoPageContent } from '@/lib/seo-pages';
 
 const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -102,7 +103,6 @@ function guideRow(
 export function getStaticPublishedCatalogItems(): PublishedIndexItem[] {
   const mistakes = getSeoPageContent('mistakesNigeriansDiasporaBuilding');
   const contractor = getSeoPageContent('howToChooseGeneralContractorNigeria');
-  const land = getSeoPageContent('landVerificationNigeriaGuide');
 
   return [
     guideRow(
@@ -178,16 +178,16 @@ export function getStaticPublishedCatalogItems(): PublishedIndexItem[] {
     guideRow(
       'seo-land-verification',
       'seo-land-verification',
-      'general',
-      land.canonicalPath,
-      land.heroTitle,
-      land.heroDescription,
-      land.description,
-      SEO_LANDING_COVERS.land,
-      land.heroTitle,
-      10,
-      [land.eyebrow],
-      '2026-03-15',
+      'build-abroad',
+      landGuide.seo.canonical.replace('https://buildmyhouse.app', ''),
+      landGuide.hero.title,
+      landGuide.hero.description,
+      landGuide.seo.description,
+      landGuide.coverImage.src,
+      landGuide.coverImage.alt,
+      landGuide.readingMinutes,
+      [...landGuide.tags],
+      landGuide.updatedAt,
     ),
   ];
 }

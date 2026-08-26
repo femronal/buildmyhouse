@@ -118,15 +118,40 @@ export function deriveArticleTakeaways(input: {
   return description ? [description] : fromList;
 }
 
+/** Extract H2/H3 headings from HTML article bodies in document order. */
+export function extractTocFromHtml(html: string): BlogTocItem[] {
+  const used = new Set<string>();
+  const toc: BlogTocItem[] = [];
+  const re = /<h([23])\b[^>]*>([\s\S]*?)<\/h\1>/gi;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(html || '')) && toc.length < MAX_TOC_ITEMS) {
+    const level = Number(match[1]) === 3 ? 3 : 2;
+    const title = String(match[2] || '')
+      .replace(/<[^>]+>/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!title) continue;
+    toc.push({ id: uniqueSlug(title, used), title, level });
+  }
+  return toc;
+}
+
 export function buildArticleReadingAids(input: {
   keyTakeaways?: string[] | null;
   content?: unknown;
   excerpt?: string;
   description?: string;
   faqs?: Array<{ question?: string; answer?: string }>;
+  htmlFallback?: string;
 }): BlogReadingAids {
+  const fromTipTap = extractTocFromTipTap(input.content);
+  const toc = fromTipTap.length
+    ? fromTipTap
+    : input.htmlFallback
+      ? extractTocFromHtml(input.htmlFallback)
+      : [];
   return {
-    toc: extractTocFromTipTap(input.content),
+    toc,
     takeaways: deriveArticleTakeaways(input),
   };
 }

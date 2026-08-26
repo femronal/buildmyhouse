@@ -3452,3 +3452,20 @@ model VendorProfileChangeRequest {
   @@index([status, createdAt])
   @@map("vendor_profile_change_requests")
 }
+
+/// Public product waitlist signups (e.g. Land Verification Checker).
+model WaitlistSignup {
+  id          String   @id @default(uuid())
+  /// Stable product key, e.g. land-verification-checker
+  productKey  String
+  email       String
+  fullName    String?
+  sourcePath  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([productKey, email])
+  @@index([productKey, createdAt])
+  @@index([email])
+  @@map("waitlist_signups")
+}

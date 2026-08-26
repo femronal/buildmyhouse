@@ -63,6 +63,11 @@ img.bmx-article-image { width: 100%; max-width: 100%; height: auto; border-radiu
 iframe.bmx-youtube-embed { display: block; width: 100% !important; max-width: 100% !important; height: auto !important; aspect-ratio: 16/9; border: 0; border-radius: 0.75rem; margin: 1.5rem 0; }
 aside.bmx-callout { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1rem 1.25rem; margin: 1.5rem 0; }
 .bmx-article-link { color: #2563eb; }
+.bmx-table-scroll { width: 100%; overflow-x: auto; margin: 1.5rem 0; -webkit-overflow-scrolling: touch; }
+table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 0.92rem; line-height: 1.45; }
+th, td { border: 1px solid #e5e7eb; padding: 0.65rem 0.75rem; text-align: left; vertical-align: top; }
+th { background: #f9fafb; font-weight: 600; color: #111; }
+tr:nth-child(even) td { background: #fcfcfd; }
 `;
 
 export function wrapArticleHtmlFragment(fragment: string): string {

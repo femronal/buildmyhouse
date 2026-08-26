@@ -30,6 +30,7 @@ import { PriceIntelligenceModule } from './price-intelligence/price-intelligence
 import { HrModule } from './hr/hr.module';
 import { AdminAccessModule } from './admin-access/admin-access.module';
 import { VendorsModule } from './vendors/vendors.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { VendorsModule } from './vendors/vendors.module';
     HrModule,
     AdminAccessModule,
     VendorsModule,
+    WaitlistModule,
   ],
   controllers: [],
   providers: [
