@@ -10,7 +10,7 @@
  *   admin-only via /admin/price-research/reports/:id).
  */
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
-import PDFDocument from 'pdfkit';
+import PDFDocument = require('pdfkit');
 import { PrismaService } from '../../prisma/prisma.service';
 import { PriceCheckerReport } from '../reports/report';
 import { CONFIDENCE_POLICY_V1 } from '../reports/confidence-policy';

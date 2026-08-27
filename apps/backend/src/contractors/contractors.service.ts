@@ -12,7 +12,7 @@ import { WebSocketService } from '../websocket/websocket.service';
 import { StripeService } from '../payments/services/stripe.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
-import PDFDocument from 'pdfkit';
+import PDFDocument = require('pdfkit');
 import { OpenAIService, RerankContractorInput } from '../openai/openai.service';
 import {
   GC_VERIFICATION_REQUIRED_DOCUMENTS,
