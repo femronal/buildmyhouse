@@ -98,8 +98,30 @@ export const priceCheckerApi = {
       { method: 'POST', body: {} },
     ),
 
+  listMyReports: () =>
+    request<{ reports: Array<{ reportId: string; generatedAt: string; title: string; status: string }> }>(
+      `/price-checker/reports/mine`,
+    ),
+
   pdfUrl: (reportId: string, token: string | null) =>
     `${API_BASE_URL}/price-checker/reports/${reportId}/pdf${token ? `?token=${encodeURIComponent(token)}` : ''}`,
+
+  /** Authenticated blob download — more reliable than window.open (sends session + JWT). */
+  downloadPdfBlob: async (reportId: string, token: string | null): Promise<Blob> => {
+    const hdrs = await headers();
+    const { ['Content-Type']: _omit, ...getHeaders } = hdrs;
+    const response = await fetch(priceCheckerApi.pdfUrl(reportId, token), {
+      method: 'GET',
+      headers: getHeaders,
+    });
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      const message: string =
+        (payload && (payload.message?.message || payload.message)) || `PDF download failed (${response.status})`;
+      throw new PriceCheckerApiError(typeof message === 'string' ? message : 'PDF download failed', response.status, null);
+    }
+    return response.blob();
+  },
 
   reportPath: (reportId: string, token: string | null) =>
     `/tools/price-checker/reports/${reportId}${token ? `?token=${encodeURIComponent(token)}` : ''}`,

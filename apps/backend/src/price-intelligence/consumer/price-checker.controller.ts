@@ -10,7 +10,6 @@ import {
   Body,
   Controller,
   Get,
-  Header,
   Param,
   Post,
   Query,
@@ -143,17 +142,30 @@ export class PriceCheckerController {
   }
 
   @Get('reports/:reportId/pdf')
-  @Header('Content-Type', 'application/pdf')
   async downloadPdf(
     @Req() req: AuthedRequest,
     @Res() res: Response,
     @Param('reportId') reportId: string,
     @Query('token') token?: string,
   ) {
-    const pdf = await this.reports.generatePdf(reportId, identityFrom(req), token ?? null);
-    res.setHeader('Content-Disposition', `attachment; filename="BuildMyHouse-Price-Report-${reportId.slice(0, 8)}.pdf"`);
-    res.setHeader('Cache-Control', 'private, no-store');
-    res.send(pdf);
+    try {
+      const pdf = await this.reports.generatePdf(reportId, identityFrom(req), token ?? null);
+      res.status(200);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="BuildMyHouse-Price-Report-${reportId.slice(0, 8)}.pdf"`,
+      );
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.setHeader('Content-Length', String(pdf.length));
+      res.end(pdf);
+    } catch (error) {
+      if (res.headersSent) {
+        res.destroy();
+        return;
+      }
+      throw error;
+    }
   }
 
   private validatePreviewBody(body: QuestionsPreviewBody): void {

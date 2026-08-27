@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Linking, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, Linking, Platform, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft } from 'phosphor-react-native';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { usePriceCheckerSession } from '@/hooks/usePriceCheckerSession';
 import { priceCheckerApi } from '@/lib/price-checker/api';
 import { priceCheckerAnalytics } from '@/lib/price-checker/analytics';
+import { downloadPriceCheckerPdf } from '@/lib/price-checker/download-pdf';
 import { ConsumerReportDto } from '@/lib/price-checker/types';
 import { isMobileWeb } from '@/lib/responsive-layout';
 import { ConversationPanel } from './ConversationPanel';
@@ -148,12 +149,13 @@ export function PriceCheckerWorkspace() {
     const reportId = state.research?.reportId;
     if (!reportId) return;
     const token = state.research?.reportAccessToken ?? null;
-    const url = priceCheckerApi.pdfUrl(reportId, token);
-    priceCheckerAnalytics.pdfDownloaded();
-    if (Platform.OS === 'web' && typeof window !== 'undefined') {
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      await Linking.openURL(url);
+    try {
+      await downloadPriceCheckerPdf(reportId, token);
+      priceCheckerAnalytics.pdfDownloaded();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF download failed. Please try again.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('Download failed', message);
     }
   };
 

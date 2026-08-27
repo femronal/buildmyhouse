@@ -170,115 +170,156 @@ export class PriceCheckerReportService {
   async generatePdf(reportId: string, identity: UsageIdentity, token: string | null): Promise<Buffer> {
     const row = await this.loadAuthorized(reportId, identity, token);
     const dto = this.toConsumerDto(row);
-    const webBase = process.env.PRICE_CHECKER_WEB_BASE_URL ?? 'https://buildmyhouse.app';
-    const onlineUrl = `${webBase}/tools/price-checker/reports/${dto.reportId}`;
+    const webBase = (process.env.PRICE_CHECKER_WEB_BASE_URL ?? 'https://buildmyhouse.app').replace(/\/+$/, '');
+    const onlineUrl = `${webBase}/tools/price-checker/reports/${dto.reportId}${
+      row.accessToken ? `?token=${encodeURIComponent(row.accessToken)}` : ''
+    }`;
 
     return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ size: 'A4', margin: 48 });
-      const chunks: Buffer[] = [];
-      doc.on('data', (chunk) => chunks.push(chunk as Buffer));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
-      doc.on('error', reject);
+      try {
+        const doc = new PDFDocument({ size: 'A4', margin: 48, autoFirstPage: true, bufferPages: true });
+        const chunks: Buffer[] = [];
+        doc.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('error', (err) => reject(err));
 
-      const naira = (v: number | null) => (v === null ? '—' : `NGN ${v.toLocaleString('en-NG')}`);
-      const heading = (text: string) => {
-        doc.moveDown(0.9);
-        doc.fontSize(11).fillColor('#111827').text(text.toUpperCase(), { characterSpacing: 0.5 });
-        doc.moveTo(doc.x, doc.y + 2).lineTo(548, doc.y + 2).strokeColor('#e5e7eb').stroke();
-        doc.moveDown(0.4);
-        doc.fontSize(10).fillColor('#374151');
-      };
+        const safe = (value: unknown) => String(value ?? '').replace(/\u0000/g, '');
+        const naira = (v: number | null) => (v === null || Number.isNaN(v) ? '—' : `NGN ${Number(v).toLocaleString('en-NG')}`);
+        const write = (text: string, options?: { link?: string }) => {
+          doc.text(safe(text), options);
+        };
+        const writeLink = (label: string, href: string | null | undefined) => {
+          const url = safe(href).trim();
+          if (/^https?:\/\//i.test(url)) {
+            write(label || url, { link: url });
+          } else {
+            write(label || url || '—');
+          }
+        };
+        const heading = (text: string) => {
+          doc.moveDown(0.9);
+          doc.fontSize(11).fillColor('#111827');
+          write(text.toUpperCase());
+          doc.moveDown(0.35);
+          doc.fontSize(10).fillColor('#374151');
+        };
 
-      // Header
-      doc.fontSize(18).fillColor('#111827').text('BuildMyHouse Price Checker Report');
-      doc.moveDown(0.2);
-      doc.fontSize(9).fillColor('#6b7280');
-      doc.text(`Reference: ${dto.reportId}`);
-      doc.text(`Generated: ${new Date(dto.generatedAt).toLocaleString('en-NG', { dateStyle: 'long', timeStyle: 'short' })}`);
-      doc.text(`Online report: ${onlineUrl}`, { link: onlineUrl });
-
-      heading('Product');
-      const specText = Object.entries(dto.product.specification)
-        .map(([k, v]) => `${k}: ${v}`)
-        .join('  ·  ');
-      doc.text(`${dto.product.name}${dto.product.brand ? ` (${dto.product.brand})` : ''}`);
-      if (specText) doc.fillColor('#6b7280').text(specText).fillColor('#374151');
-
-      heading('Location');
-      doc.text(dto.location.requested);
-      for (const lim of dto.location.limitations) doc.fillColor('#6b7280').text(`Note: ${lim}`).fillColor('#374151');
-
-      if (dto.status === 'insufficient_data' && dto.insufficientData) {
-        heading('Result — insufficient reliable data');
-        doc.text(dto.insufficientData.explanation);
-        heading('What was missing');
-        for (const m of dto.insufficientData.missingData) doc.text(`• ${m}`);
-        heading('What you can do next');
-        for (const s of dto.insufficientData.nextSteps) doc.text(`• ${s}`);
-      } else if (dto.status === 'single_source') {
-        heading('Single-source observed price');
-        doc.fontSize(14).fillColor('#111827').text(`${naira(dto.pricing.singleSourcePrice)} per ${dto.pricing.normalisedUnit ?? 'unit'}`);
-        doc.fontSize(10).fillColor('#374151');
-        doc.moveDown(0.3);
-        doc.text('This is one observed price from a single independent source. It is not a market range.');
-      } else {
-        heading('Latest observed range');
-        doc.fontSize(14).fillColor('#111827').text(
-          `${naira(dto.pricing.observedLow)} – ${naira(dto.pricing.observedHigh)} per ${dto.pricing.normalisedUnit ?? 'unit'}`,
+        doc.fontSize(18).fillColor('#111827');
+        write('BuildMyHouse Price Checker Report');
+        doc.moveDown(0.2);
+        doc.fontSize(9).fillColor('#6b7280');
+        write(`Reference: ${dto.reportId}`);
+        write(
+          `Generated: ${new Date(dto.generatedAt).toLocaleString('en-NG', { dateStyle: 'long', timeStyle: 'short' })}`,
         );
-        doc.fontSize(10).fillColor('#374151');
-        doc.moveDown(0.3);
-        doc.text(`Typical observed price: ${naira(dto.pricing.typicalPrice)} per ${dto.pricing.normalisedUnit ?? 'unit'} (median of accepted observations)`);
-      }
+        writeLink(`Online report: ${onlineUrl}`, onlineUrl);
 
-      if (dto.status !== 'insufficient_data') {
-        heading('What the price appears to include');
-        for (const i of dto.inclusions) doc.text(`• ${i}`);
-        for (const e of dto.exclusions) doc.text(`• ${e}`);
-        for (const u of dto.unknowns) doc.text(`• ${u}`);
-      }
+        heading('Product');
+        const specEntries = dto.product?.specification && typeof dto.product.specification === 'object'
+          ? Object.entries(dto.product.specification)
+          : [];
+        const specText = specEntries.map(([k, v]) => `${k}: ${v}`).join('  ·  ');
+        write(`${dto.product?.name ?? 'Product'}${dto.product?.brand ? ` (${dto.product.brand})` : ''}`);
+        if (specText) {
+          doc.fillColor('#6b7280');
+          write(specText);
+          doc.fillColor('#374151');
+        }
 
-      heading('Sources checked');
-      if (dto.sources.length === 0) {
-        doc.text('No source passed validation for this exact request.');
-      }
-      for (const s of dto.sources) {
-        doc
-          .fillColor('#111827')
-          .text(`${s.sellerName ?? 'Unnamed seller'} — ${s.currency} ${s.displayedPrice.toLocaleString('en-NG')}${s.originalUnit ? ` per ${s.originalUnit}` : ''}`);
-        doc
-          .fillColor('#6b7280')
-          .fontSize(8.5)
-          .text(`${s.sourceTierLabel} · checked ${s.dateChecked.slice(0, 10)}${s.listingDate ? ` · listed ${s.listingDate.slice(0, 10)}` : ''}`);
-        doc.text(s.sourceUrl, { link: s.sourceUrl });
-        doc.fontSize(10).fillColor('#374151').moveDown(0.35);
-      }
+        heading('Location');
+        write(dto.location?.requested ?? '—');
+        for (const lim of dto.location?.limitations ?? []) {
+          doc.fillColor('#6b7280');
+          write(`Note: ${lim}`);
+          doc.fillColor('#374151');
+        }
 
-      heading('Confidence');
-      doc
-        .fillColor('#111827')
-        .text(`${dto.confidence.label.replace('_', ' ').toUpperCase()} — ${dto.confidence.score}/100 (policy ${dto.scoringVersion})`);
-      doc.fillColor('#374151');
-      for (const r of dto.confidence.positiveReasons) doc.text(`+ ${r}`);
-      for (const r of dto.confidence.limitingReasons) doc.text(`− ${r}`);
+        if (dto.status === 'insufficient_data' && dto.insufficientData) {
+          heading('Result — insufficient reliable data');
+          write(dto.insufficientData.explanation);
+          heading('What was missing');
+          for (const m of dto.insufficientData.missingData ?? []) write(`• ${m}`);
+          heading('What you can do next');
+          for (const s of dto.insufficientData.nextSteps ?? []) write(`• ${s}`);
+        } else if (dto.status === 'single_source') {
+          heading('Single-source observed price');
+          doc.fontSize(14).fillColor('#111827');
+          write(`${naira(dto.pricing.singleSourcePrice)} per ${dto.pricing.normalisedUnit ?? 'unit'}`);
+          doc.fontSize(10).fillColor('#374151');
+          doc.moveDown(0.3);
+          write('This is one observed price from a single independent source. It is not a market range.');
+        } else {
+          heading('Latest observed range');
+          doc.fontSize(14).fillColor('#111827');
+          write(
+            `${naira(dto.pricing.observedLow)} – ${naira(dto.pricing.observedHigh)} per ${dto.pricing.normalisedUnit ?? 'unit'}`,
+          );
+          doc.fontSize(10).fillColor('#374151');
+          doc.moveDown(0.3);
+          write(
+            `Typical observed price: ${naira(dto.pricing.typicalPrice)} per ${dto.pricing.normalisedUnit ?? 'unit'} (median of accepted observations)`,
+          );
+        }
 
-      heading('Important caution');
-      for (const c of dto.cautions) doc.text(`• ${c}`);
+        if (dto.status !== 'insufficient_data') {
+          heading('What the price appears to include');
+          for (const i of dto.inclusions ?? []) write(`• ${i}`);
+          for (const e of dto.exclusions ?? []) write(`• ${e}`);
+          for (const u of dto.unknowns ?? []) write(`• ${u}`);
+        }
 
-      heading('BuildMyHouse next step');
-      doc.text(`${dto.buildMyHouseNextStep.label}: ${webBase}${dto.buildMyHouseNextStep.destination}`);
+        heading('Sources checked');
+        if (!dto.sources?.length) {
+          write('No source passed validation for this exact request.');
+        }
+        for (const s of dto.sources ?? []) {
+          doc.fillColor('#111827');
+          write(
+            `${s.sellerName ?? 'Unnamed seller'} — ${s.currency} ${Number(s.displayedPrice).toLocaleString('en-NG')}${
+              s.originalUnit ? ` per ${s.originalUnit}` : ''
+            }`,
+          );
+          doc.fillColor('#6b7280').fontSize(8.5);
+          write(
+            `${s.sourceTierLabel} · checked ${String(s.dateChecked ?? '').slice(0, 10)}${
+              s.listingDate ? ` · listed ${String(s.listingDate).slice(0, 10)}` : ''
+            }`,
+          );
+          writeLink(s.sourceUrl, s.sourceUrl);
+          doc.fontSize(10).fillColor('#374151').moveDown(0.35);
+        }
 
-      doc.moveDown(1);
-      doc
-        .fontSize(8)
-        .fillColor('#9ca3af')
-        .text(
+        heading('Confidence');
+        doc.fillColor('#111827');
+        write(
+          `${String(dto.confidence?.label ?? 'unknown').replace(/_/g, ' ').toUpperCase()} — ${dto.confidence?.score ?? 0}/100 (policy ${dto.scoringVersion})`,
+        );
+        doc.fillColor('#374151');
+        for (const r of dto.confidence?.positiveReasons ?? []) write(`+ ${r}`);
+        for (const r of dto.confidence?.limitingReasons ?? []) write(`− ${r}`);
+
+        heading('Important caution');
+        for (const c of dto.cautions ?? []) write(`• ${c}`);
+
+        heading('BuildMyHouse next step');
+        write(`${dto.buildMyHouseNextStep?.label ?? 'Continue'}: ${webBase}${dto.buildMyHouseNextStep?.destination ?? ''}`);
+
+        heading('Online report');
+        write('This PDF can be regenerated any time. Keep the online report link for your records:');
+        writeLink(onlineUrl, onlineUrl);
+
+        doc.moveDown(1);
+        doc.fontSize(8).fillColor('#9ca3af');
+        write(
           'Disclaimer: this report reflects publicly observed advertised prices at the dates shown. It is a research baseline, ' +
             'not a quotation, valuation or guarantee. Advertised prices are frequently negotiable and can change quickly. ' +
             'BuildMyHouse is not responsible for purchasing decisions made solely on this report.',
         );
 
-      doc.end();
+        doc.end();
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 }

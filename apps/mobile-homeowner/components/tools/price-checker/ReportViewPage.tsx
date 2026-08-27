@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'phosphor-react-native';
 import { priceCheckerApi } from '@/lib/price-checker/api';
 import { priceCheckerAnalytics } from '@/lib/price-checker/analytics';
+import { downloadPriceCheckerPdf } from '@/lib/price-checker/download-pdf';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
@@ -25,6 +26,11 @@ export default function ReportViewPage() {
   const { data: user, isLoading: userLoading } = useCurrentUser();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const autoSaveAttempted = useRef(false);
+
+  const reportPath = priceCheckerApi.reportPath(reportId, token);
 
   useWebSeo({
     title: 'Price Report | BuildMyHouse Price Checker',
@@ -46,13 +52,51 @@ export default function ReportViewPage() {
 
   const report = query.data;
   const tone = report ? confidenceTone(report.confidence.label) : null;
+  const isSaved = Boolean(report?.savedToAccount || saved);
+
+  const persistToAccount = async (): Promise<boolean> => {
+    if (!reportId || isSaved) return true;
+    setSaving(true);
+    try {
+      await priceCheckerApi.saveReport(reportId, token);
+      setSaved(true);
+      priceCheckerAnalytics.reportSaved();
+      await query.refetch();
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not save this report.';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') window.alert(message);
+      else Alert.alert('Save failed', message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // After sign-in return (or when already signed in), attach the report to the account once.
+  useEffect(() => {
+    if (!report || userLoading || !user || isSaved || autoSaveAttempted.current) return;
+    autoSaveAttempted.current = true;
+    void persistToAccount().then((ok) => {
+      if (!ok) autoSaveAttempted.current = false;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional one-shot after auth/report ready
+  }, [report?.reportId, report?.savedToAccount, user?.id, userLoading, isSaved]);
 
   const downloadPdf = async () => {
-    if (!reportId) return;
-    priceCheckerAnalytics.pdfDownloaded();
-    const url = priceCheckerApi.pdfUrl(reportId, token);
-    if (Platform.OS === 'web') window.open(url, '_blank', 'noopener,noreferrer');
-    else await Linking.openURL(url);
+    if (!reportId || pdfBusy) return;
+    setPdfError(null);
+    setPdfBusy(true);
+    try {
+      await downloadPriceCheckerPdf(reportId, token);
+      priceCheckerAnalytics.pdfDownloaded();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'PDF download failed. Please try again.';
+      setPdfError(message);
+      if (Platform.OS !== 'web') Alert.alert('Download failed', message);
+    } finally {
+      setPdfBusy(false);
+    }
   };
 
   const saveReport = async () => {
@@ -60,7 +104,7 @@ export default function ReportViewPage() {
       router,
       currentUser: user,
       userLoading,
-      destinationPath: `/tools/price-checker/reports/${reportId}${token ? `?token=${token}` : ''}`,
+      destinationPath: reportPath,
       promptTitle: 'Sign in to save this report',
       promptMessage: 'Create a free account or sign in to keep this report in your history.',
     });
@@ -68,14 +112,7 @@ export default function ReportViewPage() {
       priceCheckerAnalytics.loginPromptViewed();
       return;
     }
-    setSaving(true);
-    try {
-      await priceCheckerApi.saveReport(reportId, token);
-      setSaved(true);
-      priceCheckerAnalytics.reportSaved();
-    } finally {
-      setSaving(false);
-    }
+    await persistToAccount();
   };
 
   return (
@@ -277,34 +314,39 @@ export default function ReportViewPage() {
             <View className="mt-4 gap-3">
               <Pressable
                 onPress={downloadPdf}
+                disabled={pdfBusy}
                 className="min-h-[48px] items-center justify-center rounded-2xl"
-                style={{ backgroundColor: pc.green }}
+                style={{ backgroundColor: pc.green, opacity: pdfBusy ? 0.75 : 1 }}
                 accessibilityRole="button"
+                accessibilityLabel="Download PDF"
               >
                 <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Download PDF
+                  {pdfBusy ? 'Preparing PDF…' : 'Download PDF'}
                 </Text>
               </Pressable>
-              <Pressable
-                onPress={() => {
-                  if (Platform.OS === 'web') window.print();
-                }}
-                className="min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200"
-              >
-                <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Print</Text>
-              </Pressable>
-              {!report.savedToAccount && !saved ? (
+              {pdfError ? (
+                <Text className="text-center text-sm text-red-700">{pdfError}</Text>
+              ) : null}
+              {!isSaved ? (
                 <Pressable
                   onPress={saveReport}
                   disabled={saving}
                   className="min-h-[48px] items-center justify-center rounded-2xl border border-neutral-200"
+                  accessibilityRole="button"
                 >
                   <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {saving ? 'Saving…' : user ? 'Save to account' : 'Sign in to save this report'}
                   </Text>
                 </Pressable>
               ) : (
-                <Text className="text-center text-sm text-emerald-700">Saved to your account</Text>
+                <View className="items-center gap-1 py-2">
+                  <Text className="text-center text-sm text-emerald-700" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Saved to your account
+                  </Text>
+                  <Text className="text-center text-xs text-neutral-500">
+                    Keep this page link to reopen the online report anytime.
+                  </Text>
+                </View>
               )}
               <Pressable
                 onPress={() => router.push('/tools/price-checker' as any)}
