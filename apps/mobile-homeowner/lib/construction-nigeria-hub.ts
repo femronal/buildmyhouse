@@ -72,14 +72,14 @@ export type ConstructionNigeriaHubContent = {
 export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubContent {
   return {
     seoTitle:
-      'BuildMyHouse Nigeria | Construction Services in Nigeria for Diaspora Homeowners',
+      'House Building & Construction Services in Nigeria | BuildMyHouse',
     seoDescription:
-      'BuildMyHouse Nigeria is a property project management platform for homeowners and diaspora users planning house construction in Nigeria, renovation, repairs, and interior upgrades with stage tracking and milestone payment discipline.',
+      'House building in Nigeria for local and diaspora homeowners. BuildMyHouse helps you run house construction, building construction, remodeling and construction projects, repairs, and interior upgrades with stage tracking and milestone payment discipline.',
     canonicalPath: '/construction/nigeria',
     eyebrow: 'BUILDMYHOUSE NIGERIA',
-    heroTitle: 'Construction Services in Nigeria for Diaspora Homeowners',
+    heroTitle: 'House Building and Construction Services in Nigeria',
     heroDescription:
-      'BuildMyHouse Nigeria is a project management platform for homeowners. It is built for Nigerians abroad and local families who want to run construction, renovation, repairs, and interior work with clearer scope, stage tracking, proof, and payment discipline.',
+      'BuildMyHouse is a project management platform for homeowners who need building services in Nigeria — from house building and full house construction to renovation, remodeling work, repairs, and interior upgrades — with clearer scope, stage tracking, proof, and payment discipline.',
     heroPrimaryCta: { label: 'Start Your Project', href: '/location?mode=explore' },
     heroSecondaryCta: { label: 'See How Project Tracking Works', href: '/demo/project-monitoring' },
     coverImage: {
@@ -122,7 +122,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
         'BuildMyHouse is a remote property project management platform for Nigerians who want to manage property work in Nigeria with more control.',
         'It is not just a contractor directory. It is not just a construction company. It is not "Uber for artisans."',
         'BuildMyHouse sits between the homeowner, contractor, project scope, stage progress, communication, and payment decisions — so property work can feel more structured and visible.',
-        'You can use BuildMyHouse for construction, renovation, repairs, interior design, and diaspora project management.',
+        'You can use BuildMyHouse for house building, building construction, renovation and remodeling, repairs, interior design, and diaspora project management — the full range of building services homeowners actually need.',
       ],
     },
     strongHook: {
@@ -180,9 +180,9 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
           ],
         },
         {
-          title: 'Renovations',
+          title: 'Renovations & remodeling',
           points: [
-            'stage-based home renovation',
+            'stage-based home renovation and remodeling work',
             "parents' homes",
             'inherited properties',
             'rental prep',
@@ -200,17 +200,20 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
           ],
         },
         {
-          title: 'Full builds',
-          points: ['house construction projects with stage-by-stage visibility'],
+          title: 'Full builds / house building',
+          points: [
+            'house building and house construction projects with stage-by-stage visibility',
+            'building construction from foundation through finishing',
+          ],
         },
       ],
       outro:
-        'BuildMyHouse earns trust through smaller scoped jobs and can support larger renovation and construction projects as the relationship grows.',
+        'BuildMyHouse earns trust through smaller scoped jobs and can support larger remodeling and construction projects as the relationship grows.',
     },
     diasporaSection: {
       title: 'Built for Nigerians Abroad Managing Property Work in Nigeria',
       paragraphs: [
-        'Nigerians in the UK, US, Canada, UAE, Europe, and other countries often send money home for building, repairs, renovation, or family property upgrades.',
+        'Nigerians in the UK, US, Canada, UAE, Europe, and other countries often send money home for house building in Nigeria, repairs, renovation, or family property upgrades.',
         'The issue is not love for Nigeria. The issue is control from a distance.',
       ],
       bullets: [
@@ -275,13 +278,13 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       watchPageHref: '/demo/project-monitoring',
     },
     constructionServicesSection: {
-      title: 'Construction Services in Nigeria',
+      title: 'House Building and Building Construction in Nigeria',
       paragraphs: [
-        'BuildMyHouse can support homeowners planning new construction projects in Nigeria by helping them think through stage-based execution, contractor workflows, project communication, and payment control.',
-        'If you want to build a house in Nigeria with better structure, this page is your practical starting point.',
+        'BuildMyHouse supports homeowners planning house building and building construction in Nigeria — helping them think through stage-based execution, contractor workflows, project communication, and payment control.',
+        'If you want house construction in Nigeria with better structure, or you are comparing house building options from foundation to finishing, this page is your practical starting point for building services that stay visible stage by stage.',
       ],
       links: [
-        { label: 'Construction in Lagos', href: '/construction/lagos' },
+        { label: 'House construction in Lagos', href: '/construction/lagos' },
         {
           label: 'Lagos building permits and stage inspections',
           href: '/guides/lagos-building-permits-and-stage-inspections',
@@ -293,12 +296,13 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       ],
     },
     renovationServicesSection: {
-      title: 'Renovation Services in Nigeria',
+      title: 'Renovation, Remodeling Work, and Home Upgrades',
       paragraphs: [
-        'Many Nigerian property projects are not full builds. They are parents’ home upgrades, inherited home repairs, rental prep, bathroom renovation, kitchen renovation, roof repair, electrical rewiring, plumbing correction, painting, tiling, ceiling repair, and full house renovation.',
+        'Many Nigerian property projects are not full builds. They are remodeling work and home renovation: parents’ home upgrades, inherited home repairs, rental prep, bathroom renovation, kitchen renovation, roof repair, electrical rewiring, plumbing correction, painting, tiling, ceiling repair, and full house remodeling.',
+        'Whether you search for home remodeling or home renovation, the same rule applies: separate repairs from upgrades, track stages, and do not pay because the site only looks busy.',
       ],
       links: [
-        { label: 'Renovation services in Nigeria', href: '/renovation/nigeria' },
+        { label: 'Home renovation & remodeling in Nigeria', href: '/renovation/nigeria' },
         {
           label: 'Remote renovation scope worksheet',
           href: '/downloads/remote-renovation-scope-worksheet',
@@ -309,7 +313,7 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
     interiorDesignSection: {
       title: 'Interior Design and Cosmetic Upgrade Projects',
       paragraphs: [
-        'Some users need furnishing, styling, lighting, curtains, wall panels, furniture sourcing, short-let design, parents’ home refresh, or cosmetic renovation. BuildMyHouse can help users turn interior ideas into structured tracked projects.',
+        'Some users need furnishing, styling, lighting, curtains, wall panels, furniture sourcing, short-let design, parents’ home refresh, or cosmetic renovation. BuildMyHouse can help users turn interior ideas into structured tracked projects alongside other building services.',
       ],
       links: [{ label: 'Interior design in Nigeria', href: '/interior-design/nigeria' }],
     },
@@ -340,19 +344,25 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       title: 'Popular BuildMyHouse Nigeria Searches',
       cards: [
         {
+          title: 'House building in Nigeria',
+          href: '/construction/nigeria',
+          description:
+            'House building and building construction for local and diaspora homeowners, with stage tracking.',
+        },
+        {
           title: 'Build in Nigeria from abroad',
           href: '/diaspora/build-in-nigeria-from-abroad',
-          description: 'Practical guide for remote property project management and execution clarity.',
+          description: 'Practical guide for remote house building and property project control from abroad.',
         },
         {
           title: 'House construction in Lagos',
           href: '/construction/lagos',
-          description: 'Construction context for Lagos-based projects and stage planning.',
+          description: 'House construction context for Lagos-based projects and stage planning.',
         },
         {
-          title: 'Renovation services in Nigeria',
+          title: 'Home remodeling and renovation in Nigeria',
           href: '/renovation/nigeria',
-          description: 'Renovation pathways for family homes, rentals, and inherited properties.',
+          description: 'Remodeling work and renovation pathways for family homes, rentals, and inherited properties.',
         },
         {
           title: 'Interior design in Nigeria',
@@ -379,18 +389,23 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
           href: '/diaspora/uk/renovate-parents-house',
           description: 'Country-specific flow for UK-based diaspora renovation use cases.',
         },
+        {
+          title: 'Building maintenance in Lagos',
+          href: '/services/lagos/property-maintenance',
+          description: 'Ongoing building maintenance and property upkeep with tracked visits and evidence.',
+        },
       ],
     },
     faqs: [
       {
         question: 'What is BuildMyHouse Nigeria?',
         answer:
-          'BuildMyHouse Nigeria is a property project management platform that helps homeowners structure construction, renovation, repair, and interior projects with clearer tracking and workflow visibility.',
+          'BuildMyHouse (often searched as buildmyhouse) is a property project management platform that helps homeowners structure house building, construction, renovation, repair, and interior projects with clearer tracking and workflow visibility.',
       },
       {
         question: 'Is BuildMyHouse a construction company?',
         answer:
-          'BuildMyHouse is a platform focused on project structure, visibility, and homeowner control. It is not just a traditional construction company website.',
+          'BuildMyHouse is a platform focused on project structure, visibility, and homeowner control for building services. It is not just a traditional construction company website.',
       },
       {
         question: 'Can Nigerians abroad use BuildMyHouse?',
@@ -400,17 +415,27 @@ export function getConstructionNigeriaHubContent(): ConstructionNigeriaHubConten
       {
         question: 'What kinds of projects can I start on BuildMyHouse?',
         answer:
-          'You can start repairs, upgrades, renovations, interior design projects, and full house construction in Nigeria.',
+          'You can start repairs, upgrades, renovations and remodeling work, interior design projects, and full house building or house construction in Nigeria.',
+      },
+      {
+        question: 'Can BuildMyHouse help with house building in Nigeria?',
+        answer:
+          'Yes. House building in Nigeria — from early planning through stage-by-stage construction — is a core use case, especially when you want visibility and milestone payment discipline.',
       },
       {
         question: 'Can BuildMyHouse help with repairs and renovation?',
         answer:
-          'Yes. Property repairs in Nigeria and home renovation in Nigeria are key use cases, especially when the homeowner wants better control over scope and updates.',
+          'Yes. Property repairs, home renovation, and home remodeling in Nigeria are key use cases, especially when the homeowner wants better control over scope and updates.',
+      },
+      {
+        question: 'Do you handle remodeling and construction together?',
+        answer:
+          'Yes. Many homeowners need remodeling and construction in one workflow — for example upgrading an existing wing while extending another. BuildMyHouse helps keep both lanes scoped, staged, and tracked.',
       },
       {
         question: 'Can BuildMyHouse help with full house construction?',
         answer:
-          'Yes. BuildMyHouse can support house construction in Nigeria with project stage tracking and milestone payment discipline.',
+          'Yes. BuildMyHouse can support house construction and building construction in Nigeria with project stage tracking and milestone payment discipline.',
       },
       {
         question: 'How does BuildMyHouse verify contractors?',

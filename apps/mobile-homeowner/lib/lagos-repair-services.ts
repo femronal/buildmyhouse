@@ -195,14 +195,14 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
   },
   'property-maintenance': {
     slug: 'property-maintenance',
-    title: 'Property Maintenance in Lagos',
-    metaTitle: 'Home Maintenance in Lagos | Tracked Repairs & Evidence Before Payment',
+    title: 'Building Maintenance in Lagos',
+    metaTitle: 'Building Maintenance in Lagos | Tracked Repairs & Evidence Before Payment',
     summary:
-      'Keep Lagos properties maintained with verified workers, recurring repair tracking, and evidence-based approvals.',
+      'Keep Lagos properties maintained with verified workers, recurring building maintenance tracking, and evidence-based approvals.',
     intro:
-      'Property maintenance in Lagos spans plumbing checks, electrical fixes, painting touch-ups, and preventive repairs. BuildMyHouse gives owners one workflow for verified workers, tracked tasks, and evidence before payment — whether you live on site or abroad.',
+      'Building maintenance in Lagos spans plumbing checks, electrical fixes, painting touch-ups, and preventive repairs. BuildMyHouse gives owners one workflow for property and building maintenance with verified workers, tracked tasks, and evidence before payment — whether you live on site or abroad.',
     bullets: [
-      'One platform for repairs, touch-ups, and preventive maintenance',
+      'One platform for repairs, touch-ups, and preventive building maintenance',
       'Verified workers across plumbing, electrical, roofing, and more',
       'Stage tracking with photos for every maintenance visit',
       'Built for landlords, family homes, and diaspora-managed properties',
@@ -211,7 +211,7 @@ export const LAGOS_REPAIR_SERVICES: Record<LagosRepairSlug, LagosRepairService> 
       {
         question: 'Is BuildMyHouse only for one-off repairs?',
         answer:
-          'No. Many owners use it for ongoing maintenance — each task can be scoped and tracked with the same evidence-before-payment discipline.',
+          'No. Many owners use it for ongoing building maintenance — each task can be scoped and tracked with the same evidence-before-payment discipline.',
       },
       {
         question: 'Can I manage multiple properties in Lagos?',

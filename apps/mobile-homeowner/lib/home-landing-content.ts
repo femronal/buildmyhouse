@@ -9,7 +9,7 @@ export const LANDING_ACCENT = '#000000';
 export const HOMEPAGE_META = {
   title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
   description:
-    'Manage repairs, renovations, and property work in Nigeria from abroad with verified workers, clearer scope, stage evidence, and more control over when work and money move forward.',
+    'BuildMyHouse helps you manage house building, repairs, renovations, remodeling work, and property work in Nigeria from abroad — with verified workers, clearer scope, stage evidence, and more control over when work and money move forward.',
   canonicalPath: '/',
 } as const;
 
@@ -22,7 +22,7 @@ export const HERO_KEYWORDS = [
 ] as const;
 
 export const HERO_SUBHEADLINE =
-  'From leaking roofs and plumbing faults to room upgrades, renovations, and full builds, BuildMyHouse helps you find verified workers in Nigeria and manage property work with clearer scope, evidence, and progress updates.';
+  'From leaking roofs and plumbing faults to room upgrades, home remodeling, renovations, and full house building, BuildMyHouse helps you find verified workers in Nigeria and manage property work with clearer scope, evidence, and progress updates.';
 
 /** Rotating hero verbs for the contractor / get-hired audience tab. */
 export const CONTRACTOR_HERO_KEYWORDS = [
@@ -411,7 +411,7 @@ export const PLATFORM_LADDER: PlatformPillar[] = [
   {
     title: 'Full Builds',
     description:
-      'For bigger projects, work with verified professionals through structured project stages.',
+      'For house building and full house construction, work with verified professionals through structured project stages.',
     href: '/construction/nigeria',
   },
 ];
@@ -851,9 +851,9 @@ export const SERVICE_SEO_PAGES = {
       'Plan kitchen upgrades and installation work in Nigeria with structured stage visibility.',
   },
   'home-renovation-nigeria': {
-    title: 'Home Renovation in Nigeria | Verified Contractors',
+    title: 'Home Renovation & Remodeling in Nigeria | Verified Contractors',
     summary:
-      'Manage renovation projects in Nigeria with documented scope, updates, and approvals.',
+      'Manage home renovation and remodeling work in Nigeria with documented scope, updates, and approvals.',
   },
   'general-contractors-nigeria': {
     title: 'Verified General Contractors in Nigeria',

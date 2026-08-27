@@ -2,17 +2,17 @@ const WEB = 'https://buildmyhouse.app';
 
 export const renovationNigeriaLandingPageContent = {
   seo: {
-    title: 'Home Renovation Services in Nigeria | BuildMyHouse',
+    title: 'Home Renovation & Remodeling in Nigeria | BuildMyHouse',
     description:
-      'Plan and manage home renovation in Nigeria with clearer scope, verified contractor workflows, stage visibility, and stronger payment discipline for local and diaspora homeowners.',
+      'Plan and manage home renovation and remodeling work in Nigeria with clearer scope, verified contractor workflows, stage visibility, and stronger payment discipline for local and diaspora homeowners.',
     canonical: `${WEB}/renovation/nigeria`,
     robots: 'index, follow',
   },
   hero: {
-    eyebrow: 'RENOVATION SERVICES IN NIGERIA',
+    eyebrow: 'HOME RENOVATION & REMODELING IN NIGERIA',
     title: 'Home Renovation Services in Nigeria',
     description:
-      'BuildMyHouse helps homeowners plan, track, and manage renovation projects in Nigeria with clearer scope, verified contractor workflows, stage visibility, and better payment discipline.',
+      'BuildMyHouse helps homeowners plan, track, and manage home renovation and remodeling work in Nigeria with clearer scope, verified contractor workflows, stage visibility, and better payment discipline.',
     primaryCta: {
       label: 'Start Your Renovation Project',
       href: '/projects/new?type=renovation',
@@ -48,16 +48,16 @@ export const renovationNigeriaLandingPageContent = {
     ],
   },
   whatBuildMyHouseDoes: {
-    title: 'What BuildMyHouse Does for Renovation Projects',
+    title: 'What BuildMyHouse Does for Renovation and Remodeling Projects',
     paragraphs: [
-      'BuildMyHouse is not a random referral list. It is a structured system for home renovation in Nigeria.',
+      'BuildMyHouse is not a random referral list. It is a structured system for home renovation and home remodeling in Nigeria.',
       'You define the exact work, split it into stages, and track what is done before the next payment moves.',
       'If it is your parents’ home, inherited house, rental property, or family house, you get one place to follow updates, proof, and decisions without scattered WhatsApp confusion.',
-      'Whether you are in Nigeria or abroad, BuildMyHouse gives renovation services in Nigeria more structure: homeowner app visibility, GC workflow updates, and admin-side oversight when issues need escalation.',
+      'Whether you are in Nigeria or abroad, BuildMyHouse gives renovation and remodeling services in Nigeria more structure: homeowner app visibility, GC workflow updates, and admin-side oversight when issues need escalation.',
     ],
   },
   renovationTypes: {
-    title: 'Renovation Projects BuildMyHouse Can Help You Plan and Track',
+    title: 'Renovation and Remodeling Projects BuildMyHouse Can Help You Plan and Track',
     cards: [
       {
         title: 'Bathroom renovation',
@@ -134,11 +134,11 @@ export const renovationNigeriaLandingPageContent = {
     ],
   },
   repairsVsUpgrades: {
-    title: 'Do Not Mix Repairs and Upgrades Carelessly',
+    title: 'Do Not Mix Repairs, Renovation, and Remodeling Work Carelessly',
     paragraphs: [
       'A leaking roof is a repair. Bad plumbing is a repair. Unsafe wiring is a repair. Designer tiles are an upgrade. New kitchen cabinets may be an upgrade unless the old kitchen is unusable.',
-      'When essential repairs are hidden inside upgrade language, budget control breaks quickly. Separate "must fix" work from "nice to improve" work before spending starts.',
-      'This is exactly why renovation budget Nigeria planning should begin with a structured worksheet.',
+      'When people say "remodeling work" they often mean serious home remodeling — layout changes, larger upgrades, or restructuring — not a simple touch-up. When essential repairs are hidden inside upgrade language, budget control breaks quickly.',
+      'Separate "must fix" work from "nice to improve" remodeling and renovation work before spending starts. This is exactly why renovation budget Nigeria planning should begin with a structured worksheet.',
     ],
     cta: {
       label: 'Download the Remote Renovation Scope Worksheet',
@@ -377,6 +377,11 @@ export const renovationNigeriaLandingPageContent = {
         question: 'What is the difference between repair and renovation?',
         answer:
           'Repairs fix faults and safety risks. Renovation often includes upgrades and redesign. Mixing both without clarity creates cost confusion.',
+      },
+      {
+        question: 'Is home remodeling the same as home renovation?',
+        answer:
+          'In everyday language, home remodeling and home renovation are often used interchangeably for remodeling work on an existing house. In Lagos building-control guidance, “remodelling” can mean heavier restructuring than finish-level renovation — so always clarify scope before money moves.',
       },
       {
         question: 'Do I need a permit to renovate in Lagos?',

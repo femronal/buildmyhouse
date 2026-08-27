@@ -4,15 +4,15 @@ export const constructionLagosLandingPageContent = {
   seo: {
     title: 'House Construction in Lagos | BuildMyHouse',
     description:
-      'BuildMyHouse helps homeowners plan, track, and manage house construction in Lagos with verified contractor workflows, stage visibility, payment discipline, and remote project control.',
+      'House building and house construction in Lagos with verified contractor workflows, stage visibility, payment discipline, and remote project control for local and diaspora homeowners.',
     canonical: `${WEB}/construction/lagos`,
     robots: 'index, follow',
   },
   hero: {
-    eyebrow: 'LAGOS CONSTRUCTION',
+    eyebrow: 'LAGOS HOUSE BUILDING & CONSTRUCTION',
     title: 'House Construction in Lagos',
     description:
-      'BuildMyHouse helps homeowners plan, track, and manage house construction in Lagos with clearer stages, verified contractor workflows, payment discipline, and better visibility from start to finish.',
+      'BuildMyHouse helps homeowners plan, track, and manage house building and house construction in Lagos with clearer stages, verified contractor workflows, payment discipline, and better visibility from start to finish.',
     primaryCta: {
       label: 'Start Your Lagos Project',
       href: '/projects/new',

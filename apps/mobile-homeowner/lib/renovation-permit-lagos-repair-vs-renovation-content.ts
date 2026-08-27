@@ -2,7 +2,7 @@ export const renovationPermitLagosRepairVsRenovationPageContent = {
   seo: {
     title: "Renovation vs Repair in Lagos: When You Need More Caution | BuildMyHouse",
     description:
-      "A plain-English Lagos guide for Nigerians abroad. Learn the difference between repairs, renovation, and remodelling, and know when to slow down and verify more carefully before your project moves forward.",
+      "A plain-English Lagos guide for Nigerians abroad. Learn the difference between repairs, renovation, remodeling work, and remodelling, and know when to slow down and verify more carefully before your project moves forward.",
     canonical:
       "https://buildmyhouse.app/guides/renovation-permit-lagos-repair-vs-renovation",
     robots: "index, follow",
@@ -257,7 +257,12 @@ export const renovationPermitLagosRepairVsRenovationPageContent = {
       {
         question: "What is remodelling according to LASBCA?",
         answer:
-          "LASBCA says remodelling is the general restructuring of a building to change it from its original design, and that a new design must be prepared for the proposed structure.",
+          "LASBCA says remodelling is the general restructuring of a building to change it from its original design, and that a new design must be prepared for the proposed structure. In US English this is often called remodeling — the same caution applies when the work grows beyond finish replacement.",
+      },
+      {
+        question: "Is remodeling work the same as renovation in Lagos?",
+        answer:
+          "Not always. Everyday remodeling work may mean upgrades people call renovation, but Lagos guidance uses “remodelling” for heavier restructuring. Clarify whether you are replacing finishes or changing the original design before you approve the next stage.",
       },
       {
         question:

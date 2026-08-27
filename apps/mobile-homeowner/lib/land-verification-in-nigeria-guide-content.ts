@@ -6,7 +6,7 @@ export const landVerificationInNigeriaGuideContent = {
   seo: {
     title: 'How to Verify Land in Nigeria From Abroad (2026 Guide) | BuildMyHouse',
     description:
-      'Step-by-step remote land verification for Nigerians abroad: documents to demand, lawyers and surveyors to verify, government searches, CTC checks, state portals, red flags, and what to receive before you send money.',
+      'Step-by-step remote land verification for Nigerians abroad before house building starts: documents to demand, lawyers and surveyors to verify, government searches, CTC checks, state portals, red flags, and what to receive before you send money.',
     canonical: `https://buildmyhouse.app${LAND_VERIFICATION_GUIDE_PATH}`,
     robots: 'index, follow',
   },
@@ -110,7 +110,7 @@ export const landVerificationInNigeriaGuideContent = {
     "href": "/guides/lagos-building-permits-and-stage-inspections"
   },
   {
-    "label": "Construction services in Nigeria",
+    "label": "House building & construction in Nigeria",
     "href": "/construction/nigeria"
   }
 ] as InternalLinkItem[],

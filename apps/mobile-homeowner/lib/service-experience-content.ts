@@ -373,10 +373,10 @@ const SERVICE_KIND_COPY: Record<
     reviewDetail: 'Interior repainting in Ajah',
   },
   'property-maintenance': {
-    headline: 'Maintenance',
+    headline: 'Building Maintenance',
     heroLead:
-      'Keep Lagos properties maintained with verified workers, recurring repair tracking, and evidence-based approvals.',
-    heroMeta: 'Plumbing checks, electrical fixes, touch-ups, and preventive repairs — one tracked workflow.',
+      'Keep Lagos properties maintained with verified workers, recurring building maintenance tracking, and evidence-based approvals.',
+    heroMeta: 'Plumbing checks, electrical fixes, touch-ups, and preventive building maintenance — one tracked workflow.',
     pillars: [
       { title: 'One workflow', body: 'Repairs, touch-ups, and preventive visits share the same accountability model.' },
       { title: 'Verified workers', body: 'Plumbing, electrical, roofing, and more — matched to each task.' },
@@ -386,9 +386,9 @@ const SERVICE_KIND_COPY: Record<
     fieldNotes: [
       { number: '01', title: 'Log recurring issues.', body: 'Repeat faults deserve tracked history — not one-off handyman visits.' },
       { number: '02', title: 'Separate urgent from planned.', body: 'Emergency fixes and scheduled upkeep should stay clearly scoped.' },
-      { number: '03', title: 'Keep approvals per task.', body: 'Maintenance stays controlled when each visit has its own evidence trail.' },
+      { number: '03', title: 'Keep approvals per task.', body: 'Building maintenance stays controlled when each visit has its own evidence trail.' },
     ],
-    reviewDetail: 'Property maintenance in Lagos',
+    reviewDetail: 'Building maintenance in Lagos',
   },
   'window-repair': {
     headline: 'Windows',

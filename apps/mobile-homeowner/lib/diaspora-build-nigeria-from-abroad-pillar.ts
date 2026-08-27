@@ -2,16 +2,16 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
   seo: {
     title: "Build in Nigeria from Abroad | The Safe Remote Building System | BuildMyHouse",
     description:
-      "Build your house in Nigeria from abroad without losing money, control, or peace of mind. Learn the safest way to manage land checks, contractors, milestones, payments, permits, and tracked progress with BuildMyHouse.",
+      "House building in Nigeria from abroad without losing money, control, or peace of mind. Learn the safest way to manage land checks, contractors, milestones, payments, permits, and tracked progress with BuildMyHouse.",
     canonical: "https://buildmyhouse.app/diaspora/build-in-nigeria-from-abroad",
     robots: "index, follow",
   },
 
   hero: {
-    eyebrow: "DIASPORA BUILDING IN NIGERIA",
+    eyebrow: "DIASPORA HOUSE BUILDING IN NIGERIA",
     title: "Build in Nigeria From Abroad — Without Losing Control of Your Project",
     description:
-      "If you live in the UK, US, Canada, UAE, or anywhere else abroad, BuildMyHouse helps you manage your building project in Nigeria with clearer visibility, milestone tracking, contractor accountability, and a more structured way to build remotely.",
+      "If you live in the UK, US, Canada, UAE, or anywhere else abroad, BuildMyHouse helps you manage house building and construction in Nigeria with clearer visibility, milestone tracking, contractor accountability, and a more structured way to build remotely.",
     primaryCta: {
       label: "Start a Tracked Project",
       href: "/location?mode=explore",
@@ -26,7 +26,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     title: "How to Build in Nigeria From Abroad Safely",
     items: [
       "Verify the land and documents properly before sending serious money",
-      "Define your scope, budget direction, and finishing standard clearly",
+      "Define your house building scope, budget direction, and finishing standard clearly",
       "Avoid giving one person total control of the project",
       "Use milestone-based payments instead of blind transfers",
       "Track each stage with proper documentation and evidence",
