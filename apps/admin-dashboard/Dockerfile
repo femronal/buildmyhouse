@@ -1,22 +1,26 @@
-# Build stage
-FROM node:18-alpine AS builder
+# Build stage — Debian slim (glibc). Alpine/musl cannot run pnpm@9.14.2's official binary.
+FROM node:18-slim AS builder
 
 WORKDIR /app
 
-# Copy package files for monorepo
+# Copy workspace manifests so the lockfile importers resolve.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/admin-dashboard/package.json ./apps/admin-dashboard/
+COPY apps/backend/package.json ./apps/backend/
+COPY apps/mobile-homeowner/package.json ./apps/mobile-homeowner/
+COPY apps/mobile-contractor/package.json ./apps/mobile-contractor/
 COPY packages/shared-types/package.json ./packages/shared-types/
 COPY packages/shared-ui/package.json ./packages/shared-ui/
 COPY packages/shared-utils/package.json ./packages/shared-utils/
 
-# Install pnpm
-RUN npm install -g pnpm
+# Pin pnpm via npm. Do not let Corepack download a host-specific binary.
+ENV COREPACK_ENABLE_STRICT=0
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN npm install -g pnpm@9.14.2 \
+  && pnpm config set package-manager-strict false
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm --filter @buildmyhouse/admin-dashboard... install --frozen-lockfile
 
-# Copy source code
 COPY packages/ ./packages/
 COPY apps/admin-dashboard/ ./apps/admin-dashboard/
 
@@ -28,8 +32,8 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN pnpm --filter @buildmyhouse/admin-dashboard build
 
-# Production stage - use standalone output
-FROM node:18-alpine AS production
+# Production stage
+FROM node:18-slim AS production
 
 WORKDIR /app
 
