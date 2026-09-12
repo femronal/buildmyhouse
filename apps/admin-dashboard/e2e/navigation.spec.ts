@@ -44,6 +44,12 @@ test.describe('Navigation', () => {
     await expect(page.getByRole('heading', { name: /People & HR/i })).toBeVisible();
   });
 
+  test('should navigate to Growth', async ({ page }) => {
+    await page.getByRole('link', { name: /^Growth$/i }).click();
+    await expect(page).toHaveURL(/\/growth$/);
+    await expect(page.getByRole('heading', { name: /^Growth$/i })).toBeVisible();
+  });
+
   test('should navigate to tools hub then price checker ops', async ({ page }) => {
     await page.getByRole('link', { name: /^Tools$/i }).click();
     await expect(page).toHaveURL(/\/tools/);

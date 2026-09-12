@@ -19,6 +19,7 @@ import {
   X,
   Wrench,
   UserCog,
+  Waypoints,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 import { useMyPermissions } from '@/hooks/useMyPermissions';
@@ -38,6 +39,7 @@ const menuItems = [
   { href: '/waitlist', label: 'Waitlist', icon: ClipboardList },
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/people', label: 'People & HR', icon: UserCog },
+  { href: '/growth', label: 'Growth', icon: Waypoints },
   { href: '/admin-access', label: 'Admin Access', icon: Shield },
 ];
 
