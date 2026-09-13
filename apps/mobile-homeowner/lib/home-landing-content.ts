@@ -641,7 +641,27 @@ export const FAQ_ITEMS = [
   {
     question: 'How do payments work?',
     answer:
-      'Projects are structured around stages. Homeowners are encouraged to review progress evidence before approving the next stage or releasing the next payment through the platform workflow. BuildMyHouse uses approved payment providers; platform fees may apply on later projects, while first-project platform commission is currently ₦0. Refunds and holds follow process and dispute review. They are not automatic blanket guarantees.',
+      'Projects are funded stage by stage, not as one lump sum. At the start of an approved stage, BuildMyHouse typically releases about 30–40% as mobilisation so the contractor can cover approved materials and start the work. After the stage is completed, independent verification may be required, you review the evidence, and the remaining 60–70% is released only after your approval — subject to normal banking processing. BuildMyHouse does not take a commission from the contractor’s agreed project amount. It earns primarily through the project contingency provision, so the incentive is to manage the project efficiently rather than take a percentage of the contractor’s fee.',
+  },
+  {
+    question: 'Does BuildMyHouse take a cut of the contractor’s fee?',
+    answer:
+      'No. The budget allocated to the contractor remains the contractor’s project money. BuildMyHouse does not deduct a platform transaction fee from that agreed amount. BuildMyHouse earns primarily through the project contingency, which is managed to prevent avoidable overruns without compromising quality or specifications.',
+  },
+  {
+    question: 'Do contractors have to finance my project with their own money?',
+    answer:
+      'No. Contractors are not expected to fund the homeowner’s project. Mobilisation is built into each approved milestone so approved materials, labour and start-up costs can be covered before execution. The remaining workmanship payment is released after verification and your approval.',
+  },
+  {
+    question: 'How is completed work verified before I approve a stage?',
+    answer:
+      'BuildMyHouse does not rely only on the contractor saying the work is finished. Where technical checks are needed, an independent inspector, engineer or testing professional may verify the work against the approved drawings, scope and standards. That evidence is shared with you before the stage balance is released.',
+  },
+  {
+    question: 'Does BuildMyHouse work only in Lagos?',
+    answer:
+      'No. BuildMyHouse operates across Nigeria, including Abuja/FCT. The main office is in Lagos, but qualified contractors are onboarded nationwide. How many opportunities exist in a given state depends on the projects available there at the time.',
   },
   {
     question: 'What if I already have someone working on site?',

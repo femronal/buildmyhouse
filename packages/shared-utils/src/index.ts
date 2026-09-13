@@ -36,3 +36,9 @@ export const calculateRemaining = (budget: number, spent: number): number => {
   return Math.max(0, budget - spent);
 };
 
+export {
+  PLATFORM_TERMS_LAST_UPDATED,
+  PLATFORM_TERMS_SECTIONS,
+  type PlatformTermsSection,
+} from './platform-terms';
+

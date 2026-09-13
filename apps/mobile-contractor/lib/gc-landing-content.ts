@@ -14,7 +14,7 @@ const homeownerBase = () => (process.env.EXPO_PUBLIC_HOMEOWNER_WEB_URL || 'https
 export const GC_HOMEPAGE_META = {
   title: 'BuildMyHouse for General Contractors | Verified Projects, Stage Evidence & Milestone Pay',
   description:
-    'Join BuildMyHouse as a verified general contractor or skilled trade professional in Lagos, Nigeria. Receive clearer briefs, document stage evidence, keep clients updated, and get paid through milestones — not scattered WhatsApp promises.',
+    'Join BuildMyHouse as a verified general contractor or skilled trade professional in Nigeria. Receive clearer briefs, document stage evidence, keep clients updated, and get paid through milestones — not scattered WhatsApp promises.',
   canonicalPath: '/',
 } as const;
 
@@ -229,7 +229,7 @@ export const GC_FAQ_ITEMS = [
   {
     question: 'Who can join BuildMyHouse as a contractor?',
     answer:
-      'General contractors, renovation teams, and skilled trades — plumbers, electricians, roofers, painters, tilers, carpenters, AC technicians, and related professionals operating in Lagos, Nigeria.',
+      'General contractors, renovation teams, and skilled trades — plumbers, electricians, roofers, painters, tilers, carpenters, AC technicians, and related professionals operating in Nigeria, including Lagos and Abuja/FCT.',
   },
   {
     question: 'Is BuildMyHouse only for large construction companies?',
@@ -237,14 +237,39 @@ export const GC_FAQ_ITEMS = [
       'No. The platform starts with repairs and upgrades, then scales to renovations and full builds. Solo specialists and small teams are welcome if they can document work professionally.',
   },
   {
+    question: 'Are opportunities available outside Lagos, including Abuja/FCT?',
+    answer:
+      'Yes. BuildMyHouse operates across Nigeria, not only in Lagos. The main office is in Lagos, but qualified contractors are onboarded nationwide. The number of opportunities in a state depends on the projects available there at any given time.',
+  },
+  {
     question: 'How does verification work?',
     answer:
-      'We visit your workshop or active work site, confirm tools and operating history, and collect identity and business registration documents. Verified contractors get a badge homeowners can trust.',
+      'Sign up at gc.buildmyhouse.app and submit the requested company documents. BuildMyHouse may also review identity, CAC registration, portfolio and references. Additional company profile materials can be requested during review. You will receive an email when you are verified.',
   },
   {
     question: 'Do I pay to join?',
     answer:
-      'Create your account and start verification at no upfront platform fee. BuildMyHouse earns when structured projects move through the platform successfully.',
+      'No. Registration, contractor verification and onboarding are completely free. There is also no subscription fee required to join the platform.',
+  },
+  {
+    question: 'Does BuildMyHouse take a commission from my project fee?',
+    answer:
+      'No. BuildMyHouse does not take a commission from the contractor’s agreed project amount and does not deduct a platform transaction fee from it. The project budget allocated to you remains your project money. BuildMyHouse earns primarily through the project contingency provision, so the incentive is to manage the project efficiently rather than take a percentage of your earnings.',
+  },
+  {
+    question: 'How are contractor payments released?',
+    answer:
+      'Projects are paid stage by stage. At the start of an approved stage, BuildMyHouse typically releases about 30–40% as mobilisation so you can cover approved materials and start the work. After completion, independent verification may be required. Once the stage passes verification and the homeowner approves it, the remaining 60–70% is released, subject to normal banking processing.',
+  },
+  {
+    question: 'Can I see the full scope, budget and milestones before I accept?',
+    answer:
+      'Yes. You can review the full project scope, proposed budget and payment milestones before accepting. You are not required to accept the proposed scope or budget as presented. You may propose adjustments if your professional assessment says the pricing, methodology or schedule needs to change. Nothing becomes an accepted obligation until the project terms are agreed.',
+  },
+  {
+    question: 'Am I expected to finance the homeowner’s project upfront?',
+    answer:
+      'No. Never. BuildMyHouse does not expect a contractor to use their own money to finance the homeowner’s project. Mobilisation is built into each approved milestone so approved materials, labour and start-up costs can be covered before execution.',
   },
   {
     question: 'How do I get project requests?',
@@ -259,7 +284,7 @@ export const GC_FAQ_ITEMS = [
   {
     question: 'What if a client disputes a stage?',
     answer:
-      'BuildMyHouse maintains a evidence trail — scope, photos, messages, and approvals — so disputes are resolved from documented facts, not memory.',
+      'BuildMyHouse maintains an evidence trail — scope, photos, messages, and approvals — so disputes are resolved from documented facts, not memory.',
   },
   {
     question: 'Can I still use WhatsApp with clients?',
