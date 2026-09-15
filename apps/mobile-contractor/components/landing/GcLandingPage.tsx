@@ -10,7 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import {
   ArrowRight,
   Camera,
@@ -147,6 +147,7 @@ function AudienceTabs({
 }
 
 export default function GcLandingPage() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = width >= 1024;
   const scrollRef = useRef<ScrollView>(null);
@@ -162,6 +163,10 @@ export default function GcLandingPage() {
   const navPress = (href: string) => {
     if (href.startsWith('http')) {
       Linking.openURL(href);
+      return;
+    }
+    if (href.startsWith('/')) {
+      router.push(href as any);
       return;
     }
     const key = href.replace('#', '');
@@ -237,7 +242,7 @@ export default function GcLandingPage() {
                     className="text-xs uppercase tracking-[0.18em] text-blue-300"
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
                   >
-                    For general contractors & skilled trades · Lagos, Nigeria
+                    For general contractors & skilled trades · Nigeria
                   </Text>
                   <HeroHeadline audience={audience} />
                   <Text className="text-base md:text-lg text-gray-400 leading-relaxed max-w-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -490,6 +495,40 @@ export default function GcLandingPage() {
                   </Text>
                 </View>
               ))}
+            </View>
+          </View>
+        </View>
+
+        <View className="py-16 px-6 md:px-12">
+          <View className="max-w-7xl w-full self-center rounded-3xl border border-blue-900/40 p-8 md:p-10" style={{ backgroundColor: GC_SURFACE }}>
+            <Text className="text-xs uppercase tracking-[0.18em] text-blue-300 mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              For general contractors
+            </Text>
+            <SectionHeading className="text-2xl md:text-3xl font-semibold tracking-tight text-white mb-3">
+              Start with this article if you want to win diaspora construction work
+            </SectionHeading>
+            <Text className="text-sm md:text-base text-gray-300 leading-relaxed max-w-2xl mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+              How to win serious diaspora construction work with clearer scope, stage mobilisation, evidence and homeowner approval — then use the same workflow inside BuildMyHouse.
+            </Text>
+            <View className="flex-row flex-wrap gap-3">
+              <Link href={'/articles/buildmyhouse-for-general-contractors-nigeria' as any} asChild>
+                <Pressable
+                  className="h-12 px-6 rounded-xl justify-center"
+                  style={{ backgroundColor: GC_PRIMARY_CTA }}
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Read this first
+                  </Text>
+                </Pressable>
+              </Link>
+              <Link href={'/articles' as any} asChild>
+                <Pressable className="h-12 px-6 rounded-xl justify-center border border-white/20" accessibilityRole="link">
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Browse contractor resources
+                  </Text>
+                </Pressable>
+              </Link>
             </View>
           </View>
         </View>

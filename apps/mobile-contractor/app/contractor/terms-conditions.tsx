@@ -3,11 +3,19 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, FileText } from "lucide-react-native";
 import { PLATFORM_TERMS_SECTIONS } from "@buildmyhouse/shared-utils";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { useWebSeo } from "@/lib/seo";
 
 export default function TermsConditionsScreen() {
   const router = useRouter();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
+
+  useWebSeo({
+    title: 'Contractor Terms & Conditions | BuildMyHouse',
+    description:
+      'BuildMyHouse contractor terms: registration, verification, project acceptance, stage mobilisation, evidence and payment progression for general contractors in Nigeria.',
+    canonicalPath: '/terms-conditions',
+  });
 
   return (
     <View className="flex-1 bg-[#0A1628]">

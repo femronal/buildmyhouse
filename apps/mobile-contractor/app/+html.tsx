@@ -20,6 +20,7 @@ export default function Root({ children }: RootProps) {
         <title>{GC_HOMEPAGE_META.title}</title>
         <meta name="description" content={GC_HOMEPAGE_META.description} />
         <meta name="robots" content="index,follow" />
+        <meta name="google-site-verification" content="xtG6LheAyTmsA3z_UgdSE82LRapfNuop9FRsJL_N3Xw" />
         <link rel="canonical" href={`${WEB_URL}${GC_HOMEPAGE_META.canonicalPath}`} />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="BuildMyHouse Technologies" />

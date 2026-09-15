@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "build": "expo export --platform web",
+    "build": "expo export --platform web && node ./inject-static-seo.mjs",
     "start:8082": "expo start --port 8082",
     "start:web:8082": "expo start --web --port 8082",
     "reset-project": "node ./scripts/reset-project.js",

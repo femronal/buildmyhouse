@@ -10,7 +10,6 @@ import {
   Building2, 
   Briefcase,
   Mail,
-  ClipboardList,
   CheckCircle2, 
   Scale,
   FileText, 
@@ -36,7 +35,6 @@ const menuItems = [
   { href: '/opportunities', label: 'Opportunities', icon: Briefcase },
   { href: '/tools', label: 'Tools', icon: Wrench },
   { href: '/articles', label: 'Content', icon: FileText },
-  { href: '/waitlist', label: 'Waitlist', icon: ClipboardList },
   { href: '/emails', label: 'Emails', icon: Mail },
   { href: '/people', label: 'People & HR', icon: UserCog },
   { href: '/growth', label: 'Growth', icon: Waypoints },
@@ -77,28 +75,28 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
 
   return (
     <aside
-      className={`w-64 bg-gray-900 text-white p-4 flex flex-col ${
+      className={`w-40 bg-gray-900 text-white px-1.5 py-2 flex flex-col ${
         isMobile ? 'min-h-full' : 'h-full min-h-screen'
       }`}
     >
-      <div className="mb-8 flex items-start justify-between gap-4">
+      <div className="mb-2 flex items-start justify-between gap-1">
         <div>
-          <h1 className="text-2xl font-bold font-poppins">BuildMyHouse</h1>
-          <p className="text-gray-400 text-sm">Admin Dashboard</p>
+          <h1 className="text-[11px] font-bold font-poppins leading-tight">BuildMyHouse</h1>
+          <p className="text-gray-400 text-[9px] leading-tight">Admin Dashboard</p>
         </div>
         {isMobile && (
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-gray-300 hover:bg-gray-800 hover:text-white"
+            className="rounded p-0.5 text-gray-300 hover:bg-gray-800 hover:text-white"
             aria-label="Close navigation menu"
           >
-            <X className="w-5 h-5" />
+            <X className="w-3 h-3" />
           </button>
         )}
       </div>
 
-      <nav className="space-y-2 flex-1">
+      <nav className="space-y-px flex-1 overflow-y-auto">
         {visibleItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -113,14 +111,14 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
               key={item.href}
               href={item.href}
               onClick={onNavigate}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+              className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
                 isActive
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-300 hover:bg-gray-800'
               }`}
             >
-              <Icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <Icon className="w-2.5 h-2.5 shrink-0" />
+              <span className="text-[10px] font-medium leading-tight">{item.label}</span>
             </Link>
           );
         })}
@@ -128,10 +126,10 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
 
       <button
         onClick={handleLogout}
-        className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors w-full"
+        className="flex items-center gap-1 px-1.5 py-0.5 rounded text-gray-300 hover:bg-gray-800 transition-colors w-full mt-1.5"
       >
-        <LogOut className="w-5 h-5" />
-        <span className="font-medium">Logout</span>
+        <LogOut className="w-2.5 h-2.5 shrink-0" />
+        <span className="text-[10px] font-medium leading-tight">Logout</span>
       </button>
     </aside>
   );

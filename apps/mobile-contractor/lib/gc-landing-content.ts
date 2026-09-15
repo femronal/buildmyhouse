@@ -95,6 +95,7 @@ export const GC_NAV_ITEMS = [
   { label: 'Project Types', href: '#projects' },
   { label: 'How It Works', href: '#how-it-works' },
   { label: 'Verification', href: '#verification' },
+  { label: 'Resources', href: '/articles' },
   { label: 'FAQ', href: '#faq' },
   { label: 'Homeowner App', href: HOMEOWNER_APP_URL },
 ] as const;

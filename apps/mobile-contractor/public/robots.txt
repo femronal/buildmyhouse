@@ -1,0 +1,23 @@
+# BuildMyHouse contractor site
+User-agent: *
+Allow: /
+Allow: /articles
+Allow: /articles/buildmyhouse-for-general-contractors-nigeria
+Allow: /terms-conditions
+
+# Private contractor workspace
+Disallow: /contractor
+Disallow: /dashboard
+Disallow: /email-login
+Disallow: /login
+Disallow: /chat
+Disallow: /access
+Disallow: /reset-password
+Disallow: /forgot-password
+Disallow: /google-callback
+Disallow: /notifications
+Disallow: /profile
+Disallow: /timeline
+Disallow: /stage-detail
+
+Sitemap: https://gc.buildmyhouse.app/sitemap.xml

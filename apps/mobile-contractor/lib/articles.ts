@@ -47,13 +47,21 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
 }
 
 export async function fetchPublishedArticles() {
-  const remote = await api.get('/articles?audience=gc');
-  if (!Array.isArray(remote)) return [];
-  return remote.map((item) => normalizeRemoteArticle(item as RemoteArticle));
+  try {
+    const remote = await api.get('/articles?audience=gc');
+    if (!Array.isArray(remote)) return [];
+    return remote.map((item) => normalizeRemoteArticle(item as RemoteArticle));
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchPublishedArticleBySlug(slug: string) {
-  const remote = await api.get(`/articles/${encodeURIComponent(slug)}?audience=gc`);
-  if (!remote) return undefined;
-  return normalizeRemoteArticle(remote as RemoteArticle);
+  try {
+    const remote = await api.get(`/articles/${encodeURIComponent(slug)}?audience=gc`);
+    if (!remote) return undefined;
+    return normalizeRemoteArticle(remote as RemoteArticle);
+  } catch {
+    return undefined;
+  }
 }

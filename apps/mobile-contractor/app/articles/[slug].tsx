@@ -3,21 +3,28 @@ import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Clock3, Tag } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import GcPillarArticlePage from '@/components/articles/GcPillarArticlePage';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { fetchPublishedArticleBySlug, type Article } from '@/lib/articles';
 import { cardShadowStyle } from '@/lib/card-styles';
+import { GC_PILLAR_SLUG } from '@/lib/gc-pillar-article';
+
+export function generateStaticParams() {
+  return [{ slug: GC_PILLAR_SLUG }];
+}
 
 export default function GCArticleDetailPage() {
   const router = useRouter();
   const params = useLocalSearchParams<{ slug?: string | string[] }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+  const isPillar = slug === GC_PILLAR_SLUG;
   const [article, setArticle] = useState<Article | null>(null);
   const [lookupComplete, setLookupComplete] = useState(false);
 
   useEffect(() => {
     let active = true;
-    if (!slug) {
+    if (!slug || isPillar) {
       setLookupComplete(true);
       return;
     }
@@ -34,13 +41,17 @@ export default function GCArticleDetailPage() {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug, isPillar]);
 
   const html = useMemo(() => {
     if (!article) return '';
     const doc = normalizeStoredArticleContent(article.content);
     return articleContentToHtml(doc);
   }, [article]);
+
+  if (isPillar) {
+    return <GcPillarArticlePage />;
+  }
 
   if (!article && !lookupComplete) {
     return (

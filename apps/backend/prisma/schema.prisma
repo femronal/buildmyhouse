@@ -3453,19 +3453,43 @@ model VendorProfileChangeRequest {
   @@map("vendor_profile_change_requests")
 }
 
-/// Public product waitlist signups (e.g. Land Verification Checker).
-model WaitlistSignup {
+/// Admin-created waitlist that can be attached to a public page.
+model Waitlist {
   id          String   @id @default(uuid())
+  /// Stable join key, e.g. land-verification-checker
+  key         String   @unique
+  name        String
+  /// tool | webinar | podcast | book | meeting | other
+  purpose     String
+  description String?
+  /// Public page path that explains why people should join, e.g. /land-verification-in-nigeria-guide
+  pagePath    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  signups     WaitlistSignup[]
+
+  @@index([purpose])
+  @@index([isActive])
+  @@map("waitlists")
+}
+
+/// Public waitlist signups (email capture for a specific waitlist).
+model WaitlistSignup {
+  id          String    @id @default(uuid())
+  waitlistId  String?
   /// Stable product key, e.g. land-verification-checker
   productKey  String
   email       String
   fullName    String?
   sourcePath  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  waitlist    Waitlist? @relation(fields: [waitlistId], references: [id], onDelete: SetNull)
 
   @@unique([productKey, email])
   @@index([productKey, createdAt])
   @@index([email])
+  @@index([waitlistId])
   @@map("waitlist_signups")
 }

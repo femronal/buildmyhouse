@@ -1,6 +1,7 @@
 'use client';
 
-import { Waypoints } from 'lucide-react';
+import Link from 'next/link';
+import { ClipboardList, Waypoints } from 'lucide-react';
 import GrowthModuleCard from '@/components/growth/GrowthModuleCard';
 import { GROWTH_MODULES } from '@/lib/growth-modules';
 
@@ -22,8 +23,8 @@ export default function GrowthOverviewPage() {
               strategic relationships and expand distribution.
             </p>
             <p className="mt-1 max-w-3xl text-sm text-gray-500">
-              The future home for partnerships, referrals, affiliates, leads, campaigns and growth
-              performance.
+              The home for waitlists, partnerships, referrals, affiliates, leads, campaigns and
+              growth performance.
             </p>
           </div>
         </div>
@@ -45,6 +46,36 @@ export default function GrowthOverviewPage() {
         </p>
       </section>
 
+      <section className="mb-6" aria-labelledby="growth-waitlist-heading">
+        <Link
+          href="/growth/waitlist"
+          data-testid="growth-module-waitlist"
+          className="block rounded-xl border border-blue-200 bg-white p-5 shadow-sm transition-colors hover:border-blue-400 hover:bg-blue-50/40"
+        >
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+                <ClipboardList className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Live</p>
+                <h2 id="growth-waitlist-heading" className="mt-1 text-lg font-semibold text-gray-900">
+                  Waitlist
+                </h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+                  See who joined a waitlist and for what — a tool, webinar, podcast, book or
+                  in-person meeting. Create a new waitlist and attach it to the page that explains
+                  why people should join.
+                </p>
+              </div>
+            </div>
+            <span className="inline-flex w-fit shrink-0 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white">
+              Open waitlist
+            </span>
+          </div>
+        </Link>
+      </section>
+
       <section aria-labelledby="growth-modules-heading">
         <h2 id="growth-modules-heading" className="sr-only">
           Planned Growth modules
@@ -64,7 +95,7 @@ export default function GrowthOverviewPage() {
           One growth system. Multiple acquisition channels.
         </h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          BuildMyHouse Growth will bring partnership development, referrals, affiliate
+          BuildMyHouse Growth will bring waitlists, partnership development, referrals, affiliate
           distribution, lead management and campaign performance into one operating layer.
         </p>
       </section>

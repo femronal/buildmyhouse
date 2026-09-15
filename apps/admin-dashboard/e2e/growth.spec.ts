@@ -42,9 +42,10 @@ test.describe('Growth overview', () => {
       await expect(card.locator('button')).toHaveCount(0);
     }
 
-    await expect(page.locator('[data-testid^="growth-module-"]')).toHaveCount(6);
+    await expect(page.locator('[data-testid^="growth-module-"]')).toHaveCount(7);
+    await expect(page.getByRole('link', { name: /Waitlist/i })).toBeVisible();
+    await expect(page.locator('a[href="/growth/waitlist"]')).toHaveCount(1);
     await expect(page.getByRole('link', { name: /Partnerships|Referrals|Affiliates/i })).toHaveCount(0);
-    await expect(page.locator('a[href^="/growth/"]')).toHaveCount(0);
     await expect(page.getByText(/%|₦|conversion rate/i)).toHaveCount(0);
   });
 
@@ -52,14 +53,15 @@ test.describe('Growth overview', () => {
     await page.goto('/growth');
     const firstCard = page.locator('[data-testid="growth-module-partnerships"]');
     await expect(firstCard).toBeVisible();
-
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Enter');
-
-    await expect(page).toHaveURL(/\/growth$/);
     await expect(firstCard).not.toBeFocused();
+  });
+
+  test('waitlist card opens the waitlist subsection', async ({ page }) => {
+    await page.goto('/growth');
+    await page.getByTestId('growth-module-waitlist').click();
+    await expect(page).toHaveURL(/\/growth\/waitlist$/);
+    await expect(page.getByRole('heading', { level: 1, name: /^Waitlist$/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Growth$/i })).toHaveClass(/bg-blue-600/);
   });
 
   test('desktop grid keeps existing admin navigation working', async ({ page }) => {
