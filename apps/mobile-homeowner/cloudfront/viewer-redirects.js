@@ -106,6 +106,25 @@ function handler(event) {
     }
   }
 
+  // Professional public profiles: /professionals/<slug> → professionals/[slug].html
+  var professionalsPrefix = '/professionals/';
+  if (uri.indexOf(professionalsPrefix) === 0) {
+    var professionalSegment = uri.slice(professionalsPrefix.length);
+    var reservedProfessionalRoutes = {
+      apply: true,
+      manage: true,
+    };
+    if (
+      professionalSegment &&
+      professionalSegment.indexOf('/') === -1 &&
+      professionalSegment !== '[slug]' &&
+      !reservedProfessionalRoutes[professionalSegment]
+    ) {
+      request.uri = professionalsPrefix + '[slug].html';
+      return request;
+    }
+  }
+
   // Vendor public profiles: /vendors/<slug> → vendors/[slug].html
   // Keep static vendor routes (apply/manage/claim) on their own .html objects.
   var vendorsPrefix = '/vendors/';

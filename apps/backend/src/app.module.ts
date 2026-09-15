@@ -31,6 +31,7 @@ import { HrModule } from './hr/hr.module';
 import { AdminAccessModule } from './admin-access/admin-access.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
+import { ProfessionalsModule } from './professionals/professionals.module';
 
 @Module({
   imports: [
@@ -73,6 +74,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
     AdminAccessModule,
     VendorsModule,
     WaitlistModule,
+    ProfessionalsModule,
   ],
   controllers: [],
   providers: [

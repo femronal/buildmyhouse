@@ -44,6 +44,12 @@ test.describe('Navigation', () => {
     await expect(page.getByRole('heading', { name: /People & HR/i })).toBeVisible();
   });
 
+  test('should navigate to Professionals', async ({ page }) => {
+    await page.getByRole('link', { name: /Professionals/i }).click();
+    await expect(page).toHaveURL(/\/professionals/);
+    await expect(page.getByRole('heading', { name: /Professionals/i })).toBeVisible();
+  });
+
   test('should navigate to Growth', async ({ page }) => {
     await page.getByRole('link', { name: /^Growth$/i }).click();
     await expect(page).toHaveURL(/\/growth$/);

@@ -242,6 +242,12 @@ model User {
   vendorClaimInvitesCreated    VendorClaimInvite[]     @relation("VendorClaimInviteCreator")
   vendorChangeRequests         VendorProfileChangeRequest[] @relation("VendorChangeRequestRequester")
   vendorChangeRequestsReviewed VendorProfileChangeRequest[] @relation("VendorChangeRequestReviewer")
+  professionalListing          ProfessionalListing?    @relation("UserProfessionalListing")
+  professionalListingsCreated  ProfessionalListing[]   @relation("ProfessionalListingCreatedByAdmin")
+  professionalCredentialsVerified ProfessionalCredential[] @relation("ProfessionalCredentialVerifier")
+  professionalApplicationsReviewed ProfessionalApplication[] @relation("ProfessionalApplicationReviewer")
+  professionalClaimsReviewed   ProfessionalClaimRequest[] @relation("ProfessionalClaimReviewer")
+  professionalEngagementsCreated ProfessionalEngagement[] @relation("ProfessionalEngagementCreator")
   contractorProfile            Contractor?             @relation("UserContractor")
   orders                       Order[]                 @relation("UserOrders")
   reviews                      Review[]                @relation("UserReviews")
@@ -469,8 +475,9 @@ model Project {
   disputes            ProjectStageDispute[]
   stageChangeRequests StageChangeRequest[]
   reviews             Review[]
-  accessLinks         ProjectAccessLink[]
-  vendorActivities    VendorActivity[]
+  accessLinks              ProjectAccessLink[]
+  vendorActivities         VendorActivity[]
+  professionalEngagements  ProfessionalEngagement[]
 
   @@map("projects")
 }
@@ -497,8 +504,9 @@ model Stage {
   materials       StageMaterial[]
   media           StageMedia[]
   documents       StageDocument[]
-  disputes        ProjectStageDispute[]
-  changeRequests  StageChangeRequest[]
+  disputes                 ProjectStageDispute[]
+  changeRequests           StageChangeRequest[]
+  professionalEngagements  ProfessionalEngagement[]
 
   @@map("stages")
 }
@@ -3492,4 +3500,511 @@ model WaitlistSignup {
   @@index([email])
   @@index([waitlistId])
   @@map("waitlist_signups")
+}
+
+// ---------------------------------------------------------------------------
+// Professionals Directory + internal procurement CRM
+// Distinct from Contractor (GCs/artisans) and Vendor (material suppliers).
+// A listing can exist with no User. Listed ≠ claimed ≠ credential-checked ≠ used by BMH.
+// ---------------------------------------------------------------------------
+
+enum ProfessionalType {
+  individual
+  firm
+}
+
+enum ProfessionalListingStatus {
+  draft
+  listed
+  hidden
+  archived
+}
+
+enum ProfessionalOwnershipStatus {
+  unclaimed
+  claim_pending
+  claimed
+}
+
+enum ProfessionalVerificationStatus {
+  unverified
+  pending
+  verified
+  rejected
+  expired
+}
+
+enum ProfessionalProcurementStatus {
+  not_assessed
+  reviewing
+  ready
+  hold
+  blocked
+}
+
+enum ProfessionalSourceType {
+  admin_research
+  self_submitted
+  claimed
+  referral
+  used_by_bmh
+}
+
+enum ProfessionalVerificationMode {
+  regulator
+  documents
+}
+
+enum ProfessionalReviewStatus {
+  pending
+  approved
+  rejected
+}
+
+enum ProfessionalCredentialStatus {
+  current
+  expiring_soon
+  expired
+  unknown
+}
+
+enum ProfessionalCredentialVerification {
+  unchecked
+  pending
+  checked
+  rejected
+  expired
+}
+
+enum ProfessionalAvailabilityStatus {
+  unknown
+  available
+  limited
+  unavailable
+}
+
+enum ProfessionalEngagementStatus {
+  draft
+  requested
+  assigned
+  in_progress
+  delivered
+  reviewed
+  completed
+  cancelled
+}
+
+enum ProfessionalEnquiryStatus {
+  new
+  reviewing
+  contacted
+  closed
+}
+
+model ProfessionCatalog {
+  id               String                      @id
+  key              String                      @unique
+  label            String
+  description      String                      @default("")
+  regulatorKey     String?
+  regulatorLabel   String?
+  verificationMode ProfessionalVerificationMode @default(documents)
+  isActive         Boolean                     @default(true)
+  sortOrder        Int                         @default(0)
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+
+  listings     ProfessionalListing[]
+  specialties  ProfessionSpecialty[]
+  needs        ProfessionalNeed[]
+  applications ProfessionalApplication[]
+
+  @@index([isActive, sortOrder])
+  @@map("profession_catalog")
+}
+
+model ProfessionSpecialty {
+  id           String            @id
+  key          String            @unique
+  professionId String
+  label        String
+  description  String            @default("")
+  isActive     Boolean           @default(true)
+  sortOrder    Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  profession   ProfessionCatalog @relation(fields: [professionId], references: [id], onDelete: Cascade)
+  listings     ProfessionalListingSpecialty[]
+
+  @@index([professionId, isActive, sortOrder])
+  @@map("profession_specialties")
+}
+
+model ProfessionService {
+  id          String   @id
+  key         String   @unique
+  label       String
+  description String   @default("")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  listings    ProfessionalListingService[]
+  needs       ProfessionalNeed[]
+  engagements ProfessionalEngagement[]
+
+  @@index([isActive, sortOrder])
+  @@map("profession_services")
+}
+
+model ProfessionDeliverable {
+  id          String   @id
+  key         String   @unique
+  label       String
+  description String   @default("")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  listings    ProfessionalListingDeliverable[]
+  engagements ProfessionalEngagement[]
+
+  @@index([isActive, sortOrder])
+  @@map("profession_deliverables")
+}
+
+model ProfessionalProjectStage {
+  id          String   @id
+  key         String   @unique
+  label       String
+  description String   @default("")
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  listings    ProfessionalListingStage[]
+
+  @@index([isActive, sortOrder])
+  @@map("professional_project_stages")
+}
+
+/// Everyday need language → commonly relevant profession/service. Not a legal diagnosis.
+model ProfessionalNeed {
+  id                  String             @id
+  key                 String             @unique
+  label               String
+  description         String             @default("")
+  primaryProfessionId String
+  serviceId           String?
+  isActive            Boolean            @default(true)
+  sortOrder           Int                @default(0)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  primaryProfession   ProfessionCatalog  @relation(fields: [primaryProfessionId], references: [id], onDelete: Restrict)
+  service             ProfessionService? @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+
+  @@index([isActive, sortOrder])
+  @@map("professional_needs")
+}
+
+model ProfessionalListing {
+  id                   String                         @id @default(uuid())
+  slug                 String                         @unique
+  displayName          String
+  professionalType     ProfessionalType               @default(individual)
+  primaryProfessionId  String
+  bio                  String?
+  yearsExperience      Int?
+  phone                String?
+  email                String?
+  whatsapp             String?
+  website              String?
+  address              String?
+  city                 String?
+  state                String?
+  stateKey             String?
+  country              String                         @default("Nigeria")
+  serviceStates        String[]                       @default([])
+  serviceCities        String[]                       @default([])
+  remoteConsultation   Boolean                        @default(false)
+  siteVisits           Boolean                        @default(false)
+  canIssueSignedReport Boolean                        @default(false)
+  publicPhone          Boolean                        @default(false)
+  publicEmail          Boolean                        @default(false)
+  publicWhatsapp       Boolean                        @default(false)
+  publicWebsite        Boolean                        @default(true)
+  listingStatus        ProfessionalListingStatus      @default(draft)
+  ownershipStatus      ProfessionalOwnershipStatus    @default(unclaimed)
+  verificationStatus   ProfessionalVerificationStatus @default(unverified)
+  procurementStatus    ProfessionalProcurementStatus  @default(not_assessed)
+  usedByBmh            Boolean                        @default(false)
+  usedByBmhSince       DateTime?
+  usedByBmhNote        String?
+  linkedUserId         String?                        @unique
+  sourceType           ProfessionalSourceType         @default(admin_research)
+  sourceNotes          String?
+  sourceUrls           String[]                       @default([])
+  completenessScore    Int                            @default(0)
+  searchRank           Int                            @default(0)
+  normalizedName       String?
+  normalizedPhone      String?
+  normalizedEmail      String?
+  websiteDomain        String?
+  createdByAdminId     String?
+  listedAt             DateTime?
+  archivedAt           DateTime?
+  createdAt            DateTime                       @default(now())
+  updatedAt            DateTime                       @updatedAt
+
+  primaryProfession ProfessionCatalog                 @relation(fields: [primaryProfessionId], references: [id], onDelete: Restrict)
+  linkedUser        User?                             @relation("UserProfessionalListing", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  createdByAdmin    User?                             @relation("ProfessionalListingCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  specialties       ProfessionalListingSpecialty[]
+  services          ProfessionalListingService[]
+  deliverables      ProfessionalListingDeliverable[]
+  projectStages     ProfessionalListingStage[]
+  credentials       ProfessionalCredential[]
+  procurement       ProfessionalProcurementProfile?
+  engagements       ProfessionalEngagement[]
+  applications      ProfessionalApplication[]
+  claims            ProfessionalClaimRequest[]
+  enquiries         ProfessionalEnquiry[]
+
+  @@index([listingStatus, verificationStatus])
+  @@index([primaryProfessionId, listingStatus])
+  @@index([stateKey, listingStatus])
+  @@index([usedByBmh, listingStatus])
+  @@index([ownershipStatus])
+  @@index([searchRank, displayName])
+  @@index([normalizedName])
+  @@index([normalizedPhone])
+  @@index([normalizedEmail])
+  @@map("professional_listings")
+}
+
+model ProfessionalListingSpecialty {
+  professionalListingId String
+  specialtyId           String
+  listing               ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  specialty             ProfessionSpecialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@id([professionalListingId, specialtyId])
+  @@map("professional_listing_specialties")
+}
+
+model ProfessionalListingService {
+  professionalListingId String
+  serviceId             String
+  listing               ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  service               ProfessionService   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([professionalListingId, serviceId])
+  @@map("professional_listing_services")
+}
+
+model ProfessionalListingDeliverable {
+  professionalListingId String
+  deliverableId         String
+  listing               ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  deliverable           ProfessionDeliverable @relation(fields: [deliverableId], references: [id], onDelete: Cascade)
+
+  @@id([professionalListingId, deliverableId])
+  @@map("professional_listing_deliverables")
+}
+
+model ProfessionalListingStage {
+  professionalListingId String
+  projectStageId        String
+  listing               ProfessionalListing      @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  projectStage          ProfessionalProjectStage @relation(fields: [projectStageId], references: [id], onDelete: Cascade)
+
+  @@id([professionalListingId, projectStageId])
+  @@map("professional_listing_stages")
+}
+
+model ProfessionalCredential {
+  id                   String                             @id @default(uuid())
+  professionalListingId String
+  credentialType       String
+  regulatorKey         String?
+  regulatorLabel       String?
+  registrationNumber   String?
+  normalizedRegKey     String?                            @unique
+  holderName           String?
+  holderType           ProfessionalType                   @default(individual)
+  credentialStatus     ProfessionalCredentialStatus       @default(unknown)
+  verificationStatus   ProfessionalCredentialVerification @default(unchecked)
+  verificationSourceUrl String?
+  issuedAt             DateTime?
+  expiresAt            DateTime?
+  verifiedAt           DateTime?
+  verifiedByAdminId    String?
+  verificationNotes    String?
+  isPrimary            Boolean                            @default(false)
+  isPublic             Boolean                            @default(true)
+  createdAt            DateTime                           @default(now())
+  updatedAt            DateTime                           @updatedAt
+
+  listing      ProfessionalListing              @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  verifiedBy   User?                            @relation("ProfessionalCredentialVerifier", fields: [verifiedByAdminId], references: [id], onDelete: SetNull)
+  documents    ProfessionalCredentialDocument[]
+
+  @@index([professionalListingId, isPrimary])
+  @@index([regulatorKey, registrationNumber])
+  @@map("professional_credentials")
+}
+
+model ProfessionalCredentialDocument {
+  id            String   @id @default(uuid())
+  credentialId  String
+  documentType  String
+  fileName      String
+  fileRef       String
+  mimeType      String?
+  fileSizeBytes Int?
+  uploadedBy    String?
+  isPublic      Boolean  @default(false)
+  uploadedAt    DateTime @default(now())
+
+  credential ProfessionalCredential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@index([credentialId])
+  @@map("professional_credential_documents")
+}
+
+model ProfessionalProcurementProfile {
+  id                       String                          @id @default(uuid())
+  professionalListingId    String                          @unique
+  availabilityStatus       ProfessionalAvailabilityStatus  @default(unknown)
+  inspectionFee            Decimal?                        @db.Decimal(12, 2)
+  reportFee                Decimal?                        @db.Decimal(12, 2)
+  consultationFee          Decimal?                        @db.Decimal(12, 2)
+  currency                 String                          @default("NGN")
+  travelFeeNotes           String?
+  rateNotes                String?
+  typicalTurnaroundHours   Int?
+  acceptsBmhNegotiatedRates Boolean                        @default(false)
+  capabilityTags           String[]                        @default([])
+  lastContactedAt          DateTime?
+  internalNotes            String?
+  createdAt                DateTime                        @default(now())
+  updatedAt                DateTime                        @updatedAt
+
+  listing ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+
+  @@map("professional_procurement_profiles")
+}
+
+model ProfessionalEngagement {
+  id                       String                        @id @default(uuid())
+  professionalListingId    String
+  projectId                String
+  stageId                  String?
+  purpose                  String
+  serviceId                String?
+  requiredDeliverableId    String?
+  fee                      Decimal?                      @db.Decimal(12, 2)
+  currency                 String                        @default("NGN")
+  status                   ProfessionalEngagementStatus  @default(draft)
+  requestedAt              DateTime?
+  assignedAt               DateTime?
+  dueAt                    DateTime?
+  deliveredAt              DateTime?
+  completedAt              DateTime?
+  reportUrl                String?
+  reportNotes              String?
+  professionalRecommendation String?
+  internalDecisionNotes    String?
+  createdByAdminId         String?
+  createdAt                DateTime                      @default(now())
+  updatedAt                DateTime                      @updatedAt
+
+  listing             ProfessionalListing     @relation(fields: [professionalListingId], references: [id], onDelete: Restrict)
+  project             Project                 @relation(fields: [projectId], references: [id], onDelete: Restrict)
+  stage               Stage?                  @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  service             ProfessionService?      @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  requiredDeliverable ProfessionDeliverable?  @relation(fields: [requiredDeliverableId], references: [id], onDelete: SetNull)
+  createdByAdmin      User?                   @relation("ProfessionalEngagementCreator", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([professionalListingId, createdAt])
+  @@index([projectId, stageId])
+  @@index([status, dueAt])
+  @@map("professional_engagements")
+}
+
+model ProfessionalApplication {
+  id                   String                   @id @default(uuid())
+  professionalType     ProfessionalType         @default(individual)
+  displayName          String
+  professionId         String?
+  specialtyKeys        String[]                 @default([])
+  serviceKeys          String[]                 @default([])
+  phone                String?
+  email                String?
+  whatsapp             String?
+  website              String?
+  state                String?
+  city                 String?
+  regulatorKey         String?
+  registrationNumber   String?
+  shortDescription     String?
+  status               ProfessionalReviewStatus @default(pending)
+  reviewedByAdminId    String?
+  reviewedAt           DateTime?
+  adminNotes           String?
+  createdListingId     String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  profession     ProfessionCatalog?    @relation(fields: [professionId], references: [id], onDelete: SetNull)
+  reviewedBy     User?                 @relation("ProfessionalApplicationReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+  createdListing ProfessionalListing?  @relation(fields: [createdListingId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@map("professional_applications")
+}
+
+model ProfessionalClaimRequest {
+  id                       String                   @id @default(uuid())
+  professionalListingId    String
+  requesterName            String
+  relationshipToPractice   String
+  email                    String
+  phone                    String?
+  proofMethod              String?
+  proofNotes               String?
+  status                   ProfessionalReviewStatus @default(pending)
+  reviewedByAdminId        String?
+  reviewedAt               DateTime?
+  adminNotes               String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  listing    ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  reviewedBy User?               @relation("ProfessionalClaimReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([professionalListingId, status])
+  @@index([status, createdAt])
+  @@map("professional_claim_requests")
+}
+
+model ProfessionalEnquiry {
+  id                    String                     @id @default(uuid())
+  professionalListingId String?
+  requesterName         String
+  email                 String
+  phone                 String?
+  propertyState         String?
+  propertyCity          String?
+  whatDoYouNeed         String
+  message               String?
+  status                ProfessionalEnquiryStatus  @default(new)
+  createdAt             DateTime                   @default(now())
+  updatedAt             DateTime                   @updatedAt
+
+  listing ProfessionalListing? @relation(fields: [professionalListingId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([professionalListingId, createdAt])
+  @@map("professional_enquiries")
 }

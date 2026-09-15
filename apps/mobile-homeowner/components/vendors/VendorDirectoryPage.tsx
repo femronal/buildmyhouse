@@ -228,6 +228,17 @@ export default function VendorDirectoryPage() {
                 </Text>
               </Pressable>
             </Link>
+            <Link href={'/professionals' as any} asChild>
+              <Pressable
+                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
+                style={{ borderColor: LANDING_BORDER }}
+                accessibilityRole="link"
+              >
+                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+                  Find a professional
+                </Text>
+              </Pressable>
+            </Link>
             <Link href={'/tools/price-checker' as any} asChild>
               <Pressable
                 className="rounded-full px-4 py-2.5 mb-2 border"

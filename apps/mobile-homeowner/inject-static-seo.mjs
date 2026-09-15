@@ -47,6 +47,7 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/onboarding-intro',
   '/vendors/manage',
   '/vendors/claim',
+  '/professionals/manage',
 ];
 
 const SEO_PAGES = {
@@ -194,6 +195,16 @@ const SEO_PAGES = {
     title: 'List your building-material business on BuildMyHouse',
     description:
       'Tell BuildMyHouse what you sell, prove who you are, and become easier for serious buyers to find. Submission does not guarantee approval.',
+  },
+  '/professionals': {
+    title: 'Construction Professionals in Nigeria | BuildMyHouse',
+    description:
+      'Find architects, engineers, quantity surveyors, land surveyors, property lawyers and other construction professionals in Nigeria. See services, locations and BuildMyHouse credential checks.',
+  },
+  '/professionals/apply': {
+    title: 'List your professional practice on BuildMyHouse',
+    description:
+      'Apply to appear in the BuildMyHouse construction professionals directory. Submission is not approval or verification.',
   },
   '/contractors/lagos/plumbing-repair': {
     title: 'Plumbing Repair Contractors in Lagos | BuildMyHouse',

@@ -19,6 +19,7 @@ import {
   Wrench,
   UserCog,
   Waypoints,
+  BadgeCheck,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 import { useMyPermissions } from '@/hooks/useMyPermissions';
@@ -29,6 +30,7 @@ const menuItems = [
   { href: '/homeowners', label: 'Homeowners', icon: Users },
   { href: '/contractors', label: 'Contractors', icon: HardHat },
   { href: '/vendors', label: 'Vendors', icon: Store },
+  { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },
   { href: '/disputes', label: 'Disputes', icon: Scale },

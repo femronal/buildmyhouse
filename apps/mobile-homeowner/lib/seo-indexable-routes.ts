@@ -5,7 +5,11 @@ export const INDEXABLE_ROUTE_PREFIXES = routesConfig.prefixes as readonly string
 
 /** Authenticated vendor surfaces under /vendors/ that must stay noindex. */
 function isPrivateVendorPath(pathname: string): boolean {
-  return pathname === '/vendors/manage' || pathname.startsWith('/vendors/claim/');
+  return (
+    pathname === '/vendors/manage' ||
+    pathname.startsWith('/vendors/claim/') ||
+    pathname === '/professionals/manage'
+  );
 }
 
 export function isStaticIndexablePath(pathname: string): boolean {
