@@ -1,10 +1,11 @@
 'use client';
 
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { CredentialCheckPanel } from '@/components/CredentialCheckPanel';
 import {
   LISTING_STATUS_LABELS,
   OWNERSHIP_STATUS_LABELS,
@@ -25,7 +26,9 @@ function labelOf(map: Record<string, string>, value: string | undefined) {
 
 export default function ProfessionalDetailPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const id = params.id;
+  const credentialError = searchParams.get('credentialError') === '1';
   const { data, isLoading, error, refetch } = useProfessional(id);
   const meta = useProfessionalMeta();
   const update = useUpdateProfessional(id);
@@ -47,6 +50,12 @@ export default function ProfessionalDetailPage() {
             {data.profession?.label} · Completeness {data.completenessScore}% · {labelOf(OWNERSHIP_STATUS_LABELS, data.ownershipStatus)}
           </p>
           <p className="text-xs text-gray-400 mt-1">Listed ≠ claimed ≠ credential checked ≠ used by BMH.</p>
+          {data.primaryCredential?.registrationNumber && (
+            <p className="text-sm text-gray-700 mt-2">
+              {data.profession?.regulatorLabel || 'Licence'} {data.primaryCredential.registrationNumber}
+              {data.verificationStatus === 'verified' ? ' · credential checked' : ''}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           {Object.keys(LISTING_STATUS_LABELS).map((status) => (
@@ -69,7 +78,12 @@ export default function ProfessionalDetailPage() {
         ))}
       </div>
 
-      {tab === 'Overview' && <Overview data={data} update={update} />}
+      {credentialError && (
+        <p className="text-sm text-amber-800 bg-amber-50 rounded-lg px-3 py-2">
+          The professional was saved, but the licence number could not be stored. Enter it on Overview and save again.
+        </p>
+      )}
+      {tab === 'Overview' && <Overview data={data} update={update} actions={actions} />}
       {tab === 'Public profile' && <PublicProfile data={data} update={update} meta={meta.data} />}
       {tab === 'Credentials' && <Credentials data={data} actions={actions} />}
       {tab === 'Procurement' && <Procurement data={data} actions={actions} meta={meta.data} />}
@@ -79,8 +93,21 @@ export default function ProfessionalDetailPage() {
   );
 }
 
-function Overview({ data, update }: { data: any; update: ReturnType<typeof useUpdateProfessional> }) {
+function Overview({
+  data,
+  update,
+  actions,
+}: {
+  data: any;
+  update: ReturnType<typeof useUpdateProfessional>;
+  actions: ReturnType<typeof useProfessionalAction>;
+}) {
   const [usedNote, setUsedNote] = useState(data.usedByBmhNote || '');
+  const [credError, setCredError] = useState('');
+  const primary =
+    (data.credentials || []).find((c: any) => c.isPrimary) || (data.credentials || [])[0];
+  const checked = data.verificationStatus === 'verified';
+
   return (
     <div className="grid lg:grid-cols-2 gap-4">
       <section className="bg-white rounded-xl shadow p-5 space-y-2 text-sm">
@@ -92,6 +119,10 @@ function Overview({ data, update }: { data: any; update: ReturnType<typeof useUp
         <p>Source: {data.sourceType}</p>
         <p>Listing: {labelOf(LISTING_STATUS_LABELS, data.listingStatus)}</p>
         <p>Verification: {labelOf(VERIFICATION_STATUS_LABELS, data.verificationStatus)}</p>
+        <p>
+          Licence: {primary?.regulatorLabel || data.profession?.regulatorLabel || '—'}
+          {primary?.registrationNumber ? ` ${primary.registrationNumber}` : ' — no number on file'}
+        </p>
         <p>Procurement: {labelOf(PROCUREMENT_STATUS_LABELS, data.procurementStatus)}</p>
         <p>Created: {new Date(data.createdAt).toLocaleDateString()}</p>
       </section>
@@ -106,6 +137,54 @@ function Overview({ data, update }: { data: any; update: ReturnType<typeof useUp
           Mark used by BMH
         </button>
         {data.usedByBmh && <p className="text-sm text-emerald-700">Currently marked used by BMH.</p>}
+      </section>
+      <section className="bg-white rounded-xl shadow p-5 lg:col-span-2">
+        {checked && primary && (
+          <p className="mb-4 text-sm text-emerald-800 bg-emerald-50 rounded-lg px-3 py-2">
+            Credential checked{primary.regulatorLabel ? ` with ${primary.regulatorLabel}` : ''}: {primary.registrationNumber || 'number on file'}
+            {primary.verifiedAt ? ` · ${new Date(primary.verifiedAt).toLocaleDateString()}` : ''}
+          </p>
+        )}
+        <CredentialCheckPanel
+          key={`${primary?.id || 'new'}-${data.verificationStatus}`}
+          profession={data.profession}
+          initial={{
+            registrationNumber: primary?.registrationNumber || '',
+            verificationSourceUrl: primary?.verificationSourceUrl || '',
+            verificationNotes: primary?.verificationNotes || '',
+            markChecked: true,
+          }}
+          pending={actions.addCredential.isPending || actions.updateCredential.isPending}
+          error={credError}
+          submitLabel={primary ? 'Update and mark credential checked' : 'Save licence number and mark credential checked'}
+          onSubmit={async (draft) => {
+            setCredError('');
+            try {
+              if (primary) {
+                await actions.updateCredential.mutateAsync({
+                  credentialId: primary.id,
+                  registrationNumber: draft.registrationNumber,
+                  verificationSourceUrl: draft.verificationSourceUrl || undefined,
+                  verificationNotes: draft.verificationNotes,
+                  markChecked: draft.markChecked,
+                  isPrimary: true,
+                  isPublic: true,
+                });
+              } else {
+                await actions.addCredential.mutateAsync({
+                  registrationNumber: draft.registrationNumber,
+                  verificationSourceUrl: draft.verificationSourceUrl || undefined,
+                  verificationNotes: draft.verificationNotes,
+                  markChecked: draft.markChecked,
+                  isPrimary: true,
+                  isPublic: true,
+                });
+              }
+            } catch (err) {
+              setCredError((err as Error).message);
+            }
+          }}
+        />
       </section>
     </div>
   );
@@ -157,48 +236,41 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
 }
 
 function Credentials({ data, actions }: { data: any; actions: ReturnType<typeof useProfessionalAction> }) {
-  const [reg, setReg] = useState('');
-  const [source, setSource] = useState('');
-  const [note, setNote] = useState('');
   const [file, setFile] = useState<File | null>(null);
-  const add = async (event: FormEvent) => {
-    event.preventDefault();
-    await actions.addCredential.mutateAsync({
-      registrationNumber: reg,
-      verificationSourceUrl: source || undefined,
-      verificationNotes: note,
-      markChecked: true,
-      isPrimary: true,
-      isPublic: true,
-    });
-    setReg('');
-    setSource('');
-    setNote('');
-  };
+  const [credError, setCredError] = useState('');
   return (
     <div className="space-y-4">
-      <form onSubmit={add} className="bg-white rounded-xl shadow p-5 space-y-3">
-        <h2 className="font-semibold">Add credential</h2>
-        <p className="text-sm text-gray-600">
-          {data.profession?.regulatorLabel
-            ? `Expected context: ${data.profession.regulatorLabel}`
-            : 'No single statutory regulator. Record documents checked, not a false regulator claim.'}
-        </p>
-        <input value={reg} onChange={(e) => setReg(e.target.value)} placeholder="Registration number" className="w-full border rounded-lg px-3 py-2" />
-        <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Verification source URL" className="w-full border rounded-lg px-3 py-2" />
-        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Admin verification note" className="w-full border rounded-lg px-3 py-2" />
-        <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">Save and mark checked</button>
-      </form>
       <div className="bg-white rounded-xl shadow p-5">
-        <h2 className="font-semibold mb-3">Credentials</h2>
+        <CredentialCheckPanel
+          profession={data.profession}
+          pending={actions.addCredential.isPending}
+          error={credError}
+          onSubmit={async (draft) => {
+            setCredError('');
+            try {
+              await actions.addCredential.mutateAsync({
+                registrationNumber: draft.registrationNumber,
+                verificationSourceUrl: draft.verificationSourceUrl || undefined,
+                verificationNotes: draft.verificationNotes,
+                markChecked: draft.markChecked,
+                isPrimary: true,
+                isPublic: true,
+              });
+            } catch (err) {
+              setCredError((err as Error).message);
+            }
+          }}
+        />
+      </div>
+      <div className="bg-white rounded-xl shadow p-5">
+        <h2 className="font-semibold mb-3">Saved credentials</h2>
         {(data.credentials || []).length === 0 && <p className="text-sm text-gray-500">No credentials have been added yet.</p>}
         {(data.credentials || []).map((credential: any) => (
           <div key={credential.id} className="border rounded-lg p-3 mb-3 text-sm">
             <p className="font-medium">{credential.regulatorLabel || credential.credentialType} · {credential.registrationNumber || 'No number'}</p>
             <p>Status: {credential.verificationStatus} · {credential.credentialStatus}</p>
             <p>Checked: {credential.verifiedAt ? new Date(credential.verifiedAt).toLocaleDateString() : '—'}</p>
-            <div className="mt-2 flex gap-2">
-              <button onClick={() => actions.setVerification.mutate({ verificationStatus: 'verified', note })} className="px-2 py-1 border rounded">Use for listing check</button>
+            <div className="mt-2 flex gap-2 flex-wrap">
               <label className="text-xs">
                 Upload private document
                 <input type="file" className="block mt-1" onChange={(e) => setFile(e.target.files?.[0] || null)} />

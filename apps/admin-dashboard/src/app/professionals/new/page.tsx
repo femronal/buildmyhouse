@@ -3,12 +3,19 @@
 import { FormEvent, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { api } from '@/lib/api';
+import {
+  CredentialCheckFields,
+  EMPTY_CREDENTIAL_DRAFT,
+  type CredentialDraft,
+} from '@/components/CredentialCheckPanel';
 import { useCreateProfessional, useProfessionalMeta } from '@/hooks/useProfessionals';
 
 export default function NewProfessionalPage() {
   const router = useRouter();
   const meta = useProfessionalMeta();
   const create = useCreateProfessional();
+  const [credential, setCredential] = useState<CredentialDraft>(EMPTY_CREDENTIAL_DRAFT);
   const [form, setForm] = useState({
     displayName: '',
     professionalType: 'individual',
@@ -38,6 +45,10 @@ export default function NewProfessionalPage() {
     () => (meta.data?.specialties || []).filter((s: any) => s.professionId === form.primaryProfessionId),
     [form.primaryProfessionId, meta.data?.specialties],
   );
+  const selectedProfession = useMemo(
+    () => (meta.data?.professions || []).find((p: any) => p.id === form.primaryProfessionId) || null,
+    [form.primaryProfessionId, meta.data?.professions],
+  );
 
   const toggle = (key: 'specialtyIds' | 'serviceIds' | 'deliverableIds' | 'projectStageIds' | 'serviceStates', id: string) => {
     setForm((prev) => ({
@@ -53,6 +64,21 @@ export default function NewProfessionalPage() {
       yearsExperience: form.yearsExperience ? Number(form.yearsExperience) : undefined,
       usedByBmhNote: form.usedByBmh ? form.usedByBmhNote : undefined,
     });
+    if (credential.registrationNumber.trim()) {
+      try {
+        await api.post(`/admin/professionals/${created.id}/credentials`, {
+          registrationNumber: credential.registrationNumber.trim(),
+          verificationSourceUrl: credential.verificationSourceUrl.trim() || undefined,
+          verificationNotes: credential.verificationNotes,
+          markChecked: credential.markChecked,
+          isPrimary: true,
+          isPublic: true,
+        });
+      } catch {
+        router.push(`/professionals/${created.id}?credentialError=1`);
+        return;
+      }
+    }
     router.push(`/professionals/${created.id}`);
   };
 
@@ -106,6 +132,10 @@ export default function NewProfessionalPage() {
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.siteVisits} onChange={(e) => setForm({ ...form, siteVisits: e.target.checked })} /> Site visits</label>
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.remoteConsultation} onChange={(e) => setForm({ ...form, remoteConsultation: e.target.checked })} /> Remote consultation</label>
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.canIssueSignedReport} onChange={(e) => setForm({ ...form, canIssueSignedReport: e.target.checked })} /> Can issue signed reports</label>
+        </section>
+
+        <section className="bg-white rounded-xl shadow p-5">
+          <CredentialCheckFields profession={selectedProfession} draft={credential} onChange={setCredential} />
         </section>
 
         <section className="bg-white rounded-xl shadow p-5 space-y-3">

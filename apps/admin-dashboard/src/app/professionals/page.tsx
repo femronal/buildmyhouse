@@ -166,9 +166,9 @@ export default function ProfessionalsPage() {
                   <th className="px-4 py-3 font-medium">Professional</th>
                   <th className="px-4 py-3 font-medium">Profession</th>
                   <th className="px-4 py-3 font-medium">Location</th>
-                  <th className="px-4 py-3 font-medium">Regulator</th>
+                  <th className="px-4 py-3 font-medium">Regulator / licence</th>
                   <th className="px-4 py-3 font-medium">Listing</th>
-                  <th className="px-4 py-3 font-medium">Verification</th>
+                  <th className="px-4 py-3 font-medium">Credential</th>
                   <th className="px-4 py-3 font-medium">Procurement</th>
                   <th className="px-4 py-3 font-medium">Used by BMH</th>
                   <th className="px-4 py-3 font-medium">Complete</th>
@@ -184,7 +184,10 @@ export default function ProfessionalsPage() {
                     </td>
                     <td className="px-4 py-3">{row.profession?.label || '—'}</td>
                     <td className="px-4 py-3">{[row.city, row.state].filter(Boolean).join(', ') || '—'}</td>
-                    <td className="px-4 py-3">{row.profession?.regulatorLabel || 'Documents'}</td>
+                    <td className="px-4 py-3">
+                      <div>{row.profession?.regulatorLabel || 'Documents'}</div>
+                      <div className="text-xs text-gray-500">{row.primaryCredential?.registrationNumber || 'No licence number'}</div>
+                    </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 text-[10px] rounded-full font-medium ${pill('listing', row.listingStatus)}`}>
                         {LISTING_STATUS_LABELS[row.listingStatus]}

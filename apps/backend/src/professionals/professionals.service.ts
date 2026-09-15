@@ -1171,7 +1171,28 @@ export class ProfessionalsService implements OnModuleInit {
       slug: row.slug,
       displayName: row.displayName,
       professionalType: row.professionalType,
-      profession: row.primaryProfession ? { id: row.primaryProfession.id, key: row.primaryProfession.key, label: row.primaryProfession.label, regulatorLabel: row.primaryProfession.regulatorLabel } : null,
+      profession: row.primaryProfession
+        ? {
+            id: row.primaryProfession.id,
+            key: row.primaryProfession.key,
+            label: row.primaryProfession.label,
+            regulatorKey: row.primaryProfession.regulatorKey,
+            regulatorLabel: row.primaryProfession.regulatorLabel,
+            verificationMode: row.primaryProfession.verificationMode,
+          }
+        : null,
+      primaryCredential: (() => {
+        const cred =
+          (row.credentials || []).find((c: any) => c.isPrimary) || (row.credentials || [])[0] || null;
+        return cred
+          ? {
+              id: cred.id,
+              registrationNumber: cred.registrationNumber,
+              regulatorLabel: cred.regulatorLabel,
+              verificationStatus: cred.verificationStatus,
+            }
+          : null;
+      })(),
       city: row.city,
       state: row.state,
       listingStatus: row.listingStatus,

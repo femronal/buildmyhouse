@@ -51,7 +51,20 @@ export type ProfessionalListItem = {
   slug: string;
   displayName: string;
   professionalType: 'individual' | 'firm';
-  profession: { id: string; key: string; label: string; regulatorLabel?: string | null } | null;
+  profession: {
+    id: string;
+    key: string;
+    label: string;
+    regulatorKey?: string | null;
+    regulatorLabel?: string | null;
+    verificationMode?: string | null;
+  } | null;
+  primaryCredential?: {
+    id: string;
+    registrationNumber?: string | null;
+    regulatorLabel?: string | null;
+    verificationStatus?: string | null;
+  } | null;
   city: string | null;
   state: string | null;
   listingStatus: keyof typeof LISTING_STATUS_LABELS;
