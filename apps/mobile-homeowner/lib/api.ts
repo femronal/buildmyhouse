@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth';
+import { httpErrorMessage } from './http-error-message';
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -21,7 +22,7 @@ export const api = {
     
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Failed to fetch data');
+      throw new Error(httpErrorMessage(error, 'Failed to fetch data'));
     }
     
     return response.json();
@@ -51,7 +52,9 @@ export const api = {
         throw new Error('Selected file is too large. Please choose a smaller image or reduce image quality and try again.');
       }
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `Failed to create resource: ${response.status} ${response.statusText}`);
+      throw new Error(
+        httpErrorMessage(error, `Failed to create resource: ${response.status} ${response.statusText}`),
+      );
     }
 
     return response.json();
@@ -66,7 +69,7 @@ export const api = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Failed to update resource');
+      throw new Error(httpErrorMessage(error, 'Failed to update resource'));
     }
 
     return response.json();
@@ -80,7 +83,7 @@ export const api = {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || 'Failed to delete resource');
+      throw new Error(httpErrorMessage(error, 'Failed to delete resource'));
     }
 
     // Handle 204 No Content responses

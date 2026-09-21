@@ -211,7 +211,11 @@ export default function VendorApplyPage() {
         publicPhone: publicPhone.trim() || undefined,
         publicWhatsApp: publicWhatsApp.trim() || publicPhone.trim() || undefined,
         publicEmail: publicEmail.trim() || undefined,
-        websiteUrl: websiteUrl.trim() || undefined,
+        websiteUrl: websiteUrl.trim()
+          ? /^https?:\/\//i.test(websiteUrl.trim())
+            ? websiteUrl.trim()
+            : `https://${websiteUrl.trim()}`
+          : undefined,
         preferredContactMethod: preferredContact,
         acceptsBulkOrders,
         acceptsProjectQuotations,

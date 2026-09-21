@@ -1,3 +1,5 @@
+import { httpErrorMessage } from '@/lib/http-error-message';
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
   (__DEV__ ? 'http://localhost:3001/api' : 'https://api.buildmyhouse.app/api');
@@ -208,14 +210,13 @@ export async function submitVendorApplication(payload: VendorApplyPayload): Prom
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    let message = 'Unable to submit your application right now.';
+    let payload: unknown = null;
     try {
-      const err = await response.json();
-      if (typeof err?.message === 'string') message = err.message;
+      payload = await response.json();
     } catch {
       // ignore
     }
-    throw new Error(message);
+    throw new Error(httpErrorMessage(payload, 'Unable to submit your application right now.'));
   }
   return response.json();
 }

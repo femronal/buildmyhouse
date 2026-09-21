@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -29,6 +29,13 @@ import {
   VendorVerificationCheckStatus,
   VendorVerificationStatus,
 } from '@prisma/client';
+
+import { coerceWebsiteUrl } from '../vendor-helpers';
+
+function toWebsiteUrl({ value }: { value: unknown }) {
+  if (value == null || value === '') return undefined;
+  return coerceWebsiteUrl(String(value));
+}
 
 export class VendorOfferingInputDto {
   @IsOptional() @IsString() familyKey?: string;
@@ -123,7 +130,7 @@ export class ApplyVendorDto {
   @IsOptional() @IsBoolean() showPublicPhone?: boolean;
   @IsOptional() @IsBoolean() showPublicWhatsApp?: boolean;
   @IsOptional() @IsBoolean() showPublicEmail?: boolean;
-  @IsOptional() @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @Transform(toWebsiteUrl) @IsUrl({ require_protocol: true }) websiteUrl?: string;
   @IsOptional() @IsObject() socialLinks?: Record<string, string>;
   @IsOptional() @IsEnum(VendorPreferredContactMethod) preferredContactMethod?: VendorPreferredContactMethod;
   @IsOptional() @IsString() salesContactName?: string;
@@ -250,7 +257,7 @@ export class AdminUpdateVendorDto {
   @IsOptional() @IsBoolean() showPublicPhone?: boolean;
   @IsOptional() @IsBoolean() showPublicWhatsApp?: boolean;
   @IsOptional() @IsBoolean() showPublicEmail?: boolean;
-  @IsOptional() @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @Transform(toWebsiteUrl) @IsUrl({ require_protocol: true }) websiteUrl?: string;
   @IsOptional() @IsObject() socialLinks?: Record<string, string>;
   @IsOptional() @IsEnum(VendorPreferredContactMethod) preferredContactMethod?: VendorPreferredContactMethod;
   @IsOptional() @IsString() salesContactName?: string;
@@ -357,7 +364,7 @@ export class VendorManageUpdateDto {
   @IsOptional() @IsBoolean() showPublicPhone?: boolean;
   @IsOptional() @IsBoolean() showPublicWhatsApp?: boolean;
   @IsOptional() @IsBoolean() showPublicEmail?: boolean;
-  @IsOptional() @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @Transform(toWebsiteUrl) @IsUrl({ require_protocol: true }) websiteUrl?: string;
   @IsOptional() @IsString() logoUrl?: string;
   @IsOptional() @IsObject() socialLinks?: Record<string, string>;
   @IsOptional() @IsArray() @IsString({ each: true }) paymentMethodsAccepted?: string[];

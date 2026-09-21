@@ -25,6 +25,7 @@ import { HOMEOWNER_WELCOME_EMAIL_TEMPLATE } from '../email/templates/homeowner-w
 import { GC_WELCOME_EMAIL_TEMPLATE } from '../email/templates/gc-welcome.template';
 import { AdminAccessGateService } from '../admin-access/admin-access-gate.service';
 import { AdminAccessPermissionsService } from '../admin-access/admin-access-permissions.service';
+import { canResetPasswordForRequestedApp } from './password-reset-access';
 
 @Injectable()
 export class AuthService {
@@ -155,9 +156,7 @@ export class AuthService {
 
     const requestedRole = dto.appRole;
     const canResetForApp =
-      user &&
-      (user.role === 'homeowner' || user.role === 'general_contractor') &&
-      (!requestedRole || user.role === requestedRole);
+      user && canResetPasswordForRequestedApp(user.role, requestedRole);
 
     if (!canResetForApp) {
       return AuthService.PASSWORD_RESET_RESPONSE;

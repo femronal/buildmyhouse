@@ -32,8 +32,9 @@ export class VendorsPublicController {
   }
 
   @Get('claim/:token')
-  previewClaim(@Param('token') token: string) {
-    return this.vendors.previewClaim(token);
+  @UseGuards(OptionalJwtAuthGuard)
+  previewClaim(@Param('token') token: string, @Req() req: any) {
+    return this.vendors.previewClaim(token, req.user?.sub);
   }
 
   @Post('claim/:token')

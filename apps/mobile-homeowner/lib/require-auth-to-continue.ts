@@ -3,6 +3,7 @@ import type { Router } from 'expo-router';
 import type { HomeownerUserLike } from '@/lib/onboarding';
 import { showAuthContinueModal } from '@/lib/auth-continue-modal-store';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
+import { buildAuthContinueHref } from '@/lib/vendor-claim-flow';
 
 type RequireAuthOptions = {
   router: Router;
@@ -11,6 +12,7 @@ type RequireAuthOptions = {
   destinationPath: string;
   promptTitle?: string;
   promptMessage?: string;
+  loginMode?: 'signin' | 'signup';
 };
 
 export async function requireAuthToContinue({
@@ -20,6 +22,7 @@ export async function requireAuthToContinue({
   destinationPath,
   promptTitle = 'Sign up to continue',
   promptMessage = 'Create a free account or sign in to view this plan scope and continue from where you left off.',
+  loginMode = 'signin',
 }: RequireAuthOptions): Promise<boolean> {
   if (userLoading) return false;
 
@@ -31,7 +34,7 @@ export async function requireAuthToContinue({
     const goToLogin = () => {
       void (async () => {
         await setPostAuthReturnPath(destinationPath);
-        router.push('/login');
+        router.push(buildAuthContinueHref(destinationPath, loginMode) as any);
         resolve(false);
       })();
     };

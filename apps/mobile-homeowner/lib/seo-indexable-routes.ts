@@ -7,6 +7,7 @@ export const INDEXABLE_ROUTE_PREFIXES = routesConfig.prefixes as readonly string
 function isPrivateVendorPath(pathname: string): boolean {
   return (
     pathname === '/vendors/manage' ||
+    pathname === '/vendors/claim' ||
     pathname.startsWith('/vendors/claim/') ||
     pathname === '/professionals/manage'
   );

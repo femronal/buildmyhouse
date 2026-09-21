@@ -208,6 +208,13 @@ export default function VendorDirectoryPage() {
           >
             {summary}
           </Text>
+          <Text
+            className="text-sm mt-3"
+            style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
+          >
+            Already listed by BuildMyHouse? Use the claim invite we emailed you. Filling “List your
+            business” again creates a new application, not a claim.
+          </Text>
 
           <View className="flex-row flex-wrap mt-3">
             <Link href={'/vendors/apply' as any} asChild>
@@ -225,6 +232,17 @@ export default function VendorDirectoryPage() {
               >
                 <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
                   Manage listing
+                </Text>
+              </Pressable>
+            </Link>
+            <Link href={'/vendors/claim' as any} asChild>
+              <Pressable
+                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
+                style={{ borderColor: LANDING_BORDER }}
+                accessibilityRole="link"
+              >
+                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+                  Claim your listing
                 </Text>
               </Pressable>
             </Link>

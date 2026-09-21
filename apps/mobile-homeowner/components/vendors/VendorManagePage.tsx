@@ -21,7 +21,8 @@ import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-c
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
-import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
+import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
+import { buildAuthContinueHref } from '@/lib/vendor-claim-flow';
 import { useWebSeo } from '@/lib/seo';
 import {
   VENDOR_APPLY_FAMILY_OPTIONS,
@@ -117,6 +118,7 @@ export default function VendorManagePage() {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [profile, setProfile] = useState<ManagedVendorProfile | null>(null);
   const [missingProfile, setMissingProfile] = useState(false);
 
@@ -211,22 +213,16 @@ export default function VendorManagePage() {
     (async () => {
       if (userLoading) return;
 
-      const canContinue = await requireAuthToContinue({
-        router,
-        currentUser,
-        userLoading,
-        destinationPath: '/vendors/manage',
-        promptTitle: 'Sign in to manage',
-        promptMessage: 'Sign in with the account linked to your vendor profile.',
-      });
-
-      if (!canContinue) {
+      if (!currentUser) {
         if (!cancelled) {
+          setNeedsSignIn(true);
+          setMissingProfile(false);
           setLoading(false);
-          setMissingProfile(true);
         }
         return;
       }
+
+      setNeedsSignIn(false);
 
       try {
         const data = await fetchManagedVendorProfile();
@@ -249,7 +245,7 @@ export default function VendorManagePage() {
     return () => {
       cancelled = true;
     };
-  }, [currentUser, userLoading, router]);
+  }, [currentUser, userLoading]);
 
   const readOnly =
     profile?.listingStatus === 'suspended' || profile?.listingStatus === 'rejected';
@@ -454,6 +450,55 @@ export default function VendorManagePage() {
     );
   }
 
+  if (needsSignIn) {
+    const goToAuth = async (mode: 'signin' | 'signup') => {
+      await setPostAuthReturnPath('/vendors/manage');
+      router.push(buildAuthContinueHref('/vendors/manage', mode) as any);
+    };
+
+    return (
+      <SeoContentShell>
+        <SeoContentColumn>
+          <SeoContentBackButton fallbackHref="/vendors" />
+          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
+            Sign in to manage
+          </SeoHeading>
+          <Text className="text-base mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+            Sign in with the account linked to your vendor profile. If you were invited to claim a
+            listing, create an account from the claim link first — this page only works after the
+            profile is linked.
+          </Text>
+          <Pressable
+            onPress={() => void goToAuth('signin')}
+            className="rounded-full bg-black px-5 py-3 items-center mb-3"
+            accessibilityRole="button"
+          >
+            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              Sign in
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void goToAuth('signup')}
+            className="rounded-full border px-5 py-3 items-center mb-3"
+            style={{ borderColor: LANDING_BORDER }}
+            accessibilityRole="button"
+          >
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+              Create an account
+            </Text>
+          </Pressable>
+          <Link href={'/vendors/claim' as any} asChild>
+            <Pressable className="items-center py-2">
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                How to claim an existing listing →
+              </Text>
+            </Pressable>
+          </Link>
+        </SeoContentColumn>
+      </SeoContentShell>
+    );
+  }
+
   if (missingProfile || !profile) {
     return (
       <SeoContentShell>
@@ -464,7 +509,8 @@ export default function VendorManagePage() {
           </SeoHeading>
           <Text className="text-base mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
             This account is not linked to a vendor listing yet. Apply to be listed, or use a claim
-            invite from BuildMyHouse if we already created your profile.
+            invite from BuildMyHouse if we already created your profile. Claiming does not verify the
+            business.
           </Text>
           {error ? (
             <Text className="text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium', color: '#B91C1C' }}>
@@ -475,6 +521,13 @@ export default function VendorManagePage() {
             <Pressable className="rounded-full bg-black px-5 py-3 items-center mb-3">
               <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                 Apply to list your business
+              </Text>
+            </Pressable>
+          </Link>
+          <Link href={'/vendors/claim' as any} asChild>
+            <Pressable className="items-center py-2 mb-2">
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                How to claim an existing listing →
               </Text>
             </Pressable>
           </Link>
