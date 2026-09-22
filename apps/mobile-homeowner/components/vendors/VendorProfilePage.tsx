@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { Image, Linking, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { SeoHeading } from '@/components/seo/SeoHeading';
@@ -287,6 +287,7 @@ function SelectedTypeDetail({ offering }: { offering: Offering }) {
 }
 
 export default function VendorProfilePage({ slug }: Props) {
+  const router = useRouter();
   const [showVerifiedHelp, setShowVerifiedHelp] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteProduct, setQuoteProduct] = useState('');
@@ -607,6 +608,12 @@ export default function VendorProfilePage({ slug }: Props) {
                   onDark
                   outline={quoteOpen}
                   onPress={() => setQuoteOpen((v) => !v)}
+                />
+                <SystemButton
+                  label="This_is_my_business"
+                  onDark
+                  outline
+                  onPress={() => router.push('/vendors/claim' as any)}
                 />
               </View>
 

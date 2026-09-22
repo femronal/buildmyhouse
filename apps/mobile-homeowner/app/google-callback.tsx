@@ -3,6 +3,7 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
 import { exchangeGoogleAuthCode, storeAuthToken } from "@/lib/auth";
 import { navigateAfterAuth } from "@/lib/post-auth-navigation";
+import { canSignInOnHomeownerApp } from "@/lib/homeowner-app-roles";
 
 export default function GoogleCallbackScreen() {
   const router = useRouter();
@@ -29,9 +30,9 @@ export default function GoogleCallbackScreen() {
           throw new Error("Login failed. Please try again.");
         }
 
-        if (result.user.role !== "homeowner") {
+        if (!canSignInOnHomeownerApp(result.user.role)) {
           throw new Error(
-            `This app is for homeowners only. Your account role: ${result.user.role || "unknown"}.`,
+            `This app is for homeowners and vendors. Your account role: ${result.user.role || "unknown"}.`,
           );
         }
 

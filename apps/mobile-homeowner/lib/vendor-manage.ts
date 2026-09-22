@@ -1,11 +1,13 @@
-import { api } from '@/lib/api';
-import { API_BASE_URL } from '@/lib/api';
+import { api, API_BASE_URL } from '@/lib/api';
+import { getAuthToken } from '@/lib/auth';
+import { httpErrorMessage } from '@/lib/http-error-message';
 
 export type VendorClaimPreview = {
   tradingName: string;
   slug: string;
   email: string | null;
   expiresAt: string;
+  alreadyClaimedByYou?: boolean;
 };
 
 export type ManagedVendorOffering = {
@@ -138,16 +140,20 @@ export const VENDOR_DOCUMENT_TYPES: Array<{ value: string; label: string }> = [
 ];
 
 export async function previewVendorClaim(token: string): Promise<VendorClaimPreview> {
-  const response = await fetch(`${API_BASE_URL}/vendors/claim/${encodeURIComponent(token)}`);
+  const authToken = await getAuthToken();
+  const response = await fetch(`${API_BASE_URL}/vendors/claim/${encodeURIComponent(token)}`, {
+    headers: {
+      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+    },
+  });
   if (!response.ok) {
-    let message = 'This claim link is invalid or has expired.';
+    let payload: unknown = null;
     try {
-      const err = await response.json();
-      if (typeof err?.message === 'string') message = err.message;
+      payload = await response.json();
     } catch {
       // ignore
     }
-    throw new Error(message);
+    throw new Error(httpErrorMessage(payload, 'This claim link is invalid or has expired.'));
   }
   return response.json();
 }

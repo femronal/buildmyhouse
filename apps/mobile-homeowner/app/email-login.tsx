@@ -5,7 +5,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { storeAuthToken } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { claimManagedAccount } from '@/lib/project-access';
-import { navigateAfterAuth, getPostAuthReturnPath } from '@/lib/post-auth-navigation';
+import { navigateAfterAuth, getPostAuthReturnPath, setPostAuthReturnPath, normalizePostAuthReturnPath } from '@/lib/post-auth-navigation';
+import { canSignInOnHomeownerApp, registerRoleForReturnPath } from '@/lib/homeowner-app-roles';
+import { postAuthContinueMessage } from '@/lib/vendor-claim-flow';
 import { ArrowLeft, Mail, Lock, User, Eye, EyeOff, LogIn, UserPlus } from "lucide-react-native";
 import LogoText from '@/components/LogoText';
 
@@ -20,7 +22,11 @@ const FAINT_COLOR = '#737373';
 export default function EmailLoginScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const params = useLocalSearchParams<{ accessToken?: string | string[]; mode?: string | string[] }>();
+  const params = useLocalSearchParams<{
+    accessToken?: string | string[];
+    mode?: string | string[];
+    returnTo?: string | string[];
+  }>();
   const accessToken = useMemo(
     () => {
       const raw = params.accessToken;
@@ -40,11 +46,23 @@ export default function EmailLoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const [pendingReturnPath, setPendingReturnPath] = useState<string | null>(null);
+  const returnToFromQuery = useMemo(() => {
+    const raw = params.returnTo;
+    return normalizePostAuthReturnPath(Array.isArray(raw) ? raw[0] : raw);
+  }, [params.returnTo]);
+  const [pendingReturnPath, setPendingReturnPath] = useState<string | null>(returnToFromQuery);
 
   useEffect(() => {
-    void getPostAuthReturnPath().then(setPendingReturnPath);
-  }, []);
+    void (async () => {
+      if (returnToFromQuery) {
+        await setPostAuthReturnPath(returnToFromQuery);
+        setPendingReturnPath(returnToFromQuery);
+        return;
+      }
+      const stored = await getPostAuthReturnPath();
+      setPendingReturnPath(stored);
+    })();
+  }, [returnToFromQuery]);
 
   const clearError = () => setFormError(null);
 
@@ -73,7 +91,7 @@ export default function EmailLoginScreen() {
             fullName: fullName.trim(),
             email: email.trim().toLowerCase(),
             password,
-            role: 'homeowner',
+            role: registerRoleForReturnPath(pendingReturnPath),
           })
         : await api.post('/auth/login', {
             email: email.trim().toLowerCase(),
@@ -85,11 +103,10 @@ export default function EmailLoginScreen() {
         return;
       }
 
-      // ROLE VALIDATION: Only allow homeowners
       const userRole = data.user?.role;
-      if (!userRole || userRole !== 'homeowner') {
+      if (!canSignInOnHomeownerApp(userRole)) {
         alert(
-          `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app to sign in.`
+          `This app is for homeowners and vendors.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app if you are a general contractor.`,
         );
         return;
       }
@@ -176,12 +193,16 @@ export default function EmailLoginScreen() {
                   </Text>
                   <Text className="text-sm mt-1.5" style={{ color: MUTED_COLOR, fontFamily: 'Poppins_400Regular' }}>
                     {isSignup
-                      ? 'Sign up with your email to start your first project.'
-                      : 'Use your email and password to continue.'}
+                      ? pendingReturnPath?.startsWith('/vendors/')
+                        ? 'Create an account to link this vendor listing to your login.'
+                        : 'Sign up with your email to start your first project.'
+                      : pendingReturnPath?.startsWith('/vendors/')
+                        ? 'Sign in with the account you want linked to this vendor listing.'
+                        : 'Use your email and password to continue.'}
                   </Text>
                   {pendingReturnPath ? (
                     <Text className="text-xs mt-3" style={{ color: '#34d399', fontFamily: 'Poppins_500Medium' }}>
-                      Sign in to continue viewing the plan you selected.
+                      {postAuthContinueMessage(pendingReturnPath)}
                     </Text>
                   ) : null}
                 </View>

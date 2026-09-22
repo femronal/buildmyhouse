@@ -11,15 +11,16 @@ import {
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
+import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useWebSeo } from '@/lib/seo';
 import {
   acceptVendorClaim,
   previewVendorClaim,
   type VendorClaimPreview,
 } from '@/lib/vendor-manage';
+import { buildAuthContinueHref, vendorClaimPath } from '@/lib/vendor-claim-flow';
 
-type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'error';
+type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'already' | 'error';
 
 export default function VendorClaimPage() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function VendorClaimPage() {
     () => (Array.isArray(params.token) ? params.token[0] : params.token)?.trim() || '',
     [params.token],
   );
+  const destinationPath = token ? vendorClaimPath(token) : '/vendors/claim';
 
   const [step, setStep] = useState<Step>('loading');
   const [preview, setPreview] = useState<VendorClaimPreview | null>(null);
@@ -38,7 +40,7 @@ export default function VendorClaimPage() {
   useWebSeo({
     title: 'Claim vendor profile | BuildMyHouse',
     description: 'Accept your BuildMyHouse vendor profile invitation.',
-    canonicalPath: token ? `/vendors/claim/${token}` : '/vendors/claim',
+    canonicalPath: token ? destinationPath : '/vendors/claim',
     robots: 'noindex,nofollow',
   });
 
@@ -55,7 +57,7 @@ export default function VendorClaimPage() {
         const data = await previewVendorClaim(token);
         if (cancelled) return;
         setPreview(data);
-        setStep('ready');
+        setStep(data.alreadyClaimedByYou ? 'already' : 'ready');
       } catch (e: any) {
         if (cancelled) return;
         setError(e?.message || 'Unable to load this claim invite.');
@@ -68,19 +70,17 @@ export default function VendorClaimPage() {
     };
   }, [token]);
 
-  const handleClaim = async () => {
-    if (!token) return;
+  const goToAuth = async (mode: 'signup' | 'signin') => {
+    await setPostAuthReturnPath(destinationPath);
+    router.push(buildAuthContinueHref(destinationPath, mode) as any);
+  };
 
-    const canContinue = await requireAuthToContinue({
-      router,
-      currentUser,
-      userLoading,
-      destinationPath: `/vendors/claim/${token}`,
-      promptTitle: 'Sign in to claim',
-      promptMessage:
-        'Sign in or create an account to link this vendor profile to your BuildMyHouse login.',
-    });
-    if (!canContinue) return;
+  const handleClaim = async () => {
+    if (!token || userLoading) return;
+    if (!currentUser) {
+      await goToAuth('signup');
+      return;
+    }
 
     setError(null);
     setStep('claiming');
@@ -103,8 +103,8 @@ export default function VendorClaimPage() {
           Claim your vendor profile
         </SeoHeading>
         <Text className="text-base mb-6" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          Linking this invite connects the business listing to your BuildMyHouse account so you can
-          keep public details up to date.
+          Use this invite to link the listing to a BuildMyHouse login. Claiming is not automatic listing
+          approval, and it does not make the business BuildMyHouse Verified.
         </Text>
 
         {step === 'loading' || userLoading ? (
@@ -113,22 +113,34 @@ export default function VendorClaimPage() {
           </View>
         ) : null}
 
-        {step === 'error' ? (
+        {!userLoading && step === 'error' ? (
           <View className="border rounded-2xl p-4" style={{ borderColor: LANDING_BORDER }}>
             <Text style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
               {error || 'This invite cannot be used.'}
             </Text>
-            <Link href={'/vendors/apply' as any} asChild>
+            <Text className="text-sm mt-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+              If BuildMyHouse already created this profile, ask us to send a fresh claim invite. Do not
+              submit a second “List your business” form — that creates a new application instead of
+              claiming this one.
+            </Text>
+            <Link href={'/vendors/claim' as any} asChild>
               <Pressable className="mt-4">
                 <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-                  Apply to list your business →
+                  How claiming works →
+                </Text>
+              </Pressable>
+            </Link>
+            <Link href={'/vendors/manage' as any} asChild>
+              <Pressable className="mt-3">
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                  Manage listing if you already claimed →
                 </Text>
               </Pressable>
             </Link>
           </View>
         ) : null}
 
-        {(step === 'ready' || step === 'claiming') && preview ? (
+        {!userLoading && (step === 'ready' || step === 'claiming') && preview ? (
           <View className="border rounded-2xl p-5" style={{ borderColor: LANDING_BORDER }}>
             <Text className="text-xl mb-1" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
               {preview.tradingName}
@@ -145,31 +157,79 @@ export default function VendorClaimPage() {
               </Text>
             ) : null}
 
-            <Pressable
-              onPress={handleClaim}
-              disabled={step === 'claiming'}
-              className="rounded-full bg-black px-5 py-3 items-center"
-              accessibilityRole="button"
-            >
-              {step === 'claiming' ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {currentUser ? 'Claim this profile' : 'Sign in and claim'}
+            {currentUser ? (
+              <Pressable
+                onPress={handleClaim}
+                disabled={step === 'claiming'}
+                className="rounded-full bg-black px-5 py-3 items-center"
+                accessibilityRole="button"
+              >
+                {step === 'claiming' ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Claim this profile
+                  </Text>
+                )}
+              </Pressable>
+            ) : (
+              <View>
+                <Text className="text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+                  Create a free account (or sign in) to finish claiming. You will come back to this page
+                  automatically.
                 </Text>
-              )}
+                <Pressable
+                  onPress={() => void goToAuth('signup')}
+                  className="rounded-full bg-black px-5 py-3 items-center mb-3"
+                  accessibilityRole="button"
+                >
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Create account to claim
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void goToAuth('signin')}
+                  className="rounded-full border px-5 py-3 items-center"
+                  style={{ borderColor: LANDING_BORDER }}
+                  accessibilityRole="button"
+                >
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                    I already have an account
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        ) : null}
+
+        {!userLoading && step === 'already' && preview ? (
+          <View className="border rounded-2xl p-5" style={{ borderColor: LANDING_BORDER }}>
+            <Text className="text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+              This profile is already linked to your account
+            </Text>
+            <Text className="text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+              {preview.tradingName} is connected to this login. Verification is a separate BuildMyHouse
+              review step.
+            </Text>
+            <Pressable
+              onPress={() => router.replace('/vendors/manage' as any)}
+              className="rounded-full bg-black px-5 py-3 items-center"
+            >
+              <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Open vendor manage
+              </Text>
             </Pressable>
           </View>
         ) : null}
 
-        {step === 'done' ? (
+        {!userLoading && step === 'done' ? (
           <View className="border rounded-2xl p-5" style={{ borderColor: LANDING_BORDER }}>
             <Text className="text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
               Profile claimed
             </Text>
             <Text className="text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
               You can now update contact details, offerings, and delivery coverage. Sensitive identity
-              changes still need BuildMyHouse review.
+              changes still need BuildMyHouse review. Claiming does not stamp the listing as Verified.
             </Text>
             <Pressable
               onPress={() => router.replace('/vendors/manage' as any)}

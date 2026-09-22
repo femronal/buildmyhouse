@@ -4,6 +4,7 @@ import {
   VendorVerificationStatus,
 } from '@prisma/client';
 import {
+  coerceWebsiteUrl,
   computeProfileCompleteness,
   isPubliclyListed,
   normalizeEmail,
@@ -19,10 +20,18 @@ describe('vendor-helpers', () => {
     expect(normalizeVendorSlug('  Dangote Cement — Lagos!! ')).toBe('dangote-cement-lagos');
   });
 
-  it('normalizes phones and emails', () => {
+  it('normalizes phones and emails including China +86', () => {
     expect(normalizePhone('+234 801 234 5678')).toBe('2348012345678');
+    expect(normalizePhone('+86 135 2712 9229')).toBe('8613527129229');
+    expect(normalizePhone('13527129229')).toBe('13527129229');
     expect(normalizeEmail(' Vendor@Example.COM ')).toBe('vendor@example.com');
     expect(normalizeTradingName('Acme  Building!!')).toBe('acme building');
+  });
+
+  it('coerces website URLs missing a protocol so apply/claim updates can submit', () => {
+    expect(coerceWebsiteUrl('primahousing.com')).toBe('https://primahousing.com');
+    expect(coerceWebsiteUrl('https://primahousing.com')).toBe('https://primahousing.com');
+    expect(coerceWebsiteUrl('  ')).toBeUndefined();
   });
 
   it('computes completeness without treating it as verification', () => {

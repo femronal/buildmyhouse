@@ -52,6 +52,15 @@ export function websiteDomain(value?: string | null): string | null {
   }
 }
 
+/** Accept vendor-entered sites without a protocol (common on the apply form). */
+export function coerceWebsiteUrl(value?: string | null): string | undefined {
+  if (value == null) return undefined;
+  const trimmed = String(value).trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
 export function buildApplicationReference(now = new Date()): string {
   const y = now.getUTCFullYear();
   const m = String(now.getUTCMonth() + 1).padStart(2, '0');

@@ -39,6 +39,7 @@ import {
 import {
   VERIFICATION_CHECK_KEYS,
   buildApplicationReference,
+  coerceWebsiteUrl,
   computeProfileCompleteness,
   isPubliclyListed,
   normalizeEmail,
@@ -168,7 +169,7 @@ export class VendorsService {
         showPublicPhone: dto.showPublicPhone ?? true,
         showPublicWhatsApp: dto.showPublicWhatsApp ?? true,
         showPublicEmail: dto.showPublicEmail ?? false,
-        websiteUrl: dto.websiteUrl || null,
+        websiteUrl: coerceWebsiteUrl(dto.websiteUrl) || null,
         socialLinks: dto.socialLinks || undefined,
         preferredContactMethod: dto.preferredContactMethod || null,
         salesContactName: dto.salesContactName || null,
@@ -953,9 +954,34 @@ export class VendorsService {
   // Claim + vendor manage
   // ---------------------------------------------------------------------------
 
-  async previewClaim(rawToken: string) {
-    const invite = await this.findValidInvite(rawToken);
+  async previewClaim(rawToken: string, userId?: string) {
+    const invite = await this.loadInvite(rawToken);
     const profile = await this.requireVendor(invite.vendorProfileId);
+    const alreadyOwnedByCaller = Boolean(userId && profile.userId === userId);
+    const claimedByOther = Boolean(profile.userId && profile.userId !== userId);
+
+    if (alreadyOwnedByCaller) {
+      return {
+        tradingName: profile.tradingName,
+        slug: profile.slug,
+        email: invite.email,
+        expiresAt: invite.expiresAt,
+        alreadyClaimedByYou: true,
+      };
+    }
+
+    if (invite.usedAt || claimedByOther) {
+      throw new ConflictException(
+        'This invite has already been used. Sign in with the account that claimed the listing to manage it.',
+      );
+    }
+
+    if (invite.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'This claim invite has expired. Ask BuildMyHouse to send a new invite.',
+      );
+    }
+
     return {
       tradingName: profile.tradingName,
       slug: profile.slug,
@@ -965,9 +991,36 @@ export class VendorsService {
   }
 
   async acceptClaim(rawToken: string, userId: string) {
-    const invite = await this.findValidInvite(rawToken);
+    const invite = await this.loadInvite(rawToken);
+    const profile = await this.requireVendor(invite.vendorProfileId);
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+
+    if (profile.userId === userId) {
+      if (!invite.usedAt) {
+        await this.prisma.vendorClaimInvite.update({
+          where: { id: invite.id },
+          data: { usedAt: new Date() },
+        });
+      }
+      return this.getManagedProfile(userId);
+    }
+
+    if (profile.userId && profile.userId !== userId) {
+      throw new ConflictException(
+        'This vendor profile has already been claimed by another account.',
+      );
+    }
+
+    if (invite.usedAt) {
+      throw new ConflictException('This invite has already been used.');
+    }
+
+    if (invite.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'This claim invite has expired. Ask BuildMyHouse to send a new invite.',
+      );
+    }
 
     const existing = await this.prisma.vendorProfile.findUnique({ where: { userId } });
     if (existing && existing.id !== invite.vendorProfileId) {
@@ -1050,7 +1103,7 @@ export class VendorsService {
         showPublicPhone: dto.showPublicPhone,
         showPublicWhatsApp: dto.showPublicWhatsApp,
         showPublicEmail: dto.showPublicEmail,
-        websiteUrl: dto.websiteUrl,
+        websiteUrl: dto.websiteUrl !== undefined ? coerceWebsiteUrl(dto.websiteUrl) || null : undefined,
         logoUrl: dto.logoUrl,
         socialLinks: dto.socialLinks,
         paymentMethodsAccepted: dto.paymentMethodsAccepted,
@@ -1463,10 +1516,17 @@ export class VendorsService {
     return createHash('sha256').update(raw).digest('hex');
   }
 
-  private async findValidInvite(rawToken: string) {
-    const tokenHash = this.hashToken(rawToken);
+  private async loadInvite(rawToken: string) {
+    const token = String(rawToken || '').trim();
+    if (!token) throw new NotFoundException('This claim link is invalid.');
+    const tokenHash = this.hashToken(token);
     const invite = await this.prisma.vendorClaimInvite.findUnique({ where: { tokenHash } });
-    if (!invite) throw new NotFoundException('Invite not found');
+    if (!invite) throw new NotFoundException('This claim link is invalid.');
+    return invite;
+  }
+
+  private async findValidInvite(rawToken: string) {
+    const invite = await this.loadInvite(rawToken);
     if (invite.usedAt) throw new ConflictException('Invite has already been used');
     if (invite.expiresAt.getTime() < Date.now()) {
       throw new BadRequestException('Invite has expired');

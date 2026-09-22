@@ -8,8 +8,20 @@ async function getStorage() {
   return AsyncStorage;
 }
 
+/** Only same-origin app paths. Reject protocol-relative and absolute URLs. */
+export function normalizePostAuthReturnPath(path?: string | null): string | null {
+  if (!path) return null;
+  const trimmed = String(path).trim();
+  if (!trimmed.startsWith('/')) return null;
+  if (trimmed.startsWith('//')) return null;
+  if (trimmed.includes('://')) return null;
+  if (trimmed.includes('\\')) return null;
+  return trimmed;
+}
+
 export async function setPostAuthReturnPath(path: string) {
-  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const normalized = normalizePostAuthReturnPath(path);
+  if (!normalized) return;
   const storage = await getStorage();
   await storage.setItem(POST_AUTH_RETURN_PATH_KEY, normalized);
 }
@@ -17,8 +29,7 @@ export async function setPostAuthReturnPath(path: string) {
 export async function getPostAuthReturnPath(): Promise<string | null> {
   const storage = await getStorage();
   const value = await storage.getItem(POST_AUTH_RETURN_PATH_KEY);
-  if (!value || !value.startsWith('/')) return null;
-  return value;
+  return normalizePostAuthReturnPath(value);
 }
 
 export async function clearPostAuthReturnPath() {

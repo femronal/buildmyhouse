@@ -128,16 +128,153 @@ describe('VendorsService', () => {
     expect(created.listingStatus).toBe(VendorListingStatus.internal_only);
   });
 
-  it('claim invite cannot be reused', async () => {
+  it('claim invite cannot be reused by a different visitor', async () => {
     const prisma = mockPrisma();
     prisma.vendorClaimInvite.findUnique.mockResolvedValue({
       id: 'inv1',
       vendorProfileId: 'v1',
       usedAt: new Date(),
       expiresAt: new Date(Date.now() + 86400000),
+      email: 'info@primahousing.com',
+    });
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      userId: 'owner-1',
+      tradingName: 'Prima',
+      slug: 'prima',
+      deletedAt: null,
     });
     const service = new VendorsService(prisma as any, email as any);
     await expect(service.previewClaim('raw-token')).rejects.toThrow(/already been used/i);
+  });
+
+  it('previewClaim tells the owning user the invite is already linked', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      vendorProfileId: 'v1',
+      usedAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000),
+      email: 'info@primahousing.com',
+    });
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      userId: 'u1',
+      tradingName: 'Prima',
+      slug: 'prima',
+      deletedAt: null,
+    });
+    const service = new VendorsService(prisma as any, email as any);
+    const preview = await service.previewClaim('raw-token', 'u1');
+    expect(preview.alreadyClaimedByYou).toBe(true);
+    expect(preview.tradingName).toBe('Prima');
+  });
+
+  it('acceptClaim links the account without stamping Verified', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      vendorProfileId: 'v1',
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 86400000),
+      email: 'info@primahousing.com',
+    });
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      userId: null,
+      tradingName: 'Prima',
+      slug: 'prima',
+      deletedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'homeowner' });
+    prisma.vendorProfile.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 'v1',
+        userId: 'u1',
+        tradingName: 'Prima',
+        verificationStatus: VendorVerificationStatus.unverified,
+        listingStatus: VendorListingStatus.listed,
+        claimStatus: VendorClaimStatus.claimed,
+        offerings: [],
+        serviceAreas: [],
+        documents: [],
+        changeRequests: [],
+      });
+    const service = new VendorsService(prisma as any, email as any);
+    const result = await service.acceptClaim('raw-token', 'u1');
+
+    expect(prisma.vendorProfile.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 'u1',
+          claimStatus: VendorClaimStatus.claimed,
+        }),
+      }),
+    );
+    const updateData = prisma.vendorProfile.update.mock.calls[0][0].data;
+    expect(updateData.verificationStatus).toBeUndefined();
+    expect(prisma.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { role: 'vendor' } }),
+    );
+    expect(result.verificationStatus).toBe(VendorVerificationStatus.unverified);
+  });
+
+  it('acceptClaim refuses to steal a profile already linked to another user', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      vendorProfileId: 'v1',
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 86400000),
+      email: 'info@primahousing.com',
+    });
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      userId: 'owner-1',
+      tradingName: 'Prima',
+      slug: 'prima',
+      deletedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({ id: 'u2', role: 'homeowner' });
+    const service = new VendorsService(prisma as any, email as any);
+    await expect(service.acceptClaim('raw-token', 'u2')).rejects.toThrow(/already been claimed/i);
+    expect(prisma.vendorProfile.update).not.toHaveBeenCalled();
+  });
+
+  it('acceptClaim is idempotent for the owning user', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      vendorProfileId: 'v1',
+      usedAt: new Date(),
+      expiresAt: new Date(Date.now() + 86400000),
+      email: 'info@primahousing.com',
+    });
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      userId: 'u1',
+      tradingName: 'Prima',
+      slug: 'prima',
+      deletedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({ id: 'u1', role: 'vendor' });
+    prisma.vendorProfile.findUnique.mockResolvedValue({
+      id: 'v1',
+      userId: 'u1',
+      tradingName: 'Prima',
+      verificationStatus: VendorVerificationStatus.unverified,
+      listingStatus: VendorListingStatus.listed,
+      claimStatus: VendorClaimStatus.claimed,
+      offerings: [],
+      serviceAreas: [],
+      documents: [],
+      changeRequests: [],
+    });
+    const service = new VendorsService(prisma as any, email as any);
+    const result = await service.acceptClaim('raw-token', 'u1');
+    expect(result.id).toBe('v1');
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 
   it('adminApproveListing publishes without auto-verifying', async () => {
