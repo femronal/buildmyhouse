@@ -73,8 +73,7 @@ function VendorCard({ vendor }: { vendor: PublicVendorCard }) {
   const sales = [vendor.sellsRetail ? 'Retail' : null, vendor.sellsWholesale ? 'Wholesale' : null]
     .filter(Boolean)
     .join(' · ');
-  const delivery =
-    vendor.deliveryAvailable === true ? 'Delivery' : vendor.deliveryAvailable === false ? 'Pickup' : null;
+  const delivery = vendor.deliveryAvailable === true ? 'Delivery' : null;
   const meta = [location, sales, delivery, vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ yrs` : null]
     .filter(Boolean)
     .join(' · ');
@@ -286,7 +285,7 @@ export default function VendorDirectoryPage() {
                 <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>
                   Unable to load vendors right now. Please try again shortly.
                 </Text>
-                <Pressable onPress={() => refetch()} style={{ marginTop: 8 }}>
+                <Pressable onPress={() => refetch()} accessibilityRole="button" style={{ marginTop: 8 }}>
                   <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Retry</Text>
                 </Pressable>
               </View>

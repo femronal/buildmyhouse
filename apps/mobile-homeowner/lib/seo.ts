@@ -381,6 +381,26 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (normalized === '/vendors') {
+    return {
+      title: 'Building Material Vendors in Nigeria | BuildMyHouse',
+      description:
+        'Discover listed building-material suppliers by category, location, brands, and BuildMyHouse verification status.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/professionals') {
+    return {
+      title: 'Construction Professionals in Nigeria | BuildMyHouse',
+      description:
+        'Find architects, engineers, quantity surveyors, land surveyors, property lawyers and other construction professionals in Nigeria. See services, locations and BuildMyHouse credential checks.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
   if (normalized === '/articles' || normalized.startsWith('/articles/')) {
     return {
       title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',

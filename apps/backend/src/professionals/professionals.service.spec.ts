@@ -103,7 +103,7 @@ describe('ProfessionalsService', () => {
     expect((result.data[0] as any).phone).toBeUndefined();
     expect(prisma.professionalListing.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        orderBy: [{ searchRank: 'desc' }, { displayName: 'asc' }],
+        orderBy: [{ searchRank: 'desc' }, { displayName: 'asc' }, { id: 'asc' }],
       }),
     );
   });
@@ -116,7 +116,7 @@ describe('ProfessionalsService', () => {
     await service.searchPublic({ page: 1, limit: 20, sort: 'name' });
     expect(prisma.professionalListing.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        orderBy: [{ displayName: 'asc' }],
+        orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
       }),
     );
   });

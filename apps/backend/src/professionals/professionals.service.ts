@@ -316,8 +316,8 @@ export class ProfessionalsService implements OnModuleInit {
         include: PUBLIC_INCLUDE,
         orderBy:
           query.sort === 'name'
-            ? [{ displayName: 'asc' as const }]
-            : [{ searchRank: 'desc' as const }, { displayName: 'asc' as const }],
+            ? [{ displayName: 'asc' as const }, { id: 'asc' as const }]
+            : [{ searchRank: 'desc' as const }, { displayName: 'asc' as const }, { id: 'asc' as const }],
         skip: (page - 1) * limit,
         take: limit,
       }),

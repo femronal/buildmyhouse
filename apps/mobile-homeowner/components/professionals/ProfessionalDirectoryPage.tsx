@@ -343,7 +343,7 @@ export default function ProfessionalDirectoryPage() {
                 <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>
                   Unable to load professionals right now.
                 </Text>
-                <Pressable onPress={() => listQuery.refetch()} style={{ marginTop: 8 }}>
+                <Pressable onPress={() => listQuery.refetch()} accessibilityRole="button" style={{ marginTop: 8 }}>
                   <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Retry</Text>
                 </Pressable>
               </View>

@@ -84,6 +84,7 @@ describe('VendorsService', () => {
           { profileCompleteness: 'desc' },
           { listedAt: 'desc' },
           { createdAt: 'desc' },
+          { id: 'asc' },
         ],
       }),
     );
@@ -97,7 +98,7 @@ describe('VendorsService', () => {
     await service.searchPublic({ page: 1, limit: 20, sort: 'name' });
     expect(prisma.vendorProfile.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        orderBy: [{ tradingName: 'asc' }],
+        orderBy: [{ tradingName: 'asc' }, { id: 'asc' }],
       }),
     );
   });
