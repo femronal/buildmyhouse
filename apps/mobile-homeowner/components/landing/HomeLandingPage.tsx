@@ -50,6 +50,7 @@ import {
   type AudienceTab,
 } from '@/lib/home-landing-content';
 import { trackWebEvent } from '@/lib/analytics';
+import { LEGAL_OPERATOR_LINE } from '@buildmyhouse/shared-utils';
 
 function WebWordSlider({
   words,
@@ -1168,6 +1169,9 @@ export default function HomeLandingPage() {
 
               <Text className="text-xs text-white/70 text-center mt-6" style={{ fontFamily: 'Poppins_500Medium' }}>
                 © {new Date().getFullYear()} BuildMyHouse. Built with care in Lagos, Nigeria.
+              </Text>
+              <Text className="text-xs text-white/70 text-center mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {LEGAL_OPERATOR_LINE}
               </Text>
             </View>
           </View>
