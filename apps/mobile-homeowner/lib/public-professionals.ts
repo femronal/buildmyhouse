@@ -60,6 +60,7 @@ export type ProfessionalSearchParams = {
   siteVisits?: boolean;
   signedReport?: boolean;
   professionalType?: 'individual' | 'firm';
+  sort?: 'best' | 'name';
   page?: number;
   limit?: number;
 };

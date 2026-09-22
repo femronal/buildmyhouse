@@ -1,157 +1,165 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import DirectoryBrowse, {
+  DirectoryActionLink,
+  DirectoryPill,
+  useDirectoryColumns,
+  type DirectoryChip,
+  type DirectoryFilterSection,
+} from '@/components/directory/DirectoryBrowse';
+import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
+import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
+import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
-import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
+  DIRECTORY_PAGE_SIZE,
+  PROFESSIONAL_DIRECTORY_SUMMARY,
+  PROFESSIONAL_QUERY_ORDER,
+  directoryCanonical,
+  humanizeKey,
+  initialsFromName,
+  normalizeSearchParams,
+  professionalDirectoryHeading,
+  readFlag,
+  readPage,
+  readSort,
+  toggleFilterHref,
+  withDirectoryParams,
+} from '@/lib/directory-listing';
 import {
   fetchProfessionalMeta,
   fetchPublicProfessionals,
   type PublicProfessionalCard,
 } from '@/lib/public-professionals';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
-import { useWebSeo } from '@/lib/seo';
+import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 
-function FilterChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      className={`rounded-full px-3 py-1.5 mr-2 mb-2 border ${active ? 'bg-black' : 'bg-white'}`}
-      style={{ borderColor: active ? '#000' : LANDING_BORDER }}
-      accessibilityRole="button"
-    >
-      <Text className="text-xs" style={{ fontFamily: 'Poppins_600SemiBold', color: active ? '#fff' : LANDING_INK }}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
-function TrustPills({ professional }: { professional: PublicProfessionalCard }) {
-  const pills = [
-    professional.trust.listingLabel,
-    professional.trust.claimedLabel,
-    professional.trust.credentialLabel,
-    professional.trust.usedByBmhLabel,
-  ].filter(Boolean) as string[];
-  return (
-    <View className="flex-row flex-wrap mt-2">
-      {pills.map((label) => (
-        <View
-          key={label}
-          className={`rounded-full px-2 py-0.5 mr-1 mb-1 ${label === 'Listed' && !professional.trust.credentialLabel ? 'border' : 'bg-black'}`}
-          style={label === 'Listed' && !professional.trust.credentialLabel ? { borderColor: LANDING_BORDER } : undefined}
-        >
-          <Text
-            className="text-[10px]"
-            style={{
-              fontFamily: 'Poppins_600SemiBold',
-              color: label === 'Listed' && !professional.trust.credentialLabel ? LANDING_MUTED : '#fff',
-            }}
-          >
-            {label}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
+const PATH = '/professionals';
+const FEATURED_STATE_KEYS = ['lagos', 'ogun', 'fct', 'edo', 'rivers', 'oyo'];
 
 function ProfessionalCard({ professional }: { professional: PublicProfessionalCard }) {
   const location = [professional.city, professional.state, ...(professional.serviceStates || [])]
     .filter(Boolean)
-    .filter((item, index, arr) => arr.indexOf(item) === index)
+    .filter((item, index, all) => all.indexOf(item) === index)
     .slice(0, 3)
     .join(' · ');
+  const capabilities = [
+    professional.siteVisits ? 'Site inspections' : null,
+    professional.remoteConsultation ? 'Remote consultation' : null,
+    professional.canIssueSignedReport ? 'Signed reports' : null,
+  ].filter(Boolean) as string[];
+  const badges = [
+    { label: professional.trust.listingLabel, tone: 'outline' as const },
+    professional.trust.claimedLabel ? { label: professional.trust.claimedLabel, tone: 'solid' as const } : null,
+    professional.trust.credentialLabel ? { label: professional.trust.credentialLabel, tone: 'solid' as const } : null,
+    professional.trust.usedByBmhLabel ? { label: professional.trust.usedByBmhLabel, tone: 'solid' as const } : null,
+  ].filter(Boolean) as Array<{ label: string; tone: 'outline' | 'solid' }>;
+  const role = [
+    professional.profession?.label || 'Professional',
+    professional.professionalType === 'firm' ? 'Firm' : 'Individual',
+  ].join(' · ');
+
   return (
     <Link href={`/professionals/${professional.slug}` as any} asChild>
-      <Pressable className="border rounded-2xl p-4 mb-3" style={{ borderColor: LANDING_BORDER }} accessibilityRole="link">
-        <Text className="text-base" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-          {professional.displayName}
-        </Text>
-        <Text className="text-sm mt-1" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
-          {professional.profession?.label || 'Professional'}
-        </Text>
-        {professional.specialties.length > 0 && (
-          <Text className="text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {professional.specialties.slice(0, 3).map((s) => s.label).join(' · ')}
-          </Text>
-        )}
-        {location ? (
-          <Text className="text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {location}
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`${professional.displayName}, ${professional.trust.listingLabel}`}
+        style={{
+          borderWidth: 1,
+          borderColor: LANDING_BORDER,
+          borderRadius: 16,
+          backgroundColor: '#fff',
+          padding: 14,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: professional.professionalType === 'firm' ? 12 : 28,
+              backgroundColor: LANDING_SURFACE,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12,
+            }}
+          >
+            <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
+              {initialsFromName(professional.displayName)}
+            </Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text numberOfLines={2} style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
+              {professional.displayName}
+            </Text>
+            <Text style={{ marginTop: 2, fontFamily: 'Poppins_500Medium', fontSize: 13, color: LANDING_INK }}>{role}</Text>
+            {location ? (
+              <Text style={{ marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED }}>
+                {location}
+              </Text>
+            ) : null}
+          </View>
+        </View>
+        {professional.specialties.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
+            {professional.specialties.slice(0, 4).map((specialty) => (
+              <DirectoryPill key={specialty.key} label={specialty.label} />
+            ))}
+          </View>
+        ) : null}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+          {badges.map((badge) => (
+            <DirectoryPill key={badge.label} label={badge.label} tone={badge.tone} />
+          ))}
+        </View>
+        {capabilities.length > 0 ? (
+          <Text style={{ marginTop: 4, fontFamily: 'Poppins_400Regular', fontSize: 12, color: LANDING_MUTED }}>
+            {capabilities.join(' · ')}
           </Text>
         ) : null}
-        <TrustPills professional={professional} />
-        <Text className="text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          {[
-            professional.siteVisits ? 'Site inspections' : null,
-            professional.remoteConsultation ? 'Remote consultation' : null,
-            professional.canIssueSignedReport ? 'Signed reports' : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </Text>
-        {professional.projectStages.length > 0 && (
-          <Text className="text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {professional.projectStages.slice(0, 3).map((s) => s.label).join(' · ')}
-          </Text>
-        )}
-        <Text className="text-xs mt-3" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-          View professional →
-        </Text>
       </Pressable>
     </Link>
   );
 }
 
 export default function ProfessionalDirectoryPage() {
+  usePageOwnedSeo();
   const router = useRouter();
-  const params = useLocalSearchParams<{
-    q?: string;
-    profession?: string;
-    need?: string;
-    state?: string;
-    credentialChecked?: string;
-    usedByBmh?: string;
-    siteVisits?: string;
-    signedReport?: string;
-    remoteConsultation?: string;
-    type?: string;
-  }>();
-
-  const setParam = (key: string, value?: string) => {
-    const next = { ...params, [key]: value || undefined };
-    router.setParams(next as any);
-  };
-
-  const title = 'Construction Professionals in Nigeria';
-  const summary =
-    'Find architects, engineers, quantity surveyors, surveyors, property lawyers and other professionals by what you need done, where they operate, and whether BuildMyHouse has checked their credentials. Listing is not the same as verification.';
+  const raw = useLocalSearchParams();
+  const params = useMemo(() => normalizeSearchParams(raw, PROFESSIONAL_QUERY_ORDER), [raw]);
+  const columns = useDirectoryColumns('professional');
+  const page = readPage(params.page);
+  const sort = readSort(params.sort);
+  const metaQuery = useQuery({ queryKey: ['professional-meta'], queryFn: fetchProfessionalMeta });
+  const professions = metaQuery.data?.professions || [];
+  const needs = metaQuery.data?.needs || [];
+  const states = (metaQuery.data?.states || []).filter((state: { key: string }) =>
+    FEATURED_STATE_KEYS.includes(state.key),
+  );
+  const professionLabel = params.profession
+    ? professions.find((item: { key: string; label: string }) => item.key === params.profession)?.label ||
+      humanizeKey(params.profession)
+    : undefined;
+  const stateLabel = params.state
+    ? (metaQuery.data?.states || []).find((item: { key: string; label: string }) => item.key === params.state)?.label ||
+      humanizeKey(params.state)
+    : undefined;
+  const needLabel = params.need
+    ? needs.find((item: { key: string; label: string }) => item.key === params.need)?.label || humanizeKey(params.need)
+    : undefined;
+  const title = professionalDirectoryHeading({ professionLabel, stateLabel, needLabel });
+  const canonicalPath = directoryCanonical(PATH, params, ['profession', 'need', 'state']);
 
   useWebSeo({
     title: `${title} | BuildMyHouse`,
-    description: summary,
-    canonicalPath: '/professionals',
+    description: PROFESSIONAL_DIRECTORY_SUMMARY,
+    canonicalPath,
     robots: 'index,follow',
     jsonLd: buildSeoJsonLd({
-      path: '/professionals',
+      path: canonicalPath,
       title,
-      description: summary,
+      description: PROFESSIONAL_DIRECTORY_SUMMARY,
       schemaType: 'Service',
       breadcrumbs: [
         { name: 'Home', path: '/' },
@@ -160,11 +168,13 @@ export default function ProfessionalDirectoryPage() {
       faqs: [
         {
           question: 'Does listing mean BuildMyHouse verified this professional?',
-          answer: 'No. Listing only means the professional appears in the directory. Credential checks and previous BuildMyHouse use are shown separately.',
+          answer:
+            'No. Listing only means the professional appears in the directory. Credential checks and previous BuildMyHouse use are shown separately.',
         },
         {
           question: 'What does credential checked mean?',
-          answer: 'BuildMyHouse reviewed the relevant registration or documents and recorded the date. It does not guarantee future performance.',
+          answer:
+            'BuildMyHouse reviewed the relevant registration or documents and recorded the date. It does not guarantee future performance.',
         },
       ],
     }),
@@ -172,163 +182,198 @@ export default function ProfessionalDirectoryPage() {
 
   const searchParams = useMemo(
     () => ({
-      q: typeof params.q === 'string' ? params.q : undefined,
-      profession: typeof params.profession === 'string' ? params.profession : undefined,
-      need: typeof params.need === 'string' ? params.need : undefined,
-      state: typeof params.state === 'string' ? params.state : undefined,
-      credentialChecked: params.credentialChecked === '1' || undefined,
-      usedByBmh: params.usedByBmh === '1' || undefined,
-      siteVisits: params.siteVisits === '1' || undefined,
-      signedReport: params.signedReport === '1' || undefined,
-      remoteConsultation: params.remoteConsultation === '1' || undefined,
-      professionalType: params.type === 'firm' || params.type === 'individual' ? params.type : undefined,
-      limit: 30,
+      q: params.q?.trim() || undefined,
+      profession: params.profession,
+      need: params.need,
+      state: params.state,
+      credentialChecked: readFlag(params.credentialChecked) || undefined,
+      usedByBmh: readFlag(params.usedByBmh) || undefined,
+      siteVisits: readFlag(params.siteVisits) || undefined,
+      signedReport: readFlag(params.signedReport) || undefined,
+      remoteConsultation: readFlag(params.remoteConsultation) || undefined,
+      professionalType:
+        params.type === 'firm' || params.type === 'individual' ? (params.type as 'firm' | 'individual') : undefined,
+      sort: sort === 'name' ? ('name' as const) : undefined,
+      page,
+      limit: DIRECTORY_PAGE_SIZE,
     }),
-    [params],
+    [page, params, sort],
   );
 
-  const metaQuery = useQuery({ queryKey: ['professional-meta'], queryFn: fetchProfessionalMeta });
   const listQuery = useQuery({
     queryKey: ['public-professionals', searchParams],
     queryFn: () => fetchPublicProfessionals(searchParams),
   });
+
+  const onSearchChange = useCallback(
+    (value: string) => {
+      router.replace(
+        withDirectoryParams(PATH, params, { q: value.trim() || undefined }, PROFESSIONAL_QUERY_ORDER) as any,
+      );
+    },
+    [params, router],
+  );
+
+  const chip = (key: string, label: string, param: string, value: string): DirectoryChip => ({
+    key,
+    label,
+    active: params[param] === value,
+    href: toggleFilterHref(PATH, params, param, value, PROFESSIONAL_QUERY_ORDER),
+  });
+
+  const needChips: DirectoryChip[] = needs.map((need: { key: string; label: string }) =>
+    chip(`need-${need.key}`, need.label, 'need', need.key),
+  );
+  const featuredProfessions = professions.slice(0, 8) as Array<{ key: string; label: string }>;
+  const professionSource = (professions.length ? professions : featuredProfessions) as Array<{ key: string; label: string }>;
+  const professionChips: DirectoryChip[] = professionSource.map((item) =>
+    chip(`profession-${item.key}`, item.label, 'profession', item.key),
+  );
+  const quickProfessions: DirectoryChip[] = featuredProfessions.map((item) =>
+    chip(`profession-${item.key}`, item.label, 'profession', item.key),
+  );
+  if (params.profession && !quickProfessions.some((item) => item.active)) {
+    quickProfessions.unshift(
+      chip(`profession-${params.profession}`, professionLabel || params.profession, 'profession', params.profession),
+    );
+  }
+  const stateChips: DirectoryChip[] = states.map((item: { key: string; label: string }) =>
+    chip(`state-${item.key}`, item.label, 'state', item.key),
+  );
+  const capabilityChips = [
+    chip('credential', 'Credential checked', 'credentialChecked', '1'),
+    chip('used', 'Used by BuildMyHouse', 'usedByBmh', '1'),
+    chip('visits', 'Site visits', 'siteVisits', '1'),
+    chip('remote', 'Remote consultation', 'remoteConsultation', '1'),
+    chip('signed', 'Signed reports', 'signedReport', '1'),
+    chip('individual', 'Individual', 'type', 'individual'),
+    chip('firm', 'Firm', 'type', 'firm'),
+  ];
+  if (params.profession && !professionChips.some((item) => item.active)) {
+    professionChips.unshift(chip(`profession-${params.profession}`, professionLabel || params.profession, 'profession', params.profession));
+  }
+  if (params.need && !needChips.some((item) => item.active)) {
+    needChips.unshift(chip(`need-${params.need}`, needLabel || params.need, 'need', params.need));
+  }
+  if (params.state && !stateChips.some((item) => item.active)) {
+    stateChips.unshift(chip(`state-${params.state}`, stateLabel || params.state, 'state', params.state));
+  }
+
+  const sections: DirectoryFilterSection[] = [
+    {
+      id: 'need',
+      title: 'What do you need checked or done?',
+      hint: 'These point to professionals commonly relevant to the task. They are not a legal or professional diagnosis.',
+      chips: needChips,
+    },
+    { id: 'profession', title: 'Profession', chips: professionChips },
+    { id: 'location', title: 'Location', chips: stateChips },
+    { id: 'trust', title: 'Trust and capability', chips: capabilityChips },
+  ];
+  const activeFilterCount = [
+    params.profession,
+    params.need,
+    params.state,
+    params.credentialChecked,
+    params.usedByBmh,
+    params.siteVisits,
+    params.remoteConsultation,
+    params.signedReport,
+    params.type,
+  ].filter(Boolean).length;
+
   const professionals = listQuery.data?.professionals ?? [];
-  const needs = metaQuery.data?.needs || [];
-  const professions = metaQuery.data?.professions || [];
-  const states = metaQuery.data?.states || [];
-  const featuredProfessions = professions.slice(0, 8);
+  const total = listQuery.data?.meta?.total ?? 0;
+  const totalPages = listQuery.data?.meta?.totalPages ?? 0;
+  const pageHref = (nextPage: number) =>
+    withDirectoryParams(
+      PATH,
+      params,
+      { page: nextPage <= 1 ? undefined : String(nextPage) },
+      PROFESSIONAL_QUERY_ORDER,
+      false,
+    );
 
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
-      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
+    <View className="flex-1 bg-white">
+      <DirectorySiteHeader current="professionals" />
+      <SeoContentShell contentContainerStyle={{ paddingBottom: 96 }}>
+      <View className="w-full max-w-[1120px] self-center px-4 md:px-6 pt-6 md:pt-10">
         <SeoContentBackButton fallbackHref="/" />
-        <View className="border rounded-3xl p-6 mb-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-            {title}
-          </SeoHeading>
-          <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {summary}
-          </Text>
-          <View className="flex-row flex-wrap mt-3">
-            <Link href={'/professionals/apply' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>List your professional practice</Text>
-              </Pressable>
-            </Link>
-            <Link href={'/professionals/manage' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 border" style={{ borderColor: LANDING_BORDER }}>
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>Manage listing</Text>
-              </Pressable>
-            </Link>
-            <Link href={'/book-repair' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mb-2 border" style={{ borderColor: LANDING_BORDER }}>
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>Find someone for my project</Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-
-        <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-          What do you need checked or done?
-        </Text>
-        <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          These point to professionals commonly relevant to the task. They are not a legal or professional diagnosis.
-        </Text>
-        <View className="flex-row flex-wrap mb-4">
-          {needs.map((need: any) => (
-            <FilterChip
-              key={need.key}
-              label={need.label}
-              active={searchParams.need === need.key}
-              onPress={() => setParam('need', searchParams.need === need.key ? undefined : need.key)}
-            />
+        <DirectoryBrowse
+          title={title}
+          summary={PROFESSIONAL_DIRECTORY_SUMMARY}
+          searchValue={params.q || ''}
+          onSearchChange={onSearchChange}
+          searchPlaceholder="Search BOQ, foundation inspection, COREN, Lagos…"
+          quickChips={needChips}
+          wideChips={[...quickProfessions, ...stateChips, ...capabilityChips]}
+          sections={sections}
+          activeFilterCount={activeFilterCount}
+          clearHref={PATH}
+          resultCount={listQuery.isLoading ? null : total}
+          resultNoun="professional"
+          loading={listQuery.isLoading}
+          sort={sort}
+          sortHrefs={{
+            best: withDirectoryParams(PATH, params, { sort: undefined }, PROFESSIONAL_QUERY_ORDER),
+            name: withDirectoryParams(PATH, params, { sort: 'name' }, PROFESSIONAL_QUERY_ORDER),
+          }}
+          page={page}
+          totalPages={totalPages}
+          pageHref={pageHref}
+          columns={columns}
+          actions={
+            <>
+              <DirectoryActionLink href="/professionals/apply" label="List your professional practice" filled />
+              <DirectoryActionLink href="/professionals/manage" label="Manage listing" />
+              <DirectoryActionLink href="/book-repair" label="Find someone for my project" />
+            </>
+          }
+          notice={
+            listQuery.data?.appliedNeed ? (
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED, marginBottom: 12 }}>
+                {listQuery.data.appliedNeed.description}
+              </Text>
+            ) : null
+          }
+          error={
+            listQuery.isError ? (
+              <View style={{ borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>
+                  Unable to load professionals right now.
+                </Text>
+                <Pressable onPress={() => listQuery.refetch()} accessibilityRole="button" style={{ marginTop: 8 }}>
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Retry</Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
+          empty={
+            <View style={{ borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16 }}>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>
+                No professionals match these filters yet.
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
+                <DirectoryActionLink href={PATH} label="Clear filters" />
+                <DirectoryActionLink href="/book-repair" label="Request BuildMyHouse help" filled />
+              </View>
+            </View>
+          }
+        >
+          {professionals.map((professional) => (
+            <ProfessionalCard key={professional.id} professional={professional} />
           ))}
-        </View>
-        {listQuery.data?.appliedNeed && (
-          <Text className="text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            {listQuery.data.appliedNeed.description}
-          </Text>
-        )}
-
-        <TextInput
-          value={searchParams.q || ''}
-          onChangeText={(value) => setParam('q', value)}
-          placeholder="Search BOQ, foundation inspection, COREN, Lagos…"
-          placeholderTextColor="#9CA3AF"
-          className="border rounded-2xl px-4 py-3 text-sm mb-3"
-          style={{ borderColor: LANDING_BORDER, fontFamily: 'Poppins_400Regular', color: LANDING_INK, outlineStyle: 'none' as any }}
-        />
-
-        <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Profession</Text>
-        <View className="flex-row flex-wrap mb-2">
-          <FilterChip label="All" active={!searchParams.profession} onPress={() => setParam('profession')} />
-          {featuredProfessions.map((item: any) => (
-            <FilterChip
-              key={item.key}
-              label={item.label}
-              active={searchParams.profession === item.key}
-              onPress={() => setParam('profession', searchParams.profession === item.key ? undefined : item.key)}
-            />
-          ))}
-        </View>
-
-        <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Location</Text>
-        <View className="flex-row flex-wrap mb-2">
-          <FilterChip label="All states" active={!searchParams.state} onPress={() => setParam('state')} />
-          {states.filter((s: any) => ['lagos', 'ogun', 'fct', 'edo', 'rivers', 'oyo'].includes(s.key)).map((item: any) => (
-            <FilterChip
-              key={item.key}
-              label={item.label}
-              active={searchParams.state === item.key}
-              onPress={() => setParam('state', searchParams.state === item.key ? undefined : item.key)}
-            />
-          ))}
-        </View>
-
-        <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Trust and capability</Text>
-        <View className="flex-row flex-wrap mb-4">
-          <FilterChip label="Credential checked" active={!!searchParams.credentialChecked} onPress={() => setParam('credentialChecked', searchParams.credentialChecked ? undefined : '1')} />
-          <FilterChip label="Used by BuildMyHouse" active={!!searchParams.usedByBmh} onPress={() => setParam('usedByBmh', searchParams.usedByBmh ? undefined : '1')} />
-          <FilterChip label="Site visits" active={!!searchParams.siteVisits} onPress={() => setParam('siteVisits', searchParams.siteVisits ? undefined : '1')} />
-          <FilterChip label="Remote consultation" active={!!searchParams.remoteConsultation} onPress={() => setParam('remoteConsultation', searchParams.remoteConsultation ? undefined : '1')} />
-          <FilterChip label="Signed reports" active={!!searchParams.signedReport} onPress={() => setParam('signedReport', searchParams.signedReport ? undefined : '1')} />
-          <FilterChip label="Individual" active={searchParams.professionalType === 'individual'} onPress={() => setParam('type', searchParams.professionalType === 'individual' ? undefined : 'individual')} />
-          <FilterChip label="Firm" active={searchParams.professionalType === 'firm'} onPress={() => setParam('type', searchParams.professionalType === 'firm' ? undefined : 'firm')} />
-        </View>
-
-        {listQuery.isLoading && <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>Loading professionals…</Text>}
-        {listQuery.isError && (
-          <View className="border rounded-2xl p-4 mb-3" style={{ borderColor: LANDING_BORDER }}>
-            <Text style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>Unable to load professionals right now.</Text>
-            <Pressable onPress={() => listQuery.refetch()} className="mt-2">
-              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Retry</Text>
-            </Pressable>
-          </View>
-        )}
-        {!listQuery.isLoading && professionals.length === 0 && (
-          <View className="border rounded-2xl p-5" style={{ borderColor: LANDING_BORDER }}>
-            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>No professionals match these filters yet.</Text>
-            <Pressable onPress={() => router.replace('/professionals' as any)} className="mt-3">
-              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Clear filters</Text>
-            </Pressable>
-            <Link href={'/book-repair' as any} asChild>
-              <Pressable className="mt-2">
-                <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Request BuildMyHouse help →</Text>
-              </Pressable>
-            </Link>
-          </View>
-        )}
-        {professionals.map((professional) => (
-          <ProfessionalCard key={professional.id} professional={professional} />
-        ))}
+        </DirectoryBrowse>
         <Link href={'/vendors' as any} asChild>
-          <Pressable className="mt-6">
-            <Text className="text-xs" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+          <Pressable style={{ marginTop: 8, marginBottom: 12 }}>
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED }}>
               Looking for building materials instead? See Vendors →
             </Text>
           </Pressable>
         </Link>
-      </SeoContentColumn>
-    </SeoContentShell>
+      </View>
+      </SeoContentShell>
+    </View>
   );
 }

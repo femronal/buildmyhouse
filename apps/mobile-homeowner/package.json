@@ -9,7 +9,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "test": "jest --watchAll",
+    "test": "jest --watchAll=false --passWithNoTests",
     "lint": "expo lint"
   },
   "jest": {
@@ -45,6 +45,7 @@
     "date-fns": "^4.1.0",
     "expo": "^54.0.25",
     "expo-apple-authentication": "^8.0.8",
+    "expo-asset": "~12.0.13",
     "expo-atlas": "^0.4.0",
     "expo-auth-session": "^7.0.10",
     "expo-blur": "~15.0.7",

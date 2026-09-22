@@ -28,6 +28,7 @@ import {
 } from 'lucide-react-native';
 import GcDashboardMockup from '@/components/landing/GcDashboardMockup';
 import GcSeoJsonLd from '@/components/landing/GcSeoJsonLd';
+import { LEGAL_OPERATOR_LINE } from '@buildmyhouse/shared-utils';
 import {
   GC_AUDIENCE_TABS,
   GC_COMPARISON_ROWS,
@@ -823,6 +824,9 @@ export default function GcLandingPage() {
 
               <Text className="text-xs text-blue-100 text-center mt-6" style={{ fontFamily: 'Poppins_500Medium' }}>
                 © {new Date().getFullYear()} BuildMyHouse Technologies — Built with care in Lagos, Nigeria
+              </Text>
+              <Text className="text-xs text-blue-100 text-center mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {LEGAL_OPERATOR_LINE}
               </Text>
             </View>
           </View>

@@ -95,12 +95,16 @@ export class VendorsService {
         },
         skip,
         take: limit,
-        orderBy: [
-          { verificationStatus: 'desc' },
-          { profileCompleteness: 'desc' },
-          { listedAt: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy:
+          dto.sort === 'name'
+            ? [{ tradingName: 'asc' as const }, { id: 'asc' as const }]
+            : [
+                { verificationStatus: 'desc' as const },
+                { profileCompleteness: 'desc' as const },
+                { listedAt: 'desc' as const },
+                { createdAt: 'desc' as const },
+                { id: 'asc' as const },
+              ],
       }),
     ]);
 

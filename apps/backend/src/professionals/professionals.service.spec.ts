@@ -101,6 +101,24 @@ describe('ProfessionalsService', () => {
     expect(result.data[0].slug).toBe('lagos-qs');
     expect(result.data[0].trust.usedByBmh).toBe(true);
     expect((result.data[0] as any).phone).toBeUndefined();
+    expect(prisma.professionalListing.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ searchRank: 'desc' }, { displayName: 'asc' }, { id: 'asc' }],
+      }),
+    );
+  });
+
+  it('searchPublic sorts by display name when sort=name', async () => {
+    const prisma = mockPrisma();
+    prisma.professionalListing.count.mockResolvedValue(0);
+    prisma.professionalListing.findMany.mockResolvedValue([]);
+    const service = new ProfessionalsService(prisma);
+    await service.searchPublic({ page: 1, limit: 20, sort: 'name' });
+    expect(prisma.professionalListing.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ displayName: 'asc' }, { id: 'asc' }],
+      }),
+    );
   });
 
   it('getPublicBySlug 404s for draft/hidden/archived', async () => {

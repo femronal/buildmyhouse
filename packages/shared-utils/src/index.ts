@@ -42,3 +42,5 @@ export {
   type PlatformTermsSection,
 } from './platform-terms';
 
+export { LEGAL_OPERATOR_LINE } from './legal-entity';
+

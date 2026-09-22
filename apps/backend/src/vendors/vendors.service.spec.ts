@@ -77,6 +77,30 @@ describe('VendorsService', () => {
     );
     expect(result.data[0].slug).toBe('acme');
     expect(result.data[0].isBuildMyHouseVerified).toBe(true);
+    expect(prisma.vendorProfile.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [
+          { verificationStatus: 'desc' },
+          { profileCompleteness: 'desc' },
+          { listedAt: 'desc' },
+          { createdAt: 'desc' },
+          { id: 'asc' },
+        ],
+      }),
+    );
+  });
+
+  it('searchPublic sorts by trading name when sort=name', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.count.mockResolvedValue(0);
+    prisma.vendorProfile.findMany.mockResolvedValue([]);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.searchPublic({ page: 1, limit: 20, sort: 'name' });
+    expect(prisma.vendorProfile.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderBy: [{ tradingName: 'asc' }, { id: 'asc' }],
+      }),
+    );
   });
 
   it('getPublicBySlug 404s for internal_only vendors', async () => {

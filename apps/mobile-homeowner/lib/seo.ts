@@ -15,7 +15,24 @@ type SeoOptions = {
   gscVerificationToken?: string;
   /** Static markdown twin for AI agents (link rel="alternate" type="text/markdown"). */
   markdownAlternatePath?: string;
+  /**
+   * Layout-level defaults. Skip when a screen has claimed the head so filter
+   * titles and canonicals are not overwritten after the page effect runs.
+   */
+  fallback?: boolean;
 };
+
+let pageSeoClaimed = false;
+
+/** Call during render on screens that set their own title, canonical, and JSON-LD. */
+export function usePageOwnedSeo() {
+  pageSeoClaimed = true;
+  useEffect(() => {
+    return () => {
+      pageSeoClaimed = false;
+    };
+  }, []);
+}
 
 const WEB_URL = (
   process.env.EXPO_PUBLIC_WEB_URL ||
@@ -145,40 +162,49 @@ export function isIndexablePath(pathname?: string) {
 export function useWebSeo(options: SeoOptions) {
   useEffect(() => {
     if (Platform.OS !== 'web') return;
+    if (options.fallback && pageSeoClaimed) return;
 
-    const canonicalUrl = options.canonicalPath
-      ? `${WEB_URL}${options.canonicalPath.startsWith('/') ? options.canonicalPath : `/${options.canonicalPath}`}`
-      : WEB_URL;
+    const apply = () => {
+      if (options.fallback && pageSeoClaimed) return;
+      const canonicalUrl = options.canonicalPath
+        ? `${WEB_URL}${options.canonicalPath.startsWith('/') ? options.canonicalPath : `/${options.canonicalPath}`}`
+        : WEB_URL;
 
-    document.title = options.title;
-    upsertMetaByName('description', options.description);
-    upsertMetaByName('robots', options.robots || 'index,follow');
-    upsertCanonical(canonicalUrl);
+      document.title = options.title;
+      upsertMetaByName('description', options.description);
+      upsertMetaByName('robots', options.robots || 'index,follow');
+      upsertCanonical(canonicalUrl);
 
-    upsertMetaByProperty('og:type', 'website');
-    upsertMetaByProperty('og:site_name', BRAND_NAME);
-    upsertMetaByProperty('og:title', options.title);
-    upsertMetaByProperty('og:description', options.description);
-    upsertMetaByProperty('og:url', canonicalUrl);
-    upsertMetaByProperty('og:image', options.ogImage || DEFAULT_OG_IMAGE);
+      upsertMetaByProperty('og:type', 'website');
+      upsertMetaByProperty('og:site_name', BRAND_NAME);
+      upsertMetaByProperty('og:title', options.title);
+      upsertMetaByProperty('og:description', options.description);
+      upsertMetaByProperty('og:url', canonicalUrl);
+      upsertMetaByProperty('og:image', options.ogImage || DEFAULT_OG_IMAGE);
 
-    upsertMetaByName('twitter:card', 'summary_large_image');
-    upsertMetaByName('twitter:title', options.title);
-    upsertMetaByName('twitter:description', options.description);
-    upsertMetaByName('twitter:image', options.ogImage || DEFAULT_OG_IMAGE);
+      upsertMetaByName('twitter:card', 'summary_large_image');
+      upsertMetaByName('twitter:title', options.title);
+      upsertMetaByName('twitter:description', options.description);
+      upsertMetaByName('twitter:image', options.ogImage || DEFAULT_OG_IMAGE);
 
-    if (options.gscVerificationToken) {
-      upsertMetaByName('google-site-verification', options.gscVerificationToken);
-    }
+      if (options.gscVerificationToken) {
+        upsertMetaByName('google-site-verification', options.gscVerificationToken);
+      }
 
-    if (options.jsonLd) {
-      upsertJsonLd(options.jsonLd);
-    }
+      if (options.jsonLd) {
+        upsertJsonLd(options.jsonLd);
+      }
 
-    upsertMarkdownAlternate(options.markdownAlternatePath);
+      upsertMarkdownAlternate(options.markdownAlternatePath);
 
-    injectAnalytics(process.env.EXPO_PUBLIC_GA_MEASUREMENT_ID);
-    injectRedditPixel(process.env.EXPO_PUBLIC_REDDIT_PIXEL_ID);
+      injectAnalytics(process.env.EXPO_PUBLIC_GA_MEASUREMENT_ID);
+      injectRedditPixel(process.env.EXPO_PUBLIC_REDDIT_PIXEL_ID);
+    };
+
+    apply();
+    if (options.fallback) return;
+    const timer = window.setTimeout(apply, 0);
+    return () => window.clearTimeout(timer);
   }, [
     options.title,
     options.description,
@@ -188,6 +214,7 @@ export function useWebSeo(options: SeoOptions) {
     options.gscVerificationToken,
     JSON.stringify(options.jsonLd || null),
     options.markdownAlternatePath,
+    options.fallback,
   ]);
 }
 
@@ -349,6 +376,26 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
       title: 'Verified Repair Services in Nigeria | BuildMyHouse',
       description:
         'Find verified repairers in Lagos and Nigeria for plumbing, electrical, roof leaks, drainage, painting, and property maintenance with staged evidence before payment.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/vendors') {
+    return {
+      title: 'Building Material Vendors in Nigeria | BuildMyHouse',
+      description:
+        'Discover listed building-material suppliers by category, location, brands, and BuildMyHouse verification status.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized === '/professionals') {
+    return {
+      title: 'Construction Professionals in Nigeria | BuildMyHouse',
+      description:
+        'Find architects, engineers, quantity surveyors, land surveyors, property lawyers and other construction professionals in Nigeria. See services, locations and BuildMyHouse credential checks.',
       canonicalPath,
       robots: 'index,follow',
     };

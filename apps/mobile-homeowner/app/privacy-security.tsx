@@ -3,6 +3,11 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, Shield, Lock, Mail } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { cardShadowStyle } from "@/lib/card-styles";
+import {
+  PRIVACY_DATA_PROTECTION,
+  PRIVACY_HOW_WE_USE_IT,
+  PRIVACY_PAYMENT_PROCESSORS,
+} from "@/lib/privacy-security-copy";
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -51,9 +56,7 @@ export default function PrivacySecurityScreen() {
         <Section title="How we use it">
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
-              • To match you with verified General Contractors{"\n"}
-              • To hold deposits and release funds as you approve each stage{"\n"}
-              • To send project updates and payment instructions
+              {PRIVACY_HOW_WE_USE_IT.map((line) => `• ${line}`).join("\n")}
             </Text>
           </View>
         </Section>
@@ -62,7 +65,7 @@ export default function PrivacySecurityScreen() {
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
             <Text className="text-gray-700 text-sm leading-6" style={{ fontFamily: "Poppins_400Regular" }}>
               • Your GC (project details, contact info needed for the build){"\n"}
-              • Payment processors (Stripe, Wise, Paystack, Zelle) for deposits{"\n"}
+              {PRIVACY_PAYMENT_PROCESSORS}{"\n"}
               • BuildMyHouse admin (for support and dispute resolution)
             </Text>
           </View>
@@ -72,7 +75,7 @@ export default function PrivacySecurityScreen() {
           <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-4 border border-gray-200 flex-row items-start">
             <Lock size={18} color="#059669" strokeWidth={2} />
             <Text className="text-gray-700 text-sm leading-6 ml-2 flex-1" style={{ fontFamily: "Poppins_400Regular" }}>
-              We use industry-standard encryption and secure storage. Deposits are held in escrow and released only after your stage-by-stage approval.
+              {PRIVACY_DATA_PROTECTION}
             </Text>
           </View>
         </Section>

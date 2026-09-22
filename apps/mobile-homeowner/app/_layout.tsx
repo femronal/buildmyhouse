@@ -93,6 +93,7 @@ export default function RootLayout() {
   const defaultSeo = getDefaultSeoForPath(pathname);
   useWebSeo({
     ...defaultSeo,
+    fallback: true,
     gscVerificationToken: process.env.EXPO_PUBLIC_GSC_VERIFICATION,
     jsonLd:
       Platform.OS === 'web'
