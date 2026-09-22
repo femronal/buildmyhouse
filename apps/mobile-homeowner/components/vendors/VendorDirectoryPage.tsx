@@ -1,15 +1,32 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'expo-router';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import DirectoryBrowse, {
+  DirectoryActionLink,
+  DirectoryPill,
+  useDirectoryColumns,
+  type DirectoryChip,
+  type DirectoryFilterSection,
+} from '@/components/directory/DirectoryBrowse';
+import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
+import { getBackendAssetUrl } from '@/lib/image';
+import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
-import { SeoHeading } from '@/components/seo/SeoHeading';
-import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
+  DIRECTORY_PAGE_SIZE,
+  VENDOR_DIRECTORY_SUMMARY,
+  VENDOR_QUERY_ORDER,
+  directoryCanonical,
+  humanizeKey,
+  initialsFromName,
+  normalizeSearchParams,
+  readFlag,
+  readPage,
+  readSort,
+  toggleFilterHref,
+  vendorDirectoryHeading,
+  withDirectoryParams,
+} from '@/lib/directory-listing';
 import {
   VENDOR_CATEGORY_FILTERS,
   VENDOR_STATE_FILTERS,
@@ -17,130 +34,115 @@ import {
   type PublicVendorCard,
 } from '@/lib/public-vendors';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
-import { useWebSeo } from '@/lib/seo';
+import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 
-function FilterChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
+const PATH = '/vendors';
+
+function placeLabel(stateKey?: string): string | undefined {
+  if (!stateKey) return undefined;
+  return VENDOR_STATE_FILTERS.find((item) => item.stateKey === stateKey)?.label || humanizeKey(stateKey.replace(/^ng-/, ''));
+}
+
+function categoryLabel(category?: string): string | undefined {
+  if (!category) return undefined;
+  return VENDOR_CATEGORY_FILTERS.find((item) => item.familyKey === category)?.label || humanizeKey(category);
+}
+
+function VendorMark({ name, logoUrl }: { name: string; logoUrl: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const logo = !failed ? getBackendAssetUrl(logoUrl) : null;
+  if (!logo) {
+    return (
+      <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 28, color: LANDING_INK }}>{initialsFromName(name)}</Text>
+    );
+  }
   return (
-    <Pressable
-      onPress={onPress}
-      className={`rounded-full px-3 py-1.5 mr-2 mb-2 border ${active ? 'bg-black' : 'bg-white'}`}
-      style={{ borderColor: active ? '#000' : LANDING_BORDER }}
-      accessibilityRole="button"
-    >
-      <Text
-        className="text-xs"
-        style={{ fontFamily: 'Poppins_600SemiBold', color: active ? '#fff' : LANDING_INK }}
-      >
-        {label}
-      </Text>
-    </Pressable>
+    <Image
+      source={{ uri: logo }}
+      accessibilityIgnoresInvertColors
+      onError={() => setFailed(true)}
+      style={{ width: '78%', height: '78%' }}
+      resizeMode="contain"
+    />
   );
 }
 
 function VendorCard({ vendor }: { vendor: PublicVendorCard }) {
   const location = [vendor.cityLabel, vendor.stateLabel].filter(Boolean).join(', ');
-  const sales = [
-    vendor.sellsRetail ? 'Retail' : null,
-    vendor.sellsWholesale ? 'Wholesale' : null,
-  ]
+  const sales = [vendor.sellsRetail ? 'Retail' : null, vendor.sellsWholesale ? 'Wholesale' : null]
     .filter(Boolean)
     .join(' · ');
   const delivery =
-    vendor.deliveryAvailable === true
-      ? 'Delivery available'
-      : vendor.deliveryAvailable === false
-        ? 'Pickup / enquiry'
-        : null;
+    vendor.deliveryAvailable === true ? 'Delivery' : vendor.deliveryAvailable === false ? 'Pickup' : null;
+  const meta = [location, sales, delivery, vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ yrs` : null]
+    .filter(Boolean)
+    .join(' · ');
+  const status = vendor.isBuildMyHouseVerified ? 'BMH Verified' : 'Listed';
 
   return (
     <Link href={`/vendors/${vendor.slug}` as any} asChild>
       <Pressable
-        className="border rounded-2xl p-4 mb-3"
-        style={{ borderColor: LANDING_BORDER }}
         accessibilityRole="link"
+        accessibilityLabel={`${vendor.tradingName}, ${status}`}
+        style={{
+          borderWidth: 1,
+          borderColor: LANDING_BORDER,
+          borderRadius: 16,
+          backgroundColor: '#fff',
+          overflow: 'hidden',
+        }}
       >
-        <View className="flex-row items-start justify-between mb-1 gap-2">
-          <Text
-            className="text-base flex-1"
-            style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-          >
+        <View style={{ aspectRatio: 4 / 3, backgroundColor: LANDING_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
+          <VendorMark name={vendor.tradingName} logoUrl={vendor.logoUrl} />
+          <View style={{ position: 'absolute', top: 10, left: 10 }}>
+            <DirectoryPill label={status} tone={vendor.isBuildMyHouseVerified ? 'solid' : 'outline'} />
+          </View>
+        </View>
+        <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 14 }}>
+          <Text numberOfLines={2} style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
             {vendor.tradingName}
           </Text>
-          {vendor.isBuildMyHouseVerified ? (
-            <View className="rounded-full px-2 py-0.5 bg-black">
-              <Text className="text-[10px] text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                BMH Verified
-              </Text>
+          {meta ? (
+            <Text numberOfLines={2} style={{ marginTop: 4, fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED }}>
+              {meta}
+            </Text>
+          ) : null}
+          {vendor.categories.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+              {vendor.categories.slice(0, 3).map((category) => (
+                <DirectoryPill key={category} label={humanizeKey(category)} />
+              ))}
             </View>
-          ) : (
-            <View className="rounded-full px-2 py-0.5 border" style={{ borderColor: LANDING_BORDER }}>
-              <Text className="text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_MUTED }}>
-                Listed
-              </Text>
-            </View>
-          )}
+          ) : null}
+          {vendor.brands.length > 0 ? (
+            <Text numberOfLines={1} style={{ marginTop: 2, fontFamily: 'Poppins_400Regular', fontSize: 12, color: LANDING_MUTED }}>
+              {vendor.brands.slice(0, 3).join(', ')}
+            </Text>
+          ) : null}
         </View>
-
-        {vendor.description ? (
-          <Text
-            className="text-sm mb-2"
-            numberOfLines={2}
-            style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
-          >
-            {vendor.description}
-          </Text>
-        ) : null}
-
-        {vendor.categories.length > 0 ? (
-          <Text className="text-xs mb-1" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
-            {vendor.categories.slice(0, 4).join(' · ')}
-          </Text>
-        ) : null}
-
-        {vendor.brands.length > 0 ? (
-          <Text className="text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            Brands: {vendor.brands.slice(0, 4).join(', ')}
-          </Text>
-        ) : null}
-
-        <Text className="text-xs" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          {[location || null, sales || null, delivery, vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ years` : null]
-            .filter(Boolean)
-            .join(' · ')}
-        </Text>
-
-        <Text className="text-xs mt-3" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-          View vendor →
-        </Text>
       </Pressable>
     </Link>
   );
 }
 
 export default function VendorDirectoryPage() {
-  const [query, setQuery] = useState('');
-  const [familyKey, setFamilyKey] = useState('');
-  const [stateKey, setStateKey] = useState('');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [wholesale, setWholesale] = useState(false);
-  const [delivery, setDelivery] = useState(false);
-
-  const title = 'Building Material Vendors in Nigeria';
-  const summary =
-    'Discover listed building-material suppliers by what they sell, where they operate, and whether BuildMyHouse has verified their business identity. Listing is not the same as verification.';
+  usePageOwnedSeo();
+  const router = useRouter();
+  const raw = useLocalSearchParams();
+  const params = useMemo(() => normalizeSearchParams(raw, VENDOR_QUERY_ORDER), [raw]);
+  const columns = useDirectoryColumns('vendor');
+  const page = readPage(params.page);
+  const sort = readSort(params.sort);
+  const title = vendorDirectoryHeading({
+    categoryLabel: categoryLabel(params.category),
+    stateLabel: placeLabel(params.state),
+  });
+  const canonicalPath = directoryCanonical(PATH, params, ['category', 'state']);
 
   const jsonLd = buildSeoJsonLd({
-    path: '/vendors',
+    path: canonicalPath,
     title,
-    description: summary,
+    description: VENDOR_DIRECTORY_SUMMARY,
     schemaType: 'Service',
     breadcrumbs: [
       { name: 'Home', path: '/' },
@@ -162,211 +164,158 @@ export default function VendorDirectoryPage() {
 
   useWebSeo({
     title: `${title} | BuildMyHouse`,
-    description: summary,
-    canonicalPath: '/vendors',
+    description: VENDOR_DIRECTORY_SUMMARY,
+    canonicalPath,
     robots: 'index,follow',
     jsonLd,
   });
 
   const searchParams = useMemo(
     () => ({
-      query: query.trim() || undefined,
-      familyKey: familyKey || undefined,
-      stateKey: stateKey || undefined,
-      verifiedOnly: verifiedOnly || undefined,
-      wholesale: wholesale || undefined,
-      delivery: delivery || undefined,
-      limit: 30,
+      query: params.q?.trim() || undefined,
+      familyKey: params.category,
+      stateKey: params.state,
+      verifiedOnly: readFlag(params.verified) || undefined,
+      wholesale: readFlag(params.wholesale) || undefined,
+      delivery: readFlag(params.delivery) || undefined,
+      sort: sort === 'name' ? ('name' as const) : undefined,
+      page,
+      limit: DIRECTORY_PAGE_SIZE,
     }),
-    [delivery, familyKey, query, stateKey, verifiedOnly, wholesale],
+    [page, params.category, params.delivery, params.q, params.state, params.verified, params.wholesale, sort],
   );
 
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['public-vendors', searchParams],
     queryFn: () => fetchPublicVendors(searchParams),
   });
 
+  const onSearchChange = useCallback(
+    (value: string) => {
+      router.replace(
+        withDirectoryParams(PATH, params, { q: value.trim() || undefined }, VENDOR_QUERY_ORDER) as any,
+      );
+    },
+    [params, router],
+  );
+
+  const chip = (key: string, label: string, param: string, value: string): DirectoryChip => ({
+    key,
+    label,
+    active: params[param] === value,
+    href: toggleFilterHref(PATH, params, param, value, VENDOR_QUERY_ORDER),
+  });
+
+  const categoryChips = VENDOR_CATEGORY_FILTERS.map((item) =>
+    chip(`category-${item.familyKey}`, item.label, 'category', item.familyKey),
+  );
+  const stateChips = VENDOR_STATE_FILTERS.map((item) => chip(`state-${item.stateKey}`, item.label, 'state', item.stateKey));
+  const optionChips = [
+    chip('verified', 'Verified only', 'verified', '1'),
+    chip('wholesale', 'Wholesale', 'wholesale', '1'),
+    chip('delivery', 'Delivery', 'delivery', '1'),
+  ];
+  if (params.category && !categoryChips.some((item) => item.active)) {
+    categoryChips.push(chip(`category-${params.category}`, categoryLabel(params.category) || params.category, 'category', params.category));
+  }
+  if (params.state && !stateChips.some((item) => item.active)) {
+    stateChips.push(chip(`state-${params.state}`, placeLabel(params.state) || params.state, 'state', params.state));
+  }
+  const sections: DirectoryFilterSection[] = [
+    { id: 'category', title: 'Category', chips: categoryChips },
+    { id: 'location', title: 'Location', chips: stateChips },
+    { id: 'options', title: 'Listing', chips: optionChips },
+  ];
+  const activeFilterCount = [params.category, params.state, params.verified, params.wholesale, params.delivery].filter(
+    Boolean,
+  ).length;
+  const pageHref = (nextPage: number) =>
+    withDirectoryParams(
+      PATH,
+      params,
+      { page: nextPage <= 1 ? undefined : String(nextPage) },
+      VENDOR_QUERY_ORDER,
+      false,
+    );
+
   const vendors = data?.vendors ?? [];
   const total = data?.meta?.total ?? 0;
+  const totalPages = data?.meta?.totalPages ?? 0;
 
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 48 }}>
-      <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
+    <SeoContentShell contentContainerStyle={{ paddingBottom: 96 }}>
+      <View className="w-full max-w-[1120px] self-center px-4 md:px-6 pt-6 md:pt-10">
         <SeoContentBackButton fallbackHref="/" />
-
-        <View className="border rounded-3xl p-6 mb-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading
-            level={1}
-            className={seoContentTypography.title}
-            style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-          >
-            {title}
-          </SeoHeading>
-          <Text
-            className={seoContentTypography.description}
-            style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}
-          >
-            {summary}
-          </Text>
-
-          <View className="flex-row flex-wrap mt-3">
-            <Link href={'/vendors/apply' as any} asChild>
-              <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
-                <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  List your business
+        <DirectoryBrowse
+          title={title}
+          summary={VENDOR_DIRECTORY_SUMMARY}
+          searchValue={params.q || ''}
+          onSearchChange={onSearchChange}
+          searchPlaceholder="Search cement, plumbing, Dangote, Lagos…"
+          quickChips={categoryChips}
+          wideChips={[...stateChips, ...optionChips]}
+          sections={sections}
+          activeFilterCount={activeFilterCount}
+          clearHref={PATH}
+          resultCount={isLoading ? null : total}
+          resultNoun="vendor"
+          loading={isLoading}
+          sort={sort}
+          sortHrefs={{
+            best: withDirectoryParams(PATH, params, { sort: undefined }, VENDOR_QUERY_ORDER),
+            name: withDirectoryParams(PATH, params, { sort: 'name' }, VENDOR_QUERY_ORDER),
+          }}
+          page={page}
+          totalPages={totalPages}
+          pageHref={pageHref}
+          columns={columns}
+          actions={
+            <>
+              <DirectoryActionLink href="/vendors/apply" label="List your business" filled />
+              <DirectoryActionLink href="/vendors/manage" label="Manage listing" />
+              <DirectoryActionLink href="/professionals" label="Find a professional" />
+              <DirectoryActionLink href="/tools/price-checker" label="Check market prices" />
+            </>
+          }
+          error={
+            isError ? (
+              <View style={{ borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>
+                  Unable to load vendors right now. Please try again shortly.
                 </Text>
-              </Pressable>
-            </Link>
-            <Link href={'/vendors/manage' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Manage listing
-                </Text>
-              </Pressable>
-            </Link>
-            <Link href={'/professionals' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Find a professional
-                </Text>
-              </Pressable>
-            </Link>
-            <Link href={'/tools/price-checker' as any} asChild>
-              <Pressable
-                className="rounded-full px-4 py-2.5 mb-2 border"
-                style={{ borderColor: LANDING_BORDER }}
-                accessibilityRole="link"
-              >
-                <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                  Check market prices
-                </Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-
-        <View className="mb-4">
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search cement, plumbing, Dangote, Lagos…"
-            placeholderTextColor="#9CA3AF"
-            className="border rounded-2xl px-4 py-3 text-sm mb-3"
-            style={{
-              borderColor: LANDING_BORDER,
-              fontFamily: 'Poppins_400Regular',
-              color: LANDING_INK,
-              outlineStyle: 'none' as any,
-            }}
-          />
-
-          <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-            Category
-          </Text>
-          <View className="flex-row flex-wrap mb-2">
-            <FilterChip label="All" active={!familyKey} onPress={() => setFamilyKey('')} />
-            {VENDOR_CATEGORY_FILTERS.map((item) => (
-              <FilterChip
-                key={item.familyKey}
-                label={item.label}
-                active={familyKey === item.familyKey}
-                onPress={() => setFamilyKey(familyKey === item.familyKey ? '' : item.familyKey)}
-              />
-            ))}
-          </View>
-
-          <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
-            Location
-          </Text>
-          <View className="flex-row flex-wrap mb-2">
-            <FilterChip label="All states" active={!stateKey} onPress={() => setStateKey('')} />
-            {VENDOR_STATE_FILTERS.map((item) => (
-              <FilterChip
-                key={item.stateKey}
-                label={item.label}
-                active={stateKey === item.stateKey}
-                onPress={() => setStateKey(stateKey === item.stateKey ? '' : item.stateKey)}
-              />
-            ))}
-          </View>
-
-          <View className="flex-row flex-wrap">
-            <FilterChip
-              label="Verified only"
-              active={verifiedOnly}
-              onPress={() => setVerifiedOnly((v) => !v)}
-            />
-            <FilterChip label="Wholesale" active={wholesale} onPress={() => setWholesale((v) => !v)} />
-            <FilterChip label="Delivery" active={delivery} onPress={() => setDelivery((v) => !v)} />
-          </View>
-        </View>
-
-        <View className="border rounded-3xl p-6" style={{ borderColor: LANDING_BORDER }}>
-          <SeoHeading
-            level={2}
-            className={seoContentTypography.sectionHeading}
-            style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}
-          >
-            {isLoading ? 'Loading vendors…' : `${total} vendor${total === 1 ? '' : 's'}`}
-          </SeoHeading>
-
-          {isError ? (
-            <Text className="text-sm mt-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-              Unable to load vendors right now. Please try again shortly.
-            </Text>
-          ) : null}
-
-          {!isLoading && !isError && vendors.length === 0 ? (
-            <View className="mt-3">
-              <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
+                <Pressable onPress={() => refetch()} style={{ marginTop: 8 }}>
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Retry</Text>
+                </Pressable>
+              </View>
+            ) : null
+          }
+          empty={
+            <View style={{ borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK, marginBottom: 6 }}>
                 No listed vendor currently matches this exact search.
               </Text>
-              <Text className="text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginBottom: 12 }}>
                 Try nearby states, clear filters, check market prices, or ask BuildMyHouse for procurement help.
               </Text>
-              <View className="flex-row flex-wrap">
-                <Pressable
-                  onPress={() => {
-                    setFamilyKey('');
-                    setStateKey('');
-                    setVerifiedOnly(false);
-                    setWholesale(false);
-                    setDelivery(false);
-                    setQuery('');
-                  }}
-                  className="rounded-full px-4 py-2.5 mr-3 mb-2 border"
-                  style={{ borderColor: LANDING_BORDER }}
-                >
-                  <Text className="text-sm" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-                    Clear filters
-                  </Text>
-                </Pressable>
-                <Link href={'/tools/price-checker' as any} asChild>
-                  <Pressable className="rounded-full px-4 py-2.5 mb-2 bg-black" accessibilityRole="link">
-                    <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      Use Price Checker
-                    </Text>
-                  </Pressable>
-                </Link>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                <DirectoryActionLink href={PATH} label="Clear filters" />
+                <DirectoryActionLink href="/tools/price-checker" label="Use Price Checker" filled />
               </View>
             </View>
-          ) : null}
-
-          <View className="mt-4">
-            {vendors.map((vendor) => (
-              <VendorCard key={vendor.id} vendor={vendor} />
-            ))}
-          </View>
-        </View>
-      </SeoContentColumn>
+          }
+        >
+          {vendors.map((vendor) => (
+            <VendorCard key={vendor.id} vendor={vendor} />
+          ))}
+        </DirectoryBrowse>
+        <Link href={'/professionals' as any} asChild>
+          <Pressable style={{ marginTop: 8, marginBottom: 12 }}>
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED }}>
+              Looking for an architect, engineer, or surveyor? See Professionals →
+            </Text>
+          </Pressable>
+        </Link>
+      </View>
     </SeoContentShell>
   );
 }

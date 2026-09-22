@@ -90,6 +90,7 @@ export type PublicVendorSearchParams = {
   retail?: boolean;
   wholesale?: boolean;
   delivery?: boolean;
+  sort?: 'best' | 'name';
   page?: number;
   limit?: number;
 };

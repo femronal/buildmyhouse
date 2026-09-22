@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
   IsNumber,
   IsOptional,
@@ -43,6 +44,7 @@ export class PublicProfessionalSearchDto {
   @IsOptional() @IsBoolean() @Type(() => Boolean) siteVisits?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) signedReport?: boolean;
   @IsOptional() @IsEnum(ProfessionalType) professionalType?: ProfessionalType;
+  @IsOptional() @IsIn(['best', 'name']) sort?: 'best' | 'name';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit?: number = 20;
 }
