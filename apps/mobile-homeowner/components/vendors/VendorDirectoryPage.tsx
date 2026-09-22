@@ -9,6 +9,7 @@ import DirectoryBrowse, {
   type DirectoryChip,
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
+import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
 import { getBackendAssetUrl } from '@/lib/image';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
@@ -243,7 +244,9 @@ export default function VendorDirectoryPage() {
   const totalPages = data?.meta?.totalPages ?? 0;
 
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 96 }}>
+    <View className="flex-1 bg-white">
+      <DirectorySiteHeader current="vendors" />
+      <SeoContentShell contentContainerStyle={{ paddingBottom: 96 }}>
       <View className="w-full max-w-[1120px] self-center px-4 md:px-6 pt-6 md:pt-10">
         <SeoContentBackButton fallbackHref="/" />
         <DirectoryBrowse
@@ -316,6 +319,7 @@ export default function VendorDirectoryPage() {
           </Pressable>
         </Link>
       </View>
-    </SeoContentShell>
+      </SeoContentShell>
+    </View>
   );
 }
