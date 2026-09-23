@@ -25,7 +25,9 @@ export default function WhatsAppFloatingChat() {
     /(^|\/)chat(\/|$)/.test(currentPath) ||
     /(^|\/)dashboard(\/|$)/.test(currentPath) ||
     /(^|\/)stage-detail(\/|$)/.test(currentPath) ||
-    /(^|\/)timeline(\/|$)/.test(currentPath);
+    /(^|\/)timeline(\/|$)/.test(currentPath) ||
+    /^\/vendors\/[^/]+/.test(currentPath) ||
+    /^\/professionals\/[^/]+/.test(currentPath);
 
   const tabRoutes = useMemo(
     () => new Set(['/home', '/property-projects-nigeria', '/build-opportunities-nigeria', '/finance']),

@@ -2,8 +2,12 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'expo-router';
 import { Image, Linking, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
+import { SeoContentBackButton } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { getBackendAssetUrl } from '@/lib/image';
+import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
+import { initialsFromName } from '@/lib/directory-listing';
 import {
   fetchPublicVendorBySlug,
   submitVendorQuoteRequest,
@@ -15,123 +19,80 @@ import { useWebSeo } from '@/lib/seo';
 
 type Props = { slug: string };
 type Offering = PublicVendorProfile['offerings'][number];
-
-const INK = '#000000';
-const PAPER = '#FFFFFF';
-const STROKE = 3;
+type TabId = 'sell' | 'about';
 
 function formatCategoryLabel(o: Offering): string {
   const raw = (o.customCategoryLabel || o.familyKey || 'Materials').replace(/[-_]/g, ' ');
-  return raw.toUpperCase();
+  return raw.replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function Rule() {
-  return <View style={{ height: STROKE, backgroundColor: INK, width: '100%' }} />;
-}
-
-function MonoLabel({
-  children,
-  color = INK,
-}: {
-  children: string;
-  color?: string;
-}) {
+function Badge({ label, solid = false }: { label: string; solid?: boolean }) {
   return (
-    <Text
-      className="text-[11px] uppercase"
+    <View
+      accessibilityLabel={label}
       style={{
-        fontFamily: 'JetBrainsMono_500Medium',
-        color,
-        letterSpacing: 2,
+        backgroundColor: solid ? LANDING_INK : '#fff',
+        borderWidth: 1,
+        borderColor: solid ? LANDING_INK : LANDING_BORDER,
+        borderRadius: 999,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginRight: 8,
+        marginBottom: 8,
       }}
     >
-      {children}
-    </Text>
-  );
-}
-
-function Info({ label, value, invert = false }: { label: string; value?: string | null; invert?: boolean }) {
-  if (!value) return null;
-  const color = invert ? PAPER : INK;
-  return (
-    <View className="mb-5">
-      <MonoLabel color={color}>{label}</MonoLabel>
-      <Text
-        className="text-lg md:text-xl leading-snug mt-1"
-        style={{ fontFamily: 'Poppins_700Bold', color }}
-      >
-        {value}
-      </Text>
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: solid ? '#fff' : LANDING_INK }}>{label}</Text>
     </View>
   );
 }
 
-function SystemButton({
+function ActionButton({
   label,
   onPress,
-  /** On black hero: white fill. On white paper: black fill. */
-  onDark = false,
-  outline = false,
+  filled = false,
   disabled,
+  flex,
 }: {
   label: string;
   onPress: () => void;
-  onDark?: boolean;
-  outline?: boolean;
+  filled?: boolean;
   disabled?: boolean;
+  flex?: boolean;
 }) {
-  const filled = !outline;
-  const bg = filled ? (onDark ? PAPER : INK) : onDark ? INK : PAPER;
-  const fg = filled ? (onDark ? INK : PAPER) : onDark ? PAPER : INK;
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      className="px-5 py-3 mr-2 mb-2"
       style={{
-        backgroundColor: bg,
-        borderWidth: STROKE,
-        borderColor: onDark ? PAPER : INK,
-        opacity: disabled ? 0.4 : 1,
+        backgroundColor: filled ? LANDING_INK : '#fff',
+        borderWidth: 1,
+        borderColor: LANDING_INK,
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginRight: flex ? 0 : 8,
+        marginBottom: flex ? 0 : 8,
+        opacity: disabled ? 0.5 : 1,
+        flex: flex ? 1 : undefined,
+        alignItems: 'center',
       }}
     >
-      <Text
-        className="text-xs uppercase"
-        style={{
-          fontFamily: 'JetBrainsMono_500Medium',
-          color: fg,
-          letterSpacing: 1.5,
-        }}
-      >
-        {label}
-      </Text>
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: filled ? '#fff' : LANDING_INK }}>{label}</Text>
     </Pressable>
   );
 }
 
-function PaperSection({ title, children }: { title: string; children: ReactNode }) {
+function Fact({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
   return (
-    <View style={{ backgroundColor: PAPER }}>
-      <Rule />
-      <View className="px-5 md:px-10 py-10 md:py-14 w-full max-w-[1100px] self-center">
-        <SeoHeading
-          level={2}
-          className="text-3xl md:text-5xl leading-none mb-8 uppercase"
-          style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
-        >
-          {title}
-        </SeoHeading>
-        {children}
-      </View>
+    <View style={{ flexGrow: 1, flexBasis: 160, marginBottom: 14, paddingRight: 12 }}>
+      <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: LANDING_MUTED }}>{label}</Text>
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: LANDING_INK, marginTop: 4 }}>{value}</Text>
     </View>
   );
 }
 
-/**
- * Bottom grid: one card per offering category / brand type.
- * Click selects that type and lists its brands + commercial details below.
- */
 function BrandTypeGrid({
   offerings,
   selectedIndex,
@@ -142,60 +103,48 @@ function BrandTypeGrid({
   onSelect: (index: number) => void;
 }) {
   const { width } = useWindowDimensions();
-  const columns = width >= 900 ? Math.min(4, Math.max(offerings.length, 1)) : width >= 640 ? 2 : 1;
-
+  const columns = width >= 900 ? 3 : width >= 640 ? 2 : 1;
   if (!offerings.length) {
     return (
-      <View style={{ borderTopWidth: STROKE, borderColor: INK }}>
-        <View className="min-h-[140px] px-5 py-8 justify-end" style={{ borderBottomWidth: STROKE, borderColor: INK }}>
-          <Text
-            className="text-2xl uppercase"
-            style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
-          >
-            No categories yet
-          </Text>
-          <MonoLabel>Vendor has not published brand types</MonoLabel>
-        </View>
-      </View>
+      <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED }}>
+        This vendor has not published categories yet.
+      </Text>
     );
   }
-
   return (
-    <View
-      className="flex-row flex-wrap"
-      style={{ borderTopWidth: STROKE, borderColor: INK }}
-    >
-      {offerings.map((o, idx) => {
-        const selected = idx === selectedIndex;
-        const brandCount = o.brands?.length || 0;
-        const itemCount = (o.productTypes?.length || 0) + brandCount;
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
+      {offerings.map((offering, index) => {
+        const selected = index === selectedIndex;
+        const count = (offering.brands?.length || 0) + (offering.productTypes?.length || 0);
         return (
           <Pressable
-            key={`${formatCategoryLabel(o)}-${idx}`}
-            onPress={() => onSelect(idx)}
+            key={`${formatCategoryLabel(offering)}-${index}`}
+            onPress={() => onSelect(index)}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            className="min-h-[160px] md:min-h-[200px] px-5 py-5 justify-end"
             style={{
               width: `${100 / columns}%`,
-              backgroundColor: selected ? INK : PAPER,
-              borderBottomWidth: STROKE,
-              borderRightWidth: (idx + 1) % columns === 0 ? 0 : STROKE,
-              borderColor: INK,
+              padding: 6,
             }}
           >
-            <MonoLabel color={selected ? PAPER : INK}>
-              {itemCount > 0 ? `${itemCount} ITEM${itemCount === 1 ? '' : 'S'}` : 'CATEGORY'}
-            </MonoLabel>
-            <Text
-              className="text-2xl md:text-3xl uppercase mt-2"
+            <View
               style={{
-                fontFamily: 'Poppins_800ExtraBold',
-                color: selected ? PAPER : INK,
+                borderWidth: 1,
+                borderColor: selected ? LANDING_INK : LANDING_BORDER,
+                backgroundColor: selected ? LANDING_INK : '#fff',
+                borderRadius: 12,
+                minHeight: 96,
+                padding: 14,
+                justifyContent: 'flex-end',
               }}
             >
-              {formatCategoryLabel(o)}
-            </Text>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: selected ? '#D1D5DB' : LANDING_MUTED }}>
+                {count > 0 ? `${count} item${count === 1 ? '' : 's'}` : 'Category'}
+              </Text>
+              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: selected ? '#fff' : LANDING_INK, marginTop: 4 }}>
+                {formatCategoryLabel(offering)}
+              </Text>
+            </View>
           </Pressable>
         );
       })}
@@ -218,75 +167,158 @@ function SelectedTypeDetail({ offering }: { offering: Offering }) {
     offering.specialOrder ? 'Special order' : null,
   ].filter(Boolean) as string[];
 
-  const items =
-    brands.length > 0
-      ? brands.map((b) => ({ kind: 'BRAND', label: b }))
-      : productTypes.length > 0
-        ? productTypes.map((p) => ({ kind: 'TYPE', label: p }))
-        : [{ kind: 'LINE', label: formatCategoryLabel(offering) }];
-
-  // If both brands and product types exist, list brands first then types.
-  const rows =
-    brands.length && productTypes.length
-      ? [
-          ...brands.map((b) => ({ kind: 'BRAND', label: b })),
-          ...productTypes.map((p) => ({ kind: 'TYPE', label: p })),
-        ]
-      : items;
-
   return (
-    <View style={{ backgroundColor: PAPER, borderBottomWidth: STROKE, borderColor: INK }}>
-      <View className="px-5 md:px-10 py-8 w-full max-w-[1100px] self-center">
-        <MonoLabel>Selected brand type</MonoLabel>
-        <Text
-          className="text-3xl md:text-4xl uppercase mt-2 mb-6"
-          style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
-        >
-          {formatCategoryLabel(offering)}
+    <View style={{ marginTop: 16 }}>
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: LANDING_INK }}>{formatCategoryLabel(offering)}</Text>
+      {flags.length ? (
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_MUTED, marginTop: 6 }}>{flags.join(' · ')}</Text>
+      ) : null}
+      {brands.length ? (
+        <ChipRow title="Brands" items={brands} />
+      ) : null}
+      {productTypes.length ? <ChipRow title="Product types" items={productTypes} /> : null}
+      {!brands.length && !productTypes.length ? (
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 8 }}>
+          No individual brands listed for this category yet.
         </Text>
+      ) : null}
+      {offering.examplePriceAmount ? (
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_INK, marginTop: 12 }}>
+          Example price (vendor claim): ₦{offering.examplePriceAmount}
+          {offering.examplePriceUnit ? ` / ${offering.examplePriceUnit}` : ''}. {offering.examplePriceDisclaimer}
+        </Text>
+      ) : null}
+    </View>
+  );
+}
 
-        {flags.length ? (
-          <Text
-            className="text-xs uppercase mb-6"
-            style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK, letterSpacing: 1 }}
+function ChipRow({ title, items }: { title: string; items: string[] }) {
+  return (
+    <View style={{ marginTop: 12 }}>
+      <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: LANDING_MUTED, marginBottom: 8 }}>{title}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {items.map((item) => (
+          <View
+            key={item}
+            style={{
+              borderWidth: 1,
+              borderColor: LANDING_BORDER,
+              borderRadius: 999,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              marginRight: 8,
+              marginBottom: 8,
+              backgroundColor: '#fff',
+            }}
           >
-            {flags.join(' · ')}
-          </Text>
-        ) : null}
-
-        <View style={{ borderTopWidth: STROKE, borderColor: INK }}>
-          {rows.map((row, i) => (
-            <View
-              key={`${row.kind}-${row.label}-${i}`}
-              className="flex-row items-end justify-between py-4"
-              style={{ borderBottomWidth: STROKE, borderColor: INK }}
-            >
-              <View className="flex-1 pr-4">
-                <MonoLabel>{row.kind}</MonoLabel>
-                <Text
-                  className="text-xl md:text-2xl uppercase mt-1"
-                  style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
-                >
-                  {row.label.toUpperCase()}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        {offering.examplePriceAmount ? (
-          <Text className="text-sm mt-6" style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
-            Example price (vendor claim): ₦{offering.examplePriceAmount}
-            {offering.examplePriceUnit ? ` / ${offering.examplePriceUnit}` : ''}.{' '}
-            {offering.examplePriceDisclaimer}
-          </Text>
-        ) : null}
+            <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, color: LANDING_INK }}>{item}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
 }
 
+function QuoteForm({
+  quoteProduct,
+  setQuoteProduct,
+  quoteQty,
+  setQuoteQty,
+  quoteLocation,
+  setQuoteLocation,
+  buyerName,
+  setBuyerName,
+  buyerPhone,
+  setBuyerPhone,
+  buyerEmail,
+  setBuyerEmail,
+  quoteNote,
+  setQuoteNote,
+  quoteBusy,
+  onSend,
+}: {
+  quoteProduct: string;
+  setQuoteProduct: (v: string) => void;
+  quoteQty: string;
+  setQuoteQty: (v: string) => void;
+  quoteLocation: string;
+  setQuoteLocation: (v: string) => void;
+  buyerName: string;
+  setBuyerName: (v: string) => void;
+  buyerPhone: string;
+  setBuyerPhone: (v: string) => void;
+  buyerEmail: string;
+  setBuyerEmail: (v: string) => void;
+  quoteNote: string;
+  setQuoteNote: (v: string) => void;
+  quoteBusy: boolean;
+  onSend: () => void;
+}) {
+  const fields = [
+    ['Product / material *', quoteProduct, setQuoteProduct],
+    ['Quantity', quoteQty, setQuoteQty],
+    ['Delivery location', quoteLocation, setQuoteLocation],
+    ['Your name *', buyerName, setBuyerName],
+    ['Phone', buyerPhone, setBuyerPhone],
+    ['Email', buyerEmail, setBuyerEmail],
+  ] as const;
+  return (
+    <View style={{ marginTop: 16, borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16, backgroundColor: '#fff' }}>
+      <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: LANDING_INK, marginBottom: 12 }}>Request a quote</Text>
+      {fields.map(([label, value, setter]) => (
+        <View key={label} style={{ marginBottom: 10 }}>
+          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: LANDING_MUTED, marginBottom: 4 }}>{label}</Text>
+          <TextInput
+            value={value}
+            onChangeText={setter}
+            style={{
+              borderWidth: 1,
+              borderColor: LANDING_BORDER,
+              borderRadius: 10,
+              paddingHorizontal: 12,
+              paddingVertical: 10,
+              fontFamily: 'Poppins_400Regular',
+              color: LANDING_INK,
+            }}
+          />
+        </View>
+      ))}
+      <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: LANDING_MUTED, marginBottom: 4 }}>Note</Text>
+      <TextInput
+        value={quoteNote}
+        onChangeText={setQuoteNote}
+        multiline
+        style={{
+          borderWidth: 1,
+          borderColor: LANDING_BORDER,
+          borderRadius: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 10,
+          minHeight: 80,
+          fontFamily: 'Poppins_400Regular',
+          color: LANDING_INK,
+          marginBottom: 12,
+        }}
+      />
+      <ActionButton label={quoteBusy ? 'Sending…' : 'Send quote request'} filled disabled={quoteBusy} onPress={onSend} />
+    </View>
+  );
+}
+
+function AboutBlock({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>{label}</Text>
+      <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 4, lineHeight: 22 }}>{value}</Text>
+    </View>
+  );
+}
+
 export default function VendorProfilePage({ slug }: Props) {
+  const { width } = useWindowDimensions();
+  const compact = width < 768;
+  const [tab, setTab] = useState<TabId>('sell');
   const [showVerifiedHelp, setShowVerifiedHelp] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const [quoteProduct, setQuoteProduct] = useState('');
@@ -299,6 +331,7 @@ export default function VendorProfilePage({ slug }: Props) {
   const [quoteStatus, setQuoteStatus] = useState<string | null>(null);
   const [quoteBusy, setQuoteBusy] = useState(false);
   const [selectedTypeIndex, setSelectedTypeIndex] = useState(0);
+  const [logoFailed, setLogoFailed] = useState(false);
 
   const { data: vendor, isLoading, isError, error } = useQuery({
     queryKey: ['public-vendor', slug],
@@ -340,7 +373,25 @@ export default function VendorProfilePage({ slug }: Props) {
 
   const whatsappHref = vendorWhatsAppHref(vendor?.publicWhatsApp || vendor?.publicPhone);
   const location = [vendor?.cityLabel, vendor?.stateLabel].filter(Boolean).join(', ');
-  const logoSrc = getBackendAssetUrl(vendor?.logoUrl);
+  const logoSrc = !logoFailed ? getBackendAssetUrl(vendor?.logoUrl) : null;
+  const signal =
+    vendor?.description?.trim() ||
+    'Listed supplier. Contact them for a quote. Any prices are vendor claims, not BuildMyHouse estimates.';
+  const sales = [
+    vendor?.sellsRetail ? 'Retail' : null,
+    vendor?.sellsWholesale ? 'Wholesale' : null,
+    vendor?.pickupAvailable ? 'Pickup' : null,
+    vendor?.deliveryAvailable ? 'Delivery' : vendor?.deliveryAvailable === false ? 'No delivery' : null,
+    vendor?.interstateDelivery ? 'Interstate delivery' : null,
+    vendor?.nationwideDelivery ? 'Nationwide delivery' : null,
+    vendor?.installationAvailable ? 'Installation' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
+  const coverage = vendor?.serviceAreas
+    ?.map((area) => [area.cityLabel, area.stateLabel].filter(Boolean).join(', ') || area.coverageType)
+    .filter(Boolean)
+    .join(' · ');
 
   const sendQuote = async () => {
     setQuoteStatus(null);
@@ -368,398 +419,254 @@ export default function VendorProfilePage({ slug }: Props) {
     }
   };
 
-  const inputStyle = {
-    borderWidth: STROKE,
-    borderColor: PAPER,
-    fontFamily: 'Poppins_400Regular' as const,
-    color: PAPER,
-    backgroundColor: INK,
-    outlineStyle: 'none' as any,
-  };
+  const openQuote = () => setQuoteOpen((open) => !open);
 
-  return (
-    <ScrollView
-      className="flex-1"
-      style={{ backgroundColor: PAPER }}
-      contentContainerStyle={{ paddingBottom: 0 }}
-      keyboardShouldPersistTaps="handled"
-    >
-      {/* Header — white bar, thick black rules */}
-      <View style={{ backgroundColor: PAPER }}>
-        <Rule />
-        <View className="px-5 md:px-10 py-4 flex-row items-center justify-between w-full max-w-[1100px] self-center">
-          <Link href={'/' as any} asChild>
-            <Pressable accessibilityRole="link">
-              <Text
-                className="text-sm md:text-base uppercase"
-                style={{ fontFamily: 'Poppins_800ExtraBold', color: INK, letterSpacing: 1 }}
-              >
-                BuildMyHouse
-              </Text>
-            </Pressable>
-          </Link>
-          <View className="flex-row items-center gap-5">
-            <Link href={'/vendors' as any} asChild>
-              <Pressable accessibilityRole="link">
-                <MonoLabel>Index</MonoLabel>
-              </Pressable>
-            </Link>
-            <Link href={'/tools/price-checker' as any} asChild>
-              <Pressable accessibilityRole="link">
-                <MonoLabel>Prices</MonoLabel>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-        <Rule />
+  const contactActions = vendor ? (
+    <>
+      {vendor.publicPhone ? (
+        <ActionButton label="Call vendor" filled={!compact} flex={compact} onPress={() => Linking.openURL(`tel:${vendor.publicPhone}`)} />
+      ) : null}
+      {whatsappHref ? (
+        <ActionButton label="WhatsApp" flex={compact} onPress={() => Linking.openURL(whatsappHref)} />
+      ) : null}
+      <ActionButton label={quoteOpen ? 'Close quote' : 'Request quote'} filled flex={compact} onPress={openQuote} />
+    </>
+  ) : null;
+
+  let body: ReactNode = null;
+  if (isLoading) {
+    body = <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED, padding: 24 }}>Loading vendor…</Text>;
+  } else if (notFound) {
+    body = (
+      <View style={{ paddingHorizontal: 24, paddingVertical: 32 }}>
+        <SeoHeading level={1} className="text-3xl" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+          Not available
+        </SeoHeading>
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, color: LANDING_MUTED, marginTop: 8, marginBottom: 16 }}>
+          This profile is not publicly listed. It may be awaiting review, suspended, or internal-only.
+        </Text>
+        <Link href={'/vendors' as any} asChild>
+          <Pressable accessibilityRole="link" style={{ alignSelf: 'flex-start', backgroundColor: LANDING_INK, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: '#fff' }}>Browse vendors</Text>
+          </Pressable>
+        </Link>
       </View>
-
-      {isLoading ? (
-        <View className="px-5 py-16" style={{ backgroundColor: INK }}>
-          <MonoLabel color={PAPER}>Loading vendor…</MonoLabel>
-        </View>
-      ) : null}
-
-      {notFound ? (
-        <View style={{ backgroundColor: INK }} className="px-5 md:px-10 py-16">
-          <SeoHeading
-            level={1}
-            className="text-5xl md:text-7xl leading-none uppercase mb-6"
-            style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER }}
+    );
+  } else if (isError) {
+    body = (
+      <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_INK, padding: 24 }}>Unable to load this vendor right now.</Text>
+    );
+  } else if (vendor) {
+    body = (
+      <>
+        <View style={{ height: compact ? 120 : 168, backgroundColor: LANDING_INK }} accessibilityLabel="Vendor banner" />
+        <View style={{ paddingHorizontal: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' }}>
+          <View
+            style={{
+              marginTop: -44,
+              width: 88,
+              height: 88,
+              borderRadius: 16,
+              backgroundColor: '#fff',
+              borderWidth: 1,
+              borderColor: LANDING_BORDER,
+              overflow: 'hidden',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            Not available
-          </SeoHeading>
-          <Text className="text-base mb-8 max-w-[32rem]" style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}>
-            This profile is not publicly listed. It may be awaiting review, suspended, or internal-only.
-          </Text>
-          <Link href={'/vendors' as any} asChild>
-            <Pressable
-              className="px-5 py-3 self-start"
-              style={{ backgroundColor: PAPER, borderWidth: STROKE, borderColor: PAPER }}
-              accessibilityRole="link"
-            >
-              <Text
-                className="text-xs uppercase"
-                style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK, letterSpacing: 1.5 }}
-              >
-                Browse_vendors
-              </Text>
-            </Pressable>
-          </Link>
-        </View>
-      ) : null}
-
-      {isError && !notFound ? (
-        <View className="px-5 py-10">
-          <Text style={{ fontFamily: 'Poppins_400Regular', color: INK }}>
-            Unable to load this vendor right now.
-          </Text>
-        </View>
-      ) : null}
-
-      {vendor ? (
-        <>
-          {/* Black hero */}
-          <View style={{ backgroundColor: INK }}>
-            <View className="px-5 md:px-10 py-12 md:py-16 w-full max-w-[1100px] self-center">
-              <View className="flex-row flex-wrap items-start gap-6 mb-8">
-                {logoSrc ? (
-                  <View
-                    className="w-24 h-24 md:w-32 md:h-32 overflow-hidden"
-                    style={{ borderWidth: STROKE, borderColor: PAPER }}
-                  >
-                    <Image
-                      source={{ uri: logoSrc }}
-                      style={{ width: '100%', height: '100%' }}
-                      resizeMode="cover"
-                      accessibilityLabel={`${vendor.tradingName} logo`}
-                    />
-                  </View>
-                ) : (
-                  <View
-                    className="w-24 h-24 md:w-32 md:h-32 items-center justify-center"
-                    style={{ borderWidth: STROKE, borderColor: PAPER }}
-                  >
-                    <Text
-                      className="text-4xl"
-                      style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER }}
-                    >
-                      {(vendor.tradingName || 'V').slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
-                )}
-
-                <View className="flex-1 min-w-[220px]">
-                  <View className="flex-row flex-wrap items-center gap-3 mb-4">
-                    {vendor.isBuildMyHouseVerified ? (
-                      <Pressable
-                        onPress={() => setShowVerifiedHelp((v) => !v)}
-                        className="px-3 py-1"
-                        style={{ backgroundColor: PAPER }}
-                      >
-                        <Text
-                          className="text-[10px] uppercase"
-                          style={{
-                            fontFamily: 'JetBrainsMono_500Medium',
-                            color: INK,
-                            letterSpacing: 1,
-                          }}
-                        >
-                          Verified
-                        </Text>
-                      </Pressable>
-                    ) : (
-                      <View className="px-3 py-1" style={{ borderWidth: 2, borderColor: PAPER }}>
-                        <Text
-                          className="text-[10px] uppercase"
-                          style={{
-                            fontFamily: 'JetBrainsMono_500Medium',
-                            color: PAPER,
-                            letterSpacing: 1,
-                          }}
-                        >
-                          Listed
-                        </Text>
-                      </View>
-                    )}
-                    <Pressable onPress={() => setShowVerifiedHelp((v) => !v)}>
-                      <Text
-                        className="text-[10px] uppercase underline"
-                        style={{ fontFamily: 'JetBrainsMono_500Medium', color: PAPER }}
-                      >
-                        What does verified mean?
-                      </Text>
-                    </Pressable>
-                  </View>
-
-                  <SeoHeading
-                    level={1}
-                    className="text-5xl md:text-7xl leading-[0.92] uppercase"
-                    style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER }}
-                  >
-                    {title}
-                  </SeoHeading>
-                </View>
-              </View>
-
-              {vendor.description ? (
-                <View className="flex-row mb-8 max-w-[40rem]">
-                  <View style={{ width: STROKE, backgroundColor: PAPER, marginRight: 16 }} />
-                  <Text
-                    className="text-base md:text-lg leading-6 flex-1 uppercase"
-                    style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}
-                  >
-                    {vendor.description}
-                  </Text>
-                </View>
-              ) : (
-                <View className="flex-row mb-8 max-w-[40rem]">
-                  <View style={{ width: STROKE, backgroundColor: PAPER, marginRight: 16 }} />
-                  <Text
-                    className="text-base md:text-lg leading-6 flex-1 uppercase"
-                    style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}
-                  >
-                    Stripped supplier signal. Contact for quotes. Prices are vendor claims.
-                  </Text>
-                </View>
-              )}
-
-              {showVerifiedHelp ? (
-                <View className="mb-8 p-5" style={{ borderWidth: STROKE, borderColor: PAPER }}>
-                  <MonoLabel color={PAPER}>What BuildMyHouse Verified means</MonoLabel>
-                  <Text className="text-sm mt-3 leading-5" style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}>
-                    BuildMyHouse completed defined checks such as business identity, registration where applicable,
-                    representative identity, phone reachability, and location evidence. It does not mean the vendor is
-                    scam-proof, or that every product is guaranteed genuine.
-                  </Text>
-                </View>
-              ) : null}
-
-              <View className="flex-row flex-wrap">
-                {vendor.publicPhone ? (
-                  <SystemButton
-                    label="Call_vendor"
-                    onDark
-                    onPress={() => Linking.openURL(`tel:${vendor.publicPhone}`)}
-                  />
-                ) : null}
-                {whatsappHref ? (
-                  <SystemButton label="WhatsApp" onDark outline onPress={() => Linking.openURL(whatsappHref)} />
-                ) : null}
-                {vendor.publicEmail ? (
-                  <SystemButton
-                    label="Email"
-                    onDark
-                    outline
-                    onPress={() => Linking.openURL(`mailto:${vendor.publicEmail}`)}
-                  />
-                ) : null}
-                {vendor.websiteUrl ? (
-                  <SystemButton
-                    label="Website"
-                    onDark
-                    outline
-                    onPress={() => Linking.openURL(vendor.websiteUrl!)}
-                  />
-                ) : null}
-                <SystemButton
-                  label={quoteOpen ? 'Close_quote' : 'Request_quote'}
-                  onDark
-                  outline={quoteOpen}
-                  onPress={() => setQuoteOpen((v) => !v)}
-                />
-              </View>
-
-              {quoteStatus ? (
-                <Text className="text-sm mt-4" style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}>
-                  {quoteStatus}
-                </Text>
-              ) : null}
-
-              {quoteOpen ? (
-                <View className="mt-8 pt-8" style={{ borderTopWidth: STROKE, borderTopColor: PAPER }}>
-                  <Text
-                    className="text-xl uppercase mb-5"
-                    style={{ fontFamily: 'Poppins_800ExtraBold', color: PAPER }}
-                  >
-                    Request a quote
-                  </Text>
-                  {(
-                    [
-                      ['Product / material *', quoteProduct, setQuoteProduct],
-                      ['Quantity', quoteQty, setQuoteQty],
-                      ['Delivery location', quoteLocation, setQuoteLocation],
-                      ['Your name *', buyerName, setBuyerName],
-                      ['Phone', buyerPhone, setBuyerPhone],
-                      ['Email', buyerEmail, setBuyerEmail],
-                    ] as const
-                  ).map(([label, value, setter]) => (
-                    <View key={label} className="mb-3">
-                      <MonoLabel color={PAPER}>{label}</MonoLabel>
-                      <TextInput
-                        value={value}
-                        onChangeText={setter}
-                        className="px-3 py-3 text-base mt-1"
-                        style={inputStyle}
-                        placeholderTextColor="#888"
-                      />
-                    </View>
-                  ))}
-                  <MonoLabel color={PAPER}>Note</MonoLabel>
-                  <TextInput
-                    value={quoteNote}
-                    onChangeText={setQuoteNote}
-                    multiline
-                    className="px-3 py-3 text-base mt-1 mb-4 min-h-[88px]"
-                    style={inputStyle}
-                  />
-                  <SystemButton
-                    label={quoteBusy ? 'Sending…' : 'Send_quote_request'}
-                    onDark
-                    disabled={quoteBusy}
-                    onPress={sendQuote}
-                  />
-                </View>
-              ) : null}
-            </View>
-          </View>
-
-          {/* Who they are */}
-          <PaperSection title="Who they are">
-            <Info label="Location" value={location} />
-            <Info label="Business types" value={vendor.businessTypes.join(', ')} />
-            <Info
-              label="Years in business"
-              value={vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ years` : null}
-            />
-            <Info label="Business hours" value={vendor.businessHours} />
-            {vendor.representative ? (
-              <Info
-                label="Business representative"
-                value={`${vendor.representative.name}${vendor.representative.role ? ` — ${vendor.representative.role}` : ''}`}
+            {logoSrc ? (
+              <Image
+                source={{ uri: logoSrc }}
+                accessibilityLabel={`${vendor.tradingName} logo`}
+                onError={() => setLogoFailed(true)}
+                style={{ width: '78%', height: '78%' }}
+                resizeMode="contain"
               />
-            ) : null}
-            <Info
-              label="Sales"
-              value={[
-                vendor.sellsRetail ? 'Retail' : null,
-                vendor.sellsWholesale ? 'Wholesale' : null,
-                vendor.pickupAvailable ? 'Pickup' : null,
-                vendor.deliveryAvailable ? 'Delivery' : null,
-                vendor.interstateDelivery ? 'Interstate delivery' : null,
-                vendor.nationwideDelivery ? 'Nationwide delivery' : null,
-                vendor.installationAvailable ? 'Installation' : null,
-              ]
-                .filter(Boolean)
-                .join(' · ')}
-            />
-          </PaperSection>
-
-          {/* What they sell — brand-type cards + item list */}
-          <View style={{ backgroundColor: PAPER }}>
-            <Rule />
-            <View className="px-5 md:px-10 py-10 md:py-12 w-full max-w-[1100px] self-center">
-              <SeoHeading
-                level={2}
-                className="text-3xl md:text-5xl leading-none uppercase"
-                style={{ fontFamily: 'Poppins_800ExtraBold', color: INK }}
-              >
-                What they sell
-              </SeoHeading>
-              <Text className="text-sm mt-3 mb-2 uppercase" style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK }}>
-                Select a brand type to list items
-              </Text>
-            </View>
-            <BrandTypeGrid
-              offerings={offerings}
-              selectedIndex={Math.min(selectedTypeIndex, Math.max(offerings.length - 1, 0))}
-              onSelect={setSelectedTypeIndex}
-            />
-            {selectedOffering ? <SelectedTypeDetail offering={selectedOffering} /> : null}
+            ) : (
+              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 28, color: LANDING_INK }}>{initialsFromName(vendor.tradingName)}</Text>
+            )}
           </View>
 
-          {/* Transparency */}
-          <PaperSection title="Transparency">
-            <Info label="Vendor status" value={vendor.transparency.verificationLabel} />
-            <Info
-              label="Information last updated"
-              value={new Date(vendor.lastUpdatedAt).toLocaleDateString()}
-            />
-            <Info label="Business identity" value={vendor.transparency.businessIdentity} />
-            <Info label="Location evidence" value={vendor.transparency.locationEvidence} />
-            <Info label="Registration" value={vendor.transparency.registration} />
-            <Info label="Pricing" value={vendor.transparency.pricingDisclaimer} />
-            <Info label="BuildMyHouse relationship" value={vendor.transparency.bmhRelationship} />
-          </PaperSection>
+          <SeoHeading level={1} className="text-3xl md:text-4xl mt-4" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
+            {title}
+          </SeoHeading>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+            <Badge label="Listed" />
+            {vendor.isBuildMyHouseVerified ? <Badge label="Verified" solid /> : null}
+            {vendor.transparency.bmhRelationship?.startsWith('Previously') ? <Badge label="Used by BMH" /> : null}
+          </View>
+          <Text numberOfLines={3} style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, color: LANDING_MUTED, marginTop: 4, lineHeight: 22 }}>
+            {signal}
+          </Text>
+          {location ? (
+            <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK, marginTop: 8 }}>{location}</Text>
+          ) : null}
+          <Pressable onPress={() => setShowVerifiedHelp((open) => !open)} accessibilityRole="button" style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK, textDecorationLine: 'underline' }}>
+              What does Verified mean?
+            </Text>
+          </Pressable>
+          {showVerifiedHelp ? (
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 8, lineHeight: 22, maxWidth: 640 }}>
+              BuildMyHouse completed defined checks such as business identity, registration where applicable, representative identity, phone reachability, and location evidence. It does not mean the vendor is scam-proof, or that every product is guaranteed genuine. Listing is not the same as verification.
+            </Text>
+          ) : null}
 
-          {/* Price checker CTA */}
-          <View style={{ backgroundColor: INK }}>
-            <View className="px-5 md:px-10 py-12 w-full max-w-[1100px] self-center">
-              <Text
-                className="text-lg md:text-xl mb-6 max-w-[36rem] uppercase"
-                style={{ fontFamily: 'Poppins_400Regular', color: PAPER }}
-              >
-                Before contacting a supplier, you can compare independent market-price research.
-              </Text>
-              <Link href={'/tools/price-checker' as any} asChild>
+          {!compact ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 }}>{contactActions}</View> : null}
+          {vendor.publicEmail ? (
+            <Pressable onPress={() => Linking.openURL(`mailto:${vendor.publicEmail}`)} accessibilityRole="link" style={{ marginTop: 4 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>Email vendor</Text>
+            </Pressable>
+          ) : null}
+          {vendor.websiteUrl ? (
+            <Pressable onPress={() => Linking.openURL(vendor.websiteUrl!)} accessibilityRole="link" style={{ marginTop: 6 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>Website</Text>
+            </Pressable>
+          ) : null}
+          {quoteStatus ? (
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_INK, marginTop: 8 }}>{quoteStatus}</Text>
+          ) : null}
+          {quoteOpen ? (
+            <QuoteForm
+              quoteProduct={quoteProduct}
+              setQuoteProduct={setQuoteProduct}
+              quoteQty={quoteQty}
+              setQuoteQty={setQuoteQty}
+              quoteLocation={quoteLocation}
+              setQuoteLocation={setQuoteLocation}
+              buyerName={buyerName}
+              setBuyerName={setBuyerName}
+              buyerPhone={buyerPhone}
+              setBuyerPhone={setBuyerPhone}
+              buyerEmail={buyerEmail}
+              setBuyerEmail={setBuyerEmail}
+              quoteNote={quoteNote}
+              setQuoteNote={setQuoteNote}
+              quoteBusy={quoteBusy}
+              onSend={sendQuote}
+            />
+          ) : null}
+
+          <View
+            style={{
+              marginTop: 20,
+              borderWidth: 1,
+              borderColor: LANDING_BORDER,
+              borderRadius: 16,
+              padding: 16,
+              backgroundColor: LANDING_SURFACE,
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+            }}
+          >
+            <Fact label="Location" value={location || 'Nigeria'} />
+            <Fact label="Sales" value={sales || null} />
+            <Fact label="Coverage" value={coverage || null} />
+            <Fact label="Listing status" value={vendor.transparency.verificationLabel || vendor.transparency.listingLabel} />
+            <Fact label="Last updated" value={vendor.lastUpdatedAt ? new Date(vendor.lastUpdatedAt).toLocaleDateString('en-GB') : null} />
+          </View>
+
+          <View style={{ flexDirection: 'row', marginTop: 24, borderBottomWidth: 1, borderColor: LANDING_BORDER }}>
+            {(
+              [
+                ['sell', 'What they sell'],
+                ['about', 'About'],
+              ] as const
+            ).map(([id, label]) => {
+              const active = tab === id;
+              return (
                 <Pressable
-                  className="px-5 py-3 self-start"
-                  style={{ backgroundColor: PAPER, borderWidth: STROKE, borderColor: PAPER }}
-                  accessibilityRole="link"
+                  key={id}
+                  onPress={() => setTab(id)}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  style={{ paddingVertical: 12, marginRight: 20, borderBottomWidth: 2, borderBottomColor: active ? LANDING_INK : 'transparent' }}
                 >
-                  <Text
-                    className="text-xs uppercase"
-                    style={{ fontFamily: 'JetBrainsMono_500Medium', color: INK, letterSpacing: 1.5 }}
-                  >
-                    Check_market_price
+                  <Text style={{ fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_500Medium', fontSize: 15, color: active ? LANDING_INK : LANDING_MUTED }}>
+                    {label}
                   </Text>
                 </Pressable>
-              </Link>
-            </View>
-            <Rule />
+              );
+            })}
           </View>
-        </>
+
+          <View style={{ paddingVertical: 20 }}>
+            {tab === 'sell' ? (
+              <>
+                <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginBottom: 12 }}>
+                  Select a category to see brands and commercial details.
+                </Text>
+                <BrandTypeGrid
+                  offerings={offerings}
+                  selectedIndex={Math.min(selectedTypeIndex, Math.max(offerings.length - 1, 0))}
+                  onSelect={setSelectedTypeIndex}
+                />
+                {selectedOffering ? <SelectedTypeDetail offering={selectedOffering} /> : null}
+              </>
+            ) : (
+              <>
+                <AboutBlock label="About" value={vendor.description} />
+                <AboutBlock label="Business types" value={vendor.businessTypes.join(', ')} />
+                <AboutBlock label="Years in business" value={vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ years` : null} />
+                <AboutBlock label="Business hours" value={vendor.businessHours} />
+                {vendor.representative ? (
+                  <AboutBlock
+                    label="Business representative"
+                    value={`${vendor.representative.name}${vendor.representative.role ? ` — ${vendor.representative.role}` : ''}`}
+                  />
+                ) : null}
+                <AboutBlock label="Business identity" value={vendor.transparency.businessIdentity} />
+                <AboutBlock label="Location evidence" value={vendor.transparency.locationEvidence} />
+                <AboutBlock label="Registration" value={vendor.transparency.registration} />
+                <AboutBlock label="Pricing" value={vendor.transparency.pricingDisclaimer} />
+                <AboutBlock label="BuildMyHouse relationship" value={vendor.transparency.bmhRelationship} />
+                <Link href={'/tools/price-checker' as any} asChild>
+                  <Pressable accessibilityRole="link" style={{ marginTop: 8, alignSelf: 'flex-start', borderWidth: 1, borderColor: LANDING_INK, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
+                    <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Check market prices</Text>
+                  </Pressable>
+                </Link>
+              </>
+            )}
+          </View>
+        </View>
+      </>
+    );
+  }
+
+  return (
+    <View className="flex-1 bg-white">
+      <DirectorySiteHeader current="vendors" />
+      <ScrollView
+        className="flex-1"
+        style={{ backgroundColor: '#fff' }}
+        contentContainerStyle={{ paddingBottom: compact && vendor ? 96 : 32 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ paddingHorizontal: 16, paddingTop: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' }}>
+          <SeoContentBackButton fallbackHref="/vendors" />
+        </View>
+        {body}
+      </ScrollView>
+      {compact && vendor ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: '#fff',
+            borderTopWidth: 1,
+            borderTopColor: LANDING_BORDER,
+            flexDirection: 'row',
+            gap: 8,
+            paddingHorizontal: 12,
+            paddingVertical: 10,
+          }}
+        >
+          {contactActions}
+        </View>
       ) : null}
-    </ScrollView>
+    </View>
   );
 }
