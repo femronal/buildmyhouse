@@ -1,4 +1,4 @@
-import { createElement, useRef, useState, type ReactNode } from 'react';
+import { createElement, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Linking, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from 'react-native';
 import { Link } from 'expo-router';
 import {
@@ -288,6 +288,19 @@ export default function HomeLandingPage() {
   const recordSectionOffset = (key: string, y: number) => {
     sectionOffsets.current[key] = y;
   };
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') return;
+    const hash = window.location.hash.replace('#', '');
+    if (!hash) return;
+    const timer = window.setTimeout(() => {
+      const y = sectionOffsets.current[hash];
+      if (typeof y === 'number') {
+        scrollRef.current?.scrollTo({ y: Math.max(0, y - 24), animated: false });
+      }
+    }, 500);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const navPress = (href: string) => {
     const key = href.replace('#', '');
@@ -716,7 +729,11 @@ export default function HomeLandingPage() {
         <TrustpilotReviewSection />
 
         {/* Godfather offer + bonuses + scarcity */}
-        <View className="py-24 bg-white border-b border-slate-100">
+        <View
+          nativeID="first-project-offer"
+          className="py-24 bg-white border-b border-slate-100"
+          onLayout={(e) => recordSectionOffset('first-project-offer', e.nativeEvent.layout.y)}
+        >
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
             <View className="max-w-3xl self-center mb-12">
               <Text

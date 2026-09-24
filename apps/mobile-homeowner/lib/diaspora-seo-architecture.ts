@@ -183,8 +183,9 @@ const pages: Record<string, SeoPageArchitecture> = {
     path: '/diaspora/build-in-nigeria-from-abroad',
     kind: 'pillar',
     schemaType: 'Article',
-    title: 'Build in Nigeria from Abroad | Diaspora Authority Guide | BuildMyHouse',
-    description: 'Primary diaspora pillar: how to build in Nigeria from abroad with structure, verified contractor workflows, milestone payments, and better visibility.',
+    title: 'How to Build a House in Nigeria From Abroad in 2026 | BuildMyHouse',
+    description:
+      'A step-by-step guide to building a house in Nigeria from abroad. Learn land verification, soil tests, drawings, BOQ, permits, contractor selection, construction stages, payments and remote monitoring.',
     robots: 'index,follow',
     eyebrow: 'Global Diaspora Pillar',
     heroTitle: 'Build in Nigeria from Abroad',

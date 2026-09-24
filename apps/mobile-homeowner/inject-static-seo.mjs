@@ -297,9 +297,9 @@ const SEO_PAGES = {
       'Build in Lagos, Nigeria from USA or Canada with clearer scope, verified contractor workflows, construction project tracking in Lagos, and milestone payment discipline through BuildMyHouse.',
   },
   '/diaspora/build-in-nigeria-from-abroad': {
-    title: 'Build in Nigeria from Abroad | BuildMyHouse',
+    title: 'How to Build a House in Nigeria From Abroad in 2026 | BuildMyHouse',
     description:
-      'Manage construction and renovation projects in Nigeria from abroad with clearer stages, verified contractors, and payment discipline through BuildMyHouse.',
+      'A step-by-step guide to building a house in Nigeria from abroad. Learn land verification, soil tests, drawings, BOQ, permits, contractor selection, construction stages, payments and remote monitoring.',
   },
   '/diaspora/renovate-in-nigeria-from-abroad': {
     title: 'Renovate in Nigeria from Abroad | BuildMyHouse',

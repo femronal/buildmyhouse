@@ -115,7 +115,7 @@ export function getStaticPublishedCatalogItems(): PublishedIndexItem[] {
       buildPillar.seo.description,
       HOMEPAGE_PUBLISHED_COVERS.buildAbroad,
       buildPillar.hero.title,
-      14,
+      28,
       [buildPillar.hero.eyebrow],
       '2026-04-01',
     ),

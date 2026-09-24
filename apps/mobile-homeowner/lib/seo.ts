@@ -381,6 +381,16 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (normalized === '/diaspora/build-in-nigeria-from-abroad') {
+    return {
+      title: 'How to Build a House in Nigeria From Abroad in 2026 | BuildMyHouse',
+      description:
+        'A step-by-step guide to building a house in Nigeria from abroad. Learn land verification, soil tests, drawings, BOQ, permits, contractor selection, construction stages, payments and remote monitoring.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
   if (normalized === '/vendors') {
     return {
       title: 'Building Material Vendors in Nigeria | BuildMyHouse',
