@@ -21,6 +21,23 @@ type Props = { slug: string };
 type Offering = PublicVendorProfile['offerings'][number];
 type TabId = 'sell' | 'about';
 
+function passedOrNot(label?: string | null): 'Passed' | 'Not yet checked' {
+  return label === 'Passed' || label === 'Checked' ? 'Passed' : 'Not yet checked';
+}
+
+function verificationChecklist(vendor: PublicVendorProfile) {
+  if (vendor.transparency.checklist?.length) return vendor.transparency.checklist;
+  return [
+    { key: 'business_identity', label: 'Business identity', status: passedOrNot(vendor.transparency.businessIdentity) },
+    { key: 'business_registration', label: 'Registration', status: passedOrNot(vendor.transparency.registration) },
+    { key: 'representative_identity', label: 'Representative identity', status: 'Not yet checked' as const },
+    { key: 'phone', label: 'Phone verified', status: 'Not yet checked' as const },
+    { key: 'location_evidence', label: 'Location evidence', status: passedOrNot(vendor.transparency.locationEvidence) },
+    { key: 'product_categories', label: 'Product categories reviewed', status: 'Not yet checked' as const },
+    { key: 'supporting_evidence', label: 'Supporting evidence', status: 'Not yet checked' as const },
+  ];
+}
+
 function formatCategoryLabel(o: Offering): string {
   const raw = (o.customCategoryLabel || o.familyKey || 'Materials').replace(/[-_]/g, ' ');
   return raw.replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -524,7 +541,7 @@ export default function VendorProfilePage({ slug }: Props) {
               <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, lineHeight: 22 }}>
                 BuildMyHouse completed defined checks such as business identity, registration where applicable, representative identity, phone reachability, and location evidence. It does not mean the vendor is scam-proof, or that every product is guaranteed genuine.
               </Text>
-              {(vendor.transparency.checklist || []).map((check) => (
+              {verificationChecklist(vendor).map((check) => (
                 <Text key={check.key} style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK, marginTop: 6 }}>
                   {check.label}: {check.status}
                 </Text>
@@ -687,7 +704,7 @@ export default function VendorProfilePage({ slug }: Props) {
                     style={{ border: 0, width: '100%', height: 220, borderRadius: 12, marginTop: 8 }}
                   />
                 ) : null}
-                {(vendor.transparency.checklist || []).map((check) => (
+                {verificationChecklist(vendor).map((check) => (
                   <AboutBlock key={check.key} label={check.label} value={check.status} />
                 ))}
                 <AboutBlock label="Business identity" value={vendor.transparency.businessIdentity} />
