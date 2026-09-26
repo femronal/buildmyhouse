@@ -27,7 +27,7 @@ export default function RepairPricingPage() {
                 </Text>
               </Pressable>
             </Link>
-            <Link href={'/book-repair' as any} asChild>
+            <Link href={'/start' as any} asChild>
               <Pressable accessibilityRole="link">
                 <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
                   Book online
@@ -123,7 +123,7 @@ export default function RepairPricingPage() {
               {PLATFORM_SERVICE_FEE_OFFER.name}: {formatNgn(PLATFORM_SERVICE_FEE_OFFER.price)}.{' '}
               {PLATFORM_SERVICE_FEE_OFFER.description}
             </Text>
-            <Link href={'/book-repair' as any} asChild>
+            <Link href={'/start' as any} asChild>
               <Pressable className="mt-4 self-start h-11 px-5 rounded-xl bg-black items-center justify-center" accessibilityRole="link">
                 <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Book a repair online

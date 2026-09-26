@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { injectRedditPixel } from '@/lib/analytics';
 import { isStaticIndexablePath } from '@/lib/seo-indexable-routes';
+import { seoForPathname } from '@/lib/start-project/flow';
 
 type RobotsValue = 'index,follow' | 'noindex,nofollow' | 'noindex,follow';
 
@@ -222,6 +223,8 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
   const normalized = normalizePathname(pathname);
   const indexable = isIndexablePath(normalized);
   const canonicalPath = normalized;
+  const startSeo = seoForPathname(normalized);
+  if (startSeo) return startSeo;
 
   if (normalized === '/property-projects-nigeria') {
     return {
@@ -323,11 +326,11 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/book-repair') {
     return {
-      title: 'Book a Verified Repair in Lagos | BuildMyHouse',
+      title: 'Start a home repair in Nigeria | BuildMyHouse',
       description:
-        'Schedule a verified repair in Lagos online. Choose service, date, and time. BuildMyHouse service fee is free for now — pay contractor quote only.',
-      canonicalPath,
-      robots: 'index,follow',
+        'Start a home repair in Nigeria. Tell us what needs fixing and send the request on WhatsApp.',
+      canonicalPath: '/start/repair',
+      robots: 'noindex,follow',
     };
   }
 

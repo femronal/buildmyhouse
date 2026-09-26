@@ -18,6 +18,6 @@ Directional contractor quote ranges in Lagos, Nigeria (NGN).
 | Drainage repair | ₦25,000 – ₦180,000 | per job |
 | Window repair | ₦20,000 – ₦120,000 | per job |
 
-## Book online
+## Start a repair
 
-https://buildmyhouse.app/book-repair
+https://buildmyhouse.app/start/repair

@@ -30,6 +30,7 @@ function handler(event) {
     '/from-kitchen-to-building-site':
       '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
     '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
+    '/book-repair': '/start/repair',
   };
 
   var target = redirects[uri];

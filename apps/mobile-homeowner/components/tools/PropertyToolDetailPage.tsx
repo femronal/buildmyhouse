@@ -175,7 +175,7 @@ function ToolDetailBody({ tool, categoryLabel }: { tool: PropertyTool; categoryL
               start a tracked repair or hire a verified worker with clearer scope and evidence today.
             </Text>
             <View className="flex-col sm:flex-row gap-3">
-              <Link href={'/book-repair' as any} asChild>
+              <Link href={'/start' as any} asChild>
                 <Pressable className="h-11 px-5 rounded-lg bg-black items-center justify-center">
                   <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
                     Book repair online
@@ -201,7 +201,7 @@ function ToolDetailBody({ tool, categoryLabel }: { tool: PropertyTool; categoryL
                 </Text>
               </Pressable>
             </Link>
-            <Link href={'/book-repair' as any} asChild>
+            <Link href={'/start' as any} asChild>
               <Pressable className="h-11 px-5 rounded-lg bg-black items-center justify-center">
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
                   Book repair online

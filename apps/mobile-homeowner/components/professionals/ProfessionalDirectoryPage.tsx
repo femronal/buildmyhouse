@@ -327,7 +327,7 @@ export default function ProfessionalDirectoryPage() {
             <>
               <DirectoryActionLink href="/professionals/apply" label="List your professional practice" filled />
               <DirectoryActionLink href="/professionals/manage" label="Manage listing" />
-              <DirectoryActionLink href="/book-repair" label="Find someone for my project" />
+              <DirectoryActionLink href="/start" label="Find someone for my project" />
             </>
           }
           notice={
@@ -356,7 +356,7 @@ export default function ProfessionalDirectoryPage() {
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
                 <DirectoryActionLink href={PATH} label="Clear filters" />
-                <DirectoryActionLink href="/book-repair" label="Request BuildMyHouse help" filled />
+                <DirectoryActionLink href="/start" label="Request BuildMyHouse help" filled />
               </View>
             </View>
           }

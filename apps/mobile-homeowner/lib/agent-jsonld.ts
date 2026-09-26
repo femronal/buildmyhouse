@@ -105,8 +105,7 @@ export function buildHomepageJsonLd() {
       url: WEB_URL,
       potentialAction: {
         '@type': 'SearchAction',
-        target: `${WEB_URL}/book-repair?service={search_term_string}`,
-        'query-input': 'required name=search_term_string',
+        target: `${WEB_URL}/start`,
       },
     },
     {
@@ -120,7 +119,7 @@ export function buildHomepageJsonLd() {
         name: PLATFORM_SERVICE_FEE_OFFER.name,
         price: 0,
         priceCurrency: 'NGN',
-        url: `${WEB_URL}/book-repair`,
+        url: `${WEB_URL}/start/repair`,
         description: PLATFORM_SERVICE_FEE_OFFER.description,
       },
       areaServed: {
@@ -141,14 +140,14 @@ export function buildBookRepairJsonLd() {
     ...buildHomepageJsonLd(),
     {
       '@type': 'WebPage',
-      '@id': `${WEB_URL}/book-repair#webpage`,
-      name: 'Book a verified repair | BuildMyHouse',
-      url: `${WEB_URL}/book-repair`,
+      '@id': `${WEB_URL}/start/repair#webpage`,
+      name: 'Start a home repair in Nigeria | BuildMyHouse',
+      url: `${WEB_URL}/start/repair`,
       isPartOf: { '@id': `${WEB_URL}/#website` },
       potentialAction: {
         '@type': 'ReserveAction',
-        target: `${WEB_URL}/book-repair`,
-        name: 'Schedule repair intake',
+        target: `${WEB_URL}/start/repair`,
+        name: 'Start a repair',
       },
     },
   ];

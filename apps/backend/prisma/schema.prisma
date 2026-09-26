@@ -4063,3 +4063,19 @@ model ProfessionalEnquiry {
   @@index([professionalListingId, createdAt])
   @@map("professional_enquiries")
 }
+
+model StartRequest {
+  id        String   @id @default(uuid())
+  reference String   @unique
+  path      String
+  answers   Json
+  name      String
+  whatsapp  String
+  source    String?
+  referrer  String?
+  utm       Json?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("start_requests")
+}

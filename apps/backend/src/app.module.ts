@@ -32,6 +32,7 @@ import { AdminAccessModule } from './admin-access/admin-access.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
+import { StartRequestsModule } from './start-requests/start-requests.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { ProfessionalsModule } from './professionals/professionals.module';
     VendorsModule,
     WaitlistModule,
     ProfessionalsModule,
+    StartRequestsModule,
   ],
   controllers: [],
   providers: [

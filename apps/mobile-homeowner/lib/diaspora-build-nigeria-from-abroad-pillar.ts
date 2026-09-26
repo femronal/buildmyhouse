@@ -19,7 +19,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     byline: 'BuildMyHouse Editorial',
     primaryCta: {
       label: 'Start a project',
-      href: '/book-repair',
+      href: '/start',
     },
     secondaryCta: {
       label: 'Preview project monitoring',
@@ -268,7 +268,7 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
     title: 'Ready to build in Nigeria from abroad?',
     description:
       'Before the next transfer, know what you are funding, which stage the project is in, what evidence you expect, and who confirms that the work meets its requirements. Start with a clear request and see how the project can be structured before you commit to execution.',
-    primary: { label: 'Start a project', href: '/book-repair' },
+    primary: { label: 'Start a project', href: '/start' },
     secondary: { label: 'Preview project monitoring', href: '/demo/project-monitoring' },
   },
 } as const;

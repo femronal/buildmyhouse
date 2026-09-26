@@ -418,7 +418,7 @@ export const egbedaWindowCaseStudySeed = {
     {
       type: 'cta',
       label: 'Start a tracked repair with BuildMyHouse',
-      href: '/book-repair',
+      href: '/start',
       note: 'Begin with inspection and clear scope — not with an assumed replacement.',
     },
   ] satisfies ArticleBlock[],

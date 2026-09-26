@@ -317,7 +317,7 @@ export default function HomeLandingPage() {
 
   const trackPrimaryCta = (placement: string, href: string) => {
     trackWebEvent('homepage_primary_cta_clicked', { placement, href });
-    if (href.includes('book-repair') || href.includes('diaspora')) {
+    if (href === '/start' || href.startsWith('/start/') || href.includes('diaspora')) {
       trackWebEvent('homepage_project_started', { placement, href });
     }
   };
@@ -379,9 +379,9 @@ export default function HomeLandingPage() {
                   </Text>
                 </Pressable>
               </Link>
-              <Link href={'/book-repair' as any} asChild>
+              <Link href={'/start' as any} asChild>
                 <Pressable
-                  onPress={() => trackPrimaryCta('header', '/book-repair')}
+                  onPress={() => trackPrimaryCta('header', '/start')}
                   className="hidden md:flex bg-black px-4 py-2 rounded-lg bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="link"
                 >
@@ -603,9 +603,9 @@ export default function HomeLandingPage() {
               </View>
             </View>
             <View className="items-center mt-12">
-              <Link href={'/book-repair' as any} asChild>
+              <Link href={'/start' as any} asChild>
                 <Pressable
-                  onPress={() => trackPrimaryCta('comparison', '/book-repair')}
+                  onPress={() => trackPrimaryCta('comparison', '/start')}
                   className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="link"
                 >
@@ -645,9 +645,9 @@ export default function HomeLandingPage() {
               <PhoneDashboardMockup />
             </View>
             <View className="items-center mt-10">
-              <Link href={'/book-repair' as any} asChild>
+              <Link href={'/start' as any} asChild>
                 <Pressable
-                  onPress={() => trackPrimaryCta('product_demo', '/book-repair')}
+                  onPress={() => trackPrimaryCta('product_demo', '/start')}
                   className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="link"
                 >
@@ -889,9 +889,9 @@ export default function HomeLandingPage() {
                 <Text className="text-slate-400 leading-relaxed mb-8" style={{ fontFamily: 'Poppins_500Medium' }}>
                   Whether you&apos;re in London, Toronto, Houston, Dubai or elsewhere, distance should not mean surrendering control. Keep scope, stages, evidence and project communication in one structured workflow.
                 </Text>
-                <Link href={'/book-repair' as any} asChild>
+                <Link href={'/start' as any} asChild>
                   <Pressable
-                    onPress={() => trackPrimaryCta('diaspora_card', '/book-repair')}
+                    onPress={() => trackPrimaryCta('diaspora_card', '/start')}
                     className="h-12 px-6 rounded-lg bg-white self-start justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="link"
                   >

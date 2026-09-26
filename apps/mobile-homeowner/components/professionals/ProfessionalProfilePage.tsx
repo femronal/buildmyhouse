@@ -466,7 +466,7 @@ function SummaryCard({
       <Pressable onPress={onShare} accessibilityRole="button" style={{ marginTop: 8 }}>
         <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>Share</Text>
       </Pressable>
-      <Link href={'/book-repair' as any} asChild>
+      <Link href={'/start' as any} asChild>
         <Pressable accessibilityRole="link" style={{ marginTop: 8 }}>
           <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>Start a project</Text>
         </Pressable>

@@ -63,7 +63,7 @@ export const PLATFORM_SERVICE_FEE_OFFER = {
   priceCurrency: 'NGN',
   description:
     'BuildMyHouse service fee for repair services is free for now. Homeowners pay the verified contractor quote only, in staged milestones with evidence.',
-  url: 'https://buildmyhouse.app/book-repair',
+  url: 'https://buildmyhouse.app/start/repair',
 } as const;
 
 export const BOOK_REPAIR_TIME_SLOTS = [
@@ -81,5 +81,5 @@ export const AGENT_BUSINESS_HOURS_TEXT = BUILDMYHOUSE_OPENING_HOURS.map((slot) =
 
 export const AGENT_CONTACT_BLOCK = `Phone: ${BUILDMYHOUSE_CONTACT.phoneDisplay}
 Address: ${BUILDMYHOUSE_CONTACT.address}
-Online booking: https://buildmyhouse.app/book-repair
+Online booking: https://buildmyhouse.app/start
 Pricing: https://buildmyhouse.app/pricing/repairs`;

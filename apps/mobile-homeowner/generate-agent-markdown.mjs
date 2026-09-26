@@ -26,8 +26,8 @@ const pages = {
 
 ## Online booking
 
-- **Book a repair**: ${WEB_URL}/book-repair
-- Required fields: service, preferred date, time window, name, phone, Lagos area
+- **Start a project**: ${WEB_URL}/start
+- One question per page. The only required typing is a name and a WhatsApp number.
 - Platform service fee for repairs: **₦0 (free for now)** — client pays verified contractor quote only
 
 ## Pricing (directional, Lagos)
@@ -55,31 +55,17 @@ Full guide: ${WEB_URL}/pricing/repairs
 - ${WEB_URL}/start-repair — tracked repair intake overview
 `,
 
-  'book-repair.md': `# Book a verified repair | BuildMyHouse
+  'book-repair.md': `# Start a home repair | BuildMyHouse
 
-Schedule a verified repair in Lagos online.
+The old booking form has moved. Start a repair at ${WEB_URL}/start/repair.
 
-**URL:** ${WEB_URL}/book-repair
+**URL:** ${WEB_URL}/start/repair
+
+Answer one question per page. A BuildMyHouse agent picks the request up on WhatsApp.
 
 ## Platform fee
 
-BuildMyHouse service fee for repair services is **free for now (₦0)**. Homeowners pay the verified contractor quote only, in staged milestones with evidence.
-
-## Booking form (required fields)
-
-| Field | Required | Notes |
-| --- | --- | --- |
-| service | yes | Plumbing, electrical, roof leak, drainage, window, or other |
-| preferredDate | yes | ISO date, today or later |
-| timeSlot | yes | 08:00–10:00, 10:00–12:00, 12:00–14:00, 14:00–16:00, or 16:00–18:00 WAT |
-| fullName | yes | Contact name |
-| phone | yes | WhatsApp-capable phone |
-| area | yes | Lagos neighbourhood / property area |
-| details | no | Fault description |
-
-## After booking
-
-Continue to tracked repair setup: ${WEB_URL}/start-repair
+BuildMyHouse service fee for repair services is **free for now (₦0)**.
 
 ## Pricing reference
 
@@ -104,9 +90,9 @@ Directional contractor quote ranges in Lagos, Nigeria (NGN).
 | --- | --- | --- |
 ${REPAIR_PRICING.map((r) => `| ${r.service} | ${formatNgn(r.low)} – ${formatNgn(r.high)} | ${r.unit} |`).join('\n')}
 
-## Book online
+## Start a repair
 
-${WEB_URL}/book-repair
+${WEB_URL}/start/repair
 `,
 };
 

@@ -55,7 +55,7 @@ ${finalRoutes
     <loc>${route === '/' ? WEB_URL : `${WEB_URL}${route}`}</loc>
     <lastmod>${now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start-repair' ? '0.9' : '0.7'}</priority>
+    <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start-repair' || route === '/start' || route.startsWith('/start/') ? '0.9' : '0.7'}</priority>
   </url>`,
   )
   .join('\n')}

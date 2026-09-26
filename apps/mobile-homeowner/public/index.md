@@ -4,8 +4,8 @@
 
 ## Online booking
 
-- **Book a repair**: https://buildmyhouse.app/book-repair
-- Required fields: service, preferred date, time window, name, phone, Lagos area
+- **Start a project**: https://buildmyhouse.app/start
+- One question per page. The only required typing is a name and a WhatsApp number.
 - Platform service fee for repairs: **₦0 (free for now)** — client pays verified contractor quote only
 
 ## Pricing (directional, Lagos)

@@ -1,0 +1,69 @@
+{
+  "/start": {
+    "title": "Start a project in Nigeria | BuildMyHouse",
+    "description": "Start a repair, upgrade, full build, or interior project in Nigeria. Answer a few short questions and send the request to a BuildMyHouse agent on WhatsApp.",
+    "h1": "What do you want to do?",
+    "intro": "Tell us what you want done, one question at a time. A BuildMyHouse agent picks it up on WhatsApp and plans the work with you, in stages you approve.",
+    "links": [
+      { "href": "/start/repair", "title": "Repair", "description": "Fix something that's broken or leaking." },
+      { "href": "/start/upgrade", "title": "Upgrade or renovation", "description": "Improve a room, a floor, or the whole house." },
+      { "href": "/start/build", "title": "Full build", "description": "Build from land to keys." },
+      { "href": "/start/interiors", "title": "Interior design", "description": "Furnish or redesign the inside." }
+    ]
+  },
+  "/start/repair": {
+    "title": "Start a home repair in Nigeria | BuildMyHouse",
+    "description": "Tell us what needs fixing, where the property is, and when a visit works. A BuildMyHouse agent plans the repair with you on WhatsApp, in stages you approve.",
+    "h1": "What needs fixing?",
+    "intro": "Tell us what's wrong, where the property is, and when works. A BuildMyHouse agent picks it up on WhatsApp and plans the repair with you, in stages you approve.",
+    "links": [
+      { "href": "/start/repair/urgency", "title": "Plumbing", "description": "Leaks, blockages, taps, and pipes." },
+      { "href": "/start/repair/urgency", "title": "Electrical", "description": "Power cuts, fittings, and wiring faults." },
+      { "href": "/start/repair/urgency", "title": "Roofing", "description": "Leaks, missing sheets, and storm damage." },
+      { "href": "/start/repair/urgency", "title": "Leaks and damp", "description": "Damp walls, ceiling stains, and seepage." },
+      { "href": "/start/repair/urgency", "title": "Doors and windows", "description": "Frames, locks, glass, and seals." },
+      { "href": "/start/repair/urgency", "title": "Painting and walls", "description": "Cracks, peeling paint, and damp patches." },
+      { "href": "/start/repair/urgency", "title": "AC or generator", "description": "Cooling, servicing, and backup power." },
+      { "href": "/start/repair/urgency", "title": "Something else", "description": "We will ask you to describe it in a note." }
+    ]
+  },
+  "/start/upgrade": {
+    "title": "Start an upgrade or renovation in Nigeria | BuildMyHouse",
+    "description": "Tell us which part of the house you want to improve, where it is, and a rough budget. A BuildMyHouse agent plans the work with you on WhatsApp.",
+    "h1": "What do you want to upgrade?",
+    "intro": "Tell us which part of the house you want to improve, where it is, and a rough budget. A BuildMyHouse agent replies on WhatsApp and plans the work in stages you approve.",
+    "links": [
+      { "href": "/start/upgrade", "title": "Kitchen", "description": "Cabinets, worktops, fittings, and layout." },
+      { "href": "/start/upgrade", "title": "Bathroom", "description": "Fixtures, tiling, and plumbing fittings." },
+      { "href": "/start/upgrade", "title": "Flooring and tiling", "description": "Floors, tiles, and finishes." },
+      { "href": "/start/upgrade", "title": "Painting", "description": "Interior or exterior repainting." },
+      { "href": "/start/upgrade", "title": "Roofing", "description": "A roof replacement or upgrade." },
+      { "href": "/start/upgrade", "title": "Whole house", "description": "More than one room, or the full home." },
+      { "href": "/start/upgrade", "title": "Something else", "description": "Describe it in the note." }
+    ]
+  },
+  "/start/build": {
+    "title": "Start a full build in Nigeria | BuildMyHouse",
+    "description": "Tell us about the land, whether you have plans, and what you want to build. A BuildMyHouse agent walks the project with you on WhatsApp.",
+    "h1": "Do you have land?",
+    "intro": "Tell us about the land, the plans, and what you want to build. A BuildMyHouse agent replies on WhatsApp and walks the project with you, in stages you approve.",
+    "links": [
+      { "href": "/start/build/state", "title": "Yes, with documents", "description": "The land papers are in hand." },
+      { "href": "/start/build/state", "title": "Documents in progress", "description": "The land is yours, papers are still moving." },
+      { "href": "/start/build/state", "title": "Not yet", "description": "You are still looking for land." }
+    ]
+  },
+  "/start/interiors": {
+    "title": "Start an interior project in Nigeria | BuildMyHouse",
+    "description": "Tell us which space you want furnished or redesigned, where it is, and a rough budget. A BuildMyHouse agent plans it with you on WhatsApp.",
+    "h1": "Which space?",
+    "intro": "Tell us which space you want furnished or redesigned. A BuildMyHouse agent replies on WhatsApp and plans the work with you, in stages you approve.",
+    "links": [
+      { "href": "/start/interiors/need", "title": "Living room", "description": "The main sitting space." },
+      { "href": "/start/interiors/need", "title": "Bedroom", "description": "One bedroom, or a few." },
+      { "href": "/start/interiors/need", "title": "Kitchen", "description": "The kitchen and how it is used." },
+      { "href": "/start/interiors/need", "title": "Whole home", "description": "More than one room." },
+      { "href": "/start/interiors/need", "title": "Office or shop", "description": "A workspace or a shop interior." }
+    ]
+  }
+}

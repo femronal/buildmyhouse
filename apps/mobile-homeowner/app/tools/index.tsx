@@ -236,7 +236,7 @@ export default function ToolsIndexPage() {
           )}
 
           <TouchableOpacity
-            onPress={() => router.push('/book-repair' as any)}
+            onPress={() => router.push('/start' as any)}
             className="mt-8 self-start flex-row items-center gap-2 rounded-lg bg-black px-4 py-2.5"
           >
             <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>

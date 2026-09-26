@@ -76,7 +76,7 @@ export const amalaJointTrackingStoryCtas = {
   ctaBody:
     'Start with a small repair or renovation request. See the process for yourself before you commit to anything larger.',
   primaryLabel: 'Start a Tracked Project',
-  primaryHref: '/book-repair',
+  primaryHref: '/start',
   secondaryLabel: 'See How It Works',
   secondaryHref: '/demo/project-monitoring',
   servicesLabel: 'Browse repair and renovation services',
@@ -85,7 +85,7 @@ export const amalaJointTrackingStoryCtas = {
 
 export const amalaJointTrackingStoryInternalLinks = [
   { label: 'BuildMyHouse homepage', href: '/' },
-  { label: 'Start a tracked project', href: '/book-repair' },
+  { label: 'Start a tracked project', href: '/start' },
   { label: 'Build in Nigeria from abroad', href: '/diaspora/build-in-nigeria-from-abroad' },
 ] as const;
 

@@ -17,6 +17,7 @@ const REDIRECTS = {
   '/from-kitchen-to-building-site':
     '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
   '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
+  '/book-repair': '/start/repair',
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
@@ -140,11 +141,6 @@ const SEO_PAGES = {
     title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
     description:
       'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment.',
-  },
-  '/book-repair': {
-    title: 'Book a Verified Repair in Lagos | BuildMyHouse',
-    description:
-      'Schedule a verified repair in Lagos online. Choose service, date, and time. BuildMyHouse service fee is free for now — pay contractor quote only.',
   },
   '/pricing/repairs': {
     title: 'Repair Pricing Guide Lagos | BuildMyHouse',
@@ -513,9 +509,31 @@ function upsertJsonLd(html, id, payload) {
 
 const MARKDOWN_ALTERNATES = {
   '/': '/index.md',
-  '/book-repair': '/book-repair.md',
   '/pricing/repairs': '/pricing/repairs.md',
 };
+
+const startIndexable = JSON.parse(
+  fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/indexable.json'), 'utf8'),
+);
+for (const [route, page] of Object.entries(startIndexable)) {
+  SEO_PAGES[route] = { title: page.title, description: page.description };
+}
+
+function injectStartCrawlable(html, route) {
+  const page = startIndexable[route];
+  if (!page) return html;
+  const heading = `>${escapeHtml(page.h1)}<`;
+  if (html.includes(heading)) return html;
+  const items = (page.links || [])
+    .map(
+      (link) =>
+        `<li><a href="${escapeHtml(link.href)}">${escapeHtml(link.title)}</a> — ${escapeHtml(link.description || '')}</li>`,
+    )
+    .join('');
+  const block = `<main><h1>${escapeHtml(page.h1)}</h1><p>${escapeHtml(page.intro)}</p><ul>${items}</ul></main>`;
+  if (html.includes('id="root">')) return html.replace('id="root">', `id="root">${block}`);
+  return html.replace('</body>', `${block}</body>`);
+}
 
 function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   const redirectTarget = REDIRECTS[route];
@@ -528,9 +546,10 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   const canonicalRoute = pageMeta?.canonicalPath || route;
   const canonicalUrl =
     canonicalRoute === '/' ? `${WEB_URL}/` : `${WEB_URL}${canonicalRoute}`;
+  const followUpStart = route.startsWith('/start/') && !startIndexable[route];
   const robots =
     pageMeta?.robots ||
-    (isPrivateRoute(route) ? 'noindex,nofollow' : 'index,follow');
+    (followUpStart ? 'noindex,follow' : isPrivateRoute(route) ? 'noindex,nofollow' : 'index,follow');
   const title = pageMeta?.title || 'BuildMyHouse Technologies';
   const description =
     pageMeta?.description ||
@@ -572,6 +591,7 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   if (pageMeta?.jsonLd) {
     next = upsertJsonLd(next, 'buildmyhouse-route-jsonld', pageMeta.jsonLd);
   }
+  next = injectStartCrawlable(next, route);
   return next;
 }
 

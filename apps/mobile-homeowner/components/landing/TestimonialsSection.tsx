@@ -122,12 +122,12 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               <View className="h-px bg-white/10 mt-6" />
 
               <View className="flex-row flex-wrap items-center gap-3 mt-5">
-                <Link href={'/book-repair' as any} asChild>
+                <Link href={'/start' as any} asChild>
                   <Pressable
                     onPress={() =>
                       trackWebEvent('homepage_primary_cta_clicked', {
                         placement: 'testimonials',
-                        href: '/book-repair',
+                        href: '/start',
                       })
                     }
                     className="h-12 px-6 rounded-lg bg-white justify-center bmh-glass-btn bmh-glass-btn-light"

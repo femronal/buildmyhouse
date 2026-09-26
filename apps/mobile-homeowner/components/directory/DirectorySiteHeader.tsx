@@ -85,7 +85,7 @@ function BrandLockup() {
 export default function DirectorySiteHeader({
   current,
 }: {
-  current: 'vendors' | 'professionals';
+  current?: 'vendors' | 'professionals';
 }) {
   const { width } = useWindowDimensions();
   const showNav = width >= 768;
@@ -102,7 +102,7 @@ export default function DirectorySiteHeader({
           {showNav ? (
             <WebLandmark tag="nav" aria-label="Directory" className="flex-row items-center gap-5">
               {NAV.map((item) => {
-                const active = item.key === current;
+                const active = current != null && item.key === current;
                 return (
                   <Link key={item.key} href={item.href as any} asChild>
                     <Pressable accessibilityRole="link" accessibilityState={{ selected: active }}>
@@ -138,7 +138,7 @@ export default function DirectorySiteHeader({
               </Text>
             </Pressable>
           </Link>
-          <Link href={'/book-repair' as any} asChild>
+          <Link href={'/start' as any} asChild>
             <Pressable className="hidden md:flex bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
               <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
                 Start a Project

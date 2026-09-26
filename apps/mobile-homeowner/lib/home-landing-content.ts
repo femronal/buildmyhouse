@@ -83,7 +83,7 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     subheadline:
       "Whether you're fixing your parents' home, renovating an investment property, or building from the ground up. BuildMyHouse helps you work with verified professionals, clearer scope, and stage-by-stage evidence before money moves forward.",
     searchPlaceholder: 'What property work are you managing remotely?',
-    primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+    primaryCta: { label: 'Start a Tracked Project', href: '/start' },
     secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
     reassurance: 'Repairs, upgrades, renovations and full builds. Start as small as one job.',
   },
@@ -93,7 +93,7 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'in Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
-    primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+    primaryCta: { label: 'Start a Tracked Project', href: '/start' },
     secondaryCta: { label: 'Find a Verified Worker', href: '/location?mode=explore' },
     reassurance: 'Repairs, upgrades, renovations and full builds.',
     tertiaryLink: {
@@ -120,7 +120,7 @@ export const AUDIENCE_TABS: AudienceTab[] = [
     description:
       'Use BuildMyHouse as your control layer so distance does not become loss of visibility.',
     ctaLabel: 'Start a Tracked Project',
-    ctaHref: '/book-repair',
+    ctaHref: '/start',
   },
   {
     key: 'need-worker',
@@ -251,7 +251,7 @@ export const PRODUCT_LADDER_SECTION = {
   heading: 'Start with the job you need done now.',
   supporting:
     "Fix one leaking pipe. Renovate your parents' bathroom. Upgrade a rental. Or manage a complete build. BuildMyHouse is designed to grow with the size of the work.",
-  primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+  primaryCta: { label: 'Start a Tracked Project', href: '/start' },
   secondaryCta: { label: 'Browse Services', href: '/services/home-renovation-nigeria' },
 } as const;
 
@@ -291,7 +291,7 @@ export const OFFER_SECTION = {
   ],
   scarcity:
     'Early-user first-project slots are limited each month while we carefully onboard diaspora owners. Support stays personal, not mass-market chaos.',
-  primaryCta: { label: 'Claim Your First-Project Offer', href: '/book-repair' },
+  primaryCta: { label: 'Claim Your First-Project Offer', href: '/start' },
   secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
 } as const;
 
@@ -323,7 +323,7 @@ export const GUARANTEE_SECTION = {
   ],
   footnote:
     'Payment handling uses approved providers and platform policies. Refunds and holds follow the managed stage process and dispute review. They are not automatic blanket promises.',
-  primaryCta: { label: 'Start a Tracked Project', href: '/book-repair' },
+  primaryCta: { label: 'Start a Tracked Project', href: '/start' },
 } as const;
 
 export const WORKSHEET_SECTION = {
@@ -359,7 +359,7 @@ export const FOOTER_CLOSE = {
   supporting:
     'Claim your first-project offer. Get ₦0 BuildMyHouse commission, a free first inspection for qualifying projects, and tools that help you decide before money moves.',
   ctaLabel: 'Start Your First Tracked Project',
-  ctaHref: '/book-repair',
+  ctaHref: '/start',
 } as const;
 
 export type PopularChip = {

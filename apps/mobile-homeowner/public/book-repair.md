@@ -1,28 +1,14 @@
-# Book a verified repair | BuildMyHouse
+# Start a home repair | BuildMyHouse
 
-Schedule a verified repair in Lagos online.
+The old booking form has moved. Start a repair at https://buildmyhouse.app/start/repair.
 
-**URL:** https://buildmyhouse.app/book-repair
+**URL:** https://buildmyhouse.app/start/repair
+
+Answer one question per page. A BuildMyHouse agent picks the request up on WhatsApp.
 
 ## Platform fee
 
-BuildMyHouse service fee for repair services is **free for now (₦0)**. Homeowners pay the verified contractor quote only, in staged milestones with evidence.
-
-## Booking form (required fields)
-
-| Field | Required | Notes |
-| --- | --- | --- |
-| service | yes | Plumbing, electrical, roof leak, drainage, window, or other |
-| preferredDate | yes | ISO date, today or later |
-| timeSlot | yes | 08:00–10:00, 10:00–12:00, 12:00–14:00, 14:00–16:00, or 16:00–18:00 WAT |
-| fullName | yes | Contact name |
-| phone | yes | WhatsApp-capable phone |
-| area | yes | Lagos neighbourhood / property area |
-| details | no | Fault description |
-
-## After booking
-
-Continue to tracked repair setup: https://buildmyhouse.app/start-repair
+BuildMyHouse service fee for repair services is **free for now (₦0)**.
 
 ## Pricing reference
 
