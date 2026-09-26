@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, Phone, Plus, Search, Store } from 'lucide-react';
 import { AddVendorModal } from '@/components/AddVendorModal';
+import { VENDOR_CATEGORIES } from '@buildmyhouse/shared-types';
 import {
-  FAMILY_OPTIONS,
   LISTING_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
   VendorListingStatus,
   VendorVerificationStatus,
+  useBulkVendorAction,
   useVendors,
 } from '@/hooks/useVendors';
 
@@ -42,7 +43,17 @@ export default function VendorsPage() {
   const [familyKey, setFamilyKey] = useState('');
   const [wholesale, setWholesale] = useState(false);
   const [previouslyUsed, setPreviouslyUsed] = useState(false);
+  const [claimStatus, setClaimStatus] = useState('');
+  const [lastContacted, setLastContacted] = useState('');
+  const [emailBounced, setEmailBounced] = useState(false);
+  const [needsDataCleanup, setNeedsDataCleanup] = useState(false);
+  const [completenessMin, setCompletenessMin] = useState('');
+  const [completenessMax, setCompletenessMax] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkListing, setBulkListing] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const bulk = useBulkVendorAction();
 
   const params = useMemo(
     () => ({
@@ -52,9 +63,15 @@ export default function VendorsPage() {
       familyKey: familyKey || undefined,
       wholesale: wholesale || undefined,
       previouslyUsed: previouslyUsed || undefined,
+      claimStatus: claimStatus || undefined,
+      lastContacted: lastContacted || undefined,
+      emailBounced: emailBounced || undefined,
+      needsDataCleanup: needsDataCleanup || undefined,
+      completenessMin: completenessMin ? Number(completenessMin) : undefined,
+      completenessMax: completenessMax ? Number(completenessMax) : undefined,
       limit: 50,
     }),
-    [familyKey, listingStatus, previouslyUsed, query, verificationStatus, wholesale],
+    [claimStatus, completenessMax, completenessMin, emailBounced, familyKey, lastContacted, listingStatus, needsDataCleanup, previouslyUsed, query, verificationStatus, wholesale],
   );
 
   const { data, isLoading, error } = useVendors(params);
@@ -125,9 +142,9 @@ export default function VendorsPage() {
             className="w-full px-3 py-2 border rounded-lg bg-white"
           >
             <option value="">All categories</option>
-            {FAMILY_OPTIONS.map((f) => (
-              <option key={f} value={f}>
-                {f}
+            {VENDOR_CATEGORIES.map((category) => (
+              <option key={category.slug} value={category.slug}>
+                {category.label}
               </option>
             ))}
           </select>
@@ -146,6 +163,29 @@ export default function VendorsPage() {
               Used by BMH
             </label>
           </div>
+          <select value={claimStatus} onChange={(e) => setClaimStatus(e.target.value)} className="w-full px-3 py-2 border rounded-lg bg-white">
+            <option value="">Claimed or unclaimed</option>
+            <option value="claimed">Claimed</option>
+            <option value="unclaimed">Unclaimed</option>
+            <option value="invite_sent">Invite sent</option>
+          </select>
+          <select value={lastContacted} onChange={(e) => setLastContacted(e.target.value)} className="w-full px-3 py-2 border rounded-lg bg-white">
+            <option value="">Last contacted</option>
+            <option value="never">Never</option>
+            <option value="older_than_7">Older than 7 days</option>
+            <option value="older_than_30">Older than 30 days</option>
+            <option value="older_than_90">Older than 90 days</option>
+          </select>
+          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Completeness min" value={completenessMin} onChange={(e) => setCompletenessMin(e.target.value)} />
+          <input className="w-full px-3 py-2 border rounded-lg" placeholder="Completeness max" value={completenessMax} onChange={(e) => setCompletenessMax(e.target.value)} />
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={emailBounced} onChange={(e) => setEmailBounced(e.target.checked)} />
+            Email bounced
+          </label>
+          <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={needsDataCleanup} onChange={(e) => setNeedsDataCleanup(e.target.checked)} />
+            Needs data cleanup
+          </label>
         </div>
       </div>
 
@@ -153,8 +193,61 @@ export default function VendorsPage() {
         <div className="px-4 py-3 border-b flex items-center justify-between">
           <p className="text-sm text-gray-600">
             {isLoading ? 'Loading…' : `${total} vendor${total === 1 ? '' : 's'}`}
+            {data?.meta?.hiddenFromDirectory
+              ? ` · ${data.meta.hiddenFromDirectory} hidden from the public directory because they are not listed`
+              : ''}
           </p>
         </div>
+        {selected.length > 0 && (
+          <div className="px-4 py-3 border-b flex flex-wrap items-center gap-2 text-sm">
+            <span>{selected.length} selected</span>
+            <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="border rounded-lg px-2 py-1">
+              <option value="">Set category…</option>
+              {VENDOR_CATEGORIES.map((category) => (
+                <option key={category.slug} value={category.slug}>{category.label}</option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="px-3 py-1 rounded-lg border"
+              disabled={!bulkCategory || bulk.isPending}
+              onClick={() => {
+                if (!window.confirm(`Set the primary category for ${selected.length} vendors?`)) return;
+                bulk.mutate({ action: 'set_category', ids: selected, confirm: true, primaryFamilyKey: bulkCategory });
+              }}
+            >
+              Set category
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1 rounded-lg border"
+              disabled={bulk.isPending}
+              onClick={() => {
+                if (!window.confirm(`Send a claim invite to each selected vendor's own email?`)) return;
+                bulk.mutate({ action: 'send_claim_invites', ids: selected, confirm: true });
+              }}
+            >
+              Send claim invites
+            </button>
+            <select value={bulkListing} onChange={(e) => setBulkListing(e.target.value)} className="border rounded-lg px-2 py-1">
+              <option value="">Listing status…</option>
+              <option value="listed">Listed</option>
+              <option value="suspended">Suspended</option>
+              <option value="internal_only">Internal only</option>
+            </select>
+            <button
+              type="button"
+              className="px-3 py-1 rounded-lg border"
+              disabled={!bulkListing || bulk.isPending}
+              onClick={() => {
+                if (!window.confirm(`Change listing status for ${selected.length} vendors to ${bulkListing}? This does not mark anyone verified.`)) return;
+                bulk.mutate({ action: 'set_listing_status', ids: selected, confirm: true, listingStatus: bulkListing });
+              }}
+            >
+              Change listing status
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="p-8 text-center text-red-600">
@@ -175,11 +268,20 @@ export default function VendorsPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-gray-500">
                 <tr>
+                  <th className="px-4 py-3 font-medium">
+                    <input
+                      type="checkbox"
+                      checked={vendors.length > 0 && selected.length === vendors.length}
+                      onChange={(e) => setSelected(e.target.checked ? vendors.map((vendor) => vendor.id) : [])}
+                    />
+                  </th>
                   <th className="px-4 py-3 font-medium">Vendor</th>
                   <th className="px-4 py-3 font-medium">Location</th>
                   <th className="px-4 py-3 font-medium">Sells</th>
                   <th className="px-4 py-3 font-medium">Listing</th>
                   <th className="px-4 py-3 font-medium">Verification</th>
+                  <th className="px-4 py-3 font-medium">Claimed</th>
+                  <th className="px-4 py-3 font-medium">Last contacted</th>
                   <th className="px-4 py-3 font-medium">Contact</th>
                   <th className="px-4 py-3 font-medium">Complete</th>
                   <th className="px-4 py-3 font-medium" />
@@ -194,6 +296,17 @@ export default function VendorsPage() {
                   const phone = vendor.publicWhatsApp || vendor.publicPhone;
                   return (
                     <tr key={vendor.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(vendor.id)}
+                          onChange={(e) =>
+                            setSelected((current) =>
+                              e.target.checked ? [...current, vendor.id] : current.filter((id) => id !== vendor.id),
+                            )
+                          }
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="font-medium text-gray-900">{vendor.tradingName}</div>
                         <div className="text-xs text-gray-500">
@@ -215,6 +328,9 @@ export default function VendorsPage() {
                         >
                           {LISTING_STATUS_LABELS[vendor.listingStatus]}
                         </span>
+                        {vendor.directoryVisibility && vendor.listingStatus !== 'listed' ? (
+                          <p className="text-[11px] text-gray-500 mt-1">{vendor.directoryVisibility}</p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -224,6 +340,10 @@ export default function VendorsPage() {
                         >
                           {VERIFICATION_STATUS_LABELS[vendor.verificationStatus]}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 text-gray-700">{vendor.claimStatus === 'claimed' ? 'Claimed' : 'Unclaimed'}</td>
+                      <td className="px-4 py-3 text-gray-700">
+                        {vendor.lastContactedAt ? new Date(vendor.lastContactedAt).toLocaleDateString() : 'Never'}
                       </td>
                       <td className="px-4 py-3">
                         {phone ? (

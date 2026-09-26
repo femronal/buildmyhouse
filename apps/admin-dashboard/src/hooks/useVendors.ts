@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { VENDOR_CATEGORIES } from '@buildmyhouse/shared-types';
 import { api } from '@/lib/api';
 
 export type VendorListingStatus =
@@ -37,6 +38,12 @@ export type VendorListItem = {
   stateKey?: string | null;
   profileCompleteness: number;
   procurementRelationship: string;
+  lastContactedAt?: string | null;
+  emailBounced?: boolean;
+  primaryFamilyKey?: string | null;
+  claimEmail?: string | null;
+  claimedAt?: string | null;
+  directoryVisibility?: string;
   previouslyUsedByBmh: boolean;
   applicationReference?: string | null;
   createdAt: string;
@@ -119,6 +126,7 @@ export type VendorDetail = VendorListItem & {
     type: string;
     summary?: string | null;
     note?: string | null;
+    actorAdminId?: string | null;
     createdAt: string;
   }>;
   quoteRequests?: Array<{
@@ -146,6 +154,13 @@ export type VendorSearchParams = {
   brand?: string;
   wholesale?: boolean;
   previouslyUsed?: boolean;
+  claimStatus?: string;
+  lastContacted?: string;
+  emailBounced?: boolean;
+  completenessMin?: number;
+  completenessMax?: number;
+  localAreaKey?: string;
+  needsDataCleanup?: boolean;
   page?: number;
   limit?: number;
 };
@@ -164,7 +179,10 @@ export function useVendors(params: VendorSearchParams = {}) {
   return useQuery({
     queryKey: ['admin-vendors', params],
     queryFn: () =>
-      api.get<{ data: VendorListItem[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
+      api.get<{
+        data: VendorListItem[];
+        meta: { total: number; page: number; limit: number; totalPages: number; hiddenFromDirectory?: number };
+      }>(
         `/admin/vendors${toQuery(params)}`,
       ),
   });
@@ -234,6 +252,10 @@ export function useVendorAction(id: string) {
       mutationFn: (body: { note?: string } = {}) => api.post(`/admin/vendors/${id}/restore`, body),
       onSuccess: invalidate,
     }),
+    unlist: useMutation({
+      mutationFn: (body: { note?: string } = {}) => api.post(`/admin/vendors/${id}/unlist`, body),
+      onSuccess: invalidate,
+    }),
     upsertChecks: useMutation({
       mutationFn: (body: {
         checks: Array<{ checkKey: string; status: string; notes?: string }>;
@@ -290,26 +312,20 @@ export const VERIFICATION_CHECK_OPTIONS = [
   { key: 'supporting_evidence', label: 'Supporting evidence' },
 ] as const;
 
-export const FAMILY_OPTIONS = [
-  'cement',
-  'reinforcement-steel',
-  'concrete-blocks',
-  'sand',
-  'granite-aggregates',
-  'roofing',
-  'waterproofing',
-  'doors',
-  'aluminium-windows',
-  'tiles',
-  'paint',
-  'pop-ceilings',
-  'plumbing-pipes',
-  'water-pumps',
-  'water-tanks',
-  'electrical-cables',
-  'solar-panels',
-  'inverters',
-  'batteries',
-  'generators',
-  'cctv-security',
-] as const;
+export const FAMILY_OPTIONS = VENDOR_CATEGORIES.map((category) => category.slug);
+
+export function useBulkVendorAction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      action: 'set_category' | 'send_claim_invites' | 'set_listing_status';
+      ids: string[];
+      confirm: boolean;
+      primaryFamilyKey?: string;
+      listingStatus?: string;
+    }) => api.post('/admin/vendors/bulk', body),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin-vendors'] });
+    },
+  });
+}

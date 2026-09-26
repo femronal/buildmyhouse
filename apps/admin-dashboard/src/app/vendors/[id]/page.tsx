@@ -102,8 +102,14 @@ export default function VendorDetailPage() {
           <p className="text-gray-500 text-sm mt-1">
             {vendor?.applicationReference || vendor?.slug}
             {vendor ? ` · Completeness ${vendor.profileCompleteness}%` : ''}
+            {vendor?.lastContactedAt ? ` · Last contacted ${new Date(vendor.lastContactedAt).toLocaleDateString()}` : ' · Last contacted: never'}
           </p>
         </div>
+        {id ? (
+          <Link href={`/vendors/${id}/edit`} className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
+            Edit
+          </Link>
+        ) : null}
       </div>
 
       {feedback && (
@@ -205,7 +211,13 @@ export default function VendorDetailPage() {
                     <li key={doc.id} className="text-sm border rounded-lg px-3 py-2">
                       <span className="font-medium">{doc.documentType}</span>
                       <span className="text-gray-500"> · {doc.reviewStatus}</span>
-                      <div className="text-xs text-gray-400 break-all mt-1">{doc.fileRef}</div>
+                      {doc.fileRef ? (
+                        <a href={doc.fileRef} target="_blank" rel="noreferrer" className="text-xs text-blue-700 mt-1 inline-block">
+                          Open document
+                        </a>
+                      ) : (
+                        <div className="text-xs text-gray-400 mt-1">Document link unavailable</div>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -271,26 +283,39 @@ export default function VendorDetailPage() {
 
               <Section title="Listing review">
                 <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 rounded-lg border text-sm"
-                    disabled={actions.underReview.isPending}
-                    onClick={() => run('Moved to under review', () => actions.underReview.mutateAsync())}
-                  >
-                    Under review
-                  </button>
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm"
-                    disabled={actions.approveListing.isPending}
-                    onClick={() =>
-                      run('Listing approved (not verified)', () =>
-                        actions.approveListing.mutateAsync({}),
-                      )
-                    }
-                  >
-                    Approve listing
-                  </button>
+                  {vendor.listingStatus !== 'listed' ? (
+                    <>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-lg border text-sm"
+                        disabled={actions.underReview.isPending}
+                        onClick={() => run('Moved to under review', () => actions.underReview.mutateAsync())}
+                      >
+                        Under review
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-lg bg-green-600 text-white text-sm"
+                        disabled={actions.approveListing.isPending}
+                        onClick={() =>
+                          run('Listing approved (not verified)', () =>
+                            actions.approveListing.mutateAsync({}),
+                          )
+                        }
+                      >
+                        Approve listing
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="px-3 py-1.5 rounded-lg border text-sm"
+                      disabled={actions.unlist.isPending}
+                      onClick={() => run('Vendor unlisted', () => actions.unlist.mutateAsync({}))}
+                    >
+                      Unlist
+                    </button>
+                  )}
                   {vendor.listingStatus === 'suspended' ? (
                     <button
                       type="button"
@@ -377,7 +402,17 @@ export default function VendorDetailPage() {
                 <div className="space-y-2">
                   {VERIFICATION_CHECK_OPTIONS.map((opt) => (
                     <label key={opt.key} className="flex items-center justify-between gap-3 text-sm">
-                      <span>{opt.label}</span>
+                      <span>
+                        {opt.label}
+                        {opt.key === 'product_categories' ? (
+                          <span className="block text-xs text-gray-500 font-normal mt-1">
+                            {(vendor as { primaryFamilyKey?: string }).primaryFamilyKey || 'No primary category'}
+                            {((vendor as { products?: Array<{ name: string }> }).products || []).length
+                              ? ` · ${((vendor as { products?: Array<{ name: string }> }).products || []).map((product) => product.name).join(', ')}`
+                              : ' · No products listed'}
+                          </span>
+                        ) : null}
+                      </span>
                       <select
                         value={checkState[opt.key] || 'not_started'}
                         onChange={(e) =>
@@ -414,6 +449,25 @@ export default function VendorDetailPage() {
                   <ShieldCheck className="w-4 h-4" />
                   Save checks / mark verified if ready
                 </button>
+              </Section>
+
+              <Section title="Claim">
+                <Row
+                  label="Claimant"
+                  value={(vendor as { user?: { fullName?: string } }).user?.fullName || (vendor.claimStatus === 'claimed' ? 'Claimed account' : 'Not claimed')}
+                />
+                <Row label="Claim email" value={(vendor as { claimEmail?: string }).claimEmail} />
+                <Row
+                  label="Claim date"
+                  value={(vendor as { claimedAt?: string }).claimedAt ? new Date((vendor as { claimedAt?: string }).claimedAt as string).toLocaleString() : undefined}
+                />
+                {(vendor as { claimEmail?: string }).claimEmail &&
+                vendor.publicEmail &&
+                (vendor as { claimEmail?: string }).claimEmail?.toLowerCase() !== vendor.publicEmail.toLowerCase() ? (
+                  <p className="text-sm text-amber-800">
+                    Claim email {(vendor as { claimEmail?: string }).claimEmail} differs from the listed email {vendor.publicEmail}.
+                  </p>
+                ) : null}
               </Section>
 
               <Section title="Claim invite">
@@ -453,6 +507,10 @@ export default function VendorDetailPage() {
               </Section>
 
               <Section title="Procurement / relationship">
+                <p className="text-sm text-gray-600">
+                  Last contacted:{' '}
+                  {vendor.lastContactedAt ? new Date(vendor.lastContactedAt).toLocaleString() : 'Never'}
+                </p>
                 <select
                   className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
                   value={vendor.procurementRelationship}
@@ -551,8 +609,16 @@ export default function VendorDetailPage() {
                         <span className="font-medium">{a.summary || a.type}</span>
                       </div>
                       {a.note && <p className="text-gray-600 mt-1">{a.note}</p>}
+                      {Array.isArray((a as { metadata?: { changes?: Array<{ field: string; old: unknown; new: unknown }> } }).metadata?.changes)
+                        ? (a as { metadata?: { changes?: Array<{ field: string; old: unknown; new: unknown }> } }).metadata?.changes?.map((change) => (
+                            <p key={change.field} className="text-xs text-gray-600 mt-1">
+                              {change.field}: {String(change.old ?? 'empty')} → {String(change.new ?? 'empty')}
+                            </p>
+                          ))
+                        : null}
                       <p className="text-[11px] text-gray-400 mt-1">
                         {new Date(a.createdAt).toLocaleString()}
+                        {a.actorAdminId ? ` · ${a.actorAdminId}` : ''}
                       </p>
                     </li>
                   ))}
