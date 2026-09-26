@@ -147,6 +147,24 @@ export {
 } from './build-opportunity-taxonomy';
 
 export {
+  LAGOS_VENDOR_AREAS,
+  VENDOR_BUSINESS_TYPES,
+  VENDOR_CATEGORIES,
+  VENDOR_CATEGORY_GROUPS,
+  VENDOR_DELIVERY_STATUSES,
+  VENDOR_REGISTRY_STATUSES,
+  canonicalVendorCategorySlug,
+  categoryMatchSlugs,
+  publicDeliverySummary,
+  publicVerificationCheckLabel,
+  resolveVendorCategory,
+  vendorCategoryLabel,
+  type VendorCategory,
+  type VendorCategoryGroup,
+  type VendorDeliveryStatusValue,
+} from './vendor-catalog';
+
+export {
   buildOpportunityDisplayData,
   formatOpportunityCheckValue,
   getAllOpportunityProfiles,

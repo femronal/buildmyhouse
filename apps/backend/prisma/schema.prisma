@@ -193,6 +193,18 @@ enum VendorAddressVisibility {
   private
 }
 
+enum VendorDeliveryStatus {
+  not_confirmed
+  delivers
+  pickup_only
+}
+
+enum VendorRegistryStatus {
+  active
+  inactive
+  unknown
+}
+
 model User {
   id                           String    @id @default(uuid())
   email                        String    @unique
@@ -3148,14 +3160,36 @@ model VendorProfile {
   lgaLabel             String?
   localAreaLabel       String?
   publicAddress        String?
+  /// Landmark shown with the public street address. Not a verification claim.
+  landmark             String?
+  /// Lagos area key from the shared vendor catalog, e.g. lekki-ajah.
+  localAreaKey         String?
   privateBusinessAddress String?
   addressVisibility    VendorAddressVisibility @default(public_city_state_only)
   latitude             Float?
   longitude            Float?
+  deliveryStatus       VendorDeliveryStatus @default(not_confirmed)
+
+  /// Primary directory category slug, plus up to five secondary slugs.
+  primaryFamilyKey     String?
+  secondaryFamilyKeys  String[] @default([])
+  /// Lowercased description, products, brands and categories for directory search.
+  catalogSearchText    String?
 
   /// Private verification identity (never exposed on public APIs).
   cacRegistrationStatus String? // registered | not_registered | unknown | not_applicable
   cacNumber             String?
+  cacRegisteredName     String?
+  cacRegistryStatus     VendorRegistryStatus?
+  cacRegisteredOn       DateTime?
+  cacCheckedVia         String?
+  cacCheckedAt          DateTime?
+  cacCheckedByAdminId   String?
+  cacCheckedByName      String?
+  lastContactedAt       DateTime?
+  emailBounced          Boolean @default(false)
+  claimedAt             DateTime?
+  claimEmail            String?
   taxIdentificationNumber String?
   bankAccountName       String?
 
@@ -3193,6 +3227,7 @@ model VendorProfile {
 
   representatives   VendorRepresentative[]
   offerings         VendorOffering[]
+  products          VendorProduct[]
   serviceAreas      VendorServiceArea[]
   documents         VendorDocument[]
   verificationChecks VendorVerificationCheck[]
@@ -3286,6 +3321,23 @@ model VendorOffering {
   @@map("vendor_offerings")
 }
 
+model VendorProduct {
+  id              String   @id @default(uuid())
+  vendorProfileId String
+  name            String
+  spec            String?
+  unit            String?
+  brand           String?
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  vendorProfile VendorProfile @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([vendorProfileId])
+  @@map("vendor_products")
+}
+
 model VendorServiceArea {
   id              String  @id @default(uuid())
   vendorProfileId String
@@ -3316,6 +3368,9 @@ model VendorDocument {
   label           String?
   /// S3 object key or private file ref — not a long-lived public URL.
   fileRef         String
+  contentHash     String?
+  /// Storefront and product photos may be shown on the public page. Verification files stay private.
+  isPublic        Boolean @default(false)
   mimeType        String?
   fileSizeBytes   Int?
   reviewStatus    VendorDocumentReviewStatus @default(pending)

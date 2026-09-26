@@ -8,6 +8,12 @@ import {
   type VendorServiceArea,
   type VendorVerificationCheck,
 } from '@prisma/client';
+import {
+  canonicalVendorCategorySlug,
+  publicDeliverySummary,
+  publicVerificationCheckLabel,
+  vendorCategoryLabel,
+} from './vendor-catalog';
 
 export function normalizeVendorSlug(input: string): string {
   return String(input || '')
@@ -125,6 +131,14 @@ export type PublicVendorCard = {
   sellsRetail: boolean;
   sellsWholesale: boolean;
   deliveryAvailable: boolean | null;
+  deliverySummary: string;
+  primaryCategory: string | null;
+  primaryCategoryLabel: string | null;
+  secondaryCategories: string[];
+  extraCategoryCount: number;
+  claimed: boolean;
+  localAreaKey: string | null;
+  localAreaLabel: string | null;
   yearEstablished: number | null;
   yearsInBusiness: number | null;
   profileCompleteness: number;
@@ -158,7 +172,15 @@ export type PublicVendorProfile = PublicVendorCard & {
     pricingDisclaimer: string;
     bmhRelationship: string | null;
     checksPerformed: Array<{ key: string; status: string }>;
+    checklist: Array<{ key: string; label: string; status: 'Passed' | 'Not yet checked' }>;
+    listingIsNotVerification: string;
   };
+  products: Array<{ name: string; spec: string | null; unit: string | null; brand: string | null }>;
+  publicAddress: string | null;
+  landmark: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  photos: Array<{ url: string; label: string | null; documentType: string }>;
   representative: { name: string; role: string | null } | null;
   offerings: Array<{
     familyKey: string | null;
@@ -197,7 +219,21 @@ type ProfileWithRelations = VendorProfile & {
   serviceAreas?: VendorServiceArea[];
   representatives?: VendorRepresentative[];
   verificationChecks?: VendorVerificationCheck[];
+  products?: Array<{ name: string; spec?: string | null; unit?: string | null; brand?: string | null; sortOrder?: number }>;
+  documents?: Array<{ documentType: string; fileRef: string; label?: string | null; isPublic?: boolean; reviewStatus?: string }>;
 };
+
+const PUBLIC_CHECK_LABELS: Array<{ key: string; label: string }> = [
+  { key: 'business_identity', label: 'Business identity' },
+  { key: 'business_registration', label: 'Registration' },
+  { key: 'representative_identity', label: 'Representative identity' },
+  { key: 'phone', label: 'Phone verified' },
+  { key: 'location_evidence', label: 'Location evidence' },
+  { key: 'product_categories', label: 'Product categories reviewed' },
+  { key: 'supporting_evidence', label: 'Supporting evidence' },
+];
+
+const PUBLIC_PHOTO_TYPES = new Set(['storefront_photo', 'warehouse_photo', 'logo']);
 
 function yearsInBusiness(yearEstablished?: number | null): number | null {
   if (!yearEstablished || yearEstablished < 1900) return null;
@@ -229,25 +265,34 @@ function checkStatusLabel(
 
 export function toPublicVendorCard(profile: ProfileWithRelations): PublicVendorCard {
   const offerings = profile.offerings || [];
-  const categories = Array.from(
-    new Set(
-      offerings
-        .map((o) => o.customCategoryLabel || o.familyKey || o.categoryCode)
-        .filter(Boolean) as string[],
-    ),
+  const primary = canonicalVendorCategorySlug(profile.primaryFamilyKey)
+    || canonicalVendorCategorySlug(offerings.find((o) => o.familyKey)?.familyKey || null);
+  const secondary = (profile.secondaryFamilyKeys || [])
+    .map((slug) => canonicalVendorCategorySlug(slug))
+    .filter((slug): slug is string => !!slug && slug !== primary)
+    .slice(0, 5);
+  const offeringCategories = offerings
+    .map((o) => canonicalVendorCategorySlug(o.familyKey) || o.customCategoryLabel || o.categoryCode)
+    .filter((slug): slug is string => !!slug);
+  const categories = Array.from(new Set([primary, ...secondary, ...offeringCategories].filter(Boolean) as string[])).slice(0, 8);
+  const brands = Array.from(
+    new Set([
+      ...offerings.flatMap((o) => o.brands || []),
+      ...(profile.products || []).map((product) => product.brand).filter(Boolean),
+    ] as string[]),
   ).slice(0, 8);
-  const brands = Array.from(new Set(offerings.flatMap((o) => o.brands || []))).slice(0, 8);
   const sellsRetail = offerings.some((o) => o.sellsRetail) || profile.businessTypes.includes('retailer');
   const sellsWholesale =
     offerings.some((o) => o.sellsWholesale) ||
     profile.businessTypes.some((t) => ['wholesaler', 'distributor'].includes(t));
-  const deliveryFlags = offerings.map((o) => o.deliveryAvailable);
-  const deliveryAvailable =
-    deliveryFlags.length === 0
-      ? profile.nationwideDelivery || profile.interstateDelivery
-        ? true
-        : null
-      : deliveryFlags.some(Boolean);
+  const areaLabels = (profile.serviceAreas || [])
+    .map((area) => area.cityLabel || area.stateLabel || area.locationKey)
+    .filter((label): label is string => !!label);
+  const deliverySummary = publicDeliverySummary({
+    deliveryStatus: profile.deliveryStatus,
+    areaLabels,
+  });
+  const deliveryAvailable = profile.deliveryStatus === 'delivers' ? true : null;
 
   return {
     id: profile.id,
@@ -266,6 +311,14 @@ export function toPublicVendorCard(profile: ProfileWithRelations): PublicVendorC
     sellsRetail,
     sellsWholesale,
     deliveryAvailable,
+    deliverySummary,
+    primaryCategory: primary,
+    primaryCategoryLabel: primary ? vendorCategoryLabel(primary) : null,
+    secondaryCategories: secondary,
+    extraCategoryCount: Math.max(0, categories.length - (primary ? 1 : 0)),
+    claimed: profile.claimStatus === 'claimed',
+    localAreaKey: profile.localAreaKey,
+    localAreaLabel: profile.localAreaLabel,
     yearEstablished: profile.yearEstablished,
     yearsInBusiness: yearsInBusiness(profile.yearEstablished),
     profileCompleteness: profile.profileCompleteness,
@@ -318,7 +371,30 @@ export function toPublicVendorProfile(profile: ProfileWithRelations): PublicVend
           ].includes(c.status as any),
         )
         .map((c) => ({ key: c.checkKey, status: c.status })),
+      checklist: PUBLIC_CHECK_LABELS.map((item) => ({
+        key: item.key,
+        label: item.label,
+        status: publicVerificationCheckLabel(checks.find((check) => check.checkKey === item.key)?.status),
+      })),
+      listingIsNotVerification: 'Listing is not the same as verification.',
     },
+    products: (profile.products || []).map((product) => ({
+      name: product.name,
+      spec: product.spec || null,
+      unit: product.unit || null,
+      brand: product.brand || null,
+    })),
+    publicAddress: profile.publicAddress,
+    landmark: profile.landmark,
+    latitude: profile.latitude,
+    longitude: profile.longitude,
+    photos: (profile.documents || [])
+      .filter((doc) => doc.isPublic && PUBLIC_PHOTO_TYPES.has(doc.documentType))
+      .map((doc) => ({
+        url: doc.fileRef,
+        label: doc.label || null,
+        documentType: doc.documentType,
+      })),
     representative: publicRep
       ? { name: publicRep.name, role: publicRep.role }
       : null,

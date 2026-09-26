@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,7 +31,8 @@ function mockPrisma(overrides: Record<string, any> = {}) {
     vendorOffering: { deleteMany: jest.fn(), createMany: jest.fn() },
     vendorServiceArea: { deleteMany: jest.fn(), createMany: jest.fn() },
     vendorRepresentative: { deleteMany: jest.fn(), create: jest.fn() },
-    vendorDocument: { create: jest.fn() },
+    vendorDocument: { create: jest.fn(), findFirst: jest.fn() },
+    vendorProduct: { deleteMany: jest.fn(), createMany: jest.fn() },
     vendorVerificationCheck: { upsert: jest.fn(), findMany: jest.fn() },
     vendorProfileChangeRequest: { create: jest.fn() },
     user: { findUnique: jest.fn(), update: jest.fn() },
@@ -205,5 +207,113 @@ describe('VendorsService', () => {
     const updateData = prisma.vendorProfile.update.mock.calls[0][0].data;
     expect(updateData.verificationStatus).toBeUndefined();
     expect(result.listingStatus).toBe(VendorListingStatus.listed);
+  });
+
+  it('persists a vendor street address on admin update (Nigerchin regression)', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'nigerchin',
+      publicAddress: 'old yard',
+      websiteUrl: null,
+      documents: [],
+    });
+    prisma.vendorProfile.update.mockResolvedValue({});
+    prisma.vendorProfile.findUnique.mockResolvedValue({
+      tradingName: 'Nigerchin',
+      description: null,
+      offerings: [],
+      products: [],
+      serviceAreas: [],
+      documents: [],
+      representatives: [],
+      businessTypes: [],
+      paymentMethodsAccepted: [],
+      secondaryFamilyKeys: [],
+      primaryFamilyKey: null,
+      priceListAvailable: false,
+    });
+    prisma.vendorActivity.create.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+    await service.adminUpdate('nigerchin', 'admin-1', {
+      publicAddress: '12 Industrial Crescent, Lagos',
+      websiteUrl: '',
+    });
+    expect(prisma.vendorProfile.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          publicAddress: '12 Industrial Crescent, Lagos',
+          websiteUrl: null,
+        }),
+      }),
+    );
+    expect(prisma.vendorActivity.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            changes: expect.arrayContaining([
+              expect.objectContaining({
+                field: 'publicAddress',
+                old: 'old yard',
+                new: '12 Industrial Crescent, Lagos',
+              }),
+            ]),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('refuses to mark registration Passed without an RC number and registry status', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      cacNumber: null,
+      cacRegistryStatus: null,
+    });
+    const service = new VendorsService(prisma as any, email as any);
+    await expect(
+      service.adminUpsertVerificationChecks('v1', 'admin-1', {
+        checks: [{ checkKey: 'business_registration' as any, status: 'passed' as any }],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.vendorVerificationCheck.upsert).not.toHaveBeenCalled();
+  });
+
+  it('matches plywood in product names and aliases pop-ceilings to ceilings', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.count.mockResolvedValue(0);
+    prisma.vendorProfile.findMany.mockResolvedValue([]);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.searchPublic({ query: 'plywood', page: 1, limit: 20 });
+    expect(JSON.stringify(prisma.vendorProfile.findMany.mock.calls[0][0].where)).toContain('plywood');
+    await service.searchPublic({ familyKey: 'pop-ceilings', page: 1, limit: 20 });
+    const categoryWhere = JSON.stringify(prisma.vendorProfile.findMany.mock.calls[1][0].where);
+    expect(categoryWhere).toContain('ceilings');
+    expect(categoryWhere).toContain('pop-ceilings');
+  });
+
+  it('returns a signed document URL instead of the stored public object URL', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      documents: [{ id: 'doc', fileRef: 'https://buildmyhouse-prod-uploads.s3.amazonaws.com/uploads/vendors/cac.pdf' }],
+    });
+    const uploads = { signGetUrl: jest.fn().mockResolvedValue('https://signed.example/cac?X-Amz-Signature=1') };
+    const service = new VendorsService(prisma as any, email as any, uploads as any);
+    const result = await service.adminGet('v1');
+    expect(result.documents[0].fileRef).toBe('https://signed.example/cac?X-Amz-Signature=1');
+    expect(result.documents[0].fileRef).not.toContain('cac.pdf');
+  });
+
+  it('requires confirmation before a bulk vendor action', async () => {
+    const prisma = mockPrisma();
+    const service = new VendorsService(prisma as any, email as any);
+    await expect(
+      service.adminBulk('admin-1', {
+        action: 'send_claim_invites',
+        ids: ['v1'],
+        confirm: false,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

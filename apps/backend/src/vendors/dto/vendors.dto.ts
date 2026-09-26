@@ -16,11 +16,13 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import {
   VendorAcquisitionSource,
   VendorActivityType,
+  VendorClaimStatus,
   VendorAddressVisibility,
   VendorDocumentType,
   VendorListingStatus,
@@ -83,6 +85,8 @@ export class VendorDocumentInputDto {
   @IsOptional() @IsString() label?: string;
   @IsOptional() @IsString() mimeType?: string;
   @IsOptional() @IsInt() fileSizeBytes?: number;
+  @IsOptional() @IsString() contentHash?: string;
+  @IsOptional() @IsBoolean() isPublic?: boolean;
 }
 
 export class PublicVendorSearchDto {
@@ -92,6 +96,7 @@ export class PublicVendorSearchDto {
   @IsOptional() @IsString() brand?: string;
   @IsOptional() @IsString() stateKey?: string;
   @IsOptional() @IsString() cityKey?: string;
+  @IsOptional() @IsString() localAreaKey?: string;
   @IsOptional() @IsString() deliveryStateKey?: string;
   @IsOptional() @IsBoolean() @Type(() => Boolean) verifiedOnly?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) retail?: boolean;
@@ -209,14 +214,53 @@ export class AdminVendorSearchDto {
   @IsOptional() @IsString() deliveryStateKey?: string;
   @IsOptional() @IsBoolean() @Type(() => Boolean) wholesale?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) previouslyUsed?: boolean;
+  @IsOptional() @IsEnum(VendorClaimStatus) claimStatus?: VendorClaimStatus;
+  @IsOptional() @IsIn(['never', 'older_than_7', 'older_than_30', 'older_than_90'])
+  lastContacted?: 'never' | 'older_than_7' | 'older_than_30' | 'older_than_90';
+  @IsOptional() @IsBoolean() @Type(() => Boolean) emailBounced?: boolean;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) completenessMin?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(0) @Max(100) completenessMax?: number;
+  @IsOptional() @IsString() localAreaKey?: string;
+  @IsOptional() @IsBoolean() @Type(() => Boolean) needsDataCleanup?: boolean;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit?: number = 30;
+}
+
+export class AdminVendorProductDto {
+  @IsString() @MaxLength(160) name!: string;
+  @IsOptional() @IsString() @MaxLength(160) spec?: string;
+  @IsOptional() @IsString() @MaxLength(40) unit?: string;
+  @IsOptional() @IsString() @MaxLength(80) brand?: string;
 }
 
 export class AdminCreateVendorDto {
   @IsString() @MinLength(2) @MaxLength(160) tradingName!: string;
   @IsOptional() @IsString() legalName?: string;
-  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() @MaxLength(1000) description?: string;
+  @IsOptional() @IsInt() @Min(1800) yearEstablished?: number;
+  @IsOptional() @ValidateIf((_, value) => value !== '' && value != null) @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @IsEmail() quotationEmail?: string;
+  @IsOptional() @IsString() salesContactName?: string;
+  @IsOptional() @IsString() localAreaLabel?: string;
+  @IsOptional() @IsString() localAreaKey?: string;
+  @IsOptional() @IsString() publicAddress?: string;
+  @IsOptional() @IsString() landmark?: string;
+  @IsOptional() @IsString() privateBusinessAddress?: string;
+  @IsOptional() @IsNumber() latitude?: number;
+  @IsOptional() @IsNumber() longitude?: number;
+  @IsOptional() @IsIn(['not_confirmed', 'delivers', 'pickup_only']) deliveryStatus?: 'not_confirmed' | 'delivers' | 'pickup_only';
+  @IsOptional() @IsString() primaryFamilyKey?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(5) @IsString({ each: true }) secondaryFamilyKeys?: string[];
+  @IsOptional() @IsBoolean() sellsRetail?: boolean;
+  @IsOptional() @IsBoolean() sellsWholesale?: boolean;
+  @IsOptional() @IsString() cacNumber?: string;
+  @IsOptional() @IsString() cacRegisteredName?: string;
+  @IsOptional() @IsIn(['active', 'inactive', 'unknown']) cacRegistryStatus?: 'active' | 'inactive' | 'unknown';
+  @IsOptional() @IsString() cacRegisteredOn?: string;
+  @IsOptional() @IsString() cacCheckedVia?: string;
+  @IsOptional() @IsString() cacCheckedAt?: string;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AdminVendorProductDto) products?: AdminVendorProductDto[];
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => VendorServiceAreaInputDto) serviceAreas?: VendorServiceAreaInputDto[];
   @IsOptional() @IsString() publicPhone?: string;
   @IsOptional() @IsString() publicWhatsApp?: string;
   @IsOptional() @IsEmail() publicEmail?: string;
@@ -242,7 +286,7 @@ export class AdminCreateVendorDto {
 export class AdminUpdateVendorDto {
   @IsOptional() @IsString() tradingName?: string;
   @IsOptional() @IsString() legalName?: string;
-  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() @MaxLength(1000) description?: string;
   @IsOptional() @IsString() logoUrl?: string;
   @IsOptional() @IsInt() yearEstablished?: number;
   @IsOptional() @IsArray() @IsString({ each: true }) businessTypes?: string[];
@@ -252,7 +296,7 @@ export class AdminUpdateVendorDto {
   @IsOptional() @IsBoolean() showPublicPhone?: boolean;
   @IsOptional() @IsBoolean() showPublicWhatsApp?: boolean;
   @IsOptional() @IsBoolean() showPublicEmail?: boolean;
-  @IsOptional() @IsUrl({ require_protocol: true }) websiteUrl?: string;
+  @IsOptional() @ValidateIf((_, value) => value !== '' && value != null) @IsUrl({ require_protocol: true }) websiteUrl?: string;
   @IsOptional() @IsObject() socialLinks?: Record<string, string>;
   @IsOptional() @IsEnum(VendorPreferredContactMethod) preferredContactMethod?: VendorPreferredContactMethod;
   @IsOptional() @IsString() salesContactName?: string;
@@ -266,6 +310,14 @@ export class AdminUpdateVendorDto {
   @IsOptional() @IsString() cityLabel?: string;
   @IsOptional() @IsString() lgaLabel?: string;
   @IsOptional() @IsString() publicAddress?: string;
+  @IsOptional() @IsString() landmark?: string;
+  @IsOptional() @IsString() localAreaLabel?: string;
+  @IsOptional() @IsString() localAreaKey?: string;
+  @IsOptional() @IsNumber() latitude?: number;
+  @IsOptional() @IsNumber() longitude?: number;
+  @IsOptional() @IsIn(['not_confirmed', 'delivers', 'pickup_only']) deliveryStatus?: 'not_confirmed' | 'delivers' | 'pickup_only';
+  @IsOptional() @IsString() primaryFamilyKey?: string;
+  @IsOptional() @IsArray() @ArrayMaxSize(5) @IsString({ each: true }) secondaryFamilyKeys?: string[];
   @IsOptional() @IsString() privateBusinessAddress?: string;
   @IsOptional() @IsEnum(VendorAddressVisibility) addressVisibility?: VendorAddressVisibility;
   @IsOptional() @IsBoolean() acceptsSmallOrders?: boolean;
@@ -290,6 +342,11 @@ export class AdminUpdateVendorDto {
   @IsOptional() @IsInt() typicalQuoteResponseHours?: number;
   @IsOptional() @IsString() cacRegistrationStatus?: string;
   @IsOptional() @IsString() cacNumber?: string;
+  @IsOptional() @IsString() cacRegisteredName?: string;
+  @IsOptional() @IsIn(['active', 'inactive', 'unknown']) cacRegistryStatus?: 'active' | 'inactive' | 'unknown';
+  @IsOptional() @IsString() cacRegisteredOn?: string;
+  @IsOptional() @IsString() cacCheckedVia?: string;
+  @IsOptional() @IsString() cacCheckedAt?: string;
   @IsOptional() @IsString() taxIdentificationNumber?: string;
   @IsOptional() @IsString() bankAccountName?: string;
   @IsOptional() @IsEnum(VendorProcurementRelationship) procurementRelationship?: VendorProcurementRelationship;
@@ -308,6 +365,16 @@ export class AdminUpdateVendorDto {
   @ValidateNested()
   @Type(() => VendorRepresentativeInputDto)
   representative?: VendorRepresentativeInputDto;
+  @IsOptional() @IsArray() @ValidateNested({ each: true }) @Type(() => AdminVendorProductDto) products?: AdminVendorProductDto[];
+}
+
+export class AdminBulkVendorActionDto {
+  @IsIn(['set_category', 'send_claim_invites', 'set_listing_status'])
+  action!: 'set_category' | 'send_claim_invites' | 'set_listing_status';
+  @IsArray() @ArrayMaxSize(100) @IsString({ each: true }) ids!: string[];
+  @IsBoolean() confirm!: boolean;
+  @IsOptional() @IsString() primaryFamilyKey?: string;
+  @IsOptional() @IsEnum(VendorListingStatus) listingStatus?: VendorListingStatus;
 }
 
 export class AdminReviewActionDto {

@@ -20,6 +20,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import {
   AdminActivityDto,
+  AdminBulkVendorActionDto,
   AdminClaimInviteDto,
   AdminCreateVendorDto,
   AdminReviewActionDto,
@@ -49,16 +50,30 @@ import {
   toPublicVendorProfile,
   websiteDomain,
 } from './vendor-helpers';
+import { canonicalVendorCategorySlug, categoryMatchSlugs } from './vendor-catalog';
+import { S3UploadService } from '../upload/s3-upload.service';
 
 const PUBLIC_INCLUDE = {
   offerings: { orderBy: { sortOrder: 'asc' as const } },
+  products: { orderBy: { sortOrder: 'asc' as const } },
   serviceAreas: true,
   representatives: true,
   verificationChecks: true,
+  documents: {
+    where: {
+      isPublic: true,
+      documentType: { in: ['storefront_photo', 'warehouse_photo', 'logo'] },
+    },
+  },
 } satisfies Prisma.VendorProfileInclude;
 
 const ADMIN_INCLUDE = {
-  ...PUBLIC_INCLUDE,
+  offerings: { orderBy: { sortOrder: 'asc' as const } },
+  products: { orderBy: { sortOrder: 'asc' as const } },
+  serviceAreas: true,
+  representatives: true,
+  verificationChecks: true,
+  user: { select: { id: true, fullName: true, email: true } },
   documents: { orderBy: { createdAt: 'desc' as const } },
   adminNotes: { orderBy: { createdAt: 'desc' as const }, take: 50 },
   activities: { orderBy: { createdAt: 'desc' as const }, take: 50 },
@@ -72,6 +87,7 @@ export class VendorsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
+    private readonly uploads?: S3UploadService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -343,9 +359,25 @@ export class VendorsService {
       }),
     ]);
 
+    const hiddenFromDirectory = await this.prisma.vendorProfile.count({
+      where: { deletedAt: null, listingStatus: { not: VendorListingStatus.listed } },
+    });
+
     return {
-      data: rows,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 0 },
+      data: rows.map((row) => ({
+        ...row,
+        directoryVisibility:
+          row.listingStatus === VendorListingStatus.listed
+            ? 'Listed'
+            : `Hidden from the public directory: ${row.listingStatus.replace(/_/g, ' ')}`,
+      })),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit) || 0,
+        hiddenFromDirectory,
+      },
     };
   }
 
@@ -355,7 +387,7 @@ export class VendorsService {
       include: ADMIN_INCLUDE,
     });
     if (!profile) throw new NotFoundException('Vendor not found');
-    return profile;
+    return this.withSignedDocuments(profile);
   }
 
   async adminCreate(adminId: string, dto: AdminCreateVendorDto) {
@@ -389,6 +421,28 @@ export class VendorsService {
         stateKey: dto.stateKey || null,
         stateLabel: dto.stateLabel || null,
         cityLabel: dto.cityLabel || null,
+        localAreaLabel: dto.localAreaLabel || null,
+        localAreaKey: dto.localAreaKey || null,
+        publicAddress: dto.publicAddress || null,
+        landmark: dto.landmark || null,
+        privateBusinessAddress: dto.privateBusinessAddress || null,
+        latitude: dto.latitude ?? null,
+        longitude: dto.longitude ?? null,
+        websiteUrl: dto.websiteUrl || null,
+        websiteDomain: websiteDomain(dto.websiteUrl),
+        yearEstablished: dto.yearEstablished ?? null,
+        quotationEmail: dto.quotationEmail || null,
+        salesContactName: dto.salesContactName || null,
+        deliveryStatus: dto.deliveryStatus || 'not_confirmed',
+        primaryFamilyKey: canonicalVendorCategorySlug(dto.primaryFamilyKey || dto.offerings?.[0]?.familyKey),
+        secondaryFamilyKeys: (dto.secondaryFamilyKeys || []).map((slug) => canonicalVendorCategorySlug(slug)).filter(Boolean).slice(0, 5) as string[],
+        cacNumber: dto.cacNumber || null,
+        cacRegisteredName: dto.cacRegisteredName || null,
+        cacRegistryStatus: dto.cacRegistryStatus || null,
+        cacRegisteredOn: dto.cacRegisteredOn ? new Date(dto.cacRegisteredOn) : null,
+        cacCheckedVia: dto.cacCheckedVia || null,
+        cacCheckedAt: dto.cacCheckedAt ? new Date(dto.cacCheckedAt) : null,
+        cacCheckedByAdminId: dto.cacNumber ? adminId : null,
         normalizedTradingName: normalizeTradingName(dto.tradingName),
         normalizedPhone: normalizePhone(dto.publicPhone),
         normalizedWhatsApp: normalizePhone(dto.publicWhatsApp),
@@ -397,6 +451,35 @@ export class VendorsService {
         profileCompleteness: this.completenessFromPayload(dto),
         offerings: dto.offerings?.length
           ? { create: dto.offerings.map((o, i) => this.mapOfferingCreate(o, i)) }
+          : dto.primaryFamilyKey
+            ? {
+                create: [
+                  this.mapOfferingCreate(
+                    {
+                      familyKey: canonicalVendorCategorySlug(dto.primaryFamilyKey) || dto.primaryFamilyKey,
+                      sellsRetail: dto.sellsRetail ?? true,
+                      sellsWholesale: dto.sellsWholesale ?? false,
+                    },
+                    0,
+                  ),
+                ],
+              }
+            : undefined,
+        products: dto.products?.length
+          ? {
+              create: dto.products
+                .filter((product) => product.name?.trim())
+                .map((product, index) => ({
+                  name: product.name.trim(),
+                  spec: product.spec?.trim() || null,
+                  unit: product.unit?.trim() || null,
+                  brand: product.brand?.trim() || null,
+                  sortOrder: index,
+                })),
+            }
+          : undefined,
+        serviceAreas: dto.serviceAreas?.length
+          ? { create: dto.serviceAreas.map((area) => this.mapServiceAreaCreate(area)) }
           : undefined,
         representatives: dto.representative
           ? { create: [this.mapRepresentativeCreate(dto.representative)] }
@@ -425,7 +508,8 @@ export class VendorsService {
   }
 
   async adminUpdate(id: string, adminId: string, dto: AdminUpdateVendorDto) {
-    await this.requireVendor(id);
+    const before = await this.requireVendor(id);
+    const websiteUrl = dto.websiteUrl === '' ? null : dto.websiteUrl;
     const data: Prisma.VendorProfileUpdateInput = {
       tradingName: dto.tradingName?.trim(),
       legalName: dto.legalName?.trim(),
@@ -439,7 +523,7 @@ export class VendorsService {
       showPublicPhone: dto.showPublicPhone,
       showPublicWhatsApp: dto.showPublicWhatsApp,
       showPublicEmail: dto.showPublicEmail,
-      websiteUrl: dto.websiteUrl,
+      websiteUrl,
       socialLinks: dto.socialLinks,
       preferredContactMethod: dto.preferredContactMethod,
       salesContactName: dto.salesContactName,
@@ -453,6 +537,23 @@ export class VendorsService {
       cityLabel: dto.cityLabel,
       lgaLabel: dto.lgaLabel,
       publicAddress: dto.publicAddress,
+      landmark: dto.landmark,
+      localAreaLabel: dto.localAreaLabel,
+      localAreaKey: dto.localAreaKey,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      deliveryStatus: dto.deliveryStatus,
+      primaryFamilyKey:
+        dto.primaryFamilyKey !== undefined
+          ? canonicalVendorCategorySlug(dto.primaryFamilyKey)
+          : undefined,
+      secondaryFamilyKeys:
+        dto.secondaryFamilyKeys !== undefined
+          ? (dto.secondaryFamilyKeys
+              .map((slug) => canonicalVendorCategorySlug(slug))
+              .filter(Boolean)
+              .slice(0, 5) as string[])
+          : undefined,
       privateBusinessAddress: dto.privateBusinessAddress,
       addressVisibility: dto.addressVisibility,
       acceptsSmallOrders: dto.acceptsSmallOrders,
@@ -477,6 +578,12 @@ export class VendorsService {
       typicalQuoteResponseHours: dto.typicalQuoteResponseHours,
       cacRegistrationStatus: dto.cacRegistrationStatus,
       cacNumber: dto.cacNumber,
+      cacRegisteredName: dto.cacRegisteredName,
+      cacRegistryStatus: dto.cacRegistryStatus,
+      cacRegisteredOn: dto.cacRegisteredOn ? new Date(dto.cacRegisteredOn) : dto.cacRegisteredOn === '' ? null : undefined,
+      cacCheckedVia: dto.cacCheckedVia,
+      cacCheckedAt: dto.cacCheckedAt ? new Date(dto.cacCheckedAt) : dto.cacCheckedAt === '' ? null : undefined,
+      cacCheckedByAdminId: dto.cacCheckedVia !== undefined ? adminId : undefined,
       taxIdentificationNumber: dto.taxIdentificationNumber,
       bankAccountName: dto.bankAccountName,
       procurementRelationship: dto.procurementRelationship,
@@ -489,7 +596,7 @@ export class VendorsService {
       normalizedWhatsApp:
         dto.publicWhatsApp !== undefined ? normalizePhone(dto.publicWhatsApp) : undefined,
       normalizedEmail: dto.publicEmail !== undefined ? normalizeEmail(dto.publicEmail) : undefined,
-      websiteDomain: dto.websiteUrl !== undefined ? websiteDomain(dto.websiteUrl) : undefined,
+      websiteDomain: dto.websiteUrl !== undefined ? websiteDomain(websiteUrl) : undefined,
     };
 
     await this.prisma.vendorProfile.update({
@@ -530,13 +637,41 @@ export class VendorsService {
       });
     }
 
+    if (dto.products) {
+      await this.prisma.vendorProduct.deleteMany({ where: { vendorProfileId: id } });
+      const rows = dto.products.filter((product) => product.name?.trim());
+      if (rows.length) {
+        await this.prisma.vendorProduct.createMany({
+          data: rows.map((product, index) => ({
+            vendorProfileId: id,
+            name: product.name.trim(),
+            spec: product.spec?.trim() || null,
+            unit: product.unit?.trim() || null,
+            brand: product.brand?.trim() || null,
+            sortOrder: index,
+          })),
+        });
+      }
+    }
+
     await this.refreshCompleteness(id);
+    const changes = this.profileFieldChanges(before, this.stripUndefined(data) as Record<string, unknown>);
+    if (dto.products) {
+      changes.push({
+        field: 'products',
+        old: null,
+        new: dto.products.map((product) => product.name).filter(Boolean).join(', '),
+      });
+    }
     await this.prisma.vendorActivity.create({
       data: {
         vendorProfileId: id,
         type: VendorActivityType.profile_correction,
-        summary: 'Admin updated vendor profile',
+        summary: changes.length
+          ? `Admin updated ${changes.map((change) => change.field).join(', ')}`
+          : 'Admin updated vendor profile',
         actorAdminId: adminId,
+        metadata: { changes } as Prisma.InputJsonValue,
       },
     });
 
@@ -725,8 +860,17 @@ export class VendorsService {
     adminId: string,
     dto: AdminUpsertVerificationChecksDto,
   ) {
-    await this.requireVendor(id);
+    const profile = await this.requireVendor(id);
     for (const check of dto.checks) {
+      if (
+        check.checkKey === VendorVerificationCheckKey.business_registration &&
+        check.status === VendorVerificationCheckStatus.passed &&
+        (!profile.cacNumber?.trim() || !profile.cacRegistryStatus)
+      ) {
+        throw new BadRequestException(
+          'Registration can be marked Passed only when the RC or BN number and registry status are filled in.',
+        );
+      }
       await this.prisma.vendorVerificationCheck.upsert({
         where: {
           vendorProfileId_checkKey: { vendorProfileId: id, checkKey: check.checkKey },
@@ -852,6 +996,7 @@ export class VendorsService {
           where: { id },
           data: {
             procurementRelationship: rel as any,
+            lastContactedAt: new Date(),
             previouslyUsedByBmh:
               dto.type === VendorActivityType.purchase_completed ? true : undefined,
           },
@@ -884,7 +1029,16 @@ export class VendorsService {
 
     await this.prisma.vendorProfile.update({
       where: { id },
-      data: { claimStatus: VendorClaimStatus.invite_sent },
+      data: {
+        claimStatus:
+          profile.claimStatus === VendorClaimStatus.claimed
+            ? VendorClaimStatus.claimed
+            : VendorClaimStatus.invite_sent,
+        claimEmail: email,
+        lastContactedAt: new Date(),
+        procurementRelationship:
+          profile.procurementRelationship === 'never_contacted' ? 'contacted' : undefined,
+      },
     });
     await this.prisma.vendorActivity.create({
       data: {
@@ -978,6 +1132,10 @@ export class VendorsService {
       throw new ConflictException('This account already manages another vendor profile');
     }
 
+    const profile = await this.requireVendor(invite.vendorProfileId);
+    const alreadyClaimed =
+      profile.claimStatus === VendorClaimStatus.claimed && profile.userId === userId;
+
     await this.prisma.$transaction([
       this.prisma.vendorClaimInvite.update({
         where: { id: invite.id },
@@ -988,6 +1146,11 @@ export class VendorsService {
         data: {
           userId,
           claimStatus: VendorClaimStatus.claimed,
+          claimedAt: profile.claimedAt || new Date(),
+          claimEmail: invite.email,
+          lastContactedAt: new Date(),
+          procurementRelationship:
+            profile.procurementRelationship === 'never_contacted' ? 'contacted' : undefined,
         },
       }),
       this.prisma.user.update({
@@ -998,8 +1161,13 @@ export class VendorsService {
         data: {
           vendorProfileId: invite.vendorProfileId,
           type: VendorActivityType.claim_accepted,
-          summary: 'Vendor claimed profile',
-          metadata: { userId },
+          summary: alreadyClaimed ? 'Re-claim recorded' : 'Vendor claimed profile',
+          metadata: {
+            userId,
+            claimantName: user.fullName,
+            claimEmail: invite.email,
+            reason: alreadyClaimed ? 'This account had already claimed the listing' : null,
+          },
         },
       }),
     ]);
@@ -1017,9 +1185,11 @@ export class VendorsService {
             id: true,
             documentType: true,
             label: true,
+            fileRef: true,
             reviewStatus: true,
             createdAt: true,
             rejectionReason: true,
+            isPublic: true,
           },
         },
         changeRequests: {
@@ -1030,7 +1200,7 @@ export class VendorsService {
       },
     });
     if (!profile) throw new NotFoundException('No vendor profile linked to this account');
-    return profile;
+    return this.withSignedDocuments(profile);
   }
 
   async updateManagedProfile(userId: string, dto: VendorManageUpdateDto) {
@@ -1122,6 +1292,19 @@ export class VendorsService {
 
   async addManagedDocument(userId: string, dto: VendorDocumentInputDto) {
     const profile = await this.getManagedProfile(userId);
+    if (dto.contentHash || dto.fileRef) {
+      const duplicate = await this.prisma.vendorDocument.findFirst({
+        where: {
+          vendorProfileId: profile.id,
+          documentType: dto.documentType,
+          OR: [
+            dto.contentHash ? { contentHash: dto.contentHash } : undefined,
+            { fileRef: dto.fileRef },
+          ].filter(Boolean) as Prisma.VendorDocumentWhereInput[],
+        },
+      });
+      if (duplicate) return duplicate;
+    }
     const doc = await this.prisma.vendorDocument.create({
       data: {
         vendorProfileId: profile.id,
@@ -1162,8 +1345,11 @@ export class VendorsService {
           { tradingName: { contains: q, mode: 'insensitive' } },
           { description: { contains: q, mode: 'insensitive' } },
           { offerings: { some: { brands: { has: q } } } },
-          { offerings: { some: { familyKey: { contains: q, mode: 'insensitive' } } } },
           { offerings: { some: { customCategoryLabel: { contains: q, mode: 'insensitive' } } } },
+          { products: { some: { name: { contains: q, mode: 'insensitive' } } } },
+          { products: { some: { spec: { contains: q, mode: 'insensitive' } } } },
+          { products: { some: { brand: { contains: q, mode: 'insensitive' } } } },
+          { catalogSearchText: { contains: q.toLowerCase(), mode: 'insensitive' } },
         ],
       });
     }
@@ -1172,25 +1358,18 @@ export class VendorsService {
     }
     if (dto.stateKey) and.push({ stateKey: dto.stateKey });
     if (dto.cityKey) and.push({ cityKey: dto.cityKey });
-    if (dto.familyKey || dto.category || dto.brand || dto.retail || dto.wholesale || dto.delivery) {
+    if (dto.localAreaKey) and.push({ localAreaKey: dto.localAreaKey });
+    const categorySlug = dto.familyKey || dto.category;
+    if (categorySlug) and.push(this.categoryMatchWhere(categorySlug));
+    if (dto.delivery) and.push({ deliveryStatus: 'delivers' });
+    if (dto.brand || dto.retail || dto.wholesale) {
       and.push({
         offerings: {
           some: {
             AND: [
-              dto.familyKey ? { familyKey: dto.familyKey } : {},
-              dto.category
-                ? {
-                    OR: [
-                      { categoryCode: dto.category },
-                      { familyKey: dto.category },
-                      { customCategoryLabel: { contains: dto.category, mode: 'insensitive' } },
-                    ],
-                  }
-                : {},
               dto.brand ? { brands: { has: dto.brand } } : {},
               dto.retail ? { sellsRetail: true } : {},
               dto.wholesale ? { sellsWholesale: true } : {},
-              dto.delivery ? { deliveryAvailable: true } : {},
             ],
           },
         },
@@ -1219,6 +1398,19 @@ export class VendorsService {
     if (dto.acquisitionSource) and.push({ acquisitionSource: dto.acquisitionSource });
     if (dto.stateKey) and.push({ stateKey: dto.stateKey });
     if (dto.previouslyUsed) and.push({ previouslyUsedByBmh: true });
+    if (dto.claimStatus) and.push({ claimStatus: dto.claimStatus });
+    if (dto.emailBounced) and.push({ emailBounced: true });
+    if (dto.localAreaKey) and.push({ localAreaKey: dto.localAreaKey });
+    if (dto.completenessMin != null) and.push({ profileCompleteness: { gte: dto.completenessMin } });
+    if (dto.completenessMax != null) and.push({ profileCompleteness: { lte: dto.completenessMax } });
+    if (dto.lastContacted === 'never') and.push({ lastContactedAt: null });
+    if (dto.lastContacted && dto.lastContacted !== 'never') {
+      const days = dto.lastContacted === 'older_than_7' ? 7 : dto.lastContacted === 'older_than_30' ? 30 : 90;
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      and.push({ OR: [{ lastContactedAt: null }, { lastContactedAt: { lt: cutoff } }] });
+    }
+    if (dto.needsDataCleanup) and.push(this.needsDataCleanupWhere());
+    if (dto.familyKey) and.push(this.categoryMatchWhere(dto.familyKey));
     if (dto.query?.trim()) {
       const q = dto.query.trim();
       and.push({
@@ -1233,12 +1425,11 @@ export class VendorsService {
         ],
       });
     }
-    if (dto.familyKey || dto.brand || dto.wholesale) {
+    if (dto.brand || dto.wholesale) {
       and.push({
         offerings: {
           some: {
             AND: [
-              dto.familyKey ? { familyKey: dto.familyKey } : {},
               dto.brand ? { brands: { has: dto.brand } } : {},
               dto.wholesale ? { sellsWholesale: true } : {},
             ],
@@ -1367,12 +1558,23 @@ export class VendorsService {
       where: { id },
       include: {
         offerings: true,
+        products: true,
         serviceAreas: true,
         documents: true,
         representatives: true,
       },
     });
     if (!profile) return;
+    const catalogSearchText = [
+      profile.description,
+      profile.primaryFamilyKey,
+      ...(profile.secondaryFamilyKeys || []),
+      ...profile.offerings.flatMap((offering) => [offering.familyKey, ...(offering.brands || [])]),
+      ...profile.products.map((product) => [product.name, product.spec, product.brand].filter(Boolean).join(' ')),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
     const score = computeProfileCompleteness({
       tradingName: profile.tradingName,
       description: profile.description,
@@ -1395,7 +1597,7 @@ export class VendorsService {
     });
     await this.prisma.vendorProfile.update({
       where: { id },
-      data: { profileCompleteness: score },
+      data: { profileCompleteness: score, catalogSearchText },
     });
   }
 
@@ -1453,14 +1655,197 @@ export class VendorsService {
   }
 
   private mapDocumentCreate(d: VendorDocumentInputDto, uploadedByUserId?: string | null) {
+    const publicPhoto = ['storefront_photo', 'warehouse_photo', 'logo'].includes(d.documentType);
     return {
       documentType: d.documentType,
       fileRef: d.fileRef,
+      contentHash: d.contentHash || null,
+      isPublic: publicPhoto ? !!d.isPublic : false,
       label: d.label || null,
       mimeType: d.mimeType || null,
       fileSizeBytes: d.fileSizeBytes ?? null,
       uploadedByUserId: uploadedByUserId || null,
     };
+  }
+
+  private categoryMatchWhere(slug: string): Prisma.VendorProfileWhereInput {
+    const slugs = categoryMatchSlugs(slug);
+    return {
+      OR: [
+        { primaryFamilyKey: { in: slugs } },
+        { secondaryFamilyKeys: { hasSome: slugs } },
+        { offerings: { some: { familyKey: { in: slugs } } } },
+      ],
+    };
+  }
+
+  private needsDataCleanupWhere(): Prisma.VendorProfileWhereInput {
+    const websiteInNotes = {
+      adminNotes: {
+        some: {
+          OR: [
+            { body: { contains: 'http', mode: 'insensitive' as const } },
+            { body: { contains: 'www.', mode: 'insensitive' as const } },
+          ],
+        },
+      },
+    };
+    return {
+      OR: [
+        { AND: [{ OR: [{ websiteUrl: null }, { websiteUrl: '' }] }, websiteInNotes] },
+        {
+          AND: [
+            { OR: [{ publicAddress: null }, { publicAddress: '' }] },
+            {
+              adminNotes: {
+                some: {
+                  OR: [
+                    { body: { contains: 'street', mode: 'insensitive' } },
+                    { body: { contains: 'road', mode: 'insensitive' } },
+                    { body: { contains: 'address', mode: 'insensitive' } },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+        {
+          AND: [
+            { products: { none: {} } },
+            {
+              adminNotes: {
+                some: {
+                  OR: [
+                    { body: { contains: 'sells', mode: 'insensitive' } },
+                    { body: { contains: 'product', mode: 'insensitive' } },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  private profileFieldChanges(before: Record<string, any>, data: Record<string, unknown>) {
+    const skip = new Set([
+      'lastReviewedAt',
+      'normalizedTradingName',
+      'normalizedPhone',
+      'normalizedWhatsApp',
+      'normalizedEmail',
+      'websiteDomain',
+      'cacCheckedByAdminId',
+    ]);
+    const changes: Array<{ field: string; old: unknown; new: unknown }> = [];
+    for (const [field, value] of Object.entries(data)) {
+      if (skip.has(field) || value === undefined) continue;
+      const previous = before[field];
+      const next = value instanceof Date ? value.toISOString().slice(0, 10) : value;
+      const prev = previous instanceof Date ? previous.toISOString().slice(0, 10) : previous ?? null;
+      if (JSON.stringify(prev) !== JSON.stringify(next ?? null)) {
+        changes.push({ field, old: prev, new: next ?? null });
+      }
+    }
+    return changes;
+  }
+
+  private async withSignedDocuments<T extends { documents?: any[] }>(profile: T): Promise<T> {
+    if (!profile.documents?.length) return profile;
+    const documents = await Promise.all(
+      profile.documents.map(async (doc) => {
+        if (!doc.fileRef || !this.uploads) {
+          return { ...doc, fileRef: doc.fileRef?.startsWith('/uploads/') ? doc.fileRef : null };
+        }
+        const signed = await this.uploads.signGetUrl(doc.fileRef);
+        return { ...doc, fileRef: signed, downloadUrl: signed };
+      }),
+    );
+    return { ...profile, documents };
+  }
+
+  async adminBulk(adminId: string, dto: AdminBulkVendorActionDto) {
+    if (!dto.confirm) {
+      throw new BadRequestException('Confirmation is required before this bulk action.');
+    }
+    if (!dto.ids.length) throw new BadRequestException('Select at least one vendor.');
+
+    if (dto.action === 'set_category') {
+      const slug = canonicalVendorCategorySlug(dto.primaryFamilyKey);
+      if (!slug) throw new BadRequestException('A category is required.');
+      for (const id of dto.ids) {
+        const before = await this.requireVendor(id);
+        await this.prisma.vendorProfile.update({ where: { id }, data: { primaryFamilyKey: slug } });
+        await this.prisma.vendorActivity.create({
+          data: {
+            vendorProfileId: id,
+            type: VendorActivityType.profile_correction,
+            summary: 'Admin updated primaryFamilyKey',
+            actorAdminId: adminId,
+            metadata: { changes: [{ field: 'primaryFamilyKey', old: before.primaryFamilyKey, new: slug }] },
+          },
+        });
+      }
+      return { updated: dto.ids.length };
+    }
+
+    if (dto.action === 'send_claim_invites') {
+      const sent: string[] = [];
+      const skipped: string[] = [];
+      for (const id of dto.ids) {
+        try {
+          await this.adminCreateClaimInvite(id, adminId, {});
+          sent.push(id);
+        } catch {
+          skipped.push(id);
+        }
+      }
+      return { sent, skipped };
+    }
+
+    if (!dto.listingStatus || dto.listingStatus === VendorListingStatus.draft) {
+      throw new BadRequestException('Choose a listing status.');
+    }
+    for (const id of dto.ids) {
+      await this.prisma.vendorProfile.update({
+        where: { id },
+        data: { listingStatus: dto.listingStatus, lastReviewedAt: new Date() },
+      });
+      await this.prisma.vendorActivity.create({
+        data: {
+          vendorProfileId: id,
+          type: VendorActivityType.other,
+          summary: `Listing status set to ${dto.listingStatus}`,
+          actorAdminId: adminId,
+        },
+      });
+    }
+    return { updated: dto.ids.length };
+  }
+
+  async adminUnlist(id: string, adminId: string, dto: AdminReviewActionDto) {
+    const profile = await this.requireVendor(id);
+    if (profile.listingStatus !== VendorListingStatus.listed) {
+      throw new BadRequestException('Only a listed vendor can be unlisted.');
+    }
+    await this.prisma.vendorProfile.update({
+      where: { id },
+      data: {
+        listingStatus: VendorListingStatus.internal_only,
+        lastReviewedAt: new Date(),
+      },
+    });
+    await this.prisma.vendorActivity.create({
+      data: {
+        vendorProfileId: id,
+        type: VendorActivityType.other,
+        summary: 'Vendor unlisted',
+        note: dto.note || null,
+        actorAdminId: adminId,
+      },
+    });
+    return this.adminGet(id);
   }
 
   private hashToken(raw: string) {

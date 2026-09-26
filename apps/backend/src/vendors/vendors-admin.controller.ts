@@ -15,6 +15,7 @@ import { PermissionsGuard } from '../hr/permissions/permissions.guard';
 import { RequirePermissions } from '../hr/permissions/require-permissions.decorator';
 import {
   AdminActivityDto,
+  AdminBulkVendorActionDto,
   AdminClaimInviteDto,
   AdminCreateVendorDto,
   AdminNoteDto,
@@ -65,6 +66,12 @@ export class VendorsAdminController {
     return this.vendors.adminCreate(req.user.sub, body);
   }
 
+  @Post('bulk')
+  @RequirePermissions('vendors.edit')
+  bulk(@Req() req: any, @Body() body: AdminBulkVendorActionDto) {
+    return this.vendors.adminBulk(req.user.sub, body);
+  }
+
   @Get(':id')
   @RequirePermissions('vendors.view')
   get(@Param('id') id: string) {
@@ -105,6 +112,12 @@ export class VendorsAdminController {
   @RequirePermissions('vendors.suspend')
   suspend(@Param('id') id: string, @Req() req: any, @Body() body: AdminReviewActionDto) {
     return this.vendors.adminSuspend(id, req.user.sub, body);
+  }
+
+  @Post(':id/unlist')
+  @RequirePermissions('vendors.edit')
+  unlist(@Param('id') id: string, @Req() req: any, @Body() body: AdminReviewActionDto) {
+    return this.vendors.adminUnlist(id, req.user.sub, body);
   }
 
   @Post(':id/restore')
