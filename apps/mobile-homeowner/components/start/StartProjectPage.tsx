@@ -40,6 +40,10 @@ import {
   type Icon,
 } from 'phosphor-react-native';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
+import StartBuildIcon from '@/components/start/StartBuildIcon';
+import StartInteriorIcon from '@/components/start/StartInteriorIcon';
+import StartRepairIcon from '@/components/start/StartRepairIcon';
+import StartUpgradeIcon from '@/components/start/StartUpgradeIcon';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LAGOS_VENDOR_AREAS } from '@buildmyhouse/shared-types';
 import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
@@ -339,8 +343,10 @@ function Hub({ wide }: { wide: boolean }) {
 }
 
 function PathIcon({ id }: { id: PathId }) {
-  const Icon = id === 'repair' ? Wrench : id === 'upgrade' ? PaintBrush : id === 'build' ? Buildings : House;
-  return <Icon size={28} color="#000" />;
+  if (id === 'repair') return <StartRepairIcon />;
+  if (id === 'upgrade') return <StartUpgradeIcon />;
+  if (id === 'build') return <StartBuildIcon />;
+  return <StartInteriorIcon />;
 }
 
 function Question({
