@@ -1,3 +1,10 @@
+import {
+  LAGOS_VENDOR_AREAS,
+  VENDOR_CATEGORIES,
+  VENDOR_CATEGORY_GROUPS as CATEGORY_GROUPS,
+  vendorCategoryLabel,
+} from '@buildmyhouse/shared-types';
+
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
   (__DEV__ ? 'http://localhost:3001/api' : 'https://api.buildmyhouse.app/api');
@@ -18,6 +25,14 @@ export type PublicVendorCard = {
   sellsRetail: boolean;
   sellsWholesale: boolean;
   deliveryAvailable: boolean | null;
+  deliverySummary?: string;
+  primaryCategory?: string | null;
+  primaryCategoryLabel?: string | null;
+  secondaryCategories?: string[];
+  extraCategoryCount?: number;
+  claimed?: boolean;
+  localAreaKey?: string | null;
+  localAreaLabel?: string | null;
   yearsInBusiness: number | null;
   profileCompleteness: number;
 };
@@ -49,7 +64,15 @@ export type PublicVendorProfile = PublicVendorCard & {
     pricingDisclaimer: string;
     bmhRelationship: string | null;
     checksPerformed: Array<{ key: string; status: string }>;
+    checklist?: Array<{ key: string; label: string; status: 'Passed' | 'Not yet checked' }>;
+    listingIsNotVerification?: string;
   };
+  products?: Array<{ name: string; spec: string | null; unit: string | null; brand: string | null }>;
+  publicAddress?: string | null;
+  landmark?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  photos?: Array<{ url: string; label: string | null; documentType: string }>;
   representative: { name: string; role: string | null } | null;
   offerings: Array<{
     familyKey: string | null;
@@ -86,6 +109,7 @@ export type PublicVendorSearchParams = {
   familyKey?: string;
   brand?: string;
   stateKey?: string;
+  localAreaKey?: string;
   verifiedOnly?: boolean;
   retail?: boolean;
   wholesale?: boolean;
@@ -95,19 +119,16 @@ export type PublicVendorSearchParams = {
   limit?: number;
 };
 
-export const VENDOR_CATEGORY_FILTERS: Array<{ label: string; familyKey: string }> = [
-  { label: 'Cement', familyKey: 'cement' },
-  { label: 'Steel', familyKey: 'reinforcement-steel' },
-  { label: 'Blocks', familyKey: 'concrete-blocks' },
-  { label: 'Roofing', familyKey: 'roofing' },
-  { label: 'Tiles', familyKey: 'tiles' },
-  { label: 'Plumbing', familyKey: 'plumbing-pipes' },
-  { label: 'Electrical', familyKey: 'electrical-cables' },
-  { label: 'Pumps', familyKey: 'water-pumps' },
-  { label: 'Solar', familyKey: 'solar-panels' },
-  { label: 'Inverters', familyKey: 'inverters' },
-  { label: 'Paint', familyKey: 'paint' },
-];
+export const VENDOR_CATEGORY_FILTERS: Array<{ label: string; familyKey: string; group: string }> =
+  VENDOR_CATEGORIES.map((category) => ({
+    label: category.label,
+    familyKey: category.slug,
+    group: category.group,
+  }));
+
+export const VENDOR_CATEGORY_GROUPS = CATEGORY_GROUPS;
+export const VENDOR_AREA_FILTERS = LAGOS_VENDOR_AREAS.map((area) => ({ label: area.label, areaKey: area.key }));
+export { vendorCategoryLabel };
 
 export const VENDOR_STATE_FILTERS: Array<{ label: string; stateKey: string }> = [
   { label: 'Lagos', stateKey: 'ng-lagos' },

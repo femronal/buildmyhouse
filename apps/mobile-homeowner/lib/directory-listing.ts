@@ -15,6 +15,7 @@ export const VENDOR_QUERY_ORDER = [
   'q',
   'category',
   'state',
+  'area',
   'verified',
   'wholesale',
   'delivery',

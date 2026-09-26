@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'expo-router';
-import { Image, Linking, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Image, Linking, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentBackButton } from '@/components/seo/SeoContentLayout';
@@ -380,10 +380,7 @@ export default function VendorProfilePage({ slug }: Props) {
   const sales = [
     vendor?.sellsRetail ? 'Retail' : null,
     vendor?.sellsWholesale ? 'Wholesale' : null,
-    vendor?.pickupAvailable ? 'Pickup' : null,
-    vendor?.deliveryAvailable ? 'Delivery' : vendor?.deliveryAvailable === false ? 'No delivery' : null,
-    vendor?.interstateDelivery ? 'Interstate delivery' : null,
-    vendor?.nationwideDelivery ? 'Nationwide delivery' : null,
+    vendor?.deliverySummary || 'Delivery: not confirmed',
     vendor?.installationAvailable ? 'Installation' : null,
   ]
     .filter(Boolean)
@@ -459,7 +456,21 @@ export default function VendorProfilePage({ slug }: Props) {
   } else if (vendor) {
     body = (
       <>
-        <View style={{ height: compact ? 120 : 168, backgroundColor: LANDING_INK }} accessibilityLabel="Vendor banner" />
+        {vendor.photos?.find((photo) => photo.documentType === 'storefront_photo')?.url ? (
+          <Image
+            source={{ uri: vendor.photos.find((photo) => photo.documentType === 'storefront_photo')!.url }}
+            accessibilityLabel={`${vendor.tradingName} storefront`}
+            style={{ height: compact ? 160 : 220, width: '100%' }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View
+            accessibilityLabel="Vendor banner"
+            style={{ height: compact ? 120 : 168, backgroundColor: LANDING_SURFACE, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 40, color: LANDING_INK }}>{initialsFromName(vendor.tradingName)}</Text>
+          </View>
+        )}
         <View style={{ paddingHorizontal: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' }}>
           <View
             style={{
@@ -493,6 +504,7 @@ export default function VendorProfilePage({ slug }: Props) {
           </SeoHeading>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
             <Badge label="Listed" />
+            {vendor.claimed ? <Badge label="Claimed by the business" /> : null}
             {vendor.isBuildMyHouseVerified ? <Badge label="Verified" solid /> : null}
             {vendor.transparency.bmhRelationship?.startsWith('Previously') ? <Badge label="Used by BMH" /> : null}
           </View>
@@ -508,9 +520,19 @@ export default function VendorProfilePage({ slug }: Props) {
             </Text>
           </Pressable>
           {showVerifiedHelp ? (
-            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 8, lineHeight: 22, maxWidth: 640 }}>
-              BuildMyHouse completed defined checks such as business identity, registration where applicable, representative identity, phone reachability, and location evidence. It does not mean the vendor is scam-proof, or that every product is guaranteed genuine. Listing is not the same as verification.
-            </Text>
+            <View style={{ marginTop: 8, maxWidth: 640 }}>
+              <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, lineHeight: 22 }}>
+                BuildMyHouse completed defined checks such as business identity, registration where applicable, representative identity, phone reachability, and location evidence. It does not mean the vendor is scam-proof, or that every product is guaranteed genuine.
+              </Text>
+              {(vendor.transparency.checklist || []).map((check) => (
+                <Text key={check.key} style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK, marginTop: 6 }}>
+                  {check.label}: {check.status}
+                </Text>
+              ))}
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK, marginTop: 8 }}>
+                {vendor.transparency.listingIsNotVerification || 'Listing is not the same as verification.'}
+              </Text>
+            </View>
           ) : null}
 
           {!compact ? <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 }}>{contactActions}</View> : null}
@@ -520,9 +542,15 @@ export default function VendorProfilePage({ slug }: Props) {
             </Pressable>
           ) : null}
           {vendor.websiteUrl ? (
-            <Pressable onPress={() => Linking.openURL(vendor.websiteUrl!)} accessibilityRole="link" style={{ marginTop: 6 }}>
-              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>Website</Text>
-            </Pressable>
+            Platform.OS === 'web' ? (
+              <a href={vendor.websiteUrl} rel="nofollow noopener" target="_blank" style={{ marginTop: 6, fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>
+                {vendor.websiteUrl}
+              </a>
+            ) : (
+              <Pressable onPress={() => Linking.openURL(vendor.websiteUrl!)} accessibilityRole="link" style={{ marginTop: 6 }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: LANDING_INK }}>{vendor.websiteUrl}</Text>
+              </Pressable>
+            )
           ) : null}
           {quoteStatus ? (
             <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_INK, marginTop: 8 }}>{quoteStatus}</Text>
@@ -560,7 +588,7 @@ export default function VendorProfilePage({ slug }: Props) {
               flexWrap: 'wrap',
             }}
           >
-            <Fact label="Location" value={location || 'Nigeria'} />
+            <Fact label="Location" value={[vendor.publicAddress, vendor.landmark, location].filter(Boolean).join(' · ') || 'Nigeria'} />
             <Fact label="Sales" value={sales || null} />
             <Fact label="Coverage" value={coverage || null} />
             <Fact label="Listing status" value={vendor.transparency.verificationLabel || vendor.transparency.listingLabel} />
@@ -594,15 +622,50 @@ export default function VendorProfilePage({ slug }: Props) {
           <View style={{ paddingVertical: 20 }}>
             {tab === 'sell' ? (
               <>
-                <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginBottom: 12 }}>
-                  Select a category to see brands and commercial details.
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: LANDING_INK }}>
+                  {vendor.primaryCategoryLabel || (vendor.categories[0] ? formatCategoryLabel({ familyKey: vendor.categories[0], customCategoryLabel: null } as Offering) : 'Category not listed')}
                 </Text>
-                <BrandTypeGrid
-                  offerings={offerings}
-                  selectedIndex={Math.min(selectedTypeIndex, Math.max(offerings.length - 1, 0))}
-                  onSelect={setSelectedTypeIndex}
-                />
-                {selectedOffering ? <SelectedTypeDetail offering={selectedOffering} /> : null}
+                {vendor.secondaryCategories?.length ? (
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 6 }}>
+                    Also: {vendor.secondaryCategories.map((slug) => slug.replace(/[-_]/g, ' ')).join(', ')}
+                  </Text>
+                ) : null}
+                {vendor.products?.length ? (
+                  vendor.products.map((product) => (
+                    <Text key={product.name} style={{ fontFamily: 'Poppins_500Medium', fontSize: 15, color: LANDING_INK, marginTop: 8 }}>
+                      {[product.name, product.spec, product.unit, product.brand].filter(Boolean).join(' · ')}
+                    </Text>
+                  ))
+                ) : (
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 8 }}>
+                    Products have not been listed yet.
+                  </Text>
+                )}
+                {vendor.photos && vendor.photos.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}>
+                    {vendor.photos.map((photo) => (
+                      <Image
+                        key={photo.url}
+                        source={{ uri: photo.url }}
+                        accessibilityLabel={photo.label || photo.documentType}
+                        style={{ width: 140, height: 100, borderRadius: 12, marginRight: 8, backgroundColor: LANDING_SURFACE }}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : null}
+                {offerings.length > 0 ? (
+                  <>
+                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 16, marginBottom: 12 }}>
+                      Select a category to see brands and commercial details.
+                    </Text>
+                    <BrandTypeGrid
+                      offerings={offerings}
+                      selectedIndex={Math.min(selectedTypeIndex, Math.max(offerings.length - 1, 0))}
+                      onSelect={setSelectedTypeIndex}
+                    />
+                    {selectedOffering ? <SelectedTypeDetail offering={selectedOffering} /> : null}
+                  </>
+                ) : null}
               </>
             ) : (
               <>
@@ -616,6 +679,17 @@ export default function VendorProfilePage({ slug }: Props) {
                     value={`${vendor.representative.name}${vendor.representative.role ? ` — ${vendor.representative.role}` : ''}`}
                   />
                 ) : null}
+                <AboutBlock label="Street address" value={[vendor.publicAddress, vendor.landmark].filter(Boolean).join(', ') || null} />
+                {vendor.latitude != null && vendor.longitude != null && Platform.OS === 'web' ? (
+                  <iframe
+                    title={`${vendor.tradingName} map`}
+                    src={`https://maps.google.com/maps?q=${vendor.latitude},${vendor.longitude}&z=15&output=embed`}
+                    style={{ border: 0, width: '100%', height: 220, borderRadius: 12, marginTop: 8 }}
+                  />
+                ) : null}
+                {(vendor.transparency.checklist || []).map((check) => (
+                  <AboutBlock key={check.key} label={check.label} value={check.status} />
+                ))}
                 <AboutBlock label="Business identity" value={vendor.transparency.businessIdentity} />
                 <AboutBlock label="Location evidence" value={vendor.transparency.locationEvidence} />
                 <AboutBlock label="Registration" value={vendor.transparency.registration} />

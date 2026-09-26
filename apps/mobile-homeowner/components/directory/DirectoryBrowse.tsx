@@ -224,6 +224,8 @@ export default function DirectoryBrowse({
   const extraChips = wide ? wideChips : wideChips.filter((chip) => chip.active);
   const seen = new Set(quickChips.map((chip) => chip.key));
   const rowChips = [...quickChips, ...extraChips.filter((chip) => !seen.has(chip.key))];
+  const compact = width < 768;
+  const shownChips = compact ? rowChips.slice(0, 8) : rowChips;
   const countLabel = loading
     ? `Loading ${resultNoun}s…`
     : resultCount == null
@@ -299,9 +301,26 @@ export default function DirectoryBrowse({
               Filters{activeFilterCount > 0 ? ` ${activeFilterCount}` : ''}
             </Text>
           </Pressable>
-          {rowChips.map((chip) => (
+          {shownChips.map((chip) => (
             <ChipLink key={chip.key} chip={chip} flush />
           ))}
+          {compact && rowChips.length > shownChips.length ? (
+            <Pressable
+              onPress={() => setFiltersOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="More categories"
+              style={{
+                borderRadius: 999,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
+                borderWidth: 1,
+                borderColor: INK,
+                backgroundColor: '#fff',
+              }}
+            >
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 13, color: INK }}>More</Text>
+            </Pressable>
+          ) : null}
         </ScrollView>
       </View>
 

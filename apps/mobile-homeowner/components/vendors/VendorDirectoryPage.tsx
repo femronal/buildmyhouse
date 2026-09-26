@@ -29,7 +29,9 @@ import {
   withDirectoryParams,
 } from '@/lib/directory-listing';
 import {
+  VENDOR_AREA_FILTERS,
   VENDOR_CATEGORY_FILTERS,
+  VENDOR_CATEGORY_GROUPS,
   VENDOR_STATE_FILTERS,
   fetchPublicVendors,
   type PublicVendorCard,
@@ -73,7 +75,7 @@ function VendorCard({ vendor }: { vendor: PublicVendorCard }) {
   const sales = [vendor.sellsRetail ? 'Retail' : null, vendor.sellsWholesale ? 'Wholesale' : null]
     .filter(Boolean)
     .join(' · ');
-  const delivery = vendor.deliveryAvailable === true ? 'Delivery' : null;
+  const delivery = vendor.deliverySummary || (vendor.deliveryAvailable === true ? 'Delivers' : 'Delivery: not confirmed');
   const meta = [location, sales, delivery, vendor.yearsInBusiness != null ? `${vendor.yearsInBusiness}+ yrs` : null]
     .filter(Boolean)
     .join(' · ');
@@ -94,8 +96,9 @@ function VendorCard({ vendor }: { vendor: PublicVendorCard }) {
       >
         <View style={{ aspectRatio: 4 / 3, backgroundColor: LANDING_SURFACE, alignItems: 'center', justifyContent: 'center' }}>
           <VendorMark name={vendor.tradingName} logoUrl={vendor.logoUrl} />
-          <View style={{ position: 'absolute', top: 10, left: 10 }}>
+          <View style={{ position: 'absolute', top: 10, left: 10, flexDirection: 'row' }}>
             <DirectoryPill label={status} tone={vendor.isBuildMyHouseVerified ? 'solid' : 'outline'} />
+            {vendor.claimed ? <DirectoryPill label="Claimed" tone="outline" /> : null}
           </View>
         </View>
         <View style={{ paddingHorizontal: 12, paddingTop: 12, paddingBottom: 14 }}>
@@ -107,11 +110,12 @@ function VendorCard({ vendor }: { vendor: PublicVendorCard }) {
               {meta}
             </Text>
           ) : null}
-          {vendor.categories.length > 0 ? (
+          {vendor.primaryCategoryLabel || vendor.categories.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-              {vendor.categories.slice(0, 3).map((category) => (
-                <DirectoryPill key={category} label={humanizeKey(category)} />
-              ))}
+              <DirectoryPill label={vendor.primaryCategoryLabel || humanizeKey(vendor.categories[0])} />
+              {(vendor.extraCategoryCount || Math.max(0, vendor.categories.length - 1)) > 0 ? (
+                <DirectoryPill label={`+${vendor.extraCategoryCount || vendor.categories.length - 1} more`} />
+              ) : null}
             </View>
           ) : null}
           {vendor.brands.length > 0 ? (
@@ -175,6 +179,7 @@ export default function VendorDirectoryPage() {
       query: params.q?.trim() || undefined,
       familyKey: params.category,
       stateKey: params.state,
+      localAreaKey: params.area || undefined,
       verifiedOnly: readFlag(params.verified) || undefined,
       wholesale: readFlag(params.wholesale) || undefined,
       delivery: readFlag(params.delivery) || undefined,
@@ -182,7 +187,7 @@ export default function VendorDirectoryPage() {
       page,
       limit: DIRECTORY_PAGE_SIZE,
     }),
-    [page, params.category, params.delivery, params.q, params.state, params.verified, params.wholesale, sort],
+    [page, params.area, params.category, params.delivery, params.q, params.state, params.verified, params.wholesale, sort],
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -221,12 +226,18 @@ export default function VendorDirectoryPage() {
   if (params.state && !stateChips.some((item) => item.active)) {
     stateChips.push(chip(`state-${params.state}`, placeLabel(params.state) || params.state, 'state', params.state));
   }
+  const areaChips = VENDOR_AREA_FILTERS.map((item) => chip(`area-${item.areaKey}`, item.label, 'area', item.areaKey));
   const sections: DirectoryFilterSection[] = [
-    { id: 'category', title: 'Category', chips: categoryChips },
-    { id: 'location', title: 'Location', chips: stateChips },
+    ...VENDOR_CATEGORY_GROUPS.map((group) => ({
+      id: group,
+      title: group,
+      chips: categoryChips.filter((item) => VENDOR_CATEGORY_FILTERS.find((category) => `category-${category.familyKey}` === item.key)?.group === group),
+    })),
+    { id: 'location', title: 'State', chips: stateChips },
+    { id: 'area', title: 'Lagos area', chips: areaChips },
     { id: 'options', title: 'Listing', chips: optionChips },
   ];
-  const activeFilterCount = [params.category, params.state, params.verified, params.wholesale, params.delivery].filter(
+  const activeFilterCount = [params.category, params.state, params.area, params.verified, params.wholesale, params.delivery].filter(
     Boolean,
   ).length;
   const pageHref = (nextPage: number) =>
