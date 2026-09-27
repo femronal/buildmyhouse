@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Image,
   Platform,
@@ -65,6 +66,11 @@ function focusNode(node: unknown) {
   element?.focus?.();
 }
 
+function lockToViewport(node: ReactNode) {
+  if (Platform.OS !== 'web' || typeof document === 'undefined') return node;
+  return createPortal(node, document.body);
+}
+
 export default function MilestoneCalculator() {
   const router = useRouter();
   const { width } = useWindowDimensions();
@@ -118,6 +124,20 @@ export default function MilestoneCalculator() {
           step === 5 ? ` · ${status.total}%` : ''
         }`
       : '';
+
+  useEffect(() => {
+    if (Platform.OS !== 'web' || !active) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtml = html.style.overflow;
+    const previousBody = body.style.overflow;
+    html.style.overflow = 'hidden';
+    body.style.overflow = 'hidden';
+    return () => {
+      html.style.overflow = previousHtml;
+      body.style.overflow = previousBody;
+    };
+  }, [active]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -430,18 +450,16 @@ export default function MilestoneCalculator() {
   }
 
   const formattedBudget = formatMoney(budget, money.symbol);
-  const screenStyle =
-    active && isPhone
-      ? ({
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: 1100,
-          backgroundColor: '#fff',
-        } as const)
-      : ({ width: '100%', maxWidth: 480, alignSelf: 'center' } as const);
+  const screenStyle = {
+    position: 'fixed' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1100,
+    backgroundColor: '#fff',
+    overflow: 'hidden' as const,
+  };
 
   if (!active) {
     return (
@@ -506,9 +524,19 @@ export default function MilestoneCalculator() {
                 ? config.copy.proofHelper
                 : `${project?.resultLabel ?? ''} · ${stages.length} stages`;
 
-  return (
-    <View nativeID="builder" className={active && isPhone ? 'bmh-mps-screen bg-white' : ''} style={screenStyle}>
-      <View className="flex-1 bg-white" style={active && isPhone ? { flex: 1, minHeight: '100%', overflow: 'hidden' } : cardShadowStyle}>
+  return lockToViewport(
+    <View nativeID="builder" className="bmh-mps-screen bg-white" style={screenStyle}>
+      <View
+        className="flex-1 bg-white"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          maxWidth: isPhone ? undefined : 480,
+          alignSelf: 'center',
+          overflow: 'hidden',
+        }}
+      >
         <View className="flex-row items-center justify-between px-4 pt-4">
           <Pressable
             accessibilityRole="button"
