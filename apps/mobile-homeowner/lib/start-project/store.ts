@@ -4,6 +4,8 @@ import { Platform } from 'react-native';
 import { DIAL_CODES, type AnswerValue, type PathId } from '@/lib/start-project/flow';
 
 const STORAGE_KEY = 'bmh.startRequest.v1';
+const RETRY_KEY = 'bmh.startRequest.retry';
+export const START_DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export type StartDraft = {
   answersByPath: Partial<Record<PathId, Record<string, AnswerValue>>>;
@@ -13,7 +15,13 @@ export type StartDraft = {
   reference: string | null;
   utm: Record<string, string>;
   referrer: string;
+  savedAt?: number;
 };
+
+export function draftIsExpired(savedAt: number | undefined, now = Date.now()): boolean {
+  if (!savedAt) return true;
+  return now - savedAt > START_DRAFT_TTL_MS;
+}
 
 const EMPTY: StartDraft = {
   answersByPath: {},
@@ -27,6 +35,7 @@ const EMPTY: StartDraft = {
 
 let draft: StartDraft = EMPTY;
 let hydrated = false;
+let sessionRetryUrl: string | null = null;
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -39,14 +48,22 @@ function subscribe(listener: () => void) {
 }
 
 function persist(next: StartDraft) {
-  draft = next;
+  draft = { ...next, savedAt: Date.now() };
   emit();
-  const raw = JSON.stringify(next);
+  const raw = JSON.stringify(draft);
   if (Platform.OS === 'web') {
     if (typeof localStorage !== 'undefined') localStorage.setItem(STORAGE_KEY, raw);
     return;
   }
   void AsyncStorage.setItem(STORAGE_KEY, raw);
+}
+
+function forgetStoredDraft() {
+  if (Platform.OS === 'web') {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+  void AsyncStorage.removeItem(STORAGE_KEY);
 }
 
 function readRaw(): string | null {
@@ -64,13 +81,18 @@ export async function hydrateStartDraft() {
       Platform.OS === 'web' ? readRaw() : await AsyncStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StartDraft>;
-      draft = {
-        ...EMPTY,
-        ...parsed,
-        answersByPath: parsed.answersByPath || {},
-        utm: parsed.utm || {},
-        dialCode: parsed.dialCode || DIAL_CODES[0].code,
-      };
+      if (draftIsExpired(parsed.savedAt)) {
+        draft = EMPTY;
+        forgetStoredDraft();
+      } else {
+        draft = {
+          ...EMPTY,
+          ...parsed,
+          answersByPath: parsed.answersByPath || {},
+          utm: parsed.utm || {},
+          dialCode: parsed.dialCode || DIAL_CODES[0].code,
+        };
+      }
     }
   } catch {
     draft = EMPTY;
@@ -115,7 +137,34 @@ export function setStartReference(reference: string | null) {
   persist({ ...draft, reference });
 }
 
+export function clearStartIdentity() {
+  persist({ ...draft, name: '', whatsapp: '' });
+}
+
+export function rememberStartRetry(url: string) {
+  sessionRetryUrl = url;
+  if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(RETRY_KEY, url);
+  }
+}
+
+export function readStartRetry(): string | null {
+  if (sessionRetryUrl) return sessionRetryUrl;
+  if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+    return sessionStorage.getItem(RETRY_KEY);
+  }
+  return null;
+}
+
+export function clearStartRetry() {
+  sessionRetryUrl = null;
+  if (Platform.OS === 'web' && typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(RETRY_KEY);
+  }
+}
+
 export function clearStartDraft() {
+  clearStartRetry();
   persist({ ...EMPTY, utm: draft.utm, referrer: draft.referrer });
 }
 

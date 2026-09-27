@@ -34,4 +34,4 @@ Full guide: https://buildmyhouse.app/pricing/repairs
 - https://buildmyhouse.app/services/plumbing-repair-nigeria
 - https://buildmyhouse.app/services/electrical-repair-nigeria
 - https://buildmyhouse.app/services/roof-leak-repair-nigeria
-- https://buildmyhouse.app/start-repair — tracked repair intake overview
+- https://buildmyhouse.app/start — step-by-step project request that ends on WhatsApp

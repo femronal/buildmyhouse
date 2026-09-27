@@ -635,7 +635,7 @@ function buildContent(kind: ServiceKind, region: 'lagos' | 'nigeria', canonicalP
         ? [WINDOW_CASE_STUDY_ARTICLE, ...SHARED_ARTICLES]
         : [...SHARED_ARTICLES],
     images: { ...IMAGE_SETS[kind], strip: BMH_WHY_STRIP_IMAGE },
-    primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
+    primaryCta: { label: 'Start a Tracked Repair', href: '/start/repair' },
     secondaryCta: { label: 'Browse Verified Plans', href: '/location?mode=explore' },
   };
 }

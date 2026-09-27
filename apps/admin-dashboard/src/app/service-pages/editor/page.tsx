@@ -96,7 +96,7 @@ function emptyForm(region: ServicePageRegion): FormState {
         workMask: '',
         archive: [],
       },
-      primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
+      primaryCta: { label: 'Start a Tracked Repair', href: '/start/repair' },
       secondaryCta: { label: 'Browse Verified Plans', href: '/location?mode=explore' },
     },
     isPublished: false,

@@ -2064,3 +2064,17 @@ html.bmh-svc-active body {
 .bmh-start-repair-progress {
   animation: bmhStartRepairProgress 4s linear forwards;
 }
+
+.bmh-start-screen {
+  height: 100vh;
+  height: 100dvh;
+  box-sizing: border-box;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.bmh-start-continue {
+  position: sticky !important;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  z-index: 2;
+  margin-top: 20px;
+}

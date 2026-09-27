@@ -205,15 +205,6 @@ jobs:
           EXPO_PUBLIC_REDDIT_PIXEL_ID=${{ env.EXPO_PUBLIC_REDDIT_PIXEL_ID }} \
           pnpm --filter mobile-homeowner build
 
-      - name: Deploy to S3
-        if: env.AWS_S3_BUCKET_HOMEOWNER != ''
-        run: |
-          aws s3 sync apps/mobile-homeowner/dist "s3://$AWS_S3_BUCKET_HOMEOWNER" --delete --region "$AWS_REGION"
-          if [ -n "$AWS_CLOUDFRONT_HOMEOWNER_ID" ]; then
-            aws cloudfront create-invalidation --distribution-id "$AWS_CLOUDFRONT_HOMEOWNER_ID" --paths "/*" --region "$AWS_REGION"
-          fi
-          echo "✅ Deployed to S3"
-
       - name: Sync CloudFront legacy redirects
         if: env.AWS_S3_BUCKET_HOMEOWNER != ''
         continue-on-error: true
@@ -221,6 +212,16 @@ jobs:
           AWS_CLOUDFRONT_HOMEOWNER_ID: ${{ secrets.AWS_CLOUDFRONT_HOMEOWNER_ID }}
         working-directory: apps/mobile-homeowner
         run: node ./scripts/sync-cloudfront-redirects.mjs
+
+      - name: Deploy to S3
+        if: env.AWS_S3_BUCKET_HOMEOWNER != ''
+        working-directory: apps/mobile-homeowner
+        run: node ./scripts/publish-web-assets.mjs
+
+      - name: Invalidate CloudFront
+        if: env.AWS_S3_BUCKET_HOMEOWNER != '' && env.AWS_CLOUDFRONT_HOMEOWNER_ID != ''
+        run: |
+          aws cloudfront create-invalidation --distribution-id "$AWS_CLOUDFRONT_HOMEOWNER_ID" --paths "/*" --region "$AWS_REGION"
 
       - name: Deploy skipped (no S3 bucket)
         if: env.AWS_S3_BUCKET_HOMEOWNER == ''

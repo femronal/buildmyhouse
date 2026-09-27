@@ -54,14 +54,19 @@ import {
   REPAIR_FEE_LINE,
   START_PATHS,
   START_REASSURANCE,
+  NOTE_MIN_LENGTH,
+  NOTE_REQUIRED_HELPER,
   getPath,
   guardHref,
   hrefAfterAnswer,
+  hrefAfterChoice,
   normalizeWhatsApp,
+  noteIsRequired,
   previousHref,
   progressFor,
   reviewRows,
   seoForPathname,
+  startStructuredData,
   stepById,
   stepHref,
   type AnswerValue,
@@ -74,6 +79,9 @@ import { messageForDraft, saveStartRequest, startWhatsAppUrl, trackStart } from 
 import {
   answersFor,
   clearStartDraft,
+  clearStartIdentity,
+  readStartRetry,
+  rememberStartRetry,
   setStartAnswer,
   setStartContact,
   setStartReference,
@@ -188,14 +196,21 @@ export default function StartProjectPage() {
   const seo = useMemo(() => seoForPathname(pathname), [pathname]);
 
   usePageOwnedSeo();
-  useWebSeo(
-    seo || {
+  useWebSeo({
+    ...(seo || {
       title: HUB.seoTitle,
       description: HUB.seoDescription,
       canonicalPath: '/start',
-      robots: 'noindex,follow',
-    },
-  );
+      robots: 'noindex,follow' as const,
+    }),
+    jsonLd: startStructuredData(pathname) || undefined,
+    markdownAlternatePath:
+      pathname === '/start'
+        ? '/start.md'
+        : /^\/start\/(repair|upgrade|build|interiors)$/.test(pathname)
+          ? `${pathname}.md`
+          : undefined,
+  });
 
   useEffect(() => {
     if (pathname.startsWith('/start/') && !path) openStartHref(router, '/start', true);
@@ -235,12 +250,11 @@ export default function StartProjectPage() {
 
   return (
     <View
-      className="flex-1 bg-white"
+      className="flex-1 bg-white bmh-start-screen"
       style={
         {
-          paddingBottom: insets.bottom,
           backgroundColor: '#fff',
-          ...(Platform.OS === 'web' ? { height: '100vh' } : null),
+          ...(Platform.OS === 'web' ? {} : { paddingBottom: insets.bottom }),
         } as never
       }
     >
@@ -259,7 +273,19 @@ export default function StartProjectPage() {
           <View className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: LINE }}>
             <View style={{ width: `${Math.round(progress.fraction * 100)}%`, height: 4, backgroundColor: GREEN }} />
           </View>
-          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, color: MUTED }}>{progress.label}</Text>
+          {progress.label ? (
+            <Text
+              style={{
+                fontFamily: 'Poppins_500Medium',
+                fontSize: 13,
+                color: MUTED,
+                flexShrink: 1,
+                textAlign: 'right',
+              }}
+            >
+              {progress.label}
+            </Text>
+          ) : null}
         </View>
       </View>
       <ScrollView
@@ -461,10 +487,12 @@ function ChoiceStep({
   const destination = hrefAfterAnswer(path, step.id, fromReview);
 
   const chooseOne = (optionId: string) => {
+    const plan = hrefAfterChoice(path, step.id, answers[step.id], optionId, fromReview, answers);
     setStartAnswer(path.id, step.id, optionId);
+    if (plan.clearArea) setStartAnswer(path.id, 'area', '');
     setPending(optionId);
     trackStart('start_answer', { path: path.id, step: step.id, value: optionId });
-    setTimeout(() => openStartHref(router, destination), 200);
+    setTimeout(() => openStartHref(router, plan.href), 200);
   };
 
   const toggle = (optionId: string) => {
@@ -514,8 +542,10 @@ function ChoiceStep({
           label="Continue"
           disabled={!chosen.length}
           onPress={() => {
+            const plan = hrefAfterChoice(path, step.id, answers[step.id], chosen, fromReview, answers);
+            if (plan.clearArea) setStartAnswer(path.id, 'area', '');
             trackStart('start_answer', { path: path.id, step: step.id, value: chosen.join(',') });
-            openStartHref(router, destination);
+            openStartHref(router, plan.href);
           }}
         />
       ) : null}
@@ -575,10 +605,13 @@ function TextStep({
   const destination = hrefAfterAnswer(path, step.id, fromReview);
   const state = typeof answers.state === 'string' ? answers.state : '';
   const lagos = step.kind === 'area' && state === 'lagos';
-  const helper =
-    step.kind === 'area' && state === 'other'
+  const noteRequired = step.kind === 'note' && noteIsRequired(path, answers);
+  const helper = noteRequired
+    ? NOTE_REQUIRED_HELPER
+    : step.kind === 'area' && state === 'other'
       ? 'Type the state and the area, if you know them.'
       : step.helper;
+  const continueDisabled = noteRequired ? text.trim().length < NOTE_MIN_LENGTH : !text.trim();
 
   useEffect(() => setText(current), [current]);
 
@@ -619,7 +652,7 @@ function TextStep({
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder={step.kind === 'note' ? 'Optional note' : 'Area or LGA'}
+        placeholder={noteRequired ? NOTE_REQUIRED_HELPER : step.kind === 'note' ? 'Optional note' : 'Area or LGA'}
         placeholderTextColor="#9CA3AF"
         multiline={step.kind === 'note'}
         style={{
@@ -636,10 +669,12 @@ function TextStep({
           textAlignVertical: 'top',
         }}
       />
-      <Continue label="Continue" disabled={!text.trim()} onPress={() => go(text)} />
-      <Pressable accessibilityRole="button" onPress={() => go('')} style={{ marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: MUTED }}>Skip</Text>
-      </Pressable>
+      <Continue label="Continue" disabled={continueDisabled} onPress={() => go(text)} />
+      {noteRequired ? null : (
+        <Pressable accessibilityRole="button" onPress={() => go('')} style={{ marginTop: 14, alignItems: 'center', minHeight: 44, justifyContent: 'center' }}>
+          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: MUTED }}>Skip</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -660,8 +695,14 @@ function Contact({
   const [localPhone, setLocalPhone] = useState(whatsapp.replace(dialCode, ''));
   const [code, setCode] = useState(dialCode || '+234');
   const [error, setError] = useState('');
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const normalized = normalizeWhatsApp(code, localPhone);
   const ready = localName.trim().length >= 2 && !!normalized;
+  const phoneDigits = localPhone.replace(/\D/g, '');
+  const showPhoneError =
+    !normalized &&
+    localPhone.trim().length > 0 &&
+    (phoneTouched || phoneDigits.length >= 11 || localPhone.includes('+'));
 
   useEffect(() => {
     setLocalName(name);
@@ -715,25 +756,30 @@ function Contact({
           setLocalPhone(value);
           setError('');
         }}
+        onBlur={() => setPhoneTouched(true)}
         placeholder="801 234 5678"
         placeholderTextColor="#9CA3AF"
         keyboardType="phone-pad"
         autoComplete="tel"
         style={inputStyle}
       />
-      {error ? (
-        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#B91C1C', marginTop: 8 }}>{error}</Text>
+      {showPhoneError || error ? (
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#B91C1C', marginTop: 8 }}>
+          {showPhoneError ? 'Please check this number.' : error}
+        </Text>
       ) : null}
       <Continue
         label="Review your request"
         disabled={!ready}
         onPress={() => {
           const next = normalizeWhatsApp(code, localPhone);
-          if (localName.trim().length < 2 || !next) {
-            setError('Enter a name and a WhatsApp number we can message.');
+          if (!next) {
+            setPhoneTouched(true);
+            setError('Please check this number.');
             return;
           }
-          setStartContact({ name: localName.trim(), whatsapp: next, dialCode: code });
+          const matchedCode = DIAL_CODES.find((item) => next.startsWith(item.code))?.code || code;
+          setStartContact({ name: localName.trim(), whatsapp: next, dialCode: matchedCode });
           trackStart('start_answer', { path: path.id, step: 'contact', value: 'provided' });
           openStartHref(router, stepHref(path.id, 'review'));
         }}
@@ -755,23 +801,35 @@ const inputStyle = {
 } as const;
 
 function Continue({ label, disabled, onPress }: { label: string; disabled: boolean; onPress: () => void }) {
-  return (
+  const button = (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
       onPress={onPress}
       style={{
-        marginTop: 20,
         minHeight: 56,
         borderRadius: 999,
         backgroundColor: disabled ? '#E5E7EB' : '#000',
-        ...(Platform.OS === 'web' ? { position: 'sticky' as const, bottom: 16 } : null),
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
       <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: disabled ? '#9CA3AF' : '#fff' }}>{label}</Text>
     </Pressable>
+  );
+  if (Platform.OS !== 'web') {
+    return <View style={{ marginTop: 20 }}>{button}</View>;
+  }
+  return (
+    <View
+      ref={(node) => {
+        const el = node as unknown as { classList?: { add: (name: string) => void } } | null;
+        el?.classList?.add('bmh-start-continue');
+      }}
+      style={{ marginTop: 20, zIndex: 2 }}
+    >
+      {button}
+    </View>
   );
 }
 
@@ -806,6 +864,8 @@ function Review({
     });
     if (reference) setStartReference(reference);
     const url = startWhatsAppUrl(messageForDraft(path.id, answers, name, reference));
+    rememberStartRetry(url);
+    clearStartIdentity();
     trackStart('start_send_whatsapp', { path: path.id, saved: !!reference });
     if (popup) popup.location.href = url;
     else if (Platform.OS === 'web' && typeof window !== 'undefined') window.open(url, '_blank', 'noopener,noreferrer');
@@ -889,7 +949,7 @@ function Sent({
   reference: string | null;
 }) {
   const router = useRouter();
-  const url = startWhatsAppUrl(messageForDraft(pathId, answers, name, reference));
+  const url = readStartRetry() || startWhatsAppUrl(messageForDraft(pathId, answers, name, reference));
   return (
     <View>
       <SeoHeading

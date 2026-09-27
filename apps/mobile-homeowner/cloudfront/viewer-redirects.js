@@ -7,6 +7,23 @@
  * 3) Rewrite other extensionless public routes to matching .html objects
  *    so crawlers receive per-route SEO (canonical/title) instead of SPA index.html
  */
+function compressedSuffix(request) {
+  var header = request.headers['accept-encoding'];
+  var value = header && header.value ? String(header.value).toLowerCase() : '';
+  if (value.indexOf('br') !== -1) return '.br';
+  if (value.indexOf('gzip') !== -1) return '.gz';
+  return '';
+}
+
+function isCompressibleAsset(uri) {
+  return (
+    uri.endsWith('.js') ||
+    uri.endsWith('.css') ||
+    uri.endsWith('.json') ||
+    uri.endsWith('.svg')
+  );
+}
+
 function handler(event) {
   var request = event.request;
   var uri = request.uri || '/';
@@ -31,6 +48,8 @@ function handler(event) {
       '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
     '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
     '/book-repair': '/start/repair',
+    '/book-repair.md': '/start.md',
+    '/start-repair': '/start/repair',
   };
 
   var target = redirects[uri];
@@ -59,8 +78,14 @@ function handler(event) {
   var lastSlash = uri.lastIndexOf('/');
   var lastSegment = lastSlash >= 0 ? uri.slice(lastSlash + 1) : uri;
   if (lastSegment.indexOf('.') !== -1) {
-    // Already has an extension — fetch as-is
-    request.uri = uri;
+    // Hashed JS/CSS/JSON/SVG are stored precompressed. CloudFront will not
+    // gzip a file larger than 10MB, so pick the encoded object here.
+    var suffix = compressedSuffix(request);
+    if (suffix && isCompressibleAsset(uri)) {
+      request.uri = uri + suffix;
+    } else {
+      request.uri = uri;
+    }
     return request;
   }
 

@@ -140,7 +140,7 @@ export default function ContractorDirectoryPage({ specialty }: ContractorDirecto
           </Text>
 
           <View className="flex-row flex-wrap mt-2">
-            <Link href={'/start-repair' as any} asChild>
+            <Link href={'/start/repair' as any} asChild>
               <Pressable className="rounded-full px-4 py-2.5 mr-3 mb-2 bg-black" accessibilityRole="link">
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
                   Start a Tracked Repair

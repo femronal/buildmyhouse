@@ -79,7 +79,7 @@ export default function HeroSection({ selectedAudience, onSelectAudience, isDesk
         </Text>
 
         <View className="flex-row flex-wrap items-center mt-6">
-          <Link href={'/start-repair' as any} asChild>
+          <Link href={'/start/repair' as any} asChild>
             <Pressable
               className="rounded-full px-6 py-3.5 mr-3 mb-3"
               style={{ backgroundColor: LANDING_INK }}

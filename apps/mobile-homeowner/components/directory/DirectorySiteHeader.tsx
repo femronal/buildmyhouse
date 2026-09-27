@@ -1,7 +1,7 @@
 import { createElement, useEffect, useState } from 'react';
 import { Image, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
 import { Asset } from 'expo-asset';
-import { Link } from 'expo-router';
+import { Link, usePathname } from 'expo-router';
 import LogoText from '@/components/LogoText';
 import WebLandmark from '@/components/seo/WebLandmark';
 
@@ -59,7 +59,7 @@ function BrandLockup() {
   if (Platform.OS === 'web') {
     return createElement('img', {
       src: uri,
-      alt: '',
+      alt: 'BuildMyHouse',
       width: LOCKUP_WIDTH,
       height,
       style: {
@@ -75,7 +75,7 @@ function BrandLockup() {
   return (
     <Image
       source={{ uri }}
-      accessible={false}
+      accessibilityLabel="BuildMyHouse"
       resizeMode="cover"
       style={{ width: LOCKUP_WIDTH, height }}
     />
@@ -88,7 +88,10 @@ export default function DirectorySiteHeader({
   current?: 'vendors' | 'professionals';
 }) {
   const { width } = useWindowDimensions();
+  const pathname = usePathname();
   const showNav = width >= 768;
+  const compact = width < 768;
+  const onStartFlow = pathname === '/start' || pathname.startsWith('/start/');
 
   return (
     <WebLandmark tag="header" className="bg-white border-b border-slate-100">
@@ -121,30 +124,28 @@ export default function DirectorySiteHeader({
         </View>
         <View className="flex-row items-center gap-4">
           <Link href={'/email-login' as any} asChild>
-            <Pressable className="hidden md:flex" accessibilityRole="link">
-              <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Log in"
+              className={compact ? 'bg-black px-4 py-2 rounded-lg' : ''}
+            >
+              <Text
+                className={compact ? 'text-sm text-white' : 'text-sm text-slate-500'}
+                style={{ fontFamily: 'Poppins_500Medium' }}
+              >
                 Log in
               </Text>
             </Pressable>
           </Link>
-          <Link href={'/email-login' as any} asChild>
-            <Pressable
-              className="md:hidden bg-black px-4 py-2 rounded-lg"
-              accessibilityRole="link"
-              accessibilityLabel="Login"
-            >
-              <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Login
-              </Text>
-            </Pressable>
-          </Link>
-          <Link href={'/start' as any} asChild>
-            <Pressable className="hidden md:flex bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
-              <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Start a Project
-              </Text>
-            </Pressable>
-          </Link>
+          {onStartFlow ? null : (
+            <Link href={'/start' as any} asChild>
+              <Pressable className="hidden md:flex bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
+                <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Start a Project
+                </Text>
+              </Pressable>
+            </Link>
+          )}
         </View>
       </View>
     </WebLandmark>

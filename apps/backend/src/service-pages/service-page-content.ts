@@ -185,7 +185,7 @@ export function buildServicePageTemplate(
       { label: 'How to choose a contractor in Nigeria', href: '/how-to-choose-a-general-contractor-in-nigeria' },
     ],
     images: defaultImages(),
-    primaryCta: { label: 'Start a Tracked Repair', href: '/start-repair' },
+    primaryCta: { label: 'Start a Tracked Repair', href: '/start/repair' },
     secondaryCta: { label: 'Browse Verified Plans', href: '/location?mode=explore' },
   };
 

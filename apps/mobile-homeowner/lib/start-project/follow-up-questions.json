@@ -1,0 +1,56 @@
+{
+  "labels": {
+    "repair": "Start a repair",
+    "upgrade": "Start an upgrade",
+    "build": "Start a full build",
+    "interiors": "Start an interior project"
+  },
+  "questions": {
+    "repair": {
+      "urgency": "How urgent is it?",
+      "state": "Which state is the property in?",
+      "area": "Which area?",
+      "access": "Is someone at the property who can let the technician in?",
+      "visit-time": "When is a good time for a visit?",
+      "visit-day": "Which day works?",
+      "note": "Anything else we should know?",
+      "contact": "How should we reach you?",
+      "review": "Check your request",
+      "sent": "Request ready on WhatsApp"
+    },
+    "upgrade": {
+      "occupied": "Is the property lived in?",
+      "state": "Which state is the property in?",
+      "area": "Which area?",
+      "budget": "What is your rough budget?",
+      "timing": "When do you want to start?",
+      "note": "Anything else we should know?",
+      "contact": "How should we reach you?",
+      "review": "Check your request",
+      "sent": "Request ready on WhatsApp"
+    },
+    "build": {
+      "state": "Where is the land?",
+      "area": "Which area?",
+      "plans": "Do you have building plans?",
+      "building": "What are you building?",
+      "budget": "What is your rough budget?",
+      "timing": "When do you want to start?",
+      "note": "Anything else we should know?",
+      "contact": "How should we reach you?",
+      "review": "Check your request",
+      "sent": "Request ready on WhatsApp"
+    },
+    "interiors": {
+      "need": "What do you need?",
+      "state": "Which state is the property in?",
+      "area": "Which area?",
+      "budget": "What is your rough budget?",
+      "timing": "When do you want to start?",
+      "note": "Anything else we should know?",
+      "contact": "How should we reach you?",
+      "review": "Check your request",
+      "sent": "Request ready on WhatsApp"
+    }
+  }
+}

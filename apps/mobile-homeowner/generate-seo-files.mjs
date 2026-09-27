@@ -55,7 +55,7 @@ ${finalRoutes
     <loc>${route === '/' ? WEB_URL : `${WEB_URL}${route}`}</loc>
     <lastmod>${now}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start-repair' || route === '/start' || route.startsWith('/start/') ? '0.9' : '0.7'}</priority>
+    <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start' || route.startsWith('/start/') ? '0.9' : '0.7'}</priority>
   </url>`,
   )
   .join('\n')}
@@ -89,33 +89,49 @@ Disallow: /location
 User-agent: GPTBot
 Allow: /
 Allow: /index.md
-Allow: /book-repair.md
+Allow: /start.md
+Allow: /start/repair.md
+Allow: /start/upgrade.md
+Allow: /start/build.md
+Allow: /start/interiors.md
 Allow: /pricing/repairs.md
 Allow: /llms.txt
 
 User-agent: ClaudeBot
 Allow: /
 Allow: /index.md
-Allow: /book-repair.md
+Allow: /start.md
+Allow: /start/repair.md
+Allow: /start/upgrade.md
+Allow: /start/build.md
+Allow: /start/interiors.md
 Allow: /pricing/repairs.md
 Allow: /llms.txt
 
 User-agent: Google-Extended
 Allow: /
 Allow: /index.md
-Allow: /book-repair.md
+Allow: /start.md
+Allow: /start/repair.md
+Allow: /start/upgrade.md
+Allow: /start/build.md
+Allow: /start/interiors.md
 Allow: /pricing/repairs.md
 Allow: /llms.txt
 
 User-agent: PerplexityBot
 Allow: /
 Allow: /index.md
-Allow: /book-repair.md
+Allow: /start.md
+Allow: /start/repair.md
+Allow: /start/upgrade.md
+Allow: /start/build.md
+Allow: /start/interiors.md
 Allow: /pricing/repairs.md
 Allow: /llms.txt
 
 # Agent discovery
-# Markdown twins: /index.md, /book-repair.md, /pricing/repairs.md (also link rel=alternate type=text/markdown)
+# Markdown twins: /index.md, /start.md, /start/repair.md, /pricing/repairs.md (also link rel=alternate type=text/markdown)
 # Policy summary: ${WEB_URL}/llms.txt
 
 Sitemap: ${WEB_URL}/sitemap.xml

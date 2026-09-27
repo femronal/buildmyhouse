@@ -52,26 +52,59 @@ Full guide: ${WEB_URL}/pricing/repairs
 - ${WEB_URL}/services/plumbing-repair-nigeria
 - ${WEB_URL}/services/electrical-repair-nigeria
 - ${WEB_URL}/services/roof-leak-repair-nigeria
-- ${WEB_URL}/start-repair — tracked repair intake overview
+- ${WEB_URL}/start — step-by-step project request that ends on WhatsApp
 `,
 
-  'book-repair.md': `# Start a home repair | BuildMyHouse
+  'start.md': `# Start a project | BuildMyHouse
 
-The old booking form has moved. Start a repair at ${WEB_URL}/start/repair.
+A step-by-step request that ends on WhatsApp. One question per page. A BuildMyHouse agent replies to plan the next step.
+
+**URL:** ${WEB_URL}/start
+
+## Paths
+
+- Repair: ${WEB_URL}/start/repair
+- Upgrade or renovation: ${WEB_URL}/start/upgrade
+- Full build: ${WEB_URL}/start/build
+- Interior design: ${WEB_URL}/start/interiors
+`,
+
+  'start/repair.md': `# Start a repair | BuildMyHouse
+
+A step-by-step repair request that ends on WhatsApp.
 
 **URL:** ${WEB_URL}/start/repair
 
-Answer one question per page. A BuildMyHouse agent picks the request up on WhatsApp.
+Tell us what needs fixing, where the property is, and when a visit works. A BuildMyHouse agent plans the repair with you on WhatsApp.
 
-## Platform fee
+Platform service fee for repairs: **₦0 (free for now)**.
+`,
 
-BuildMyHouse service fee for repair services is **free for now (₦0)**.
+  'start/upgrade.md': `# Start an upgrade or renovation | BuildMyHouse
 
-## Pricing reference
+A step-by-step upgrade request that ends on WhatsApp.
 
-${pricingTable}
+**URL:** ${WEB_URL}/start/upgrade
 
-Full guide: ${WEB_URL}/pricing/repairs
+Tell us which part of the house you want to improve, where it is, and a rough budget.
+`,
+
+  'start/build.md': `# Start a full build | BuildMyHouse
+
+A step-by-step full-build request that ends on WhatsApp.
+
+**URL:** ${WEB_URL}/start/build
+
+Tell us about the land, whether you have plans, and what you want to build.
+`,
+
+  'start/interiors.md': `# Start an interior project | BuildMyHouse
+
+A step-by-step interior request that ends on WhatsApp.
+
+**URL:** ${WEB_URL}/start/interiors
+
+Tell us which space you want furnished or redesigned, where it is, and a rough budget.
 `,
 
   'pricing/repairs.md': `# Repair pricing guide | BuildMyHouse

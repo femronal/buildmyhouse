@@ -2,14 +2,27 @@
 
 > BuildMyHouse is a Nigerian construction platform that helps homeowners, especially Nigerians in the diaspora, build and renovate more safely in Nigeria. The platform supports project setup, stage tracking, contractor workflows, payment discipline, communication, and visibility across the project lifecycle.
 
-For AI systems, prefer markdown twins (`/index.md`, `/book-repair.md`, `/pricing/repairs.md`) or send `Accept: text/markdown`. Full policy: `/llms.txt`.
+For AI systems, prefer markdown twins (`/index.md`, `/start.md`, `/pricing/repairs.md`) or send `Accept: text/markdown`. Full policy: `/llms.txt`.
 
 **Pricing policy (repairs):** BuildMyHouse platform service fee is **free for now (₦0)**. Clients pay the verified contractor quote only, in staged milestones with evidence.
 
-## Online booking & pricing
+## Start a project
 
-- [/book-repair](/book-repair) - structured online booking (service + date + time window; required: name, phone, Lagos area)
-- [/book-repair.md](/book-repair.md) - markdown booking spec for agents
+A step-by-step request that ends on WhatsApp. Answer one question per page. A BuildMyHouse agent replies to plan the work.
+
+- [/start](/start) - choose a repair, upgrade, full build, or interior project
+- [/start.md](/start.md) - markdown overview for agents
+- [/start/repair](/start/repair) - start a repair request
+- [/start/repair.md](/start/repair.md) - markdown for the repair path
+- [/start/upgrade](/start/upgrade) - start an upgrade or renovation request
+- [/start/upgrade.md](/start/upgrade.md) - markdown for the upgrade path
+- [/start/build](/start/build) - start a full build request
+- [/start/build.md](/start/build.md) - markdown for the full-build path
+- [/start/interiors](/start/interiors) - start an interior design request
+- [/start/interiors.md](/start/interiors.md) - markdown for the interior path
+
+## Pricing
+
 - [/pricing/repairs](/pricing/repairs) - parseable directional contractor pricing (NGN)
 - [/pricing/repairs.md](/pricing/repairs.md) - markdown pricing table for agents
 - [/index.md](/index.md) - homepage markdown twin
@@ -29,7 +42,6 @@ For AI systems, prefer markdown twins (`/index.md`, `/book-repair.md`, `/pricing
 - [/services/kitchen-renovation-nigeria](/services/kitchen-renovation-nigeria) - verified kitchen renovation with staged evidence before payment
 - [/services/home-renovation-nigeria](/services/home-renovation-nigeria) - verified home renovation with staged evidence before payment
 - [/services/general-contractors-nigeria](/services/general-contractors-nigeria) - verified general contractors with staged evidence before payment
-- [/start-repair](/start-repair) - start a tracked repair intake in Lagos
 
 ## Verified repair services (Lagos)
 

@@ -18,6 +18,7 @@ const REDIRECTS = {
     '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
   '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
   '/book-repair': '/start/repair',
+  '/start-repair': '/start/repair',
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
@@ -136,11 +137,6 @@ const SEO_PAGES = {
     title: 'Verified General Contractors in Lagos, Nigeria | BuildMyHouse',
     description:
       'Find verified general contractor support in Lagos, Nigeria and execute with better workflow control.',
-  },
-  '/start-repair': {
-    title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
-    description:
-      'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment.',
   },
   '/pricing/repairs': {
     title: 'Repair Pricing Guide Lagos | BuildMyHouse',
@@ -510,13 +506,56 @@ function upsertJsonLd(html, id, payload) {
 const MARKDOWN_ALTERNATES = {
   '/': '/index.md',
   '/pricing/repairs': '/pricing/repairs.md',
+  '/start': '/start.md',
+  '/start/repair': '/start/repair.md',
+  '/start/upgrade': '/start/upgrade.md',
+  '/start/build': '/start/build.md',
+  '/start/interiors': '/start/interiors.md',
 };
+
+const followUpQuestions = JSON.parse(
+  fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/follow-up-questions.json'), 'utf8'),
+);
+
+function followUpDocumentTitle(route) {
+  const match = route.match(/^\/start\/(repair|upgrade|build|interiors)\/([^/]+)$/);
+  if (!match) return null;
+  const label = followUpQuestions.labels?.[match[1]];
+  const question = followUpQuestions.questions?.[match[1]]?.[match[2]];
+  if (!label || !question) return null;
+  return `${question} | ${label} | BuildMyHouse`;
+}
 
 const startIndexable = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/indexable.json'), 'utf8'),
 );
 for (const [route, page] of Object.entries(startIndexable)) {
   SEO_PAGES[route] = { title: page.title, description: page.description };
+}
+
+function startJsonLd(route, page) {
+  const url = `${WEB_URL}${route}`;
+  const crumbs = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${WEB_URL}/` },
+    { '@type': 'ListItem', position: 2, name: 'Start a project', item: `${WEB_URL}/start` },
+  ];
+  if (route !== '/start') {
+    crumbs.push({ '@type': 'ListItem', position: 3, name: page.h1, item: url });
+  }
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Service',
+        name: page.title,
+        description: page.description,
+        url,
+        provider: { '@type': 'Organization', name: 'BuildMyHouse', url: WEB_URL },
+        areaServed: { '@type': 'Country', name: 'Nigeria' },
+      },
+      { '@type': 'BreadcrumbList', itemListElement: crumbs },
+    ],
+  };
 }
 
 function injectStartCrawlable(html, route) {
@@ -550,7 +589,7 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   const robots =
     pageMeta?.robots ||
     (followUpStart ? 'noindex,follow' : isPrivateRoute(route) ? 'noindex,nofollow' : 'index,follow');
-  const title = pageMeta?.title || 'BuildMyHouse Technologies';
+  const title = (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || 'BuildMyHouse Technologies';
   const description =
     pageMeta?.description ||
     'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.';
@@ -590,6 +629,9 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   }
   if (pageMeta?.jsonLd) {
     next = upsertJsonLd(next, 'buildmyhouse-route-jsonld', pageMeta.jsonLd);
+  }
+  if (startIndexable[route]) {
+    next = upsertJsonLd(next, 'buildmyhouse-start-jsonld', startJsonLd(route, startIndexable[route]));
   }
   next = injectStartCrawlable(next, route);
   return next;
@@ -814,7 +856,11 @@ writeNotFoundHtml();
 const publicDir = path.resolve(process.cwd(), 'public');
 const agentMarkdownFiles = [
   'index.md',
-  'book-repair.md',
+  'start.md',
+  'start/repair.md',
+  'start/upgrade.md',
+  'start/build.md',
+  'start/interiors.md',
   'pricing/repairs.md',
   'robots.txt',
   'llms.txt',

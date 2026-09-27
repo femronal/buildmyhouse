@@ -66,6 +66,7 @@
     "expo-system-ui": "~6.0.8",
     "expo-web-browser": "~15.0.9",
     "gsap": "^3.15.0",
+    "libphonenumber-js": "^1.13.14",
     "lightningcss": "^1.29.2",
     "lottie-react": "^2.4.1",
     "lucide-react-native": "^0.479.0",

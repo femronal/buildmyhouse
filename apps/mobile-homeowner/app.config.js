@@ -37,7 +37,15 @@ module.exports = {
       favicon: "./assets/images/favicon.png",
     },
     plugins: [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          asyncRoutes: {
+            web: "production",
+            default: false,
+          },
+        },
+      ],
       [
         "expo-splash-screen",
         {

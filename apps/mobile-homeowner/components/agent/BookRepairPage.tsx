@@ -60,12 +60,7 @@ export default function BookRepairPage() {
   };
 
   const continueInApp = () => {
-    const query = new URLSearchParams({
-      service,
-      date: preferredDate,
-      slot: timeSlot,
-    });
-    router.push(`/start-repair?${query.toString()}` as any);
+    router.push('/start/repair' as any);
   };
 
   const openWhatsApp = () => {

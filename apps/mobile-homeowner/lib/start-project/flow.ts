@@ -1,7 +1,11 @@
+import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
+
 export const REPAIR_FEE_LINE = 'Platform service fee: ₦0 for repairs (free for now).';
 export const READY_MADE_PLANS_HREF = '/design-library';
+export const NOTE_MIN_LENGTH = 5;
 export const START_REASSURANCE =
   'A BuildMyHouse agent will reply on WhatsApp to plan the next step. Nothing is paid until you agree the scope.';
+export const NOTE_REQUIRED_HELPER = 'Tell us briefly what needs doing.';
 
 export const DIAL_CODES = [
   { code: '+234', label: 'Nigeria' },
@@ -201,6 +205,7 @@ export const START_PATHS: Record<PathId, StartPath> = {
             message: 'Family or caretaker at the property',
           },
           { id: 'abroad', title: "No, I'm abroad", description: 'Nobody is there right now.', message: 'Nobody is at the property' },
+          { id: 'not-sure', title: 'Not sure', description: 'We can sort this out on WhatsApp.' },
         ],
       },
       {
@@ -269,6 +274,7 @@ export const START_PATHS: Record<PathId, StartPath> = {
           { id: 'family', title: 'Family lives there', description: 'People will be in the house during the work.' },
           { id: 'tenants', title: 'Tenants', description: 'Someone else is living there.' },
           { id: 'empty', title: 'Empty', description: 'The property is vacant.' },
+          { id: 'not-sure', title: 'Not sure', description: 'We can sort this out on WhatsApp.' },
         ],
       },
       stateStep(),
@@ -374,8 +380,9 @@ export const START_PATHS: Record<PathId, StartPath> = {
           { id: 'living', title: 'Living room', description: 'The main sitting space.' },
           { id: 'bedroom', title: 'Bedroom', description: 'One bedroom, or a few.' },
           { id: 'kitchen', title: 'Kitchen', description: 'The kitchen and how it is used.' },
-          { id: 'whole-home', title: 'Whole home', description: 'More than one room.' },
+          { id: 'whole-home', title: 'Whole house', description: 'More than one room.' },
           { id: 'office', title: 'Office or shop', description: 'A workspace or a shop interior.' },
+          { id: 'not-sure', title: 'Not sure', description: 'We can help you choose the space.' },
         ],
       },
       {
@@ -453,6 +460,30 @@ export function hrefAfterAnswer(path: StartPath, stepId: string, fromReview: boo
   return upcoming ? stepHref(path.id, upcoming.id) : stepHref(path.id, 'review');
 }
 
+/** State chooses the area list. "Something else" makes the later note required. */
+export function hrefAfterChoice(
+  path: StartPath,
+  stepId: string,
+  previous: AnswerValue | undefined,
+  next: AnswerValue,
+  fromReview: boolean,
+  answers: AnswerMap,
+): { href: string; clearArea: boolean } {
+  const clearArea = stepId === 'state' && previous !== next;
+  const nextAnswers: AnswerMap = { ...answers, [stepId]: next };
+  if (clearArea) nextAnswers.area = '';
+  if (fromReview && clearArea) return { href: stepHref(path.id, 'area', true), clearArea };
+  if (fromReview && noteIsRequired(path, nextAnswers)) {
+    const note = typeof nextAnswers.note === 'string' ? nextAnswers.note.trim() : '';
+    if (note.length < NOTE_MIN_LENGTH) return { href: stepHref(path.id, 'note', true), clearArea };
+  }
+  return { href: hrefAfterAnswer(path, stepId, fromReview), clearArea };
+}
+
+function countedSteps(path: StartPath): FlowStep[] {
+  return path.steps.filter((step) => step.kind !== 'review');
+}
+
 export function progressFor(path: StartPath | null, stepId: string | null): {
   current: number;
   total: number;
@@ -460,18 +491,22 @@ export function progressFor(path: StartPath | null, stepId: string | null): {
   label: string;
 } {
   if (!path || !stepId) {
-    return { current: 1, total: 0, fraction: 0.08, label: 'Step 1' };
+    return { current: 0, total: 0, fraction: 0, label: '' };
   }
-  const total = 1 + path.steps.length;
+  const steps = countedSteps(path);
+  const total = steps.length;
+  if (stepId === 'review') {
+    return { current: total, total, fraction: 1, label: 'Last step: check your request' };
+  }
   if (stepId === 'sent') {
-    return { current: total, total, fraction: 1, label: `Step ${total} of ${total}` };
+    return { current: total, total, fraction: 1, label: '' };
   }
-  const index = path.steps.findIndex((step) => step.id === stepId);
-  const current = (index < 0 ? 0 : index) + 2;
+  const index = steps.findIndex((step) => step.id === stepId);
+  const current = index < 0 ? 1 : index + 1;
   return {
     current,
     total,
-    fraction: current / total,
+    fraction: total ? current / total : 0,
     label: `Step ${current} of ${total}`,
   };
 }
@@ -486,9 +521,26 @@ export function optionLabel(step: FlowStep, id: string, forMessage = false): str
   return forMessage ? option.message || option.title : option.title;
 }
 
-export function isAnswered(step: FlowStep, value: AnswerValue | undefined, contact?: { name: string; whatsapp: string }): boolean {
+export function noteIsRequired(path: StartPath, answers: AnswerMap): boolean {
+  if (path.id === 'repair') return answers.type === 'other';
+  if (path.id === 'upgrade') {
+    const what = answers.what;
+    return Array.isArray(what) && what.includes('other');
+  }
+  return false;
+}
+
+export function isAnswered(
+  step: FlowStep,
+  value: AnswerValue | undefined,
+  contact?: { name: string; whatsapp: string },
+  context?: { path: StartPath; answers: AnswerMap },
+): boolean {
   if (step.kind === 'review') return true;
   if (step.kind === 'contact') return !!contact?.name.trim() && !!contact.whatsapp.trim();
+  if (step.kind === 'note' && context && noteIsRequired(context.path, context.answers)) {
+    return typeof value === 'string' && value.trim().length >= NOTE_MIN_LENGTH;
+  }
   if (step.optional) return true;
   if (Array.isArray(value)) return value.length > 0;
   return typeof value === 'string' && value.trim().length > 0;
@@ -500,7 +552,7 @@ export function firstIncompleteStep(
   contact: { name: string; whatsapp: string },
 ): FlowStep | null {
   for (const step of path.steps) {
-    if (!isAnswered(step, answers[step.id], contact)) return step;
+    if (!isAnswered(step, answers[step.id], contact, { path, answers })) return step;
   }
   return null;
 }
@@ -647,17 +699,88 @@ export function labeledAnswers(path: StartPath, answers: AnswerMap): Record<stri
   return labeled;
 }
 
-export function normalizeWhatsApp(dialCode: string, raw: string): string | null {
-  const country = dialCode.replace(/\D/g, '');
-  if (!country) return null;
-  let digits = raw.replace(/\D/g, '');
-  if (!digits) return null;
-  if (digits.startsWith(country) && digits.length > country.length + 6) {
-    digits = digits.slice(country.length);
+const DIAL_COUNTRIES: Record<string, CountryCode | CountryCode[]> = {
+  '+234': 'NG',
+  '+44': 'GB',
+  '+1': ['US', 'CA'],
+  '+971': 'AE',
+};
+
+function parsedNational(input: string, dialCode: string) {
+  const country = DIAL_COUNTRIES[dialCode];
+  const countries = Array.isArray(country) ? country : country ? [country] : [];
+  for (const code of countries) {
+    const parsed = parsePhoneNumberFromString(input, code);
+    if (parsed?.isValid() && `+${parsed.countryCallingCode}` === dialCode) return parsed;
   }
-  if (country === '234' && digits.startsWith('0')) digits = digits.slice(1);
-  if (digits.length < 7 || digits.length > 12) return null;
-  return `+${country}${digits}`;
+  return null;
+}
+
+/** Turn a typed or pasted number into E.164 for the selected country. */
+export function normalizeWhatsApp(dialCode: string, raw: string): string | null {
+  let input = raw.trim();
+  if (!input) return null;
+  if (input.startsWith('00')) input = `+${input.slice(2)}`;
+  if (input.startsWith('+')) {
+    const parsed = parsePhoneNumberFromString(input);
+    return parsed?.isValid() ? parsed.number : null;
+  }
+  const countryDigits = dialCode.replace(/\D/g, '');
+  let national = input.replace(/[^\d]/g, '');
+  if (!national || !countryDigits) return null;
+  if (national.startsWith(countryDigits) && national.length > countryDigits.length + 6) {
+    national = national.slice(countryDigits.length);
+  }
+  return parsedNational(national, dialCode)?.number ?? null;
+}
+
+const PATH_DOCUMENT_LABEL: Record<PathId, string> = {
+  repair: 'Start a repair',
+  upgrade: 'Start an upgrade',
+  build: 'Start a full build',
+  interiors: 'Start an interior project',
+};
+
+export function followUpDocumentTitle(path: StartPath, stepId: string): string {
+  const label = PATH_DOCUMENT_LABEL[path.id];
+  if (stepId === 'sent') return `Request ready on WhatsApp | ${label} | BuildMyHouse`;
+  const step = path.steps.find((item) => item.id === stepId);
+  const question = step?.question || 'Start a project';
+  return `${question} | ${label} | BuildMyHouse`;
+}
+
+const START_SITE = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
+
+export function startStructuredData(pathname: string): Record<string, unknown>[] | null {
+  const seo = seoForPathname(pathname);
+  if (!seo || seo.robots !== 'index,follow') return null;
+  const path = pathname.split('?')[0].replace(/\/+$/, '') || '/';
+  if (path !== '/start' && !/^\/start\/(repair|upgrade|build|interiors)$/.test(path)) return null;
+  const url = `${START_SITE}${path}`;
+  const crumbs: Record<string, unknown>[] = [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: `${START_SITE}/` },
+    { '@type': 'ListItem', position: 2, name: 'Start a project', item: `${START_SITE}/start` },
+  ];
+  if (path !== '/start') {
+    const pathId = path.split('/')[2] as PathId;
+    crumbs.push({
+      '@type': 'ListItem',
+      position: 3,
+      name: START_PATHS[pathId].title,
+      item: url,
+    });
+  }
+  return [
+    {
+      '@type': 'Service',
+      name: seo.title,
+      description: seo.description,
+      url,
+      provider: { '@type': 'Organization', name: 'BuildMyHouse', url: START_SITE },
+      areaServed: { '@type': 'Country', name: 'Nigeria' },
+    },
+    { '@type': 'BreadcrumbList', itemListElement: crumbs },
+  ];
 }
 
 export function seoForPathname(pathname: string): {
@@ -689,7 +812,7 @@ export function seoForPathname(pathname: string): {
     };
   }
   return {
-    title: startPath.seoTitle,
+    title: followUpDocumentTitle(startPath, stepId),
     description: startPath.seoDescription,
     canonicalPath: `/start/${pathId}/${stepId}`,
     robots: 'noindex,follow',

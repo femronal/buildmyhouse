@@ -316,11 +316,11 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
 
   if (normalized === '/start-repair') {
     return {
-      title: 'Start a Tracked Repair in Lagos | BuildMyHouse',
+      title: 'Start a home repair in Nigeria | BuildMyHouse',
       description:
-        'Start a tracked repair in Lagos with verified workers, stage updates, and evidence before payment. Plumbing, electrical, roof leaks, drainage, painting, and maintenance.',
-      canonicalPath,
-      robots: 'index,follow',
+        'Start a home repair in Nigeria. Tell us what needs fixing and send the request on WhatsApp.',
+      canonicalPath: '/start/repair',
+      robots: 'noindex,follow',
     };
   }
 

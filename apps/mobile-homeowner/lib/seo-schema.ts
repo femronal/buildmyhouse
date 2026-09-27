@@ -90,7 +90,7 @@ function typedPrimaryNode(
       category: title,
       offers: {
         '@type': 'Offer',
-        url: `${WEB}/start-repair`,
+        url: `${WEB}/start/repair`,
         availability: 'https://schema.org/InStock',
         price: '0',
         priceCurrency: 'NGN',

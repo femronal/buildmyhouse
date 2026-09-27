@@ -1,50 +1,30 @@
-import StartRepairHeroPage from '@/components/start-repair/StartRepairHeroPage';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
-import { useWebSeo } from '@/lib/seo';
+import { useEffect } from 'react';
+import { Text, View } from 'react-native';
+import { Link, useRouter } from 'expo-router';
+import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 
-const INTAKE_FAQS = [
-  {
-    question: 'What is a tracked repair on BuildMyHouse?',
-    answer:
-      'A tracked repair breaks work into stages with photo evidence and approval checkpoints so you pay after verified progress — not on vague promises.',
-  },
-  {
-    question: 'Who is this for?',
-    answer:
-      'Homeowners in Nigeria and diaspora clients managing property remotely who want verified workers and clearer repair accountability.',
-  },
-  {
-    question: 'What happens after I continue?',
-    answer:
-      'You choose how to start — browse verified project ideas or upload your brief — then scope the repair and assign verified workers.',
-  },
-] as const;
-
-export default function StartRepairPage() {
-  const canonicalPath = '/start-repair';
-  const title = 'Start a Tracked Repair in Nigeria';
-  const description =
-    'Verified workers, staged updates, and photo evidence before you pay — for plumbing, electrical, roof leaks, and urgent Nigeria repairs.';
-
-  const jsonLd = buildSeoJsonLd({
-    path: canonicalPath,
-    title,
-    description,
-    schemaType: 'Service',
-    faqs: [...INTAKE_FAQS],
-    breadcrumbs: [
-      { name: 'Home', path: '/' },
-      { name: 'Start a tracked repair', path: canonicalPath },
-    ],
-  });
-
+export default function StartRepairRedirect() {
+  const router = useRouter();
+  usePageOwnedSeo();
   useWebSeo({
-    title: `${title} | BuildMyHouse`,
-    description,
-    canonicalPath,
-    robots: 'index,follow',
-    jsonLd,
+    title: 'Start a home repair in Nigeria | BuildMyHouse',
+    description: 'Start a home repair in Nigeria. Tell us what needs fixing and send the request on WhatsApp.',
+    canonicalPath: '/start/repair',
+    robots: 'noindex,follow',
   });
 
-  return <StartRepairHeroPage />;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace({ pathname: '/start/[path]', params: { path: 'repair' } } as never);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [router]);
+
+  return (
+    <View className="flex-1 bg-white items-center justify-center px-6">
+      <Link href={'/start/repair' as never}>
+        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>Continue to start a repair</Text>
+      </Link>
+    </View>
+  );
 }

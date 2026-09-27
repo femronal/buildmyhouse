@@ -62,8 +62,9 @@
       { "href": "/start/interiors/need", "title": "Living room", "description": "The main sitting space." },
       { "href": "/start/interiors/need", "title": "Bedroom", "description": "One bedroom, or a few." },
       { "href": "/start/interiors/need", "title": "Kitchen", "description": "The kitchen and how it is used." },
-      { "href": "/start/interiors/need", "title": "Whole home", "description": "More than one room." },
-      { "href": "/start/interiors/need", "title": "Office or shop", "description": "A workspace or a shop interior." }
+      { "href": "/start/interiors/need", "title": "Whole house", "description": "More than one room." },
+      { "href": "/start/interiors/need", "title": "Office or shop", "description": "A workspace or a shop interior." },
+      { "href": "/start/interiors/need", "title": "Not sure", "description": "We can help you choose the space." }
     ]
   }
 }
