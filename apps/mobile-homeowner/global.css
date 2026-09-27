@@ -2108,7 +2108,37 @@ body:has(.bmh-calc-screen) [aria-label='Open WhatsApp support chat'] {
   display: none !important;
 }
 
-.bmh-calc-focus:focus-visible {
+.bmh-calc-focus:focus-visible,
+.bmh-mps-focus:focus-visible {
   outline: 2px solid #000;
   outline-offset: 2px;
+}
+
+.bmh-mps-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1100;
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+html:has(.bmh-mps-screen),
+body:has(.bmh-mps-screen) {
+  overflow: hidden !important;
+  height: 100%;
+}
+
+body:has(.bmh-mps-screen) .seo-content-shell-scroll {
+  overflow: hidden !important;
+}
+
+body:has(.bmh-mps-screen) [aria-label='Open WhatsApp support chat'] {
+  display: none !important;
 }
