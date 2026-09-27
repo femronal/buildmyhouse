@@ -2070,6 +2070,7 @@ html.bmh-svc-active body {
   height: 100dvh;
   box-sizing: border-box;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  overflow-x: hidden;
 }
 
 .bmh-start-continue {
@@ -2077,6 +2078,43 @@ html.bmh-svc-active body {
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
   z-index: 2;
   margin-top: 20px;
+}
+
+@keyframes bmhStartStepForward {
+  from {
+    opacity: 0;
+    transform: translate3d(28px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes bmhStartStepBack {
+  from {
+    opacity: 0;
+    transform: translate3d(-28px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.bmh-start-step-forward {
+  animation: bmhStartStepForward 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.bmh-start-step-back {
+  animation: bmhStartStepBack 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bmh-start-step-forward,
+  .bmh-start-step-back {
+    animation: none;
+  }
 }
 
 .bmh-calc-screen {

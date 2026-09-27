@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions, type View as ViewType } from 'react-native';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Bath, BedDouble, Brush, Check, DoorOpen, Download, Droplets, Hammer, HardHat, House, Image as ImageIcon, Share2, Sofa, Trees, Zap } from 'lucide-react-native';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -57,6 +57,7 @@ function spaceIcon(space: SpaceId) {
 
 export default function RenovationBudgetCalculator() {
   const router = useRouter();
+  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isPhone = width < 768;
   const headingRef = useRef<ViewType | null>(null);
@@ -104,8 +105,11 @@ export default function RenovationBudgetCalculator() {
     setStep(draft.step);
   }
 
+  const onThisTool = pathname.startsWith('/tools/renovation-budget-planner');
+  const locked = active && onThisTool;
+
   useEffect(() => {
-    if (Platform.OS !== 'web' || !active) return;
+    if (Platform.OS !== 'web' || !locked) return;
     const html = document.documentElement;
     const body = document.body;
     const previousHtml = html.style.overflow;
@@ -116,7 +120,7 @@ export default function RenovationBudgetCalculator() {
       html.style.overflow = previousHtml;
       body.style.overflow = previousBody;
     };
-  }, [active]);
+  }, [locked]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -380,7 +384,7 @@ export default function RenovationBudgetCalculator() {
     }
   }
 
-  if (!active) {
+  if (!locked) {
     return (
       <View nativeID="planner" style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
         <Text className="text-black text-[22px] leading-7 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -649,6 +653,7 @@ export default function RenovationBudgetCalculator() {
                 accessibilityRole="link"
                 onPress={() => {
                   trackWebEvent('rbp_calc_start_project_click');
+                  setActive(false);
                   router.push(config.startProjectHref as never);
                 }}
                 className="bmh-calc-focus rounded-full min-h-12 items-center justify-center"

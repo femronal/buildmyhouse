@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
   type View as ViewType,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
 import { Brush, Check, Download, FileText, Hammer, HardHat, Image as ImageIcon, Pencil, Share2, Sofa, Trees, Wrench } from 'lucide-react-native';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
@@ -73,6 +73,7 @@ function lockToViewport(node: ReactNode) {
 
 export default function MilestoneCalculator() {
   const router = useRouter();
+  const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isPhone = width < 768;
   const headingRef = useRef<ViewType | null>(null);
@@ -125,8 +126,11 @@ export default function MilestoneCalculator() {
         }`
       : '';
 
+  const onThisTool = pathname.startsWith('/tools/milestone-payment-schedule');
+  const locked = active && onThisTool;
+
   useEffect(() => {
-    if (Platform.OS !== 'web' || !active) return;
+    if (Platform.OS !== 'web' || !locked) return;
     const html = document.documentElement;
     const body = document.body;
     const previousHtml = html.style.overflow;
@@ -137,7 +141,7 @@ export default function MilestoneCalculator() {
       html.style.overflow = previousHtml;
       body.style.overflow = previousBody;
     };
-  }, [active]);
+  }, [locked]);
 
   useEffect(() => {
     if (Platform.OS !== 'web') {
@@ -461,7 +465,7 @@ export default function MilestoneCalculator() {
     overflow: 'hidden' as const,
   };
 
-  if (!active) {
+  if (!locked) {
     return (
       <View nativeID="builder" style={cardShadowStyle} className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
         <Text className="text-black text-[22px] leading-7 mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -1050,6 +1054,7 @@ export default function MilestoneCalculator() {
                   accessibilityRole="link"
                   onPress={() => {
                     trackWebEvent('mps_calc_start_tracked_click');
+                    setActive(false);
                     router.push('/start' as never);
                   }}
                   className="bmh-mps-focus rounded-full min-h-12 items-center justify-center"

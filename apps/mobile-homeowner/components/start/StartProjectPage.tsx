@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Linking,
   Platform,
@@ -41,6 +41,7 @@ import {
 } from 'phosphor-react-native';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import StartBuildIcon from '@/components/start/StartBuildIcon';
+import StartStepMotion from '@/components/start/StartStepMotion';
 import StartInteriorIcon from '@/components/start/StartInteriorIcon';
 import StartRepairIcon from '@/components/start/StartRepairIcon';
 import StartUpgradeIcon from '@/components/start/StartUpgradeIcon';
@@ -181,6 +182,7 @@ function selectedIds(value: AnswerValue | undefined): string[] {
 
 export default function StartProjectPage() {
   const router = useRouter();
+  const scrollRef = useRef<ScrollView>(null);
   const pathname = usePathname() || '/start';
   const params = useLocalSearchParams<{ path?: string; step?: string; from?: string }>();
   const { width } = useWindowDimensions();
@@ -231,6 +233,10 @@ export default function StartProjectPage() {
   }, [hydrated, path, step, draft.name, draft.whatsapp, pathname, router]);
 
   useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [pathname]);
+
+  useEffect(() => {
     if (!hydrated) return;
     if (isHub) trackStart('start_step_view', { path: 'hub', step: 'hub' });
     else if (isSent && path) trackStart('start_step_view', { path: path.id, step: 'sent' });
@@ -271,7 +277,18 @@ export default function StartProjectPage() {
             <ArrowLeft size={18} color="#000" />
           </Pressable>
           <View className="flex-1 h-1 rounded-full overflow-hidden" style={{ backgroundColor: LINE }}>
-            <View style={{ width: `${Math.round(progress.fraction * 100)}%`, height: 4, backgroundColor: GREEN }} />
+            <View
+              style={
+                {
+                  width: `${Math.round(progress.fraction * 100)}%`,
+                  height: 4,
+                  backgroundColor: GREEN,
+                  ...(Platform.OS === 'web'
+                    ? { transition: 'width 320ms cubic-bezier(0.22, 1, 0.36, 1)' }
+                    : {}),
+                } as never
+              }
+            />
           </View>
           {progress.label ? (
             <Text
@@ -289,29 +306,32 @@ export default function StartProjectPage() {
         </View>
       </View>
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: 16 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ maxWidth: column, width: '100%', alignSelf: 'center', paddingTop: 28 }}>
-          {isHub ? <Hub wide={wide} /> : null}
-          {path && step && (step.kind !== 'review' || hydrated) ? (
-            <Question
-              path={path}
-              step={step}
-              answers={answersFor(path.id)}
-              draftName={draft.name}
-              draftWhatsapp={draft.whatsapp}
-              dialCode={draft.dialCode}
-              fromReview={fromReview}
-              showIntro={!stepParam}
-              wide={wide}
-            />
-          ) : null}
-          {path && isSent && hydrated ? (
-            <Sent pathId={path.id} answers={answersFor(path.id)} name={draft.name} reference={draft.reference} />
-          ) : null}
-        </View>
+        <StartStepMotion pathname={pathname}>
+          <View style={{ maxWidth: column, width: '100%', alignSelf: 'center', paddingTop: 28 }}>
+            {isHub ? <Hub wide={wide} /> : null}
+            {path && step && (step.kind !== 'review' || hydrated) ? (
+              <Question
+                path={path}
+                step={step}
+                answers={answersFor(path.id)}
+                draftName={draft.name}
+                draftWhatsapp={draft.whatsapp}
+                dialCode={draft.dialCode}
+                fromReview={fromReview}
+                showIntro={!stepParam}
+                wide={wide}
+              />
+            ) : null}
+            {path && isSent && hydrated ? (
+              <Sent pathId={path.id} answers={answersFor(path.id)} name={draft.name} reference={draft.reference} />
+            ) : null}
+          </View>
+        </StartStepMotion>
       </ScrollView>
     </View>
   );
