@@ -18,7 +18,7 @@ export const renovationBudgetPlannerPageContent = {
     },
     secondaryCta: {
       label: "Start Your Renovation Project",
-      href: "/projects/new?type=renovation",
+      href: "/start/upgrade",
     },
   },
 
@@ -214,7 +214,7 @@ export const renovationBudgetPlannerPageContent = {
       "Use this planner to get a budget direction first. Then use BuildMyHouse when you want clearer scope, stage tracking, communication, and more controlled renovation execution.",
     primary: {
       label: "Start Your Renovation Project",
-      href: "/projects/new?type=renovation",
+      href: "/start/upgrade",
     },
     secondary: {
       label: "Download the Scope Worksheet",

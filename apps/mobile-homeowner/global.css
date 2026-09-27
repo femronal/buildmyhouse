@@ -2078,3 +2078,37 @@ html.bmh-svc-active body {
   z-index: 2;
   margin-top: 20px;
 }
+
+.bmh-calc-screen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1100;
+  width: 100% !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+  box-sizing: border-box;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+html:has(.bmh-calc-screen),
+body:has(.bmh-calc-screen) {
+  overflow: hidden !important;
+  height: 100%;
+}
+
+body:has(.bmh-calc-screen) .seo-content-shell-scroll {
+  overflow: hidden !important;
+}
+
+body:has(.bmh-calc-screen) [aria-label='Open WhatsApp support chat'] {
+  display: none !important;
+}
+
+.bmh-calc-focus:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}

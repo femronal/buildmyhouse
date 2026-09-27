@@ -526,6 +526,42 @@ function followUpDocumentTitle(route) {
   return `${question} | ${label} | BuildMyHouse`;
 }
 
+SEO_PAGES['/tools/renovation-budget-planner'] = {
+  title: 'Renovation Budget Planner | BuildMyHouse',
+  description:
+    'Estimate your renovation budget in Nigeria by room, work type, finish level, and location. A simple planning tool for diaspora homeowners who want to renovate with more control.',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'Is this a final renovation quote?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'No. This is a rough planning estimate to help you think clearly before the project starts.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Why should I add contingency?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Because renovation can uncover hidden problems after work begins, especially in older properties.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Which rooms usually cost more to renovate?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Kitchen, bathrooms, roofing, plumbing, and electrical work usually consume more money than lighter cosmetic areas.',
+        },
+      },
+    ],
+  },
+};
+
 const startIndexable = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/indexable.json'), 'utf8'),
 );
