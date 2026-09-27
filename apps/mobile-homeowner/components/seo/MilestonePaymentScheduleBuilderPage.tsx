@@ -3,7 +3,7 @@ import { Alert, Linking, Platform, ScrollView, Text, TextInput, TouchableOpacity
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Brush, CheckCircle2, FileText, Hammer, HardHat, Sofa, Trees, Wrench } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
-import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
+import BrandedLottieCover from '@/components/seo/BrandedLottieCover';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
@@ -454,7 +454,13 @@ export default function MilestonePaymentScheduleBuilderPage() {
             {content.hero.description}
           </Text>
 
-          <HouseRenovationLottieCover className="mb-4" height={220} />
+          <BrandedLottieCover
+            animationUrl="/lottie/mortgage-schedule.json"
+            label="Payment schedule illustration"
+            placeholder="schedule"
+            className="mb-4"
+            height={220}
+          />
 
           <View className="flex-col md:flex-row gap-3">
             <TouchableOpacity onPress={() => openLink(content.hero.primaryCta.href)} className="rounded-full bg-black px-5 py-3">
