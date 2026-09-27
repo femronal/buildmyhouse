@@ -5,7 +5,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
-import SeoCoverImage from '@/components/seo/SeoCoverImage';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import TrustBlocks from '@/components/seo/TrustBlocks';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { useWebSeo } from '@/lib/seo';
@@ -155,12 +155,7 @@ export default function RenovationPermitLagosRepairVsRenovationPage() {
           <Text className="text-gray-700 text-base leading-7 mb-5 md:text-lg" style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <SeoCoverImage
-            source={{ uri: content.coverImage.src }}
-            alt={content.coverImage.alt}
-            aspectRatio={16 / 9}
-            className="mb-5"
-          />
+          <HouseRenovationLottieCover className="mb-5" height={240} />
           <View className="flex-col md:flex-row gap-3">
             <TouchableOpacity onPress={() => openLink(content.hero.primaryCta.href, router)} className="rounded-full bg-black px-5 py-3">
               <Text className="text-white text-sm text-center" style={{ fontFamily: 'Poppins_700Bold' }}>

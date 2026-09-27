@@ -1,8 +1,9 @@
-import { Image, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CheckCircle2, Hammer } from 'lucide-react-native';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import RenovationBudgetCalculator from '@/components/seo/RenovationBudgetCalculator';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
@@ -47,14 +48,7 @@ export default function RenovationBudgetPlannerPage() {
           <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <View className="hidden md:flex w-full rounded-2xl overflow-hidden border border-gray-200 mb-4" style={{ height: 210 }}>
-            <Image
-              source={{ uri: content.coverImage.src }}
-              accessibilityLabel={content.coverImage.alt}
-              resizeMode="cover"
-              style={{ width: '100%', height: '100%' }}
-            />
-          </View>
+          <HouseRenovationLottieCover className="mb-4" height={220} />
           <View className="flex-col md:flex-row gap-3 mb-4">
             <TouchableOpacity onPress={() => openLink(content.hero.primaryCta.href)} className="rounded-full bg-black px-5 py-3">
               <Text className="text-white text-sm text-center" style={{ fontFamily: 'Poppins_700Bold' }}>

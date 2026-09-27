@@ -5,7 +5,9 @@ import InternalLinksBlock, { InternalLinkItem } from '@/components/seo/InternalL
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
 import RelatedLinkSections, { type RelatedLinkSection } from '@/components/seo/RelatedLinkSections';
 import TrustBlocks, { type TrustBlock } from '@/components/seo/TrustBlocks';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
+import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
 import ProofOfProcessDemoSection from '@/components/seo/ProofOfProcessDemoSection';
 import type { ProofOfProcessDemoContent } from '@/components/seo/proof-of-process-types';
 import {
@@ -152,11 +154,19 @@ export default function SeoLandingPage({
 
       {coverImageSource ? (
         <SeoContentColumn className="mb-8">
-          <SeoCoverImage
-            source={coverImageSource}
-            alt={coverImageAlt || title}
-            aspectRatio={coverImageAspectRatio}
-          />
+          {isGenericConstructionCover(
+            typeof coverImageSource === 'object' && coverImageSource && 'uri' in coverImageSource
+              ? coverImageSource.uri
+              : null,
+          ) ? (
+            <HouseRenovationLottieCover className="mb-0" height={260} />
+          ) : (
+            <SeoCoverImage
+              source={coverImageSource}
+              alt={coverImageAlt || title}
+              aspectRatio={coverImageAspectRatio}
+            />
+          )}
         </SeoContentColumn>
       ) : null}
 

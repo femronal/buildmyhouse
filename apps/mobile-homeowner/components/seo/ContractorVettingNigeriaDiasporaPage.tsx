@@ -1,4 +1,4 @@
-import { Image, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, BadgeCheck, FileCheck2, IdCard } from 'lucide-react-native';
 import EgbedaWindowCaseStudyCard from '@/components/blog/EgbedaWindowCaseStudyCard';
@@ -6,6 +6,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { useWebSeo } from '@/lib/seo';
 import { trackWebEvent } from '@/lib/analytics';
@@ -60,14 +61,7 @@ export default function ContractorVettingNigeriaDiasporaPage() {
           <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <View className="w-full rounded-2xl overflow-hidden border border-gray-200 mb-5" style={{ height: 210 }}>
-            <Image
-              source={{ uri: content.coverImage.src }}
-              accessibilityLabel={content.coverImage.alt}
-              resizeMode="cover"
-              style={{ width: '100%', height: '100%' }}
-            />
-          </View>
+          <HouseRenovationLottieCover className="mb-5" height={220} />
         </View>
 
         <View style={cardShadowStyle} className="bg-black rounded-2xl p-5 mb-6">

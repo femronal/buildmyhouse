@@ -5,6 +5,7 @@ import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
 import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import EgbedaWindowProcessTimeline from '@/components/blog/EgbedaWindowProcessTimeline';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import {
   SeoContentBackButton,
   SeoContentColumn,
@@ -13,6 +14,7 @@ import {
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { EGBEDA_WINDOW_CASE_STUDY_SLUG } from '@/lib/aluminium-window-repair-egbeda-case-study';
+import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
 import { Article } from '@/lib/articles';
@@ -103,15 +105,19 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
       </SeoContentColumn>
 
       <SeoContentColumn className="mb-8">
-        <View className="rounded-3xl overflow-hidden bg-gray-100">
-          <Image
-            source={{ uri: article.coverImageUrl }}
-            accessibilityLabel={article.coverImageAlt}
-            className="w-full"
-            style={{ height: 320 }}
-            resizeMode="cover"
-          />
-        </View>
+        {isGenericConstructionCover(article.coverImageUrl) ? (
+          <HouseRenovationLottieCover className="mb-0" height={280} />
+        ) : (
+          <View className="rounded-3xl overflow-hidden bg-gray-100">
+            <Image
+              source={{ uri: article.coverImageUrl }}
+              accessibilityLabel={article.coverImageAlt}
+              className="w-full"
+              style={{ height: 320 }}
+              resizeMode="cover"
+            />
+          </View>
+        )}
       </SeoContentColumn>
 
       <SeoContentColumn narrow>

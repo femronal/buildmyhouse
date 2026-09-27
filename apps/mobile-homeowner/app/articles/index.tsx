@@ -8,6 +8,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  type ImageSourcePropType,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -32,9 +33,18 @@ import {
   type ResourceTopicFilter,
 } from '@/lib/resources-catalog';
 import { fetchResourceSections, resolveSidebarTopics } from '@/lib/resource-sections';
+import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
 import { useWebSeo } from '@/lib/seo';
+import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 
 const CARD_COVER_HEIGHT = 160;
+
+function coverUri(source: ImageSourcePropType) {
+  if (source && typeof source === 'object' && !Array.isArray(source) && 'uri' in source && typeof source.uri === 'string') {
+    return source.uri;
+  }
+  return null;
+}
 
 const coverStyles = StyleSheet.create({
   featuredImage: {
@@ -86,13 +96,17 @@ function FeaturedResourceCard({
       accessibilityLabel={`Featured: ${item.title}`}
     >
       <View className="lg:flex-row lg:items-stretch">
-        <View className="w-full lg:w-1/2 overflow-hidden bmh-articles-hub-feature-media relative min-h-[220px]">
-          <Image
-            source={publishedIndexCoverSource(item)}
-            accessibilityLabel={item.coverImageAlt}
-            style={coverStyles.featuredImage}
-            resizeMode="cover"
-          />
+        <View className="w-full lg:w-1/2 overflow-hidden bmh-articles-hub-feature-media relative min-h-[220px] bg-white">
+          {isGenericConstructionCover(coverUri(publishedIndexCoverSource(item))) ? (
+            <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={220} />
+          ) : (
+            <Image
+              source={publishedIndexCoverSource(item)}
+              accessibilityLabel={item.coverImageAlt}
+              style={coverStyles.featuredImage}
+              resizeMode="cover"
+            />
+          )}
         </View>
         <View className="w-full lg:w-1/2 p-5 md:p-8 bg-white/[0.04]">
           <Text
@@ -140,13 +154,17 @@ function ResourceGridCard({ item, onPress }: { item: ResourceIndexItem; onPress:
       accessibilityRole="link"
       accessibilityLabel={item.title}
     >
-      <View className="overflow-hidden">
-        <Image
-          source={publishedIndexCoverSource(item)}
-          accessibilityLabel={item.coverImageAlt}
-          style={coverStyles.card}
-          resizeMode="cover"
-        />
+      <View className="overflow-hidden bg-white">
+        {isGenericConstructionCover(coverUri(publishedIndexCoverSource(item))) ? (
+          <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={CARD_COVER_HEIGHT} />
+        ) : (
+          <Image
+            source={publishedIndexCoverSource(item)}
+            accessibilityLabel={item.coverImageAlt}
+            style={coverStyles.card}
+            resizeMode="cover"
+          />
+        )}
       </View>
       <View className="p-4 bg-white/[0.03]">
         <Text
