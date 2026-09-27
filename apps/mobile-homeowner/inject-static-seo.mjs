@@ -526,6 +526,42 @@ function followUpDocumentTitle(route) {
   return `${question} | ${label} | BuildMyHouse`;
 }
 
+SEO_PAGES['/tools/milestone-payment-schedule'] = {
+  title: 'Milestone Payment Schedule Builder | BuildMyHouse',
+  description:
+    'Create a simple stage-by-stage payment plan for building or renovating in Nigeria. Control when to pay, what proof to request, and how much buffer to keep for unexpected changes.',
+  jsonLd: {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      {
+        '@type': 'Question',
+        name: 'What is a milestone payment schedule?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'It is a stage-by-stage plan that says when money should be paid, how much should be paid, and what proof should come before payment.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Why should I keep a contingency buffer?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'Because building and renovation projects in Nigeria can face hidden defects, scope changes, or price movement. A contingency buffer helps you plan for that instead of panicking later.',
+        },
+      },
+      {
+        '@type': 'Question',
+        name: 'Should I pay the next stage if the current stage is still ongoing?',
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: 'No. If the current stage is not genuinely complete, do not proceed casually to the next payment.',
+        },
+      },
+    ],
+  },
+};
+
 const startIndexable = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/indexable.json'), 'utf8'),
 );

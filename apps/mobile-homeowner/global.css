@@ -2078,3 +2078,18 @@ html.bmh-svc-active body {
   z-index: 2;
   margin-top: 20px;
 }
+
+.bmh-mps-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+body:has(.bmh-mps-screen) [aria-label='Open WhatsApp support chat'] {
+  display: none !important;
+}
+
+.bmh-mps-focus:focus-visible {
+  outline: 2px solid #000;
+  outline-offset: 2px;
+}

@@ -22,7 +22,7 @@ export const milestonePaymentScheduleBuilderPageContent = {
     },
     secondaryCta: {
       label: "Start a Tracked Project",
-      href: "/projects/new",
+      href: "/start",
     },
   },
 
@@ -263,7 +263,7 @@ export const milestonePaymentScheduleBuilderPageContent = {
       "Use this builder to create your payment plan. Then use BuildMyHouse when you want clearer stage tracking, project communication, and a more controlled payment flow.",
     primary: {
       label: "Start a Tracked Project",
-      href: "/projects/new",
+      href: "/start",
     },
     secondary: {
       label: "See How Remote Monitoring Works",
