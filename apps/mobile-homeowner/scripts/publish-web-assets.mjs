@@ -21,7 +21,7 @@ const execFileAsync = promisify(execFile);
 const bucket = process.env.AWS_S3_BUCKET_HOMEOWNER || '';
 const region = process.env.AWS_REGION || 'eu-north-1';
 const distDir = path.resolve(process.cwd(), 'dist');
-const COMPRESSIBLE = new Set(['.js', '.css', '.json', '.svg']);
+const COMPRESSIBLE = new Set(['.js', '.css', '.json', '.svg', '.html']);
 
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -34,6 +34,8 @@ const CONTENT_TYPES = {
   '.jpeg': 'image/jpeg',
   '.webp': 'image/webp',
   '.gif': 'image/gif',
+  '.webm': 'video/webm',
+  '.mp4': 'video/mp4',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain; charset=utf-8',
   '.xml': 'application/xml; charset=utf-8',
@@ -90,7 +92,9 @@ function objectHeaders(rel) {
     rel.includes('_expo/static/') ||
     /-[a-f0-9]{8,}\.(js|css|json|svg|png|jpe?g|webp)(\.(br|gz))?$/.test(rel);
   const cacheControl = base.endsWith('.html')
-    ? 'public, max-age=0, must-revalidate'
+    ? 'public, max-age=300, stale-while-revalidate=86400'
+    : base.startsWith('animations/')
+      ? 'public, max-age=31536000, immutable'
     : hashed
       ? 'public, max-age=31536000, immutable'
       : 'public, max-age=3600';
