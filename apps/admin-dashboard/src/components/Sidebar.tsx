@@ -30,6 +30,7 @@ const menuItems = [
   { href: '/homeowners', label: 'Homeowners', icon: Users },
   { href: '/contractors', label: 'Contractors', icon: HardHat },
   { href: '/vendors', label: 'Vendors', icon: Store },
+  { href: '/vendors/categories', label: 'Vendor categories', icon: Store },
   { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },
@@ -104,8 +105,12 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
             pathname === item.href ||
             (item.href === '/articles' && pathname.startsWith('/service-pages')) ||
             (item.href === '/tools' && isToolsPath(pathname)) ||
+            (item.href === '/vendors' &&
+              pathname.startsWith('/vendors/') &&
+              !pathname.startsWith('/vendors/categories')) ||
             (item.href !== '/dashboard' &&
               item.href !== '/tools' &&
+              item.href !== '/vendors' &&
               pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
           return (

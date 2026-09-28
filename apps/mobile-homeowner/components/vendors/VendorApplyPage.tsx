@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'expo-router';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import {
@@ -10,9 +10,10 @@ import {
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import {
-  VENDOR_APPLY_FAMILY_OPTIONS,
   VENDOR_STATE_FILTERS,
+  fetchPublicVendorCategories,
   submitVendorApplication,
+  type PublicVendorCategory,
 } from '@/lib/public-vendors';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
@@ -90,7 +91,19 @@ export default function VendorApplyPage() {
   const [stateKey, setStateKey] = useState('ng-lagos');
   const [cityLabel, setCityLabel] = useState('');
 
-  const [familyKey, setFamilyKey] = useState('cement');
+  const [familyKey, setFamilyKey] = useState('');
+  const [categoryOptions, setCategoryOptions] = useState<PublicVendorCategory[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublicVendorCategories(true).then((rows) => {
+      if (cancelled) return;
+      setCategoryOptions(rows);
+      setFamilyKey((current) => current || rows[0]?.slug || '');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [brands, setBrands] = useState('');
   const [sellsRetail, setSellsRetail] = useState(true);
   const [sellsWholesale, setSellsWholesale] = useState(false);
@@ -364,8 +377,8 @@ export default function VendorApplyPage() {
                 Primary category
               </Text>
               <View className="flex-row flex-wrap mb-3">
-                {VENDOR_APPLY_FAMILY_OPTIONS.map((f) => (
-                  <Chip key={f.familyKey} label={f.label} active={familyKey === f.familyKey} onPress={() => setFamilyKey(f.familyKey)} />
+                {categoryOptions.map((f) => (
+                  <Chip key={f.slug} label={f.group ? `${f.group}: ${f.label}` : f.label} active={familyKey === f.slug} onPress={() => setFamilyKey(f.slug)} />
                 ))}
               </View>
               <Field label="Brands stocked (comma-separated)" value={brands} onChangeText={setBrands} placeholder="Dangote, BUA" />

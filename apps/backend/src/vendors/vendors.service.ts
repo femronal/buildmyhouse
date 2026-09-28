@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   Prisma,
@@ -52,6 +53,7 @@ import {
 } from './vendor-helpers';
 import { canonicalVendorCategorySlug, categoryMatchSlugs } from './vendor-catalog';
 import { S3UploadService } from '../upload/s3-upload.service';
+import { VendorCategoriesService } from './vendor-categories.service';
 
 const PUBLIC_INCLUDE = {
   offerings: { orderBy: { sortOrder: 'asc' as const } },
@@ -87,7 +89,8 @@ export class VendorsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly email: EmailService,
-    private readonly uploads?: S3UploadService,
+    @Optional() private readonly uploads?: S3UploadService,
+    @Optional() private readonly categories?: VendorCategoriesService,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -98,7 +101,17 @@ export class VendorsService {
     const page = dto.page ?? 1;
     const limit = dto.limit ?? 20;
     const skip = (page - 1) * limit;
-    const where = this.buildPublicWhere(dto);
+    const rawCategory = dto.familyKey || dto.category;
+    let categorySlugs: string[] | undefined;
+    let categoryRedirect: { from: string; to: string } | null = null;
+    if (rawCategory && this.categories) {
+      const resolved = await this.categories.resolveFilter(rawCategory);
+      categorySlugs = resolved.slugs;
+      if (resolved.redirectedFrom && resolved.canonical !== resolved.redirectedFrom) {
+        categoryRedirect = { from: resolved.redirectedFrom, to: resolved.canonical };
+      }
+    }
+    const where = this.buildPublicWhere(dto, categorySlugs);
 
     const [total, rows] = await Promise.all([
       this.prisma.vendorProfile.count({ where }),
@@ -124,9 +137,11 @@ export class VendorsService {
       }),
     ]);
 
+    const labels = this.categories ? await this.categories.displayLabels().catch(() => ({} as Record<string, string>)) : {};
     return {
-      data: rows.map(toPublicVendorCard),
+      data: rows.map((row) => this.applyCategoryLabels(toPublicVendorCard(row), labels)),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) || 0 },
+      categoryRedirect,
     };
   }
 
@@ -140,7 +155,8 @@ export class VendorsService {
       include: PUBLIC_INCLUDE,
     });
     if (!profile) throw new NotFoundException('Vendor not found');
-    return toPublicVendorProfile(profile);
+    const labels = this.categories ? await this.categories.displayLabels().catch(() => ({} as Record<string, string>)) : {};
+    return this.applyCategoryLabels(toPublicVendorProfile(profile), labels);
   }
 
   async apply(dto: ApplyVendorDto, userId?: string) {
@@ -504,6 +520,7 @@ export class VendorsService {
       include: ADMIN_INCLUDE,
     });
 
+    await this.syncCategoryLinks(profile.id, profile.primaryFamilyKey, profile.secondaryFamilyKeys);
     return { ...profile, possibleDuplicates: duplicates };
   }
 
@@ -652,6 +669,14 @@ export class VendorsService {
           })),
         });
       }
+    }
+
+    if (dto.primaryFamilyKey !== undefined || dto.secondaryFamilyKeys !== undefined) {
+      const saved = await this.prisma.vendorProfile.findUnique({
+        where: { id },
+        select: { primaryFamilyKey: true, secondaryFamilyKeys: true },
+      });
+      await this.syncCategoryLinks(id, saved?.primaryFamilyKey || null, saved?.secondaryFamilyKeys || []);
     }
 
     await this.refreshCompleteness(id);
@@ -1272,7 +1297,7 @@ export class VendorsService {
   async submitSensitiveChange(userId: string, dto: VendorSensitiveChangeDto) {
     const profile = await this.getManagedProfile(userId);
     const group = String(dto.fieldGroup || '').trim();
-    if (!['identity', 'registration', 'representative', 'location', 'documents', 'other'].includes(group)) {
+    if (!['identity', 'registration', 'representative', 'location', 'documents', 'category', 'other'].includes(group)) {
       throw new BadRequestException('Invalid fieldGroup');
     }
     return this.prisma.vendorProfileChangeRequest.create({
@@ -1331,7 +1356,7 @@ export class VendorsService {
   // Internals
   // ---------------------------------------------------------------------------
 
-  private buildPublicWhere(dto: PublicVendorSearchDto): Prisma.VendorProfileWhereInput {
+  private buildPublicWhere(dto: PublicVendorSearchDto, categorySlugs?: string[]): Prisma.VendorProfileWhereInput {
     const where: Prisma.VendorProfileWhereInput = {
       listingStatus: VendorListingStatus.listed,
       deletedAt: null,
@@ -1360,7 +1385,8 @@ export class VendorsService {
     if (dto.cityKey) and.push({ cityKey: dto.cityKey });
     if (dto.localAreaKey) and.push({ localAreaKey: dto.localAreaKey });
     const categorySlug = dto.familyKey || dto.category;
-    if (categorySlug) and.push(this.categoryMatchWhere(categorySlug));
+    if (categorySlugs?.length) and.push(this.categoryMatchWhere(categorySlugs[0], categorySlugs));
+    else if (categorySlug) and.push(this.categoryMatchWhere(categorySlug));
     if (dto.delivery) and.push({ deliveryStatus: 'delivers' });
     if (dto.brand || dto.retail || dto.wholesale) {
       and.push({
@@ -1668,8 +1694,20 @@ export class VendorsService {
     };
   }
 
-  private categoryMatchWhere(slug: string): Prisma.VendorProfileWhereInput {
-    const slugs = categoryMatchSlugs(slug);
+  private async syncCategoryLinks(vendorProfileId: string, primary: string | null, extra: string[]) {
+    if (!this.categories) return;
+    await this.categories.syncVendor(vendorProfileId, primary, extra);
+  }
+
+  private applyCategoryLabels<T extends { primaryCategory: string | null; primaryCategoryLabel: string | null }>(
+    card: T,
+    labels: Record<string, string>,
+  ): T {
+    if (!card.primaryCategory || !labels[card.primaryCategory]) return card;
+    return { ...card, primaryCategoryLabel: labels[card.primaryCategory] };
+  }
+
+  private categoryMatchWhere(slug: string, slugs = categoryMatchSlugs(slug)): Prisma.VendorProfileWhereInput {
     return {
       OR: [
         { primaryFamilyKey: { in: slugs } },
@@ -1777,6 +1815,7 @@ export class VendorsService {
       for (const id of dto.ids) {
         const before = await this.requireVendor(id);
         await this.prisma.vendorProfile.update({ where: { id }, data: { primaryFamilyKey: slug } });
+        await this.syncCategoryLinks(id, slug, before.secondaryFamilyKeys);
         await this.prisma.vendorActivity.create({
           data: {
             vendorProfileId: id,

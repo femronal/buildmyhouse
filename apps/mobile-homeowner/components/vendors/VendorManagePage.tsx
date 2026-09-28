@@ -23,10 +23,7 @@ import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
-import {
-  VENDOR_APPLY_FAMILY_OPTIONS,
-  VENDOR_STATE_FILTERS,
-} from '@/lib/public-vendors';
+import { VENDOR_STATE_FILTERS } from '@/lib/public-vendors';
 import {
   VENDOR_DOCUMENT_TYPES,
   addManagedVendorDocument,
@@ -138,6 +135,7 @@ export default function VendorManagePage() {
   const [installationAvailable, setInstallationAvailable] = useState(false);
 
   const [familyKey, setFamilyKey] = useState('cement');
+  const [categorySuggestion, setCategorySuggestion] = useState('');
   const [brands, setBrands] = useState('');
   const [sellsRetail, setSellsRetail] = useState(true);
   const [sellsWholesale, setSellsWholesale] = useState(false);
@@ -635,20 +633,39 @@ export default function VendorManagePage() {
           </View>
         </Section>
 
-        <Section title="Primary offering">
-          <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
-            Category
+        <Section title="Categories">
+          <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
+            {(data?.offerings || []).map((offering) => offering.customCategoryLabel || (offering.familyKey || '').replace(/-/g, ' ')).filter(Boolean).join(', ') || 'No category yet'}
           </Text>
-          <View className="flex-row flex-wrap mb-2">
-            {VENDOR_APPLY_FAMILY_OPTIONS.map((opt) => (
-              <ToggleChip
-                key={opt.familyKey}
-                label={opt.label}
-                active={familyKey === opt.familyKey}
-                onPress={() => setFamilyKey(opt.familyKey)}
-              />
-            ))}
-          </View>
+          <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+            Categories are set by BuildMyHouse. You can suggest one if yours is missing.
+          </Text>
+          <Field
+            label="Suggest a category"
+            value={categorySuggestion}
+            onChangeText={setCategorySuggestion}
+            placeholder="Insulation, paving stones…"
+          />
+          <Pressable
+            onPress={async () => {
+              const suggestion = categorySuggestion.trim();
+              if (!suggestion) return;
+              try {
+                await submitVendorSensitiveChange({ fieldGroup: 'category', proposedPayload: { suggestion } });
+                setCategorySuggestion('');
+                setNotice('Category suggestion sent.');
+              } catch (err) {
+                setNotice(err instanceof Error ? err.message : 'Could not send the suggestion.');
+              }
+            }}
+            className="self-start rounded-full px-4 py-2 mb-4"
+            style={{ backgroundColor: LANDING_INK }}
+          >
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: '#fff' }}>Send suggestion</Text>
+          </Pressable>
+        </Section>
+
+        <Section title="Primary offering">
           <Field
             label="Brands (comma-separated)"
             value={brands}
@@ -667,8 +684,7 @@ export default function VendorManagePage() {
             />
           </View>
           <Text className="text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            Saving replaces your public offerings with this primary category for now. Add richer
-            multi-category editing later if needed.
+            Saving updates brands and how you sell. Your category stays as BuildMyHouse set it.
           </Text>
         </Section>
 

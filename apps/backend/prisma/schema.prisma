@@ -3236,6 +3236,7 @@ model VendorProfile {
   claimInvites      VendorClaimInvite[]
   quoteRequests     VendorQuoteRequest[]
   changeRequests    VendorProfileChangeRequest[]
+  categoryLinks     VendorCategoryLink[]
 
   @@index([listingStatus, verificationStatus])
   @@index([listingStatus, stateKey])
@@ -3319,6 +3320,70 @@ model VendorOffering {
   @@index([familyKey])
   @@index([categoryCode])
   @@map("vendor_offerings")
+}
+
+/// Admin-managed directory taxonomy. Two levels: a category, or a sub-category of one parent.
+model VendorCategory {
+  id          String   @id
+  name        String
+  slug        String   @unique
+  description String?
+  parentId    String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  parent    VendorCategory?  @relation("VendorCategoryTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children  VendorCategory[] @relation("VendorCategoryTree")
+  links     VendorCategoryLink[]
+  redirects VendorCategoryRedirect[]
+
+  @@index([parentId, sortOrder])
+  @@index([isActive])
+  @@map("vendor_categories")
+}
+
+model VendorCategoryLink {
+  id              String  @id
+  vendorProfileId String
+  categoryId      String
+  isPrimary       Boolean @default(false)
+  createdAt       DateTime @default(now())
+
+  vendorProfile VendorProfile  @relation(fields: [vendorProfileId], references: [id], onDelete: Cascade)
+  category      VendorCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([vendorProfileId, categoryId])
+  @@index([categoryId])
+  @@index([vendorProfileId, isPrimary])
+  @@map("vendor_category_links")
+}
+
+/// Previous slugs kept so a renamed category's public filter URL still resolves.
+model VendorCategoryRedirect {
+  id         String   @id
+  fromSlug   String   @unique
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  category VendorCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId])
+  @@map("vendor_category_redirects")
+}
+
+model VendorCategoryAudit {
+  id           String   @id
+  actorAdminId String?
+  action       String
+  categoryId   String?
+  summary      String
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([categoryId, createdAt])
+  @@map("vendor_category_audits")
 }
 
 model VendorProduct {

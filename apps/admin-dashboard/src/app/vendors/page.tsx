@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Eye, Phone, Plus, Search, Store } from 'lucide-react';
 import { AddVendorModal } from '@/components/AddVendorModal';
-import { VENDOR_CATEGORIES } from '@buildmyhouse/shared-types';
 import {
   LISTING_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
   VendorListingStatus,
   VendorVerificationStatus,
+  flattenVendorCategories,
   useBulkVendorAction,
+  useVendorCategoryTree,
   useVendors,
 } from '@/hooks/useVendors';
 
@@ -54,6 +55,8 @@ export default function VendorsPage() {
   const [bulkListing, setBulkListing] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const bulk = useBulkVendorAction();
+  const categoryTree = useVendorCategoryTree();
+  const categoryOptions = flattenVendorCategories(categoryTree.data || []).filter((category) => category.isActive);
 
   const params = useMemo(
     () => ({
@@ -87,6 +90,10 @@ export default function VendorsPage() {
             Supplier directory, applications, and BuildMyHouse procurement CRM
           </p>
         </div>
+        <div className="flex items-center gap-2">
+        <Link href="/vendors/categories" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50">
+          Categories
+        </Link>
         <button
           type="button"
           onClick={() => setAddOpen(true)}
@@ -95,6 +102,7 @@ export default function VendorsPage() {
           <Plus className="w-4 h-4" />
           Add vendor
         </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow p-4">
@@ -142,9 +150,9 @@ export default function VendorsPage() {
             className="w-full px-3 py-2 border rounded-lg bg-white"
           >
             <option value="">All categories</option>
-            {VENDOR_CATEGORIES.map((category) => (
+            {categoryOptions.map((category) => (
               <option key={category.slug} value={category.slug}>
-                {category.label}
+                {category.group === category.label ? category.label : `${category.group}: ${category.label}`}
               </option>
             ))}
           </select>
@@ -203,7 +211,7 @@ export default function VendorsPage() {
             <span>{selected.length} selected</span>
             <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="border rounded-lg px-2 py-1">
               <option value="">Set category…</option>
-              {VENDOR_CATEGORIES.map((category) => (
+              {categoryOptions.map((category) => (
                 <option key={category.slug} value={category.slug}>{category.label}</option>
               ))}
             </select>

@@ -52,6 +52,10 @@ const getHeadersForFormData = (): HeadersInit => {
 const getErrorMessage = async (response: Response, fallback: string): Promise<string> => {
   try {
     const error = await response.json();
+    if (Array.isArray(error?.message)) {
+      const text = error.message.filter((item: unknown) => typeof item === 'string').join(' ');
+      if (text.trim()) return text.trim();
+    }
     if (typeof error?.message === 'string' && error.message.trim()) {
       return error.message;
     }

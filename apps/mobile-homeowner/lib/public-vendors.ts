@@ -149,9 +149,26 @@ function toQuery(params: PublicVendorSearchParams): string {
   return q ? `?${q}` : '';
 }
 
+export type PublicVendorCategory = {
+  slug: string;
+  label: string;
+  group: string | null;
+  groupSlug: string | null;
+  vendorCount: number;
+};
+
+export async function fetchPublicVendorCategories(includeEmpty = false): Promise<PublicVendorCategory[]> {
+  const response = await fetch(`${API_BASE_URL}/vendors/categories${includeEmpty === true ? '?includeEmpty=1' : ''}`);
+  if (!response.ok) return [];
+  const payload = (await response.json()) as PublicVendorCategory[];
+  if (!Array.isArray(payload)) return [];
+  return includeEmpty === true ? payload : payload.filter((item) => item.vendorCount > 0);
+}
+
 export async function fetchPublicVendors(params: PublicVendorSearchParams = {}): Promise<{
   vendors: PublicVendorCard[];
   meta: { page: number; limit: number; total: number; totalPages: number };
+  categoryRedirect: { from: string; to: string } | null;
 }> {
   const response = await fetch(`${API_BASE_URL}/vendors${toQuery({ limit: 24, ...params })}`);
   if (!response.ok) {
@@ -160,10 +177,12 @@ export async function fetchPublicVendors(params: PublicVendorSearchParams = {}):
   const payload = (await response.json()) as {
     data?: PublicVendorCard[];
     meta?: { page: number; limit: number; total: number; totalPages: number };
+    categoryRedirect?: { from: string; to: string } | null;
   };
   return {
     vendors: payload.data ?? [],
     meta: payload.meta ?? { page: 1, limit: 24, total: 0, totalPages: 0 },
+    categoryRedirect: payload.categoryRedirect ?? null,
   };
 }
 

@@ -21,14 +21,23 @@ import {
   VendorSensitiveChangeDto,
 } from './dto/vendors.dto';
 import { VendorsService } from './vendors.service';
+import { VendorCategoriesService } from './vendor-categories.service';
 
 @Controller('vendors')
 export class VendorsPublicController {
-  constructor(private readonly vendors: VendorsService) {}
+  constructor(
+    private readonly vendors: VendorsService,
+    private readonly categories: VendorCategoriesService,
+  ) {}
 
   @Get()
   search(@Query() query: PublicVendorSearchDto) {
     return this.vendors.searchPublic(query);
+  }
+
+  @Get('categories')
+  categoriesList(@Query('includeEmpty') includeEmpty?: string) {
+    return this.categories.publicFilters(includeEmpty === '1');
   }
 
   @Get('claim/:token')

@@ -6,12 +6,14 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { AdminAccessModule } from '../admin-access/admin-access.module';
 import { VendorsPublicController } from './vendors-public.controller';
 import { VendorsAdminController } from './vendors-admin.controller';
+import { VendorCategoriesAdminController } from './vendor-categories-admin.controller';
 import { VendorsService } from './vendors.service';
+import { VendorCategoriesService } from './vendor-categories.service';
 
 @Module({
   imports: [PrismaModule, AuthModule, EmailModule, AdminAccessModule, UploadModule],
-  controllers: [VendorsPublicController, VendorsAdminController],
-  providers: [VendorsService],
+  controllers: [VendorsPublicController, VendorsAdminController, VendorCategoriesAdminController],
+  providers: [VendorsService, VendorCategoriesService],
   exports: [VendorsService],
 })
 export class VendorsModule {}

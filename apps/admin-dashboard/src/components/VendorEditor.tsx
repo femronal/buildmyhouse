@@ -1,12 +1,10 @@
 'use client';
 
 import { useMemo, useState, type ReactNode } from 'react';
-import {
-  LAGOS_VENDOR_AREAS,
-  VENDOR_BUSINESS_TYPES,
-  VENDOR_CATEGORIES,
-  VENDOR_CATEGORY_GROUPS,
-} from '@buildmyhouse/shared-types';
+import { useQuery } from '@tanstack/react-query';
+import { LAGOS_VENDOR_AREAS, VENDOR_BUSINESS_TYPES } from '@buildmyhouse/shared-types';
+import { api } from '@/lib/api';
+import { flattenVendorCategories, type AdminVendorCategory } from '@/hooks/useVendors';
 
 export type VendorEditorProduct = { name: string; spec?: string; unit?: string; brand?: string };
 
@@ -117,15 +115,27 @@ export function VendorEditor({
   error?: string | null;
 }) {
   const [productDraft, setProductDraft] = useState<VendorEditorProduct>({ name: '' });
+  const [categoryQuery, setCategoryQuery] = useState('');
+  const { data: categoryTree } = useQuery({
+    queryKey: ['admin-vendor-categories'],
+    queryFn: () => api.get<AdminVendorCategory[]>('/admin/vendor-categories'),
+  });
   const set = (patch: Partial<VendorEditorValue>) => onChange({ ...value, ...patch });
-  const categoriesByGroup = useMemo(
-    () =>
-      VENDOR_CATEGORY_GROUPS.map((group) => ({
-        group,
-        items: VENDOR_CATEGORIES.filter((category) => category.group === group),
-      })),
-    [],
-  );
+  const categoryOptions = useMemo(() => flattenVendorCategories(categoryTree || []), [categoryTree]);
+  const visibleCategories = categoryOptions.filter((category) => {
+    const query = categoryQuery.trim().toLowerCase();
+    if (!query) return true;
+    return category.label.toLowerCase().includes(query) || category.slug.includes(query) || category.group.toLowerCase().includes(query);
+  });
+  const categoriesByGroup = useMemo(() => {
+    const groups: Array<{ group: string; items: typeof visibleCategories }> = [];
+    for (const category of visibleCategories) {
+      const existing = groups.find((group) => group.group === category.group);
+      if (existing) existing.items.push(category);
+      else groups.push({ group: category.group, items: [category] });
+    }
+    return groups;
+  }, [visibleCategories]);
 
   const toggle = (list: string[], item: string, max?: number) => {
     if (list.includes(item)) return list.filter((entry) => entry !== item);
@@ -246,8 +256,18 @@ export function VendorEditor({
       <section className="bg-white rounded-xl shadow p-5 grid gap-4 md:grid-cols-2">
         <h2 className="md:col-span-2 text-sm font-semibold uppercase tracking-wide text-gray-500">What they sell</h2>
         <Field label="Primary category">
+          <input
+            className={`${inputClass} mb-2`}
+            value={categoryQuery}
+            onChange={(e) => setCategoryQuery(e.target.value)}
+            placeholder="Search categories"
+            aria-label="Search categories"
+          />
           <select className={inputClass} value={value.primaryFamilyKey} onChange={(e) => set({ primaryFamilyKey: e.target.value, secondaryFamilyKeys: value.secondaryFamilyKeys.filter((slug) => slug !== e.target.value) })}>
             <option value="">Choose a category</option>
+            {value.primaryFamilyKey && !categoryOptions.some((category) => category.slug === value.primaryFamilyKey) ? (
+              <option value={value.primaryFamilyKey}>{value.primaryFamilyKey}</option>
+            ) : null}
             {categoriesByGroup.map((group) => (
               <optgroup key={group.group} label={group.group}>
                 {group.items.map((category) => (
@@ -258,16 +278,16 @@ export function VendorEditor({
           </select>
         </Field>
         <div>
-          <p className="text-sm text-gray-600 mb-2">Secondary categories (up to 5)</p>
+          <p className="text-sm text-gray-600 mb-2">Also sells (up to 5)</p>
           <div className="flex flex-wrap gap-2 max-h-40 overflow-auto">
-            {VENDOR_CATEGORIES.filter((category) => category.slug !== value.primaryFamilyKey).map((category) => (
+            {visibleCategories.filter((category) => category.slug !== value.primaryFamilyKey).map((category) => (
               <label key={category.slug} className="inline-flex items-center gap-2 text-sm border rounded-full px-3 py-1">
                 <input
                   type="checkbox"
                   checked={value.secondaryFamilyKeys.includes(category.slug)}
                   onChange={() => set({ secondaryFamilyKeys: toggle(value.secondaryFamilyKeys, category.slug, 5) })}
                 />
-                {category.label}
+                {category.group}: {category.label}
               </label>
             ))}
           </div>
@@ -384,8 +404,6 @@ export function vendorEditorPayload(value: VendorEditorValue, mode: 'create' | '
     longitude: Number.isFinite(longitude) && value.longitude.trim() ? longitude : undefined,
     deliveryStatus: value.deliveryStatus,
     serviceAreas: value.serviceAreaLabels.map((label) => ({ stateLabel: 'Lagos', stateKey: 'ng-lagos', cityLabel: label, coverageType: 'delivery' })),
-    sellsRetail: value.sellsRetail,
-    sellsWholesale: value.sellsWholesale,
     primaryFamilyKey: value.primaryFamilyKey || undefined,
     secondaryFamilyKeys: value.secondaryFamilyKeys,
     products: value.products,
@@ -407,7 +425,12 @@ export function vendorEditorPayload(value: VendorEditorValue, mode: 'create' | '
       ? [{ familyKey: value.primaryFamilyKey, brands, sellsRetail: value.sellsRetail, sellsWholesale: value.sellsWholesale }]
       : undefined,
     ...(mode === 'create'
-      ? { internalNote: value.internalNote.trim() || undefined, saveAsInternalOnly: value.saveAsInternalOnly }
+      ? {
+          sellsRetail: value.sellsRetail,
+          sellsWholesale: value.sellsWholesale,
+          internalNote: value.internalNote.trim() || undefined,
+          saveAsInternalOnly: value.saveAsInternalOnly,
+        }
       : {}),
   };
 }

@@ -1,8 +1,42 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { VENDOR_CATEGORIES } from '@buildmyhouse/shared-types';
 import { api } from '@/lib/api';
+
+export type AdminVendorCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parentId: string | null;
+  sortOrder: number;
+  isActive: boolean;
+  vendorCount: number;
+  children: AdminVendorCategory[];
+};
+
+export type FlatVendorCategory = { id: string; slug: string; label: string; group: string; isActive: boolean };
+
+export function flattenVendorCategories(tree: AdminVendorCategory[]): FlatVendorCategory[] {
+  const rows: FlatVendorCategory[] = [];
+  for (const node of tree) {
+    if (node.children.length) {
+      for (const child of node.children) {
+        rows.push({ id: child.id, slug: child.slug, label: child.name, group: node.name, isActive: child.isActive && node.isActive });
+      }
+    } else {
+      rows.push({ id: node.id, slug: node.slug, label: node.name, group: node.name, isActive: node.isActive });
+    }
+  }
+  return rows;
+}
+
+export function useVendorCategoryTree() {
+  return useQuery({
+    queryKey: ['admin-vendor-categories'],
+    queryFn: () => api.get<AdminVendorCategory[]>('/admin/vendor-categories'),
+  });
+}
 
 export type VendorListingStatus =
   | 'draft'
@@ -311,8 +345,6 @@ export const VERIFICATION_CHECK_OPTIONS = [
   { key: 'product_categories', label: 'Product categories reviewed' },
   { key: 'supporting_evidence', label: 'Supporting evidence' },
 ] as const;
-
-export const FAMILY_OPTIONS = VENDOR_CATEGORIES.map((category) => category.slug);
 
 export function useBulkVendorAction() {
   const qc = useQueryClient();

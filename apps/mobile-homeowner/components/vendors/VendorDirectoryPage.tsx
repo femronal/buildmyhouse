@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
@@ -30,11 +30,11 @@ import {
 } from '@/lib/directory-listing';
 import {
   VENDOR_AREA_FILTERS,
-  VENDOR_CATEGORY_FILTERS,
-  VENDOR_CATEGORY_GROUPS,
   VENDOR_STATE_FILTERS,
+  fetchPublicVendorCategories,
   fetchPublicVendors,
   type PublicVendorCard,
+  type PublicVendorCategory,
 } from '@/lib/public-vendors';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
@@ -46,9 +46,9 @@ function placeLabel(stateKey?: string): string | undefined {
   return VENDOR_STATE_FILTERS.find((item) => item.stateKey === stateKey)?.label || humanizeKey(stateKey.replace(/^ng-/, ''));
 }
 
-function categoryLabel(category?: string): string | undefined {
+function categoryLabel(category: string | undefined, filters: PublicVendorCategory[]): string | undefined {
   if (!category) return undefined;
-  return VENDOR_CATEGORY_FILTERS.find((item) => item.familyKey === category)?.label || humanizeKey(category);
+  return filters.find((item) => item.slug === category)?.label || humanizeKey(category);
 }
 
 function VendorMark({ name, logoUrl }: { name: string; logoUrl: string | null }) {
@@ -137,8 +137,12 @@ export default function VendorDirectoryPage() {
   const columns = useDirectoryColumns('vendor');
   const page = readPage(params.page);
   const sort = readSort(params.sort);
+  const { data: categoryFilters = [] } = useQuery({
+    queryKey: ['public-vendor-categories'],
+    queryFn: () => fetchPublicVendorCategories(),
+  });
   const title = vendorDirectoryHeading({
-    categoryLabel: categoryLabel(params.category),
+    categoryLabel: categoryLabel(params.category, categoryFilters),
     stateLabel: placeLabel(params.state),
   });
   const canonicalPath = directoryCanonical(PATH, params, ['category', 'state']);
@@ -195,6 +199,12 @@ export default function VendorDirectoryPage() {
     queryFn: () => fetchPublicVendors(searchParams),
   });
 
+  useEffect(() => {
+    const redirect = data?.categoryRedirect;
+    if (!redirect || params.category !== redirect.from || redirect.from === redirect.to) return;
+    router.replace(withDirectoryParams(PATH, params, { category: redirect.to }, VENDOR_QUERY_ORDER) as any);
+  }, [data?.categoryRedirect, params, router]);
+
   const onSearchChange = useCallback(
     (value: string) => {
       router.replace(
@@ -211,8 +221,8 @@ export default function VendorDirectoryPage() {
     href: toggleFilterHref(PATH, params, param, value, VENDOR_QUERY_ORDER),
   });
 
-  const categoryChips = VENDOR_CATEGORY_FILTERS.map((item) =>
-    chip(`category-${item.familyKey}`, item.label, 'category', item.familyKey),
+  const categoryChips = categoryFilters.map((item) =>
+    chip(`category-${item.slug}`, item.label, 'category', item.slug),
   );
   const stateChips = VENDOR_STATE_FILTERS.map((item) => chip(`state-${item.stateKey}`, item.label, 'state', item.stateKey));
   const optionChips = [
@@ -221,17 +231,20 @@ export default function VendorDirectoryPage() {
     chip('delivery', 'Delivery', 'delivery', '1'),
   ];
   if (params.category && !categoryChips.some((item) => item.active)) {
-    categoryChips.push(chip(`category-${params.category}`, categoryLabel(params.category) || params.category, 'category', params.category));
+    categoryChips.push(chip(`category-${params.category}`, categoryLabel(params.category, categoryFilters) || params.category, 'category', params.category));
   }
   if (params.state && !stateChips.some((item) => item.active)) {
     stateChips.push(chip(`state-${params.state}`, placeLabel(params.state) || params.state, 'state', params.state));
   }
   const areaChips = VENDOR_AREA_FILTERS.map((item) => chip(`area-${item.areaKey}`, item.label, 'area', item.areaKey));
+  const categoryGroups = Array.from(new Set(categoryFilters.map((item) => item.group).filter((group): group is string => !!group)));
+  const ungroupedCategoryChips = categoryChips.filter((item) => !categoryFilters.find((category) => `category-${category.slug}` === item.key)?.group);
   const sections: DirectoryFilterSection[] = [
-    ...VENDOR_CATEGORY_GROUPS.map((group) => ({
+    ...(ungroupedCategoryChips.length ? [{ id: 'categories', title: 'Categories', chips: ungroupedCategoryChips }] : []),
+    ...categoryGroups.map((group) => ({
       id: group,
       title: group,
-      chips: categoryChips.filter((item) => VENDOR_CATEGORY_FILTERS.find((category) => `category-${category.familyKey}` === item.key)?.group === group),
+      chips: categoryChips.filter((item) => categoryFilters.find((category) => `category-${category.slug}` === item.key)?.group === group),
     })),
     { id: 'location', title: 'State', chips: stateChips },
     { id: 'area', title: 'Lagos area', chips: areaChips },
