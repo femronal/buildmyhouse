@@ -34,11 +34,11 @@ function ToolStatusBadge({ status }: { status: PropertyTool['status'] }) {
         borderRadius: 999,
         paddingHorizontal: 8,
         paddingVertical: 4,
-        backgroundColor: live ? '#DCFCE7' : '#FEF3C7',
+        backgroundColor: live ? '#E7F6EC' : '#171717',
       }}
     >
-      <Text style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 11, color: live ? '#166534' : '#92400E' }}>
-        {live ? '● LIVE' : '◷ COMING SOON'}
+      <Text style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 11, color: live ? '#166534' : '#FFFFFF' }}>
+        {live ? '● LIVE' : 'COMING SOON'}
       </Text>
     </View>
   );

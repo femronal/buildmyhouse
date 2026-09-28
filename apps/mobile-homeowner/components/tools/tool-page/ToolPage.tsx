@@ -50,11 +50,11 @@ function StatusBadge({ status }: { status: PropertyTool['status'] }) {
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 6,
-        backgroundColor: live ? '#DCFCE7' : '#FEF3C7',
+        backgroundColor: live ? '#E7F6EC' : '#171717',
       }}
     >
-      <Text style={{ fontFamily: mono, fontSize: 12, color: live ? '#166534' : '#92400E' }}>
-        {live ? '● LIVE' : '◷ COMING SOON'}
+      <Text style={{ fontFamily: mono, fontSize: 12, color: live ? '#166534' : '#FFFFFF' }}>
+        {live ? '● LIVE' : 'COMING SOON'}
       </Text>
     </View>
   );
@@ -130,22 +130,30 @@ export default function ToolPage({ slug, toolSlot }: Props) {
     if (Platform.OS !== 'web' || typeof IntersectionObserver === 'undefined') return;
     const hero = document.getElementById('tool-hero');
     const band = document.getElementById('waitlist');
+    const toolPanel = document.getElementById('tool');
+    const footer = document.getElementById('tool-footer');
     if (!hero) return;
     let heroVisible = true;
     let bandVisible = false;
-    const update = () => setShowSticky(!heroVisible && !bandVisible);
+    let toolVisible = false;
+    let footerVisible = false;
+    const update = () => setShowSticky(!heroVisible && !bandVisible && !toolVisible && !footerVisible);
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.target === hero) heroVisible = entry.isIntersecting;
           if (entry.target === band) bandVisible = entry.isIntersecting;
+          if (entry.target === toolPanel) toolVisible = entry.isIntersecting;
+          if (entry.target === footer) footerVisible = entry.isIntersecting;
         });
         update();
       },
-      { threshold: 0.15 },
+      { threshold: 0.05 },
     );
     observer.observe(hero);
     if (band) observer.observe(band);
+    if (toolPanel) observer.observe(toolPanel);
+    if (footer) observer.observe(footer);
     return () => observer.disconnect();
   }, [slug]);
 
@@ -161,9 +169,41 @@ export default function ToolPage({ slug, toolSlot }: Props) {
     );
   }
 
+  const stickyBar = showSticky ? (
+    <View
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 40,
+        backgroundColor: '#FFFFFF',
+        borderTopWidth: 1,
+        borderTopColor: '#E5E5E5',
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 12,
+      }}
+    >
+      <Text style={{ fontFamily: semibold, fontSize: 14, color: '#171717', flex: 1 }} numberOfLines={2}>
+        {tool.title}
+      </Text>
+      <Pressable
+        onPress={() => scrollToId(live ? 'tool' : 'waitlist')}
+        style={{ ...blackButton, paddingHorizontal: 16 }}
+      >
+        <Text style={blackButtonLabel}>{live ? 'Use the tool' : 'Join waitlist'}</Text>
+      </Pressable>
+    </View>
+  ) : null;
+
   return (
-    <SeoContentShell contentContainerStyle={{ paddingBottom: 96 }}>
-      <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: 20 }}>
+    <SeoContentShell contentContainerStyle={{ paddingBottom: showSticky ? 72 : 0, flexGrow: 1 }} footer={stickyBar}>
+      <View style={{ width: '100%', alignSelf: 'stretch', minHeight: '100vh', flexDirection: 'column' }}>
+      <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: 20, flexGrow: 1 }}>
         <View style={{ paddingTop: width < 768 ? 20 : 40, paddingBottom: 8, gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Pressable
@@ -185,8 +225,8 @@ export default function ToolPage({ slug, toolSlot }: Props) {
         </View>
 
         <Anchor id="tool-hero">
-          <View style={{ paddingTop: 28, paddingBottom: 48, flexDirection: desktop ? 'row' : 'column', gap: 28 }}>
-            <View style={{ flex: desktop ? 1.2 : undefined, gap: 14 }}>
+          <View style={splitRow(desktop, 28)}>
+            <View style={{ ...splitCell(desktop), gap: 14 }}>
               <Text style={{ fontFamily: mono, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: '#525252' }}>
                 {page.eyebrow}
               </Text>
@@ -230,7 +270,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
                 </View>
               )}
             </View>
-            <View style={{ flex: desktop ? 0.9 : undefined, minWidth: 0, width: desktop ? undefined : '100%' }}>
+            <View style={splitCell(desktop)}>
               <PreviewCard page={page} />
             </View>
           </View>
@@ -251,15 +291,19 @@ export default function ToolPage({ slug, toolSlot }: Props) {
               {paragraph}
             </Text>
           ))}
-          <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 16, marginTop: 8 }}>
-            <CompareCard title="Without this tool" items={page.without} positive={false} />
-            <CompareCard title={`With ${tool.shortTitle || tool.title}`} items={page.with} positive />
+          <View style={{ ...splitRow(desktop, 16), marginTop: 8 }}>
+            <View style={splitCell(desktop)}>
+              <CompareCard title="Without this tool" items={page.without} positive={false} />
+            </View>
+            <View style={splitCell(desktop)}>
+              <CompareCard title={`With ${tool.shortTitle || tool.title}`} items={page.with} positive />
+            </View>
           </View>
         </Section>
 
         <Section>
-          <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 16, alignItems: 'stretch' }}>
-            <View style={lightCard}>
+          <View style={splitRow(desktop, 16)}>
+            <View style={{ ...lightCard, ...splitCell(desktop) }}>
               <Text style={kicker}>You provide</Text>
               {page.inputs.map((item) => (
                 <View key={item.label} style={{ marginBottom: 14 }}>
@@ -269,12 +313,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
               ))}
               {page.timeNote ? <Text style={{ fontFamily: body, fontSize: 13, color: '#525252' }}>{page.timeNote}</Text> : null}
             </View>
-            {desktop ? (
-              <Text style={{ alignSelf: 'center', fontFamily: bold, fontSize: 22, color: '#171717' }}>→</Text>
-            ) : (
-              <Text style={{ alignSelf: 'center', fontFamily: bold, fontSize: 22, color: '#171717' }}>↓</Text>
-            )}
-            <View style={darkCard}>
+            <View style={{ ...darkCard, ...splitCell(desktop) }}>
               <Text style={{ ...kicker, color: '#A3A3A3' }}>You get back</Text>
               {page.outputs.map((item) => (
                 <View key={item.label} style={{ marginBottom: 14 }}>
@@ -284,7 +323,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
               ))}
               {page.trustLine ? (
                 <View style={{ marginTop: 8, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#3F3F46' }}>
-                  <Text style={{ fontFamily: semibold, fontSize: 14, color: '#22C55E' }}>{page.trustLine}</Text>
+                  <Text style={{ fontFamily: semibold, fontSize: 14, color: '#4ADE80' }}>{page.trustLine}</Text>
                   {page.trustDetail ? (
                     <Text style={{ fontFamily: body, fontSize: 14, lineHeight: 22, color: '#E5E5E5', marginTop: 6 }}>{page.trustDetail}</Text>
                   ) : null}
@@ -299,9 +338,9 @@ export default function ToolPage({ slug, toolSlot }: Props) {
             <SeoHeading level={2} style={h2}>
               How it works
             </SeoHeading>
-            <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 16 }}>
+            <View style={splitRow(desktop, 16)}>
               {page.steps.map((step, index) => (
-                <View key={step.title} style={{ flex: 1, gap: 8 }}>
+                <View key={step.title} style={{ ...splitCell(desktop), gap: 8 }}>
                   <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: '#FFFFFF', fontFamily: semibold, fontSize: 14 }}>{index + 1}</Text>
                   </View>
@@ -331,9 +370,11 @@ export default function ToolPage({ slug, toolSlot }: Props) {
           {relatedCards.length ? (
             <View style={{ marginTop: 28 }}>
               <Text style={kicker}>More in {category?.shortLabel || 'this category'}</Text>
-              <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 12 }}>
+              <View style={splitRow(desktop, 12)}>
                 {relatedCards.map((item) => (
-                  <ToolLinkCard key={item.slug} tool={item} />
+                  <View key={item.slug} style={splitCell(desktop)}>
+                    <ToolLinkCard tool={item} />
+                  </View>
                 ))}
               </View>
             </View>
@@ -344,12 +385,12 @@ export default function ToolPage({ slug, toolSlot }: Props) {
           <SeoHeading level={2} style={h2}>
             Who it is for
           </SeoHeading>
-          <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 16 }}>
-            <View style={lightCard}>
+          <View style={splitRow(desktop, 16)}>
+            <View style={{ ...lightCard, ...splitCell(desktop) }}>
               <Text style={kicker}>Homeowners and Nigerians abroad</Text>
               <Text style={paragraphStyle}>{page.homeowner}</Text>
             </View>
-            <View style={lightCard}>
+            <View style={{ ...lightCard, ...splitCell(desktop) }}>
               <Text style={kicker}>Professionals</Text>
               <Text style={paragraphStyle}>{page.professional}</Text>
               <Link href={'/professionals/apply' as never}>
@@ -381,8 +422,8 @@ export default function ToolPage({ slug, toolSlot }: Props) {
 
         <Anchor id="waitlist">
           <View style={{ backgroundColor: '#F3F0E8', borderRadius: 24, padding: width < 768 ? 20 : 32, marginBottom: 64 }}>
-            <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 24 }}>
-              <View style={{ flex: 1, gap: 8 }}>
+            <View style={splitRow(desktop, 24)}>
+              <View style={{ ...splitCell(desktop), gap: 8 }}>
                 <SeoHeading level={2} style={h2}>
                   {live ? page.waitlistHeading : page.waitlistHeading}
                 </SeoHeading>
@@ -400,7 +441,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
                   </Link>
                 ))}
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={splitCell(desktop)}>
                 {live ? (
                   <WaitlistForm
                     productKey="all-tools"
@@ -424,14 +465,14 @@ export default function ToolPage({ slug, toolSlot }: Props) {
         </Anchor>
 
         <Section>
-          <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 24 }}>
-            <View style={{ flex: desktop ? 0.4 : undefined }}>
+          <View style={splitRow(desktop, 24)}>
+            <View style={{ ...splitCell(desktop), maxWidth: desktop ? 360 : '100%' }}>
               <SeoHeading level={2} style={h2}>
                 Questions people ask
               </SeoHeading>
               <Text style={paragraphStyle}>Straight answers about what this tool does and what it does not do.</Text>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={{ ...splitCell(desktop), flexGrow: desktop ? 2 : undefined }}>
               {faqs.map((item, index) =>
                 Platform.OS === 'web' ? (
                   createElement(
@@ -478,14 +519,19 @@ export default function ToolPage({ slug, toolSlot }: Props) {
           <SeoHeading level={2} style={h2}>
             Other BuildMyHouse tools
           </SeoHeading>
-          <View style={{ flexDirection: desktop ? 'row' : 'column', gap: 12 }}>
+          <View style={splitRow(desktop, 12)}>
             {crossSell.map((item) => (
-              <ToolLinkCard key={item.slug} tool={item} />
+              <View key={item.slug} style={splitCell(desktop)}>
+                <ToolLinkCard tool={item} />
+              </View>
             ))}
           </View>
         </Section>
 
-        <View style={{ borderTopWidth: 1, borderTopColor: '#E5E5E5', paddingVertical: 28, backgroundColor: '#060706', marginHorizontal: -20, paddingHorizontal: 20 }}>
+      </View>
+      <Anchor id="tool-footer">
+      <View style={{ width: '100%', backgroundColor: '#060706', marginTop: 24 }}>
+        <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: 20, paddingVertical: 28 }}>
           <Text style={{ fontFamily: body, fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>{LEGAL_OPERATOR_LINE}</Text>
           <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
             <Link href={'/privacy-security' as never}>
@@ -497,44 +543,16 @@ export default function ToolPage({ slug, toolSlot }: Props) {
           </View>
         </View>
       </View>
-
-      {showSticky ? (
-        <View
-          style={{
-            position: Platform.OS === 'web' ? ('fixed' as unknown as 'absolute') : 'absolute',
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: '#FFFFFF',
-            borderTopWidth: 1,
-            borderTopColor: '#E5E5E5',
-            paddingHorizontal: 20,
-            paddingVertical: 10,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <Text style={{ fontFamily: semibold, fontSize: 14, color: '#171717', flex: 1 }} numberOfLines={2}>
-            {tool.title}
-          </Text>
-          <Pressable
-            onPress={() => scrollToId(live ? 'tool' : 'waitlist')}
-            style={{ ...blackButton, paddingHorizontal: 16 }}
-          >
-            <Text style={blackButtonLabel}>{live ? 'Use the tool' : 'Join waitlist'}</Text>
-          </Pressable>
-        </View>
-      ) : null}
+      </Anchor>
+      </View>
     </SeoContentShell>
   );
 }
 
 function PreviewCard({ page }: { page: ToolPageCopy }) {
   return (
-    <View style={{ ...darkCard, minHeight: 280 }}>
-      <Text style={{ fontFamily: mono, fontSize: 12, color: '#FDE68A' }}>{page.preview.kicker}</Text>
+    <View style={{ ...darkCard, width: '100%', minHeight: 280 }}>
+      <Text style={{ fontFamily: mono, fontSize: 12, color: '#86EFAC' }}>{page.preview.kicker}</Text>
       <Text style={{ fontFamily: bold, fontSize: 22, color: '#FFFFFF', marginTop: 10, marginBottom: 16 }}>{page.preview.title}</Text>
       {page.preview.lines.map((line) => (
         <View key={line.label} style={{ borderTopWidth: 1, borderTopColor: '#3F3F46', paddingVertical: 10 }}>
@@ -553,7 +571,7 @@ function PreviewCard({ page }: { page: ToolPageCopy }) {
 
 function CompareCard({ title, items, positive }: { title: string; items: string[]; positive: boolean }) {
   return (
-    <View style={{ ...lightCard, flex: 1, borderColor: positive ? '#BBF7D0' : '#E5E5E5' }}>
+    <View style={{ ...lightCard, flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%', borderColor: positive ? '#171717' : '#E5E5E5' }}>
       <Text style={{ fontFamily: semibold, fontSize: 16, color: '#171717', marginBottom: 10 }}>{title}</Text>
       {items.map((item) => (
         <Text key={item} style={{ fontFamily: body, fontSize: 14, lineHeight: 22, color: '#525252', marginBottom: 8 }}>
@@ -597,7 +615,7 @@ function JourneyCard({ node, currentSlug }: { node: JourneyNode; currentSlug: st
 function ToolLinkCard({ tool }: { tool: PropertyTool }) {
   return (
     <Link href={tool.href as never} asChild>
-      <Pressable style={{ ...lightCard, flex: 1 }}>
+      <Pressable style={{ ...lightCard, flexGrow: 1, flexShrink: 1, minWidth: 0, maxWidth: '100%' }}>
         <StatusBadge status={tool.status} />
         <Text style={{ fontFamily: semibold, fontSize: 16, color: '#171717', marginTop: 8 }}>{tool.title}</Text>
         <Text style={{ fontFamily: body, fontSize: 13, lineHeight: 20, color: '#525252', marginTop: 4 }}>{tool.tagline}</Text>
@@ -623,13 +641,47 @@ const lightCard = {
   borderRadius: 20,
   backgroundColor: '#FFFFFF',
   padding: 18,
+  minWidth: 0,
+  maxWidth: '100%' as const,
+  alignSelf: 'stretch' as const,
 } as const;
+function splitRow(wide: boolean, gap: number) {
+  return {
+    width: '100%' as const,
+    maxWidth: '100%' as const,
+    flexDirection: (wide ? 'row' : 'column') as 'row' | 'column',
+    alignItems: 'stretch' as const,
+    gap,
+  };
+}
+
+function splitCell(wide: boolean) {
+  if (!wide) {
+    return {
+      width: '100%' as const,
+      maxWidth: '100%' as const,
+      minWidth: 0,
+      alignSelf: 'stretch' as const,
+    };
+  }
+  return {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: '0%' as const,
+    minWidth: 0,
+    maxWidth: '100%' as const,
+    alignSelf: 'stretch' as const,
+  };
+}
+
 const darkCard = {
-  flex: 1,
   borderRadius: 20,
-  backgroundColor: '#23262F',
+  backgroundColor: '#171717',
   padding: 18,
-} as const;
+  minWidth: 0,
+  maxWidth: '100%' as const,
+  alignSelf: 'stretch' as const,
+};
 const blackButton = {
   minHeight: 44,
   borderRadius: 10,

@@ -255,7 +255,7 @@ export function PriceCheckerWorkspace({ embedded = false }: { embedded?: boolean
             maxWidth: embedded ? '100%' : 1100,
             paddingHorizontal: pagePadX,
             paddingTop: pagePadTop,
-            overflow: 'hidden',
+            overflow: embedded ? 'visible' : 'hidden',
           }}
         >
           {embedded ? null : (
@@ -364,7 +364,7 @@ export function PriceCheckerWorkspace({ embedded = false }: { embedded?: boolean
         backgroundColor: embedded ? 'transparent' : pc.pageBg,
         width: '100%',
         maxWidth: '100%',
-        overflow: 'hidden',
+        overflow: embedded ? 'visible' : 'hidden',
       }}
     >
       {embedded ? (
