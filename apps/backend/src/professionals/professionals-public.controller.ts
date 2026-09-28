@@ -110,7 +110,7 @@ export class ProfessionalsPublicController {
   }
 
   @Post(':slug/verify')
-  selfVerifyBlocked() {
+  selfVerifyBlockedBySlug() {
     return this.professionals.assertPublicCannotSelfVerify();
   }
 }
