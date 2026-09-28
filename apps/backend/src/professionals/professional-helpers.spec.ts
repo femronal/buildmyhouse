@@ -152,6 +152,10 @@ describe('professional-helpers', () => {
     expect(card.trust.credentialLabel).toBe('COREN credential checked');
     expect(card.trust.usedByBmhLabel).toBe('Used by BuildMyHouse');
     expect(card.trust.claimedLabel).toBe('Claimed');
+    const ownerClaimed = toPublicProfessionalCard({ ...listing, claimedAt: new Date('2026-09-28') });
+    expect(ownerClaimed.trust.claimedLabel).toBe('Claimed by owner');
+    expect(ownerClaimed.verificationStatus).toBe(ProfessionalVerificationStatus.verified);
+    expect(ownerClaimed.trust.credentialLabel).not.toBe('Claimed by owner');
     expect(profile.contact.phone).toBeNull();
     expect(profile.contact.email).toBeNull();
     expect(profile.website).toBe('https://adewale.ng');

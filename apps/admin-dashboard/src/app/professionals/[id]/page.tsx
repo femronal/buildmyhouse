@@ -48,6 +48,7 @@ export default function ProfessionalDetailPage() {
           <h1 className="text-3xl font-bold font-poppins">{data.displayName}</h1>
           <p className="text-gray-500 mt-1">
             {data.profession?.label} · Completeness {data.completenessScore}% · {labelOf(OWNERSHIP_STATUS_LABELS, data.ownershipStatus)}
+            {data.claimedAt ? ' · Claimed by owner' : ''}
           </p>
           <p className="text-xs text-gray-400 mt-1">Listed ≠ claimed ≠ credential checked ≠ used by BMH.</p>
           {data.primaryCredential?.registrationNumber && (
@@ -88,7 +89,7 @@ export default function ProfessionalDetailPage() {
       {tab === 'Credentials' && <Credentials data={data} actions={actions} />}
       {tab === 'Procurement' && <Procurement data={data} actions={actions} meta={meta.data} />}
       {tab === 'Engagements' && <Engagements data={data} actions={actions} meta={meta.data} />}
-      {tab === 'Inbox' && <Inbox data={data} inbox={inbox} onDone={() => { qc.invalidateQueries(); refetch(); }} />}
+      {tab === 'Inbox' && <Inbox data={data} inbox={inbox} actions={actions} onDone={() => { qc.invalidateQueries(); refetch(); }} />}
     </div>
   );
 }
@@ -137,6 +138,15 @@ function Overview({
           Mark used by BMH
         </button>
         {data.usedByBmh && <p className="text-sm text-emerald-700">Currently marked used by BMH.</p>}
+      </section>
+      <section className="bg-white rounded-xl shadow p-5 space-y-3 lg:col-span-2">
+        <h2 className="font-semibold">Owner claim</h2>
+        <p className="text-sm text-gray-600">
+          {data.claimedAt
+            ? `Claimed by owner${data.claimEmail ? ` · ${data.claimEmail}` : ''} · ${new Date(data.claimedAt).toLocaleString()}`
+            : 'Not claimed by an owner. The ownership flag above is a separate admin review.'}
+        </p>
+        <ClaimInviteForm data={data} actions={actions} />
       </section>
       <section className="bg-white rounded-xl shadow p-5 lg:col-span-2">
         {checked && primary && (
@@ -268,7 +278,7 @@ function Credentials({ data, actions }: { data: any; actions: ReturnType<typeof 
         {(data.credentials || []).map((credential: any) => (
           <div key={credential.id} className="border rounded-lg p-3 mb-3 text-sm">
             <p className="font-medium">{credential.regulatorLabel || credential.credentialType} · {credential.registrationNumber || 'No number'}</p>
-            <p>Status: {credential.verificationStatus} · {credential.credentialStatus}</p>
+            <p>Status: {credential.verificationStatus === 'needs_recheck' ? 'Needs re-check' : credential.verificationStatus} · {credential.credentialStatus}</p>
             <p>Checked: {credential.verifiedAt ? new Date(credential.verifiedAt).toLocaleDateString() : '—'}</p>
             <div className="mt-2 flex gap-2 flex-wrap">
               <label className="text-xs">
@@ -438,7 +448,66 @@ function Engagements({ data, actions, meta }: { data: any; actions: ReturnType<t
   );
 }
 
-function Inbox({ data, inbox, onDone }: { data: any; inbox: ReturnType<typeof useProfessionalInbox>; onDone: () => void }) {
+function ClaimInviteForm({
+  data,
+  actions,
+}: {
+  data: any;
+  actions: ReturnType<typeof useProfessionalAction>;
+}) {
+  const [inviteEmail, setInviteEmail] = useState(data.email || data.claimEmail || '');
+  const [inviteUrl, setInviteUrl] = useState('');
+  const [feedback, setFeedback] = useState('');
+
+  return (
+    <div className="space-y-2">
+      <input
+        value={inviteEmail}
+        onChange={(e) => setInviteEmail(e.target.value)}
+        placeholder="Listing email"
+        className="w-full border rounded-lg px-3 py-2 text-sm"
+      />
+      <button
+        type="button"
+        className="px-3 py-1.5 rounded-lg border text-sm"
+        disabled={actions.claimInvite.isPending || !inviteEmail.trim()}
+        onClick={async () => {
+          try {
+            const res = await actions.claimInvite.mutateAsync({ email: inviteEmail.trim() });
+            setInviteUrl(res.claimUrl);
+            setFeedback(`Invite sent to ${res.email}`);
+          } catch (e: any) {
+            setFeedback(e?.message || 'Invite failed');
+          }
+        }}
+      >
+        Send claim invite
+      </button>
+      {inviteUrl ? (
+        <button
+          type="button"
+          className="block text-xs text-blue-700"
+          onClick={() => navigator.clipboard.writeText(inviteUrl)}
+        >
+          Copy claim link
+        </button>
+      ) : null}
+      {feedback ? <p className="text-sm text-gray-600">{feedback}</p> : null}
+    </div>
+  );
+}
+
+function Inbox({
+  data,
+  inbox,
+  actions,
+  onDone,
+}: {
+  data: any;
+  inbox: ReturnType<typeof useProfessionalInbox>;
+  actions: ReturnType<typeof useProfessionalAction>;
+  onDone: () => void;
+}) {
   return (
     <div className="grid lg:grid-cols-3 gap-4">
       <section className="bg-white rounded-xl shadow p-5">
@@ -454,8 +523,53 @@ function Inbox({ data, inbox, onDone }: { data: any; inbox: ReturnType<typeof us
           </div>
         ))}
       </section>
-      <section className="bg-white rounded-xl shadow p-5">
+      <section className="bg-white rounded-xl shadow p-5 space-y-3">
         <h2 className="font-semibold mb-2">Claims</h2>
+        <ClaimInviteForm data={data} actions={actions} />
+        {(data.claimInvites || []).length === 0 && <p className="text-sm text-gray-500">No claim invites yet.</p>}
+        {(data.claimInvites || []).map((invite: any) => (
+          <div key={invite.id} className="border rounded-lg p-3 text-sm space-y-1">
+            <p className="font-medium">{invite.email || 'No email'}</p>
+            <p>Sent {invite.createdAt ? new Date(invite.createdAt).toLocaleString() : '—'}</p>
+            <p>
+              Status:{' '}
+              {invite.status === 'claimed'
+                ? 'Claimed'
+                : invite.status === 'expired'
+                  ? 'Expired'
+                  : invite.status === 'revoked'
+                    ? 'Revoked'
+                    : 'Pending'}
+            </p>
+            <div className="flex gap-2 mt-2">
+              {invite.status === 'pending' || invite.status === 'expired' ? (
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded"
+                  onClick={async () => {
+                    const res = await actions.resendClaimInvite.mutateAsync(invite.id);
+                    if (res?.claimUrl) await navigator.clipboard.writeText(res.claimUrl);
+                    onDone();
+                  }}
+                >
+                  Resend
+                </button>
+              ) : null}
+              {invite.status === 'pending' ? (
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded"
+                  onClick={async () => {
+                    await actions.revokeClaimInvite.mutateAsync(invite.id);
+                    onDone();
+                  }}
+                >
+                  Revoke
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ))}
         {(inbox.claims.data || []).filter((row: any) => row.professionalListingId === data.id || row.listing?.id === data.id).map((row: any) => (
           <div key={row.id} className="border rounded-lg p-3 mb-2 text-sm">
             <p className="font-medium">{row.requesterName}</p>
@@ -474,6 +588,45 @@ function Inbox({ data, inbox, onDone }: { data: any; inbox: ReturnType<typeof us
           <div key={row.id} className="border rounded-lg p-3 mb-2 text-sm">
             <p className="font-medium">{row.requesterName}</p>
             <p>{row.whatDoYouNeed}</p>
+          </div>
+        ))}
+      </section>
+      <section className="bg-white rounded-xl shadow p-5 lg:col-span-3">
+        <h2 className="font-semibold mb-2">Document review</h2>
+        {(data.documents || []).length === 0 && <p className="text-sm text-gray-500">No owner documents yet.</p>}
+        {(data.documents || []).map((doc: any) => (
+          <div key={doc.id} className="border rounded-lg p-3 mb-2 text-sm space-y-1">
+            <p className="font-medium">{doc.label || doc.documentType}</p>
+            <p>{doc.documentType} · {doc.reviewStatus}</p>
+            {doc.signedUrl ? (
+              <a href={doc.signedUrl} target="_blank" rel="noreferrer" className="text-blue-700">Open private file</a>
+            ) : (
+              <p className="text-gray-500">Private file on record.</p>
+            )}
+            {doc.reviewStatus === 'pending' && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded"
+                  onClick={async () => {
+                    await actions.reviewDocument.mutateAsync({ documentId: doc.id, status: 'approved' });
+                    onDone();
+                  }}
+                >
+                  Approve
+                </button>
+                <button
+                  type="button"
+                  className="px-2 py-1 border rounded"
+                  onClick={async () => {
+                    await actions.reviewDocument.mutateAsync({ documentId: doc.id, status: 'rejected' });
+                    onDone();
+                  }}
+                >
+                  Reject
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </section>

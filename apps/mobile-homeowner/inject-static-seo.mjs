@@ -50,6 +50,7 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/vendors/manage',
   '/vendors/claim',
   '/professionals/manage',
+  '/professionals/claim',
 ];
 
 const SEO_PAGES = {

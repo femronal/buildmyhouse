@@ -173,6 +173,31 @@ export function useProfessionalAction(id: string) {
         api.patch(`/admin/professionals/engagements/${engagementId}`, body),
       onSuccess: invalidate,
     }),
+    claimInvite: useMutation({
+      mutationFn: (body: { email: string; phone?: string }) =>
+        api.post<{ id: string; expiresAt: string; claimUrl: string; email: string; status: string }>(
+          `/admin/professionals/${id}/claim-invites`,
+          body,
+        ),
+      onSuccess: invalidate,
+    }),
+    resendClaimInvite: useMutation({
+      mutationFn: (inviteId: string) =>
+        api.post<{ claimUrl: string; email: string; status: string }>(
+          `/admin/professionals/claim-invites/${inviteId}/resend`,
+          {},
+        ),
+      onSuccess: invalidate,
+    }),
+    revokeClaimInvite: useMutation({
+      mutationFn: (inviteId: string) => api.post(`/admin/professionals/claim-invites/${inviteId}/revoke`, {}),
+      onSuccess: invalidate,
+    }),
+    reviewDocument: useMutation({
+      mutationFn: ({ documentId, ...body }: { documentId: string; status: 'approved' | 'rejected'; rejectionReason?: string }) =>
+        api.patch(`/admin/professionals/documents/${documentId}/review`, body),
+      onSuccess: invalidate,
+    }),
   };
 }
 

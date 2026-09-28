@@ -1,3 +1,4 @@
+import { createHash, randomBytes } from 'crypto';
 import {
   BadRequestException,
   ConflictException,
@@ -5,6 +6,7 @@ import {
   Injectable,
   NotFoundException,
   OnModuleInit,
+  Optional,
 } from '@nestjs/common';
 import {
   ProfessionalCredentialVerification,
@@ -17,7 +19,9 @@ import {
   ProfessionalVerificationStatus,
   Prisma,
 } from '@prisma/client';
+import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { S3UploadService } from '../upload/s3-upload.service';
 import {
   DELIVERABLES,
   NEEDS,
@@ -58,7 +62,12 @@ import {
   AdminVerificationActionDto,
   ApplyProfessionalDto,
   ClaimProfessionalDto,
+  ProfessionalClaimInviteDto,
+  ProfessionalDocumentInputDto,
+  ProfessionalDocumentReviewDto,
   ProfessionalEnquiryDto,
+  ProfessionalManageUpdateDto,
+  ProfessionalOwnerCredentialDto,
   PublicProfessionalSearchDto,
 } from './dto/professionals.dto';
 
@@ -86,13 +95,33 @@ const ADMIN_INCLUDE = {
     take: 50,
   },
   claims: { orderBy: { createdAt: 'desc' as const }, take: 20 },
+  claimInvites: { orderBy: { createdAt: 'desc' as const }, take: 30 },
+  documents: { orderBy: { createdAt: 'desc' as const }, take: 50 },
   applications: { orderBy: { createdAt: 'desc' as const }, take: 10 },
   enquiries: { orderBy: { createdAt: 'desc' as const }, take: 20 },
 } satisfies Prisma.ProfessionalListingInclude;
 
+const OWNER_BLOCKED_FIELDS = [
+  'verificationStatus',
+  'listingStatus',
+  'ownershipStatus',
+  'usedByBmh',
+  'usedByBmhNote',
+  'usedByBmhSince',
+  'procurementStatus',
+  'markChecked',
+  'verificationNotes',
+  'isPublic',
+  'credentialChecked',
+] as const;
+
 @Injectable()
 export class ProfessionalsService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly email?: EmailService,
+    @Optional() private readonly uploads?: S3UploadService,
+  ) {}
 
   async onModuleInit() {
     await this.ensureTaxonomy();
@@ -512,7 +541,16 @@ export class ProfessionalsService implements OnModuleInit {
       include: ADMIN_INCLUDE,
     });
     if (!listing) throw new NotFoundException('Professional not found');
-    return this.toAdminDetail(listing);
+    const detail = this.toAdminDetail(listing);
+    if (this.uploads && Array.isArray(detail.documents)) {
+      detail.documents = await Promise.all(
+        detail.documents.map(async (doc: any) => ({
+          ...doc,
+          signedUrl: doc.fileRef ? await this.uploads!.signGetUrl(doc.fileRef).catch(() => null) : null,
+        })),
+      );
+    }
+    return detail;
   }
 
   async findDuplicates(input: {
@@ -1021,6 +1059,240 @@ export class ProfessionalsService implements OnModuleInit {
     throw new ForbiddenException('Professionals cannot mark their own credentials as checked.');
   }
 
+  assertOwnerCannotEscalate(body: Record<string, unknown>) {
+    const present = OWNER_BLOCKED_FIELDS.filter((key) => body[key] !== undefined);
+    if (present.length) {
+      throw new ForbiddenException(`Owners cannot change ${present.join(', ')}.`);
+    }
+  }
+
+  async adminCreateClaimInvite(id: string, adminId: string, dto: ProfessionalClaimInviteDto) {
+    const listing = await this.prisma.professionalListing.findUnique({ where: { id } });
+    if (!listing) throw new NotFoundException('Professional not found');
+    const email = (dto.email || listing.email || '').trim();
+    if (!email) throw new BadRequestException('Invite email is required');
+
+    const rawToken = randomBytes(32).toString('hex');
+    const expiresInDays = dto.expiresInDays ?? 14;
+    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
+    const invite = await this.prisma.professionalClaimInvite.create({
+      data: {
+        professionalListingId: id,
+        tokenHash: this.hashToken(rawToken),
+        email,
+        phone: dto.phone || listing.phone || listing.whatsapp || null,
+        invitedByAdminId: adminId,
+        expiresAt,
+      },
+    });
+
+    await this.prisma.professionalListing.update({
+      where: { id },
+      data: { claimEmail: email },
+    });
+
+    const claimUrl = `https://buildmyhouse.app/professionals/claim/${rawToken}`;
+    const safeName = listing.displayName.replace(/[&<>"]/g, (char) =>
+      char === '&' ? '&amp;' : char === '<' ? '&lt;' : char === '>' ? '&gt;' : '&quot;',
+    );
+    if (this.email) {
+      await this.email.send({
+        to: email,
+        subject: 'Claim your BuildMyHouse professional listing',
+        html: `<p>BuildMyHouse invited you to claim <strong>${safeName}</strong>.</p>
+<p><a href="${claimUrl}">Claim listing</a></p>
+<p>This link expires on ${expiresAt.toISOString().slice(0, 10)}.</p>`,
+        text: `Claim your professional listing: ${claimUrl}`,
+      });
+    }
+
+    return { id: invite.id, expiresAt, claimUrl, email, status: 'pending' as const };
+  }
+
+  async resendClaimInvite(inviteId: string, adminId: string) {
+    const invite = await this.prisma.professionalClaimInvite.findUnique({ where: { id: inviteId } });
+    if (!invite) throw new NotFoundException('Invite not found');
+    if (!invite.email) throw new BadRequestException('Invite email is required');
+    return this.adminCreateClaimInvite(invite.professionalListingId, adminId, { email: invite.email });
+  }
+
+  async revokeClaimInvite(inviteId: string) {
+    const invite = await this.prisma.professionalClaimInvite.findUnique({ where: { id: inviteId } });
+    if (!invite) throw new NotFoundException('Invite not found');
+    if (invite.usedAt) throw new ConflictException('This invite has already been claimed');
+    if (!invite.revokedAt) {
+      await this.prisma.professionalClaimInvite.update({
+        where: { id: inviteId },
+        data: { revokedAt: new Date() },
+      });
+    }
+    return { id: inviteId, status: 'revoked' as const };
+  }
+
+  async previewClaim(rawToken: string) {
+    const invite = await this.findValidInvite(rawToken);
+    const listing = await this.prisma.professionalListing.findUnique({ where: { id: invite.professionalListingId } });
+    if (!listing) throw new NotFoundException('Professional not found');
+    return {
+      displayName: listing.displayName,
+      slug: listing.slug,
+      email: invite.email,
+      expiresAt: invite.expiresAt,
+    };
+  }
+
+  async acceptClaim(rawToken: string, userId: string) {
+    const invite = await this.findValidInvite(rawToken);
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const listing = await this.prisma.professionalListing.findUnique({ where: { id: invite.professionalListingId } });
+    if (!listing) throw new NotFoundException('Professional not found');
+    if (listing.claimedByUserId && listing.claimedByUserId !== userId) {
+      throw new ConflictException('This listing has already been claimed');
+    }
+    if (listing.linkedUserId && listing.linkedUserId !== userId) {
+      throw new ConflictException('This listing is already linked to another account');
+    }
+
+    const existing = await this.prisma.professionalListing.findFirst({
+      where: {
+        id: { not: listing.id },
+        OR: [{ claimedByUserId: userId }, { linkedUserId: userId }],
+      },
+    });
+    if (existing) {
+      throw new ConflictException('This account already manages another professional listing');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.professionalClaimInvite.update({
+        where: { id: invite.id },
+        data: { usedAt: new Date() },
+      }),
+      this.prisma.professionalListing.update({
+        where: { id: listing.id },
+        data: {
+          claimedByUserId: userId,
+          linkedUserId: userId,
+          claimedAt: listing.claimedAt || new Date(),
+          claimEmail: invite.email,
+        },
+      }),
+    ]);
+
+    return this.getManagedProfile(userId);
+  }
+
+  async getManagedProfile(userId: string) {
+    const listing = await this.requireManagedListing(userId);
+    return this.toManagedProfile(listing);
+  }
+
+  async updateManaged(userId: string, dto: ProfessionalManageUpdateDto) {
+    this.assertOwnerCannotEscalate(dto as Record<string, unknown>);
+    const listing = await this.requireManagedListing(userId);
+    await this.prisma.professionalListing.update({
+      where: { id: listing.id },
+      data: {
+        bio: dto.bio,
+        phone: dto.phone,
+        whatsapp: dto.whatsapp,
+        website: dto.website,
+        email: dto.email !== undefined ? normalizeEmail(dto.email) ?? dto.email : undefined,
+        address: dto.address,
+        serviceStates: dto.serviceStates,
+        serviceCities: dto.serviceCities,
+        normalizedPhone: dto.phone !== undefined ? normalizePhone(dto.phone) : undefined,
+        normalizedEmail: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
+        websiteDomain: dto.website !== undefined ? websiteDomain(dto.website) : undefined,
+      },
+    });
+    if (dto.serviceIds) {
+      await this.prisma.professionalListingService.deleteMany({ where: { professionalListingId: listing.id } });
+      if (dto.serviceIds.length) {
+        await this.prisma.professionalListingService.createMany({
+          data: dto.serviceIds.map((serviceId) => ({ professionalListingId: listing.id, serviceId })),
+        });
+      }
+    }
+    await this.refreshScores(listing.id);
+    return this.getManagedProfile(userId);
+  }
+
+  async updateManagedCredential(userId: string, credentialId: string, dto: ProfessionalOwnerCredentialDto) {
+    this.assertOwnerCannotEscalate(dto as unknown as Record<string, unknown>);
+    const listing = await this.requireManagedListing(userId);
+    const credential = await this.prisma.professionalCredential.findFirst({
+      where: { id: credentialId, professionalListingId: listing.id },
+    });
+    if (!credential) throw new NotFoundException('Credential not found');
+    const next = dto.registrationNumber.trim();
+    const changed = next !== (credential.registrationNumber || '');
+    const wasChecked = credential.verificationStatus === ProfessionalCredentialVerification.checked;
+    const normalizedRegKey = normalizeRegKey(credential.regulatorKey, next);
+    if (normalizedRegKey && normalizedRegKey !== credential.normalizedRegKey) {
+      const clash = await this.prisma.professionalCredential.findUnique({ where: { normalizedRegKey } });
+      if (clash && clash.id !== credential.id) {
+        throw new ConflictException('That regulator registration number is already on another listing.');
+      }
+    }
+    await this.prisma.professionalCredential.update({
+      where: { id: credential.id },
+      data: {
+        registrationNumber: next,
+        normalizedRegKey,
+        verificationStatus: changed && wasChecked ? ProfessionalCredentialVerification.needs_recheck : credential.verificationStatus,
+        verifiedAt: changed && wasChecked ? null : credential.verifiedAt,
+        verifiedByAdminId: changed && wasChecked ? null : credential.verifiedByAdminId,
+      },
+    });
+    await this.syncListingVerification(listing.id);
+    return this.getManagedProfile(userId);
+  }
+
+  async addManagedDocument(userId: string, dto: ProfessionalDocumentInputDto) {
+    const listing = await this.requireManagedListing(userId);
+    const created = await this.prisma.professionalDocument.create({
+      data: {
+        professionalListingId: listing.id,
+        documentType: dto.documentType,
+        label: dto.label || null,
+        fileRef: dto.fileRef,
+        mimeType: dto.mimeType || null,
+        fileSizeBytes: dto.fileSizeBytes || null,
+        isPublic: false,
+        reviewStatus: ProfessionalReviewStatus.pending,
+        uploadedByUserId: userId,
+      },
+    });
+    return {
+      id: created.id,
+      documentType: created.documentType,
+      label: created.label,
+      reviewStatus: created.reviewStatus,
+      createdAt: created.createdAt,
+    };
+  }
+
+  async reviewDocument(adminId: string, documentId: string, dto: ProfessionalDocumentReviewDto) {
+    const document = await this.prisma.professionalDocument.findUnique({ where: { id: documentId } });
+    if (!document) throw new NotFoundException('Document not found');
+    const status =
+      dto.status === 'approved' ? ProfessionalReviewStatus.approved : ProfessionalReviewStatus.rejected;
+    await this.prisma.professionalDocument.update({
+      where: { id: documentId },
+      data: {
+        reviewStatus: status,
+        rejectionReason: status === ProfessionalReviewStatus.rejected ? dto.rejectionReason || null : null,
+        reviewedByAdminId: adminId,
+        reviewedAt: new Date(),
+        isPublic: false,
+      },
+    });
+    return this.adminGet(document.professionalListingId);
+  }
+
   private writeData(dto: AdminProfessionalWriteDto): Prisma.ProfessionalListingUncheckedUpdateInput {
     return {
       displayName: dto.displayName?.trim(),
@@ -1235,6 +1507,10 @@ export class ProfessionalsService implements OnModuleInit {
       sourceNotes: row.sourceNotes,
       sourceUrls: row.sourceUrls,
       linkedUserId: row.linkedUserId,
+      claimedAt: row.claimedAt,
+      claimEmail: row.claimEmail,
+      claimedByUserId: row.claimedByUserId,
+      ownerClaimed: Boolean(row.claimedAt),
       createdAt: row.createdAt,
       specialties: (row.specialties || []).map((s: any) => s.specialty),
       services: (row.services || []).map((s: any) => s.service),
@@ -1244,8 +1520,94 @@ export class ProfessionalsService implements OnModuleInit {
       procurement: row.procurement,
       engagements: row.engagements,
       claims: row.claims,
+      claimInvites: (row.claimInvites || []).map((invite: any) => ({
+        id: invite.id,
+        email: invite.email,
+        phone: invite.phone,
+        expiresAt: invite.expiresAt,
+        usedAt: invite.usedAt,
+        revokedAt: invite.revokedAt,
+        createdAt: invite.createdAt,
+        status: this.inviteStatus(invite),
+      })),
+      documents: row.documents || [],
       applications: row.applications,
       enquiries: row.enquiries,
+    };
+  }
+
+  private hashToken(raw: string) {
+    return createHash('sha256').update(raw).digest('hex');
+  }
+
+  private inviteStatus(invite: { usedAt?: Date | null; revokedAt?: Date | null; expiresAt: Date }) {
+    if (invite.usedAt) return 'claimed';
+    if (invite.revokedAt) return 'revoked';
+    if (invite.expiresAt.getTime() < Date.now()) return 'expired';
+    return 'pending';
+  }
+
+  private async findValidInvite(rawToken: string) {
+    const invite = await this.prisma.professionalClaimInvite.findUnique({
+      where: { tokenHash: this.hashToken(rawToken) },
+    });
+    if (!invite) throw new NotFoundException('This claim link is invalid.');
+    if (invite.usedAt) throw new ConflictException('This claim link has already been used.');
+    if (invite.revokedAt) throw new BadRequestException('This claim link has been revoked.');
+    if (invite.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('This claim link has expired.');
+    }
+    return invite;
+  }
+
+  private async requireManagedListing(userId: string) {
+    const listing = await this.prisma.professionalListing.findFirst({
+      where: { OR: [{ claimedByUserId: userId }, { linkedUserId: userId }] },
+      include: {
+        ...PUBLIC_INCLUDE,
+        documents: { orderBy: { createdAt: 'desc' as const }, take: 50 },
+      },
+    });
+    if (!listing) throw new NotFoundException('This account does not manage a professional listing.');
+    return listing;
+  }
+
+  private toManagedProfile(listing: any) {
+    return {
+      id: listing.id,
+      slug: listing.slug,
+      displayName: listing.displayName,
+      bio: listing.bio,
+      phone: listing.phone,
+      whatsapp: listing.whatsapp,
+      website: listing.website,
+      email: listing.email,
+      address: listing.address,
+      city: listing.city,
+      state: listing.state,
+      serviceStates: listing.serviceStates || [],
+      serviceCities: listing.serviceCities || [],
+      services: (listing.services || []).map((row: any) => row.service),
+      credentials: (listing.credentials || []).map((cred: any) => ({
+        id: cred.id,
+        regulatorLabel: cred.regulatorLabel,
+        registrationNumber: cred.registrationNumber,
+        verificationStatus: cred.verificationStatus,
+        isPrimary: cred.isPrimary,
+      })),
+      documents: (listing.documents || []).map((doc: any) => ({
+        id: doc.id,
+        documentType: doc.documentType,
+        label: doc.label,
+        reviewStatus: doc.reviewStatus,
+        rejectionReason: doc.rejectionReason,
+        createdAt: doc.createdAt,
+      })),
+      claimedAt: listing.claimedAt,
+      ownershipStatus: listing.ownershipStatus,
+      verificationStatus: listing.verificationStatus,
+      listingStatus: listing.listingStatus,
+      usedByBmh: listing.usedByBmh,
     };
   }
 }

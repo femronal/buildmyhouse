@@ -421,9 +421,11 @@ function SummaryCard({
           Listed — appears in the directory. This is not verification.
         </Text>
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_INK, lineHeight: 20, marginTop: 6 }}>
-          {professional.trust.claimedLabel
-            ? 'Claimed — the practice demonstrated control of this listing.'
-            : 'Unclaimed — BuildMyHouse may have researched this listing.'}
+          {professional.trust.claimedLabel === 'Claimed by owner'
+            ? 'Claimed by owner — this account manages the listing. This is not verification.'
+            : professional.trust.claimedLabel
+              ? 'Claimed — the practice demonstrated control of this listing. This is not verification.'
+              : 'Unclaimed — BuildMyHouse may have researched this listing.'}
         </Text>
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_INK, lineHeight: 20, marginTop: 6 }}>
           {professional.trust.credentialLabel

@@ -132,6 +132,20 @@ function handler(event) {
     }
   }
 
+  // Professional claim invites: /professionals/claim/<token> → claim/[token].html
+  var professionalClaimPrefix = '/professionals/claim/';
+  if (uri.indexOf(professionalClaimPrefix) === 0) {
+    var professionalClaimToken = uri.slice(professionalClaimPrefix.length);
+    if (
+      professionalClaimToken &&
+      professionalClaimToken.indexOf('/') === -1 &&
+      professionalClaimToken !== '[token]'
+    ) {
+      request.uri = professionalClaimPrefix + '[token].html';
+      return request;
+    }
+  }
+
   // Professional public profiles: /professionals/<slug> → professionals/[slug].html
   var professionalsPrefix = '/professionals/';
   if (uri.indexOf(professionalsPrefix) === 0) {
@@ -139,6 +153,7 @@ function handler(event) {
     var reservedProfessionalRoutes = {
       apply: true,
       manage: true,
+      claim: true,
     };
     if (
       professionalSegment &&

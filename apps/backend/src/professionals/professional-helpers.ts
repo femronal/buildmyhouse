@@ -160,7 +160,13 @@ export function aggregateVerification(credentials: Array<{
   if (live.some((c) => c.verificationStatus === ProfessionalCredentialVerification.checked)) {
     return ProfessionalVerificationStatus.verified;
   }
-  if (live.some((c) => c.verificationStatus === ProfessionalCredentialVerification.pending)) {
+  if (
+    live.some(
+      (c) =>
+        c.verificationStatus === ProfessionalCredentialVerification.pending ||
+        c.verificationStatus === ProfessionalCredentialVerification.needs_recheck,
+    )
+  ) {
     return ProfessionalVerificationStatus.pending;
   }
   if (live.some((c) => c.verificationStatus === ProfessionalCredentialVerification.rejected)) {
@@ -248,7 +254,11 @@ export function toPublicTrust(listing: ListingWithPublicRelations): PublicTrust 
   const cred = publicCredentialLabel(listing);
   return {
     listingLabel: 'Listed',
-    claimedLabel: listing.ownershipStatus === ProfessionalOwnershipStatus.claimed ? 'Claimed' : null,
+    claimedLabel: listing.claimedAt
+      ? 'Claimed by owner'
+      : listing.ownershipStatus === ProfessionalOwnershipStatus.claimed
+        ? 'Claimed'
+        : null,
     credentialLabel: cred.label,
     credentialDetail: cred.detail,
     checkedOn: cred.checkedOn,

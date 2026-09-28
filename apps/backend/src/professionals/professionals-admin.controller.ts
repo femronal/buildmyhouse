@@ -28,6 +28,8 @@ import {
   AdminReviewDto,
   AdminTaxonomyPatchDto,
   AdminVerificationActionDto,
+  ProfessionalClaimInviteDto,
+  ProfessionalDocumentReviewDto,
 } from './dto/professionals.dto';
 import { ProfessionalsService } from './professionals.service';
 
@@ -173,6 +175,34 @@ export class ProfessionalsAdminController {
   @RequirePermissions('professionals.review')
   reviewClaim(@Req() req: any, @Param('id') id: string, @Body() body: AdminReviewDto) {
     return this.professionals.reviewClaim(req.user.sub, id, body);
+  }
+
+  @Post(':id/claim-invites')
+  @RequirePermissions('professionals.edit')
+  claimInvite(@Req() req: any, @Param('id') id: string, @Body() body: ProfessionalClaimInviteDto) {
+    return this.professionals.adminCreateClaimInvite(id, req.user.sub, body);
+  }
+
+  @Post('claim-invites/:inviteId/resend')
+  @RequirePermissions('professionals.edit')
+  resendClaimInvite(@Req() req: any, @Param('inviteId') inviteId: string) {
+    return this.professionals.resendClaimInvite(inviteId, req.user.sub);
+  }
+
+  @Post('claim-invites/:inviteId/revoke')
+  @RequirePermissions('professionals.edit')
+  revokeClaimInvite(@Param('inviteId') inviteId: string) {
+    return this.professionals.revokeClaimInvite(inviteId);
+  }
+
+  @Patch('documents/:documentId/review')
+  @RequirePermissions('professionals.review')
+  reviewDocument(
+    @Req() req: any,
+    @Param('documentId') documentId: string,
+    @Body() body: ProfessionalDocumentReviewDto,
+  ) {
+    return this.professionals.reviewDocument(req.user.sub, documentId, body);
   }
 
   @Patch('engagements/:id')

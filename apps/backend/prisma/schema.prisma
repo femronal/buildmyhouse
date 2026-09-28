@@ -255,7 +255,10 @@ model User {
   vendorChangeRequests         VendorProfileChangeRequest[] @relation("VendorChangeRequestRequester")
   vendorChangeRequestsReviewed VendorProfileChangeRequest[] @relation("VendorChangeRequestReviewer")
   professionalListing          ProfessionalListing?    @relation("UserProfessionalListing")
+  professionalListingClaimed   ProfessionalListing?    @relation("ProfessionalListingClaimedBy")
   professionalListingsCreated  ProfessionalListing[]   @relation("ProfessionalListingCreatedByAdmin")
+  professionalClaimInvitesCreated ProfessionalClaimInvite[] @relation("ProfessionalClaimInviteCreator")
+  professionalDocumentsReviewed ProfessionalDocument[]  @relation("ProfessionalDocumentReviewer")
   professionalCredentialsVerified ProfessionalCredential[] @relation("ProfessionalCredentialVerifier")
   professionalApplicationsReviewed ProfessionalApplication[] @relation("ProfessionalApplicationReviewer")
   professionalClaimsReviewed   ProfessionalClaimRequest[] @relation("ProfessionalClaimReviewer")
@@ -3694,6 +3697,7 @@ enum ProfessionalCredentialVerification {
   checked
   rejected
   expired
+  needs_recheck
 }
 
 enum ProfessionalAvailabilityStatus {
@@ -3861,6 +3865,9 @@ model ProfessionalListing {
   usedByBmhSince       DateTime?
   usedByBmhNote        String?
   linkedUserId         String?                        @unique
+  claimedAt            DateTime?
+  claimEmail           String?
+  claimedByUserId      String?                        @unique
   sourceType           ProfessionalSourceType         @default(admin_research)
   sourceNotes          String?
   sourceUrls           String[]                       @default([])
@@ -3878,6 +3885,7 @@ model ProfessionalListing {
 
   primaryProfession ProfessionCatalog                 @relation(fields: [primaryProfessionId], references: [id], onDelete: Restrict)
   linkedUser        User?                             @relation("UserProfessionalListing", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  claimedBy         User?                             @relation("ProfessionalListingClaimedBy", fields: [claimedByUserId], references: [id], onDelete: SetNull)
   createdByAdmin    User?                             @relation("ProfessionalListingCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   specialties       ProfessionalListingSpecialty[]
   services          ProfessionalListingService[]
@@ -3888,6 +3896,8 @@ model ProfessionalListing {
   engagements       ProfessionalEngagement[]
   applications      ProfessionalApplication[]
   claims            ProfessionalClaimRequest[]
+  claimInvites      ProfessionalClaimInvite[]
+  documents         ProfessionalDocument[]
   enquiries         ProfessionalEnquiry[]
 
   @@index([listingStatus, verificationStatus])
@@ -4106,6 +4116,53 @@ model ProfessionalClaimRequest {
   @@index([professionalListingId, status])
   @@index([status, createdAt])
   @@map("professional_claim_requests")
+}
+
+/// Single-use invite to attach a professional listing to an account.
+/// Sibling of vendor_claim_invites. Does not change ProfessionalOwnershipStatus.
+model ProfessionalClaimInvite {
+  id                    String    @id @default(uuid())
+  professionalListingId String
+  tokenHash             String    @unique
+  email                 String?
+  phone                 String?
+  invitedByAdminId      String?
+  expiresAt             DateTime
+  usedAt                DateTime?
+  revokedAt             DateTime?
+  createdAt             DateTime  @default(now())
+
+  listing        ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  invitedByAdmin User?               @relation("ProfessionalClaimInviteCreator", fields: [invitedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([professionalListingId, expiresAt])
+  @@index([email])
+  @@map("professional_claim_invites")
+}
+
+/// Private licence or CAC file uploaded by the listing owner. Admin review only.
+model ProfessionalDocument {
+  id                    String                   @id @default(uuid())
+  professionalListingId String
+  documentType          String
+  label                 String?
+  fileRef               String
+  mimeType              String?
+  fileSizeBytes         Int?
+  isPublic              Boolean                  @default(false)
+  reviewStatus          ProfessionalReviewStatus @default(pending)
+  rejectionReason       String?
+  uploadedByUserId      String?
+  reviewedByAdminId     String?
+  reviewedAt            DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  listing    ProfessionalListing @relation(fields: [professionalListingId], references: [id], onDelete: Cascade)
+  reviewedBy User?               @relation("ProfessionalDocumentReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([professionalListingId, reviewStatus])
+  @@map("professional_documents")
 }
 
 model ProfessionalEnquiry {

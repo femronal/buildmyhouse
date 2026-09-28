@@ -234,3 +234,38 @@ export class AdminTaxonomyPatchDto {
   @IsOptional() @IsString() @MaxLength(160) label?: string;
   @IsOptional() @IsInt() sortOrder?: number;
 }
+
+export class ProfessionalClaimInviteDto {
+  @IsEmail() email!: string;
+  @IsOptional() @IsString() @MaxLength(40) phone?: string;
+  @IsOptional() @IsInt() @Min(1) @Max(30) expiresInDays?: number;
+}
+
+export class ProfessionalManageUpdateDto {
+  @IsOptional() @IsString() @MaxLength(8000) bio?: string;
+  @IsOptional() @IsString() @MaxLength(40) phone?: string;
+  @IsOptional() @IsString() @MaxLength(40) whatsapp?: string;
+  @IsOptional() @IsString() @MaxLength(300) website?: string;
+  @IsOptional() @IsEmail() email?: string;
+  @IsOptional() @IsString() @MaxLength(500) address?: string;
+  @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceStates?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceCities?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceIds?: string[];
+}
+
+export class ProfessionalOwnerCredentialDto {
+  @IsString() @MinLength(1) @MaxLength(80) registrationNumber!: string;
+}
+
+export class ProfessionalDocumentInputDto {
+  @IsIn(['licence', 'cac', 'other']) documentType!: 'licence' | 'cac' | 'other';
+  @IsString() @MinLength(1) @MaxLength(500) fileRef!: string;
+  @IsOptional() @IsString() @MaxLength(200) label?: string;
+  @IsOptional() @IsString() @MaxLength(120) mimeType?: string;
+  @IsOptional() @IsInt() @Min(1) fileSizeBytes?: number;
+}
+
+export class ProfessionalDocumentReviewDto {
+  @IsIn(['approved', 'rejected']) status!: 'approved' | 'rejected';
+  @IsOptional() @IsString() @MaxLength(2000) rejectionReason?: string;
+}

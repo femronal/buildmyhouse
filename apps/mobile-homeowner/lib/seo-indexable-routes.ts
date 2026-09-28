@@ -8,7 +8,8 @@ function isPrivateVendorPath(pathname: string): boolean {
   return (
     pathname === '/vendors/manage' ||
     pathname.startsWith('/vendors/claim/') ||
-    pathname === '/professionals/manage'
+    pathname === '/professionals/manage' ||
+    pathname.startsWith('/professionals/claim/')
   );
 }
 
