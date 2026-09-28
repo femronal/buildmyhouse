@@ -175,7 +175,7 @@ export function useProfessionalAction(id: string) {
     }),
     claimInvite: useMutation({
       mutationFn: (body: { email: string; phone?: string }) =>
-        api.post<{ id: string; expiresAt: string; claimUrl: string; email: string; status: string }>(
+        api.post<{ id: string; expiresAt: string; claimUrl: string; email: string; emailSent: boolean; status: string }>(
           `/admin/professionals/${id}/claim-invites`,
           body,
         ),

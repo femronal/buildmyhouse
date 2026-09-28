@@ -475,7 +475,11 @@ function ClaimInviteForm({
           try {
             const res = await actions.claimInvite.mutateAsync({ email: inviteEmail.trim() });
             setInviteUrl(res.claimUrl);
-            setFeedback(`Invite sent to ${res.email}`);
+            setFeedback(
+              res.emailSent
+                ? `Invite sent to ${res.email}. Copy the link if you also want to send it on WhatsApp.`
+                : `The link is ready, but the email was not delivered. Copy it and send it to ${res.email}.`,
+            );
           } catch (e: any) {
             setFeedback(e?.message || 'Invite failed');
           }
@@ -484,13 +488,19 @@ function ClaimInviteForm({
         Send claim invite
       </button>
       {inviteUrl ? (
-        <button
-          type="button"
-          className="block text-xs text-blue-700"
-          onClick={() => navigator.clipboard.writeText(inviteUrl)}
-        >
-          Copy claim link
-        </button>
+        <div className="space-y-2">
+          <input readOnly value={inviteUrl} className="w-full border rounded-lg px-3 py-2 text-xs" onFocus={(e) => e.currentTarget.select()} />
+          <button
+            type="button"
+            className="text-xs text-blue-700"
+            onClick={async () => {
+              await navigator.clipboard.writeText(inviteUrl);
+              setFeedback('Claim link copied.');
+            }}
+          >
+            Copy claim link
+          </button>
+        </div>
       ) : null}
       {feedback ? <p className="text-sm text-gray-600">{feedback}</p> : null}
     </div>

@@ -1095,18 +1095,18 @@ export class ProfessionalsService implements OnModuleInit {
     const safeName = listing.displayName.replace(/[&<>"]/g, (char) =>
       char === '&' ? '&amp;' : char === '<' ? '&lt;' : char === '>' ? '&gt;' : '&quot;',
     );
-    if (this.email) {
-      await this.email.send({
-        to: email,
-        subject: 'Claim your BuildMyHouse professional listing',
-        html: `<p>BuildMyHouse invited you to claim <strong>${safeName}</strong>.</p>
+    const emailSent = this.email
+      ? await this.email.send({
+          to: email,
+          subject: 'Claim your BuildMyHouse professional listing',
+          html: `<p>BuildMyHouse invited you to claim <strong>${safeName}</strong>.</p>
 <p><a href="${claimUrl}">Claim listing</a></p>
 <p>This link expires on ${expiresAt.toISOString().slice(0, 10)}.</p>`,
-        text: `Claim your professional listing: ${claimUrl}`,
-      });
-    }
+          text: `Claim your professional listing: ${claimUrl}`,
+        })
+      : false;
 
-    return { id: invite.id, expiresAt, claimUrl, email, status: 'pending' as const };
+    return { id: invite.id, expiresAt, claimUrl, email, emailSent, status: 'pending' as const };
   }
 
   async resendClaimInvite(inviteId: string, adminId: string) {
