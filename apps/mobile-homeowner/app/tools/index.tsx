@@ -98,9 +98,18 @@ export default function ToolsIndexPage() {
   const seoDescription =
     'Explore BuildMyHouse tools for land risk checks, quote comparison, repair triage, budgets, remote oversight, and more — built for Nigeria property work.';
 
+  const comingSoonFeatured = useMemo(
+    () => FEATURED_PROPERTY_TOOLS.filter((tool) => tool.status === 'coming-soon'),
+    [],
+  );
+
   const visibleTools = useMemo(() => {
-    if (activeTab === 'featured') return FEATURED_PROPERTY_TOOLS;
-    if (activeTab === 'planning') return [];
+    if (activeTab === 'planning') {
+      return PROPERTY_TOOLS.filter(
+        (tool) => tool.slug === 'milestone-payment-schedule' || tool.slug === 'renovation-budget-planner',
+      );
+    }
+    if (activeTab === 'featured') return [];
     return PROPERTY_TOOLS.filter((tool) => tool.category === activeTab);
   }, [activeTab]);
 
@@ -185,31 +194,32 @@ export default function ToolsIndexPage() {
             </Text>
           ) : null}
 
-          <Text className="text-neutral-900 text-sm mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-            Live now
-          </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
-            {liveTools.map((tool) => (
-              <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
-            ))}
-          </View>
-
           {activeTab === 'featured' ? (
-            <Text className="text-neutral-500 text-sm mb-4 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-              The tools we are prioritising first. Three of them are ready to use today.
-            </Text>
-          ) : null}
-
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-            {(activeTab === 'planning'
-              ? PROPERTY_TOOLS.filter((tool) =>
-                  tool.slug === 'milestone-payment-schedule' || tool.slug === 'renovation-budget-planner',
-                )
-              : visibleTools
-            ).map((tool) => (
-              <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
-            ))}
-          </View>
+            <>
+              <Text className="text-neutral-900 text-sm mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Live now
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 28 }}>
+                {liveTools.map((tool) => (
+                  <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
+                ))}
+              </View>
+              <Text className="text-neutral-900 text-sm mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                Coming soon
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                {comingSoonFeatured.map((tool) => (
+                  <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
+                ))}
+              </View>
+            </>
+          ) : (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+              {visibleTools.map((tool) => (
+                <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
+              ))}
+            </View>
+          )}
 
           <TouchableOpacity
             onPress={() => router.push('/start/repair' as any)}
