@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeft, ArrowUpRight, CheckCircle, Clock, Wrench } from 'phosphor-react-native';
+import { ArrowLeft, ArrowUpRight, Wrench } from 'phosphor-react-native';
+import { LEGAL_OPERATOR_LINE } from '@buildmyhouse/shared-utils';
 import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import {
@@ -11,7 +12,6 @@ import {
   type PropertyTool,
   type PropertyToolCategory,
 } from '@/lib/property-tools-catalog';
-import { PLANNING_TOOLS } from '@/lib/resources-catalog';
 import { useWebSeo } from '@/lib/seo';
 import { buildCanonical } from '@/lib/seo-schema';
 
@@ -27,40 +27,38 @@ const TOOLS_TABS: { key: ToolsTabKey; label: string }[] = [
 ];
 
 function ToolStatusBadge({ status }: { status: PropertyTool['status'] }) {
-  if (status === 'live') {
-    return (
-      <View className="flex-row items-center gap-1.5">
-        <CheckCircle size={12} color="#171717" weight="fill" />
-        <Text className="text-[10px] uppercase text-neutral-800" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          Live
-        </Text>
-      </View>
-    );
-  }
-
+  const live = status === 'live';
   return (
-    <View className="flex-row items-center gap-1.5">
-      <Clock size={12} color="#a3a3a3" weight="bold" />
-      <Text className="text-[10px] uppercase text-neutral-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-        Coming soon
+    <View
+      style={{
+        borderRadius: 999,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        backgroundColor: live ? '#DCFCE7' : '#FEF3C7',
+      }}
+    >
+      <Text style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 11, color: live ? '#166534' : '#92400E' }}>
+        {live ? '● LIVE' : '◷ COMING SOON'}
       </Text>
     </View>
   );
 }
 
-function PropertyToolCard({ tool }: { tool: PropertyTool }) {
+function PropertyToolCard({ tool, width }: { tool: PropertyTool; width: string }) {
   const router = useRouter();
+  const destination = tool.status === 'live' ? tool.href : `${tool.href}#waitlist`;
 
   return (
     <TouchableOpacity
-      onPress={() => router.push(tool.href as any)}
+      onPress={() => router.push(destination as any)}
       className="border border-neutral-200 rounded-2xl p-5 bg-white"
+      style={{ width: width as `${number}%`, minHeight: 180 }}
       activeOpacity={0.92}
       accessibilityRole="link"
       accessibilityLabel={tool.title}
     >
       <View className="flex-row items-center justify-between mb-3">
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center gap-2 flex-1 pr-2">
           <Wrench size={14} color="#737373" weight="bold" />
           <Text className="text-[10px] uppercase text-neutral-500" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {PROPERTY_TOOL_CATEGORIES.find((c) => c.key === tool.category)?.shortLabel}
@@ -71,14 +69,19 @@ function PropertyToolCard({ tool }: { tool: PropertyTool }) {
       <Text className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
         {tool.title}
       </Text>
-      <Text className="text-neutral-600 text-sm mb-4 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+      <Text className="text-neutral-600 text-sm mb-3 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
         {tool.tagline}
       </Text>
-      <View className="flex-row items-center gap-1.5">
-        <Text className="text-neutral-500 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-          {tool.status === 'live' ? 'Open tool' : 'View roadmap details'}
+      {tool.cardAudience ? (
+        <Text className="text-neutral-500 text-xs mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+          {tool.cardAudience}
         </Text>
-        <ArrowUpRight size={14} color="#737373" />
+      ) : null}
+      <View className="flex-row items-center gap-1.5 mt-auto">
+        <Text className="text-neutral-800 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+          {tool.status === 'live' ? 'Use tool' : 'Join waitlist'}
+        </Text>
+        <ArrowUpRight size={14} color="#171717" />
       </View>
     </TouchableOpacity>
   );
@@ -86,7 +89,10 @@ function PropertyToolCard({ tool }: { tool: PropertyTool }) {
 
 export default function ToolsIndexPage() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<ToolsTabKey>('featured');
+  const cardWidth = width >= 1100 ? '31.5%' : width >= 768 ? '48%' : '100%';
+  const liveTools = PROPERTY_TOOLS.filter((tool) => tool.status === 'live');
 
   const seoTitle = 'Property Management Tools for Nigeria | BuildMyHouse';
   const seoDescription =
@@ -117,21 +123,13 @@ export default function ToolsIndexPage() {
         {
           '@type': 'ItemList',
           name: 'BuildMyHouse property tools',
-          numberOfItems: PROPERTY_TOOLS.length + PLANNING_TOOLS.length,
-          itemListElement: [
-            ...PROPERTY_TOOLS.map((tool, index) => ({
-              '@type': 'ListItem',
-              position: index + 1,
-              name: tool.title,
-              url: buildCanonical(tool.href),
-            })),
-            ...PLANNING_TOOLS.map((tool, index) => ({
-              '@type': 'ListItem',
-              position: PROPERTY_TOOLS.length + index + 1,
-              name: tool.title,
-              url: buildCanonical(tool.href),
-            })),
-          ],
+          numberOfItems: PROPERTY_TOOLS.length,
+          itemListElement: PROPERTY_TOOLS.map((tool, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: tool.title,
+            url: buildCanonical(tool.href),
+          })),
         },
         {
           '@type': 'BreadcrumbList',
@@ -187,63 +185,47 @@ export default function ToolsIndexPage() {
             </Text>
           ) : null}
 
+          <Text className="text-neutral-900 text-sm mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+            Live now
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
+            {liveTools.map((tool) => (
+              <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
+            ))}
+          </View>
+
           {activeTab === 'featured' ? (
             <Text className="text-neutral-500 text-sm mb-4 leading-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-              The six tools we are prioritising first — starting with Price Checker, which is live today.
+              The tools we are prioritising first. Three of them are ready to use today.
             </Text>
           ) : null}
 
-          {activeTab === 'planning' ? (
-            <View className="gap-4">
-              {PLANNING_TOOLS.map((tool) => (
-                <TouchableOpacity
-                  key={tool.key}
-                  onPress={() => router.push(tool.href as any)}
-                  className="overflow-hidden border border-neutral-200 rounded-2xl bg-white"
-                  activeOpacity={0.92}
-                  accessibilityRole="link"
-                  accessibilityLabel={tool.title}
-                >
-                  <View className="p-5">
-                    <View className="flex-row items-center gap-2 mb-2">
-                      <Wrench size={14} color="#737373" weight="bold" />
-                      <Text className="text-[10px] uppercase text-neutral-500" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {tool.tags[0]}
-                      </Text>
-                    </View>
-                    <Text className="text-black text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                      {tool.title}
-                    </Text>
-                    <Text className="text-neutral-600 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {tool.excerpt}
-                    </Text>
-                    <View className="flex-row items-center gap-1.5">
-                      <Text className="text-neutral-500 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Open tool
-                      </Text>
-                      <ArrowUpRight size={14} color="#737373" />
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <View className="gap-4">
-              {visibleTools.map((tool) => (
-                <PropertyToolCard key={tool.slug} tool={tool} />
-              ))}
-            </View>
-          )}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            {(activeTab === 'planning'
+              ? PROPERTY_TOOLS.filter((tool) =>
+                  tool.slug === 'milestone-payment-schedule' || tool.slug === 'renovation-budget-planner',
+                )
+              : visibleTools
+            ).map((tool) => (
+              <PropertyToolCard key={tool.slug} tool={tool} width={cardWidth} />
+            ))}
+          </View>
 
           <TouchableOpacity
-            onPress={() => router.push('/start' as any)}
+            onPress={() => router.push('/start/repair' as any)}
             className="mt-8 self-start flex-row items-center gap-2 rounded-lg bg-black px-4 py-2.5"
+            style={{ minHeight: 44 }}
           >
             <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               Book a tracked repair
             </Text>
             <ArrowUpRight size={14} color="#ffffff" />
           </TouchableOpacity>
+        </View>
+        <View style={{ backgroundColor: '#060706', paddingHorizontal: 20, paddingVertical: 28 }}>
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+            {LEGAL_OPERATOR_LINE}
+          </Text>
         </View>
       </ScrollView>
     </View>

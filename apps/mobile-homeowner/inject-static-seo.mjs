@@ -598,6 +598,14 @@ SEO_PAGES['/tools/renovation-budget-planner'] = {
   },
 };
 
+const batch1SeoPath = path.resolve(process.cwd(), 'lib/tools/batch-1-seo.json');
+if (fs.existsSync(batch1SeoPath)) {
+  const batch1Seo = JSON.parse(fs.readFileSync(batch1SeoPath, 'utf8'));
+  for (const [route, page] of Object.entries(batch1Seo)) {
+    SEO_PAGES[route] = page;
+  }
+}
+
 const startIndexable = JSON.parse(
   fs.readFileSync(path.resolve(process.cwd(), 'lib/start-project/indexable.json'), 'utf8'),
 );

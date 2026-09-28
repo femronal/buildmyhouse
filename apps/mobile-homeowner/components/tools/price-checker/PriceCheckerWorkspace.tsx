@@ -26,7 +26,7 @@ function firstParam(value: string | string[] | undefined): string | null {
   return value ?? null;
 }
 
-export function PriceCheckerWorkspace() {
+export function PriceCheckerWorkspace({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const params = useLocalSearchParams<{
     payment?: string | string[];
@@ -244,37 +244,21 @@ export function PriceCheckerWorkspace() {
     />
   );
 
-  const pagePadX = width <= 360 ? 12 : mobile ? 14 : 32;
-  const pagePadTop = mobile ? 12 : 32;
+  const pagePadX = embedded ? 0 : width <= 360 ? 12 : mobile ? 14 : 32;
+  const pagePadTop = embedded ? 0 : mobile ? 12 : 32;
 
-  return (
-    <View
-      className="flex-1"
-      style={{
-        backgroundColor: pc.pageBg,
-        width: '100%',
-        maxWidth: '100%',
-        overflow: 'hidden',
-      }}
-    >
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: mobile ? 28 : 48, flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="on-drag"
-        // Avoid aggressive scroll-to-focus jumps that shove the tool off-screen on thin phones.
-        automaticallyAdjustKeyboardInsets={false}
-        style={{ width: '100%', maxWidth: '100%' }}
-      >
+  const panels = (
         <View
           style={{
-            marginHorizontal: 'auto',
+            marginHorizontal: embedded ? 0 : 'auto',
             width: '100%',
-            maxWidth: 1100,
+            maxWidth: embedded ? '100%' : 1100,
             paddingHorizontal: pagePadX,
             paddingTop: pagePadTop,
             overflow: 'hidden',
           }}
         >
+          {embedded ? null : (
           <Pressable
             onPress={() => (router.canGoBack() ? router.back() : router.push('/tools' as any))}
             style={{
@@ -292,8 +276,9 @@ export function PriceCheckerWorkspace() {
           >
             <ArrowLeft size={mobile ? 14 : 16} color="#171717" weight="bold" />
           </Pressable>
+          )}
 
-          <PriceCheckerHeader compact={mobile} />
+          {embedded ? null : <PriceCheckerHeader compact={mobile} />}
 
           {!mobile ? (
             <View className="flex-row gap-6" style={{ width: '100%', maxWidth: '100%' }}>
@@ -368,9 +353,33 @@ export function PriceCheckerWorkspace() {
             </View>
           )}
 
-          <PriceCheckerAbout compact={mobile} />
+          {embedded ? null : <PriceCheckerAbout compact={mobile} />}
         </View>
+  );
+
+  return (
+    <View
+      className={embedded ? undefined : 'flex-1'}
+      style={{
+        backgroundColor: embedded ? 'transparent' : pc.pageBg,
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+      }}
+    >
+      {embedded ? (
+        panels
+      ) : (
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: mobile ? 28 : 48, flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets={false}
+        style={{ width: '100%', maxWidth: '100%' }}
+      >
+        {panels}
       </ScrollView>
+      )}
 
       <PriceCheckPaymentModal
         visible={paymentModalVisible}

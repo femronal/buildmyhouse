@@ -1,0 +1,594 @@
+{
+  "/tools/price-checker": {
+    "title": "Building Material Price Checker Nigeria | BuildMyHouse",
+    "description": "Check current Nigerian building-material prices using traceable market evidence, source dates and a confidence score before accepting a quote.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Price Checker",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Check current Nigerian building-material prices using traceable market evidence, source dates and a confidence score before accepting a quote.",
+          "url": "https://buildmyhouse.app/tools/price-checker"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Are the prices on Price Checker current?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Price Checker shows when its evidence was checked. Building-material prices can change, so look at the source dates and confidence information before relying on a result."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does Price Checker give one official Nigerian market price?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. There is rarely one single price across every seller and location. The tool provides a researched range from available evidence."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I check prices in Lagos?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The location list includes Lagos, including Lagos Mainland, Lagos Island / Lekki axis, Ikeja, Yaba and Ajah, plus other states and cities the checker currently supports, such as Abuja (FCT), Ogun and Edo. Choose the place that matches where you need the material. If a town is not in the list, the checker cannot price it for that place."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does the tool ask for the specification?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Because different sizes, brands and specifications can have very different prices even when people casually call them the same material."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What happens if BuildMyHouse cannot find enough reliable evidence?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The tool tells you when confidence is weak rather than inventing a price. From that report you can request a verified local market check, where a BuildMyHouse agent confirms current prices on WhatsApp."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does this replace a quantity surveyor?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Price Checker is a market-research tool. A quantity surveyor can provide deeper professional cost planning, measurement and project advice."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/construction-scam-red-flag-checker": {
+    "title": "Construction Scam Red-Flag Checker Nigeria | BuildMyHouse",
+    "description": "Review payment terms, pressure tactics and missing paperwork before committing money to a Nigerian construction or repair arrangement.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Construction Scam Red-Flag Checker",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Review payment terms, pressure tactics and missing paperwork before committing money to a Nigerian construction or repair arrangement.",
+          "url": "https://buildmyhouse.app/tools/construction-scam-red-flag-checker"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can this tool tell me if a contractor is a scammer?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The tool is designed to identify warning signs in an arrangement. It cannot prove that a person is fraudulent."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What kind of warning signs will it check?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The planned tool focuses on areas such as unusual payment pressure, urgency, missing paperwork and unclear project arrangements."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It is particularly relevant when you are managing property work remotely and need a structured way to question an arrangement."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does it replace a lawyer?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. If the issue requires legal due diligence or legal advice, speak with a qualified lawyer."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is the result a fraud report?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It is a warning-sign review based on the information you provide."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/contractor-quote-comparison": {
+    "title": "Compare Contractor Quotes in Nigeria | BuildMyHouse",
+    "description": "Compare contractor quotations item by item, uncover missing items and understand where prices or allowances differ before choosing a contractor.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Contractor Quote Comparison Tool",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Compare contractor quotations item by item, uncover missing items and understand where prices or allowances differ before choosing a contractor.",
+          "url": "https://buildmyhouse.app/tools/contractor-quote-comparison"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Will this tool tell me which contractor to hire?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It helps make quotation differences easier to see. The final decision should also consider experience, scope, quality, references and professional advice where necessary."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why can two contractors give very different quotes?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "They may be pricing different specifications, quantities, allowances, labour arrangements or even different scopes of work."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can the cheapest quote still cost more later?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, especially if important work was excluded. That is why it is useful to compare what is inside each quote rather than only the total."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the tool detect missing items?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The planned tool is designed to make missing or unmatched line items easier to spot."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does this replace a quantity surveyor?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. A quantity surveyor can provide professional cost and tender advice."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/nigeria-building-cost-planner": {
+    "title": "Nigeria Building Cost Planner | BuildMyHouse",
+    "description": "Create an early stage-by-stage building budget for a Nigerian property project before final drawings, BOQs and contractor quotations are complete.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Nigeria Building Cost Planner",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Create an early stage-by-stage building budget for a Nigerian property project before final drawings, BOQs and contractor quotations are complete.",
+          "url": "https://buildmyhouse.app/tools/nigeria-building-cost-planner"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How much does it cost to build a house in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "There is no single reliable figure for every house. Cost depends on location, size, design, specification, market conditions and many other factors."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this a final construction estimate?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It is intended to provide preliminary budget direction before the project is fully defined."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this the same as a BOQ?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. A bill of quantities is a much more detailed professional document."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It can help create an early planning framework before committing to a project in Nigeria."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why are the estimates dated?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Construction prices change. Showing the assumption date helps you understand when the estimate was produced."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/property-repair-triage": {
+    "title": "Property Repair Triage Assistant Nigeria | BuildMyHouse",
+    "description": "Describe a property problem and get guidance on likely urgency, the type of professional you may need and the sensible next step.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Property Repair Triage Assistant",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Describe a property problem and get guidance on likely urgency, the type of professional you may need and the sensible next step.",
+          "url": "https://buildmyhouse.app/tools/property-repair-triage"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can this tool tell me exactly what is wrong?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It provides preliminary guidance based on the symptoms you describe. A professional may still need to inspect the property."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will it tell me whether I need a plumber or an electrician?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The planned tool is designed to suggest the most likely trade based on the information provided."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use it for urgent problems?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You can use the tool for guidance, but immediate hazards should be handled through the appropriate emergency or qualified professional service without delay."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I book a repair after using the tool?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. BuildMyHouse already has a tracked repair flow. You can start one at Book a tracked repair when you know the next step."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it for a family property?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. Someone at the property can describe the symptoms while the owner uses the information to make a more informed next decision."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/land-purchase-risk-checker": {
+    "title": "Land Purchase Risk Checker Nigeria | BuildMyHouse",
+    "description": "Review ownership, survey and approval questions before buying land in Nigeria and generate a structured list of risks that need further verification.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Land Purchase Risk Checker",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Review ownership, survey and approval questions before buying land in Nigeria and generate a structured list of risks that need further verification.",
+          "url": "https://buildmyhouse.app/tools/land-purchase-risk-checker"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can this tool confirm that land is genuine?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It helps identify information and risk areas that need further verification."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I still need a lawyer?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, where legal verification is required. The tool is not a substitute for professional legal due diligence."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I still need a surveyor?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "A registered surveyor may be necessary to verify survey and location information."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use the tool?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It can help a remote buyer organise the questions that need answers before committing money."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the checker search government land records?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Registry verification has to be handled separately. The checker does not search government land records."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/milestone-payment-schedule": {
+    "title": "Construction Payment Schedule Builder Nigeria | BuildMyHouse",
+    "description": "Plan building and renovation payments stage by stage, including what comes next, what proof to request and what money should remain.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Milestone Payment Schedule Builder",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Plan building and renovation payments stage by stage, including what comes next, what proof to request and what money should remain.",
+          "url": "https://buildmyhouse.app/tools/milestone-payment-schedule"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What is a milestone payment schedule?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It divides a project into stages and connects payments to those stages."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why pay contractors in stages?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It can make it easier to understand what each payment is intended to cover and what money remains for future work."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It can provide a simple framework for discussing progress and payment from a distance."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does it certify that work is complete?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is the schedule a legal contract?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Should a quantity surveyor or architect still be involved?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "For projects that need professional cost advice or stage certification, yes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/renovation-budget-planner": {
+    "title": "Renovation Budget Planner Nigeria | BuildMyHouse",
+    "description": "Plan a Nigerian renovation by rooms, work depth, finish level, location and contingency before collecting contractor quotations.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Renovation Budget Planner",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Plan a Nigerian renovation by rooms, work depth, finish level, location and contingency before collecting contractor quotations.",
+          "url": "https://buildmyhouse.app/tools/renovation-budget-planner"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "How much does it cost to renovate a house in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "There is no single price. Cost depends on property size, condition, location, scope, finish level and current market conditions."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this result a contractor quote?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use it for Lagos?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. The live planner lets you choose Lagos, Abuja or Other Nigeria."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does finish level matter?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Different specifications and products can have very different costs."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What is renovation contingency?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Money reserved for reasonable unexpected work or changes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What should I do after using the planner?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Refine the scope, arrange an inspection where appropriate, check important prices with Price Checker, and compare quotations against the same scope."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

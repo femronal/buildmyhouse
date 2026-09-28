@@ -21,6 +21,8 @@ export type PropertyTool = {
   /** Shown on the homepage tools grid */
   featured?: boolean;
   featuredOrder?: number;
+  /** One-line audience shown on the tools index card. */
+  cardAudience?: string;
 };
 
 export const PROPERTY_TOOL_CATEGORIES: {
@@ -67,7 +69,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'price-checker',
     title: 'Price Checker',
     shortTitle: 'Price Checker',
-    tagline: 'Current Nigerian building-material prices with confidence.',
+    tagline: 'Research current building-material prices using traceable evidence and a confidence score.',
+    cardAudience: 'Homeowners • Professionals',
     description:
       'Search a material, answer a few clarifying questions, and get a source-backed price range with confidence scoring for your location.',
     solves: 'Guesswork about material prices and opaque contractor quotations',
@@ -82,7 +85,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'construction-scam-red-flag-checker',
     title: 'Construction Scam Red-Flag Checker',
     shortTitle: 'Scam Red-Flag Checker',
-    tagline: 'Review a proposed arrangement for warning signs.',
+    tagline: 'Review payment pressure, missing paperwork and other warning signs before committing.',
+    cardAudience: 'Homeowners • Nigerians abroad',
     description:
       'Walk through payment terms, urgency pressure, and missing paperwork to surface obvious construction scam risks before you commit.',
     solves: 'Customers missing obvious risks in WhatsApp-only contractor arrangements',
@@ -97,7 +101,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'contractor-quote-comparison',
     title: 'Contractor Quote Comparison Tool',
     shortTitle: 'Quote Comparison',
-    tagline: 'Align competing quotations item by item.',
+    tagline: 'Compare quotations item by item and expose missing work, different allowances and price differences.',
+    cardAudience: 'Homeowners • QS professionals',
     description:
       'Line up contractor quotes in one view so different formats, missing line items, and uneven allowances become visible.',
     solves: 'Comparing quotes that use different formats and hide gaps',
@@ -112,7 +117,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'nigeria-building-cost-planner',
     title: 'Nigeria Building Cost Planner',
     shortTitle: 'Building Cost Planner',
-    tagline: 'Stage-by-stage budget ranges with dated assumptions.',
+    tagline: 'Create an early stage-by-stage building budget before your final BOQ and quotations are ready.',
+    cardAudience: 'First-time builders • Nigerians abroad',
     description:
       'Produce preliminary stage budgets for Nigeria projects so early planning is based on ranges and assumptions, not one vague lump sum.',
     solves: 'Early budgeting uncertainty before drawings and BOQs are complete',
@@ -127,7 +133,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'property-repair-triage',
     title: 'Property Repair Triage Assistant',
     shortTitle: 'Repair Triage',
-    tagline: 'Turn symptoms into urgency and the right trade.',
+    tagline: 'Understand likely urgency, which trade may be needed and the sensible next step.',
+    cardAudience: 'Homeowners • Landlords',
     description:
       'Answer structured symptom questions to understand likely urgency, trade needed, and next step before calling the wrong artisan.',
     solves: 'Users calling the wrong trade or underestimating urgency',
@@ -142,7 +149,8 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     slug: 'land-purchase-risk-checker',
     title: 'Land Purchase Risk Checker',
     shortTitle: 'Land Risk Checker',
-    tagline: 'Structured questions that generate a land risk report.',
+    tagline: 'Review ownership, survey and approval questions before committing to a land purchase.',
+    cardAudience: 'Land buyers • Nigerians abroad',
     description:
       'Ask the right ownership, survey, and approval questions before buying land — especially useful for diaspora and first-time investors.',
     solves: 'Blind land purchases without a clear risk checklist',
@@ -152,6 +160,34 @@ export const PROPERTY_TOOLS: PropertyTool[] = [
     href: '/tools/land-purchase-risk-checker',
     featured: true,
     featuredOrder: 6,
+  },
+  {
+    slug: 'milestone-payment-schedule',
+    title: 'Milestone Payment Schedule Builder',
+    shortTitle: 'Payment Schedule',
+    tagline: 'Plan what to pay at each project stage, what proof to request and what should remain.',
+    description:
+      'Plan building and renovation payments stage by stage, including what comes next, what proof to request and what money should remain.',
+    solves: 'Payments moving ahead of the work',
+    audience: 'Homeowners and Nigerians abroad',
+    cardAudience: 'Homeowners • Nigerians abroad',
+    category: 'hiring-budgeting',
+    status: 'live',
+    href: '/tools/milestone-payment-schedule',
+  },
+  {
+    slug: 'renovation-budget-planner',
+    title: 'Renovation Budget Planner',
+    shortTitle: 'Renovation Planner',
+    tagline: 'Get a rough renovation budget direction before collecting contractor quotations.',
+    description:
+      'Plan a Nigerian renovation by rooms, work depth, finish level, location and contingency before collecting contractor quotations.',
+    solves: 'Starting renovation conversations without a defined scope or budget direction',
+    audience: 'Homeowners, landlords, and Nigerians abroad',
+    cardAudience: 'Homeowners • Landlords • Nigerians abroad',
+    category: 'hiring-budgeting',
+    status: 'live',
+    href: '/tools/renovation-budget-planner',
   },
 
   // A. Before buying or starting a project
