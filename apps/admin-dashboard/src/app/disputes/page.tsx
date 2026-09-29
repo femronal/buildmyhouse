@@ -3,30 +3,49 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertCircle,
+  ArrowLeft,
   CheckCircle,
   Mail,
   ShieldAlert,
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 import { useDisputes, type DisputeStatus } from '@/hooks/useDisputes';
+
+const STATUS_LABEL: Record<DisputeStatus, string> = {
+  open: 'Open',
+  in_review: 'In review',
+  resolved: 'Resolved',
+};
 
 export default function DisputesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<'all' | DisputeStatus>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | DisputeStatus>('open');
+  const [mobileCase, setMobileCase] = useState(false);
   const [resolutionNotes, setResolutionNotes] = useState('');
-  const { disputes, isLoading, updateDisputeStatus, isUpdatingStatus } = useDisputes(statusFilter);
+  const { disputes: allDisputes, isLoading, updateDisputeStatus, isUpdatingStatus } = useDisputes('all');
+  const disputes = useMemo(
+    () => (statusFilter === 'all' ? allDisputes : allDisputes.filter((dispute) => dispute.status === statusFilter)),
+    [allDisputes, statusFilter],
+  );
+  const counts = useMemo(
+    () => ({
+      open: allDisputes.filter((dispute) => dispute.status === 'open').length,
+      in_review: allDisputes.filter((dispute) => dispute.status === 'in_review').length,
+      resolved: allDisputes.filter((dispute) => dispute.status === 'resolved').length,
+    }),
+    [allDisputes],
+  );
 
   useEffect(() => {
-    if (!selectedId && disputes.length > 0) {
-      setSelectedId(disputes[0].id);
+    if (selectedId && !allDisputes.some((dispute) => dispute.id === selectedId)) {
+      setSelectedId(null);
+      setMobileCase(false);
     }
-    if (selectedId && !disputes.some((dispute) => dispute.id === selectedId)) {
-      setSelectedId(disputes[0]?.id ?? null);
-    }
-  }, [disputes, selectedId]);
+  }, [allDisputes, selectedId]);
 
   const selected = useMemo(
-    () => disputes.find((dispute) => dispute.id === selectedId) ?? null,
-    [disputes, selectedId],
+    () => allDisputes.find((dispute) => dispute.id === selectedId) ?? null,
+    [allDisputes, selectedId],
   );
 
   useEffect(() => {
@@ -39,7 +58,7 @@ export default function DisputesPage() {
     resolved: 'bg-green-100 text-green-700',
   };
 
-  const statusOptions: Array<'all' | DisputeStatus> = ['all', 'open', 'in_review', 'resolved'];
+  const statusOptions: DisputeStatus[] = ['open', 'in_review', 'resolved'];
 
   const sendEmail = (email?: string | null) => {
     if (!email) return;
@@ -64,23 +83,23 @@ export default function DisputesPage() {
         <p className="text-gray-500 mt-1">Track, investigate, and resolve payment and quality issues</p>
       </div>
 
-      <div className="flex items-center gap-4">
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as 'all' | DisputeStatus)}
-          className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          {statusOptions.map((status) => (
-            <option key={status} value={status}>
-              {status === 'all' ? 'All Status' : status.replace('_', ' ')}
-            </option>
-          ))}
-        </select>
-        <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">Export disputes</button>
+      <div className={`flex gap-2 overflow-x-auto ${mobileCase ? 'hidden xl:flex' : ''}`}>
+        {statusOptions.map((status) => (
+          <button
+            key={status}
+            type="button"
+            onClick={() => setStatusFilter(status)}
+            className={`min-h-11 shrink-0 rounded-full px-4 text-sm font-medium ${
+              statusFilter === status ? 'bg-gray-950 text-white' : 'bg-white text-gray-700 border border-gray-200'
+            }`}
+          >
+            {STATUS_LABEL[status]} {counts[status]}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 bg-white rounded-xl shadow">
+        <div className={`xl:col-span-2 bg-white rounded-xl shadow ${mobileCase ? 'hidden xl:block' : ''}`}>
           <div className="p-4 border-b flex items-center justify-between">
             <h2 className="text-lg font-semibold">Cases</h2>
             <span className="text-xs text-gray-400">{disputes.length} total</span>
@@ -94,7 +113,10 @@ export default function DisputesPage() {
               {disputes.map((dispute) => (
                 <button
                   key={dispute.id}
-                  onClick={() => setSelectedId(dispute.id)}
+                  onClick={() => {
+                    setSelectedId(dispute.id);
+                    setMobileCase(true);
+                  }}
                   className={`w-full text-left p-4 hover:bg-gray-50 ${
                     selectedId === dispute.id ? 'bg-gray-50' : ''
                   }`}
@@ -106,13 +128,13 @@ export default function DisputesPage() {
                         Stage: {dispute.stage.name} • {dispute.homeowner.fullName} vs{' '}
                         {dispute.generalContractor?.fullName || 'Unassigned GC'}
                       </p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        Opened {new Date(dispute.createdAt).toLocaleDateString()}
+                      <p className={`text-xs mt-1 ${dispute.status !== 'resolved' && Date.now() - new Date(dispute.createdAt).getTime() > 48 * 60 * 60 * 1000 ? 'text-red-600' : 'text-gray-400'}`}>
+                        Waiting {formatDistanceToNow(new Date(dispute.createdAt))}
                       </p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className={`px-2 py-1 text-xs rounded-full ${statusStyles[dispute.status]}`}>
-                        {dispute.status.replace('_', ' ')}
+                        {STATUS_LABEL[dispute.status]}
                       </span>
                     </div>
                   </div>
@@ -122,9 +144,13 @@ export default function DisputesPage() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+        <div className={`bg-white rounded-xl shadow p-6 space-y-4 ${mobileCase ? 'block' : 'hidden xl:block'}`}>
           {selected ? (
             <>
+              <button type="button" onClick={() => setMobileCase(false)} className="inline-flex min-h-11 items-center gap-2 text-sm font-medium xl:hidden">
+                <ArrowLeft className="h-4 w-4" />
+                All cases
+              </button>
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <ShieldAlert className="w-4 h-4" />
                 Case ID: {selected.id.slice(0, 8)}

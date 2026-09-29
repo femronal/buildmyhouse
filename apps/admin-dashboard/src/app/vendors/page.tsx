@@ -57,6 +57,7 @@ export default function VendorsPage() {
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkListing, setBulkListing] = useState('');
   const [addOpen, setAddOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const bulk = useBulkVendorAction();
   const categoryTree = useVendorCategoryTree();
   const categoryOptions = flattenVendorCategories(categoryTree.data || []).filter((category) => category.isActive);
@@ -128,6 +129,15 @@ export default function VendorsPage() {
             />
           </div>
 
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((open) => !open)}
+            className="md:hidden min-h-11 rounded-full border border-gray-300 px-4 text-sm font-medium"
+          >
+            {filtersOpen ? 'Hide filters' : 'Filters'}
+          </button>
+
+          <div className={`${filtersOpen ? 'grid gap-3' : 'hidden'} md:contents`}>
           <select
             value={listingStatus}
             onChange={(e) => setListingStatus(e.target.value as VendorListingStatus | '')}
@@ -204,6 +214,7 @@ export default function VendorsPage() {
             <input type="checkbox" checked={needsDataCleanup} onChange={(e) => setNeedsDataCleanup(e.target.checked)} />
             Needs data cleanup
           </label>
+          </div>
         </div>
       </div>
 
@@ -282,7 +293,35 @@ export default function VendorsPage() {
         )}
 
         {vendors.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="divide-y md:hidden">
+            {vendors.map((vendor) => {
+              const categories = (vendor.offerings || [])
+                .map((o) => o.customCategoryLabel || o.familyKey)
+                .filter(Boolean)
+                .slice(0, 2);
+              const place = [vendor.cityLabel, vendor.stateLabel].filter(Boolean).join(', ');
+              return (
+                <Link key={vendor.id} href={`/vendors/${vendor.id}`} className="block px-4 py-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-semibold text-gray-950">{vendor.tradingName}</p>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${listingBadge(vendor.listingStatus)}`}>
+                      {LISTING_STATUS_LABELS[vendor.listingStatus]}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {[place, categories.join(', ')].filter(Boolean).join(' · ') || 'Location unknown'}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-700">
+                    {VERIFICATION_STATUS_LABELS[vendor.verificationStatus]} · {vendor.profileCompleteness}% complete
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+
+        {vendors.length > 0 && (
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-gray-500">
                 <tr>

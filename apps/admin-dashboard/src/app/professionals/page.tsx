@@ -40,6 +40,7 @@ export default function ProfessionalsPage() {
   const [usedByBmh, setUsedByBmh] = useState(false);
   const [incomplete, setIncomplete] = useState(false);
   const [page, setPage] = useState(1);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const meta = useProfessionalMeta();
   const params = useMemo(
     () => ({
@@ -111,6 +112,14 @@ export default function ProfessionalsPage() {
             className="w-full pl-9 pr-3 py-2 border rounded-lg"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setFiltersOpen((open) => !open)}
+          className="md:hidden min-h-11 rounded-full border border-gray-300 px-4 text-sm font-medium"
+        >
+          {filtersOpen ? 'Hide filters' : 'Filters'}
+        </button>
+        <div className={`${filtersOpen ? 'grid gap-3' : 'hidden'} md:contents`}>
         <select value={profession} onChange={(e) => { setPage(1); setProfession(e.target.value); }} className="border rounded-lg px-3 py-2">
           <option value="">All professions</option>
           {(meta.data?.professions || []).map((p: any) => (
@@ -145,6 +154,7 @@ export default function ProfessionalsPage() {
           <input type="checkbox" checked={incomplete} onChange={(e) => { setPage(1); setIncomplete(e.target.checked); }} />
           Incomplete profiles
         </label>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow overflow-hidden">
@@ -159,7 +169,27 @@ export default function ProfessionalsPage() {
           </div>
         )}
         {rows.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="divide-y md:hidden">
+            {rows.map((row) => (
+              <Link key={row.id} href={`/professionals/${row.id}`} className="block px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-semibold text-gray-950">{row.displayName}</p>
+                  <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${pill('listing', row.listingStatus)}`}>
+                    {LISTING_STATUS_LABELS[row.listingStatus]}
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-gray-500">
+                  {[row.profession?.label, [row.city, row.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') || 'Profession unknown'}
+                </p>
+                <p className="mt-1 text-sm text-gray-700">
+                  {VERIFICATION_STATUS_LABELS[row.verificationStatus]} · {row.completenessScore}% complete
+                </p>
+              </Link>
+            ))}
+          </div>
+        )}
+        {rows.length > 0 && (
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-left text-gray-500">
                 <tr>

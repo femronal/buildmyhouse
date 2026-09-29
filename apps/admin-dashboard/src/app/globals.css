@@ -154,9 +154,13 @@ body {
     gap: 0.75rem;
   }
 
-  .admin-content .grid.grid-cols-2,
-  .admin-content .grid.grid-cols-3 {
+  .admin-content .grid.grid-cols-2:not(.admin-stat-grid),
+  .admin-content .grid.grid-cols-3:not(.admin-stat-grid) {
     grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+
+  .admin-content .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .admin-content h1 {
@@ -182,5 +186,25 @@ body {
   .admin-content table {
     min-width: 42rem;
   }
+}
+
+.admin-content .bg-blue-600,
+.admin-content .bg-indigo-600,
+.admin-content .bg-purple-600 {
+  background-color: #171717;
+}
+
+.admin-content .hover\:bg-blue-700:hover,
+.admin-content .hover\:bg-blue-500:hover {
+  background-color: #000;
+}
+
+.admin-content .text-blue-600,
+.admin-content .text-indigo-600 {
+  color: #171717;
+}
+
+.admin-content .border-blue-600 {
+  border-color: #171717;
 }
 

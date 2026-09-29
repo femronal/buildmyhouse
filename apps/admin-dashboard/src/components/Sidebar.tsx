@@ -117,7 +117,7 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
               onClick={onNavigate}
               className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors ${
                 isActive
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-gray-950 text-white'
                   : 'text-gray-300 hover:bg-gray-800'
               }`}
             >

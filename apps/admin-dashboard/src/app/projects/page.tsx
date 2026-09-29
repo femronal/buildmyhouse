@@ -68,7 +68,7 @@ function formatUpdatedAt(updatedAt?: string) {
   if (!updatedAt) return '—';
   const d = new Date(updatedAt);
   if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleString();
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
 
 function formatDateShort(value?: string | null) {
@@ -445,8 +445,13 @@ export default function ProjectsPage() {
                     <Building2 className="w-5 h-5 text-gray-600" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold">{project.name}</h3>
+                    <Link href={`/projects/${project.id}`} className="text-lg font-semibold text-gray-950">
+                      {project.name}
+                    </Link>
                     <p className="text-sm text-gray-500">{project.address}</p>
+                    <Link href={`/projects/${project.id}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-gray-950 md:hidden">
+                      Open project
+                    </Link>
                     {project.projectType && (
                       <p className="text-xs text-gray-400 mt-1">Type: {project.projectType.replace('_', ' ')}</p>
                     )}
@@ -518,7 +523,7 @@ export default function ProjectsPage() {
                   <span className="font-semibold">{project.progress}%</span>
                 </div>
                 <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600" style={{ width: progressWidth }} />
+                  <div className="h-full bg-gray-950" style={{ width: progressWidth }} />
                 </div>
               </div>
 
@@ -541,7 +546,7 @@ export default function ProjectsPage() {
                 </div>
               </div>
 
-              <div className="border rounded-lg p-3 space-y-2">
+              <div className="hidden md:block border rounded-lg p-3 space-y-2">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900">Manual payment</p>
@@ -598,11 +603,13 @@ export default function ProjectsPage() {
               </div>
 
               {project.homeownerEmail && (
-                <ProjectAccessLinksPanel
-                  projectId={project.id}
-                  projectName={project.name}
-                  hasGc={project.gc !== '—'}
-                />
+                <div className="hidden md:block">
+                  <ProjectAccessLinksPanel
+                    projectId={project.id}
+                    projectName={project.name}
+                    hasGc={project.gc !== '—'}
+                  />
+                </div>
               )}
 
               {project.risk === 'high' && (
@@ -612,7 +619,7 @@ export default function ProjectsPage() {
                 </div>
               )}
 
-              <div className="flex flex-wrap gap-2">
+              <div className="hidden md:flex flex-wrap gap-2">
                 <Link
                   href={`/projects/${project.id}`}
                   className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg"

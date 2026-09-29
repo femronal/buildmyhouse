@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/auth';
-import { LayoutDashboard, Lock, Mail } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -32,9 +32,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md p-8">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <div className="flex items-center justify-center mb-8">
-            <div className="bg-blue-600 p-3 rounded-lg">
-              <LayoutDashboard className="w-8 h-8 text-white" />
-            </div>
+            <img src="/dove.png" alt="" className="mx-auto h-14 w-24 object-contain" />
           </div>
           
           <h1 className="text-3xl font-bold text-center mb-2 font-poppins">BuildMyHouse</h1>
@@ -80,7 +78,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              className="w-full min-h-11 bg-gray-950 text-white py-2 px-4 rounded-lg hover:bg-black focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>

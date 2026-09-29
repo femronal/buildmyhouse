@@ -99,7 +99,7 @@ export default function DashboardPage() {
       value: stats.totalUsers.toLocaleString(),
       subtitle: `${stats.verifiedPercent}% verified`,
       icon: Users,
-      accent: 'border-l-blue-500',
+      accent: 'border-l-gray-950',
     },
     {
       title: 'Active Builds',
@@ -113,7 +113,7 @@ export default function DashboardPage() {
       value: `₦${stats.paymentsThisMonth.toLocaleString()}`,
       subtitle: `${stats.paymentsSuccessPercent}% successful`,
       icon: Banknote,
-      accent: 'border-l-purple-500',
+      accent: 'border-l-gray-950',
     },
     {
       title: 'Open Disputes',
@@ -128,10 +128,10 @@ export default function DashboardPage() {
     <div className="p-8 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold font-poppins">Dashboard Overview</h1>
-          <p className="text-gray-500 mt-1">Operational snapshot for homeowners and GCs</p>
+          <h1 className="text-3xl font-bold font-poppins">Good day</h1>
+          <p className="text-gray-500 mt-1">What needs attention today</p>
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <NotificationBell />
           <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">
             Export weekly report
@@ -139,7 +139,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="admin-stat-grid grid grid-cols-2 xl:grid-cols-4 gap-3 md:gap-6">
         {statCards.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -162,13 +162,13 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2 bg-white rounded-xl shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold font-poppins">Critical Alerts</h2>
+            <h2 className="text-xl font-semibold font-poppins">Needs you today</h2>
             <span className="text-xs text-gray-400">Last 24 hours</span>
           </div>
           <div className="space-y-3">
             {criticalAlerts.length === 0 ? (
               <div className="py-8 text-center text-gray-500 text-sm">
-                No critical alerts at the moment
+                Nothing is waiting on you right now.
               </div>
             ) : (
               criticalAlerts.map((alert) => {
