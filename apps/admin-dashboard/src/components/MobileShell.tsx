@@ -112,9 +112,15 @@ export default function MobileShell() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-gray-200 bg-white px-3 md:hidden">
-        <img src="/dove.png" alt="" className="h-8 w-12 object-contain" />
-        <h1 className="min-w-0 flex-1 truncate text-center text-base font-semibold text-gray-950">{title}</h1>
+      <header className="sticky top-0 z-30 grid h-16 grid-cols-[120px_minmax(0,1fr)_auto] items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden">
+        <img
+          src="/logo.png"
+          alt="BuildMyHouse"
+          width={120}
+          height={52}
+          className="h-[52px] w-[120px] object-cover object-center"
+        />
+        <h1 className="truncate text-center text-base font-semibold text-gray-950">{title}</h1>
         <NotificationBell />
       </header>
 

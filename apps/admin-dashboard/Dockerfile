@@ -45,7 +45,7 @@ ENV HOSTNAME="0.0.0.0"
 # Copy standalone output (monorepo layout: server.js + node_modules in apps/admin-dashboard/)
 COPY --from=builder /app/apps/admin-dashboard/.next/standalone ./
 COPY --from=builder /app/apps/admin-dashboard/.next/static ./apps/admin-dashboard/.next/static
-RUN mkdir -p ./apps/admin-dashboard/public
+COPY --from=builder /app/apps/admin-dashboard/public ./apps/admin-dashboard/public
 
 # Start script: explicitly set host to 0.0.0.0 so ALB health checks reach /health
 RUN echo '#!/bin/sh' > /start.sh && \
