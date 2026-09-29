@@ -29,7 +29,8 @@ export default function WhatsAppFloatingChat() {
     /^\/vendors\/[^/]+/.test(currentPath) ||
     /^\/professionals\/[^/]+/.test(currentPath) ||
     currentPath === '/start' ||
-    currentPath.startsWith('/start/');
+    currentPath.startsWith('/start/') ||
+    (currentPath.startsWith('/tools/') && currentPath !== '/tools');
 
   const tabRoutes = useMemo(
     () => new Set(['/home', '/property-projects-nigeria', '/build-opportunities-nigeria', '/finance']),

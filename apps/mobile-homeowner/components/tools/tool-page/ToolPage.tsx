@@ -225,7 +225,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
         </View>
 
         <Anchor id="tool-hero">
-          <View style={splitRow(desktop, 28)}>
+          <View style={{ ...splitRow(desktop, 28), marginBottom: width < 768 ? 96 : 48 }}>
             <View style={{ ...splitCell(desktop), gap: 14 }}>
               <Text style={{ fontFamily: mono, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: '#525252' }}>
                 {page.eyebrow}

@@ -153,7 +153,8 @@ export default function ToolsIndexPage() {
 
   return (
     <View className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 0 }} keyboardShouldPersistTaps="handled">
+        <View style={{ minHeight: '100vh', width: '100%' }}>
         <View className="pt-10 px-5 pb-2 md:pt-14 md:px-6 md:pb-4 max-w-4xl mx-auto w-full">
           <TouchableOpacity
             onPress={() => (router.canGoBack() ? router.back() : router.push('/' as any))}
@@ -223,7 +224,7 @@ export default function ToolsIndexPage() {
 
           <TouchableOpacity
             onPress={() => router.push('/start/repair' as any)}
-            className="mt-8 self-start flex-row items-center gap-2 rounded-lg bg-black px-4 py-2.5"
+            className="mt-8 mb-16 self-start flex-row items-center gap-2 rounded-lg bg-black px-4 py-2.5"
             style={{ minHeight: 44 }}
           >
             <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -232,10 +233,21 @@ export default function ToolsIndexPage() {
             <ArrowUpRight size={14} color="#ffffff" />
           </TouchableOpacity>
         </View>
-        <View style={{ backgroundColor: '#060706', paddingHorizontal: 20, paddingVertical: 28 }}>
-          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
-            {LEGAL_OPERATOR_LINE}
-          </Text>
+        <View style={{ width: '100%', backgroundColor: '#060706', marginTop: 24 }}>
+          <View style={{ width: '100%', maxWidth: 1120, alignSelf: 'center', paddingHorizontal: 20, paddingTop: 28, paddingBottom: 96 }}>
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+              {LEGAL_OPERATOR_LINE}
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 16, marginTop: 10 }}>
+              <TouchableOpacity onPress={() => router.push('/privacy-security' as any)} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#FFFFFF' }}>Privacy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/tools' as any)} style={{ minHeight: 44, justifyContent: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, color: '#FFFFFF' }}>All tools</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
         </View>
       </ScrollView>
     </View>
