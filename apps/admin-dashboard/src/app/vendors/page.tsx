@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, Phone, Plus, Search, Store } from 'lucide-react';
 import { AddVendorModal } from '@/components/AddVendorModal';
+import VendorCategoriesPanel from '@/components/VendorCategoriesPanel';
 import {
   LISTING_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
@@ -38,6 +39,8 @@ function verificationBadge(status: VendorVerificationStatus) {
 
 export default function VendorsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const categoriesOpen = searchParams.get('categories') === '1';
   const [query, setQuery] = useState('');
   const [listingStatus, setListingStatus] = useState<VendorListingStatus | ''>('');
   const [verificationStatus, setVerificationStatus] = useState<VendorVerificationStatus | ''>('');
@@ -91,9 +94,14 @@ export default function VendorsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-        <Link href="/vendors/categories" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-800 hover:bg-gray-50">
+        <button
+          type="button"
+          onClick={() => router.replace(categoriesOpen ? '/vendors' : '/vendors?categories=1', { scroll: false })}
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border ${categoriesOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-800 hover:bg-gray-50'}`}
+          aria-expanded={categoriesOpen}
+        >
           Categories
-        </Link>
+        </button>
         <button
           type="button"
           onClick={() => setAddOpen(true)}
@@ -104,6 +112,8 @@ export default function VendorsPage() {
         </button>
         </div>
       </div>
+
+      {categoriesOpen ? <VendorCategoriesPanel /> : null}
 
       <div className="bg-white rounded-xl shadow p-4">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
