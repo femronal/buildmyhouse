@@ -9,12 +9,12 @@ export interface PlanAnalysis {
   floors: number;
   bedrooms: number;
   bathrooms: number;
-
+  
   // Extracted details
   rooms: string[]; // List of rooms mentioned
   materials: string[]; // Building materials identified
   features: string[]; // Special features (pool, garage, etc.)
-
+  
   // Construction phases
   phases: {
     name: string;

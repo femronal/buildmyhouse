@@ -1146,6 +1146,15 @@ export default function HomeLandingPage() {
                         )}
                       </View>
                     ))}
+                    <View className="w-1/2 mb-2 pr-2">
+                      <Link href={'/articles' as any} asChild>
+                        <Pressable accessibilityRole="link">
+                          <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                            Articles
+                          </Text>
+                        </Pressable>
+                      </Link>
+                    </View>
                   </View>
                 </View>
 
