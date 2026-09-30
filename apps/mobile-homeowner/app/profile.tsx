@@ -41,6 +41,8 @@ function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
 }
 
 const menuItems: MenuItem[] = [
+  { icon: Briefcase, label: "Professional listing", route: "/professionals/manage" },
+  { icon: Briefcase, label: "Vendor listing", route: "/vendors/manage" },
   { icon: User, label: "Personal Information", route: "/personal-information" },
   { icon: Bell, label: "Notification Settings", route: "/notification-settings" },
   { icon: CreditCard, label: "Billing & Payments", route: "/billing-payments" },
@@ -199,7 +201,7 @@ export default function ProfileScreen() {
                 Vendor listing
               </Text>
               <Text className="text-gray-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Update contacts, offerings & documents
+                Storefront, logo, photos and contact
               </Text>
             </View>
             <ChevronRight size={24} color="#FFFFFF" strokeWidth={2} />

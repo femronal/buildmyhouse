@@ -40,6 +40,8 @@ export type ManagedVendorDocument = {
   id: string;
   documentType: string;
   label: string | null;
+  fileRef?: string | null;
+  isPublic?: boolean;
   reviewStatus: string;
   createdAt: string;
   rejectionReason: string | null;
@@ -179,6 +181,7 @@ export async function addManagedVendorDocument(payload: {
   label?: string;
   mimeType?: string;
   fileSizeBytes?: number;
+  isPublic?: boolean;
 }): Promise<ManagedVendorDocument> {
   return api.post('/vendors/me/documents', payload);
 }

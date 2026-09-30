@@ -6,6 +6,8 @@ export type PublicProfessionalCard = {
   id: string;
   slug: string;
   displayName: string;
+  photoUrl?: string | null;
+  logoUrl?: string | null;
   professionalType: 'individual' | 'firm';
   profession: { key: string; label: string } | null;
   specialties: Array<{ key: string; label: string }>;

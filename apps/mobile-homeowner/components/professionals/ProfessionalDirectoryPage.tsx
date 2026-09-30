@@ -1,6 +1,6 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectoryBrowse, {
   DirectoryActionLink,
@@ -10,7 +10,9 @@ import DirectoryBrowse, {
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
+import ManageListingEntry from '@/components/listings/ManageListingEntry';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
+import { getBackendAssetUrl } from '@/lib/image';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import {
   DIRECTORY_PAGE_SIZE,
@@ -59,6 +61,8 @@ function ProfessionalCard({ professional }: { professional: PublicProfessionalCa
     professional.profession?.label || 'Professional',
     professional.professionalType === 'firm' ? 'Firm' : 'Individual',
   ].join(' · ');
+  const portrait = professional.photoUrl || professional.logoUrl || '';
+  const [portraitFailed, setPortraitFailed] = useState(false);
 
   return (
     <Link href={`/professionals/${professional.slug}` as any} asChild>
@@ -85,9 +89,19 @@ function ProfessionalCard({ professional }: { professional: PublicProfessionalCa
               marginRight: 12,
             }}
           >
-            <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
-              {initialsFromName(professional.displayName)}
-            </Text>
+            {portrait && !portraitFailed ? (
+              <Image
+                source={{ uri: getBackendAssetUrl(portrait) }}
+                accessibilityLabel=""
+                onError={() => setPortraitFailed(true)}
+                style={{ width: 56, height: 56 }}
+                resizeMode={professional.photoUrl ? 'cover' : 'contain'}
+              />
+            ) : (
+              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
+                {initialsFromName(professional.displayName)}
+              </Text>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <Text numberOfLines={2} style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: LANDING_INK }}>
@@ -326,7 +340,7 @@ export default function ProfessionalDirectoryPage() {
           actions={
             <>
               <DirectoryActionLink href="/professionals/apply" label="List your professional practice" filled />
-              <DirectoryActionLink href="/professionals/manage" label="Manage listing" />
+              <ManageListingEntry kind="professional" />
               <DirectoryActionLink href="/start" label="Find someone for my project" />
             </>
           }

@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'expo-router';
-import { Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from 'react-native';
+import { Image, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentBackButton } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import { initialsFromName } from '@/lib/directory-listing';
+import { getBackendAssetUrl } from '@/lib/image';
 import {
   fetchPublicProfessional,
   professionalWhatsAppHref,
@@ -373,6 +374,8 @@ function SummaryCard({
   onShare: () => void;
 }) {
   const checkedOn = formatCheckedOn(professional.trust.checkedOn);
+  const portrait = professional.photoUrl || professional.logoUrl || '';
+  const [portraitFailed, setPortraitFailed] = useState(false);
   const location = [professional.city, professional.state].filter(Boolean).join(', ') || 'Nigeria';
   const whatsapp = professional.contact.whatsapp;
 
@@ -399,7 +402,17 @@ function SummaryCard({
           marginBottom: 12,
         }}
       >
-        <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 24, color: LANDING_INK }}>{initialsFromName(professional.displayName)}</Text>
+        {portrait && !portraitFailed ? (
+          <Image
+            source={{ uri: getBackendAssetUrl(portrait) }}
+            accessibilityLabel={`${professional.displayName} photo`}
+            onError={() => setPortraitFailed(true)}
+            style={{ width: 72, height: 72 }}
+            resizeMode={professional.photoUrl ? 'cover' : 'contain'}
+          />
+        ) : (
+          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 24, color: LANDING_INK }}>{initialsFromName(professional.displayName)}</Text>
+        )}
       </View>
       <SeoHeading level={1} className="text-2xl" style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
         {professional.displayName}

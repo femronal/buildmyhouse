@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import {
   SeoContentBackButton,
   SeoContentColumn,
@@ -12,6 +13,8 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
+import { getBackendAssetUrl } from '@/lib/image';
+import { uploadListingImage } from '@/lib/listing-image-upload';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import {
@@ -43,6 +46,8 @@ export default function ProfessionalManagePage() {
   const [profile, setProfile] = useState<ManagedProfessionalProfile | null>(null);
   const [services, setServices] = useState<Array<{ id: string; label: string }>>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [photoUrl, setPhotoUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState('');
   const [bio, setBio] = useState('');
   const [phone, setPhone] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
@@ -68,6 +73,8 @@ export default function ProfessionalManagePage() {
 
   const hydrate = (next: ManagedProfessionalProfile) => {
     setProfile(next);
+    setPhotoUrl(next.photoUrl || '');
+    setLogoUrl(next.logoUrl || '');
     setBio(next.bio || '');
     setPhone(next.phone || '');
     setWhatsapp(next.whatsapp || '');
@@ -128,6 +135,8 @@ export default function ProfessionalManagePage() {
     setNotice('');
     try {
       const updated = await updateManagedProfessionalProfile({
+        photoUrl,
+        logoUrl,
         bio,
         phone,
         whatsapp,
@@ -157,6 +166,40 @@ export default function ProfessionalManagePage() {
       setNotice('Registration number saved. A previously checked number is sent back for review.');
     } catch (e: any) {
       setError(e?.message || 'Unable to save this registration number.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const uploadImage = async (field: 'photoUrl' | 'logoUrl') => {
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      if (Platform.OS !== 'web') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permission required', 'Allow photo library access to add this image.');
+          setSaving(false);
+          return;
+        }
+      }
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.85,
+      });
+      if (picked.canceled || !picked.assets?.[0]?.uri) {
+        setSaving(false);
+        return;
+      }
+      const url = await uploadListingImage(picked.assets[0]);
+      const updated = await updateManagedProfessionalProfile(field === 'photoUrl' ? { photoUrl: url } : { logoUrl: url });
+      hydrate(updated);
+      setNotice(field === 'photoUrl' ? 'Profile picture updated.' : 'Logo updated.');
+    } catch (e: any) {
+      setError(e?.message || 'Unable to upload this image.');
     } finally {
       setSaving(false);
     }
@@ -292,6 +335,63 @@ export default function ProfessionalManagePage() {
 
         {notice ? <Text style={{ fontFamily: 'Poppins_500Medium', color: '#166534', marginBottom: 12 }}>{notice}</Text> : null}
         {error ? <Text style={{ fontFamily: 'Poppins_500Medium', color: '#B91C1C', marginBottom: 12 }}>{error}</Text> : null}
+
+        <Text style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK, fontSize: 18, marginBottom: 8 }}>
+          Profile picture and logo
+        </Text>
+        <Text className="text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+          These appear on the public listing. A picture does not mean the listing is verified.
+        </Text>
+        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+          <Pressable onPress={() => uploadImage('photoUrl')} disabled={saving} style={{ marginRight: 16, alignItems: 'center' }}>
+            <View
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 44,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: LANDING_BORDER,
+                backgroundColor: '#F5F5F5',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {photoUrl ? (
+                <Image source={{ uri: getBackendAssetUrl(photoUrl) }} style={{ width: 88, height: 88 }} resizeMode="cover" />
+              ) : (
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK, fontSize: 12 }}>Photo</Text>
+              )}
+            </View>
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK, marginTop: 8, fontSize: 13 }}>
+              {photoUrl ? 'Change photo' : 'Add photo'}
+            </Text>
+          </Pressable>
+          <Pressable onPress={() => uploadImage('logoUrl')} disabled={saving} style={{ alignItems: 'center' }}>
+            <View
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 16,
+                overflow: 'hidden',
+                borderWidth: 1,
+                borderColor: LANDING_BORDER,
+                backgroundColor: '#fff',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {logoUrl ? (
+                <Image source={{ uri: getBackendAssetUrl(logoUrl) }} style={{ width: 72, height: 72 }} resizeMode="contain" />
+              ) : (
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK, fontSize: 12 }}>Logo</Text>
+              )}
+            </View>
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK, marginTop: 8, fontSize: 13 }}>
+              {logoUrl ? 'Change logo' : 'Add logo'}
+            </Text>
+          </Pressable>
+        </View>
 
         <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK, marginBottom: 6 }}>Description</Text>
         <TextInput value={bio} onChangeText={setBio} multiline style={{ ...fieldStyle, minHeight: 120 }} />

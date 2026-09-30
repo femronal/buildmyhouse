@@ -18,6 +18,7 @@ import {
   previewProfessionalClaim,
   type ProfessionalClaimPreview,
 } from '@/lib/professional-manage';
+import { ownerHomeWithListingWelcome } from '@/lib/listing-welcome';
 
 type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'error';
 
@@ -86,7 +87,7 @@ export default function ProfessionalClaimPage() {
     try {
       await acceptProfessionalClaim(token);
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setStep('done');
+      router.replace(ownerHomeWithListingWelcome('professional') as any);
     } catch (e: any) {
       setError(e?.message || 'Unable to claim this listing right now.');
       setStep('ready');

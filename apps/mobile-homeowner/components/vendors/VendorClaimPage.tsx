@@ -18,6 +18,7 @@ import {
   previewVendorClaim,
   type VendorClaimPreview,
 } from '@/lib/vendor-manage';
+import { ownerHomeWithListingWelcome } from '@/lib/listing-welcome';
 
 type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'error';
 
@@ -87,7 +88,7 @@ export default function VendorClaimPage() {
     try {
       await acceptVendorClaim(token);
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      setStep('done');
+      router.replace(ownerHomeWithListingWelcome('vendor') as any);
     } catch (e: any) {
       setError(e?.message || 'Unable to claim this profile right now.');
       setStep('ready');

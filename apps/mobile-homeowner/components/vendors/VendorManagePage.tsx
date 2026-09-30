@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
+import * as ImagePicker from 'expo-image-picker';
 import {
   SeoContentBackButton,
   SeoContentColumn,
@@ -21,6 +24,7 @@ import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-c
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
+import { uploadListingImage } from '@/lib/listing-image-upload';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import { VENDOR_STATE_FILTERS } from '@/lib/public-vendors';
@@ -347,6 +351,49 @@ export default function VendorManagePage() {
     }
   };
 
+  const uploadShopPhoto = async (documentType: 'storefront_photo' | 'warehouse_photo') => {
+    if (!profile || readOnly) return;
+    setUploading(true);
+    setError(null);
+    setNotice(null);
+    try {
+      if (Platform.OS !== 'web') {
+        const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('Permission required', 'Allow photo library access to add this image.');
+          setUploading(false);
+          return;
+        }
+      }
+      const picked = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: documentType === 'storefront_photo',
+        aspect: documentType === 'storefront_photo' ? [16, 9] : undefined,
+        quality: 0.85,
+      });
+      if (picked.canceled || !picked.assets?.[0]?.uri) {
+        setUploading(false);
+        return;
+      }
+      const asset = picked.assets[0];
+      const url = await uploadListingImage(asset);
+      await addManagedVendorDocument({
+        documentType,
+        fileRef: url,
+        isPublic: true,
+        label: asset.fileName || (documentType === 'storefront_photo' ? 'Storefront' : 'Shop photo'),
+        mimeType: asset.mimeType || 'image/jpeg',
+      });
+      const refreshed = await fetchManagedVendorProfile();
+      hydrate(refreshed);
+      setNotice(documentType === 'storefront_photo' ? 'Storefront photo added.' : 'Photo added.');
+    } catch (e: any) {
+      setError(e?.message || 'Unable to upload this photo.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleUploadLogo = async () => {
     if (!profile || readOnly) return;
     setUploading(true);
@@ -540,6 +587,77 @@ export default function VendorManagePage() {
           </Text>
         ) : null}
 
+        <Section title="Storefront and photos">
+          <Text className="text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+            The storefront is the main picture on your public page. Extra photos appear in the gallery.
+            Pictures do not mean the business is verified.
+          </Text>
+          {(() => {
+            const storefront = (profile.documents || []).find(
+              (doc) => doc.documentType === 'storefront_photo' && doc.fileRef,
+            );
+            const extras = (profile.documents || []).filter(
+              (doc) => doc.documentType === 'warehouse_photo' && doc.fileRef,
+            );
+            return (
+              <>
+                <View
+                  style={{
+                    height: 160,
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                    borderWidth: 1,
+                    borderColor: LANDING_BORDER,
+                    backgroundColor: '#F5F5F5',
+                    marginBottom: 12,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {storefront?.fileRef ? (
+                    <Image
+                      source={{ uri: getBackendAssetUrl(storefront.fileRef) }}
+                      style={{ width: '100%', height: 160 }}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <Text style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>No storefront photo yet</Text>
+                  )}
+                </View>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
+                  <Pressable
+                    onPress={() => uploadShopPhoto('storefront_photo')}
+                    disabled={uploading || readOnly}
+                    style={{ minHeight: 44, justifyContent: 'center', marginRight: 8, marginBottom: 8 }}
+                  >
+                    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>
+                      {storefront ? 'Replace storefront' : 'Add storefront'}
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => uploadShopPhoto('warehouse_photo')}
+                    disabled={uploading || readOnly}
+                    style={{ minHeight: 44, justifyContent: 'center', marginBottom: 8 }}
+                  >
+                    <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Add another photo</Text>
+                  </Pressable>
+                </View>
+                {extras.length > 0 ? (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                    {extras.map((photo) => (
+                      <Image
+                        key={photo.id}
+                        source={{ uri: getBackendAssetUrl(photo.fileRef) }}
+                        style={{ width: 120, height: 88, borderRadius: 12, marginRight: 8, backgroundColor: '#F5F5F5' }}
+                      />
+                    ))}
+                  </ScrollView>
+                ) : null}
+              </>
+            );
+          })()}
+        </Section>
+
         <Section title="Public contact & hours">
           <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_MUTED }}>
             Logo (shown on your public website)
@@ -635,7 +753,7 @@ export default function VendorManagePage() {
 
         <Section title="Categories">
           <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
-            {(data?.offerings || []).map((offering) => offering.customCategoryLabel || (offering.familyKey || '').replace(/-/g, ' ')).filter(Boolean).join(', ') || 'No category yet'}
+            {(profile.offerings || []).map((offering) => offering.customCategoryLabel || (offering.familyKey || '').replace(/-/g, ' ')).filter(Boolean).join(', ') || 'No category yet'}
           </Text>
           <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
             Categories are set by BuildMyHouse. You can suggest one if yours is missing.

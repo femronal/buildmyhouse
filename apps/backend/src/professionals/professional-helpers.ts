@@ -273,6 +273,8 @@ export type PublicProfessionalCard = {
   id: string;
   slug: string;
   displayName: string;
+  photoUrl: string | null;
+  logoUrl: string | null;
   professionalType: ProfessionalType;
   profession: { key: string; label: string } | null;
   specialties: Array<{ key: string; label: string }>;
@@ -321,6 +323,8 @@ export function toPublicProfessionalCard(listing: ListingWithPublicRelations): P
     id: listing.id,
     slug: listing.slug,
     displayName: listing.displayName,
+    photoUrl: listing.photoUrl || null,
+    logoUrl: listing.logoUrl || null,
     professionalType: listing.professionalType,
     profession,
     specialties: mapNamed((listing.specialties || []).map((row) => row.specialty)),

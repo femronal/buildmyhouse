@@ -251,6 +251,8 @@ export class ProfessionalManageUpdateDto {
   @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceStates?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceCities?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) @ArrayMaxSize(40) serviceIds?: string[];
+  @IsOptional() @IsString() @MaxLength(500) photoUrl?: string;
+  @IsOptional() @IsString() @MaxLength(500) logoUrl?: string;
 }
 
 export class ProfessionalOwnerCredentialDto {

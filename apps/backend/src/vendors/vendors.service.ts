@@ -66,6 +66,7 @@ const PUBLIC_INCLUDE = {
       isPublic: true,
       documentType: { in: ['storefront_photo', 'warehouse_photo', 'logo'] },
     },
+    orderBy: { createdAt: 'desc' as const },
   },
 } satisfies Prisma.VendorProfileInclude;
 

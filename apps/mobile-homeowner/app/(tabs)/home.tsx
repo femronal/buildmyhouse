@@ -1,10 +1,12 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
 import { User, MapPin, Lock, Clock, X, ArrowUpRight } from "phosphor-react-native";
 import AnimatedCtaButton from '@/components/AnimatedCtaButton';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from '@tanstack/react-query';
+import ListingWelcomeModal from '@/components/listings/ListingWelcomeModal';
+import { listingWelcomeHandled, markListingWelcomeHandled, type ListingWelcomeKind } from '@/lib/listing-welcome';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, usePendingProjects, usePausedProjects, useActivateProject } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
@@ -39,6 +41,9 @@ export default function HomeScreen() {
     [tabBarMetrics],
   );
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
+  const welcomeParams = useLocalSearchParams<{ listingWelcome?: string | string[] }>();
+  const [listingWelcomeOpen, setListingWelcomeOpen] = useState(false);
+  const [listingWelcomeKind, setListingWelcomeKind] = useState<ListingWelcomeKind | null>(null);
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: pendingProjects = [], isLoading: loadingPending } = usePendingProjects();
   const { data: pausedProjects = [], isLoading: loadingPaused } = usePausedProjects();
@@ -62,6 +67,33 @@ export default function HomeScreen() {
   useEffect(() => {
     setHeaderImageFailed(false);
   }, [userPicture]);
+
+  const welcomeKind = useMemo(() => {
+    const raw = Array.isArray(welcomeParams.listingWelcome)
+      ? welcomeParams.listingWelcome[0]
+      : welcomeParams.listingWelcome;
+    return raw === 'professional' || raw === 'vendor' ? raw : null;
+  }, [welcomeParams.listingWelcome]);
+
+  useEffect(() => {
+    if (!welcomeKind || userLoading || !currentUser?.id || listingWelcomeHandled(welcomeKind)) return;
+    const timer = setTimeout(() => {
+      setListingWelcomeKind(welcomeKind);
+      setListingWelcomeOpen(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [welcomeKind, userLoading, currentUser?.id]);
+
+  const dismissListingWelcome = () => {
+    if (listingWelcomeKind) markListingWelcomeHandled(listingWelcomeKind);
+    setListingWelcomeOpen(false);
+    router.setParams({ listingWelcome: '' });
+  };
+
+  const continueToListing = (path: string) => {
+    dismissListingWelcome();
+    router.push(path as any);
+  };
 
   // Combine active and pending projects for display, ensuring no duplicates
   // IMPORTANT: Use actual project.status to determine if paid, not just which array it came from
@@ -621,6 +653,13 @@ export default function HomeScreen() {
       </ScrollView>
 
       {/* Payment Modal */}
+      <ListingWelcomeModal
+        visible={listingWelcomeOpen}
+        kind={listingWelcomeKind}
+        onContinue={continueToListing}
+        onStay={dismissListingWelcome}
+      />
+
       <PaymentModal
         visible={showPaymentModal}
         onClose={() => {

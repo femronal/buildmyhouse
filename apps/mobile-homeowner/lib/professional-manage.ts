@@ -21,6 +21,8 @@ export type ManagedProfessionalProfile = {
   id: string;
   slug: string;
   displayName: string;
+  photoUrl?: string | null;
+  logoUrl?: string | null;
   bio?: string | null;
   phone?: string | null;
   whatsapp?: string | null;

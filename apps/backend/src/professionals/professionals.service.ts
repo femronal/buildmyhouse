@@ -1206,6 +1206,8 @@ export class ProfessionalsService implements OnModuleInit {
         normalizedPhone: dto.phone !== undefined ? normalizePhone(dto.phone) : undefined,
         normalizedEmail: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
         websiteDomain: dto.website !== undefined ? websiteDomain(dto.website) : undefined,
+        photoUrl: dto.photoUrl !== undefined ? dto.photoUrl.trim() || null : undefined,
+        logoUrl: dto.logoUrl !== undefined ? dto.logoUrl.trim() || null : undefined,
       },
     });
     if (dto.serviceIds) {
@@ -1577,6 +1579,8 @@ export class ProfessionalsService implements OnModuleInit {
       id: listing.id,
       slug: listing.slug,
       displayName: listing.displayName,
+      photoUrl: listing.photoUrl || null,
+      logoUrl: listing.logoUrl || null,
       bio: listing.bio,
       phone: listing.phone,
       whatsapp: listing.whatsapp,

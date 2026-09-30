@@ -3843,6 +3843,10 @@ model ProfessionalListing {
   email                String?
   whatsapp             String?
   website              String?
+  /// Public portrait or practice photo. Not a verification claim.
+  photoUrl             String?
+  /// Public practice logo. Not a verification claim.
+  logoUrl              String?
   address              String?
   city                 String?
   state                String?

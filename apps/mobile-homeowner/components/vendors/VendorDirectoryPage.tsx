@@ -10,6 +10,7 @@ import DirectoryBrowse, {
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
+import ManageListingEntry from '@/components/listings/ManageListingEntry';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
 import { getBackendAssetUrl } from '@/lib/image';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
@@ -298,7 +299,7 @@ export default function VendorDirectoryPage() {
           actions={
             <>
               <DirectoryActionLink href="/vendors/apply" label="List your business" filled />
-              <DirectoryActionLink href="/vendors/manage" label="Manage listing" />
+              <ManageListingEntry kind="vendor" />
               <DirectoryActionLink href="/professionals" label="Find a professional" />
               <DirectoryActionLink href="/tools/price-checker" label="Check market prices" />
             </>
