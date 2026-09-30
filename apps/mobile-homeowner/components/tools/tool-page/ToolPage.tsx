@@ -13,6 +13,7 @@ import {
   type PropertyTool,
 } from '@/lib/property-tools-catalog';
 import { faqsFor, getBatch1Page, type JourneyNode, type ToolPageCopy } from '@/lib/tools/batch-1-pages';
+import { getBatch2Page } from '@/lib/tools/batch-2-pages';
 import { useWebSeo } from '@/lib/seo';
 import { buildCanonical } from '@/lib/seo-schema';
 import WaitlistForm from './WaitlistForm';
@@ -65,7 +66,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
   const { width } = useWindowDimensions();
   const desktop = width >= 1024;
   const tool = getPropertyToolBySlug(slug);
-  const page = getBatch1Page(slug);
+  const page = getBatch1Page(slug) || getBatch2Page(slug);
   const [openFaq, setOpenFaq] = useState(0);
   const [showSticky, setShowSticky] = useState(false);
 
@@ -262,7 +263,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
                     toolTitle={tool.title}
                     sourcePath={tool.href}
                     submitLabel={page.primaryCta}
-                    successDetail="We will let you know when early access opens. In the meantime, you can use Price Checker or explore other BuildMyHouse tools."
+                    successDetail="We'll let you know when early access opens."
                   />
                   <Text style={{ fontFamily: body, fontSize: 13, color: '#525252' }}>
                     Be among the first homeowners and professionals invited to test it.
@@ -456,7 +457,7 @@ export default function ToolPage({ slug, toolSlot }: Props) {
                     toolTitle={tool.title}
                     sourcePath={tool.href}
                     submitLabel="Join the early-access list"
-                    successDetail="We will contact you when early access opens. In the meantime, you can use Price Checker or explore other BuildMyHouse tools."
+                    successDetail="We'll let you know when early access opens."
                   />
                 )}
               </View>
@@ -562,7 +563,8 @@ function PreviewCard({ page }: { page: ToolPageCopy }) {
       ))}
       {page.preview.illustrative ? (
         <Text style={{ fontFamily: body, fontSize: 12, lineHeight: 18, color: '#D4D4D4', marginTop: 8 }}>
-          This sample shows the shape of the result. It is not a saved report and it is not today’s price.
+          {page.preview.note ||
+            'This sample shows the shape of the result. It is not a saved report and it is not today’s price.'}
         </Text>
       ) : null}
     </View>

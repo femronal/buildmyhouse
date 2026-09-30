@@ -33,6 +33,7 @@ export type ToolPageCopy = {
     title: string;
     lines: ToolPageLine[];
     illustrative: boolean;
+    note?: string;
   };
   faq: ToolPageFaq[];
   education?: {

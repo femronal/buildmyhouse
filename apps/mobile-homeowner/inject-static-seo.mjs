@@ -599,10 +599,11 @@ SEO_PAGES['/tools/renovation-budget-planner'] = {
   },
 };
 
-const batch1SeoPath = path.resolve(process.cwd(), 'lib/tools/batch-1-seo.json');
-if (fs.existsSync(batch1SeoPath)) {
-  const batch1Seo = JSON.parse(fs.readFileSync(batch1SeoPath, 'utf8'));
-  for (const [route, page] of Object.entries(batch1Seo)) {
+for (const fileName of ['batch-1-seo.json', 'batch-2-seo.json']) {
+  const seoPath = path.resolve(process.cwd(), 'lib/tools', fileName);
+  if (!fs.existsSync(seoPath)) continue;
+  const pages = JSON.parse(fs.readFileSync(seoPath, 'utf8'));
+  for (const [route, page] of Object.entries(pages)) {
     SEO_PAGES[route] = page;
   }
 }

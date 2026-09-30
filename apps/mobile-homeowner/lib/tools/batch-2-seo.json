@@ -1,0 +1,632 @@
+{
+  "/tools/property-document-checklist": {
+    "title": "Property Documents Checklist Nigeria | BuildMyHouse",
+    "description": "Get a location-aware checklist of property documents to ask for before buying land or property in Nigeria.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Property Document Checklist Generator",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Get a location-aware checklist of property documents to ask for before buying land or property in Nigeria.",
+          "url": "https://buildmyhouse.app/tools/property-document-checklist"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What documents do I need before buying land in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The documents can depend on the location, the ownership history, and the type of transaction. This tool is being built to help organise the questions. It does not replace a lawyer’s review."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can this tool confirm that a document is genuine?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. A checklist tells you what to look for. Whether a document is genuine may still need an independent professional and an official check."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I still need a property lawyer?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, where legal due diligence is required. The checklist is a starting list, not a legal opinion."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use this?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It can help you organise what to request before you rely only on documents sent through WhatsApp or email."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the checklist be different by state?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "That is the intention. This page does not claim a specific state’s document list until that logic is built and checked."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/survey-plan-review-request": {
+    "title": "Survey Plan Review Request Nigeria | BuildMyHouse",
+    "description": "Send a survey plan for review by a registered surveyor and request checks around coordinates, location and apparent legitimacy.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Survey Plan Review Request Tool",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Send a survey plan for review by a registered surveyor and request checks around coordinates, location and apparent legitimacy.",
+          "url": "https://buildmyhouse.app/tools/survey-plan-review-request"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can BuildMyHouse verify a survey plan automatically?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The intended tool sends the plan to a registered surveyor for review. The software does not decide that a survey is genuine."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "What will the surveyor check?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The planned review can cover the survey information, the coordinates, and whether the plan appears consistent. The exact scope depends on the professional service."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does a reviewed survey plan prove I own the land?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Ownership and title are separate legal questions."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I still need a lawyer?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You may. A survey review does not replace legal due diligence."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I submit a survey sent to me on WhatsApp?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Only file types the tool actually accepts should be used, and those will be listed when upload opens. This page does not ask you to send original documents through an unsecured chat."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/building-approval-navigator": {
+    "title": "Building Approval Navigator Nigeria | BuildMyHouse",
+    "description": "Understand likely building approval documents and steps based on your Nigerian state and project type before construction begins.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Building Approval Navigator",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Understand likely building approval documents and steps based on your Nigerian state and project type before construction begins.",
+          "url": "https://buildmyhouse.app/tools/building-approval-navigator"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Do I need building approval in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It depends on the location and the type of project. The Navigator is meant to help you see likely steps. Confirm the current requirements with the relevant authority."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can BuildMyHouse obtain approval for me?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. This tool is for guidance. It does not submit an application or receive approval from government."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will Lagos requirements be listed?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Only after they have been checked and built into the tool. This page does not publish a Lagos requirement list."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does the tool replace an architect?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Are approval rules the same across Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The process and the documents can vary by state and by project."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/pre-purchase-property-inspection": {
+    "title": "Pre-Purchase Property Inspection Nigeria | BuildMyHouse",
+    "description": "Guide a property inspection through structure, roofing, plumbing and electrical checks before you commit to buying a house.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Pre-Purchase Property Inspection App",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Guide a property inspection through structure, roofing, plumbing and electrical checks before you commit to buying a house.",
+          "url": "https://buildmyhouse.app/tools/pre-purchase-property-inspection"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Why inspect a house before buying?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "An inspection can record visible problems and show which areas need a deeper professional assessment before you commit."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can the app detect structural defects automatically?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It does not judge structural safety from answers or photographs."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Who should carry out the inspection?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "That depends on the property and the issues. Serious technical concerns should be handled by an appropriately qualified professional."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. A person or professional at the property can follow the checks and share the findings with you."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does a good inspection mean the title is safe?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The physical condition of a building and the legal ownership of the property are different questions."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/property-document-vault": {
+    "title": "Property Document Vault Nigeria | BuildMyHouse",
+    "description": "Keep property titles, drawings, receipts, inspection records and agreements organised in one place instead of scattered chats and folders.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Property Document Vault",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Keep property titles, drawings, receipts, inspection records and agreements organised in one place instead of scattered chats and folders.",
+          "url": "https://buildmyhouse.app/tools/property-document-vault"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What documents can I keep in the vault?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The planned categories include property titles, drawings, receipts, inspection records, and agreements."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does storing a document mean BuildMyHouse has verified it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can my family access the documents?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Not yet. This page does not promise family sharing. Access will only be described when that feature exists."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is this a replacement for official government records?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Keeping a copy for yourself does not replace the record held by the relevant office."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I store construction receipts later?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Receipts are one of the planned categories. BuildMyHouse also has a separate Receipt and Invoice Vault on the roadmap. This page does not claim those tools are already connected."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/project-readiness-score": {
+    "title": "Are You Ready to Build in Nigeria? | BuildMyHouse",
+    "description": "Review your land, drawings, budget, approvals and professional team before deciding whether your building project is ready to start.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Project Readiness Score",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Review your land, drawings, budget, approvals and professional team before deciding whether your building project is ready to start.",
+          "url": "https://buildmyhouse.app/tools/project-readiness-score"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "What should I have before starting construction in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The exact requirements depend on the project. Land, drawings, budget, approvals, and the professional team are the readiness areas this tool is being built around."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does a strong readiness review guarantee the project will succeed?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. It is planning guidance. It does not guarantee cost, programme, or a successful build."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use it before choosing a contractor?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It is meant for early preparation, before you mobilise."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does it replace an architect or a quantity surveyor?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/build-buy-or-renovate-calculator": {
+    "title": "Build, Buy or Renovate in Nigeria? | BuildMyHouse",
+    "description": "Compare building, buying and renovating using your budget, timeline and intended use before choosing a property strategy.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Build, Buy or Renovate Calculator",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Compare building, buying and renovating using your budget, timeline and intended use before choosing a property strategy.",
+          "url": "https://buildmyhouse.app/tools/build-buy-or-renovate-calculator"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Is it cheaper to build or buy a house in Nigeria?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "There is no answer that applies to every property. Location, whether you already own land, the specification, the market, and the timeline can all change the comparison."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is renovating always cheaper than rebuilding?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. The condition of the existing structure matters."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the calculator tell me which option is best?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It is meant to compare trade-offs. It does not make a guaranteed investment decision."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can Nigerians abroad use it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Should I inspect an existing property before deciding to renovate it?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, especially when the building’s condition is uncertain."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/plot-to-project-feasibility": {
+    "title": "What Can I Build on My Plot in Nigeria? | BuildMyHouse",
+    "description": "Turn plot size, location, access, slope and intended building use into an early feasibility brief before paying for a full design.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Plot-to-Project Feasibility Brief",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Turn plot size, location, access, slope and intended building use into an early feasibility brief before paying for a full design.",
+          "url": "https://buildmyhouse.app/tools/plot-to-project-feasibility"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can this tool tell me exactly what I can legally build?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. What you are allowed to build must be confirmed with the appropriate professionals and authorities."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does plot access matter?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Access can affect how materials and people reach the site, and it can affect design and planning."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Why does slope matter?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "The terrain can affect site planning, drainage, the foundation approach, and how complex construction becomes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do I still need an architect?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, for the architectural design and the professional services that go with it."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use it before buying the land?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "You can use the questions to think about a plot you are considering. It does not replace the checks you should make before you buy."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "/tools/abandoned-building-recovery-checker": {
+    "title": "Unfinished Building Recovery Checker Nigeria | BuildMyHouse",
+    "description": "Describe an incomplete or abandoned building and get guidance on the inspections and next steps to consider before construction restarts.",
+    "jsonLd": {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "Abandoned Building Recovery Checker",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Describe an incomplete or abandoned building and get guidance on the inspections and next steps to consider before construction restarts.",
+          "url": "https://buildmyhouse.app/tools/abandoned-building-recovery-checker"
+        },
+        {
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can I continue building from where construction stopped?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Possibly, but the existing work should be assessed first. The longer a project has been inactive, the more important that inspection becomes."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can BuildMyHouse tell whether the structure is safe from photos?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Which professional may need to inspect an unfinished building?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "It depends on the project and the condition. An architect, a structural engineer, a quantity surveyor, or another specialist may be relevant."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Can I use this if I inherited an unfinished house?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes. It is meant to organise what is known and what still needs investigation."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Will the tool estimate what completion will cost?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. Use the Renovation Budget Planner or the Nigeria Building Cost Planner when you are ready to think about money. This checker does not produce a completion price."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Does BuildMyHouse hold my money?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "No. BuildMyHouse does not hold your money through this tool. It does not safeguard, escrow, or release customer funds. BuildMyHouse is not a bank or escrow company."
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

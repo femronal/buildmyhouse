@@ -3,6 +3,7 @@ import PropertyToolDetailPage from '@/components/tools/PropertyToolDetailPage';
 import ToolPage from '@/components/tools/tool-page/ToolPage';
 import { PROPERTY_TOOLS } from '@/lib/property-tools-catalog';
 import { DEDICATED_TOOL_ROUTES, getBatch1Page } from '@/lib/tools/batch-1-pages';
+import { getBatch2Page } from '@/lib/tools/batch-2-pages';
 
 export function generateStaticParams() {
   return PROPERTY_TOOLS.filter((tool) => !DEDICATED_TOOL_ROUTES.has(tool.slug)).map((tool) => ({
@@ -15,7 +16,7 @@ export default function PropertyToolSlugRoute() {
   const resolved = Array.isArray(slug) ? slug[0] : slug;
   const value = resolved ?? '';
 
-  if (getBatch1Page(value)) {
+  if (getBatch1Page(value) || getBatch2Page(value)) {
     return <ToolPage slug={value} />;
   }
 
