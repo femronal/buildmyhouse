@@ -65,6 +65,12 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
             <Section title="Specialties" items={(artisan.specialties || []).map((item: { label: string }) => item.label)} />
             <Section title="Areas served" items={[...(artisan.serviceCities || []), ...(artisan.serviceStates || [])]} />
             {artisan.address ? <Text style={{ marginTop: 12, fontFamily: 'Poppins_400Regular' }}>Workshop / work base: {artisan.address}</Text> : null}
+            {artisan.workingHours ? <Text style={{ marginTop: 8, fontFamily: 'Poppins_400Regular' }}>Hours: {artisan.workingHours}</Text> : null}
+            {artisan.contact?.phone || artisan.contact?.whatsapp || artisan.contact?.website || artisan.contact?.instagram || artisan.contact?.facebook ? (
+              <Text style={{ marginTop: 8, fontFamily: 'Poppins_400Regular' }}>
+                {[artisan.contact.phone, artisan.contact.whatsapp, artisan.contact.website, artisan.contact.instagram, artisan.contact.facebook].filter(Boolean).join(' · ')}
+              </Text>
+            ) : null}
             <View style={{ marginTop: 24 }}>
               <Link href={'/start' as any}>
                 <Text style={{ fontFamily: 'Poppins_600SemiBold', backgroundColor: '#171717', color: '#fff', overflow: 'hidden', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999 }}>Start a repair</Text>

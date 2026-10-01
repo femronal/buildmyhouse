@@ -15,6 +15,7 @@ export default function ArtisanApplyPage() {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
   const [bio, setBio] = useState('');
+  const [companyFax, setCompanyFax] = useState('');
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
 
@@ -31,14 +32,14 @@ export default function ArtisanApplyPage() {
     const response = await fetch(`${API_BASE_URL}/artisans/applications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ displayName, tradeKey, phone, city, state, bio }),
+      body: JSON.stringify({ displayName, tradeKey, phone, city, state, bio, companyFax }),
     });
     const body = await response.json().catch(() => ({}));
     if (!response.ok) {
       setError(body?.message || 'Unable to list this business.');
       return;
     }
-    setNotice(body.publicUrl ? `Your listing is public at ${body.publicUrl}` : 'Your listing has been published.');
+    setNotice('Application received. It is not public until BuildMyHouse reviews it.');
   };
 
   return (
@@ -46,7 +47,7 @@ export default function ArtisanApplyPage() {
       <SeoContentColumn>
         <SeoHeading level={1} style={{ fontFamily: 'Poppins_700Bold' }}>List my repair business</SeoHeading>
         <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 12 }}>
-          A basic listing can go public before photos and verification are added.
+          Applications stay private until BuildMyHouse reviews them.
         </Text>
         <Field label="Business or artisan name" value={displayName} onChangeText={setDisplayName} />
         <Field label="Trade key, for example plumber" value={tradeKey} onChangeText={setTradeKey} />
@@ -54,10 +55,11 @@ export default function ArtisanApplyPage() {
         <Field label="City" value={city} onChangeText={setCity} />
         <Field label="State" value={state} onChangeText={setState} />
         <Field label="Short description" value={bio} onChangeText={setBio} />
+        <TextInput value={companyFax} onChangeText={setCompanyFax} accessibilityElementsHidden importantForAccessibility="no" style={{ position: 'absolute', left: -9999, height: 0, width: 0 }} />
         {error ? <Text style={{ color: '#B91C1C', marginBottom: 8 }}>{String(error)}</Text> : null}
         {notice ? <Text style={{ color: '#166534', marginBottom: 8 }}>{notice}</Text> : null}
         <Pressable onPress={submit} style={{ backgroundColor: '#171717', borderRadius: 999, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold' }}>Publish listing</Text>
+          <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold' }}>Submit for review</Text>
         </Pressable>
       </SeoContentColumn>
     </SeoContentShell>

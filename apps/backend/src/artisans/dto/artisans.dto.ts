@@ -38,6 +38,8 @@ export class ArtisanApplicationDto {
   @IsOptional() @IsString() state?: string;
   @IsOptional() @IsString() @MaxLength(2000) bio?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) serviceLabels?: string[];
+  /** Honeypot. Real people leave this empty. */
+  @IsOptional() @IsString() companyFax?: string;
 }
 
 export class ArtisanClaimRequestDto {
@@ -91,14 +93,20 @@ export class AdminArtisanWriteDto {
   @IsOptional() @IsString() whatsapp?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsString() website?: string;
+  @IsOptional() @IsString() instagramUrl?: string;
+  @IsOptional() @IsString() facebookUrl?: string;
   @IsOptional() @IsString() address?: string;
+  @IsOptional() @IsString() workingHours?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() state?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) serviceStates?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) serviceCities?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) capabilityIds?: string[];
+  @IsOptional() @IsIn(['high', 'medium']) researchConfidence?: 'high' | 'medium';
+  @IsOptional() @IsString() overrideSuppressionReason?: string;
   @IsOptional() @IsEnum(ArtisanSourceType) sourceType?: ArtisanSourceType;
   @IsOptional() @IsString() sourceNotes?: string;
+  @IsOptional() @IsString() internalNotes?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) sourceUrls?: string[];
   @IsOptional() @IsBoolean() acknowledgeDuplicates?: boolean;
   @IsOptional() @IsBoolean() sendClaimInvite?: boolean;
@@ -116,6 +124,8 @@ export class AdminArtisanPatchDto {
   @IsOptional() @IsString() whatsapp?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsString() website?: string;
+  @IsOptional() @IsString() instagramUrl?: string;
+  @IsOptional() @IsString() facebookUrl?: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsString() city?: string;
   @IsOptional() @IsString() state?: string;
@@ -123,6 +133,9 @@ export class AdminArtisanPatchDto {
   @IsOptional() @IsArray() @IsString({ each: true }) serviceCities?: string[];
   @IsOptional() @IsArray() @IsString({ each: true }) capabilityIds?: string[];
   @IsOptional() @IsString() workingHours?: string;
+  @IsOptional() @IsIn(['high', 'medium']) researchConfidence?: 'high' | 'medium';
+  @IsOptional() @IsBoolean() suppressedFromRelist?: boolean;
+  @IsOptional() @IsString() suppressionReason?: string;
   @IsOptional() @IsString() internalNotes?: string;
   @IsOptional() @IsString() availabilityNotes?: string;
   @IsOptional() @IsString() callOutFeeNotes?: string;
@@ -166,6 +179,13 @@ export class AdminArtisanSearchDto {
 
 export class AdminListingStatusDto {
   @IsEnum(ArtisanListingStatus) listingStatus!: ArtisanListingStatus;
+  @IsOptional() @IsBoolean() suppressFromRelist?: boolean;
+  @IsOptional() @IsString() suppressionReason?: string;
+}
+
+export class ArtisanApplicationReviewDto {
+  @IsIn(['approved', 'rejected']) status!: 'approved' | 'rejected';
+  @IsOptional() @IsString() adminNotes?: string;
 }
 
 export class AdminRecruitmentDto {

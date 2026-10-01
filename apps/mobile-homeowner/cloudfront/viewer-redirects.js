@@ -166,6 +166,40 @@ function handler(event) {
     }
   }
 
+  // Artisan claim invites: /artisans/claim/<token> → claim/[token].html
+  var artisanClaimPrefix = '/artisans/claim/';
+  if (uri.indexOf(artisanClaimPrefix) === 0) {
+    var artisanClaimToken = uri.slice(artisanClaimPrefix.length);
+    if (
+      artisanClaimToken &&
+      artisanClaimToken.indexOf('/') === -1 &&
+      artisanClaimToken !== '[token]'
+    ) {
+      request.uri = artisanClaimPrefix + '[token].html';
+      return request;
+    }
+  }
+
+  // Artisan public profiles: /artisans/<slug> → artisans/[slug].html
+  // New listings use this shell, so they do not need a rebuild.
+  var artisansPrefix = '/artisans/';
+  if (uri.indexOf(artisansPrefix) === 0) {
+    var artisanSegment = uri.slice(artisansPrefix.length);
+    var reservedArtisanRoutes = {
+      apply: true,
+      claim: true,
+    };
+    if (
+      artisanSegment &&
+      artisanSegment.indexOf('/') === -1 &&
+      artisanSegment !== '[slug]' &&
+      !reservedArtisanRoutes[artisanSegment]
+    ) {
+      request.uri = artisansPrefix + '[slug].html';
+      return request;
+    }
+  }
+
   // Vendor public profiles: /vendors/<slug> → vendors/[slug].html
   // Keep static vendor routes (apply/manage/claim) on their own .html objects.
   var vendorsPrefix = '/vendors/';

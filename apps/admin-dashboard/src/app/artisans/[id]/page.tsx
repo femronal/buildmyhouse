@@ -45,15 +45,21 @@ export default function ArtisanAdminDetailPage() {
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/listing-status`, { listingStatus: 'hidden' })}>Hide</button>
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/listing-status`, { listingStatus: 'listed' })}>List</button>
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/listing-status`, { listingStatus: 'archived' })}>Archive</button>
-          <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/verification`, { verificationStatus: 'verified', checkKey: 'identity_checked', checkStatus: 'passed' })}>Mark verified</button>
+          <button className="rounded-full border px-3 py-2 text-sm" onClick={() => {
+            const evidence = window.prompt('What evidence does this verification rest on? Include a date if you observed the work.');
+            if (!evidence?.trim()) return;
+            if (!window.confirm('Mark this artisan verified for BMH repair work?')) return;
+            void act(`${id}/verification`, { verificationStatus: 'verified', checkKey: 'identity_checked', checkStatus: 'passed', notes: evidence.trim() });
+          }}>Mark verified</button>
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/verification`, { verificationStatus: 'rejected' })}>Reject verification</button>
-          <button className="rounded-full border px-3 py-2 text-sm" onClick={async () => {
-            const invite = (await api.post(`/admin/artisans/${id}/claim-invitation`, {})) as { claimUrl: string };
-            await navigator.clipboard.writeText(invite.claimUrl);
-            setNotice(invite.claimUrl);
-          }}>Email claim invite</button>
+          <button className="rounded-full border px-3 py-2 text-sm" onClick={() => {
+            const reason = window.prompt('Why should this artisan not be listed again?');
+            if (!reason?.trim()) return;
+            void act(`${id}/listing-status`, { listingStatus: 'hidden', suppressFromRelist: true, suppressionReason: reason.trim() });
+          }}>Hide and do not relist</button>
         </div>
       </section>
+      <ArtisanEditor artisan={artisan} onSave={(body) => act(id, body)} />
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
         <h2 className="font-semibold">Recruitment</h2>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -88,5 +94,53 @@ export default function ArtisanAdminDetailPage() {
         </ul>
       </section>
     </div>
+  );
+}
+
+function ArtisanEditor({ artisan, onSave }: { artisan: Record<string, any>; onSave: (body: Record<string, unknown>) => Promise<void> }) {
+  const [email, setEmail] = useState(artisan.email || '');
+  const [whatsapp, setWhatsapp] = useState(artisan.whatsapp || '');
+  const [website, setWebsite] = useState(artisan.website || '');
+  const [instagramUrl, setInstagramUrl] = useState(artisan.instagramUrl || '');
+  const [facebookUrl, setFacebookUrl] = useState(artisan.facebookUrl || '');
+  const [address, setAddress] = useState(artisan.address || '');
+  const [workingHours, setWorkingHours] = useState(artisan.workingHours || '');
+  const [serviceCities, setServiceCities] = useState((artisan.serviceCities || []).join(', '));
+  const [confidence, setConfidence] = useState(artisan.researchConfidence || '');
+  return (
+    <section className="rounded-2xl border border-gray-200 bg-white p-4">
+      <h2 className="font-semibold">Public and research details</h2>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <input className="rounded-lg border px-3 py-2" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="WhatsApp" value={whatsapp} onChange={(event) => setWhatsapp(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Website" value={website} onChange={(event) => setWebsite(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Instagram" value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Facebook" value={facebookUrl} onChange={(event) => setFacebookUrl(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Business hours" value={workingHours} onChange={(event) => setWorkingHours(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Workshop address" value={address} onChange={(event) => setAddress(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Service cities" value={serviceCities} onChange={(event) => setServiceCities(event.target.value)} />
+        <select className="rounded-lg border px-3 py-2" value={confidence} onChange={(event) => setConfidence(event.target.value)}>
+          <option value="">Research confidence</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+        </select>
+      </div>
+      <button
+        className="mt-3 rounded-full bg-gray-950 px-4 py-2 text-sm text-white"
+        onClick={() => onSave({
+          email,
+          whatsapp,
+          website,
+          instagramUrl,
+          facebookUrl,
+          address,
+          workingHours,
+          serviceCities: serviceCities.split(',').map((item) => item.trim()).filter(Boolean),
+          researchConfidence: confidence || undefined,
+        })}
+      >
+        Save details
+      </button>
+    </section>
   );
 }

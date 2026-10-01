@@ -127,7 +127,7 @@ export default function ArtisanDirectoryPage() {
   const page = readPage(params.page);
   const sort = readSort(params.sort);
   const metaQuery = useQuery({ queryKey: ['artisan-meta'], queryFn: fetchArtisanMeta });
-  const trades = metaQuery.data?.trades || [];
+  const trades = (metaQuery.data?.trades || []).filter((trade) => (trade.listingCount || 0) > 0);
   const problems = metaQuery.data?.problems || [];
   const selectedProblem = problems.find((item) => item.key === params.problem);
 
@@ -191,7 +191,7 @@ export default function ArtisanDirectoryPage() {
   });
 
   const problemChips = FEATURED_PROBLEMS.map((label) => chip(`problem-${problemKey(label)}`, label, 'problem', problemKey(label)));
-  const tradeChips = trades.slice(0, 12).map((trade) => chip(`trade-${trade.key}`, trade.label, 'trade', trade.key));
+  const tradeChips = trades.map((trade) => chip(`trade-${trade.key}`, trade.label, 'trade', trade.key));
   const stateChips = FEATURED_STATES.map((label) => chip(`state-${label}`, label, 'state', label));
   const trustChips = [
     chip('verified', 'Verified', 'verified', '1'),
@@ -231,7 +231,7 @@ export default function ArtisanDirectoryPage() {
             onSearchChange={onSearchChange}
             searchPlaceholder="plumber Mowe, roof leak Lekki, broken window Lagos"
             quickChips={problemChips}
-            wideChips={[...tradeChips.slice(0, 8), ...stateChips, ...trustChips]}
+            wideChips={[...tradeChips, ...stateChips, ...trustChips]}
             sections={sections}
             activeFilterCount={activeFilterCount}
             clearHref={PATH}

@@ -4377,6 +4377,8 @@ model ArtisanListing {
   email    String?
   whatsapp String?
   website  String?
+  instagramUrl String?
+  facebookUrl  String?
   publicPhone    Boolean @default(true)
   publicEmail    Boolean @default(false)
   publicWhatsapp Boolean @default(true)
@@ -4407,6 +4409,11 @@ model ArtisanListing {
   sourceType        ArtisanSourceType @default(admin_research)
   sourceNotes       String?           @db.Text
   sourceUrls        String[]          @default([])
+  /// high | medium. Internal research confidence. Not shown publicly.
+  researchConfidence String?
+  /// Set when the artisan asked not to be listed again.
+  suppressedFromRelist Boolean @default(false)
+  suppressionReason    String?
   discoveredAt      DateTime          @default(now())
   lastResearchedAt  DateTime?
 

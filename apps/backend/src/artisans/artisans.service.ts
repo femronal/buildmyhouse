@@ -18,6 +18,7 @@ import {
   ArtisanRecruitmentStatus,
   ArtisanReviewStatus,
   ArtisanSourceType,
+  ArtisanVerificationCheckKey,
   ArtisanVerificationStatus,
   Prisma,
 } from '@prisma/client';
@@ -136,11 +137,18 @@ export class ArtisansService implements OnModuleInit {
           professionalHref: item.professionalHref,
         })),
     );
+    const counts = await this.prisma.artisanListing.groupBy({
+      by: ['primaryTradeId'],
+      where: { listingStatus: ArtisanListingStatus.listed, archivedAt: null },
+      _count: { _all: true },
+    });
+    const countByTrade = new Map(counts.map((row) => [row.primaryTradeId, row._count._all]));
     return {
       trades: trades.map((trade) => ({
         id: trade.id,
         key: trade.key,
         label: trade.label,
+        listingCount: countByTrade.get(trade.id) || 0,
         specialties: trade.capabilities.filter((item) => item.kind === 'specialty'),
         services: trade.capabilities.filter((item) => item.kind === 'service'),
         problems: trade.capabilities.filter((item) => item.kind === 'problem'),
@@ -210,6 +218,7 @@ export class ArtisansService implements OnModuleInit {
   }
 
   async apply(dto: ArtisanApplicationDto) {
+    if (dto.companyFax?.trim()) return { received: true };
     const trade = await this.prisma.artisanTrade.findUnique({ where: { key: dto.tradeKey } });
     if (!trade) throw new BadRequestException('Choose a supported trade.');
     const application = await this.prisma.artisanApplication.create({
@@ -224,30 +233,18 @@ export class ArtisansService implements OnModuleInit {
         state: dto.state || null,
         bio: dto.bio || null,
         serviceLabels: dto.serviceLabels || [],
+        status: ArtisanReviewStatus.pending,
       },
     });
-    const listing = await this.createListing(
-      {
-        displayName: dto.displayName,
-        businessName: dto.businessName,
-        tradeKey: dto.tradeKey,
-        bio: dto.bio,
-        phone: dto.phone,
-        whatsapp: dto.whatsapp,
-        email: dto.email,
-        city: dto.city,
-        state: dto.state,
-        sourceType: ArtisanSourceType.self_submitted,
-        acknowledgeDuplicates: true,
-        listingStatus: ArtisanListingStatus.listed,
-      },
-      null,
-    );
-    await this.prisma.artisanApplication.update({
-      where: { id: application.id },
-      data: { createdListingId: listing.id, status: ArtisanReviewStatus.approved, reviewedAt: new Date() },
-    });
-    return listing;
+    if (application.email && this.email) {
+      await this.email.send({
+        to: application.email,
+        subject: 'We received your BuildMyHouse artisan application',
+        text: 'BuildMyHouse received your repair-business application. It is not public until we review it.',
+        html: '<p>BuildMyHouse received your repair-business application. It is not public until we review it.</p>',
+      });
+    }
+    return { id: application.id, status: 'pending', received: true };
   }
 
   async requestClaim(userId: string | null, dto: ArtisanClaimRequestDto) {
@@ -527,15 +524,24 @@ export class ArtisansService implements OnModuleInit {
   async createListing(dto: AdminArtisanWriteDto, adminId: string | null) {
     const trade = await this.prisma.artisanTrade.findUnique({ where: { key: dto.tradeKey } });
     if (!trade) throw new BadRequestException('Unknown trade.');
-    const duplicates = await this.findDuplicates({
+    const identity = {
       displayName: dto.businessName || dto.displayName,
       phone: dto.phone,
       whatsapp: dto.whatsapp,
       email: dto.email,
       website: dto.website,
-    });
+      address: dto.address,
+    };
+    const suppressed = await this.findSuppressed(identity);
+    if (suppressed && !dto.overrideSuppressionReason?.trim()) {
+      throw new BadRequestException(
+        `This person or business asked not to be listed again${suppressed.reason ? ` (${suppressed.reason})` : ''}. Add an override reason to create the listing anyway.`,
+      );
+    }
+    const duplicates = await this.findDuplicates(identity);
     if (duplicates.length && !dto.acknowledgeDuplicates) {
-      throw new ConflictException('Possible duplicate artisan listings. Submit again to publish anyway.');
+      const lines = duplicates.map((item) => `${item.kind}: ${item.name} (${item.href})`).join('; ');
+      throw new ConflictException(`Possible duplicates. Create anyway to publish. ${lines}`);
     }
     const listing = await this.prisma.artisanListing.create({
       data: {
@@ -548,6 +554,10 @@ export class ArtisansService implements OnModuleInit {
         whatsapp: dto.whatsapp || null,
         email: normalizeEmail(dto.email),
         website: dto.website || null,
+        instagramUrl: dto.instagramUrl || null,
+        facebookUrl: dto.facebookUrl || null,
+        workingHours: dto.workingHours || null,
+        researchConfidence: dto.researchConfidence || null,
         address: dto.address || null,
         city: dto.city || null,
         state: dto.state || null,
@@ -558,8 +568,11 @@ export class ArtisansService implements OnModuleInit {
         verificationStatus: ArtisanVerificationStatus.unverified,
         recruitmentStatus: dto.sourceType === ArtisanSourceType.grok_research ? ArtisanRecruitmentStatus.researched : ArtisanRecruitmentStatus.discovered,
         sourceType: dto.sourceType || ArtisanSourceType.admin_research,
-        sourceNotes: dto.sourceNotes || null,
+        sourceNotes: [dto.sourceNotes, dto.overrideSuppressionReason ? `Relist override: ${dto.overrideSuppressionReason}` : null]
+          .filter(Boolean)
+          .join('\n') || null,
         sourceUrls: dto.sourceUrls || [],
+        internalNotes: dto.internalNotes || null,
         normalizedName: normalizeName(dto.businessName || dto.displayName),
         normalizedPhone: normalizePhone(dto.phone),
         normalizedWhatsapp: normalizePhone(dto.whatsapp),
@@ -608,6 +621,11 @@ export class ArtisansService implements OnModuleInit {
         whatsapp: dto.whatsapp,
         email: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
         website: dto.website,
+        instagramUrl: dto.instagramUrl,
+        facebookUrl: dto.facebookUrl,
+        researchConfidence: dto.researchConfidence,
+        suppressedFromRelist: dto.suppressedFromRelist,
+        suppressionReason: dto.suppressionReason,
         address: dto.address,
         city: dto.city,
         state: dto.state,
@@ -650,6 +668,8 @@ export class ArtisansService implements OnModuleInit {
         listingStatus: dto.listingStatus,
         archivedAt: dto.listingStatus === ArtisanListingStatus.archived ? new Date() : null,
         listedAt: dto.listingStatus === ArtisanListingStatus.listed ? new Date() : undefined,
+        suppressedFromRelist: dto.suppressFromRelist || undefined,
+        suppressionReason: dto.suppressFromRelist ? dto.suppressionReason || 'Asked not to be listed' : undefined,
       },
     });
     return this.adminGet(id);
@@ -667,15 +687,18 @@ export class ArtisansService implements OnModuleInit {
   }
 
   async setVerification(adminId: string, id: string, dto: AdminVerificationDto) {
+    if (dto.verificationStatus === ArtisanVerificationStatus.verified && !dto.notes?.trim()) {
+      throw new BadRequestException('A note is required, including the evidence this verification rests on.');
+    }
     await this.prisma.artisanListing.update({
       where: { id },
       data: { verificationStatus: dto.verificationStatus },
     });
-    if (dto.checkKey) {
+    if (dto.checkKey || dto.verificationStatus === ArtisanVerificationStatus.verified) {
       await this.prisma.artisanVerificationCheck.create({
         data: {
           artisanListingId: id,
-          checkKey: dto.checkKey,
+          checkKey: dto.checkKey || ArtisanVerificationCheckKey.identity_checked,
           status: dto.checkStatus || (dto.verificationStatus === ArtisanVerificationStatus.verified ? ArtisanCheckStatus.passed : ArtisanCheckStatus.pending),
           notes: dto.notes || null,
           checkedByAdminId: adminId,
@@ -822,24 +845,113 @@ export class ArtisansService implements OnModuleInit {
     return this.prisma.artisanApplication.findMany({ orderBy: { createdAt: 'desc' }, take: 100 });
   }
 
-  async findDuplicates(input: { displayName?: string | null; phone?: string | null; whatsapp?: string | null; email?: string | null; website?: string | null; excludeId?: string }) {
-    const ors: Prisma.ArtisanListingWhereInput[] = [];
+  async findDuplicates(input: { displayName?: string | null; phone?: string | null; whatsapp?: string | null; email?: string | null; website?: string | null; address?: string | null; excludeId?: string }) {
     const name = normalizeName(input.displayName);
     const phone = normalizePhone(input.phone);
     const whatsapp = normalizePhone(input.whatsapp);
     const email = normalizeEmail(input.email);
     const domain = websiteDomain(input.website);
+    const address = input.address?.trim().toLowerCase();
+    const matches: Array<{ kind: string; id: string; name: string; href: string }> = [];
+    const artisanOr: Prisma.ArtisanListingWhereInput[] = [];
+    if (name) artisanOr.push({ normalizedName: name });
+    if (phone) artisanOr.push({ OR: [{ normalizedPhone: phone }, { normalizedWhatsapp: phone }] });
+    if (whatsapp) artisanOr.push({ OR: [{ normalizedWhatsapp: whatsapp }, { normalizedPhone: whatsapp }] });
+    if (email) artisanOr.push({ normalizedEmail: email });
+    if (domain) artisanOr.push({ websiteDomain: domain });
+    if (address) artisanOr.push({ address: { equals: input.address!.trim(), mode: 'insensitive' } });
+    if (artisanOr.length) {
+      const rows = await this.prisma.artisanListing.findMany({
+        where: { OR: artisanOr, id: input.excludeId ? { not: input.excludeId } : undefined },
+        select: { id: true, slug: true, displayName: true },
+        take: 8,
+      });
+      rows.forEach((row) => matches.push({ kind: 'artisan', id: row.id, name: row.displayName, href: `/artisans/${row.slug}` }));
+    }
+    const vendorOr: Prisma.VendorProfileWhereInput[] = [];
+    if (name) vendorOr.push({ normalizedTradingName: name });
+    if (phone) vendorOr.push({ OR: [{ normalizedPhone: phone }, { normalizedWhatsApp: phone }] });
+    if (whatsapp) vendorOr.push({ OR: [{ normalizedWhatsApp: whatsapp }, { normalizedPhone: whatsapp }] });
+    if (email) vendorOr.push({ normalizedEmail: email });
+    if (domain) vendorOr.push({ websiteDomain: domain });
+    if (address) vendorOr.push({ publicAddress: { equals: input.address!.trim(), mode: 'insensitive' } });
+    if (vendorOr.length) {
+      const rows = await this.prisma.vendorProfile.findMany({
+        where: { deletedAt: null, OR: vendorOr },
+        select: { id: true, slug: true, tradingName: true },
+        take: 8,
+      });
+      rows.forEach((row) => matches.push({ kind: 'vendor', id: row.id, name: row.tradingName, href: `/vendors/${row.slug}` }));
+    }
+    const professionalOr: Prisma.ProfessionalListingWhereInput[] = [];
+    if (name) professionalOr.push({ normalizedName: name });
+    if (phone) professionalOr.push({ normalizedPhone: phone });
+    if (email) professionalOr.push({ normalizedEmail: email });
+    if (domain) professionalOr.push({ websiteDomain: domain });
+    if (address) professionalOr.push({ address: { equals: input.address!.trim(), mode: 'insensitive' } });
+    if (professionalOr.length) {
+      const rows = await this.prisma.professionalListing.findMany({
+        where: { archivedAt: null, OR: professionalOr },
+        select: { id: true, slug: true, displayName: true },
+        take: 8,
+      });
+      rows.forEach((row) => matches.push({ kind: 'professional', id: row.id, name: row.displayName, href: `/professionals/${row.slug}` }));
+    }
+    return matches;
+  }
+
+  private async findSuppressed(input: { displayName?: string | null; phone?: string | null; whatsapp?: string | null; email?: string | null; website?: string | null }) {
+    const name = normalizeName(input.displayName);
+    const phone = normalizePhone(input.phone);
+    const whatsapp = normalizePhone(input.whatsapp);
+    const domain = websiteDomain(input.website);
+    const ors: Prisma.ArtisanListingWhereInput[] = [];
     if (name) ors.push({ normalizedName: name });
     if (phone) ors.push({ normalizedPhone: phone });
     if (whatsapp) ors.push({ normalizedWhatsapp: whatsapp });
-    if (email) ors.push({ normalizedEmail: email });
     if (domain) ors.push({ websiteDomain: domain });
-    if (!ors.length) return [];
-    return this.prisma.artisanListing.findMany({
-      where: { OR: ors, id: input.excludeId ? { not: input.excludeId } : undefined },
-      select: { id: true, slug: true, displayName: true, city: true, state: true, phone: true },
-      take: 8,
+    if (!ors.length) return null;
+    return this.prisma.artisanListing.findFirst({
+      where: { suppressedFromRelist: true, OR: ors },
+      select: { id: true, displayName: true, suppressionReason: true },
+    }).then((row) => (row ? { id: row.id, reason: row.suppressionReason } : null));
+  }
+
+  async reviewApplication(adminId: string, id: string, status: 'approved' | 'rejected', adminNotes?: string) {
+    const application = await this.prisma.artisanApplication.findUnique({ where: { id } });
+    if (!application) throw new NotFoundException('Application not found');
+    let createdListingId = application.createdListingId;
+    if (status === 'approved' && !createdListingId) {
+      const created = await this.createListing(
+        {
+          displayName: application.displayName,
+          businessName: application.businessName || undefined,
+          tradeKey: application.tradeKey,
+          bio: application.bio || undefined,
+          phone: application.phone || undefined,
+          whatsapp: application.whatsapp || undefined,
+          email: application.email || undefined,
+          city: application.city || undefined,
+          state: application.state || undefined,
+          sourceType: ArtisanSourceType.self_submitted,
+          acknowledgeDuplicates: true,
+          listingStatus: ArtisanListingStatus.listed,
+        },
+        adminId,
+      );
+      createdListingId = created.id;
+    }
+    await this.prisma.artisanApplication.update({
+      where: { id },
+      data: {
+        status: status === 'approved' ? ArtisanReviewStatus.approved : ArtisanReviewStatus.rejected,
+        adminNotes: adminNotes || null,
+        reviewedByAdminId: adminId,
+        reviewedAt: new Date(),
+        createdListingId,
+      },
     });
+    return { id, status, createdListingId };
   }
 
   private async acceptApprovedRequest(listingId: string, userId: string) {

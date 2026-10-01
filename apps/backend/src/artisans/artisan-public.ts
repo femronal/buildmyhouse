@@ -69,6 +69,8 @@ export type ArtisanPublicSource = {
   email?: string | null;
   whatsapp?: string | null;
   website?: string | null;
+  instagramUrl?: string | null;
+  facebookUrl?: string | null;
   publicPhone: boolean;
   publicEmail: boolean;
   publicWhatsapp: boolean;
@@ -159,6 +161,8 @@ export function toPublicArtisanProfile(listing: ArtisanPublicSource) {
       email: listing.publicEmail ? listing.email || null : null,
       whatsapp: listing.publicWhatsapp ? listing.whatsapp || null : null,
       website: listing.publicWebsite ? listing.website || null : null,
+      instagram: listing.instagramUrl || null,
+      facebook: listing.facebookUrl || null,
     },
     trustIndicators: {
       listed: true,

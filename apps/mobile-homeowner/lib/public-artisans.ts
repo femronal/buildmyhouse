@@ -45,7 +45,7 @@ export async function fetchArtisanMeta() {
   const response = await fetch(`${API_BASE_URL}/artisans/meta`);
   if (!response.ok) throw new Error('Unable to load artisan filters.');
   return response.json() as Promise<{
-    trades: Array<{ key: string; label: string }>;
+    trades: Array<{ key: string; label: string; listingCount?: number }>;
     problems: ArtisanProblem[];
     trustExplanation: string;
   }>;

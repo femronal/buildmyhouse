@@ -8,6 +8,7 @@ import {
   AdminArtisanPatchDto,
   AdminArtisanSearchDto,
   AdminArtisanWriteDto,
+  ArtisanApplicationReviewDto,
   AdminClaimInviteDto,
   AdminClaimReviewDto,
   AdminListingStatusDto,
@@ -50,6 +51,12 @@ export class ArtisansAdminController {
   @RequirePermissions('artisans.review')
   applications() {
     return this.artisans.listApplications();
+  }
+
+  @Patch('applications/:id')
+  @RequirePermissions('artisans.review')
+  reviewApplication(@Req() req: any, @Param('id') id: string, @Body() body: ArtisanApplicationReviewDto) {
+    return this.artisans.reviewApplication(req.user.sub, id, body.status, body.adminNotes);
   }
 
   @Get('duplicates')
