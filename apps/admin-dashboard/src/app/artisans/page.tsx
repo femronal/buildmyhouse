@@ -43,6 +43,7 @@ export default function ArtisansAdminPage() {
   const applications = useQuery({ queryKey: ['artisan-applications'], queryFn: () => api.get<any[]>('/admin/artisans/applications') });
   const [form, setForm] = useState(emptyForm);
   const [notice, setNotice] = useState('');
+  const [needsOverride, setNeedsOverride] = useState(false);
 
   const selectedTrade = useMemo(
     () => (meta.data?.trades || []).find((item: any) => item.key === form.tradeKey),
@@ -72,6 +73,7 @@ export default function ArtisansAdminPage() {
           try {
             const created = (await create.mutateAsync({
               ...form,
+              email: form.email.trim() || undefined,
               serviceCities: form.serviceCities.split(',').map((item) => item.trim()).filter(Boolean),
               serviceStates: form.serviceStates.split(',').map((item) => item.trim()).filter(Boolean),
               sourceUrls: form.sourceUrls.split('\n').map((item) => item.trim()).filter(Boolean),
@@ -82,6 +84,7 @@ export default function ArtisansAdminPage() {
               overrideSuppressionReason: form.overrideSuppressionReason || undefined,
             })) as { publicUrl?: string; trustScore?: number };
             setNotice(`Published ${created.publicUrl}. Trust score ${created.trustScore}%.`);
+            setNeedsOverride(false);
             setForm(emptyForm);
             await list.refetch();
           } catch (error) {
@@ -89,6 +92,7 @@ export default function ArtisansAdminPage() {
             if (message.toLowerCase().includes('duplicate') || message.toLowerCase().includes('create anyway')) {
               setForm((current) => ({ ...current, acknowledgeDuplicates: true }));
             }
+            if (message.toLowerCase().includes('asked not to be listed')) setNeedsOverride(true);
             setNotice(message);
           }
         }}
@@ -131,14 +135,14 @@ export default function ArtisansAdminPage() {
             <CheckGroup title="Problems we fix" items={selectedTrade.problems || []} selected={form.capabilityIds} onChange={(capabilityIds) => set({ capabilityIds })} />
           </div>
         ) : null}
-        {form.acknowledgeDuplicates ? (
-          <input className="rounded-lg border px-3 py-2 md:col-span-3" placeholder="Override reason if they asked not to be listed" value={form.overrideSuppressionReason} onChange={(event) => setForm((current) => ({ ...current, overrideSuppressionReason: event.target.value }))} />
+        {form.acknowledgeDuplicates || needsOverride ? (
+          <input className="rounded-lg border px-3 py-2 md:col-span-3" placeholder="Reason for creating this listing anyway" value={form.overrideSuppressionReason} onChange={(event) => setForm((current) => ({ ...current, overrideSuppressionReason: event.target.value }))} required={needsOverride} />
         ) : null}
-        <button className="rounded-full bg-gray-950 px-4 py-2 text-sm font-semibold text-white" type="submit">
-          {form.acknowledgeDuplicates ? 'Create anyway' : 'Publish listing'}
+        <button className="rounded-full bg-gray-950 px-4 py-2 text-sm font-semibold text-white" type="submit" disabled={needsOverride && !form.overrideSuppressionReason.trim()}>
+          {form.acknowledgeDuplicates || needsOverride ? 'Create anyway' : 'Publish listing'}
         </button>
       </form>
-      {notice ? <p className="mt-3 whitespace-pre-wrap text-sm text-gray-800">{notice}</p> : null}
+      {notice ? <NoticeText text={notice} /> : null}
 
       {pending.length > 0 ? (
         <div className="mt-6 rounded-2xl border border-gray-200 bg-white p-4">
@@ -205,6 +209,23 @@ export default function ArtisansAdminPage() {
         </table>
       </div>
     </div>
+  );
+}
+
+function NoticeText({ text }: { text: string }) {
+  const parts = text.split(/(\/(?:artisans|vendors|professionals)\/[^\s)]+)/g);
+  return (
+    <p className="mt-3 whitespace-pre-wrap text-sm text-gray-800">
+      {parts.map((part, index) =>
+        part.startsWith('/') ? (
+          <a key={`${part}-${index}`} className="font-semibold underline" href={`https://buildmyhouse.app${part}`} target="_blank" rel="noreferrer">
+            {part}
+          </a>
+        ) : (
+          <span key={`${index}-${part.slice(0, 12)}`}>{part}</span>
+        ),
+      )}
+    </p>
   );
 }
 

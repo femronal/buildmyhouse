@@ -120,15 +120,16 @@ export default function ClaimLinkPanel({
             setNotice('Claim link copied. No email was sent.');
           }}
         >
-          <Copy className="h-3.5 w-3.5" /> Copy link
+          <Copy className="h-3.5 w-3.5" /> Copy claim link
         </button>
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm"
           disabled={busy || !email}
+          title={email ? 'Send the claim link to the email on this listing' : 'Add an email address before sending a claim invite'}
           onClick={() => run('post', '/email', email ? { email } : {})}
         >
-          <Mail className="h-3.5 w-3.5" /> Email invite to owner
+          <Mail className="h-3.5 w-3.5" /> Email claim invite to owner
         </button>
         <button
           type="button"

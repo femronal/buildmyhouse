@@ -654,6 +654,14 @@ export class ArtisansService implements OnModuleInit {
         sourceNotes: dto.sourceNotes,
         sourceUrls: dto.sourceUrls,
         lastResearchedAt: new Date(),
+        normalizedName:
+          dto.displayName !== undefined || dto.businessName !== undefined
+            ? normalizeName(dto.businessName || dto.displayName || existing.businessName || existing.displayName)
+            : undefined,
+        normalizedPhone: dto.phone !== undefined ? normalizePhone(dto.phone) : undefined,
+        normalizedWhatsapp: dto.whatsapp !== undefined ? normalizePhone(dto.whatsapp) : undefined,
+        normalizedEmail: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
+        websiteDomain: dto.website !== undefined ? websiteDomain(dto.website) : undefined,
       },
     });
     if (dto.capabilityIds) await this.replaceCapabilities(id, dto.capabilityIds);
@@ -888,6 +896,8 @@ export class ArtisansService implements OnModuleInit {
     if (phone) professionalOr.push({ normalizedPhone: phone });
     if (email) professionalOr.push({ normalizedEmail: email });
     if (domain) professionalOr.push({ websiteDomain: domain });
+    const phoneTail = (phone || whatsapp || '').slice(-10);
+    if (phoneTail.length >= 8) professionalOr.push({ whatsapp: { contains: phoneTail } });
     if (address) professionalOr.push({ address: { equals: input.address!.trim(), mode: 'insensitive' } });
     if (professionalOr.length) {
       const rows = await this.prisma.professionalListing.findMany({

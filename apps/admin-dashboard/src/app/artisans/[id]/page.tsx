@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import ClaimLinkPanel from '@/components/ClaimLinkPanel';
 import { useArtisan } from '@/hooks/useArtisans';
@@ -68,7 +69,13 @@ export default function ArtisanAdminDetailPage() {
           ))}
         </div>
         <textarea className="mt-3 w-full rounded-lg border px-3 py-2" placeholder="Internal note" value={notes} onChange={(event) => setNotes(event.target.value)} />
-        <button className="mt-2 rounded-full bg-gray-950 px-4 py-2 text-sm text-white" onClick={() => act(id, { internalNotes: notes })}>Save note</button>
+        <button className="mt-2 rounded-full bg-gray-950 px-4 py-2 text-sm text-white" onClick={() => {
+          const line = notes.trim();
+          if (!line) return;
+          const next = [artisan.internalNotes, line].filter(Boolean).join('\n');
+          void act(id, { internalNotes: next });
+          setNotes('');
+        }}>Save note</button>
         <button className="ml-2 mt-2 rounded-full border px-4 py-2 text-sm" onClick={() => act(id, { usedByBmh: true, usedByBmhNote: notes || 'Historical BMH engagement' })}>Mark used by BMH</button>
       </section>
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
@@ -98,6 +105,9 @@ export default function ArtisanAdminDetailPage() {
 }
 
 function ArtisanEditor({ artisan, onSave }: { artisan: Record<string, any>; onSave: (body: Record<string, unknown>) => Promise<void> }) {
+  const meta = useQuery({ queryKey: ['artisan-admin-meta'], queryFn: () => api.get<any>('/admin/artisans/meta') });
+  const trade = (meta.data?.trades || []).find((item: any) => item.key === artisan.primaryTrade?.key);
+  const [phone, setPhone] = useState(artisan.phone || '');
   const [email, setEmail] = useState(artisan.email || '');
   const [whatsapp, setWhatsapp] = useState(artisan.whatsapp || '');
   const [website, setWebsite] = useState(artisan.website || '');
@@ -106,29 +116,45 @@ function ArtisanEditor({ artisan, onSave }: { artisan: Record<string, any>; onSa
   const [address, setAddress] = useState(artisan.address || '');
   const [workingHours, setWorkingHours] = useState(artisan.workingHours || '');
   const [serviceCities, setServiceCities] = useState((artisan.serviceCities || []).join(', '));
+  const [serviceStates, setServiceStates] = useState((artisan.serviceStates || []).join(', '));
+  const [sourceUrls, setSourceUrls] = useState((artisan.sourceUrls || []).join('\n'));
+  const [internalNotes, setInternalNotes] = useState(artisan.internalNotes || '');
   const [confidence, setConfidence] = useState(artisan.researchConfidence || '');
+  const [capabilityIds, setCapabilityIds] = useState<string[]>((artisan.capabilities || []).map((row: any) => row.capabilityId || row.capability?.id).filter(Boolean));
+  const toggle = (id: string) => setCapabilityIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-4">
       <h2 className="font-semibold">Public and research details</h2>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <input className="rounded-lg border px-3 py-2" placeholder="Phone" value={phone} onChange={(event) => setPhone(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="Email" value={email} onChange={(event) => setEmail(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="WhatsApp" value={whatsapp} onChange={(event) => setWhatsapp(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="Website" value={website} onChange={(event) => setWebsite(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="Instagram" value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="Facebook" value={facebookUrl} onChange={(event) => setFacebookUrl(event.target.value)} />
         <input className="rounded-lg border px-3 py-2" placeholder="Business hours" value={workingHours} onChange={(event) => setWorkingHours(event.target.value)} />
-        <input className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Workshop address" value={address} onChange={(event) => setAddress(event.target.value)} />
-        <input className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Service cities" value={serviceCities} onChange={(event) => setServiceCities(event.target.value)} />
         <select className="rounded-lg border px-3 py-2" value={confidence} onChange={(event) => setConfidence(event.target.value)}>
           <option value="">Research confidence</option>
           <option value="high">High</option>
           <option value="medium">Medium</option>
         </select>
+        <input className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Workshop address" value={address} onChange={(event) => setAddress(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Service cities" value={serviceCities} onChange={(event) => setServiceCities(event.target.value)} />
+        <input className="rounded-lg border px-3 py-2" placeholder="Service states" value={serviceStates} onChange={(event) => setServiceStates(event.target.value)} />
+        <textarea className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Source URLs, one per line" value={sourceUrls} onChange={(event) => setSourceUrls(event.target.value)} />
+        <textarea className="rounded-lg border px-3 py-2 md:col-span-2" placeholder="Internal notes" value={internalNotes} onChange={(event) => setInternalNotes(event.target.value)} />
       </div>
+      {trade ? (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <CapabilityChecks title="Services" items={trade.services || []} selected={capabilityIds} onToggle={toggle} />
+          <CapabilityChecks title="Problems we fix" items={trade.problems || []} selected={capabilityIds} onToggle={toggle} />
+        </div>
+      ) : null}
       <button
         className="mt-3 rounded-full bg-gray-950 px-4 py-2 text-sm text-white"
         onClick={() => onSave({
-          email,
+          phone,
+          email: email.trim() || null,
           whatsapp,
           website,
           instagramUrl,
@@ -136,11 +162,32 @@ function ArtisanEditor({ artisan, onSave }: { artisan: Record<string, any>; onSa
           address,
           workingHours,
           serviceCities: serviceCities.split(',').map((item) => item.trim()).filter(Boolean),
+          serviceStates: serviceStates.split(',').map((item) => item.trim()).filter(Boolean),
+          sourceUrls: sourceUrls.split('\n').map((item) => item.trim()).filter(Boolean),
+          internalNotes,
+          capabilityIds,
           researchConfidence: confidence || undefined,
         })}
       >
         Save details
       </button>
     </section>
+  );
+}
+
+function CapabilityChecks({ title, items, selected, onToggle }: { title: string; items: Array<{ id: string; label: string }>; selected: string[]; onToggle: (id: string) => void }) {
+  if (!items.length) return null;
+  return (
+    <fieldset>
+      <legend className="text-sm font-semibold">{title}</legend>
+      <div className="mt-2 grid gap-1">
+        {items.map((item) => (
+          <label key={item.id} className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={selected.includes(item.id)} onChange={() => onToggle(item.id)} />
+            {item.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
