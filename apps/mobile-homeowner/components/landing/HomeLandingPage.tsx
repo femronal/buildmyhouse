@@ -1155,6 +1155,21 @@ export default function HomeLandingPage() {
                         </Pressable>
                       </Link>
                     </View>
+                    {[
+                      { href: '/vendors', label: 'Vendors' },
+                      { href: '/professionals', label: 'Professionals' },
+                      { href: '/artisans', label: 'Artisans' },
+                    ].map((item) => (
+                      <View key={item.href} className="w-1/2 mb-2 pr-2">
+                        <Link href={item.href as any} asChild>
+                          <Pressable accessibilityRole="link">
+                            <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                              {item.label}
+                            </Text>
+                          </Pressable>
+                        </Link>
+                      </View>
+                    ))}
                   </View>
                 </View>
 

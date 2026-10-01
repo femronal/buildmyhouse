@@ -24,7 +24,7 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
 
   return (
     <SeoContentShell>
-      <DirectorySiteHeader />
+      <DirectorySiteHeader current="artisans" />
       <SeoContentColumn>
         {query.isLoading ? <Text style={{ fontFamily: 'Poppins_400Regular' }}>Loading artisan…</Text> : null}
         {!query.isLoading && !artisan ? (

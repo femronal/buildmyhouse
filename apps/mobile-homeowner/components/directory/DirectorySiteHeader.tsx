@@ -17,6 +17,7 @@ const LOCKUP_WIDTH = 176;
 const NAV = [
   { key: 'vendors' as const, label: 'Vendors', href: '/vendors' },
   { key: 'professionals' as const, label: 'Professionals', href: '/professionals' },
+  { key: 'artisans' as const, label: 'Artisans', href: '/artisans' },
 ];
 
 function lockupUri(): string | undefined {
@@ -85,7 +86,7 @@ function BrandLockup() {
 export default function DirectorySiteHeader({
   current,
 }: {
-  current?: 'vendors' | 'professionals';
+  current?: 'vendors' | 'professionals' | 'artisans';
 }) {
   const { width } = useWindowDimensions();
   const pathname = usePathname();

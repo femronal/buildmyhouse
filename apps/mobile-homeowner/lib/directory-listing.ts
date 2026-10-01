@@ -4,9 +4,13 @@ export const DIRECTORY_PAGE_SIZE = 12;
 
 export const VENDOR_DIRECTORY_BASE_TITLE = 'Building Material Vendors in Nigeria';
 export const PROFESSIONAL_DIRECTORY_BASE_TITLE = 'Construction Professionals in Nigeria';
+export const ARTISAN_DIRECTORY_BASE_TITLE = 'Artisans and Repair Technicians in Nigeria';
 
 export const VENDOR_DIRECTORY_SUMMARY =
   'Discover listed building-material suppliers by what they sell, where they operate, and whether BuildMyHouse has verified their business identity. Listing is not the same as verification.';
+
+export const ARTISAN_DIRECTORY_SUMMARY =
+  'Find plumbers, bricklayers, electricians, roofers and other repair artisans by what needs fixing and where they work. A listing can be public while the profile is still thin. Listing is not the same as verification.';
 
 export const PROFESSIONAL_DIRECTORY_SUMMARY =
   'Find architects, engineers, quantity surveyors, surveyors, property lawyers and other professionals by what you need done, where they operate, and whether BuildMyHouse has checked their credentials. Listing is not the same as verification.';
@@ -19,6 +23,19 @@ export const VENDOR_QUERY_ORDER = [
   'verified',
   'wholesale',
   'delivery',
+  'sort',
+  'page',
+] as const;
+
+export const ARTISAN_QUERY_ORDER = [
+  'q',
+  'problem',
+  'trade',
+  'state',
+  'verified',
+  'usedByBmh',
+  'claimed',
+  'workshop',
   'sort',
   'page',
 ] as const;

@@ -190,7 +190,7 @@ export class ArtisansService implements OnModuleInit {
       this.prisma.artisanListing.findMany({
         where,
         include: LISTING_INCLUDE,
-        orderBy: [{ trustScore: 'desc' }, { displayName: 'asc' }],
+        orderBy: dto.sort === 'name' ? [{ displayName: 'asc' as const }] : [{ trustScore: 'desc' as const }, { displayName: 'asc' as const }],
         skip: (page - 1) * limit,
         take: limit,
       }),

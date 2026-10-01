@@ -183,10 +183,10 @@ function pageWindow(page: number, totalPages: number): number[] {
   return pages;
 }
 
-export function useDirectoryColumns(kind: 'vendor' | 'professional'): number {
+export function useDirectoryColumns(kind: 'vendor' | 'professional' | 'artisan'): number {
   const { width } = useWindowDimensions();
   if (width < 720) return 1;
-  if (kind === 'vendor' && width >= 1080) return 3;
+  if ((kind === 'vendor' || kind === 'artisan') && width >= 1080) return 3;
   return 2;
 }
 

@@ -22,6 +22,7 @@ export class PublicArtisanSearchDto {
   @IsOptional() @IsBoolean() @Type(() => Boolean) usedByBmh?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) claimed?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) hasWorkshop?: boolean;
+  @IsOptional() @IsIn(['best', 'name']) sort?: 'best' | 'name';
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page?: number = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(50) limit?: number = 20;
 }
