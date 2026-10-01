@@ -14,7 +14,15 @@ const ALLOWED_ROLES = ['general_contractor', 'admin'];
 export default function EmailLoginScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const params = useLocalSearchParams<{ accessToken?: string | string[]; mode?: string | string[] }>();
+  const params = useLocalSearchParams<{ accessToken?: string | string[]; mode?: string | string[]; claimToken?: string | string[]; slug?: string | string[] }>();
+  const claimToken = useMemo(() => {
+    const raw = params.claimToken;
+    return (Array.isArray(raw) ? raw[0] : raw)?.trim() || '';
+  }, [params.claimToken]);
+  const claimSlug = useMemo(() => {
+    const raw = params.slug;
+    return (Array.isArray(raw) ? raw[0] : raw)?.trim() || '';
+  }, [params.slug]);
   const accessToken = useMemo(
     () => {
       const raw = params.accessToken;
@@ -95,6 +103,14 @@ export default function EmailLoginScreen() {
       await queryClient.invalidateQueries({ queryKey: ['current-user'] });
       if (accessToken && data.redirectPath) {
         router.replace(data.redirectPath as any);
+        return;
+      }
+      if (claimToken === 'request') {
+        router.replace(`/claim-listing/request?slug=${encodeURIComponent(claimSlug)}` as any);
+        return;
+      }
+      if (claimToken) {
+        router.replace(`/claim-listing/${claimToken}` as any);
         return;
       }
       router.replace('/');

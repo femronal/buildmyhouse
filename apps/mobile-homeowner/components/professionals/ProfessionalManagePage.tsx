@@ -3,13 +3,8 @@ import { ActivityIndicator, Alert, Image, Platform, Pressable, Text, TextInput, 
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
-import {
-  SeoContentBackButton,
-  SeoContentColumn,
-  SeoContentShell,
-  seoContentTypography,
-} from '@/components/seo/SeoContentLayout';
-import { SeoHeading } from '@/components/seo/SeoHeading';
+import { SeoContentColumn, SeoContentShell } from '@/components/seo/SeoContentLayout';
+import ListingManageHeader from '@/components/listings/ListingManageHeader';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
@@ -267,6 +262,7 @@ export default function ProfessionalManagePage() {
     return (
       <SeoContentShell>
         <SeoContentColumn>
+          <ListingManageHeader fallbackHref="/professionals" />
           <View className="py-16 items-center">
             <ActivityIndicator color={LANDING_INK} />
           </View>
@@ -279,10 +275,7 @@ export default function ProfessionalManagePage() {
     return (
       <SeoContentShell>
         <SeoContentColumn>
-          <SeoContentBackButton fallbackHref="/professionals" />
-          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
-            Manage your listing
-          </SeoHeading>
+          <ListingManageHeader title="Manage your listing" fallbackHref="/professionals" />
           <Pressable
             onPress={() =>
               requireAuthToContinue({
@@ -309,10 +302,7 @@ export default function ProfessionalManagePage() {
     return (
       <SeoContentShell>
         <SeoContentColumn>
-          <SeoContentBackButton fallbackHref="/professionals" />
-          <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
-            No listing on this account
-          </SeoHeading>
+          <ListingManageHeader title="No listing on this account" fallbackHref="/professionals" />
           <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED, marginTop: 8 }}>
             {error || 'Claiming a professional listing is by invite only. Open the link BuildMyHouse sent you.'}
           </Text>
@@ -324,10 +314,7 @@ export default function ProfessionalManagePage() {
   return (
     <SeoContentShell>
       <SeoContentColumn>
-        <SeoContentBackButton fallbackHref={`/professionals/${profile.slug}`} />
-        <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold' }}>
-          {profile.displayName}
-        </SeoHeading>
+        <ListingManageHeader title={profile.displayName} fallbackHref={`/professionals/${profile.slug}`} />
         <Text className="text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
           Update the public profile. Licence files stay private until BuildMyHouse reviews them. You cannot change
           Listed, Credential checked, BMH Verified, or Used by BMH.

@@ -356,6 +356,7 @@ export class AuthService {
         verified: user.verified,
         profileSetupCompleted: !!user.profileSetupCompleted,
         managedParticipant: !!user.managedParticipant,
+        artisanClaimAccess: !!(user as { artisanClaimAccess?: boolean }).artisanClaimAccess,
         ...(user.role === 'admin'
           ? {
               adminDashboardAccess: !!user.adminDashboardAccess,
@@ -425,6 +426,8 @@ export class AuthService {
         verified: true,
         profileSetupCompleted: true,
         managedParticipant: true,
+        artisanClaimAccess: true,
+        listingManagementIntroSeenAt: true,
         phone: true,
         address: true,
         city: true,

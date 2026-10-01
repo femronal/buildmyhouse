@@ -546,6 +546,16 @@ export default function GCProfileScreen() {
           </View>
         </View>
 
+        <TouchableOpacity
+          onPress={() => router.push('/contractor/listings' as any)}
+          className="bg-white rounded-2xl px-4 py-4 mb-4 border border-gray-200"
+        >
+          <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Manage My Listings</Text>
+          <Text className="text-gray-500 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Artisan listings linked to this account.
+          </Text>
+        </TouchableOpacity>
+
         <View className="mb-6">
           <View className="flex-row bg-[#1E3A5F] rounded-2xl p-1 border border-blue-900">
             {[

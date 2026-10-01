@@ -222,6 +222,10 @@ model User {
   gcTermsAcceptedAt            DateTime?
   profileSetupCompleted        Boolean   @default(false)
   managedParticipant           Boolean   @default(false)
+  /// Set only when a valid artisan claim invitation is accepted. Skips the ordinary GC intro gate.
+  artisanClaimAccess           Boolean   @default(false)
+  /// Set when the post-claim "Manage your listings" intro has been opened or dismissed.
+  listingManagementIntroSeenAt DateTime?
   accessClaimedAt              DateTime?
   adminDashboardAccess         Boolean   @default(false)
   /// Bumped on suspend/revoke/session revoke so existing JWTs stop working.
@@ -264,6 +268,13 @@ model User {
   professionalClaimsReviewed   ProfessionalClaimRequest[] @relation("ProfessionalClaimReviewer")
   professionalEngagementsCreated ProfessionalEngagement[] @relation("ProfessionalEngagementCreator")
   contractorProfile            Contractor?             @relation("UserContractor")
+  artisanListingsOwned         ArtisanListing[]        @relation("ArtisanListingOwner")
+  artisanListingsCreated       ArtisanListing[]        @relation("ArtisanListingCreatedBy")
+  artisanMediaReviewed         ArtisanMedia[]          @relation("ArtisanMediaReviewer")
+  artisanChecksReviewed        ArtisanVerificationCheck[] @relation("ArtisanCheckReviewer")
+  artisanClaimInvitesCreated   ArtisanClaimInvite[]    @relation("ArtisanClaimInviteCreator")
+  artisanClaimRequests         ArtisanClaimRequest[]   @relation("ArtisanClaimRequester")
+  artisanClaimRequestsReviewed ArtisanClaimRequest[]   @relation("ArtisanClaimReviewer")
   orders                       Order[]                 @relation("UserOrders")
   reviews                      Review[]                @relation("UserReviews")
   paymentMethods               PaymentMethod[]
@@ -673,6 +684,8 @@ model Contractor {
   imageUrl                        String?
   hiringFee                       Float
   type                            String // 'general_contractor' | 'subcontractor'
+  /// general_contractor | artisan | both. Artisan claim does not create a new auth role.
+  platformKind                    String   @default("general_contractor")
   connectAccountId                String?
   professionalOnboardingCompleted Boolean  @default(false)
   professionalOnboardingSkipped   Boolean  @default(false)
@@ -684,6 +697,7 @@ model Contractor {
   contractorReviews Review[]                  @relation("ContractorReviews")
   bankAccounts      BankAccount[]             @relation("ContractorBankAccounts")
   certifications    ContractorCertification[] @relation("ContractorCertifications")
+  artisanListings   ArtisanListing[]          @relation("ArtisanListingContractor")
 
   @@map("contractors")
 }
@@ -4204,4 +4218,360 @@ model StartRequest {
 
   @@index([createdAt])
   @@map("start_requests")
+}
+
+// ===========================================================================
+// Artisan directory and repair-supply recruitment
+// Listed does not mean claimed, verified, or used by BuildMyHouse.
+// Trust score does not gate publication.
+// ===========================================================================
+
+enum ArtisanListingStatus {
+  listed
+  hidden
+  archived
+}
+
+enum ArtisanClaimStatus {
+  unclaimed
+  claim_pending
+  claimed
+}
+
+enum ArtisanVerificationStatus {
+  unverified
+  pending
+  verified
+  rejected
+  expired
+}
+
+enum ArtisanRecruitmentStatus {
+  discovered
+  researched
+  contacted
+  claim_invited
+  claimed
+  verification_pending
+  ready_for_jobs
+  active
+  temporarily_unavailable
+  paused
+  blocked
+}
+
+enum ArtisanSourceType {
+  grok_research
+  admin_research
+  self_submitted
+  claimed
+  referral
+  used_by_bmh
+}
+
+enum ArtisanCapabilityKind {
+  specialty
+  service
+  problem
+}
+
+enum ArtisanMediaType {
+  logo
+  workshop_cover
+  workshop
+  work_gallery
+  before
+  after
+}
+
+enum ArtisanMediaReviewStatus {
+  uploaded
+  reviewed
+  rejected
+}
+
+enum ArtisanVerificationCheckKey {
+  identity_checked
+  phone_checked
+  work_base_checked
+  trade_evidence_checked
+  business_registration_checked
+  references_checked
+  bmh_interview_completed
+}
+
+enum ArtisanCheckStatus {
+  pending
+  passed
+  failed
+  not_applicable
+}
+
+enum ArtisanReviewStatus {
+  pending
+  approved
+  rejected
+}
+
+model ArtisanTrade {
+  id          String  @id
+  key         String  @unique
+  label       String
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  capabilities ArtisanCapability[]
+  listings     ArtisanListing[]
+
+  @@map("artisan_trades")
+}
+
+model ArtisanCapability {
+  id               String                 @id
+  tradeId          String
+  kind             ArtisanCapabilityKind
+  key              String
+  label            String
+  professionalNote String?
+  professionalHref String?
+  sortOrder        Int                    @default(0)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  trade            ArtisanTrade             @relation(fields: [tradeId], references: [id], onDelete: Cascade)
+  listings         ArtisanListingCapability[]
+  problemServices  ArtisanProblemService[]  @relation("ArtisanProblem")
+  serviceProblems  ArtisanProblemService[]  @relation("ArtisanService")
+
+  @@unique([tradeId, kind, key])
+  @@index([kind, key])
+  @@map("artisan_capabilities")
+}
+
+model ArtisanProblemService {
+  problemId String
+  serviceId String
+
+  problem ArtisanCapability @relation("ArtisanProblem", fields: [problemId], references: [id], onDelete: Cascade)
+  service ArtisanCapability @relation("ArtisanService", fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([problemId, serviceId])
+  @@map("artisan_problem_services")
+}
+
+model ArtisanListing {
+  id              String  @id @default(uuid())
+  slug            String  @unique
+  displayName     String
+  businessName    String?
+  primaryTradeId  String
+  bio             String? @db.Text
+
+  phone    String?
+  email    String?
+  whatsapp String?
+  website  String?
+  publicPhone    Boolean @default(true)
+  publicEmail    Boolean @default(false)
+  publicWhatsapp Boolean @default(true)
+  publicWebsite  Boolean @default(true)
+  workingHours   String?
+
+  address String?
+  city    String?
+  state   String?
+  country String  @default("Nigeria")
+  serviceStates String[] @default([])
+  serviceCities String[] @default([])
+
+  listingStatus      ArtisanListingStatus      @default(listed)
+  claimStatus        ArtisanClaimStatus        @default(unclaimed)
+  verificationStatus ArtisanVerificationStatus @default(unverified)
+  recruitmentStatus  ArtisanRecruitmentStatus  @default(discovered)
+
+  linkedUserId       String?
+  linkedContractorId String?
+  claimedAt          DateTime?
+  usedByBmh          Boolean   @default(false)
+  usedByBmhNote      String?
+  usedByBmhSince     DateTime?
+
+  trustScore Int @default(0)
+
+  sourceType        ArtisanSourceType @default(admin_research)
+  sourceNotes       String?           @db.Text
+  sourceUrls        String[]          @default([])
+  discoveredAt      DateTime          @default(now())
+  lastResearchedAt  DateTime?
+
+  normalizedName     String?
+  normalizedPhone    String?
+  normalizedWhatsapp String?
+  normalizedEmail    String?
+  websiteDomain      String?
+
+  availabilityNotes String?
+  callOutFeeNotes   String?
+  inspectionFeeNotes String?
+  workmanshipNotes  String?
+  transportNotes    String?
+  emergencyJobs     Boolean @default(false)
+  sameDayJobs       Boolean @default(false)
+  weekendWork       Boolean @default(false)
+  crewSize          Int?
+  hasWorkshop       Boolean @default(false)
+  hasVehicle        Boolean @default(false)
+  ownsTools         Boolean @default(false)
+  canIssueInvoice   Boolean @default(false)
+  residentialExperience Boolean @default(true)
+  commercialExperience  Boolean @default(false)
+  lastContactedAt   DateTime?
+  internalNotes     String? @db.Text
+
+  createdByAdminId String?
+  listedAt         DateTime?
+  archivedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  primaryTrade ArtisanTrade @relation(fields: [primaryTradeId], references: [id], onDelete: Restrict)
+  owner        User?        @relation("ArtisanListingOwner", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  contractor   Contractor?  @relation("ArtisanListingContractor", fields: [linkedContractorId], references: [id], onDelete: SetNull)
+  createdBy    User?        @relation("ArtisanListingCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  capabilities ArtisanListingCapability[]
+  media        ArtisanMedia[]
+  checks       ArtisanVerificationCheck[]
+  claimInvites ArtisanClaimInvite[]
+  claimRequests ArtisanClaimRequest[]
+
+  @@index([listingStatus, primaryTradeId])
+  @@index([state, city])
+  @@index([claimStatus])
+  @@index([verificationStatus])
+  @@index([recruitmentStatus])
+  @@index([normalizedPhone])
+  @@index([normalizedWhatsapp])
+  @@index([normalizedEmail])
+  @@index([normalizedName])
+  @@map("artisan_listings")
+}
+
+model ArtisanListingCapability {
+  artisanListingId String
+  capabilityId     String
+
+  listing    ArtisanListing    @relation(fields: [artisanListingId], references: [id], onDelete: Cascade)
+  capability ArtisanCapability @relation(fields: [capabilityId], references: [id], onDelete: Cascade)
+
+  @@id([artisanListingId, capabilityId])
+  @@map("artisan_listing_capabilities")
+}
+
+model ArtisanMedia {
+  id               String                   @id @default(uuid())
+  artisanListingId String
+  mediaType        ArtisanMediaType
+  fileRef          String
+  label            String?
+  sortOrder        Int                      @default(0)
+  isPublic         Boolean                  @default(true)
+  reviewStatus     ArtisanMediaReviewStatus @default(uploaded)
+  rejectionReason  String?
+  uploadedByUserId String?
+  reviewedByAdminId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  listing    ArtisanListing @relation(fields: [artisanListingId], references: [id], onDelete: Cascade)
+  reviewedBy User?          @relation("ArtisanMediaReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([artisanListingId, mediaType])
+  @@map("artisan_media")
+}
+
+model ArtisanVerificationCheck {
+  id                String                     @id @default(uuid())
+  artisanListingId  String
+  checkKey          ArtisanVerificationCheckKey
+  status            ArtisanCheckStatus         @default(pending)
+  notes             String?
+  evidenceFileRef   String?
+  checkedByAdminId  String?
+  checkedAt         DateTime?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+
+  listing   ArtisanListing @relation(fields: [artisanListingId], references: [id], onDelete: Cascade)
+  checkedBy User?          @relation("ArtisanCheckReviewer", fields: [checkedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([artisanListingId, checkKey])
+  @@map("artisan_verification_checks")
+}
+
+model ArtisanClaimInvite {
+  id               String    @id @default(uuid())
+  artisanListingId String
+  tokenHash        String    @unique
+  email            String?
+  phone            String?
+  invitedByAdminId String?
+  expiresAt        DateTime
+  usedAt           DateTime?
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  listing   ArtisanListing @relation(fields: [artisanListingId], references: [id], onDelete: Cascade)
+  invitedBy User?          @relation("ArtisanClaimInviteCreator", fields: [invitedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([artisanListingId, expiresAt])
+  @@map("artisan_claim_invites")
+}
+
+model ArtisanClaimRequest {
+  id               String              @id @default(uuid())
+  artisanListingId String
+  requesterUserId  String?
+  requesterName    String
+  email            String
+  phone            String?
+  status           ArtisanReviewStatus @default(pending)
+  notes            String?
+  reviewedByAdminId String?
+  reviewedAt       DateTime?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  listing     ArtisanListing @relation(fields: [artisanListingId], references: [id], onDelete: Cascade)
+  requester   User?          @relation("ArtisanClaimRequester", fields: [requesterUserId], references: [id], onDelete: SetNull)
+  reviewedBy  User?          @relation("ArtisanClaimReviewer", fields: [reviewedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([artisanListingId, status])
+  @@map("artisan_claim_requests")
+}
+
+model ArtisanApplication {
+  id            String              @id @default(uuid())
+  displayName   String
+  businessName  String?
+  tradeKey      String
+  phone         String?
+  email         String?
+  whatsapp      String?
+  city          String?
+  state         String?
+  bio           String?
+  serviceLabels String[]            @default([])
+  status        ArtisanReviewStatus @default(pending)
+  createdListingId String?
+  reviewedByAdminId String?
+  reviewedAt    DateTime?
+  adminNotes    String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([status, createdAt])
+  @@map("artisan_applications")
 }

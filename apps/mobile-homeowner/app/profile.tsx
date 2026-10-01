@@ -6,6 +6,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
 import { useAllProjects } from '@/hooks';
 import { clearAuthToken } from '@/lib/auth';
+import { fetchManagedProfessionalProfile } from '@/lib/professional-manage';
+import { fetchManagedVendorProfile } from '@/lib/vendor-manage';
 import * as ImagePicker from 'expo-image-picker';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -41,8 +43,7 @@ function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
 }
 
 const menuItems: MenuItem[] = [
-  { icon: Briefcase, label: "Professional listing", route: "/professionals/manage" },
-  { icon: Briefcase, label: "Vendor listing", route: "/vendors/manage" },
+  { icon: Briefcase, label: "Manage My Listings", route: "manage-listings" },
   { icon: User, label: "Personal Information", route: "/personal-information" },
   { icon: Bell, label: "Notification Settings", route: "/notification-settings" },
   { icon: CreditCard, label: "Billing & Payments", route: "/billing-payments" },
@@ -70,7 +71,39 @@ export default function ProfileScreen() {
     router.replace('/login');
   };
 
+  const openManagedListings = async () => {
+    const [professional, vendor] = await Promise.allSettled([
+      fetchManagedProfessionalProfile(),
+      fetchManagedVendorProfile(),
+    ]);
+    const hasProfessional = professional.status === 'fulfilled';
+    const hasVendor = vendor.status === 'fulfilled';
+    if (hasProfessional && !hasVendor) {
+      router.push('/professionals/manage' as any);
+      return;
+    }
+    if (hasVendor && !hasProfessional) {
+      router.push('/vendors/manage' as any);
+      return;
+    }
+    Alert.alert(
+      'Manage My Listings',
+      hasProfessional && hasVendor
+        ? 'This account has a professional listing and a vendor listing.'
+        : 'Choose the listing you want to open.',
+      [
+        { text: 'Professional', onPress: () => router.push('/professionals/manage' as any) },
+        { text: 'Vendor', onPress: () => router.push('/vendors/manage' as any) },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
+
   const handleMenuPress = (item: MenuItem) => {
+    if (item.route === 'manage-listings') {
+      void openManagedListings();
+      return;
+    }
     if (item.route) {
       router.push(item.route as any);
       return;

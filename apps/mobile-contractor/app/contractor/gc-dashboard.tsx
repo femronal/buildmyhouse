@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Bell, Briefcase, Clock, Users, ChevronRight, MessageCircle, TrendingUp, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign, Camera } from "lucide-react-native";
 import { useState, useMemo, useEffect } from "react";
 import { usePendingRequests } from "../../hooks/useGC";
@@ -12,10 +12,15 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
+import { api } from "@/lib/api";
 
 export default function GCDashboardScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
   const router = useRouter();
+  const introParams = useLocalSearchParams<{ listingIntro?: string | string[] }>();
+  const listingIntro = (Array.isArray(introParams.listingIntro) ? introParams.listingIntro[0] : introParams.listingIntro) === '1';
+  const [showListingIntro, setShowListingIntro] = useState(false);
+  const [listingCount, setListingCount] = useState(0);
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stackBottomNav");
   const { showAlert } = useAppAlert();
@@ -47,6 +52,24 @@ export default function GCDashboardScreen() {
       router.replace('/contractor/onboarding');
     }
   }, [currentUser, loadingCurrentUser, router]);
+
+  useEffect(() => {
+    if (!listingIntro || loadingCurrentUser || !currentUser) return;
+    if ((currentUser as { listingManagementIntroSeenAt?: string | null }).listingManagementIntroSeenAt) return;
+    const timer = setTimeout(() => setShowListingIntro(true), 5000);
+    void api.get('/artisans/my-listings').then((rows) => setListingCount(Array.isArray(rows) ? rows.length : 0)).catch(() => setListingCount(0));
+    return () => clearTimeout(timer);
+  }, [listingIntro, loadingCurrentUser, currentUser]);
+
+  const dismissListingIntro = async (openListings: boolean) => {
+    setShowListingIntro(false);
+    try {
+      await api.post('/artisans/my-listings/intro-seen', {});
+    } catch {
+      // The modal should still close if the acknowledgement cannot be saved yet.
+    }
+    if (openListings) router.push('/contractor/listings' as any);
+  };
   
   // Fetch real pending requests
   const { data: pendingRequests = [] } = usePendingRequests();
@@ -849,6 +872,22 @@ export default function GCDashboardScreen() {
           <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Earnings</Text>
         </TouchableOpacity>
       </View>
+      <Modal visible={showListingIntro} transparent animationType="fade" onRequestClose={() => dismissListingIntro(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', padding: 24 }}>
+          <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 24 }}>
+            <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 28, color: '#171717' }}>Manage your listings</Text>
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, lineHeight: 22, color: '#525252', marginTop: 12 }}>
+              Your artisan listing is now connected to this account. You can update your business information, add photos, manage repair services and improve your Trust Score here.
+            </Text>
+            <TouchableOpacity onPress={() => dismissListingIntro(true)} style={{ marginTop: 20, backgroundColor: '#171717', borderRadius: 999, minHeight: 48, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ color: '#fff', fontFamily: 'Poppins_600SemiBold' }}>{listingCount > 1 ? 'Manage my listings' : 'Manage my listing'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => dismissListingIntro(false)} style={{ minHeight: 44, alignItems: 'center', justifyContent: 'center', marginTop: 8 }}>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: '#171717' }}>Not now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }

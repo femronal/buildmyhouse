@@ -87,10 +87,11 @@
     "/contractors/lagos/roof-leak-repair",
     "/vendors",
     "/vendors/apply",
+    "/artisans",
     "/professionals",
     "/professionals/apply",
     "/privacy-security",
     "/terms-conditions"
   ],
-  "prefixes": ["/articles/", "/blog/", "/services/", "/contractors/", "/vendors/", "/professionals/"]
+  "prefixes": ["/articles/", "/blog/", "/services/", "/contractors/", "/vendors/", "/professionals/", "/artisans/"]
 }

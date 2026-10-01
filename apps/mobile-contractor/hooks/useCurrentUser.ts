@@ -10,6 +10,8 @@ export interface User {
   role: string;
   verified: boolean;
   profileSetupCompleted?: boolean;
+  artisanClaimAccess?: boolean;
+  listingManagementIntroSeenAt?: string | null;
   address?: string | null;
   city?: string | null;
   state?: string | null;
