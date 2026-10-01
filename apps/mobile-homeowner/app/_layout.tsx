@@ -175,6 +175,7 @@ export default function RootLayout() {
           <Stack.Screen name="vendors/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="artisans/index" options={{ headerShown: false }} />
           <Stack.Screen name="artisans/apply" options={{ headerShown: false }} />
+          <Stack.Screen name="artisans/claim/[token]" options={{ headerShown: false }} />
           <Stack.Screen name="artisans/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="professionals/index" options={{ headerShown: false }} />
           <Stack.Screen name="professionals/apply" options={{ headerShown: false }} />

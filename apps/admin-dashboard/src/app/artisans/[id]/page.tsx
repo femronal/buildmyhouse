@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import ClaimLinkPanel from '@/components/ClaimLinkPanel';
 import { useArtisan } from '@/hooks/useArtisans';
 
 export default function ArtisanAdminDetailPage() {
@@ -34,6 +35,9 @@ export default function ArtisanAdminDetailPage() {
       </div>
       {notice ? <p className="text-sm">{notice}</p> : null}
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
+        <ClaimLinkPanel kind="artisans" id={id} email={artisan.email} />
+      </section>
+      <section className="rounded-2xl border border-gray-200 bg-white p-4">
         <h2 className="font-semibold">Overview</h2>
         <p className="mt-2 text-sm text-gray-700">Claim: {artisan.claimStatus}. Verification: {artisan.verificationStatus}. Recruitment: {artisan.recruitmentStatus}. Used by BMH: {artisan.usedByBmh ? 'Yes' : 'No'}.</p>
         <p className="mt-2 text-sm text-gray-700">Source: {artisan.sourceType}. Created {new Date(artisan.createdAt).toLocaleDateString()}.</p>
@@ -47,7 +51,7 @@ export default function ArtisanAdminDetailPage() {
             const invite = (await api.post(`/admin/artisans/${id}/claim-invitation`, {})) as { claimUrl: string };
             await navigator.clipboard.writeText(invite.claimUrl);
             setNotice(invite.claimUrl);
-          }}>Copy claim link</button>
+          }}>Email claim invite</button>
         </div>
       </section>
       <section className="rounded-2xl border border-gray-200 bg-white p-4">

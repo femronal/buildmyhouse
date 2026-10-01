@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { BadgeCheck, Eye, Plus, Search } from 'lucide-react';
+import { ClaimLinkCopyButton } from '@/components/ClaimLinkPanel';
 import {
   LISTING_STATUS_LABELS,
   OWNERSHIP_STATUS_LABELS,
@@ -202,6 +203,7 @@ export default function ProfessionalsPage() {
                   <th className="px-4 py-3 font-medium">Procurement</th>
                   <th className="px-4 py-3 font-medium">Used by BMH</th>
                   <th className="px-4 py-3 font-medium">Complete</th>
+                  <th className="px-4 py-3 font-medium">Claim link</th>
                   <th className="px-4 py-3 font-medium" />
                 </tr>
               </thead>
@@ -235,6 +237,7 @@ export default function ProfessionalsPage() {
                     </td>
                     <td className="px-4 py-3">{row.usedByBmh ? 'Yes' : '—'}</td>
                     <td className="px-4 py-3">{row.completenessScore}%</td>
+                    <td className="px-4 py-3"><ClaimLinkCopyButton kind="professionals" id={row.id} /></td>
                     <td className="px-4 py-3 text-right">
                       <Link href={`/professionals/${row.id}`} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border">
                         <Eye className="w-4 h-4" /> Open

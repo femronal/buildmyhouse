@@ -105,6 +105,30 @@ export class ArtisansAdminController {
     return this.artisans.setVerification(req.user.sub, id, body);
   }
 
+  @Get(':id/claim-link')
+  @RequirePermissions('artisans.view')
+  getClaimLink(@Param('id') id: string) {
+    return this.artisans.getClaimLink(id);
+  }
+
+  @Post(':id/claim-link')
+  @RequirePermissions('artisans.edit')
+  ensureClaimLink(@Req() req: any, @Param('id') id: string) {
+    return this.artisans.ensureClaimLink(id, req.user.sub);
+  }
+
+  @Post(':id/claim-link/email')
+  @RequirePermissions('artisans.edit')
+  emailClaimLink(@Req() req: any, @Param('id') id: string, @Body() body: AdminClaimInviteDto) {
+    return this.artisans.emailArtisanClaimLink(id, req.user.sub, body?.email);
+  }
+
+  @Post(':id/claim-link/regenerate')
+  @RequirePermissions('artisans.edit')
+  regenerateClaimLink(@Req() req: any, @Param('id') id: string) {
+    return this.artisans.regenerateArtisanClaimLink(id, req.user.sub);
+  }
+
   @Post(':id/claim-invitation')
   @RequirePermissions('artisans.review')
   invite(@Req() req: any, @Param('id') id: string, @Body() body: AdminClaimInviteDto) {

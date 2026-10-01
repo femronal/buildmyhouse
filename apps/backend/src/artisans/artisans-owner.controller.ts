@@ -6,7 +6,7 @@ import { ArtisanMediaInputDto, ArtisanOwnerUpdateDto, ArtisanVerificationSubmitD
 
 @Controller('artisans/my-listings')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('general_contractor', 'admin')
+@Roles('general_contractor', 'admin', 'homeowner')
 export class ArtisansOwnerController {
   constructor(private readonly artisans: ArtisansService) {}
 

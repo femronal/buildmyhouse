@@ -5,7 +5,7 @@ import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentColumn, SeoContentShell } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
-import { fetchArtisan, GC_CLAIM_ORIGIN } from '@/lib/public-artisans';
+import { fetchArtisan } from '@/lib/public-artisans';
 import { useWebSeo } from '@/lib/seo';
 import { TrustRing } from './TrustRing';
 
@@ -70,11 +70,8 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
                 <Text style={{ fontFamily: 'Poppins_600SemiBold', backgroundColor: '#171717', color: '#fff', overflow: 'hidden', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999 }}>Start a repair</Text>
               </Link>
             </View>
-            <Link href={`${GC_CLAIM_ORIGIN}/claim-listing/request?slug=${artisan.slug}` as any} style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: 'Poppins_600SemiBold', color: LANDING_INK }}>Claim this listing</Text>
-            </Link>
-            <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED, marginTop: 8, marginBottom: 32 }}>
-              Claiming does not verify the artisan. A low trust score does not hide this listing.
+            <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED, marginTop: 16, marginBottom: 32 }}>
+              A low trust score does not hide this listing. Listing is not verification.
             </Text>
           </>
         ) : null}

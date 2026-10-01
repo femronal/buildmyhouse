@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { ClaimLinkCopyButton } from '@/components/ClaimLinkPanel';
 import { useArtisans, useCreateArtisan } from '@/hooks/useArtisans';
 
 export default function ArtisansAdminPage() {
@@ -81,7 +82,7 @@ export default function ArtisansAdminPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              {['Artisan', 'Trade', 'Location', 'Trust', 'Claim', 'Verification', 'Recruitment', 'Used by BMH', 'Action'].map((heading) => (
+              {['Artisan', 'Trade', 'Location', 'Trust', 'Claim', 'Verification', 'Recruitment', 'Used by BMH', 'Claim link', 'Action'].map((heading) => (
                 <th key={heading} className="px-3 py-2 font-medium">{heading}</th>
               ))}
             </tr>
@@ -97,6 +98,7 @@ export default function ArtisansAdminPage() {
                 <td className="px-3 py-2">{row.verificationStatus}</td>
                 <td className="px-3 py-2">{String(row.recruitmentStatus).replaceAll('_', ' ')}</td>
                 <td className="px-3 py-2">{row.usedByBmh ? 'Yes' : 'No'}</td>
+                <td className="px-3 py-2"><ClaimLinkCopyButton kind="artisans" id={row.id} /></td>
                 <td className="px-3 py-2"><Link className="font-semibold" href={`/artisans/${row.id}`}>Open</Link></td>
               </tr>
             ))}

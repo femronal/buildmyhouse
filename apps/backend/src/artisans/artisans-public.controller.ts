@@ -26,7 +26,7 @@ export class ArtisansPublicController {
 
   @Post('claim/:token')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('general_contractor', 'admin')
+  @Roles('general_contractor', 'admin', 'homeowner')
   acceptClaim(@Param('token') token: string, @Req() req: any) {
     return this.artisans.acceptClaim(token, req.user.sub);
   }

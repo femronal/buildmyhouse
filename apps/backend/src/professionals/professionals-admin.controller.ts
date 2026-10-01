@@ -177,6 +177,30 @@ export class ProfessionalsAdminController {
     return this.professionals.reviewClaim(req.user.sub, id, body);
   }
 
+  @Get(':id/claim-link')
+  @RequirePermissions('professionals.view')
+  getClaimLink(@Param('id') id: string) {
+    return this.professionals.getClaimLink(id);
+  }
+
+  @Post(':id/claim-link')
+  @RequirePermissions('professionals.edit')
+  ensureClaimLink(@Req() req: any, @Param('id') id: string) {
+    return this.professionals.ensureClaimLink(id, req.user.sub);
+  }
+
+  @Post(':id/claim-link/email')
+  @RequirePermissions('professionals.edit')
+  emailClaimLink(@Req() req: any, @Param('id') id: string, @Body() body: ProfessionalClaimInviteDto) {
+    return this.professionals.emailClaimLink(id, req.user.sub, body.email);
+  }
+
+  @Post(':id/claim-link/regenerate')
+  @RequirePermissions('professionals.edit')
+  regenerateClaimLink(@Req() req: any, @Param('id') id: string) {
+    return this.professionals.regenerateClaimLink(id, req.user.sub);
+  }
+
   @Post(':id/claim-invites')
   @RequirePermissions('professionals.edit')
   claimInvite(@Req() req: any, @Param('id') id: string, @Body() body: ProfessionalClaimInviteDto) {

@@ -45,7 +45,6 @@ import type {
 } from './dto/artisans.dto';
 
 const PUBLIC_SITE = 'https://buildmyhouse.app';
-const GC_SITE = 'https://gc.buildmyhouse.app';
 
 const LISTING_INCLUDE = {
   primaryTrade: true,
@@ -280,6 +279,9 @@ export class ArtisansService implements OnModuleInit {
       include: { primaryTrade: true },
     });
     if (!listing) throw new NotFoundException('Artisan listing not found');
+    if (!invite.openedAt) {
+      await this.prisma.artisanClaimInvite.update({ where: { id: invite.id }, data: { openedAt: new Date() } });
+    }
     return {
       displayName: listing.displayName,
       slug: listing.slug,
@@ -294,8 +296,8 @@ export class ArtisansService implements OnModuleInit {
   async acceptClaim(rawToken: string, userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Account not found');
-    if (user.role !== 'general_contractor' && user.role !== 'admin') {
-      throw new ForbiddenException('Claim this listing from a BuildMyHouse contractor account.');
+    if (!['general_contractor', 'admin', 'homeowner'].includes(user.role)) {
+      throw new ForbiddenException('Sign in with the account that should manage this listing.');
     }
     const invite = await this.findInvite(rawToken);
     const listing = await this.prisma.artisanListing.findUnique({ where: { id: invite.artisanListingId } });
@@ -303,7 +305,10 @@ export class ArtisansService implements OnModuleInit {
     if (listing.linkedUserId && listing.linkedUserId !== userId) {
       throw new ConflictException('This listing has already been claimed');
     }
-    const contractor = await this.ensureContractor(user.id, user.fullName, user.profileSetupCompleted);
+    const contractor =
+      user.role === 'general_contractor' || user.role === 'admin'
+        ? await this.ensureContractor(user.id, user.fullName, user.profileSetupCompleted)
+        : null;
     const recruitment = this.advanceRecruitment(listing.recruitmentStatus, ArtisanRecruitmentStatus.claimed);
     await this.prisma.$transaction([
       this.prisma.artisanClaimInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } }),
@@ -311,13 +316,16 @@ export class ArtisansService implements OnModuleInit {
         where: { id: listing.id },
         data: {
           linkedUserId: userId,
-          linkedContractorId: contractor.id,
+          linkedContractorId: contractor?.id,
           claimedAt: listing.claimedAt || new Date(),
           claimStatus: ArtisanClaimStatus.claimed,
           recruitmentStatus: recruitment,
         },
       }),
-      this.prisma.user.update({ where: { id: userId }, data: { artisanClaimAccess: true } }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { artisanClaimAccess: user.role === 'general_contractor' || user.role === 'admin' },
+      }),
     ]);
     const updated = await this.reload(listing.id);
     return {
@@ -697,11 +705,12 @@ export class ArtisansService implements OnModuleInit {
     const listing = await this.prisma.artisanListing.findUnique({ where: { id } });
     if (!listing) throw new NotFoundException('Artisan not found');
     const raw = randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + (dto.expiresInDays || 14) * 24 * 60 * 60 * 1000);
-    await this.prisma.artisanClaimInvite.create({
+    const expiresAt = new Date(Date.now() + (dto.expiresInDays || 90) * 24 * 60 * 60 * 1000);
+    const created = await this.prisma.artisanClaimInvite.create({
       data: {
         artisanListingId: id,
         tokenHash: hashToken(raw),
+        rawToken: raw,
         email: dto.email || listing.email,
         phone: dto.phone || listing.phone,
         invitedByAdminId: adminId,
@@ -712,7 +721,7 @@ export class ArtisansService implements OnModuleInit {
       where: { id },
       data: { recruitmentStatus: this.advanceRecruitment(listing.recruitmentStatus, ArtisanRecruitmentStatus.claim_invited) },
     });
-    const claimUrl = `${GC_SITE}/claim-listing/${raw}`;
+    const claimUrl = `https://buildmyhouse.app/artisans/claim/${raw}`;
     const to = dto.email || listing.email;
     let emailSent = false;
     if (to && this.email) {
@@ -725,8 +734,60 @@ export class ArtisansService implements OnModuleInit {
         html: `<p>BuildMyHouse added <strong>${safeName}</strong> to the artisan directory.</p><p><a href="${claimUrl}">Claim my listing</a></p><p>Claiming lets you add a logo, workshop photo and services. It does not verify the business.</p>`,
         text: `Claim your artisan listing: ${claimUrl}`,
       });
+      if (emailSent) {
+        await this.prisma.artisanClaimInvite.update({ where: { id: created.id }, data: { emailedAt: new Date() } });
+      }
     }
     return { claimUrl, expiresAt, emailSent };
+  }
+
+  async getClaimLink(id: string) {
+    const listing = await this.requireArtisan(id);
+    return this.artisanClaimLinkState(listing);
+  }
+
+  async ensureClaimLink(id: string, adminId: string) {
+    const listing = await this.requireArtisan(id);
+    if (listing.linkedUserId) return this.artisanClaimLinkState(listing);
+    const current = await this.latestArtisanInvite(id);
+    if (current) return this.artisanClaimLinkState(listing, current);
+    const created = await this.insertArtisanInvite(listing, adminId);
+    return this.artisanClaimLinkState(listing, created);
+  }
+
+  async emailArtisanClaimLink(id: string, adminId: string, email?: string) {
+    const listing = await this.requireArtisan(id);
+    const to = (email || listing.email || '').trim();
+    if (!to) throw new BadRequestException('This listing has no email address. Copy the claim link and send it yourself.');
+    let invite = await this.latestArtisanInvite(id);
+    if (!invite?.rawToken) {
+      if (invite) throw new BadRequestException('A valid link was already issued, but it cannot be displayed. Regenerate the link before emailing it.');
+      invite = await this.insertArtisanInvite(listing, adminId);
+    }
+    const claimUrl = `https://buildmyhouse.app/artisans/claim/${invite.rawToken}`;
+    const sent = this.email
+      ? await this.email.send({
+          to,
+          subject: 'Claim your BuildMyHouse artisan listing',
+          html: `<p><a href="${claimUrl}">Claim your listing</a></p>`,
+          text: `Claim your artisan listing: ${claimUrl}`,
+        })
+      : false;
+    if (sent) {
+      invite = await this.prisma.artisanClaimInvite.update({ where: { id: invite.id }, data: { emailedAt: new Date(), email: to } });
+    }
+    return { ...(await this.artisanClaimLinkState(listing, invite)), emailSent: sent, email: to };
+  }
+
+  async regenerateArtisanClaimLink(id: string, adminId: string) {
+    const listing = await this.requireArtisan(id);
+    if (listing.linkedUserId) throw new ConflictException('This listing is already claimed.');
+    await this.prisma.artisanClaimInvite.updateMany({
+      where: { artisanListingId: id, usedAt: null, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    const created = await this.insertArtisanInvite(listing, adminId);
+    return this.artisanClaimLinkState(listing, created);
   }
 
   async listClaims() {
@@ -798,6 +859,74 @@ export class ArtisansService implements OnModuleInit {
     });
     await this.prisma.user.update({ where: { id: userId }, data: { artisanClaimAccess: true } });
     return this.adminGet(listingId);
+  }
+
+  private async requireArtisan(id: string) {
+    const listing = await this.prisma.artisanListing.findUnique({ where: { id } });
+    if (!listing) throw new NotFoundException('Artisan not found');
+    return listing;
+  }
+
+  private async latestArtisanInvite(listingId: string) {
+    const invites = await this.prisma.artisanClaimInvite.findMany({
+      where: { artisanListingId: listingId, usedAt: null, revokedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+    return invites.find((invite) => invite.expiresAt.getTime() > Date.now()) || null;
+  }
+
+  private async insertArtisanInvite(listing: { id: string; email?: string | null; phone?: string | null }, adminId: string) {
+    const rawToken = randomBytes(32).toString('hex');
+    return this.prisma.artisanClaimInvite.create({
+      data: {
+        artisanListingId: listing.id,
+        tokenHash: hashToken(rawToken),
+        rawToken,
+        email: listing.email || null,
+        phone: listing.phone || null,
+        invitedByAdminId: adminId,
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  private async artisanClaimLinkState(
+    listing: { id: string; linkedUserId?: string | null; claimedAt?: Date | null },
+    invite?: { rawToken?: string | null; expiresAt: Date; emailedAt?: Date | null } | null,
+  ) {
+    const current = invite === undefined ? await this.latestArtisanInvite(listing.id) : invite;
+    if (listing.linkedUserId) {
+      const owner = await this.prisma.user.findUnique({ where: { id: listing.linkedUserId }, select: { fullName: true, email: true } });
+      return {
+        status: 'claimed' as const,
+        claimUrl: null,
+        expiresAt: null,
+        emailedAt: current?.emailedAt || null,
+        claimedAt: listing.claimedAt || null,
+        claimedBy: owner?.fullName || owner?.email || null,
+        legacy: false,
+      };
+    }
+    if (!current) {
+      const expired = await this.prisma.artisanClaimInvite.findFirst({
+        where: { artisanListingId: listing.id, usedAt: null, revokedAt: null, expiresAt: { lt: new Date() } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (expired) {
+        return { status: 'expired' as const, claimUrl: null, expiresAt: expired.expiresAt, emailedAt: expired.emailedAt, claimedAt: null, claimedBy: null, legacy: false };
+      }
+      return { status: 'not_generated' as const, claimUrl: null, expiresAt: null, emailedAt: null, claimedAt: null, claimedBy: null, legacy: false };
+    }
+    return {
+      status: current.emailedAt ? ('emailed' as const) : ('generated' as const),
+      claimUrl: current.rawToken ? `https://buildmyhouse.app/artisans/claim/${current.rawToken}` : null,
+      expiresAt: current.expiresAt,
+      emailedAt: current.emailedAt || null,
+      claimedAt: null,
+      claimedBy: null,
+      legacy: !current.rawToken,
+    };
   }
 
   private async requireOwned(userId: string, id: string) {

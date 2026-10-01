@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { CredentialCheckPanel } from '@/components/CredentialCheckPanel';
+import ClaimLinkPanel from '@/components/ClaimLinkPanel';
 import {
   LISTING_STATUS_LABELS,
   OWNERSHIP_STATUS_LABELS,
@@ -142,11 +143,11 @@ function Overview({
       <section className="bg-white rounded-xl shadow p-5 space-y-3 lg:col-span-2">
         <h2 className="font-semibold">Owner claim</h2>
         <p className="text-sm text-gray-600">
-          {data.claimedAt
-            ? `Claimed by owner${data.claimEmail ? ` · ${data.claimEmail}` : ''} · ${new Date(data.claimedAt).toLocaleString()}`
-            : 'Not claimed by an owner. The ownership flag above is a separate admin review.'}
+          {data.claimedByUserId || data.linkedUserId
+            ? `Claimed by owner${data.claimEmail ? ` · ${data.claimEmail}` : ''} · ${data.claimedAt ? new Date(data.claimedAt).toLocaleString() : ''}`
+            : 'Not claimed yet. An ownership flag is not the same as a completed claim.'}
         </p>
-        <ClaimInviteForm data={data} actions={actions} />
+        <ClaimLinkPanel kind="professionals" id={data.id} email={data.email || data.claimEmail} />
       </section>
       <section className="bg-white rounded-xl shadow p-5 lg:col-span-2">
         {checked && primary && (

@@ -254,11 +254,8 @@ export function toPublicTrust(listing: ListingWithPublicRelations): PublicTrust 
   const cred = publicCredentialLabel(listing);
   return {
     listingLabel: 'Listed',
-    claimedLabel: listing.claimedAt
-      ? 'Claimed by owner'
-      : listing.ownershipStatus === ProfessionalOwnershipStatus.claimed
-        ? 'Claimed'
-        : null,
+    claimedLabel:
+      listing.claimedAt && (listing.claimedByUserId || listing.linkedUserId) ? 'Claimed by owner' : null,
     credentialLabel: cred.label,
     credentialDetail: cred.detail,
     checkedOn: cred.checkedOn,

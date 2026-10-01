@@ -1073,12 +1073,13 @@ export class ProfessionalsService implements OnModuleInit {
     if (!email) throw new BadRequestException('Invite email is required');
 
     const rawToken = randomBytes(32).toString('hex');
-    const expiresInDays = dto.expiresInDays ?? 14;
+    const expiresInDays = dto.expiresInDays ?? 90;
     const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
     const invite = await this.prisma.professionalClaimInvite.create({
       data: {
         professionalListingId: id,
         tokenHash: this.hashToken(rawToken),
+        rawToken,
         email,
         phone: dto.phone || listing.phone || listing.whatsapp || null,
         invitedByAdminId: adminId,
@@ -1105,8 +1106,69 @@ export class ProfessionalsService implements OnModuleInit {
           text: `Claim your professional listing: ${claimUrl}`,
         })
       : false;
+    if (emailSent) {
+      await this.prisma.professionalClaimInvite.update({ where: { id: invite.id }, data: { emailedAt: new Date() } });
+    }
 
     return { id: invite.id, expiresAt, claimUrl, email, emailSent, status: 'pending' as const };
+  }
+
+  async getClaimLink(id: string) {
+    const listing = await this.requireProfessional(id);
+    return this.claimLinkState(listing);
+  }
+
+  async ensureClaimLink(id: string, adminId: string) {
+    const listing = await this.requireProfessional(id);
+    const current = await this.latestActiveInvite(id);
+    if (listing.claimedByUserId || listing.linkedUserId) return this.claimLinkState(listing);
+    if (current?.rawToken) return this.claimLinkState(listing, current);
+    if (current && !current.rawToken) return this.claimLinkState(listing, current);
+    const created = await this.insertClaimInvite(listing, adminId, null);
+    return this.claimLinkState(listing, created);
+  }
+
+  async emailClaimLink(id: string, adminId: string, email?: string) {
+    const listing = await this.requireProfessional(id);
+    const to = (email || listing.email || listing.claimEmail || '').trim();
+    if (!to) throw new BadRequestException('This listing has no email address. Copy the claim link and send it yourself.');
+    let invite = await this.latestActiveInvite(id);
+    if (!invite?.rawToken) {
+      if (invite) throw new BadRequestException('A valid link was already issued, but it cannot be displayed. Regenerate the link before emailing it.');
+      invite = await this.insertClaimInvite(listing, adminId, to);
+    }
+    const claimUrl = `https://buildmyhouse.app/professionals/claim/${invite.rawToken}`;
+    const safeName = listing.displayName.replace(/[&<>"]/g, (char) =>
+      char === '&' ? '&amp;' : char === '<' ? '&lt;' : char === '>' ? '&gt;' : '&quot;',
+    );
+    const emailSent = this.email
+      ? await this.email.send({
+          to,
+          subject: 'Claim your BuildMyHouse professional listing',
+          html: `<p>BuildMyHouse invited you to claim <strong>${safeName}</strong>.</p><p><a href="${claimUrl}">Claim listing</a></p>`,
+          text: `Claim your professional listing: ${claimUrl}`,
+        })
+      : false;
+    if (emailSent) {
+      invite = await this.prisma.professionalClaimInvite.update({
+        where: { id: invite.id },
+        data: { emailedAt: new Date(), email: to },
+      });
+    }
+    return { ...(await this.claimLinkState(listing, invite)), emailSent, email: to };
+  }
+
+  async regenerateClaimLink(id: string, adminId: string) {
+    const listing = await this.requireProfessional(id);
+    if (listing.claimedByUserId || listing.linkedUserId) {
+      throw new ConflictException('This listing is already claimed.');
+    }
+    await this.prisma.professionalClaimInvite.updateMany({
+      where: { professionalListingId: id, usedAt: null, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    const created = await this.insertClaimInvite(listing, adminId, null);
+    return this.claimLinkState(listing, created);
   }
 
   async resendClaimInvite(inviteId: string, adminId: string) {
@@ -1131,6 +1193,9 @@ export class ProfessionalsService implements OnModuleInit {
 
   async previewClaim(rawToken: string) {
     const invite = await this.findValidInvite(rawToken);
+    if (!invite.openedAt) {
+      await this.prisma.professionalClaimInvite.update({ where: { id: invite.id }, data: { openedAt: new Date() } });
+    }
     const listing = await this.prisma.professionalListing.findUnique({ where: { id: invite.professionalListingId } });
     if (!listing) throw new NotFoundException('Professional not found');
     return {
@@ -1535,6 +1600,73 @@ export class ProfessionalsService implements OnModuleInit {
       documents: row.documents || [],
       applications: row.applications,
       enquiries: row.enquiries,
+    };
+  }
+
+  private async requireProfessional(id: string) {
+    const listing = await this.prisma.professionalListing.findUnique({ where: { id } });
+    if (!listing) throw new NotFoundException('Professional not found');
+    return listing;
+  }
+
+  private async latestActiveInvite(listingId: string) {
+    const invites = await this.prisma.professionalClaimInvite.findMany({
+      where: { professionalListingId: listingId, usedAt: null, revokedAt: null },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    });
+    return invites.find((invite) => invite.expiresAt.getTime() > Date.now()) || null;
+  }
+
+  private async insertClaimInvite(listing: { id: string; email?: string | null; phone?: string | null; whatsapp?: string | null }, adminId: string, email: string | null) {
+    const rawToken = randomBytes(32).toString('hex');
+    return this.prisma.professionalClaimInvite.create({
+      data: {
+        professionalListingId: listing.id,
+        tokenHash: this.hashToken(rawToken),
+        rawToken,
+        email: email || listing.email || null,
+        phone: listing.phone || listing.whatsapp || null,
+        invitedByAdminId: adminId,
+        expiresAt: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+      },
+    });
+  }
+
+  private async claimLinkState(listing: { id: string; claimedAt?: Date | null; claimedByUserId?: string | null; linkedUserId?: string | null; claimEmail?: string | null }, invite?: { rawToken?: string | null; expiresAt: Date; emailedAt?: Date | null; openedAt?: Date | null; usedAt?: Date | null; revokedAt?: Date | null } | null) {
+    const current = invite === undefined ? await this.latestActiveInvite(listing.id) : invite;
+    if (listing.claimedByUserId || listing.linkedUserId) {
+      const owner = listing.claimedByUserId
+        ? await this.prisma.user.findUnique({ where: { id: listing.claimedByUserId }, select: { fullName: true, email: true } })
+        : null;
+      return {
+        status: 'claimed' as const,
+        claimUrl: null,
+        expiresAt: null,
+        emailedAt: current?.emailedAt || null,
+        claimedAt: listing.claimedAt || null,
+        claimedBy: owner?.fullName || owner?.email || null,
+        legacy: false,
+      };
+    }
+    if (!current) {
+      const expired = await this.prisma.professionalClaimInvite.findFirst({
+        where: { professionalListingId: listing.id, usedAt: null, revokedAt: null, expiresAt: { lt: new Date() } },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (expired) {
+        return { status: 'expired' as const, claimUrl: null, expiresAt: expired.expiresAt, emailedAt: expired.emailedAt, claimedAt: null, claimedBy: null, legacy: false };
+      }
+      return { status: 'not_generated' as const, claimUrl: null, expiresAt: null, emailedAt: null, claimedAt: null, claimedBy: null, legacy: false };
+    }
+    return {
+      status: current.emailedAt ? ('emailed' as const) : ('generated' as const),
+      claimUrl: current.rawToken ? `https://buildmyhouse.app/professionals/claim/${current.rawToken}` : null,
+      expiresAt: current.expiresAt,
+      emailedAt: current.emailedAt || null,
+      claimedAt: null,
+      claimedBy: null,
+      legacy: !current.rawToken,
     };
   }
 

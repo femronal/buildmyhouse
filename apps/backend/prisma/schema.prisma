@@ -4142,10 +4142,14 @@ model ProfessionalClaimInvite {
   id                    String    @id @default(uuid())
   professionalListingId String
   tokenHash             String    @unique
+  /// Admin-only copy of the URL token. Never returned by public APIs.
+  rawToken              String?
   email                 String?
   phone                 String?
   invitedByAdminId      String?
   expiresAt             DateTime
+  emailedAt             DateTime?
+  openedAt              DateTime?
   usedAt                DateTime?
   revokedAt             DateTime?
   createdAt             DateTime  @default(now())
@@ -4515,10 +4519,14 @@ model ArtisanClaimInvite {
   id               String    @id @default(uuid())
   artisanListingId String
   tokenHash        String    @unique
+  /// Admin-only copy of the URL token. Never returned by public APIs.
+  rawToken         String?
   email            String?
   phone            String?
   invitedByAdminId String?
   expiresAt        DateTime
+  emailedAt        DateTime?
+  openedAt         DateTime?
   usedAt           DateTime?
   revokedAt        DateTime?
   createdAt        DateTime  @default(now())
