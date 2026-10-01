@@ -44,7 +44,7 @@ export default function ArtisanAdminDetailPage() {
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/verification`, { verificationStatus: 'verified', checkKey: 'identity_checked', checkStatus: 'passed' })}>Mark verified</button>
           <button className="rounded-full border px-3 py-2 text-sm" onClick={() => act(`${id}/verification`, { verificationStatus: 'rejected' })}>Reject verification</button>
           <button className="rounded-full border px-3 py-2 text-sm" onClick={async () => {
-            const invite = await api.post(`/admin/artisans/${id}/claim-invitation`, {});
+            const invite = (await api.post(`/admin/artisans/${id}/claim-invitation`, {})) as { claimUrl: string };
             await navigator.clipboard.writeText(invite.claimUrl);
             setNotice(invite.claimUrl);
           }}>Copy claim link</button>

@@ -37,7 +37,7 @@ export default function ArtisansAdminPage() {
           event.preventDefault();
           setNotice('');
           try {
-            const created = await create.mutateAsync(form);
+            const created = (await create.mutateAsync(form)) as { publicUrl?: string; trustScore?: number };
             setNotice(`Published ${created.publicUrl}. Trust score ${created.trustScore}%.`);
             setForm({ ...form, displayName: '', phone: '', city: '', bio: '', acknowledgeDuplicates: false });
           } catch (error) {
