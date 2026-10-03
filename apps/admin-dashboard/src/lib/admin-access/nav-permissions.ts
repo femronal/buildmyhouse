@@ -5,7 +5,6 @@ export const NAV_PERMISSION_MAP: Record<string, string> = {
   '/contractors': 'contractors.view',
   '/vendors': 'vendors.view',
   '/artisans': 'artisans.view',
-  '/join-requests': 'join_requests.view',
   '/professionals': 'professionals.view',
   '/projects': 'projects.view',
   '/verification': 'verification.view',

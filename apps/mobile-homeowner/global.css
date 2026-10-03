@@ -2087,22 +2087,6 @@ html.bmh-svc-active body {
   overflow-x: hidden;
 }
 
-.bmh-join-screen {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: #ffffff;
-  color: #000000;
-}
-
-.bmh-join-sticky {
-  position: sticky;
-  bottom: 0;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: #ffffff;
-}
-
 .bmh-start-continue {
   position: sticky !important;
   bottom: calc(16px + env(safe-area-inset-bottom, 0px));
