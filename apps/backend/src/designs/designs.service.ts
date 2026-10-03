@@ -136,7 +136,7 @@ export class DesignsService {
       });
       if (!contractor?.verified) {
         throw new ForbiddenException(
-          'Your account is not verified yet. Upload required verification documents and wait for admin approval before uploading plans.',
+          "Your account hasn't been approved yet. BuildMyHouse will let you know once we've checked your details.",
         );
       }
     }

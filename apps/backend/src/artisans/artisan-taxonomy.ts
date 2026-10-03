@@ -276,9 +276,10 @@ export const ARTISAN_TRADES: ArtisanTradeSeed[] = [
     key: 'pest-treatment',
     label: 'Pest / Property Treatment Technician',
     specialties: ['Insects', 'Rodents', 'Treatment'],
-    services: ['Pest treatment', 'Termite inspection support'],
+    services: ['Pest treatment', 'Termite inspection support', 'Fumigation'],
     problems: [
       { label: 'Pest infestation', services: ['Pest treatment'] },
+      { label: 'Cockroaches, ants or bedbugs', services: ['Fumigation', 'Pest treatment'] },
     ],
   },
   {
@@ -290,6 +291,30 @@ export const ARTISAN_TRADES: ArtisanTradeSeed[] = [
     problems: [
       { label: 'Washing machine not working', services: ['Washing machine repair'] },
       { label: 'Cooker not heating', services: ['Cooker repair'] },
+    ],
+  },
+  {
+    // TODO(BMH): confirm the label "Cleaning Service".
+    id: 'trade_cleaning',
+    key: 'cleaning-upkeep',
+    label: 'Cleaning Service',
+    specialties: ['Home cleaning', 'After-build cleaning', 'Office cleaning', 'Laundry and ironing'],
+    services: [
+      'Regular home cleaning',
+      'Deep cleaning',
+      'Post-construction cleaning',
+      'Office cleaning',
+      'Laundry and ironing',
+      'Window and glass cleaning',
+      'Sofa and carpet cleaning',
+      'Water tank cleaning',
+    ],
+    problems: [
+      { label: 'House needs a deep clean', services: ['Deep cleaning'] },
+      { label: 'Dust and debris after building work', services: ['Post-construction cleaning'] },
+      { label: 'Dirty or stained sofa or carpet', services: ['Sofa and carpet cleaning'] },
+      { label: 'Office needs regular cleaning', services: ['Office cleaning'] },
+      { label: 'Water tank needs cleaning', services: ['Water tank cleaning'] },
     ],
   },
 ];

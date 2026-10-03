@@ -304,11 +304,29 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (normalized === '/join') {
+    return {
+      title: 'Join BuildMyHouse | Cleaners, repair trades, builders, professionals and shops in Nigeria',
+      description: 'Join BuildMyHouse in a few taps. Tell us what you do and where you work, then continue on WhatsApp. No documents needed to start.',
+      canonicalPath: '/join',
+      robots: 'index,follow',
+    };
+  }
+
+  if (normalized.startsWith('/join/')) {
+    return {
+      title: 'Join BuildMyHouse',
+      description: 'Tell us what you do, then continue on WhatsApp.',
+      canonicalPath: normalized,
+      robots: 'noindex,follow',
+    };
+  }
+
   if (normalized === '/for-contractors') {
     return {
       title: 'For Contractors | BuildMyHouse',
       description:
-        'Join BuildMyHouse as a verified artisan, repairer, renovator, interior specialist, or general contractor.',
+        'If you do repairs, cleaning, building work, design or engineering, or you sell building materials, tell us what you do in a few taps. A BuildMyHouse agent will reply on WhatsApp.',
       canonicalPath,
       robots: 'index,follow',
     };

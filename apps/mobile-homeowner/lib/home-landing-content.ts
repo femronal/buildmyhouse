@@ -106,7 +106,7 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'and get hired on BuildMyHouse.',
     subheadline: CONTRACTOR_HERO_SUBHEADLINE,
     searchPlaceholder: 'What kind of projects do you take on?',
-    primaryCta: { label: 'Get Verified on BuildMyHouse', href: '/for-contractors' },
+    primaryCta: { label: 'Join BuildMyHouse', href: '/join' },
     secondaryCta: { label: 'See How Verification Works', href: '#how-it-works' },
   },
 };
@@ -134,11 +134,11 @@ export const AUDIENCE_TABS: AudienceTab[] = [
   {
     key: 'get-hired',
     label: 'I want to get hired',
-    title: 'Join BuildMyHouse as a verified artisan, repairer, renovator, or general contractor.',
+    title: 'Join BuildMyHouse',
     description:
-      'Receive clearer briefs, documented workflow expectations, and project requests from homeowners who value organized execution.',
-    ctaLabel: 'Get Verified on BuildMyHouse',
-    ctaHref: '/for-contractors',
+      'If you do repairs, cleaning, building work, design or engineering, or you sell building materials, tell us what you do in a few taps. A BuildMyHouse agent will reply on WhatsApp.',
+    ctaLabel: 'Join BuildMyHouse',
+    ctaHref: '/join',
   },
 ];
 

@@ -17,6 +17,8 @@ import { OpenAIService, RerankContractorInput } from '../openai/openai.service';
 import {
   GC_VERIFICATION_REQUIRED_DOCUMENTS,
   GCVerificationDocumentType,
+  deriveProofStatus,
+  ProofAnswerValue,
 } from './constants/gc-verification-documents';
 import { UpsertVerificationDocumentDto } from './dto/upsert-verification-document.dto';
 import { GCSpecialtyCategory } from './dto/set-gc-verification.dto';
@@ -2151,6 +2153,7 @@ export class ContractorsService {
         expiryYear: data.expiryYear?.trim() || null,
       },
     });
+    await this.upsertDocumentAnswer(contractor.id, data.documentType, 'added');
 
     const status = await this.getVerificationDocumentStatus(contractor.id);
     return {
@@ -2468,16 +2471,22 @@ export class ContractorsService {
     return contractor;
   }
 
-  private buildVerificationStatus(records: any[]) {
+  private buildVerificationStatus(
+    records: any[],
+    answers: { documentType: string; answer: string }[] = [],
+  ) {
     const byType = new Map<GCVerificationDocumentType, any>();
     for (const record of records) {
       if (record.documentType) {
         byType.set(record.documentType as GCVerificationDocumentType, record);
       }
     }
+    const answerByType = new Map(answers.map((row) => [row.documentType, row.answer]));
 
     const requiredDocuments = GC_VERIFICATION_REQUIRED_DOCUMENTS.map((required) => {
       const uploaded = byType.get(required.type);
+      const answer = (answerByType.get(required.type) as ProofAnswerValue | undefined) || null;
+      const reviewStatus = (uploaded?.reviewStatus as 'unchecked' | 'passed' | 'failed' | undefined) || 'unchecked';
       return {
         type: required.type,
         title: required.title,
@@ -2486,6 +2495,14 @@ export class ContractorsService {
         fileUrl: uploaded?.fileUrl ?? null,
         expiryYear: uploaded?.expiryYear ?? null,
         uploadedAt: uploaded?.createdAt ?? null,
+        answer,
+        reviewStatus: uploaded ? reviewStatus : (answer ? 'unchecked' : null),
+        // legacy field: a file is not a sign anything was checked, and it is not a gate.
+        status: deriveProofStatus({
+          answer,
+          hasFile: !!uploaded,
+          reviewStatus: uploaded ? reviewStatus : null,
+        }),
       };
     });
 
@@ -2499,6 +2516,7 @@ export class ContractorsService {
       uploadedRequiredCount,
       totalRequiredCount: requiredDocuments.length,
       missingRequiredDocuments,
+      // legacy; not a gate; not a sign anything was checked
       hasUploadedAllRequiredDocuments: missingRequiredDocuments.length === 0,
       uploadedDocuments: records.map((record) => ({
         id: record.id,
@@ -2523,7 +2541,57 @@ export class ContractorsService {
       where: { contractorId },
       orderBy: { createdAt: 'desc' },
     });
-    return this.buildVerificationStatus(records ?? []);
+    const answerModel = (this.prisma as any).contractorDocumentAnswer;
+    const answers = answerModel?.findMany
+      ? await answerModel.findMany({ where: { contractorId } })
+      : [];
+    return this.buildVerificationStatus(records ?? [], answers ?? []);
+  }
+
+  private async upsertDocumentAnswer(contractorId: string, documentType: string, answer: ProofAnswerValue) {
+    const model = (this.prisma as any).contractorDocumentAnswer;
+    if (!model?.upsert) return;
+    await model.upsert({
+      where: { contractorId_documentType: { contractorId, documentType } },
+      create: { contractorId, documentType, answer },
+      update: { answer, answeredAt: new Date() },
+    });
+  }
+
+  async answerVerificationDocument(userId: string, documentType: string, answer: string) {
+    const contractor = await this.getContractorByUserIdOrThrow(userId);
+    if (contractor.type !== 'general_contractor') {
+      throw new ForbiddenException('Only general contractors can manage verification documents');
+    }
+    const definition = GC_VERIFICATION_REQUIRED_DOCUMENTS.find((doc) => doc.type === documentType);
+    if (!definition) throw new BadRequestException('Invalid verification document type');
+    if (!['added', 'not_have', 'not_applicable'].includes(answer)) {
+      throw new BadRequestException('Invalid proof answer');
+    }
+    await this.upsertDocumentAnswer(contractor.id, documentType, answer as ProofAnswerValue);
+    return this.getVerificationDocumentStatus(contractor.id);
+  }
+
+  async reviewVerificationDocument(userId: string, documentType: string, status: string, adminId: string) {
+    if (!['unchecked', 'passed', 'failed'].includes(status)) {
+      throw new BadRequestException('Invalid review status');
+    }
+    const contractor = await this.prisma.contractor.findFirst({ where: { userId } });
+    if (!contractor) throw new NotFoundException('Contractor not found');
+    const record = await this.prisma.contractorCertification.findFirst({
+      where: { contractorId: contractor.id, documentType },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!record) throw new NotFoundException('No file of that type');
+    await this.prisma.contractorCertification.update({
+      where: { id: record.id },
+      data: {
+        reviewStatus: status as any,
+        reviewedByAdminId: adminId,
+        reviewedAt: new Date(),
+      },
+    });
+    return this.getVerificationDocumentStatus(contractor.id);
   }
 
   async listBankAccounts(userId: string) {

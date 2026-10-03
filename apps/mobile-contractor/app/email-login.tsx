@@ -186,8 +186,14 @@ export default function EmailLoginScreen() {
           className="text-gray-400 text-lg mb-8"
           style={{ fontFamily: 'Poppins_400Regular' }}
         >
-          {mode === 'signup' ? 'Sign up with your email to get started as a contractor' : 'Sign in to your contractor account'}
+          {mode === 'signup' ? 'Sign up as a building contractor.' : 'Sign in to your contractor account'}
         </Text>
+        {mode === 'signup' ? (
+          <Text className="text-gray-300 mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Not a building contractor? Cleaner, repair trade, architect or materials shop?{' '}
+            <Text onPress={() => router.push('/join' as never)} style={{ textDecorationLine: 'underline' }}>Join here instead</Text>
+          </Text>
+        ) : null}
 
         {mode === 'signup' && (
           <View className="mb-4">

@@ -66,4 +66,25 @@ describe('computeArtisanTrust', () => {
     expect(one.suggestions.find((item) => item.key === 'gallery')?.points).toBe(3);
     expect(two.suggestions.find((item) => item.key === 'gallery')?.points).toBe(2);
   });
+
+  it('does not score an unchecked verification submission', () => {
+    const without = computeArtisanTrust({ ...empty, verificationSubmitted: false });
+    const withSubmit = computeArtisanTrust({ ...empty, verificationSubmitted: true });
+    expect(withSubmit.score).toBe(without.score);
+  });
+
+  it('awards verification points only after staff action', () => {
+    const base = computeArtisanTrust(empty).score;
+    const checked = computeArtisanTrust({ ...empty, verificationCheckPassed: true });
+    const approved = computeArtisanTrust({
+      ...empty,
+      verificationCheckPassed: true,
+      verificationApproved: true,
+    });
+    expect(checked.score - base).toBe(10);
+    expect(approved.score - checked.score).toBe(5);
+    const weights = 15 + 15 + 15 + 20 + 15 + 5 + 15;
+    expect(weights).toBe(100);
+    expect(computeArtisanTrust(empty).suggestions.some((item) => item.key === 'verificationCheck')).toBe(true);
+  });
 });

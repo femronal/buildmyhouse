@@ -697,6 +697,7 @@ model Contractor {
   contractorReviews Review[]                  @relation("ContractorReviews")
   bankAccounts      BankAccount[]             @relation("ContractorBankAccounts")
   certifications    ContractorCertification[] @relation("ContractorCertifications")
+  documentAnswers   ContractorDocumentAnswer[] @relation("ContractorDocumentAnswers")
   artisanListings   ArtisanListing[]          @relation("ArtisanListingContractor")
 
   @@map("contractors")
@@ -709,11 +710,78 @@ model ContractorCertification {
   documentType String? // Optional required-verification document key
   fileUrl      String // Path to uploaded PDF/DOCX
   expiryYear   String? // Optional expiry year, e.g. "2026"
+  reviewStatus ProofReviewStatus @default(unchecked)
+  reviewedByAdminId String?
+  reviewedAt   DateTime?
   createdAt    DateTime @default(now())
 
   contractor Contractor @relation("ContractorCertifications", fields: [contractorId], references: [id], onDelete: Cascade)
 
   @@map("contractor_certifications")
+}
+
+enum ProofAnswer {
+  added
+  not_have
+  not_applicable
+}
+
+enum ProofReviewStatus {
+  unchecked
+  passed
+  failed
+}
+
+model ContractorDocumentAnswer {
+  id           String      @id @default(uuid())
+  contractorId String
+  documentType String
+  answer       ProofAnswer
+  answeredAt   DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  contractor Contractor @relation("ContractorDocumentAnswers", fields: [contractorId], references: [id], onDelete: Cascade)
+
+  @@unique([contractorId, documentType])
+  @@map("contractor_document_answers")
+}
+
+enum JoinRequestStatus {
+  new
+  contacted
+  approved
+  declined
+  spam
+}
+
+model JoinRequest {
+  id                  String            @id @default(uuid())
+  reference           String            @unique
+  path                String
+  answers             Json
+  proofs              Json
+  photos              String?
+  tradeKeys           String[]          @default([])
+  serviceLabels       String[]          @default([])
+  state               String?
+  areas               String[]          @default([])
+  name                String
+  whatsapp            String
+  termsAcknowledgedAt DateTime?
+  termsVersion        String?
+  source              String?
+  referrer            String?
+  utm                 Json?
+  status              JoinRequestStatus @default(new)
+  adminNotes          String?
+  handledByAdminId    String?
+  handledAt           DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([status, createdAt])
+  @@index([path, createdAt])
+  @@map("join_requests")
 }
 
 model BankAccount {

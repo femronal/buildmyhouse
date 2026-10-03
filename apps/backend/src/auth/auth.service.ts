@@ -68,6 +68,14 @@ export class AuthService {
       throw new BadRequestException('Invalid role selected for registration.');
     }
 
+    if (normalizedRole === 'general_contractor') {
+      const domain = String(email || '').split('@')[1]?.toLowerCase() || '';
+      const blocked = new Set(['example.com', 'example.org', 'example.net', 'test.com', 'localhost']);
+      if (blocked.has(domain)) {
+        throw new BadRequestException('Use a real email address to sign up.');
+      }
+    }
+
     // Check if user already exists
     const existingUser = await this.prisma.user.findUnique({
       where: { email },

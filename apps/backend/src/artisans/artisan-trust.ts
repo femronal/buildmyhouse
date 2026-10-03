@@ -45,6 +45,8 @@ function galleryPoints(count: number) {
  * Identity 15, contact 15, location 15, media 20, repair capability 15, claim 5, verification 15.
  */
 export function computeArtisanTrust(input: ArtisanTrustInput): { score: number; suggestions: ArtisanTrustSuggestion[] } {
+  // An unchecked submission does not change the score. The field stays so existing callers compile.
+  void input.verificationSubmitted;
   const parts: Array<{ key: string; label: string; earned: number; max: number }> = [
     { key: 'name', label: 'Add the artisan or business name', earned: input.displayName || input.businessName ? 6 : 0, max: 6 },
     { key: 'trade', label: 'Choose a primary trade', earned: input.hasTrade ? 5 : 0, max: 5 },
@@ -64,9 +66,9 @@ export function computeArtisanTrust(input: ArtisanTrustInput): { score: number; 
     { key: 'service', label: 'Add the repair services you offer', earned: input.serviceCount > 0 ? 6 : 0, max: 6 },
     { key: 'problem', label: 'Add the problems you fix', earned: input.problemCount > 0 ? 4 : 0, max: 4 },
     { key: 'claimed', label: 'Claim this listing', earned: input.claimed ? 5 : 0, max: 5 },
-    { key: 'verificationSubmitted', label: 'Submit verification evidence', earned: input.verificationSubmitted ? 5 : 0, max: 5 },
-    { key: 'verificationCheck', label: 'Pass a verification check', earned: input.verificationCheckPassed ? 5 : 0, max: 5 },
-    { key: 'verificationApproved', label: 'Complete verification', earned: input.verificationApproved ? 5 : 0, max: 5 },
+    // verificationSubmitted is kept on the input for callers, but an unchecked submission earns nothing.
+    { key: 'verificationCheck', label: 'Send us proof so BuildMyHouse can check it', earned: input.verificationCheckPassed ? 10 : 0, max: 10 },
+    { key: 'verificationApproved', label: 'Earn a BuildMyHouse check over time', earned: input.verificationApproved ? 5 : 0, max: 5 },
   ];
 
   const score = parts.reduce((sum, part) => sum + part.earned, 0);

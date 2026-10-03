@@ -39,6 +39,7 @@ export const calculateRemaining = (budget: number, spent: number): number => {
 export {
   PLATFORM_TERMS_LAST_UPDATED,
   PLATFORM_TERMS_SECTIONS,
+  PLATFORM_TERMS_CONTRACTOR_SECTIONS,
   type PlatformTermsSection,
 } from './platform-terms';
 

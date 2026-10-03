@@ -31,6 +31,7 @@ const menuItems = [
   { href: '/contractors', label: 'Contractors', icon: HardHat },
   { href: '/vendors', label: 'Vendors', icon: Store },
   { href: '/artisans', label: 'Artisans', icon: Wrench },
+  { href: '/join-requests', label: 'Join requests', icon: UserCog },
   { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },

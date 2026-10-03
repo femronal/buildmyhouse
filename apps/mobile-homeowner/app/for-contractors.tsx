@@ -1,4 +1,5 @@
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { Link } from 'expo-router';
 import {
   SeoContentBackButton,
   SeoContentColumn,
@@ -6,14 +7,14 @@ import {
   seoContentTypography,
 } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
-import { FOR_CONTRACTOR_URL, LANDING_BORDER, LANDING_INK, LANDING_MUTED, WORKER_CATEGORIES } from '@/lib/home-landing-content';
+import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, WORKER_CATEGORIES } from '@/lib/home-landing-content';
 import { useWebSeo } from '@/lib/seo';
 
 export default function ForContractorsPage() {
   useWebSeo({
     title: 'For Contractors | BuildMyHouse',
     description:
-      'Join BuildMyHouse as a verified artisan, repairer, renovator, or contractor. Receive better project requests from homeowners who value structured execution.',
+      'If you do repairs, cleaning, building work, design or engineering, or you sell building materials, tell us what you do in a few taps. A BuildMyHouse agent will reply on WhatsApp.',
     canonicalPath: '/for-contractors',
     robots: 'index,follow',
   });
@@ -27,11 +28,10 @@ export default function ForContractorsPage() {
           For Contractors
         </Text>
         <SeoHeading level={1} className={seoContentTypography.title} style={{ fontFamily: 'Poppins_700Bold', color: LANDING_INK }}>
-          Join as a verified worker on BuildMyHouse
+          Join BuildMyHouse
         </SeoHeading>
         <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-          If you are a skilled artisan, repairer, renovator, interior specialist, or general contractor, BuildMyHouse helps
-          you receive clearer project requests from homeowners who care about documented work and accountability.
+          If you do repairs, cleaning, building work, design or engineering, or you sell building materials, tell us what you do in a few taps. A BuildMyHouse agent will reply on WhatsApp.
         </Text>
 
         <View className="flex-row flex-wrap mb-6">
@@ -44,16 +44,17 @@ export default function ForContractorsPage() {
           ))}
         </View>
 
-        <Pressable
-          onPress={() => Linking.openURL(FOR_CONTRACTOR_URL)}
-          className="self-start rounded-full bg-black px-5 py-3"
-          accessibilityRole="button"
-          accessibilityLabel="Open contractor portal"
-        >
-          <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-            Continue to Contractor Portal
-          </Text>
-        </Pressable>
+        <Link href="/join" asChild>
+          <Pressable
+            className="self-start rounded-full bg-black px-5 py-3"
+            accessibilityRole="link"
+            accessibilityLabel="Join BuildMyHouse"
+          >
+            <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Join BuildMyHouse
+            </Text>
+          </Pressable>
+        </Link>
       </SeoContentColumn>
     </SeoContentShell>
   );

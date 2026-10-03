@@ -211,14 +211,14 @@ export default function GcLandingPage() {
                   </Text>
                 </Pressable>
               </Link>
-              <Link href={'/email-login' as any} asChild>
+              <Link href={'/join' as any} asChild>
                 <Pressable
                   className="px-4 py-2 rounded-xl flex-row items-center gap-2 gc-glass-btn gc-glass-btn-primary"
                   style={{ backgroundColor: GC_PRIMARY_CTA }}
                   accessibilityRole="link"
                 >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Get Verified
+                    Join BuildMyHouse
                   </Text>
                 </Pressable>
               </Link>

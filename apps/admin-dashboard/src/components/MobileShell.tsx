@@ -33,6 +33,7 @@ const titles: Array<{ prefix: string; title: string }> = [
   { prefix: '/disputes', title: 'Disputes' },
   { prefix: '/vendors', title: 'Vendors' },
   { prefix: '/artisans', title: 'Artisans' },
+  { prefix: '/join-requests', title: 'Join requests' },
   { prefix: '/professionals', title: 'Professionals' },
   { prefix: '/contractors', title: 'Contractors' },
   { prefix: '/homeowners', title: 'Homeowners' },
@@ -49,6 +50,7 @@ const titles: Array<{ prefix: string; title: string }> = [
 const directoryLinks = [
   { href: '/vendors', label: 'Vendors', icon: Store },
   { href: '/artisans', label: 'Artisans', icon: Wrench },
+  { href: '/join-requests', label: 'Join requests', icon: UserCog },
   { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
   { href: '/contractors', label: 'Contractors', icon: HardHat },
   { href: '/homeowners', label: 'Homeowners', icon: Users },

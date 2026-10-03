@@ -152,3 +152,11 @@ export const PLATFORM_TERMS_SECTIONS: PlatformTermsSection[] = [
     body: 'By using BuildMyHouse, all users acknowledge that:\n- construction and property work involve operational uncertainty,\n- BuildMyHouse provides workflow structure and coordination systems,\n- users remain responsible for independent decisions,\n- and successful project outcomes depend on multiple real-world factors beyond software alone.\n\nBy clicking "I Agree," users confirm that they:\n- have read these Terms,\n- understand these Terms,\n- and agree to be legally bound by them.',
   },
 ];
+
+/** Contractor-facing terms: intro, then Part B through the end. Homeowner Part A is omitted. */
+export const PLATFORM_TERMS_CONTRACTOR_SECTIONS: PlatformTermsSection[] = [
+  PLATFORM_TERMS_SECTIONS[0],
+  ...PLATFORM_TERMS_SECTIONS.slice(
+    PLATFORM_TERMS_SECTIONS.findIndex((section) => section.title.startsWith('PART B')),
+  ),
+];

@@ -36,10 +36,9 @@ export class GCVerificationReminderScheduler {
       try {
         await this.notificationsService.createForUser(gc.userId, {
           type: 'gc_verification_weekly_reminder',
-          title: 'Verification Documents Reminder',
+          title: 'Add proof when you\'re ready',
           message:
-            `Please upload all required verification documents to keep your account verified status healthy. ` +
-            `If this remains incomplete, your account may be unverified and you could lose potential customers.`,
+            'Adding proof helps homeowners trust you faster. Nothing is required, and you can add it any time from your profile.',
           data: {
             uploadedRequiredDocuments: gc.uploadedRequiredCount,
             totalRequiredDocuments: this.requiredDocTypes.length,
@@ -98,6 +97,14 @@ export class GCVerificationReminderScheduler {
       },
     });
 
+    const answers = await this.prisma.contractorDocumentAnswer.findMany({
+      where: {
+        contractorId: { in: contractorIds },
+        answer: { in: ['not_have', 'not_applicable'] },
+      },
+      select: { contractorId: true, documentType: true },
+    });
+
     const uploadedByContractor = new Map<string, Set<string>>();
     for (const doc of docs) {
       if (!doc.documentType) continue;
@@ -105,6 +112,13 @@ export class GCVerificationReminderScheduler {
         uploadedByContractor.set(doc.contractorId, new Set());
       }
       uploadedByContractor.get(doc.contractorId)!.add(doc.documentType);
+    }
+    const handledByContractor = new Map<string, Set<string>>();
+    for (const answer of answers) {
+      if (!handledByContractor.has(answer.contractorId)) {
+        handledByContractor.set(answer.contractorId, new Set());
+      }
+      handledByContractor.get(answer.contractorId)!.add(answer.documentType);
     }
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -127,8 +141,9 @@ export class GCVerificationReminderScheduler {
       }
 
       const uploadedSet = uploadedByContractor.get(gc.id) ?? new Set<string>();
+      const handledSet = handledByContractor.get(gc.id) ?? new Set<string>();
       const missingRequiredTitles = this.requiredDocTypes
-        .filter((type) => !uploadedSet.has(type))
+        .filter((type) => !uploadedSet.has(type) && !handledSet.has(type))
         .map((type) => this.requiredDocTitleByType.get(type) || type);
 
       if (missingRequiredTitles.length === 0) {

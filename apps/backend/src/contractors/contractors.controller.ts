@@ -80,6 +80,16 @@ export class ContractorsController {
     return this.contractorsService.upsertGCVerificationDocument(userId, body);
   }
 
+  @Post('verification-documents/answer')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor')
+  async answerVerificationDocument(
+    @Request() req: any,
+    @Body() body: { documentType: string; answer: string },
+  ) {
+    return this.contractorsService.answerVerificationDocument(req.user.sub, body.documentType, body.answer);
+  }
+
   @Post('certifications')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor')
@@ -355,6 +365,24 @@ export class ContractorsController {
     @Body() body?: { force?: boolean },
   ) {
     return this.contractorsService.adminVerifyGC(userId, { force: !!body?.force });
+  }
+
+  @Patch('admin/:userId/verification-documents/:documentType/review')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('admin')
+  @RequirePermissions('contractors.verify')
+  async reviewVerificationDocument(
+    @Request() req: any,
+    @Param('userId') userId: string,
+    @Param('documentType') documentType: string,
+    @Body() body: { status: string },
+  ) {
+    return this.contractorsService.reviewVerificationDocument(
+      userId,
+      documentType,
+      body.status,
+      req.user.sub,
+    );
   }
 
   @Patch('admin/:userId/verification')
