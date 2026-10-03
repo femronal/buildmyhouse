@@ -731,7 +731,7 @@ export default function VerificationPage() {
                               {doc.uploaded ? (
                                 <>
                                   <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'passed' })}>Mark checked</button>
-                                  <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'failed' })}>Didn't pass</button>
+                                  <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'failed' })}>Didn&apos;t pass</button>
                                   <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'unchecked' })}>Reset</button>
                                 </>
                               ) : null}
