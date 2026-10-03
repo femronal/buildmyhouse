@@ -62,7 +62,7 @@ const SEO_PAGES = {
   '/for-contractors': {
     title: 'For Contractors | BuildMyHouse',
     description:
-      'If you do repairs, cleaning, building work, design or engineering, or you sell building materials, tell us what you do in a few taps. A BuildMyHouse agent will reply on WhatsApp.',
+      'Join BuildMyHouse as a verified artisan, repairer, renovator, interior specialist, or general contractor.',
   },
   '/privacy-security': {
     title: 'Privacy Notice | BuildMyHouse',

@@ -46,12 +46,6 @@ export default function ArtisanApplyPage() {
     <SeoContentShell>
       <SeoContentColumn>
         <SeoHeading level={1} style={{ fontFamily: 'Poppins_700Bold' }}>List my repair business</SeoHeading>
-        <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>
-          Prefer to tap instead of type?{' '}
-        </Text>
-        <Pressable onPress={() => { if (typeof window !== 'undefined') window.location.href = '/join/repairs'; }} style={{ minHeight: 44, justifyContent: 'center', marginBottom: 12 }}>
-          <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Join in a few taps</Text>
-        </Pressable>
         <Field label="Business or artisan name" value={displayName} onChangeText={setDisplayName} />
         <Field label="Trade key, for example plumber" value={tradeKey} onChangeText={setTradeKey} />
         <Field label="Phone" value={phone} onChangeText={setPhone} />

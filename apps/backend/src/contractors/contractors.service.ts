@@ -2065,6 +2065,8 @@ export class ContractorsService {
     data: {
       experienceYears?: number;
       location?: string;
+      specialtyCategory?: GCSpecialtyCategory;
+      specialtyTags?: string[];
       professionalOnboardingCompleted?: boolean;
       professionalOnboardingSkipped?: boolean;
     },
@@ -2077,6 +2079,23 @@ export class ContractorsService {
     if (typeof data.location === 'string') {
       const location = data.location.trim();
       updateData.location = location || null;
+    }
+    if (data.specialtyCategory || (data.specialtyTags && data.specialtyTags.length > 0)) {
+      const specialtyCategory = data.specialtyCategory;
+      if (!specialtyCategory || !GC_SPECIALTY_LABELS[specialtyCategory]) {
+        throw new BadRequestException('Choose the kind of work you take on.');
+      }
+      const specialtyTags = this.normalizeSpecialtyTags(data.specialtyTags);
+      if (specialtyTags.length === 0) {
+        throw new BadRequestException('Choose at least one kind of job you can do.');
+      }
+      updateData.specialtyCategory = specialtyCategory;
+      updateData.specialtyTags = specialtyTags;
+      updateData.specialty = this.buildContractorSpecialtyDisplay({
+        category: specialtyCategory,
+        tags: specialtyTags,
+        fallback: GC_SPECIALTY_LABELS[specialtyCategory],
+      });
     }
     if (typeof data.professionalOnboardingCompleted === 'boolean') {
       updateData.professionalOnboardingCompleted = data.professionalOnboardingCompleted;

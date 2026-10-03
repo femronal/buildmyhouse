@@ -30,7 +30,8 @@ export interface GCProfile {
   completedProjects: number;
   totalEarnings: number;
   certifications?: ContractorCertification[];
-  specialtyCategory?: string | null;
+  specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor' | null;
+  specialtyTags?: string[];
   verificationRequiredDocuments?: Array<{
     type: string;
     title: string;
@@ -66,6 +67,8 @@ export function useUpdateGCProfile() {
     mutationFn: (data: {
       experienceYears?: number;
       location?: string;
+      specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor';
+      specialtyTags?: string[];
       professionalOnboardingCompleted?: boolean;
       professionalOnboardingSkipped?: boolean;
     }) =>

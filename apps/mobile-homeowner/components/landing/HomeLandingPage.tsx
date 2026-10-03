@@ -998,14 +998,14 @@ export default function HomeLandingPage() {
               <Text className="text-base text-slate-500 max-w-2xl mb-8 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
                 Join BuildMyHouse, get verified and become eligible for structured project opportunities.
               </Text>
-              <Link href={'/join' as any} asChild>
+              <Link href={'/for-contractors' as any} asChild>
                 <Pressable
-                  onPress={() => trackWebEvent('contractor_cta_clicked', { href: '/join' })}
+                  onPress={() => trackWebEvent('contractor_cta_clicked', { href: '/for-contractors' })}
                   className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
                   accessibilityRole="link"
                 >
                   <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Join BuildMyHouse
+                    Get Verified on BuildMyHouse
                   </Text>
                 </Pressable>
               </Link>

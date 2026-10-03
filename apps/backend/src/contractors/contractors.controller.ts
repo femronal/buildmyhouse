@@ -45,6 +45,8 @@ export class ContractorsController {
     body: {
       experienceYears?: number;
       location?: string;
+      specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor';
+      specialtyTags?: string[];
       professionalOnboardingCompleted?: boolean;
       professionalOnboardingSkipped?: boolean;
     },

@@ -863,17 +863,11 @@ export class AuthService {
     if (!String(data.phone || '').trim()) {
       throw new BadRequestException('Phone number is required.');
     }
-    if (!String(data.pictureUrl || '').trim()) {
-      throw new BadRequestException('Profile photo/logo is required.');
-    }
     if (!String(data.location || '').trim()) {
       throw new BadRequestException('Business location is required.');
     }
     if (!data.gcTermsAcceptedAt) {
       throw new BadRequestException('You must accept the GC terms and policies.');
-    }
-    if (data.bankAccountsCount < 1) {
-      throw new BadRequestException('Add at least one bank account to continue.');
     }
   }
 
