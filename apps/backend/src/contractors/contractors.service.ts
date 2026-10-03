@@ -2316,8 +2316,18 @@ export class ContractorsService {
           expiryYear: true,
           documentType: true,
           createdAt: true,
+          reviewStatus: true,
         },
       });
+      const answers = await this.prisma.contractorDocumentAnswer.findMany({
+        where: { contractorId: { in: contractorIds } },
+        select: { contractorId: true, documentType: true, answer: true },
+      });
+      const answersByContractor: Record<string, { documentType: string; answer: string }[]> = {};
+      for (const answer of answers) {
+        if (!answersByContractor[answer.contractorId]) answersByContractor[answer.contractorId] = [];
+        answersByContractor[answer.contractorId].push(answer);
+      }
       const grouped: Record<string, any[]> = {};
       for (const c of certs) {
         if (!grouped[c.contractorId]) grouped[c.contractorId] = [];
@@ -2325,7 +2335,10 @@ export class ContractorsService {
       }
       const result: Record<string, any> = {};
       for (const contractorId of contractorIds) {
-        result[contractorId] = this.buildVerificationStatus(grouped[contractorId] ?? []);
+        result[contractorId] = this.buildVerificationStatus(
+          grouped[contractorId] ?? [],
+          answersByContractor[contractorId] ?? [],
+        );
       }
       return result;
     } catch {

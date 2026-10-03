@@ -126,12 +126,7 @@ export default function EmailLoginScreen() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-[#0A1628]"
-      style={{
-        overflow: "hidden",
-        ...(Platform.OS === "web"
-          ? { height: "100vh", maxHeight: "100vh" }
-          : {}),
-      }}
+      style={Platform.OS === "web" ? { minHeight: "100%" } : undefined}
     >
       {/* Header */}
       <View

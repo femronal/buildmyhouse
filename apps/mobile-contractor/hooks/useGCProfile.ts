@@ -30,6 +30,7 @@ export interface GCProfile {
   completedProjects: number;
   totalEarnings: number;
   certifications?: ContractorCertification[];
+  specialtyCategory?: string | null;
   verificationRequiredDocuments?: Array<{
     type: string;
     title: string;
@@ -38,6 +39,9 @@ export interface GCProfile {
     fileUrl?: string | null;
     expiryYear?: string | null;
     uploadedAt?: string | null;
+    answer?: string | null;
+    reviewStatus?: string | null;
+    status?: string | null;
   }>;
   verificationUploadedDocuments?: ContractorCertification[];
   verificationUploadedCount?: number;

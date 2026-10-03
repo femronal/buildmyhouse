@@ -27,7 +27,7 @@ export default function JoinRequestsPage() {
   const [selected, setSelected] = useState<JoinRequest | null>(null);
   const query = useQuery({
     queryKey: ['join-requests', path, status],
-    queryFn: () => api.get(`/admin/join-requests?path=${path}&status=${status}`),
+    queryFn: () => api.get<{ items: JoinRequest[] }>(`/admin/join-requests?path=${path}&status=${status}`),
   });
   const items = (query.data?.items || []) as JoinRequest[];
 

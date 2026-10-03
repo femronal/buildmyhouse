@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { ArrowLeft, FileText } from "lucide-react-native";
-import { PLATFORM_TERMS_SECTIONS } from "@buildmyhouse/shared-utils";
+import { PLATFORM_TERMS_CONTRACTOR_SECTIONS } from "@buildmyhouse/shared-utils";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { useWebSeo } from "@/lib/seo";
 
@@ -49,10 +49,10 @@ export default function TermsConditionsScreen() {
             </Text>
           </View>
           <Text className="text-gray-300 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Full platform terms for homeowners and contractors.
+            These are the terms for people who do work on BuildMyHouse.
           </Text>
         </View>
-        {PLATFORM_TERMS_SECTIONS.map((section, index) => (
+        {PLATFORM_TERMS_CONTRACTOR_SECTIONS.map((section, index) => (
           <View key={`${index}-${section.title}`} className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-3">
             <Text className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
               {section.title}

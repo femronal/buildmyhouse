@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { CheckCircle2, Download, Search, ShieldCheck, X } from 'lucide-react';
-import { useUnverifiedGCs, useVerifyGC } from '@/hooks/useUnverifiedGCs';
+import { useUnverifiedGCs, useVerifyGC, useReviewVerificationDocument } from '@/hooks/useUnverifiedGCs';
 import {
   useGoLiveDesignPlan,
   usePendingProjectDocs,
@@ -12,6 +12,16 @@ import {
 } from '@/hooks/useProjectDocsVerification';
 import { api } from '@/lib/api';
 import { useReviewStageChangeRequest, useStageChangeRequests } from '@/hooks/useStageChangeRequests';
+
+function proofLabel(status?: string | null, uploaded?: boolean) {
+  if (status === 'checked') return 'Checked';
+  if (status === 'did_not_pass') return "Didn't pass";
+  if (status === 'received' || uploaded) return 'Received · not checked';
+  if (status === 'says_has') return 'Says they have it · not received';
+  if (status === 'not_have') return "Doesn't have it yet";
+  if (status === 'not_applicable') return "Doesn't apply";
+  return 'Not answered';
+}
 
 function formatSubmittedAt(dateStr: string) {
   const date = new Date(dateStr);
@@ -180,6 +190,7 @@ export default function VerificationPage() {
 
   const { data: gcs = [], isLoading } = useUnverifiedGCs();
   const verifyGC = useVerifyGC();
+  const reviewDoc = useReviewVerificationDocument();
   const { data: pendingProjectDocs = [], isLoading: loadingProjectDocs } = usePendingProjectDocs();
   const { data: stageChangeRequests = [], isLoading: loadingStageChanges } = useStageChangeRequests(stageChangeFilter);
   const reviewStageChangeRequest = useReviewStageChangeRequest();
@@ -690,39 +701,44 @@ export default function VerificationPage() {
                         Verification documents ({item.uploadedRequiredDocumentCount}/{item.requiredDocumentCount})
                       </p>
                       {item.hasUploadedAllVerificationDocuments ? (
-                        <span className="text-[11px] px-2 py-1 rounded-full bg-green-100 text-green-700">
-                          Ready
+                        <span className="text-[11px] px-2 py-1 rounded-full bg-gray-200 text-gray-700">
+                          All received · not checked
                         </span>
                       ) : (
-                        <span className="text-[11px] px-2 py-1 rounded-full bg-amber-100 text-amber-700">
-                          Pending
+                        <span className="text-[11px] px-2 py-1 rounded-full bg-gray-100 text-gray-600 border border-gray-300">
+                          Not complete
                         </span>
                       )}
                     </div>
                     <div className="grid sm:grid-cols-2 gap-2 mt-2">
-                      {item.verificationDocuments.map((doc) => (
-                        <div
-                          key={doc.type}
-                          className={`text-xs rounded px-2 py-1 border flex items-center justify-between gap-2 ${
-                            doc.uploaded
-                              ? 'bg-green-50 border-green-200 text-green-700'
-                              : 'bg-white border-gray-200 text-gray-600'
-                          }`}
-                        >
-                          <span className="truncate">{doc.title}</span>
-                          {doc.uploaded && doc.fileUrl ? (
-                            <a
-                              href={getAssetUrl(doc.fileUrl)}
-                              download
-                              title={`Download ${doc.title}`}
-                              className="inline-flex items-center gap-1 rounded-md bg-white/80 border border-green-200 px-2 py-0.5 text-[11px] font-medium text-green-700 hover:bg-white"
-                            >
-                              <Download className="w-3 h-3" />
-                              Download
-                            </a>
-                          ) : null}
-                        </div>
-                      ))}
+                      {item.verificationDocuments.map((doc) => {
+                        const label = proofLabel(doc.status, doc.uploaded);
+                        const tone = doc.status === 'checked'
+                          ? 'bg-green-50 border-green-200 text-green-700'
+                          : doc.status === 'did_not_pass'
+                            ? 'bg-red-50 border-red-200 text-red-700'
+                            : 'bg-white border-gray-200 text-gray-600';
+                        return (
+                          <div key={doc.type} className={`text-xs rounded px-2 py-2 border ${tone}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="truncate">{doc.title}</span>
+                              <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px]">{label}</span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {doc.uploaded && doc.fileUrl ? (
+                                <a href={getAssetUrl(doc.fileUrl)} className="underline">Download</a>
+                              ) : null}
+                              {doc.uploaded ? (
+                                <>
+                                  <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'passed' })}>Mark checked</button>
+                                  <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'failed' })}>Didn't pass</button>
+                                  <button type="button" className="underline" onClick={() => reviewDoc.mutate({ userId: item.userId, documentType: doc.type, status: 'unchecked' })}>Reset</button>
+                                </>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

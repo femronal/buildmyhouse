@@ -8,6 +8,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useUserConversations } from "../../hooks/useChat";
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from "@/hooks/useGCProfile";
+import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
@@ -25,6 +26,7 @@ export default function GCDashboardScreen() {
     useResponsivePadding("stackBottomNav");
   const { showAlert } = useAppAlert();
   const { data: profileData } = useGCProfile();
+  const { data: bankAccounts = [] } = useBankAccounts();
   const { data: currentUser, isLoading: loadingCurrentUser } = useCurrentUser();
   const isAuthenticated = !!currentUser?.id;
   const { data: unreadData } = useUnreadCount(isAuthenticated);
@@ -327,6 +329,19 @@ export default function GCDashboardScreen() {
           paddingHorizontal: horizontalPad,
         }}
       >
+        {(profileData?.verified || activeProjects.length > 0) && bankAccounts.length === 0 ? (
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-profile')}
+            className="mb-4 bg-white rounded-2xl p-4 border border-black"
+          >
+            <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Add your bank details so we can pay you
+            </Text>
+            <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+              This is only needed after BuildMyHouse has approved you.
+            </Text>
+          </TouchableOpacity>
+        ) : null}
         {!loadingCurrentUser && !isAuthenticated && (
           <View className="mb-6">
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-700">

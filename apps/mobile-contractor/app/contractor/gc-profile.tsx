@@ -782,17 +782,17 @@ export default function GCProfileScreen() {
                 <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
                   Verification Documents
                 </Text>
-                <View className={`rounded-full px-3 py-1 ${profileData.hasUploadedAllVerificationDocuments ? 'bg-green-600/20' : 'bg-amber-600/20'}`}>
+                <View className="rounded-full px-3 py-1 bg-gray-700">
                   <Text
-                    className={`text-xs ${profileData.hasUploadedAllVerificationDocuments ? 'text-green-400' : 'text-amber-300'}`}
+                    className="text-xs text-gray-300"
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
                   >
-                    {profileData.verificationUploadedCount || 0}/{profileData.verificationRequiredCount || requiredVerificationDocs.length}
+                    Optional
                   </Text>
                 </View>
               </View>
               <Text className="text-gray-400 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Upload all required legal/business files so admin can verify your account.
+                Add proof when you can. A file is received, not checked, until BuildMyHouse reviews it.
               </Text>
               {requiredVerificationDocs.map((doc) => (
                 <View key={doc.type} className="bg-[#0A1628] rounded-xl p-3 mb-3 border border-blue-900">
@@ -805,12 +805,24 @@ export default function GCProfileScreen() {
                         {doc.description}
                       </Text>
                     </View>
-                    <View className={`rounded-full px-2 py-1 ${doc.uploaded ? 'bg-green-600/20' : 'bg-gray-700'}`}>
+                    <View className={`rounded-full px-2 py-1 ${doc.status === 'checked' ? 'bg-green-600/20' : 'bg-gray-700'}`}>
                       <Text
-                        className={`text-[10px] ${doc.uploaded ? 'text-green-400' : 'text-gray-300'}`}
+                        className={`text-[10px] ${doc.status === 'checked' ? 'text-green-400' : 'text-gray-300'}`}
                         style={{ fontFamily: 'Poppins_600SemiBold' }}
                       >
-                        {doc.uploaded ? 'Uploaded' : 'Missing'}
+                        {doc.status === 'checked'
+                          ? 'Checked'
+                          : doc.status === 'did_not_pass'
+                            ? "Didn't pass"
+                            : doc.uploaded
+                              ? 'Received. Not checked yet.'
+                              : doc.status === 'not_have'
+                                ? "Don't have yet"
+                                : doc.status === 'not_applicable'
+                                  ? "Doesn't apply"
+                                  : doc.status === 'says_has'
+                                    ? 'Says you have it'
+                                    : 'Not answered'}
                       </Text>
                     </View>
                   </View>

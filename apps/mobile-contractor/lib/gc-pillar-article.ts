@@ -110,7 +110,7 @@ export const gcPillarCluster: readonly GcClusterArticle[] = [
 
 export const gcPillarWorkflow = [
   { title: 'Create your contractor account', href: '/email-login', label: 'Start at gc.buildmyhouse.app' },
-  { title: 'Complete verification', href: '/contractor/verification', label: 'Open verification' },
+  { title: 'Add proof when you can', href: '/contractor/gc-profile', label: 'Open your profile' },
   { title: 'Review project requests', href: '/contractor/gc-requests', label: 'See incoming requests' },
   { title: 'Run stages and upload evidence', href: '/contractor/gc-dashboard', label: 'Open contractor workspace' },
   { title: 'Track earnings after approval', href: '/contractor/gc-earnings', label: 'Open earnings' },

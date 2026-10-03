@@ -26,6 +26,9 @@ export type UnverifiedGC = {
     fileUrl?: string | null;
     expiryYear?: string | null;
     uploadedAt?: string | null;
+    answer?: string | null;
+    reviewStatus?: string | null;
+    status?: string | null;
   }>;
 };
 
@@ -97,6 +100,19 @@ export function useVerifyGC() {
       queryClient.invalidateQueries({ queryKey: ['admin-unverified-gcs'] });
       queryClient.invalidateQueries({ queryKey: ['admin-contractors'] });
       queryClient.invalidateQueries({ queryKey: ['gc-profile'] });
+    },
+  });
+}
+
+export function useReviewVerificationDocument() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { userId: string; documentType: string; status: 'unchecked' | 'passed' | 'failed' }) =>
+      api.patch(`/contractors/admin/${input.userId}/verification-documents/${input.documentType}/review`, {
+        status: input.status,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-unverified-gcs'] });
     },
   });
 }
