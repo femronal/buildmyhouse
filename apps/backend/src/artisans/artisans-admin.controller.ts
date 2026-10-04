@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { ArtisanCapabilityKind } from '@prisma/client';
+import { IsArray, IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { PermissionsGuard } from '../hr/permissions/permissions.guard';
@@ -17,6 +19,53 @@ import {
   AdminVerificationDto,
 } from './dto/artisans.dto';
 
+class TradeBodyDto {
+  @IsString()
+  label!: string;
+}
+
+class TradePatchDto {
+  @IsOptional()
+  @IsString()
+  label?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+}
+
+class TradeReorderDto {
+  @IsArray()
+  @IsString({ each: true })
+  ids!: string[];
+}
+
+class CapabilityBodyDto {
+  @IsString()
+  label!: string;
+
+  @IsIn(['problem', 'service', 'specialty'])
+  kind!: 'problem' | 'service' | 'specialty';
+
+  @IsOptional()
+  @IsString()
+  professionalNote?: string;
+}
+
+class CapabilityPatchDto {
+  @IsOptional()
+  @IsString()
+  label?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  professionalNote?: string;
+}
+
 @Controller('admin/artisans')
 @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @Roles('admin')
@@ -33,6 +82,54 @@ export class ArtisansAdminController {
   @RequirePermissions('artisans.view')
   meta() {
     return this.artisans.getMeta();
+  }
+
+  @Get('catalog')
+  @RequirePermissions('artisans.view')
+  catalog() {
+    return this.artisans.getCatalog();
+  }
+
+  @Post('trades')
+  @RequirePermissions('artisans.edit')
+  createTrade(@Body() body: TradeBodyDto) {
+    return this.artisans.createTrade(body.label);
+  }
+
+  @Patch('trades/reorder')
+  @RequirePermissions('artisans.edit')
+  reorderTrades(@Body() body: TradeReorderDto) {
+    return this.artisans.reorderTrades(body.ids);
+  }
+
+  @Patch('trades/:tradeId')
+  @RequirePermissions('artisans.edit')
+  updateTrade(@Param('tradeId') tradeId: string, @Body() body: TradePatchDto) {
+    return this.artisans.updateTrade(tradeId, body);
+  }
+
+  @Delete('trades/:tradeId')
+  @RequirePermissions('artisans.edit')
+  deleteTrade(@Param('tradeId') tradeId: string) {
+    return this.artisans.deleteTrade(tradeId);
+  }
+
+  @Post('trades/:tradeId/capabilities')
+  @RequirePermissions('artisans.edit')
+  createCapability(@Param('tradeId') tradeId: string, @Body() body: CapabilityBodyDto) {
+    return this.artisans.createCapability(tradeId, body.kind as ArtisanCapabilityKind, body.label, body.professionalNote);
+  }
+
+  @Patch('capabilities/:capabilityId')
+  @RequirePermissions('artisans.edit')
+  updateCapability(@Param('capabilityId') capabilityId: string, @Body() body: CapabilityPatchDto) {
+    return this.artisans.updateCapability(capabilityId, body);
+  }
+
+  @Delete('capabilities/:capabilityId')
+  @RequirePermissions('artisans.edit')
+  deleteCapability(@Param('capabilityId') capabilityId: string) {
+    return this.artisans.deleteCapability(capabilityId);
   }
 
   @Get('claims')

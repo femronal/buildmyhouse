@@ -6,6 +6,10 @@ import {
   initialsFromName,
   normalizeSearchParams,
   pluralizeLastWord,
+  ARTISAN_DIRECTORY_BASE_TITLE,
+  artisanDirectoryHeading,
+  artisanDirectorySummary,
+  ARTISAN_DIRECTORY_SUMMARY,
   professionalDirectoryHeading,
   PROFESSIONAL_DIRECTORY_BASE_TITLE,
   readFlag,
@@ -87,6 +91,23 @@ describe('directory headings', () => {
     );
     expect(professionalDirectoryHeading({ needLabel: 'I need a BOQ' })).toBe('I need a BOQ in Nigeria');
     expect(professionalDirectoryHeading({ stateLabel: 'Rivers' })).toBe('Construction Professionals in Rivers');
+    expect(artisanDirectoryHeading({})).toBe(ARTISAN_DIRECTORY_BASE_TITLE);
+    expect(artisanDirectoryHeading({ problemLabel: 'Water pump not working' })).toBe(
+      'Water pump not working in Nigeria',
+    );
+    expect(artisanDirectoryHeading({ tradeLabel: 'Pump Technician', stateLabel: 'Lagos' })).toBe(
+      'Pump Technicians in Lagos',
+    );
+    expect(
+      artisanDirectoryHeading({
+        problemLabel: 'Water pump not working',
+        tradeLabel: 'Pump Technician',
+        stateLabel: 'Lagos',
+      }),
+    ).toBe('Pump Technicians for Water pump not working in Lagos');
+    expect(artisanDirectorySummary()).toBe(ARTISAN_DIRECTORY_SUMMARY);
+    expect(artisanDirectorySummary('Water pump not working')).toContain('Water pump not working');
+    expect(artisanDirectorySummary('Water pump not working').toLowerCase()).toContain('not a diagnosis');
   });
 
   it('does not lead titles with a verified-directory claim', () => {
@@ -96,6 +117,8 @@ describe('directory headings', () => {
       professionalDirectoryHeading({}),
       professionalDirectoryHeading({ professionLabel: 'Architect', stateLabel: 'Lagos' }),
       professionalDirectoryHeading({ needLabel: 'Survey my land', stateLabel: 'Ogun' }),
+      artisanDirectoryHeading({}),
+      artisanDirectoryHeading({ problemLabel: 'Water pump not working', tradeLabel: 'Pump Technician', stateLabel: 'Lagos' }),
     ];
     headings.forEach((heading) => {
       expect(headingAvoidsVerifiedLead(heading)).toBe(true);

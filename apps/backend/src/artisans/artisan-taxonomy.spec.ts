@@ -1,4 +1,4 @@
-import { ARTISAN_TRADES } from './artisan-taxonomy';
+import { ARTISAN_TRADES, seededCapabilityIds } from './artisan-taxonomy';
 
 describe('ARTISAN_TRADES', () => {
   it('keeps unique keys and includes cleaning plus fumigation', () => {
@@ -8,6 +8,7 @@ describe('ARTISAN_TRADES', () => {
     expect(ARTISAN_TRADES).toHaveLength(25);
     const pest = ARTISAN_TRADES.find((trade) => trade.key === 'pest-treatment');
     expect(pest?.services).toContain('Fumigation');
+    expect(seededCapabilityIds().has('trade_pump_problem_water-pump-not-working')).toBe(true);
     for (const trade of ARTISAN_TRADES) {
       const services = new Set(trade.services);
       for (const problem of trade.problems) {

@@ -1,0 +1,1 @@
+ALTER TABLE "artisan_capabilities" ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN NOT NULL DEFAULT true;

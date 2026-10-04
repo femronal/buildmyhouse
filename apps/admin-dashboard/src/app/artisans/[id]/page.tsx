@@ -146,8 +146,9 @@ function ArtisanEditor({ artisan, onSave }: { artisan: Record<string, any>; onSa
       </div>
       {trade ? (
         <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <CapabilityChecks title="Problems they solve" items={trade.problems || []} selected={capabilityIds} onToggle={toggle} />
           <CapabilityChecks title="Services" items={trade.services || []} selected={capabilityIds} onToggle={toggle} />
-          <CapabilityChecks title="Problems we fix" items={trade.problems || []} selected={capabilityIds} onToggle={toggle} />
+          <CapabilityChecks title="Specialties" items={trade.specialties || []} selected={capabilityIds} onToggle={toggle} />
         </div>
       ) : null}
       <button

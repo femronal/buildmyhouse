@@ -319,6 +319,16 @@ export const ARTISAN_TRADES: ArtisanTradeSeed[] = [
   },
 ];
 
+export function seededCapabilityIds() {
+  const ids = new Set<string>();
+  for (const trade of ARTISAN_TRADES) {
+    for (const label of trade.specialties) ids.add(`${trade.id}_specialty_${slugKey(label)}`);
+    for (const label of trade.services) ids.add(`${trade.id}_service_${slugKey(label)}`);
+    for (const problem of trade.problems) ids.add(`${trade.id}_problem_${slugKey(problem.label)}`);
+  }
+  return ids;
+}
+
 export function slugKey(label: string) {
   return label
     .toLowerCase()

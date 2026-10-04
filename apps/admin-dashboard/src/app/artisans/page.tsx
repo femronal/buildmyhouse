@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import ArtisanCatalogPanel from '@/components/ArtisanCatalogPanel';
 import { ClaimLinkCopyButton } from '@/components/ClaimLinkPanel';
 import { useArtisans, useCreateArtisan } from '@/hooks/useArtisans';
 
@@ -33,6 +35,9 @@ const emptyForm = {
 };
 
 export default function ArtisansAdminPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const catalogOpen = searchParams.get('catalog') === '1';
   const [q, setQ] = useState('');
   const [trade, setTrade] = useState('');
   const [recruitmentStatus, setRecruitmentStatus] = useState('');
@@ -56,10 +61,24 @@ export default function ArtisansAdminPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <h1 className="text-2xl font-semibold text-gray-950">Artisans</h1>
-      <p className="mt-1 max-w-3xl text-sm text-gray-600">
-        Admin-created listings publish immediately. Applications from the public form stay pending until you approve them.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-950">Artisans</h1>
+          <p className="mt-1 max-w-3xl text-sm text-gray-600">
+            Admin-created listings publish immediately. Applications from the public form stay pending until you approve them.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => router.replace(catalogOpen ? '/artisans' : '/artisans?catalog=1', { scroll: false })}
+          className={`rounded-lg border px-4 py-2 text-sm ${catalogOpen ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-300 text-gray-800'}`}
+          aria-expanded={catalogOpen}
+        >
+          Trades and problems
+        </button>
+      </div>
+
+      {catalogOpen ? <div className="mt-6"><ArtisanCatalogPanel /></div> : null}
 
       <form
         className="mt-6 grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 md:grid-cols-3"
@@ -131,8 +150,12 @@ export default function ArtisansAdminPage() {
         <textarea className="rounded-lg border px-3 py-2 md:col-span-3" placeholder="Internal notes" value={form.internalNotes} onChange={(event) => set({ internalNotes: event.target.value })} />
         {selectedTrade ? (
           <div className="md:col-span-3 grid gap-3 md:grid-cols-2">
+            <CheckGroup title="Problems they solve" items={selectedTrade.problems || []} selected={form.capabilityIds} onChange={(capabilityIds) => set({ capabilityIds })} />
             <CheckGroup title="Services" items={selectedTrade.services || []} selected={form.capabilityIds} onChange={(capabilityIds) => set({ capabilityIds })} />
-            <CheckGroup title="Problems we fix" items={selectedTrade.problems || []} selected={form.capabilityIds} onChange={(capabilityIds) => set({ capabilityIds })} />
+            <CheckGroup title="Specialties" items={selectedTrade.specialties || []} selected={form.capabilityIds} onChange={(capabilityIds) => set({ capabilityIds })} />
+            <p className="text-sm text-gray-500 md:col-span-2">
+              Leave these unchecked to list this artisan for every active repair problem and service in the trade. Check specific ones when you know the work they take on.
+            </p>
           </div>
         ) : null}
         {form.acknowledgeDuplicates || needsOverride ? (
@@ -185,7 +208,7 @@ export default function ArtisansAdminPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-500">
             <tr>
-              {['Artisan', 'Trade', 'Location', 'Trust', 'Claim', 'Verification', 'Recruitment', 'Used by BMH', 'Claim link', 'Action'].map((heading) => (
+              {['Artisan', 'Trade', 'Repairs', 'Location', 'Trust', 'Claim', 'Verification', 'Recruitment', 'Used by BMH', 'Claim link', 'Action'].map((heading) => (
                 <th key={heading} className="px-3 py-2 font-medium">{heading}</th>
               ))}
             </tr>
@@ -195,6 +218,7 @@ export default function ArtisansAdminPage() {
               <tr key={row.id} className="border-t border-gray-100">
                 <td className="px-3 py-2 font-medium text-gray-950">{row.displayName}</td>
                 <td className="px-3 py-2">{row.trade}</td>
+                <td className="px-3 py-2">{(row.problems || []).slice(0, 2).join(', ') || 'All problems in this trade'}</td>
                 <td className="px-3 py-2">{[row.city, row.state].filter(Boolean).join(', ')}</td>
                 <td className="px-3 py-2">{row.trustScore}%</td>
                 <td className="px-3 py-2">{row.claimStatus}</td>

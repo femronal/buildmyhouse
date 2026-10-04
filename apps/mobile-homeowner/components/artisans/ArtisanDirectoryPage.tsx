@@ -15,11 +15,12 @@ import { TrustRing } from '@/components/artisans/TrustRing';
 import { getBackendAssetUrl } from '@/lib/image';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import {
-  ARTISAN_DIRECTORY_BASE_TITLE,
-  ARTISAN_DIRECTORY_SUMMARY,
   ARTISAN_QUERY_ORDER,
   DIRECTORY_PAGE_SIZE,
+  artisanDirectoryHeading,
+  artisanDirectorySummary,
   directoryCanonical,
+  humanizeKey,
   initialsFromName,
   normalizeSearchParams,
   readFlag,
@@ -28,7 +29,7 @@ import {
   toggleFilterHref,
   withDirectoryParams,
 } from '@/lib/directory-listing';
-import { fetchArtisanMeta, fetchArtisans, type ArtisanCard } from '@/lib/public-artisans';
+import { fetchArtisanMeta, fetchArtisans, type ArtisanCard, type ArtisanProblem } from '@/lib/public-artisans';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 
@@ -56,6 +57,24 @@ function problemKey(label: string) {
   return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
 
+function dedupedProblems(problems: ArtisanProblem[]): ArtisanProblem[] {
+  const seen = new Set<string>();
+  const rows: ArtisanProblem[] = [];
+  for (const item of problems) {
+    if (seen.has(item.key)) continue;
+    seen.add(item.key);
+    rows.push(item);
+  }
+  if (!rows.length) {
+    return FEATURED_PROBLEMS.map((label) => ({ key: problemKey(label), label, tradeKey: '', tradeLabel: '' }));
+  }
+  const featured = FEATURED_PROBLEMS.map((label) => rows.find((item) => item.key === problemKey(label))).filter(
+    (item): item is ArtisanProblem => !!item,
+  );
+  const featuredKeys = new Set(featured.map((item) => item.key));
+  return [...featured, ...rows.filter((item) => !featuredKeys.has(item.key))];
+}
+
 function ArtisanMark({ name, logoUrl }: { name: string; logoUrl: string | null }) {
   const [failed, setFailed] = useState(false);
   const logo = !failed ? getBackendAssetUrl(logoUrl) : null;
@@ -76,6 +95,7 @@ function ArtisanMark({ name, logoUrl }: { name: string; logoUrl: string | null }
 function ArtisanResultCard({ artisan }: { artisan: ArtisanCard }) {
   const place = [artisan.city, artisan.state].filter(Boolean).join(', ');
   const meta = [artisan.trade?.label, place].filter(Boolean).join(' · ');
+  const reasons = artisan.problems.length > 0 ? artisan.problems : artisan.services;
   return (
     <Link href={`/artisans/${artisan.slug}` as any} asChild>
       <Pressable
@@ -104,12 +124,12 @@ function ArtisanResultCard({ artisan }: { artisan: ArtisanCard }) {
               {meta}
             </Text>
           ) : null}
-          {artisan.services.length > 0 ? (
+          {reasons.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-              {artisan.services.slice(0, 2).map((service) => (
-                <DirectoryPill key={service} label={service} />
+              {reasons.slice(0, 2).map((label) => (
+                <DirectoryPill key={label} label={label} />
               ))}
-              {artisan.services.length > 2 ? <DirectoryPill label={`+${artisan.services.length - 2} more`} /> : null}
+              {reasons.length > 2 ? <DirectoryPill label={`+${reasons.length - 2} more`} /> : null}
             </View>
           ) : null}
         </View>
@@ -127,25 +147,39 @@ export default function ArtisanDirectoryPage() {
   const page = readPage(params.page);
   const sort = readSort(params.sort);
   const metaQuery = useQuery({ queryKey: ['artisan-meta'], queryFn: fetchArtisanMeta });
-  const trades = (metaQuery.data?.trades || []).filter((trade) => (trade.listingCount || 0) > 0);
+  const trades = metaQuery.data?.trades || [];
   const problems = metaQuery.data?.problems || [];
   const selectedProblem = problems.find((item) => item.key === params.problem);
+  const selectedTrade = trades.find((item) => item.key === params.trade);
+  const featuredLabel = FEATURED_PROBLEMS.find((label) => problemKey(label) === params.problem);
+  const problemLabel = selectedProblem?.label || featuredLabel || (params.problem ? humanizeKey(params.problem) : undefined);
+  const title = artisanDirectoryHeading({
+    problemLabel,
+    tradeLabel: selectedTrade?.label,
+    stateLabel: params.state,
+  });
+  const summary = artisanDirectorySummary(problemLabel);
 
   useWebSeo({
-    title: `${ARTISAN_DIRECTORY_BASE_TITLE} | BuildMyHouse`,
-    description: ARTISAN_DIRECTORY_SUMMARY,
+    title: `${title} | BuildMyHouse`,
+    description: summary,
     canonicalPath: directoryCanonical(PATH, params, ['problem', 'trade', 'state']),
     robots: 'index,follow',
     jsonLd: buildSeoJsonLd({
       path: directoryCanonical(PATH, params, ['problem', 'trade', 'state']),
-      title: ARTISAN_DIRECTORY_BASE_TITLE,
-      description: ARTISAN_DIRECTORY_SUMMARY,
+      title,
+      description: summary,
       schemaType: 'Service',
       breadcrumbs: [
         { name: 'Home', path: '/' },
         { name: 'Artisans', path: '/artisans' },
       ],
       faqs: [
+        {
+          question: 'How do I find an artisan for a repair?',
+          answer:
+            'Choose what needs fixing, or choose the trade. The results are artisans listed for that kind of repair. Choosing a problem is not a diagnosis.',
+        },
         {
           question: 'Does a listed artisan mean BuildMyHouse verified them?',
           answer: 'No. Listing only means the artisan appears in the directory. Verification and previous BuildMyHouse use are shown separately.',
@@ -190,8 +224,21 @@ export default function ArtisanDirectoryPage() {
     href: toggleFilterHref(PATH, params, param, value, ARTISAN_QUERY_ORDER),
   });
 
-  const problemChips = FEATURED_PROBLEMS.map((label) => chip(`problem-${problemKey(label)}`, label, 'problem', problemKey(label)));
+  const allProblems = dedupedProblems(problems);
+  const featuredKeys = new Set(FEATURED_PROBLEMS.map(problemKey));
+  const problemChips = allProblems.map((item) => chip(`problem-${item.key}`, item.label, 'problem', item.key));
+  const quickProblemChips = problemChips.filter((item) => featuredKeys.has(item.key.replace('problem-', '')));
+  const visibleQuickProblems = quickProblemChips.length ? quickProblemChips : problemChips;
+  if (params.problem && !visibleQuickProblems.some((item) => item.active)) {
+    visibleQuickProblems.unshift(chip(`problem-${params.problem}`, problemLabel || params.problem, 'problem', params.problem));
+  }
+  if (params.problem && !problemChips.some((item) => item.active)) {
+    problemChips.unshift(chip(`problem-${params.problem}`, problemLabel || params.problem, 'problem', params.problem));
+  }
   const tradeChips = trades.map((trade) => chip(`trade-${trade.key}`, trade.label, 'trade', trade.key));
+  if (params.trade && !tradeChips.some((item) => item.active)) {
+    tradeChips.unshift(chip(`trade-${params.trade}`, selectedTrade?.label || params.trade, 'trade', params.trade));
+  }
   const stateChips = FEATURED_STATES.map((label) => chip(`state-${label}`, label, 'state', label));
   const trustChips = [
     chip('verified', 'Verified', 'verified', '1'),
@@ -225,12 +272,12 @@ export default function ArtisanDirectoryPage() {
         <View className="w-full max-w-[1120px] self-center px-4 md:px-6 pt-6 md:pt-10">
           <SeoContentBackButton fallbackHref="/" />
           <DirectoryBrowse
-            title={ARTISAN_DIRECTORY_BASE_TITLE}
-            summary={ARTISAN_DIRECTORY_SUMMARY}
+            title={title}
+            summary={summary}
             searchValue={params.q || ''}
             onSearchChange={onSearchChange}
             searchPlaceholder="plumber Mowe, roof leak Lekki, broken window Lagos"
-            quickChips={problemChips}
+            quickChips={visibleQuickProblems}
             wideChips={[...tradeChips, ...stateChips, ...trustChips]}
             sections={sections}
             activeFilterCount={activeFilterCount}
@@ -280,7 +327,9 @@ export default function ArtisanDirectoryPage() {
             }
             empty={
               <View style={{ borderWidth: 1, borderColor: LANDING_BORDER, borderRadius: 16, padding: 16 }}>
-                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>No artisans match these filters yet.</Text>
+                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: LANDING_INK }}>
+                  {problemLabel ? `No artisans are listed for ${problemLabel} yet.` : 'No artisans match these filters yet.'}
+                </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
                   <DirectoryActionLink href={PATH} label="Clear filters" />
                   <DirectoryActionLink href="/artisans/apply" label="List my repair business" filled />

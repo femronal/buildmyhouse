@@ -50,6 +50,7 @@ type Capability = {
   label: string;
   professionalNote?: string | null;
   professionalHref?: string | null;
+  isActive?: boolean;
 };
 
 type Media = {
@@ -91,7 +92,7 @@ export type ArtisanPublicSource = {
   usedByBmh: boolean;
   trustScore: number;
   updatedAt: Date;
-  primaryTrade?: { key: string; label: string } | null;
+  primaryTrade?: { key: string; label: string; capabilities?: Capability[] } | null;
   capabilities?: Array<{ capability: Capability }>;
   media?: Media[];
   checks?: Array<{ checkKey: string; status: string }>;
@@ -107,7 +108,21 @@ function visibleMedia(listing: ArtisanPublicSource) {
 function caps(listing: ArtisanPublicSource, kind: string) {
   return (listing.capabilities || [])
     .map((row) => row.capability)
-    .filter((item) => item.kind === kind)
+    .filter((item) => item.kind === kind && item.isActive !== false)
+    .map((item) => ({
+      key: item.key,
+      label: item.label,
+      professionalNote: item.professionalNote || null,
+      professionalHref: item.professionalHref || null,
+    }));
+}
+
+/** Linked problems win. A listing with none still belongs to the problems on its trade. */
+export function artisanProblemCaps(listing: ArtisanPublicSource) {
+  const linked = caps(listing, 'problem');
+  if (linked.length) return linked;
+  return (listing.primaryTrade?.capabilities || [])
+    .filter((item) => item.kind === 'problem' && item.isActive !== false)
     .map((item) => ({
       key: item.key,
       label: item.label,
@@ -128,7 +143,7 @@ export function toPublicArtisanCard(listing: ArtisanPublicSource) {
     city: listing.city || null,
     state: listing.state || null,
     services: caps(listing, 'service').slice(0, 4).map((item) => item.label),
-    problems: caps(listing, 'problem').slice(0, 4).map((item) => item.label),
+    problems: artisanProblemCaps(listing).slice(0, 4).map((item) => item.label),
     trustScore: listing.trustScore,
     trustExplanation: ARTISAN_TRUST_EXPLANATION,
     listingStatus: 'listed' as const,
@@ -154,7 +169,7 @@ export function toPublicArtisanProfile(listing: ArtisanPublicSource) {
     serviceCities: listing.serviceCities || [],
     specialties: caps(listing, 'specialty'),
     repairServices: caps(listing, 'service'),
-    problemsHandled: caps(listing, 'problem'),
+    problemsHandled: artisanProblemCaps(listing),
     coverUrl: media.find((item) => item.mediaType === 'workshop_cover')?.fileRef || null,
     gallery: media
       .filter((item) => item.mediaType !== 'logo')

@@ -164,6 +164,26 @@ export function vendorDirectoryHeading(input: {
   return `${subject} in ${place}`;
 }
 
+export function artisanDirectoryHeading(input: {
+  problemLabel?: string;
+  tradeLabel?: string;
+  stateLabel?: string;
+}): string {
+  const place = input.stateLabel || 'Nigeria';
+  if (input.problemLabel && input.tradeLabel) {
+    return `${pluralizeLastWord(input.tradeLabel)} for ${input.problemLabel} in ${place}`;
+  }
+  if (input.problemLabel) return `${input.problemLabel} in ${place}`;
+  if (input.tradeLabel) return `${pluralizeLastWord(input.tradeLabel)} in ${place}`;
+  if (place === 'Nigeria') return ARTISAN_DIRECTORY_BASE_TITLE;
+  return `Artisans and Repair Technicians in ${place}`;
+}
+
+export function artisanDirectorySummary(problemLabel?: string): string {
+  if (!problemLabel) return ARTISAN_DIRECTORY_SUMMARY;
+  return `These listings are artisans who take on "${problemLabel}". Choosing a repair points you to that kind of work. It is not a diagnosis, and listing is not the same as verification.`;
+}
+
 export function professionalDirectoryHeading(input: {
   professionLabel?: string;
   stateLabel?: string;

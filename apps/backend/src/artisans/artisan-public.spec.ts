@@ -1,4 +1,4 @@
-import { toPublicArtisanProfile, assertNoArtisanPrivateKeys } from './artisan-public';
+import { toPublicArtisanCard, toPublicArtisanProfile, assertNoArtisanPrivateKeys } from './artisan-public';
 
 describe('public artisan serializer', () => {
   it('hides recruitment, notes and private contact', () => {
@@ -43,5 +43,32 @@ describe('public artisan serializer', () => {
     expect(assertNoArtisanPrivateKeys(profile)).toEqual([]);
     expect(JSON.stringify(profile)).not.toContain('discovered');
     expect(JSON.stringify(profile)).not.toContain('aggregateRating');
+  });
+
+  it('shows the trade problems when the listing was not tagged with any', () => {
+    const card = toPublicArtisanCard({
+      id: 'a2',
+      slug: 'z-and-j',
+      displayName: 'Z And J Heavy Duty Diesel Generator Mechanic',
+      publicPhone: false,
+      publicEmail: false,
+      publicWhatsapp: false,
+      publicWebsite: false,
+      serviceStates: [],
+      serviceCities: [],
+      listingStatus: 'listed',
+      claimStatus: 'unclaimed',
+      verificationStatus: 'unverified',
+      usedByBmh: false,
+      trustScore: 42,
+      updatedAt: new Date('2026-10-01'),
+      primaryTrade: {
+        key: 'generator-technician',
+        label: 'Generator Technician',
+        capabilities: [{ id: 'p1', kind: 'problem', key: 'generator-not-starting', label: 'Generator not starting' }],
+      },
+      capabilities: [],
+    });
+    expect(card.problems).toEqual(['Generator not starting']);
   });
 });

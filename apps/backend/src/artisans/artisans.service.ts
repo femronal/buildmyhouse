@@ -24,7 +24,8 @@ import {
 } from '@prisma/client';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { ARTISAN_TRADES, slugKey } from './artisan-taxonomy';
+import { artisanProblemWhere } from './artisan-search';
+import { ARTISAN_TRADES, seededCapabilityIds, slugKey } from './artisan-taxonomy';
 import { ARTISAN_TRUST_EXPLANATION, computeArtisanTrust, type ArtisanTrustInput } from './artisan-trust';
 import { toPublicArtisanCard, toPublicArtisanProfile } from './artisan-public';
 import type {
@@ -54,6 +55,18 @@ const LISTING_INCLUDE = {
   checks: true,
 } satisfies Prisma.ArtisanListingInclude;
 
+const PUBLIC_INCLUDE = {
+  ...LISTING_INCLUDE,
+  primaryTrade: {
+    include: {
+      capabilities: {
+        where: { isActive: true, kind: ArtisanCapabilityKind.problem },
+        orderBy: { sortOrder: 'asc' as const },
+      },
+    },
+  },
+} satisfies Prisma.ArtisanListingInclude;
+
 @Injectable()
 export class ArtisansService implements OnModuleInit {
   constructor(
@@ -69,7 +82,7 @@ export class ArtisansService implements OnModuleInit {
     for (const [index, trade] of ARTISAN_TRADES.entries()) {
       await this.prisma.artisanTrade.upsert({
         where: { id: trade.id },
-        update: { key: trade.key, label: trade.label, sortOrder: index, isActive: true },
+        update: {},
         create: { id: trade.id, key: trade.key, label: trade.label, sortOrder: index },
       });
       const groups: Array<[ArtisanCapabilityKind, string[]]> = [
@@ -81,7 +94,7 @@ export class ArtisansService implements OnModuleInit {
           const id = `${trade.id}_${kind}_${slugKey(label)}`;
           await this.prisma.artisanCapability.upsert({
             where: { id },
-            update: { label, sortOrder, tradeId: trade.id, kind, key: slugKey(label) },
+            update: {},
             create: { id, tradeId: trade.id, kind, key: slugKey(label), label, sortOrder },
           });
         }
@@ -90,12 +103,7 @@ export class ArtisansService implements OnModuleInit {
         const id = `${trade.id}_problem_${slugKey(problem.label)}`;
         await this.prisma.artisanCapability.upsert({
           where: { id },
-          update: {
-            label: problem.label,
-            sortOrder,
-            professionalNote: problem.professionalNote || null,
-            professionalHref: problem.professionalHref || null,
-          },
+          update: {},
           create: {
             id,
             tradeId: trade.id,
@@ -123,7 +131,7 @@ export class ArtisansService implements OnModuleInit {
     const trades = await this.prisma.artisanTrade.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: 'asc' },
-      include: { capabilities: { orderBy: { sortOrder: 'asc' } } },
+      include: { capabilities: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } } },
     });
     const problems = trades.flatMap((trade) =>
       trade.capabilities
@@ -158,6 +166,172 @@ export class ArtisansService implements OnModuleInit {
     };
   }
 
+  async getCatalog() {
+    const trades = await this.prisma.artisanTrade.findMany({
+      orderBy: [{ sortOrder: 'asc' }, { label: 'asc' }],
+      include: {
+        capabilities: { orderBy: [{ kind: 'asc' }, { sortOrder: 'asc' }, { label: 'asc' }] },
+        _count: { select: { listings: true } },
+      },
+    });
+    const seeded = new Set(ARTISAN_TRADES.map((trade) => trade.id));
+    const seededCapabilities = seededCapabilityIds();
+    const capabilityIds = trades.flatMap((trade) => trade.capabilities.map((item) => item.id));
+    const usage = capabilityIds.length
+      ? await this.prisma.artisanListingCapability.groupBy({
+          by: ['capabilityId'],
+          where: { capabilityId: { in: capabilityIds } },
+          _count: { _all: true },
+        })
+      : [];
+    const useMap = new Map(usage.map((row) => [row.capabilityId, row._count._all]));
+    const mapKind = (trade: (typeof trades)[number], kind: ArtisanCapabilityKind) =>
+      trade.capabilities
+        .filter((item) => item.kind === kind)
+        .map((item) => ({
+          id: item.id,
+          key: item.key,
+          label: item.label,
+          isActive: item.isActive,
+          seeded: seededCapabilities.has(item.id),
+          professionalNote: item.professionalNote,
+          listingCount: useMap.get(item.id) || 0,
+        }));
+    return {
+      trades: trades.map((trade) => ({
+        id: trade.id,
+        key: trade.key,
+        label: trade.label,
+        isActive: trade.isActive,
+        sortOrder: trade.sortOrder,
+        seeded: seeded.has(trade.id),
+        listingCount: trade._count.listings,
+        problems: mapKind(trade, ArtisanCapabilityKind.problem),
+        services: mapKind(trade, ArtisanCapabilityKind.service),
+        specialties: mapKind(trade, ArtisanCapabilityKind.specialty),
+      })),
+    };
+  }
+
+  async createTrade(label: string) {
+    const name = label.trim();
+    const key = slugKey(name);
+    if (!key) throw new BadRequestException('Enter a trade name.');
+    const existing = await this.prisma.artisanTrade.findUnique({ where: { key } });
+    if (existing) throw new ConflictException('A trade with that name already exists.');
+    const baseId = `trade_${key.replace(/-/g, '_')}`;
+    const idTaken = await this.prisma.artisanTrade.findUnique({ where: { id: baseId } });
+    const id = idTaken ? `${baseId}_${randomBytes(3).toString('hex')}` : baseId;
+    const max = await this.prisma.artisanTrade.aggregate({ _max: { sortOrder: true } });
+    return this.prisma.artisanTrade.create({
+      data: { id, key, label: name, sortOrder: (max._max.sortOrder ?? 0) + 1 },
+    });
+  }
+
+  async updateTrade(id: string, patch: { label?: string; isActive?: boolean }) {
+    const trade = await this.prisma.artisanTrade.findUnique({ where: { id } });
+    if (!trade) throw new NotFoundException('Trade not found');
+    const label = patch.label?.trim();
+    if (label !== undefined && !label) throw new BadRequestException('Enter a trade name.');
+    return this.prisma.artisanTrade.update({
+      where: { id },
+      data: {
+        label: label || undefined,
+        isActive: patch.isActive,
+      },
+    });
+  }
+
+  async reorderTrades(ids: string[]) {
+    const unique = [...new Set(ids)];
+    if (!unique.length) throw new BadRequestException('Choose the trades to reorder.');
+    await this.prisma.$transaction(
+      unique.map((id, sortOrder) => this.prisma.artisanTrade.update({ where: { id }, data: { sortOrder } })),
+    );
+    return { ok: true };
+  }
+
+  async deleteTrade(id: string) {
+    const trade = await this.prisma.artisanTrade.findUnique({
+      where: { id },
+      include: { _count: { select: { listings: true } } },
+    });
+    if (!trade) throw new NotFoundException('Trade not found');
+    if (ARTISAN_TRADES.some((item) => item.id === id)) {
+      throw new ConflictException('This trade is part of the directory. Hide it instead of deleting it.');
+    }
+    if (trade._count.listings > 0) {
+      throw new ConflictException('Artisans are listed in this trade. Move them, or hide the trade.');
+    }
+    await this.prisma.artisanTrade.delete({ where: { id } });
+    return { deleted: true };
+  }
+
+  async createCapability(
+    tradeId: string,
+    kind: ArtisanCapabilityKind,
+    label: string,
+    professionalNote?: string,
+  ) {
+    if (!['problem', 'service', 'specialty'].includes(kind)) {
+      throw new BadRequestException('Choose a problem, service, or specialty.');
+    }
+    const trade = await this.prisma.artisanTrade.findUnique({ where: { id: tradeId } });
+    if (!trade) throw new NotFoundException('Trade not found');
+    const name = label.trim();
+    const key = slugKey(name);
+    if (!key) throw new BadRequestException('Enter a name.');
+    const existing = await this.prisma.artisanCapability.findUnique({
+      where: { tradeId_kind_key: { tradeId, kind, key } },
+    });
+    if (existing) throw new ConflictException('That already exists on this trade.');
+    const max = await this.prisma.artisanCapability.aggregate({
+      where: { tradeId, kind },
+      _max: { sortOrder: true },
+    });
+    return this.prisma.artisanCapability.create({
+      data: {
+        id: `${tradeId}_${kind}_${key}`,
+        tradeId,
+        kind,
+        key,
+        label: name,
+        professionalNote: kind === ArtisanCapabilityKind.problem ? professionalNote?.trim() || null : null,
+        sortOrder: (max._max.sortOrder ?? 0) + 1,
+      },
+    });
+  }
+
+  async updateCapability(id: string, patch: { label?: string; isActive?: boolean; professionalNote?: string }) {
+    const row = await this.prisma.artisanCapability.findUnique({ where: { id } });
+    if (!row) throw new NotFoundException('Not found');
+    const label = patch.label?.trim();
+    if (label !== undefined && !label) throw new BadRequestException('Enter a name.');
+    return this.prisma.artisanCapability.update({
+      where: { id },
+      data: {
+        label: label || undefined,
+        isActive: patch.isActive,
+        professionalNote:
+          row.kind === ArtisanCapabilityKind.problem && patch.professionalNote !== undefined
+            ? patch.professionalNote.trim() || null
+            : undefined,
+      },
+    });
+  }
+
+  async deleteCapability(id: string) {
+    const used = await this.prisma.artisanListingCapability.count({ where: { capabilityId: id } });
+    if (used) throw new ConflictException('Artisans are listed against this. Hide it instead of deleting it.');
+    if (seededCapabilityIds().has(id)) {
+      throw new ConflictException('This is part of the directory. Hide it instead of deleting it.');
+    }
+    const row = await this.prisma.artisanCapability.findUnique({ where: { id } });
+    if (!row) throw new NotFoundException('Not found');
+    await this.prisma.artisanCapability.delete({ where: { id } });
+    return { deleted: true };
+  }
+
   async searchPublic(dto: PublicArtisanSearchDto) {
     const page = dto.page || 1;
     const limit = dto.limit || 20;
@@ -176,12 +350,13 @@ export class ArtisansService implements OnModuleInit {
                 { bio: { contains: q, mode: 'insensitive' } },
                 { primaryTrade: { label: { contains: q, mode: 'insensitive' } } },
                 { capabilities: { some: { capability: { label: { contains: q, mode: 'insensitive' } } } } },
+                { primaryTrade: { capabilities: { some: { isActive: true, label: { contains: q, mode: 'insensitive' } } } } },
               ],
             }
           : {},
         dto.trade ? { primaryTrade: { key: dto.trade } } : {},
-        dto.service ? { capabilities: { some: { capability: { kind: 'service', key: dto.service } } } } : {},
-        dto.problem ? { capabilities: { some: { capability: { kind: 'problem', key: dto.problem } } } } : {},
+        dto.service ? { capabilities: { some: { capability: { kind: 'service', key: dto.service, isActive: true } } } } : {},
+        dto.problem ? artisanProblemWhere(dto.problem) : {},
         dto.state ? { OR: [{ state: { equals: dto.state, mode: 'insensitive' } }, { serviceStates: { has: dto.state } }] } : {},
         dto.city ? { OR: [{ city: { equals: dto.city, mode: 'insensitive' } }, { serviceCities: { has: dto.city } }] } : {},
         dto.verifiedOnly ? { verificationStatus: ArtisanVerificationStatus.verified } : {},
@@ -196,7 +371,7 @@ export class ArtisansService implements OnModuleInit {
       this.prisma.artisanListing.count({ where }),
       this.prisma.artisanListing.findMany({
         where,
-        include: LISTING_INCLUDE,
+        include: PUBLIC_INCLUDE,
         orderBy: dto.sort === 'name' ? [{ displayName: 'asc' as const }] : [{ trustScore: 'desc' as const }, { displayName: 'asc' as const }],
         skip: (page - 1) * limit,
         take: limit,
@@ -211,7 +386,7 @@ export class ArtisansService implements OnModuleInit {
     }
     const listing = await this.prisma.artisanListing.findFirst({
       where: { slug, listingStatus: ArtisanListingStatus.listed, archivedAt: null },
-      include: LISTING_INCLUDE,
+      include: PUBLIC_INCLUDE,
     });
     if (!listing) throw new NotFoundException('Artisan listing not found');
     return toPublicArtisanProfile(listing as any);
@@ -456,6 +631,7 @@ export class ArtisansService implements OnModuleInit {
                 { state: { contains: q, mode: 'insensitive' } },
                 { primaryTrade: { label: { contains: q, mode: 'insensitive' } } },
                 { capabilities: { some: { capability: { label: { contains: q, mode: 'insensitive' } } } } },
+                { primaryTrade: { capabilities: { some: { isActive: true, label: { contains: q, mode: 'insensitive' } } } } },
               ],
             }
           : {},
@@ -481,7 +657,10 @@ export class ArtisansService implements OnModuleInit {
       this.prisma.artisanListing.count({ where }),
       this.prisma.artisanListing.findMany({
         where,
-        include: { primaryTrade: true },
+        include: {
+          primaryTrade: true,
+          capabilities: { include: { capability: { select: { kind: true, label: true, isActive: true } } } },
+        },
         orderBy: { updatedAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -494,6 +673,9 @@ export class ArtisansService implements OnModuleInit {
         displayName: row.displayName,
         businessName: row.businessName,
         trade: row.primaryTrade.label,
+        problems: row.capabilities
+          .filter((item) => item.capability.kind === ArtisanCapabilityKind.problem && item.capability.isActive)
+          .map((item) => item.capability.label),
         city: row.city,
         state: row.state,
         trustScore: row.trustScore,
@@ -584,6 +766,7 @@ export class ArtisansService implements OnModuleInit {
       },
     });
     if (dto.capabilityIds?.length) await this.replaceCapabilities(listing.id, dto.capabilityIds);
+    else await this.attachTradeCatalog(listing.id, trade.id);
     const scored = await this.recalculate(listing.id);
     let claimUrl: string | null = null;
     if (dto.sendClaimInvite) {
@@ -1064,6 +1247,22 @@ export class ArtisansService implements OnModuleInit {
     const listing = await this.prisma.artisanListing.findUnique({ where: { id }, include: LISTING_INCLUDE });
     if (!listing) throw new NotFoundException('Artisan not found');
     return listing;
+  }
+
+  private async attachTradeCatalog(listingId: string, tradeId: string) {
+    const caps = await this.prisma.artisanCapability.findMany({
+      where: {
+        tradeId,
+        isActive: true,
+        kind: { in: [ArtisanCapabilityKind.problem, ArtisanCapabilityKind.service] },
+      },
+      select: { id: true },
+    });
+    if (!caps.length) return;
+    await this.prisma.artisanListingCapability.createMany({
+      data: caps.map((capability) => ({ artisanListingId: listingId, capabilityId: capability.id })),
+      skipDuplicates: true,
+    });
   }
 
   private async replaceCapabilities(listingId: string, capabilityIds: string[]) {
