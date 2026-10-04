@@ -25,7 +25,7 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
   return (
     <SeoContentShell>
       <DirectorySiteHeader current="artisans" />
-      <SeoContentColumn>
+      <SeoContentColumn className="pt-8 md:pt-14">
         {query.isLoading ? <Text style={{ fontFamily: 'Poppins_400Regular' }}>Loading artisan…</Text> : null}
         {!query.isLoading && !artisan ? (
           <SeoHeading level={1} style={{ fontFamily: 'Poppins_700Bold' }}>This artisan listing is not public.</SeoHeading>
