@@ -72,7 +72,7 @@ export default function PlatformGallerySection({ onLayout, nativeID }: PlatformG
     const layout = isDesktop ? item.layout : { rotate: index % 2 === 0 ? -2 : 2, translateY: 4 };
 
     return (
-      <Link key={item.href} href={item.href as any} asChild>
+      <Link key={item.title} href={item.href as any} asChild>
         <Pressable
           onHoverIn={Platform.OS === 'web' ? () => setHoveredIndex(index) : undefined}
           onHoverOut={Platform.OS === 'web' ? () => setHoveredIndex((current) => (current === index ? null : current)) : undefined}
@@ -186,7 +186,7 @@ export default function PlatformGallerySection({ onLayout, nativeID }: PlatformG
         {/* Crawlable text links for SEO :  compact, not a second grid */}
         <View className="mt-10 flex-row flex-wrap justify-center gap-x-5 gap-y-2 px-2">
           {PLATFORM_LADDER_GALLERY.map((item) => (
-            <Link key={`seo-${item.href}`} href={item.href as any} asChild>
+            <Link key={`seo-${item.title}`} href={item.seoHref as any} asChild>
               <Pressable accessibilityRole="link">
                 <Text className="text-xs text-neutral-500" style={{ fontFamily: 'Poppins_500Medium' }}>
                   {item.title} in Nigeria

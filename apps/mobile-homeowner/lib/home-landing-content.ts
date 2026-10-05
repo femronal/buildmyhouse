@@ -381,6 +381,8 @@ export type PlatformGalleryItem = PlatformPillar & {
   };
   /** Fine-tunes cover crop so the main subject stays visible in portrait cards. */
   imageFocus?: string;
+  /** Crawlable service page. The photo card itself opens the matching start flow. */
+  seoHref: string;
 };
 
 export const PLATFORM_LADDER: PlatformPillar[] = [
@@ -422,7 +424,8 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
     title: 'Repairs',
     description:
       'Fix urgent property problems like plumbing, electrical faults, roof leaks, drainage, windows, AC, and bathrooms.',
-    href: '/services/plumbing-repair-nigeria',
+    href: '/start/repair',
+    seoHref: '/services/plumbing-repair-nigeria',
     image: require('@/assets/images/repair.jpg'),
     layout: { rotate: -8, translateY: 12 },
     imageFocus: '50% 38%',
@@ -431,7 +434,8 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
     title: 'Upgrades',
     description:
       'Improve rooms, kitchens, bathrooms, compounds, gates, and finishes without losing control of scope.',
-    href: '/services/kitchen-renovation-nigeria',
+    href: '/start/upgrade',
+    seoHref: '/services/kitchen-renovation-nigeria',
     image: require('@/assets/images/upgrade.jpg'),
     layout: { rotate: -3, translateY: 20 },
     imageFocus: '50% 35%',
@@ -440,7 +444,8 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
     title: 'Renovations',
     description:
       'Break bigger work into stages, evidence, approvals, and clearer communication.',
-    href: '/services/home-renovation-nigeria',
+    href: '/start/upgrade',
+    seoHref: '/services/home-renovation-nigeria',
     image: require('@/assets/images/renovations.jpg'),
     layout: { rotate: 2, translateY: 8 },
     imageFocus: '50% 28%',
@@ -449,7 +454,8 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
     title: 'Interiors',
     description:
       'Manage finish selection, procurement, installation, and reporting.',
-    href: '/interior-design/nigeria',
+    href: '/start/interiors',
+    seoHref: '/interior-design/nigeria',
     image: require('@/assets/images/interiorDesign.jpg'),
     layout: { rotate: -2, translateY: 14 },
     imageFocus: '50% 42%',
@@ -458,7 +464,8 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
     title: 'Full Builds',
     description:
       'For bigger projects, work with verified professionals through structured project stages.',
-    href: '/construction/nigeria',
+    href: '/start/build',
+    seoHref: '/construction/nigeria',
     image: require('@/assets/images/fullbuilds.jpg'),
     layout: { rotate: 6, translateY: 18 },
     imageFocus: '50% 40%',
