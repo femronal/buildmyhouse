@@ -25,6 +25,17 @@ export default function ContractorsPage() {
 
   const { data: contractors = [], isLoading } = useContractors();
 
+  const metrics = useMemo(() => {
+    const active = contractors.filter((contractor) => contractor.verified).length;
+    const pending = contractors.filter((contractor) => !contractor.verified).length;
+    return {
+      total: contractors.length,
+      active,
+      pending,
+      suspended: 0,
+    };
+  }, [contractors]);
+
   const minorSpecialtyOptions = useMemo(() => {
     const tags = contractors.flatMap((contractor) => contractor.specialtyTags || []);
     const unique = Array.from(new Set(tags.map((tag) => String(tag || '').trim()).filter(Boolean)));
@@ -99,6 +110,20 @@ export default function ContractorsPage() {
           <h1 className="text-3xl font-bold font-poppins">Contractors</h1>
           <p className="text-gray-500 mt-1">Manage the relationship between GCs and BuildMyHouse</p>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Total Contractors', value: metrics.total },
+          { label: 'Active', value: metrics.active },
+          { label: 'Pending', value: metrics.pending },
+          { label: 'Suspended', value: metrics.suspended },
+        ].map((metric) => (
+          <div key={metric.label} className="bg-white rounded-xl shadow p-4">
+            <p className="text-xs text-gray-500">{metric.label}</p>
+            <p className="text-2xl font-semibold mt-2">{isLoading ? '—' : metric.value}</p>
+          </div>
+        ))}
       </div>
 
       <div className="bg-white rounded-xl shadow p-4">
