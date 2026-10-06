@@ -10,6 +10,8 @@ import { diasporaBuildNigeriaFromAbroadPageContent as buildPillar } from '@/lib/
 import { diasporaRenovateNigeriaFromAbroadPageContent as renovatePillar } from '@/lib/diaspora-renovate-nigeria-from-abroad-content';
 import { lagosBuildingPermitsAndStageInspectionsPageContent as lagosGuide } from '@/lib/lagos-building-permits-and-stage-inspections-content';
 import { landVerificationInNigeriaGuideContent as landGuide } from '@/lib/land-verification-in-nigeria-guide-content';
+import { propertyPurchaseLagosDueDiligenceContent as purchaseGuide } from '@/lib/property-purchase-lagos-due-diligence-content';
+import { PROPERTY_PURCHASE_ARTICLE_PATH } from '@/lib/property-purchase-safety-check';
 import { getSeoPageContent } from '@/lib/seo-pages';
 
 const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -174,6 +176,20 @@ export function getStaticPublishedCatalogItems(): PublishedIndexItem[] {
       8,
       [contractor.eyebrow],
       '2026-03-18',
+    ),
+    guideRow(
+      'article-lagos-property-purchase',
+      'buying-property-lagos-from-abroad-due-diligence',
+      'lagos-compliance',
+      PROPERTY_PURCHASE_ARTICLE_PATH,
+      purchaseGuide.hero.title,
+      purchaseGuide.excerpt,
+      purchaseGuide.seo.description,
+      purchaseGuide.coverImage.src,
+      purchaseGuide.coverImage.alt,
+      purchaseGuide.readingMinutes,
+      [...purchaseGuide.tags],
+      purchaseGuide.publishedAt,
     ),
     guideRow(
       'seo-land-verification',

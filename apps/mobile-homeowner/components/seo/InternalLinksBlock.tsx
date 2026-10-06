@@ -20,6 +20,7 @@ type InternalLinksBlockProps = {
   compact?: boolean;
   /** White-on-dark variant for dark pages. */
   dark?: boolean;
+  onPressLink?: (href: string) => void;
 };
 
 export default function InternalLinksBlock({
@@ -27,13 +28,17 @@ export default function InternalLinksBlock({
   links,
   compact = false,
   dark = false,
+  onPressLink,
 }: InternalLinksBlockProps) {
   const router = useRouter();
 
   const chip = (item: InternalLinkItem) => (
     <TouchableOpacity
       key={item.href}
-      onPress={() => router.push(item.href as any)}
+      onPress={() => {
+        onPressLink?.(item.href);
+        router.push(item.href as any);
+      }}
       className={`${dark ? 'bg-white/10' : 'bg-gray-100'} rounded-full items-center justify-center ${compact ? 'mr-2' : ''}`}
       style={compact ? LINK_CHIP_STYLE_COMPACT : LINK_CHIP_STYLE}
     >

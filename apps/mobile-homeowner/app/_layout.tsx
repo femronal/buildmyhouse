@@ -137,6 +137,10 @@ export default function RootLayout() {
           <Stack.Screen name="land-detail" options={{ headerShown: false }} />
           <Stack.Screen name="dashboard" options={{ headerShown: false }} />
           <Stack.Screen name="articles/index" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="articles/buying-property-lagos-from-abroad-due-diligence"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="articles/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="blog/index" options={{ headerShown: false }} />
           <Stack.Screen

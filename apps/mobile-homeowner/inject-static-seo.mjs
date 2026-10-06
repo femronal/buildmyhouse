@@ -309,6 +309,11 @@ const SEO_PAGES = {
     description:
       'Preview how BuildMyHouse helps diaspora homeowners watch stage progress, receive notifications, and stay in control of payment flow.',
   },
+  '/articles/buying-property-lagos-from-abroad-due-diligence': {
+    title: 'Buying Property in Lagos From Abroad: Due Diligence Guide | BuildMyHouse',
+    description:
+      'Buying a house or unfinished building in Lagos from abroad? Learn how to verify ownership, approvals, structural condition, drainage and hidden risks before you commit.',
+  },
   '/land-verification-in-nigeria-guide': {
     title: 'Land Verification in Nigeria Guide | BuildMyHouse',
     description:

@@ -114,6 +114,13 @@ h3[id] {
   background: #f6f1e8;
   border-radius: 0.75rem;
 }
+.article-html-host figure.article-anim img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
 .article-html-host img.bmx-article-image {
   width: 100%;
   height: auto;
