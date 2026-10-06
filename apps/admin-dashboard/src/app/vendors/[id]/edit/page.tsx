@@ -52,6 +52,7 @@ export default function EditVendorPage() {
       quotationEmail: vendor.quotationEmail || '',
       salesContactName: vendor.salesContactName || '',
       representativeName: primary?.name || '',
+      representativePhone: primary?.phone || '',
       primaryFamilyKey: (vendor as { primaryFamilyKey?: string }).primaryFamilyKey || vendor.offerings?.[0]?.familyKey || '',
       secondaryFamilyKeys: (vendor as { secondaryFamilyKeys?: string[] }).secondaryFamilyKeys || [],
       products: ((vendor as { products?: VendorEditorValue['products'] }).products || []).map((product) => ({

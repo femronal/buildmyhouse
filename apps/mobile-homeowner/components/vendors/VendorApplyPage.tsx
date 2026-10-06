@@ -98,7 +98,6 @@ export default function VendorApplyPage() {
     fetchPublicVendorCategories(true).then((rows) => {
       if (cancelled) return;
       setCategoryOptions(rows);
-      setFamilyKey((current) => current || rows[0]?.slug || '');
     });
     return () => {
       cancelled = true;

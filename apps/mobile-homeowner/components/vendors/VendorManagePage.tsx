@@ -22,7 +22,14 @@ import { getBackendAssetUrl } from '@/lib/image';
 import { uploadListingImage } from '@/lib/listing-image-upload';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
-import { VENDOR_STATE_FILTERS } from '@/lib/public-vendors';
+import { fetchPublicVendorCategories, VENDOR_STATE_FILTERS, type PublicVendorCategory } from '@/lib/public-vendors';
+import {
+  BRAND_FIELD_HINT,
+  emptyOfferingDraft,
+  managedOfferingsForSave,
+  offeringDraftFromProfile,
+  type ManagedOfferingDraft,
+} from '@/lib/vendor-manage-offerings';
 import {
   VENDOR_DOCUMENT_TYPES,
   addManagedVendorDocument,
@@ -32,6 +39,7 @@ import {
   updateManagedVendorProfile,
   type ManagedVendorProfile,
 } from '@/lib/vendor-manage';
+import { VendorCategoryField } from '@/components/vendors/VendorCategoryField';
 
 function Field({
   label,
@@ -133,7 +141,8 @@ export default function VendorManagePage() {
   const [nationwideDelivery, setNationwideDelivery] = useState(false);
   const [installationAvailable, setInstallationAvailable] = useState(false);
 
-  const [familyKey, setFamilyKey] = useState('cement');
+  const [familyKey, setFamilyKey] = useState('');
+  const [categoryOptions, setCategoryOptions] = useState<PublicVendorCategory[]>([]);
   const [categorySuggestion, setCategorySuggestion] = useState('');
   const [brands, setBrands] = useState('');
   const [sellsRetail, setSellsRetail] = useState(true);
@@ -141,6 +150,7 @@ export default function VendorManagePage() {
   const [normalUnit, setNormalUnit] = useState('');
   const [moq, setMoq] = useState('');
   const [offeringDelivery, setOfferingDelivery] = useState(true);
+  const [offeringBaseline, setOfferingBaseline] = useState<ManagedOfferingDraft>(emptyOfferingDraft);
 
   const [serviceStateKeys, setServiceStateKeys] = useState<string[]>([]);
 
@@ -178,18 +188,15 @@ export default function VendorManagePage() {
     setNationwideDelivery(data.nationwideDelivery);
     setInstallationAvailable(data.installationAvailable);
 
-    const primary = data.offerings?.[0];
-    if (primary) {
-      setFamilyKey(primary.familyKey || 'cement');
-      setBrands((primary.brands || []).join(', '));
-      setSellsRetail(primary.sellsRetail !== false);
-      setSellsWholesale(!!primary.sellsWholesale);
-      setNormalUnit(primary.normalUnit || '');
-      setMoq(
-        primary.minimumOrderQuantity != null ? String(primary.minimumOrderQuantity) : '',
-      );
-      setOfferingDelivery(primary.deliveryAvailable !== false);
-    }
+    const offering = offeringDraftFromProfile(data.offerings);
+    setOfferingBaseline(offering);
+    setFamilyKey(offering.familyKey);
+    setBrands(offering.brands);
+    setSellsRetail(offering.sellsRetail);
+    setSellsWholesale(offering.sellsWholesale);
+    setNormalUnit(offering.normalUnit);
+    setMoq(offering.minimumOrderQuantity);
+    setOfferingDelivery(offering.deliveryAvailable);
 
     setServiceStateKeys(
       (data.serviceAreas || [])
@@ -201,6 +208,18 @@ export default function VendorManagePage() {
     setSensitiveLegalName(data.legalName || '');
     setSensitiveCity(data.cityLabel || '');
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPublicVendorCategories(true).then((rows) => {
+      if (!cancelled) setCategoryOptions(rows);
+    }).catch(() => {
+      if (!cancelled) setCategoryOptions([]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -274,10 +293,15 @@ export default function VendorManagePage() {
     setError(null);
     setNotice(null);
     try {
-      const brandList = brands
-        .split(',')
-        .map((b) => b.trim())
-        .filter(Boolean);
+      const offerings = managedOfferingsForSave(offeringBaseline, {
+        familyKey,
+        brands,
+        sellsRetail,
+        sellsWholesale,
+        normalUnit,
+        minimumOrderQuantity: moq,
+        deliveryAvailable: offeringDelivery,
+      });
       const updated = await updateManagedVendorProfile({
         description: description.trim() || undefined,
         businessHours: businessHours.trim() || undefined,
@@ -295,17 +319,7 @@ export default function VendorManagePage() {
         interstateDelivery,
         nationwideDelivery,
         installationAvailable,
-        offerings: [
-          {
-            familyKey,
-            brands: brandList,
-            sellsRetail,
-            sellsWholesale,
-            normalUnit: normalUnit.trim() || undefined,
-            minimumOrderQuantity: moq ? Number(moq) : undefined,
-            deliveryAvailable: offeringDelivery,
-          },
-        ],
+        ...(offerings ? { offerings } : {}),
         serviceAreas: serviceStateKeys.map((stateKey) => ({
           stateKey,
           stateLabel: VENDOR_STATE_FILTERS.find((s) => s.stateKey === stateKey)?.label,
@@ -742,11 +756,13 @@ export default function VendorManagePage() {
         </Section>
 
         <Section title="Categories">
-          <Text className="text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium', color: LANDING_INK }}>
-            {(profile.offerings || []).map((offering) => offering.customCategoryLabel || (offering.familyKey || '').replace(/-/g, ' ')).filter(Boolean).join(', ') || 'No category yet'}
-          </Text>
+          <VendorCategoryField
+            value={familyKey}
+            options={categoryOptions.map((category) => ({ slug: category.slug, label: category.label }))}
+            onChange={setFamilyKey}
+          />
           <Text className="text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            Categories are set by BuildMyHouse. You can suggest one if yours is missing.
+            Leave this on Choose a category if yours is not listed. Saving other details will not assign one.
           </Text>
           <Field
             label="Suggest a category"
@@ -774,12 +790,18 @@ export default function VendorManagePage() {
         </Section>
 
         <Section title="Primary offering">
-          <Field
-            label="Brands (comma-separated)"
-            value={brands}
-            onChangeText={setBrands}
-            placeholder="Dangote, BUA"
-          />
+          {familyKey ? (
+            <Field
+              label="Brands (comma-separated)"
+              value={brands}
+              onChangeText={setBrands}
+              placeholder={BRAND_FIELD_HINT}
+            />
+          ) : (
+            <Text className="text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
+              Choose a category before adding brands. {BRAND_FIELD_HINT}
+            </Text>
+          )}
           <Field label="Normal unit" value={normalUnit} onChangeText={setNormalUnit} placeholder="bag" />
           <Field label="Minimum order quantity" value={moq} onChangeText={setMoq} placeholder="50" />
           <View className="flex-row flex-wrap mb-2">
@@ -792,7 +814,7 @@ export default function VendorManagePage() {
             />
           </View>
           <Text className="text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-            Saving updates brands and how you sell. Your category stays as BuildMyHouse set it.
+            {BRAND_FIELD_HINT} Saving hours, logo, or payment methods does not add a category.
           </Text>
         </Section>
 

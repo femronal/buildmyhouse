@@ -647,11 +647,25 @@ export class VendorsService {
     }
 
     if (dto.representative) {
+      const existing = await this.prisma.vendorRepresentative.findFirst({
+        where: { vendorProfileId: id, isPrimary: true },
+        orderBy: { createdAt: 'asc' },
+      });
+      const representative = {
+        ...dto.representative,
+        role: dto.representative.role !== undefined ? dto.representative.role : existing?.role || undefined,
+        phone: dto.representative.phone !== undefined ? dto.representative.phone : existing?.phone || undefined,
+        email: dto.representative.email !== undefined ? dto.representative.email : existing?.email || undefined,
+        showPublicly:
+          dto.representative.showPublicly !== undefined
+            ? dto.representative.showPublicly
+            : existing?.showPublicly,
+      };
       await this.prisma.vendorRepresentative.deleteMany({
         where: { vendorProfileId: id, isPrimary: true },
       });
       await this.prisma.vendorRepresentative.create({
-        data: { vendorProfileId: id, ...this.mapRepresentativeCreate(dto.representative) },
+        data: { vendorProfileId: id, ...this.mapRepresentativeCreate(representative) },
       });
     }
 
@@ -1267,16 +1281,15 @@ export class VendorsService {
       }),
     });
 
-    if (dto.offerings) {
+    const offerings = this.offeringsWithFamilyKey(dto.offerings);
+    if (offerings) {
       await this.prisma.vendorOffering.deleteMany({ where: { vendorProfileId: profile.id } });
-      if (dto.offerings.length) {
-        await this.prisma.vendorOffering.createMany({
-          data: dto.offerings.map((o, i) => ({
-            vendorProfileId: profile.id,
-            ...this.mapOfferingCreate(o, i),
-          })),
-        });
-      }
+      await this.prisma.vendorOffering.createMany({
+        data: offerings.map((o, i) => ({
+          vendorProfileId: profile.id,
+          ...this.mapOfferingCreate(o, i),
+        })),
+      });
     }
 
     if (dto.serviceAreas) {
@@ -1626,6 +1639,13 @@ export class VendorsService {
       where: { id },
       data: { profileCompleteness: score, catalogSearchText },
     });
+  }
+
+  /** Drop rows with no category. Never invent one (cement is just the first family key). */
+  private offeringsWithFamilyKey(offerings?: VendorOfferingInputDto[]) {
+    if (!offerings?.length) return undefined;
+    const usable = offerings.filter((offering) => String(offering.familyKey || '').trim());
+    return usable.length ? usable : undefined;
   }
 
   private mapOfferingCreate(o: VendorOfferingInputDto, sortOrder: number) {

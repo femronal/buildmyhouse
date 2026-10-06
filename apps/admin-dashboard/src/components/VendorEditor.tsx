@@ -35,6 +35,7 @@ export type VendorEditorValue = {
   quotationEmail: string;
   salesContactName: string;
   representativeName: string;
+  representativePhone: string;
   primaryFamilyKey: string;
   secondaryFamilyKeys: string[];
   products: VendorEditorProduct[];
@@ -75,6 +76,7 @@ export const emptyVendorEditorValue = (): VendorEditorValue => ({
   quotationEmail: '',
   salesContactName: '',
   representativeName: '',
+  representativePhone: '',
   primaryFamilyKey: '',
   secondaryFamilyKeys: [],
   products: [],
@@ -341,6 +343,7 @@ export function VendorEditor({
         <Field label="Quotation email"><input className={inputClass} value={value.quotationEmail} onChange={(e) => set({ quotationEmail: e.target.value })} /></Field>
         <Field label="Sales contact"><input className={inputClass} value={value.salesContactName} onChange={(e) => set({ salesContactName: e.target.value })} /></Field>
         <Field label="Representative"><input className={inputClass} value={value.representativeName} onChange={(e) => set({ representativeName: e.target.value })} /></Field>
+        <Field label="Representative phone"><input className={inputClass} value={value.representativePhone} onChange={(e) => set({ representativePhone: e.target.value })} /></Field>
       </section>
 
       <section className="bg-white rounded-xl shadow p-5 grid gap-4 md:grid-cols-2">
@@ -413,7 +416,11 @@ export function vendorEditorPayload(value: VendorEditorValue, mode: 'create' | '
     quotationEmail: value.quotationEmail.trim() || undefined,
     salesContactName: value.salesContactName.trim() || undefined,
     representative: value.representativeName.trim()
-      ? { name: value.representativeName.trim(), isPrimary: true }
+      ? {
+          name: value.representativeName.trim(),
+          isPrimary: true,
+          phone: value.representativePhone.trim() || null,
+        }
       : undefined,
     cacNumber: value.cacNumber.trim() || undefined,
     cacRegisteredName: value.cacRegisteredName.trim() || undefined,

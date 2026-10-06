@@ -30,7 +30,7 @@ function mockPrisma(overrides: Record<string, any> = {}) {
     vendorAdminNote: { create: jest.fn() },
     vendorOffering: { deleteMany: jest.fn(), createMany: jest.fn() },
     vendorServiceArea: { deleteMany: jest.fn(), createMany: jest.fn() },
-    vendorRepresentative: { deleteMany: jest.fn(), create: jest.fn() },
+    vendorRepresentative: { deleteMany: jest.fn(), create: jest.fn(), findFirst: jest.fn() },
     vendorDocument: { create: jest.fn(), findFirst: jest.fn() },
     vendorProduct: { deleteMany: jest.fn(), createMany: jest.fn() },
     vendorVerificationCheck: { upsert: jest.fn(), findMany: jest.fn() },
@@ -303,6 +303,103 @@ describe('VendorsService', () => {
     const result = await service.adminGet('v1');
     expect(result.documents[0].fileRef).toBe('https://signed.example/cac?X-Amz-Signature=1');
     expect(result.documents[0].fileRef).not.toContain('cac.pdf');
+  });
+
+  function ownerProfile(overrides: Record<string, unknown> = {}) {
+    return {
+      id: 'vendor-1',
+      userId: 'user-1',
+      listingStatus: VendorListingStatus.listed,
+      documents: [],
+      offerings: [],
+      products: [],
+      serviceAreas: [],
+      representatives: [],
+      businessTypes: [],
+      paymentMethodsAccepted: [],
+      secondaryFamilyKeys: [],
+      primaryFamilyKey: null,
+      description: null,
+      priceListAvailable: false,
+      ...overrides,
+    };
+  }
+
+  it('does not create a cement offering when an owner save has no category', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findUnique.mockResolvedValue(ownerProfile());
+    prisma.vendorProfile.update.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+
+    await service.updateManagedProfile('user-1', { description: 'Updated hours' });
+    await service.updateManagedProfile('user-1', { offerings: [{ familyKey: '' }] });
+    await service.updateManagedProfile('user-1', { offerings: [{ familyKey: '   ' }] });
+
+    expect(prisma.vendorOffering.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.vendorOffering.createMany).not.toHaveBeenCalled();
+  });
+
+  it('creates exactly the category an owner chose', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findUnique.mockResolvedValue(ownerProfile());
+    prisma.vendorProfile.update.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+
+    await service.updateManagedProfile('user-1', {
+      offerings: [{ familyKey: 'roofing-sheets', brands: ['Gerard'] }],
+    });
+
+    expect(prisma.vendorOffering.createMany).toHaveBeenCalledWith({
+      data: [expect.objectContaining({ familyKey: 'roofing-sheets', brands: ['Gerard'] })],
+    });
+    expect(JSON.stringify(prisma.vendorOffering.createMany.mock.calls)).not.toContain('cement');
+  });
+
+  it('leaves existing offerings unchanged when the owner saves other fields', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findUnique.mockResolvedValue(
+      ownerProfile({ offerings: [{ id: 'off-1', familyKey: 'doors', brands: ['Pearl'] }] }),
+    );
+    prisma.vendorProfile.update.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+
+    await service.updateManagedProfile('user-1', { logoUrl: 'https://cdn.example/logo.png' });
+
+    expect(prisma.vendorOffering.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.vendorOffering.createMany).not.toHaveBeenCalled();
+  });
+
+  it('keeps a representative phone when an admin save does not send one', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'mayor',
+      websiteUrl: null,
+      documents: [],
+    });
+    prisma.vendorProfile.update.mockResolvedValue({});
+    prisma.vendorProfile.findUnique.mockResolvedValue(ownerProfile({ id: 'mayor' }));
+    prisma.vendorRepresentative.findFirst.mockResolvedValue({
+      name: 'Pastor Emeka Ezeagu',
+      phone: '+2348012345678',
+      role: 'Pastor',
+      email: 'emeka@example.com',
+      showPublicly: false,
+    });
+    prisma.vendorActivity.create.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+
+    await service.adminUpdate('mayor', 'admin-1', {
+      representative: { name: 'Pastor Emeka Ezeagu', isPrimary: true },
+    });
+
+    expect(prisma.vendorRepresentative.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: 'Pastor Emeka Ezeagu',
+        phone: '+2348012345678',
+        role: 'Pastor',
+        email: 'emeka@example.com',
+      }),
+    });
   });
 
   it('requires confirmation before a bulk vendor action', async () => {
