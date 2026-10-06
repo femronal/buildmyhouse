@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Eye, PencilLine, Rocket, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Eye, PencilLine, Plus, Rocket, Trash2, X } from 'lucide-react';
+import { AdminCreateScopeForm } from '@/components/AdminCreateScopeForm';
 import {
   type AdminProjectScope,
   useAdminDeleteProjectScope,
@@ -86,6 +87,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
   const publishScope = useAdminPublishProjectScope(contractorUserId);
   const deleteScope = useAdminDeleteProjectScope(contractorUserId);
 
+  const [creating, setCreating] = useState(false);
   const [selectedScopeId, setSelectedScopeId] = useState<string | null>(null);
   const [scopeForm, setScopeForm] = useState<ScopeForm | null>(null);
   const [feedback, setFeedback] = useState<{ title: string; message: string } | null>(null);
@@ -215,7 +217,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
           <div className="min-w-0">
             <h3 className="text-lg font-semibold text-gray-900 sm:text-xl">Project Scopes • {contractor.name}</h3>
             <p className="text-sm text-gray-500 mt-1">
-              Admin can review, edit, publish, or delete scopes uploaded by this verified GC.
+              Upload a scope for this contractor, or review, edit, publish, and delete the ones they uploaded.
             </p>
           </div>
           <button
@@ -229,9 +231,20 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
 
         <div className="grid flex-1 gap-0 lg:grid-cols-[320px,1fr]">
           <div className="border-r border-gray-200 p-4 sm:p-5 bg-gray-50">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 gap-2">
               <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Uploaded scopes</p>
-              <span className="text-xs rounded-full bg-gray-200 px-2 py-0.5 text-gray-700">{scopes.length}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs rounded-full bg-gray-200 px-2 py-0.5 text-gray-700">{scopes.length}</span>
+                <button
+                  type="button"
+                  onClick={() => setCreating(true)}
+                  className="inline-flex items-center gap-1 rounded-full bg-black px-2.5 py-1 text-xs font-semibold text-white"
+                  aria-label="Upload a scope for this contractor"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add
+                </button>
+              </div>
             </div>
             {isLoading ? (
               <p className="text-sm text-gray-500 py-10 text-center">Loading scopes...</p>
@@ -245,6 +258,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                   <button
                     key={scope.id}
                     onClick={() => {
+                      setCreating(false);
                       setSelectedScopeId(scope.id);
                       setScopeForm(buildScopeForm(scope));
                     }}
@@ -270,7 +284,23 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
           </div>
 
           <div className="p-4 sm:p-6 space-y-5 overflow-y-auto">
-            {!selectedScope || !scopeForm ? (
+            {creating ? (
+              <AdminCreateScopeForm
+                contractorUserId={contractor.userId}
+                contractorName={contractor.name}
+                onCancel={() => setCreating(false)}
+                onCreated={async (scope) => {
+                  setCreating(false);
+                  setSelectedScopeId(scope.id);
+                  setScopeForm(buildScopeForm(scope));
+                  setFeedback({
+                    title: 'Scope uploaded',
+                    message: `"${scope.name}" is now on ${contractor.name}'s design plans. Homeowners were told ${contractor.name} uploaded it.`,
+                  });
+                  await refetch();
+                }}
+              />
+            ) : !selectedScope || !scopeForm ? (
               <div className="h-full min-h-[240px] flex items-center justify-center text-gray-500 text-sm">
                 Select a scope to review and edit.
               </div>

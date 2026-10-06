@@ -45,6 +45,25 @@ export function useAdminProjectScopes(contractorUserId: string | null, enabled: 
   });
 }
 
+export function useAdminCreateProjectScope(contractorUserId: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) =>
+      api.post<AdminProjectScope>(
+        `/designs/admin/contractor/${encodeURIComponent(contractorUserId || '')}`,
+        data,
+      ),
+    onSuccess: () => {
+      if (contractorUserId) {
+        queryClient.invalidateQueries({
+          queryKey: ['admin-project-scopes', contractorUserId],
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ['designs'] });
+    },
+  });
+}
+
 export function useAdminUpdateProjectScope(contractorUserId: string | null) {
   const queryClient = useQueryClient();
   return useMutation({

@@ -52,6 +52,26 @@ export class DesignsController {
   }
 
   /**
+   * Admin: upload a scope in a verified GC's name.
+   * The design is owned by the contractor and emailed to homeowners as theirs.
+   */
+  @Post('admin/contractor/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  createDesignForContractor(
+    @Param('userId') userId: string,
+    @Request() req: any,
+    @Body() dto: CreateDesignDto,
+  ) {
+    return this.designsService.createDesignOnBehalfOfContractor({
+      actorRole: req.user?.role,
+      adminUserId: req.user?.sub,
+      contractorUserId: userId,
+      dto,
+    });
+  }
+
+  /**
    * Admin: list all scope plans uploaded by one GC.
    */
   @Get('admin/contractor/:userId')

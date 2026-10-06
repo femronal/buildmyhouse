@@ -2,12 +2,16 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaClient } from '@prisma/client';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { WebSocketService } from '../websocket/websocket.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class DesignsService {
   // Use `any` for model access to avoid tight coupling when Prisma schema evolves.
   private prisma = new PrismaClient() as any;
-  constructor(private readonly wsService: WebSocketService) {}
+  constructor(
+    private readonly wsService: WebSocketService,
+    private readonly emailService: EmailService,
+  ) {}
 
   async getAllDesigns() {
     const designs = await this.prisma.design.findMany({
@@ -115,7 +119,54 @@ export class DesignsService {
     });
   }
 
-  async createDesign(userId: string, dto: CreateDesignDto) {
+  async createDesignOnBehalfOfContractor(params: {
+    actorRole: string;
+    adminUserId: string;
+    contractorUserId: string;
+    dto: CreateDesignDto;
+  }) {
+    if (params.actorRole !== 'admin') {
+      throw new ForbiddenException('Only admins can upload a scope for a contractor');
+    }
+    const contractorUserId = String(params.contractorUserId || '').trim();
+    if (!contractorUserId) {
+      throw new BadRequestException('Contractor user ID is required');
+    }
+
+    const contractorUser = await this.prisma.user.findUnique({
+      where: { id: contractorUserId },
+      select: { id: true, role: true, fullName: true },
+    });
+    if (!contractorUser || contractorUser.role !== 'general_contractor') {
+      throw new BadRequestException('That account is not a general contractor');
+    }
+
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { userId: contractorUserId },
+      select: { verified: true, name: true },
+    });
+    if (!contractor?.verified) {
+      throw new ForbiddenException('Scopes can only be uploaded for a verified general contractor');
+    }
+
+    const contractorName = String(contractor.name || contractorUser.fullName || 'Your general contractor').trim();
+    const created = await this.createDesign(contractorUserId, params.dto, {
+      publishImmediately: true,
+      reviewedById: params.adminUserId,
+      homeownerNoticeName: contractorName,
+    });
+    return created;
+  }
+
+  async createDesign(
+    userId: string,
+    dto: CreateDesignDto,
+    options?: {
+      publishImmediately?: boolean;
+      reviewedById?: string;
+      homeownerNoticeName?: string;
+    },
+  ) {
     if (!userId) {
       throw new BadRequestException('User not found');
     }
@@ -196,9 +247,11 @@ export class DesignsService {
         materials,
         features,
         constructionPhases,
-        isActive: false,
-        adminApprovalStatus: 'pending',
+        isActive: !!options?.publishImmediately,
+        adminApprovalStatus: options?.publishImmediately ? 'approved' : 'pending',
         adminReviewReason: null,
+        adminReviewedAt: options?.publishImmediately ? new Date() : null,
+        adminReviewedById: options?.publishImmediately ? options.reviewedById || null : null,
         images: {
           create: (dto.images || []).map((img) => ({
             url: img.url,
@@ -234,17 +287,51 @@ export class DesignsService {
       },
     });
 
-    await this.wsService.sendNotificationToRole('admin', {
-      type: 'design_plan_pending_verification',
-      title: 'New design plan pending review',
-      message: `${created.createdBy?.fullName || 'A GC'} uploaded "${created.name}". Review and go live from Verification Center.`,
-      data: {
-        designId: created.id,
-        createdById: created.createdById,
-      },
-    });
+    if (options?.publishImmediately && options.homeownerNoticeName) {
+      void this.emailHomeownersAboutNewScope(options.homeownerNoticeName, created.name);
+    } else {
+      await this.wsService.sendNotificationToRole('admin', {
+        type: 'design_plan_pending_verification',
+        title: 'New design plan pending review',
+        message: `${created.createdBy?.fullName || 'A GC'} uploaded "${created.name}". Review and go live from Verification Center.`,
+        data: {
+          designId: created.id,
+          createdById: created.createdById,
+        },
+      });
+    }
 
     return created;
+  }
+
+  private async emailHomeownersAboutNewScope(contractorName: string, scopeName: string) {
+    const homeowners = await this.prisma.user.findMany({
+      where: {
+        role: 'homeowner',
+        email: { not: null },
+      },
+      select: { email: true },
+    });
+    const subject = `${contractorName} uploaded a new scope`;
+    const text = `${contractorName} uploaded a new scope, "${scopeName}". You can review it on BuildMyHouse.`;
+    const html = `<p><strong>${this.escapeHtml(contractorName)}</strong> uploaded a new scope, <strong>${this.escapeHtml(scopeName)}</strong>.</p><p>You can review it on BuildMyHouse.</p>`;
+    for (const homeowner of homeowners) {
+      const to = String(homeowner.email || '').trim();
+      if (!to) continue;
+      try {
+        await this.emailService.send({ to, subject, html, text });
+      } catch {
+        // One failed inbox should not undo the uploaded scope.
+      }
+    }
+  }
+
+  private escapeHtml(value: string) {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   async getPendingDesignsForAdmin(params: { actorRole: string }) {
