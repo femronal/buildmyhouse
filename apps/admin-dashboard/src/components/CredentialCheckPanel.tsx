@@ -13,7 +13,7 @@ export const EMPTY_CREDENTIAL_DRAFT: CredentialDraft = {
   registrationNumber: '',
   verificationSourceUrl: '',
   verificationNotes: '',
-  markChecked: true,
+  markChecked: false,
 };
 
 export function regulatorCopy(profession?: {

@@ -16,6 +16,7 @@ export type PublicProfessionalCard = {
   projectStages: Array<{ key: string; label: string }>;
   city: string | null;
   state: string | null;
+  address?: string | null;
   serviceStates: string[];
   remoteConsultation: boolean;
   siteVisits: boolean;

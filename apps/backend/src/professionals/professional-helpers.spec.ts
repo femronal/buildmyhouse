@@ -152,12 +152,32 @@ describe('professional-helpers', () => {
     expect(card.trust.credentialLabel).toBe('COREN credential checked');
     expect(card.trust.usedByBmhLabel).toBe('Used by BuildMyHouse');
     expect(card.trust.claimedLabel).toBeNull();
+    expect(card.trust.credentialLabel).toBe('COREN credential checked');
+    expect(card.trust.checkedOn).toBeTruthy();
+    expect(card.trust.disclaimer).toContain('on the date indicated');
+    const unchecked = toPublicProfessionalCard({
+      ...listing,
+      verificationStatus: ProfessionalVerificationStatus.unverified,
+      credentials: [],
+    });
+    expect(unchecked.trust.credentialLabel).toBeNull();
+    expect(unchecked.trust.checkedOn).toBeNull();
+    expect(unchecked.trust.disclaimer).toBe('');
     const ownerClaimed = toPublicProfessionalCard({
       ...listing,
+      ownershipStatus: ProfessionalOwnershipStatus.unclaimed,
       claimedAt: new Date('2026-09-28'),
       claimedByUserId: 'owner-1',
     });
     expect(ownerClaimed.trust.claimedLabel).toBe('Claimed by owner');
+    const claimedWithoutUserId = toPublicProfessionalCard({
+      ...listing,
+      ownershipStatus: ProfessionalOwnershipStatus.unclaimed,
+      claimedAt: new Date('2026-10-06'),
+      claimedByUserId: null,
+    });
+    expect(claimedWithoutUserId.trust.claimedLabel).toBe('Claimed by owner');
+    expect(toPublicProfessionalProfile({ ...listing, address: ' 12 Admiralty Way ' }).address).toBe('12 Admiralty Way');
     expect(ownerClaimed.verificationStatus).toBe(ProfessionalVerificationStatus.verified);
     expect(ownerClaimed.trust.credentialLabel).not.toBe('Claimed by owner');
     expect(profile.contact.phone).toBeNull();

@@ -45,17 +45,19 @@ function ChoiceRow({
   label,
   selected,
   onPress,
+  className = '',
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
+  className?: string;
 }) {
   return (
     <TouchableOpacity
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      className={`mb-2 rounded-xl border px-3 py-3 ${selected ? 'border-black bg-black' : 'border-gray-200 bg-white'}`}
+      className={`mb-2 rounded-xl border px-3 py-3 ${selected ? 'border-black bg-black' : 'border-gray-200 bg-white'} ${className}`.trim()}
     >
       <Text className={`text-sm ${selected ? 'text-white' : 'text-gray-900'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
         {label}
@@ -236,6 +238,7 @@ export default function PropertyPurchaseSafetyCheck() {
           <ChoiceRow
             label="I prefer not to say yet"
             selected={brief.priceUndisclosed}
+            className="mt-3"
             onPress={() => patch({ priceUndisclosed: !brief.priceUndisclosed, priceAmount: '' })}
           />
           <FieldLabel>Are you currently in Nigeria?</FieldLabel>

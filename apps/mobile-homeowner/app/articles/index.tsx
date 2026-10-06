@@ -34,8 +34,10 @@ import {
 } from '@/lib/resources-catalog';
 import { fetchResourceSections, resolveSidebarTopics } from '@/lib/resource-sections';
 import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
+import { PROPERTY_PURCHASE_ARTICLE_PATH } from '@/lib/property-purchase-safety-check';
 import { useWebSeo } from '@/lib/seo';
 import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
+import PropertyPurchaseLottieCover from '@/components/seo/PropertyPurchaseLottieCover';
 
 const CARD_COVER_HEIGHT = 160;
 
@@ -78,6 +80,29 @@ function ResourceMeta({ item }: { item: ResourceIndexItem }) {
   );
 }
 
+function ResourceCover({
+  item,
+  height,
+}: {
+  item: ResourceIndexItem;
+  height: number;
+}) {
+  if (item.href === PROPERTY_PURCHASE_ARTICLE_PATH) {
+    return <PropertyPurchaseLottieCover className="mb-0 rounded-none border-0" height={height} />;
+  }
+  if (isGenericConstructionCover(coverUri(publishedIndexCoverSource(item)))) {
+    return <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={height} />;
+  }
+  return (
+    <Image
+      source={publishedIndexCoverSource(item)}
+      accessibilityLabel={item.coverImageAlt}
+      style={height > 200 ? coverStyles.featuredImage : coverStyles.card}
+      resizeMode="cover"
+    />
+  );
+}
+
 function FeaturedResourceCard({
   item,
   onPress,
@@ -97,16 +122,7 @@ function FeaturedResourceCard({
     >
       <View className="lg:flex-row lg:items-stretch">
         <View className="w-full lg:w-1/2 overflow-hidden bmh-articles-hub-feature-media relative min-h-[220px] bg-white">
-          {isGenericConstructionCover(coverUri(publishedIndexCoverSource(item))) ? (
-            <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={220} />
-          ) : (
-            <Image
-              source={publishedIndexCoverSource(item)}
-              accessibilityLabel={item.coverImageAlt}
-              style={coverStyles.featuredImage}
-              resizeMode="cover"
-            />
-          )}
+          <ResourceCover item={item} height={220} />
         </View>
         <View className="w-full lg:w-1/2 p-5 md:p-8 bg-white/[0.04]">
           <Text
@@ -155,16 +171,7 @@ function ResourceGridCard({ item, onPress }: { item: ResourceIndexItem; onPress:
       accessibilityLabel={item.title}
     >
       <View className="overflow-hidden bg-white">
-        {isGenericConstructionCover(coverUri(publishedIndexCoverSource(item))) ? (
-          <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={CARD_COVER_HEIGHT} />
-        ) : (
-          <Image
-            source={publishedIndexCoverSource(item)}
-            accessibilityLabel={item.coverImageAlt}
-            style={coverStyles.card}
-            resizeMode="cover"
-          />
-        )}
+        <ResourceCover item={item} height={CARD_COVER_HEIGHT} />
       </View>
       <View className="p-4 bg-white/[0.03]">
         <Text

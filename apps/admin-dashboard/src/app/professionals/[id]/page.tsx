@@ -9,7 +9,7 @@ import { CredentialCheckPanel } from '@/components/CredentialCheckPanel';
 import ClaimLinkPanel from '@/components/ClaimLinkPanel';
 import {
   LISTING_STATUS_LABELS,
-  OWNERSHIP_STATUS_LABELS,
+  ownerClaimLabel,
   PROCUREMENT_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
   useProfessional,
@@ -48,8 +48,7 @@ export default function ProfessionalDetailPage() {
         <div>
           <h1 className="text-3xl font-bold font-poppins">{data.displayName}</h1>
           <p className="text-gray-500 mt-1">
-            {data.profession?.label} · Completeness {data.completenessScore}% · {labelOf(OWNERSHIP_STATUS_LABELS, data.ownershipStatus)}
-            {data.claimedAt ? ' · Claimed by owner' : ''}
+            {data.profession?.label} · Completeness {data.completenessScore}% · {ownerClaimLabel(data)}
           </p>
           <p className="text-xs text-gray-400 mt-1">Listed ≠ claimed ≠ credential checked ≠ used by BMH.</p>
           {data.primaryCredential?.registrationNumber && (
@@ -117,6 +116,7 @@ function Overview({
         <p>Type: {data.professionalType}</p>
         <p>Profession: {data.profession?.label}</p>
         <p>Location: {[data.city, data.state].filter(Boolean).join(', ') || '—'}</p>
+        <p>Address: {data.address || '—'}</p>
         <p>Contact: {data.phone || data.email || '—'}</p>
         <p>Source: {data.sourceType}</p>
         <p>Listing: {labelOf(LISTING_STATUS_LABELS, data.listingStatus)}</p>
@@ -143,9 +143,9 @@ function Overview({
       <section className="bg-white rounded-xl shadow p-5 space-y-3 lg:col-span-2">
         <h2 className="font-semibold">Owner claim</h2>
         <p className="text-sm text-gray-600">
-          {data.claimedByUserId || data.linkedUserId
-            ? `Claimed by owner${data.claimEmail ? ` · ${data.claimEmail}` : ''} · ${data.claimedAt ? new Date(data.claimedAt).toLocaleString() : ''}`
-            : 'Not claimed yet. An ownership flag is not the same as a completed claim.'}
+          {ownerClaimLabel(data) === 'Claimed by owner'
+            ? `Claimed by owner${data.claimEmail ? ` · ${data.claimEmail}` : ''}${data.claimedAt ? ` · ${new Date(data.claimedAt).toLocaleString()}` : ''}`
+            : 'Unclaimed. An ownership flag is not the same as a completed claim.'}
         </p>
         <ClaimLinkPanel kind="professionals" id={data.id} email={data.email || data.claimEmail} />
       </section>
@@ -207,6 +207,7 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
     bio: data.bio || '',
     city: data.city || '',
     state: data.state || '',
+    address: data.address || '',
     publicPhone: !!data.publicPhone,
     publicEmail: !!data.publicEmail,
     publicWhatsapp: !!data.publicWhatsapp,
@@ -231,6 +232,7 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
         <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="City" />
         <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="State" />
       </div>
+      <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full border rounded-lg px-3 py-2" placeholder="Street address (optional)" />
       {['publicPhone', 'publicEmail', 'publicWhatsapp', 'publicWebsite', 'siteVisits', 'remoteConsultation', 'canIssueSignedReport'].map((key) => (
         <label key={key} className="flex gap-2 text-sm">
           <input type="checkbox" checked={(form as any)[key]} onChange={(e) => setForm({ ...form, [key]: e.target.checked })} />

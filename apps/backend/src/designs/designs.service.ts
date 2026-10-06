@@ -287,13 +287,25 @@ export class DesignsService {
       },
     });
 
-    if (options?.publishImmediately && options.homeownerNoticeName) {
-      void this.emailHomeownersAboutNewScope(options.homeownerNoticeName, created.name);
-    } else {
+    const contractorName =
+      options?.homeownerNoticeName ||
+      created.createdBy?.contractorProfile?.name ||
+      created.createdBy?.fullName ||
+      'A general contractor';
+    void this.emailHomeownersAboutNewProjectPlan({
+      contractorName,
+      scopeName: created.name,
+      projectTypeTag: created.projectTypeTag,
+      planType: created.planType,
+      isLive: !!options?.publishImmediately,
+    });
+
+    if (!options?.publishImmediately) {
+      const section = this.catalogSectionLabel(created.projectTypeTag, created.planType);
       await this.wsService.sendNotificationToRole('admin', {
         type: 'design_plan_pending_verification',
-        title: 'New design plan pending review',
-        message: `${created.createdBy?.fullName || 'A GC'} uploaded "${created.name}". Review and go live from Verification Center.`,
+        title: 'New project plan to review',
+        message: `${contractorName} added a new project plan, "${created.name}". Homeowners can use this plan on future projects with similar issues. Review it in Verification Center and publish it so it appears under ${section} in Projects.`,
         data: {
           designId: created.id,
           createdById: created.createdById,
@@ -304,7 +316,27 @@ export class DesignsService {
     return created;
   }
 
-  private async emailHomeownersAboutNewScope(contractorName: string, scopeName: string) {
+  private catalogSectionLabel(projectTypeTag?: string | null, planType?: string | null) {
+    const tag = `${projectTypeTag || ''}`.toLowerCase();
+    if (tag === 'repair') return 'Repairs';
+    if (tag === 'upgrades') return 'Upgrades';
+    if (tag === 'renovation') return 'Renovation';
+    if (tag === 'full_builds') return 'Full Builds';
+
+    const plan = `${planType || ''}`.toLowerCase();
+    if (plan === 'interior_design') return 'Upgrades';
+    if (plan === 'homebuilding') return 'Full Builds';
+    if (plan === 'renovation') return 'Renovation';
+    return 'Projects';
+  }
+
+  private async emailHomeownersAboutNewProjectPlan(params: {
+    contractorName: string;
+    scopeName: string;
+    projectTypeTag?: string | null;
+    planType?: string | null;
+    isLive: boolean;
+  }) {
     const homeowners = await this.prisma.user.findMany({
       where: {
         role: 'homeowner',
@@ -312,9 +344,24 @@ export class DesignsService {
       },
       select: { email: true },
     });
-    const subject = `${contractorName} uploaded a new scope`;
-    const text = `${contractorName} uploaded a new scope, "${scopeName}". You can review it on BuildMyHouse.`;
-    const html = `<p><strong>${this.escapeHtml(contractorName)}</strong> uploaded a new scope, <strong>${this.escapeHtml(scopeName)}</strong>.</p><p>You can review it on BuildMyHouse.</p>`;
+    const section = this.catalogSectionLabel(params.projectTypeTag, params.planType);
+    const projectsUrl = 'https://buildmyhouse.app/property-projects-nigeria';
+    const subject = `${params.contractorName} added a new project plan`;
+    const instruction = params.isLive
+      ? `Open Projects on BuildMyHouse and choose ${section}. Use this plan as the starting point when you have a future project with a similar issue.`
+      : `BuildMyHouse is reviewing this plan. After it is published, open Projects and choose ${section}, then use it as the starting point for a future project with a similar issue.`;
+    const text = [
+      `${params.contractorName} added a new project plan, "${params.scopeName}".`,
+      'This is a project plan you can use on future projects with similar issues.',
+      instruction,
+      projectsUrl,
+    ].join('\n\n');
+    const html = [
+      `<p><strong>${this.escapeHtml(params.contractorName)}</strong> added a new project plan, <strong>${this.escapeHtml(params.scopeName)}</strong>.</p>`,
+      '<p>This is a project plan you can use on future projects with similar issues.</p>',
+      `<p>${this.escapeHtml(instruction)}</p>`,
+      `<p><a href="${projectsUrl}">Open Projects</a></p>`,
+    ].join('');
     for (const homeowner of homeowners) {
       const to = String(homeowner.email || '').trim();
       if (!to) continue;
@@ -407,6 +454,8 @@ export class DesignsService {
       throw new NotFoundException('Design not found');
     }
 
+    const alreadyLive = existing.isActive === true && existing.adminApprovalStatus === 'approved';
+
     const updated = await this.prisma.design.update({
       where: { id: params.designId },
       data: {
@@ -430,6 +479,23 @@ export class DesignsService {
         designId: updated.id,
       },
     });
+
+    const contractor = await this.prisma.contractor.findUnique({
+      where: { userId: updated.createdById },
+      select: { name: true },
+    });
+    const contractorName = String(
+      contractor?.name || updated.createdBy?.fullName || 'A general contractor',
+    ).trim();
+    if (!alreadyLive) {
+      void this.emailHomeownersAboutNewProjectPlan({
+        contractorName,
+        scopeName: updated.name,
+        projectTypeTag: updated.projectTypeTag,
+        planType: updated.planType,
+        isLive: true,
+      });
+    }
 
     return updated;
   }

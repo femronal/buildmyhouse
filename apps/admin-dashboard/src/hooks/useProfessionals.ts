@@ -26,6 +26,10 @@ export const PROCUREMENT_STATUS_LABELS = {
   blocked: 'Blocked',
 } as const;
 
+export function ownerClaimLabel(row: { claimedAt?: string | null; claimedByUserId?: string | null }) {
+  return row.claimedAt || row.claimedByUserId ? 'Claimed by owner' : 'Unclaimed';
+}
+
 export const OWNERSHIP_STATUS_LABELS = {
   unclaimed: 'Unclaimed',
   claim_pending: 'Claim pending',
@@ -67,6 +71,8 @@ export type ProfessionalListItem = {
   } | null;
   city: string | null;
   state: string | null;
+  claimedAt?: string | null;
+  claimedByUserId?: string | null;
   listingStatus: keyof typeof LISTING_STATUS_LABELS;
   ownershipStatus: keyof typeof OWNERSHIP_STATUS_LABELS;
   verificationStatus: keyof typeof VERIFICATION_STATUS_LABELS;

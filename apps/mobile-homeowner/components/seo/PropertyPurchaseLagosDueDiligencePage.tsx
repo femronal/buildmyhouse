@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { Image, Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { Clock3 } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
 import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
+import PropertyPurchaseLottieCover from '@/components/seo/PropertyPurchaseLottieCover';
 import PropertyPurchaseSafetyCheck, {
   scrollToPropertyPurchaseCheck,
 } from '@/components/seo/PropertyPurchaseSafetyCheck';
@@ -111,15 +112,7 @@ export default function PropertyPurchaseLagosDueDiligencePage() {
         </SeoContentColumn>
 
         <SeoContentColumn className="mb-8">
-          <View className="rounded-3xl overflow-hidden bg-gray-100">
-            <Image
-              source={{ uri: content.coverImage.src }}
-              accessibilityLabel={content.coverImage.alt}
-              className="w-full"
-              style={{ height: 320 }}
-              resizeMode="cover"
-            />
-          </View>
+          <PropertyPurchaseLottieCover className="mb-0" height={320} />
         </SeoContentColumn>
 
         <SeoContentColumn narrow className="mb-8">

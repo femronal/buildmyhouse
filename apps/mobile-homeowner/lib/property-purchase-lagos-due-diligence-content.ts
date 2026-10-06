@@ -21,8 +21,8 @@ export const propertyPurchaseLagosDueDiligenceContent = {
   excerpt:
     'Buying property in Lagos from abroad requires more than checking the title. This guide explains how to investigate ownership, approvals, building condition, flooding, hidden repair costs and transaction readiness before committing your money.',
   coverImage: {
-    src: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1600&q=80',
-    alt: 'A finished residential house seen from the front, the kind of property a buyer abroad may be shown on video',
+    src: 'https://buildmyhouse.app/engineer-at-buildmyhouse.png',
+    alt: 'Illustration of a property purchase being reviewed and approved',
   },
   publishedAt: '2026-10-06',
   updatedAt: '2026-10-06',

@@ -7,6 +7,7 @@ import { ClaimLinkCopyButton } from '@/components/ClaimLinkPanel';
 import {
   LISTING_STATUS_LABELS,
   OWNERSHIP_STATUS_LABELS,
+  ownerClaimLabel,
   PROCUREMENT_STATUS_LABELS,
   VERIFICATION_STATUS_LABELS,
   useProfessionalMeta,
@@ -212,7 +213,7 @@ export default function ProfessionalsPage() {
                   <tr key={row.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{row.displayName}</div>
-                      <div className="text-xs text-gray-500">{row.slug} · {OWNERSHIP_STATUS_LABELS[row.ownershipStatus]}</div>
+                      <div className="text-xs text-gray-500">{row.slug} · {ownerClaimLabel(row)}</div>
                     </td>
                     <td className="px-4 py-3">{row.profession?.label || '—'}</td>
                     <td className="px-4 py-3">{[row.city, row.state].filter(Boolean).join(', ') || '—'}</td>

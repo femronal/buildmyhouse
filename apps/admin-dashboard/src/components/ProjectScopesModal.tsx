@@ -295,7 +295,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                   setScopeForm(buildScopeForm(scope));
                   setFeedback({
                     title: 'Scope uploaded',
-                    message: `"${scope.name}" is now on ${contractor.name}'s design plans. Homeowners were told ${contractor.name} uploaded it.`,
+                    message: `"${scope.name}" is now on ${contractor.name}'s design plans. Homeowners were told this is a new project plan they can use on future projects with similar issues.`,
                   });
                   await refetch();
                 }}

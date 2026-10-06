@@ -1537,6 +1537,8 @@ export class ProfessionalsService implements OnModuleInit {
       })(),
       city: row.city,
       state: row.state,
+      claimedAt: row.claimedAt,
+      claimedByUserId: row.claimedByUserId,
       listingStatus: row.listingStatus,
       ownershipStatus: row.ownershipStatus,
       verificationStatus: row.verificationStatus,

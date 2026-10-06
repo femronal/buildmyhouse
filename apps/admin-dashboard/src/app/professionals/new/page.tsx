@@ -28,6 +28,7 @@ export default function NewProfessionalPage() {
     website: '',
     city: '',
     state: '',
+    address: '',
     serviceStates: [] as string[],
     remoteConsultation: false,
     siteVisits: false,
@@ -61,6 +62,7 @@ export default function NewProfessionalPage() {
     event.preventDefault();
     const created = await create.mutateAsync({
       ...form,
+      address: form.address.trim() || undefined,
       yearsExperience: form.yearsExperience ? Number(form.yearsExperience) : undefined,
       usedByBmhNote: form.usedByBmh ? form.usedByBmhNote : undefined,
     });
@@ -122,6 +124,7 @@ export default function NewProfessionalPage() {
               {(meta.data?.states || []).map((s: any) => <option key={s.key} value={s.label}>{s.label}</option>)}
             </select>
           </div>
+          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Street address (optional)" className="w-full border rounded-lg px-3 py-2" />
           <ChipGroup label="States served" items={(meta.data?.states || []).map((s: any) => ({ id: s.label, label: s.label }))} selected={form.serviceStates} onToggle={(id) => toggle('serviceStates', id)} />
           <div className="grid md:grid-cols-2 gap-3">
             <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone (private unless marked public later)" className="border rounded-lg px-3 py-2" />

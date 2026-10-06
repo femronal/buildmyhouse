@@ -19,7 +19,9 @@ import { useWebSeo } from '@/lib/seo';
 
 function formatCheckedOn(value?: string | null) {
   if (!value) return null;
-  return new Date(value).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 type TabId = 'about' | 'services' | 'deliverables' | 'useful' | 'coverage';
@@ -269,6 +271,7 @@ export default function ProfessionalProfilePage({ slug }: { slug: string }) {
                     <View>
                       {[
                         professional.city && professional.state ? `Office: ${professional.city}, ${professional.state}` : null,
+                        professional.address ? `Address: ${professional.address}` : null,
                         professional.serviceStates.length ? `States served: ${professional.serviceStates.join(', ')}` : null,
                         professional.siteVisits ? 'Site visits' : null,
                         professional.remoteConsultation ? 'Remote consultation' : null,
@@ -373,10 +376,12 @@ function SummaryCard({
   onSubmit: () => void;
   onShare: () => void;
 }) {
-  const checkedOn = formatCheckedOn(professional.trust.checkedOn);
+  const credentialChecked = Boolean(professional.trust.credentialLabel);
+  const checkedOn = credentialChecked ? formatCheckedOn(professional.trust.checkedOn) : null;
   const portrait = professional.photoUrl || professional.logoUrl || '';
   const [portraitFailed, setPortraitFailed] = useState(false);
   const location = [professional.city, professional.state].filter(Boolean).join(', ') || 'Nigeria';
+  const streetAddress = professional.address?.trim() || '';
   const whatsapp = professional.contact.whatsapp;
 
   return (
@@ -421,6 +426,9 @@ function SummaryCard({
         {professional.profession?.label || 'Professional'} · {professional.professionalType === 'firm' ? 'Firm' : 'Individual'}
       </Text>
       <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 4 }}>{location}</Text>
+      {streetAddress ? (
+        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: LANDING_MUTED, marginTop: 2 }}>{streetAddress}</Text>
+      ) : null}
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
         <Badge label={professional.trust.listingLabel || 'Listed'} />
@@ -441,16 +449,18 @@ function SummaryCard({
               : 'Unclaimed — BuildMyHouse may have researched this listing.'}
         </Text>
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_INK, lineHeight: 20, marginTop: 6 }}>
-          {professional.trust.credentialLabel
+          {credentialChecked
             ? `${professional.trust.credentialLabel}${professional.trust.credentialDetail ? ` · ${professional.trust.credentialDetail}` : ''}${checkedOn ? `. Checked by BuildMyHouse on ${checkedOn}.` : ''}`
             : 'Credential not checked by BuildMyHouse yet.'}
         </Text>
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: LANDING_INK, lineHeight: 20, marginTop: 6 }}>
           {professional.trust.usedByBmhLabel || 'Not recorded as used by BuildMyHouse.'}
         </Text>
-        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: LANDING_MUTED, lineHeight: 18, marginTop: 8 }}>
-          {professional.trust.disclaimer}
-        </Text>
+        {credentialChecked && checkedOn && professional.trust.disclaimer ? (
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: LANDING_MUTED, lineHeight: 18, marginTop: 8 }}>
+            {professional.trust.disclaimer}
+          </Text>
+        ) : null}
       </View>
 
       {!compact ? (

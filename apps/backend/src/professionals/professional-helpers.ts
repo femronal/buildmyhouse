@@ -176,7 +176,6 @@ export function aggregateVerification(credentials: Array<{
 }
 
 export const PUBLIC_DTO_FORBIDDEN_KEYS = [
-  'address',
   'sourceNotes',
   'sourceUrls',
   'usedByBmhNote',
@@ -250,19 +249,27 @@ function publicCredentialLabel(listing: ListingWithPublicRelations): {
   };
 }
 
+export function isOwnerClaimed(listing: {
+  claimedAt?: Date | null;
+  claimedByUserId?: string | null;
+}): boolean {
+  return Boolean(listing.claimedAt || listing.claimedByUserId);
+}
+
 export function toPublicTrust(listing: ListingWithPublicRelations): PublicTrust {
   const cred = publicCredentialLabel(listing);
+  const checkedOn = cred.label && cred.checkedOn ? cred.checkedOn : null;
   return {
     listingLabel: 'Listed',
-    claimedLabel:
-      listing.claimedAt && (listing.claimedByUserId || listing.linkedUserId) ? 'Claimed by owner' : null,
+    claimedLabel: isOwnerClaimed(listing) ? 'Claimed by owner' : null,
     credentialLabel: cred.label,
     credentialDetail: cred.detail,
-    checkedOn: cred.checkedOn,
+    checkedOn,
     usedByBmh: listing.usedByBmh,
     usedByBmhLabel: listing.usedByBmh ? 'Used by BuildMyHouse' : null,
-    disclaimer:
-      'BuildMyHouse checked the credential information shown on this profile on the date indicated. This does not guarantee future performance or suitability for every project. Listing is not the same as verification.',
+    disclaimer: checkedOn
+      ? 'BuildMyHouse checked the credential information shown on this profile on the date indicated. This does not guarantee future performance or suitability for every project. Listing is not the same as verification.'
+      : '',
   };
 }
 
@@ -280,6 +287,7 @@ export type PublicProfessionalCard = {
   projectStages: Array<{ key: string; label: string }>;
   city: string | null;
   state: string | null;
+  address: string | null;
   serviceStates: string[];
   remoteConsultation: boolean;
   siteVisits: boolean;
@@ -330,6 +338,7 @@ export function toPublicProfessionalCard(listing: ListingWithPublicRelations): P
     projectStages: mapNamed((listing.projectStages || []).map((row) => row.projectStage)).slice(0, 6),
     city: listing.city,
     state: listing.state,
+    address: listing.address?.trim() || null,
     serviceStates: listing.serviceStates,
     remoteConsultation: listing.remoteConsultation,
     siteVisits: listing.siteVisits,
