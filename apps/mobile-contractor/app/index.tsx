@@ -37,7 +37,11 @@ export default function ContractorStartScreen() {
     router.replace('/contractor/gc-dashboard');
   }, [currentUser, hasToken, isLoading, router]);
 
-  if (Platform.OS === 'web' && hasToken === false && !isLoading) {
+  const showPublicLanding =
+    Platform.OS === 'web' &&
+    (typeof window === 'undefined' || hasToken === null || (hasToken === false && !isLoading));
+
+  if (showPublicLanding) {
     return <GcLandingScreen />;
   }
 

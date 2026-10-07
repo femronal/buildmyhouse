@@ -13,7 +13,7 @@ import {
   PROPERTY_TOOL_CATEGORIES,
   type PropertyTool,
 } from '@/lib/property-tools-catalog';
-import { useWebSeo } from '@/lib/seo';
+import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 import { buildCanonical } from '@/lib/seo-schema';
 
 type PropertyToolDetailPageProps = {
@@ -33,12 +33,14 @@ export default function PropertyToolDetailPage({ slug }: PropertyToolDetailPageP
     ? `${tool.title} | BuildMyHouse Tools`
     : 'Property Tool | BuildMyHouse';
   const seoDescription = tool?.description ?? 'BuildMyHouse property management tools for Nigeria.';
+  const indexable = tool?.status === 'live';
 
+  usePageOwnedSeo();
   useWebSeo({
     title: seoTitle,
     description: seoDescription,
     canonicalPath: tool?.href ?? `/tools/${slug}`,
-    robots: tool ? 'index,follow' : 'noindex,follow',
+    robots: indexable ? 'index,follow' : 'noindex,follow',
     jsonLd: tool
       ? {
           '@context': 'https://schema.org',

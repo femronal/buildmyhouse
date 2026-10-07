@@ -384,6 +384,14 @@ function normalizeRemoteArticle(input: RemoteArticle): Article {
   };
 }
 
+export function articleFromRemote(input: unknown): Article | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const record = input as RemoteArticle;
+  const slug = String(record.slug || '').trim();
+  if (!slug || !String(record.title || '').trim()) return undefined;
+  return normalizeRemoteArticle(record);
+}
+
 export function getArticleBySlug(slug?: string) {
   if (!slug) return undefined;
   return articles.find((article) => article.slug === slug);
