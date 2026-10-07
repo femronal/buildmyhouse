@@ -510,8 +510,12 @@ function upsertMeta(html, attr, key, value) {
 }
 
 function upsertLink(html, rel, href, extraAttrs = '') {
-  const pattern = new RegExp(`<link\\s+[^>]*rel=["']${rel}["'][^>]*>`, 'i');
   const tag = `<link rel="${rel}" href="${escapeHtml(href)}"${extraAttrs ? ` ${extraAttrs}` : ''} />`;
+  if (rel === 'canonical') {
+    const without = html.replace(/<link\s+[^>]*rel=["']canonical["'][^>]*>/gi, '');
+    return without.replace('</head>', `  ${tag}\n</head>`);
+  }
+  const pattern = new RegExp(`<link\\s+[^>]*rel=["']${rel}["'][^>]*>`, 'i');
   if (pattern.test(html)) return html.replace(pattern, tag);
   return html.replace('</head>', `  ${tag}\n</head>`);
 }
@@ -1159,7 +1163,10 @@ if (fs.existsSync(sitemapPath)) {
     }
     if (best === homepageText) {
       problems.push(`${route} (body matches homepage)`);
-    } else if (best.length < 300) {
+    } else if (best.length < 120) {
+      // Spinner shells measured on 7 Oct were 54–76 characters. /professionals/apply
+      // is a real short form at about 156 characters, so 300 would fail a page that
+      // already has its own copy.
       problems.push(`${route} (visible body ${best.length} chars)`);
     }
   }
