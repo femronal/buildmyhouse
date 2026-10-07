@@ -987,7 +987,7 @@ function Sent({
         <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 15, color: '#000', marginTop: 16 }}>Reference {reference}</Text>
       ) : null}
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(url)} style={{ marginTop: 28, minHeight: 44, justifyContent: 'center' }}>
-        <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: GREEN }}>Didn't open? Tap here</Text>
+        <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: GREEN }}>{"Didn't open? Tap here"}</Text>
       </Pressable>
       <Pressable
         accessibilityRole="button"

@@ -49,6 +49,9 @@ Thumbs.db
 dist/
 web-build/
 
+# Regenerated during the homeowner web build. The committed file is an empty placeholder.
+apps/mobile-homeowner/lib/cms-snapshot.generated.json
+
 # Prisma (ignore root-level only; apps/backend migrations are tracked)
 /prisma/migrations/
 

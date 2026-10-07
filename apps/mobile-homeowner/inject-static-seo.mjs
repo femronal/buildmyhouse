@@ -51,6 +51,8 @@ const PRIVATE_ROUTE_PREFIXES = [
   '/vendors/claim',
   '/professionals/manage',
   '/professionals/claim',
+  '/home',
+  '/finance',
 ];
 
 const SEO_PAGES = {
@@ -438,6 +440,29 @@ function isPrivateRoute(route) {
   return PRIVATE_ROUTE_PREFIXES.some((prefix) => route === prefix || route.startsWith(`${prefix}/`));
 }
 
+/** Coming-soon tools rendered by PropertyToolDetailPage. Batch tool landers stay indexable. */
+function loadNoindexToolRoutes() {
+  const catalog = fs.readFileSync(path.resolve(process.cwd(), 'lib/property-tools-catalog.ts'), 'utf8');
+  const batchSlugs = new Set();
+  for (const fileName of ['batch-1-pages.ts', 'batch-2-pages.ts']) {
+    const source = fs.readFileSync(path.resolve(process.cwd(), 'lib/tools', fileName), 'utf8');
+    for (const match of source.matchAll(/^  '([^']+)': \{/gm)) {
+      batchSlugs.add(match[1]);
+    }
+  }
+  const routes = [];
+  for (const chunk of catalog.split(/\n  \{/)) {
+    const slug = chunk.match(/slug:\s*'([^']+)'/)?.[1];
+    const status = chunk.match(/status:\s*'([^']+)'/)?.[1];
+    const href = chunk.match(/href:\s*'([^']+)'/)?.[1];
+    if (!slug || !status || !href || status === 'live' || batchSlugs.has(slug)) continue;
+    if (href.startsWith('/tools/')) routes.push(href.split('?')[0]);
+  }
+  return routes;
+}
+
+const NOINDEX_FOLLOW_ROUTES = new Set(loadNoindexToolRoutes());
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -485,8 +510,12 @@ function upsertMeta(html, attr, key, value) {
 }
 
 function upsertLink(html, rel, href, extraAttrs = '') {
-  const pattern = new RegExp(`<link\\s+[^>]*rel=["']${rel}["'][^>]*>`, 'i');
   const tag = `<link rel="${rel}" href="${escapeHtml(href)}"${extraAttrs ? ` ${extraAttrs}` : ''} />`;
+  if (rel === 'canonical') {
+    const without = html.replace(/<link\s+[^>]*rel=["']canonical["'][^>]*>/gi, '');
+    return without.replace('</head>', `  ${tag}\n</head>`);
+  }
+  const pattern = new RegExp(`<link\\s+[^>]*rel=["']${rel}["'][^>]*>`, 'i');
   if (pattern.test(html)) return html.replace(pattern, tag);
   return html.replace('</head>', `  ${tag}\n</head>`);
 }
@@ -620,6 +649,93 @@ for (const [route, page] of Object.entries(startIndexable)) {
   SEO_PAGES[route] = { title: page.title, description: page.description };
 }
 
+// Titles already used by the page components. Static HTML was falling back to
+// "BuildMyHouse Technologies" because these routes were missing here.
+const EXISTING_PAGE_SEO = {
+  '/artisans': {
+    title: 'Artisans and Repair Technicians in Nigeria | BuildMyHouse',
+    description:
+      'Find plumbers, bricklayers, electricians, roofers and other repair artisans by what needs fixing and where they work. A listing can be public while the profile is still thin. Listing is not the same as verification.',
+  },
+  '/construction/abuja': {
+    title: 'House Construction in Abuja | BuildMyHouse',
+    description:
+      'Build in Abuja with verified contractor matching, budget visibility, and project tracking across each stage.',
+  },
+  '/construction/port-harcourt': {
+    title: 'House Construction in Port Harcourt | BuildMyHouse',
+    description:
+      'Execute residential building projects in Port Harcourt with project tracking, verified GC workflows, and payment transparency.',
+  },
+  '/diaspora/build-in-nigeria-from-uae': {
+    title: 'Build in Lagos, Nigeria from UAE/Middle East | BuildMyHouse',
+    description:
+      'Build or renovate in Lagos, Nigeria while living in UAE or the Middle East, with better project visibility using BuildMyHouse.',
+  },
+  '/downloads/lagos-permit-starter-checklist': {
+    title: 'Download the Lagos Permit Starter Checklist | BuildMyHouse',
+    description:
+      'Download the free Lagos Permit Starter Checklist for Nigerians abroad. A plain-English guide to help diaspora homeowners understand what to verify before building or renovating in Lagos.',
+  },
+  '/downloads/remote-renovation-scope-worksheet': {
+    title: 'Download the Remote Renovation Scope Worksheet | BuildMyHouse',
+    description:
+      'Download the free Remote Renovation Scope Worksheet for Nigerians abroad. Plan your renovation clearly, separate repairs from upgrades, control stage progression, and avoid expensive remote-renovation mistakes.',
+  },
+  '/guides/contractor-vetting-nigeria-diaspora': {
+    title: 'Contractor Verification Checklist for Diaspora Nigerians | BuildMyHouse',
+    description:
+      'A plain-English contractor vetting guide for Nigerians abroad. Learn what to check before hiring a builder or renovation contractor in Nigeria, what documents to ask for, and what red flags should stop your money.',
+  },
+  '/guides/how-to-finish-an-abandoned-house-in-nigeria-from-abroad': {
+    title: 'How to Finish an Abandoned House in Nigeria From Abroad | BuildMyHouse',
+    description:
+      'A plain-English guide for Nigerians abroad who want to finish an abandoned or uncompleted house in Nigeria. Learn how to assess the structure, reset the scope, control payments, and restart safely.',
+  },
+  '/guides/lagos-building-permits-and-stage-inspections': {
+    title: 'Lagos Building Permits and Stage Inspections | Diaspora Action Guide | BuildMyHouse',
+    description:
+      'A plain-English Lagos building permits guide for diaspora Nigerians. Learn what approvals you need, how stage inspections work, when not to move to the next stage, and how to build safely from abroad.',
+  },
+  '/guides/renovation-permit-lagos-repair-vs-renovation': {
+    title: 'Renovation vs Repair in Lagos: When You Need More Caution | BuildMyHouse',
+    description:
+      'A plain-English Lagos guide for Nigerians abroad. Learn the difference between repairs, renovation, remodeling work, and remodelling, and know when to slow down and verify more carefully before your project moves forward.',
+  },
+  '/guides/weekly-site-updates-standard': {
+    title: 'The Weekly Site Update Standard for Diaspora Homeowners | BuildMyHouse',
+    description:
+      'Learn the exact weekly site updates your contractor should send when you are building or renovating in Nigeria from abroad. A plain-English standard for photos, videos, receipts, milestones, and progress notes.',
+  },
+  '/homes-for-rent/nigeria': {
+    title: 'Homes for Rent in Nigeria | BuildMyHouse',
+    description:
+      'Browse owner-listed homes for rent in Nigeria with transparent agency fee communication and streamlined inspection requests.',
+  },
+  '/houses-for-sale/nigeria': {
+    title: 'Houses for Sale in Nigeria | BuildMyHouse',
+    description: 'Discover houses for sale in Nigeria with clear property details and a modern buyer flow.',
+  },
+  '/land-for-sale/nigeria': {
+    title: 'Land for Sale in Nigeria | BuildMyHouse',
+    description:
+      'Find land opportunities in Nigeria and prepare for your next construction or investment move with BuildMyHouse.',
+  },
+  '/mistakes-nigerians-in-diaspora-make-when-building': {
+    title: 'Mistakes Nigerians in the Diaspora Make When Building in Nigeria | BuildMyHouse',
+    description:
+      'Avoid common diaspora building mistakes: informal payments, weak land checks, and unmanaged contractors. Learn what to fix before you fund your build.',
+  },
+  '/tools': {
+    title: 'Property Management Tools for Nigeria | BuildMyHouse',
+    description:
+      'Explore BuildMyHouse tools for land risk checks, quote comparison, repair triage, budgets, remote oversight, and more — built for Nigeria property work.',
+  },
+};
+for (const [route, page] of Object.entries(EXISTING_PAGE_SEO)) {
+  if (!SEO_PAGES[route]) SEO_PAGES[route] = page;
+}
+
 function startJsonLd(route, page) {
   const url = `${WEB_URL}${route}`;
   const crumbs = [
@@ -675,7 +791,13 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   const followUpStart = route.startsWith('/start/') && !startIndexable[route];
   const robots =
     pageMeta?.robots ||
-    (followUpStart ? 'noindex,follow' : isPrivateRoute(route) ? 'noindex,nofollow' : 'index,follow');
+    (NOINDEX_FOLLOW_ROUTES.has(route)
+      ? 'noindex,follow'
+      : followUpStart
+        ? 'noindex,follow'
+        : isPrivateRoute(route)
+          ? 'noindex,nofollow'
+          : 'index,follow');
   const title = (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || 'BuildMyHouse Technologies';
   const description =
     pageMeta?.description ||
@@ -751,6 +873,50 @@ function htmlPathForRoute(route) {
   return path.join(distDir, `${route.slice(1)}.html`);
 }
 
+function candidateHtmlPaths(route) {
+  if (route === '/') return [indexHtmlPath];
+  const rel = route.replace(/^\//, '');
+  return [path.join(distDir, `${rel}.html`), path.join(distDir, rel, 'index.html')].filter((filePath) =>
+    fs.existsSync(filePath),
+  );
+}
+
+function visibleBodyText(html) {
+  const bodyMatch = html.match(/<body\b[^>]*>([\s\S]*?)<\/body>/i);
+  const body = bodyMatch ? bodyMatch[1] : '';
+  return body
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function routeFromSitemapLoc(loc) {
+  if (loc === WEB_URL || loc === `${WEB_URL}/`) return '/';
+  if (!loc.startsWith(WEB_URL)) return '';
+  const route = loc.slice(WEB_URL.length).split('?')[0].replace(/\/+$/, '') || '/';
+  return route.startsWith('/') ? route : `/${route}`;
+}
+
+function readSitemapRoutes() {
+  const candidates = [
+    path.resolve(process.cwd(), 'public/sitemap.xml'),
+    path.join(distDir, 'sitemap.xml'),
+  ];
+  const sitemapPath = candidates.find((filePath) => fs.existsSync(filePath));
+  if (!sitemapPath) return [];
+  const sitemap = fs.readFileSync(sitemapPath, 'utf8');
+  return [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)]
+    .map((match) => routeFromSitemapLoc(match[1]))
+    .filter(Boolean);
+}
+
 function ensureRouteHtml(route) {
   if (route === '/') return { filePath: indexHtmlPath, created: false };
   const filePath = htmlPathForRoute(route);
@@ -773,9 +939,17 @@ async function fetchJsonArray(pathname) {
   }
 }
 
+function articleCanonicalPath(article) {
+  const canonical = String(article?.canonicalPath || '').trim();
+  if (canonical.startsWith('/articles/')) return canonical;
+  const slug = String(article?.slug || '').trim();
+  if (!canonical && slug) return `/articles/${slug}`;
+  return '';
+}
+
 function buildArticleJsonLd(article) {
-  const canonicalPath = String(article.canonicalPath || '').trim();
-  if (!canonicalPath.startsWith('/articles/')) return null;
+  const canonicalPath = articleCanonicalPath(article);
+  if (!canonicalPath) return null;
   const canonicalUrl = `${WEB_URL}${canonicalPath}`;
   const title = String(article.title || '').trim();
   const description = String(article.description || article.excerpt || '').trim();
@@ -818,8 +992,8 @@ async function fetchCmsSeoPages() {
 
   for (const article of articles) {
     if (article?.isPublished === false) continue;
-    const route = String(article?.canonicalPath || '').trim();
-    if (!route.startsWith('/articles/')) continue;
+    const route = articleCanonicalPath(article);
+    if (!route) continue;
     const title = String(article?.title || '').trim();
     const description = String(article?.description || article?.excerpt || '').trim();
     if (!title || !description) continue;
@@ -904,14 +1078,21 @@ const routesToEnsure = Array.from(
   ]),
 ).filter((route) => route && route.startsWith('/'));
 
+const sitemapRouteSet = new Set(readSitemapRoutes());
 let ensured = 0;
 for (const route of routesToEnsure) {
   if (REDIRECTS[route]) {
     writeRedirectHtml(route, REDIRECTS[route]);
     continue;
   }
+  if (sitemapRouteSet.has(route)) {
+    continue;
+  }
   const { created } = ensureRouteHtml(route);
-  if (created) ensured += 1;
+  if (created) {
+    ensured += 1;
+    console.warn(`[seo] Copied homepage shell for non-sitemap route ${route}`);
+  }
 }
 
 let patched = 0;
@@ -962,28 +1143,49 @@ for (const relativePath of agentMarkdownFiles) {
   fs.copyFileSync(source, target);
 }
 
-// Fail the build if sitemap URLs would soft-404 (missing per-route HTML).
+// Fail the build if a sitemap URL is missing, repeats the homepage body, or is too thin to index.
 const sitemapPath = path.join(distDir, 'sitemap.xml');
 if (fs.existsSync(sitemapPath)) {
   const sitemap = fs.readFileSync(sitemapPath, 'utf8');
   const locs = [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]);
-  const missing = [];
+  const homepageText = visibleBodyText(fs.readFileSync(indexHtmlPath, 'utf8'));
+  const problems = [];
+  const noindexInSitemap = [];
   for (const loc of locs) {
-    const route =
-      loc === WEB_URL || loc === `${WEB_URL}/`
-        ? '/'
-        : loc.startsWith(WEB_URL)
-          ? loc.slice(WEB_URL.length)
-          : '';
-    if (!route) continue;
+    const route = routeFromSitemapLoc(loc);
+    if (!route || route === '/') continue;
     if (REDIRECTS[route]) continue;
-    if (!fs.existsSync(htmlPathForRoute(route))) {
-      missing.push(route);
+    if (NOINDEX_FOLLOW_ROUTES.has(route)) {
+      noindexInSitemap.push(route);
+      continue;
+    }
+    const candidates = candidateHtmlPaths(route);
+    if (!candidates.length) {
+      problems.push(`${route} (missing HTML)`);
+      continue;
+    }
+    let best = '';
+    for (const filePath of candidates) {
+      const text = visibleBodyText(fs.readFileSync(filePath, 'utf8'));
+      if (text.length > best.length) best = text;
+    }
+    if (best === homepageText) {
+      problems.push(`${route} (body matches homepage)`);
+    } else if (best.length < 120) {
+      // Spinner shells measured on 7 Oct were 54–76 characters. /professionals/apply
+      // is a real short form at about 156 characters, so 300 would fail a page that
+      // already has its own copy.
+      problems.push(`${route} (visible body ${best.length} chars)`);
     }
   }
-  if (missing.length) {
-    console.error('[seo] Sitemap routes missing per-route HTML (would soft-404 to homepage):');
-    for (const route of missing) console.error(`  - ${route}`);
+  if (noindexInSitemap.length) {
+    console.error('[seo] Coming-soon tools are in the sitemap and must be removed:');
+    for (const route of noindexInSitemap) console.error(`  - ${route}`);
+    process.exit(1);
+  }
+  if (problems.length) {
+    console.error('[seo] Sitemap routes are missing their own HTML:');
+    for (const problem of problems) console.error(`  - ${problem}`);
     process.exit(1);
   }
 }

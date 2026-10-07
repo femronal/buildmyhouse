@@ -125,10 +125,8 @@ const SEO_PAGES = {
 };
 
 function upsertTitle(html, title) {
-  if (/<title>[\s\S]*?<\/title>/i.test(html)) {
-    return html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
-  }
-  return html.replace('</head>', `  <title>${escapeHtml(title)}</title>\n</head>`);
+  const withoutTitles = html.replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, '');
+  return withoutTitles.replace('</head>', `  <title>${escapeHtml(title)}</title>\n</head>`);
 }
 
 function escapeHtml(value) {

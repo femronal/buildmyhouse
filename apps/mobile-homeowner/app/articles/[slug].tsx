@@ -9,18 +9,23 @@ import {
   getArticleSchema,
   type Article,
 } from '@/lib/articles';
+import { getSnapshotArticleBySlug, getSnapshotArticleSlugs } from '@/lib/cms-snapshot';
 import { useWebSeo } from '@/lib/seo';
 
 export function generateStaticParams() {
-  return getAllArticleSlugs().map((slug) => ({ slug }));
+  return Array.from(new Set([...getAllArticleSlugs(), ...getSnapshotArticleSlugs()])).map((slug) => ({
+    slug,
+  }));
 }
 
 export default function ArticleDetailPage() {
   const params = useLocalSearchParams<{ slug?: string | string[] }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const localArticle = getArticleBySlug(slug);
+  const snapshotArticle = getSnapshotArticleBySlug(slug);
+  const seededArticle = localArticle || snapshotArticle;
   const [remoteArticle, setRemoteArticle] = useState<Article | null>(null);
-  const [lookupComplete, setLookupComplete] = useState(false);
+  const [lookupComplete, setLookupComplete] = useState(Boolean(seededArticle));
 
   useEffect(() => {
     let active = true;
@@ -37,7 +42,7 @@ export default function ArticleDetailPage() {
     fetchPublishedArticleBySlug(slug)
       .then((item) => {
         if (!active) return;
-        setRemoteArticle(item || null);
+        if (item) setRemoteArticle(item);
         setLookupComplete(true);
       })
       .catch(() => {
@@ -50,13 +55,16 @@ export default function ArticleDetailPage() {
     };
   }, [slug, localArticle]);
 
-  const article = useMemo(() => localArticle || remoteArticle, [localArticle, remoteArticle]);
+  const article = useMemo(
+    () => localArticle || remoteArticle || snapshotArticle,
+    [localArticle, remoteArticle, snapshotArticle],
+  );
 
   useWebSeo({
     title: article?.seoTitle || article?.title || 'BuildMyHouse Article',
     description: article?.description || 'BuildMyHouse educational content for homeowners and diaspora users.',
-    canonicalPath: article?.canonicalPath || '/articles',
-    robots: article ? 'index,follow' : 'noindex,nofollow',
+    canonicalPath: article?.canonicalPath || (slug ? `/articles/${slug}` : '/articles'),
+    robots: !article && lookupComplete ? 'noindex,nofollow' : 'index,follow',
     jsonLd: article ? getArticleSchema(article) : undefined,
   });
 

@@ -27,6 +27,7 @@ import { SeoHeading } from '@/components/seo/SeoHeading';
 import { SeoContentBackButton, SeoContentColumn, SeoContentShell, seoContentTypography } from '@/components/seo/SeoContentLayout';
 import SeoCoverImage from '@/components/seo/SeoCoverImage';
 import InternalLinksBlock, { type InternalLinkItem } from '@/components/seo/InternalLinksBlock';
+import { isLocalPdfAvailable } from '@/lib/available-public-pdfs';
 import { cardShadowStyle } from '@/lib/card-styles';
 import { trackWebEvent } from '@/lib/analytics';
 import { useWebSeo } from '@/lib/seo';
@@ -133,6 +134,10 @@ function CtaButton({
   onPress: () => void;
   router: ReturnType<typeof useRouter>;
 }) {
+  if (cta.download && !isLocalPdfAvailable(cta.href)) {
+    return null;
+  }
+
   if (Platform.OS === 'web' && cta.download) {
     return createElement(
       'a',
