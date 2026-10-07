@@ -80,10 +80,16 @@ console.log(
   `[seo] Wrote CMS snapshot (${cmsSnapshot.articles.length} articles, ${cmsSnapshot.servicePages.length} service pages) and ${pdfs.length} public PDFs`,
 );
 
+function articleSitemapRoute(item) {
+  const canonical = String(item?.canonicalPath || '').trim();
+  if (canonical.startsWith('/articles/')) return canonical;
+  const slug = String(item?.slug || '').trim();
+  if (!canonical && slug) return `/articles/${slug}`;
+  return '';
+}
+
 const now = new Date().toISOString();
-const cmsRoutes = cmsSnapshot.articles
-  .map((item) => String(item?.canonicalPath || '').trim())
-  .filter((routePath) => routePath.startsWith('/articles/'));
+const cmsRoutes = cmsSnapshot.articles.map(articleSitemapRoute).filter(Boolean);
 const cmsServiceRoutes = cmsSnapshot.servicePages
   .map((item) => String(item?.canonicalPath || '').trim())
   .filter((routePath) => routePath.startsWith('/services/'));

@@ -18,6 +18,14 @@ export function getSnapshotArticleBySlug(slug?: string): Article | undefined {
   return articleFromRemote(match);
 }
 
+function snapshotArticleRoute(record: { slug?: string; canonicalPath?: string }): string {
+  const canonical = String(record.canonicalPath || '').trim();
+  if (canonical.startsWith('/articles/')) return canonical;
+  const slug = String(record.slug || '').trim();
+  if (!canonical && slug) return `/articles/${slug}`;
+  return '';
+}
+
 export function getSnapshotArticleSlugs(): string[] {
   const slugs = new Set<string>();
   for (const item of snapshot.articles || []) {
@@ -25,8 +33,7 @@ export function getSnapshotArticleSlugs(): string[] {
     const record = item as { slug?: string; isPublished?: boolean; canonicalPath?: string };
     if (record.isPublished === false) continue;
     const slug = String(record.slug || '').trim();
-    const canonical = String(record.canonicalPath || '');
-    if (!slug || !canonical.startsWith('/articles/')) continue;
+    if (!slug || !snapshotArticleRoute(record)) continue;
     slugs.add(slug);
   }
   return [...slugs];

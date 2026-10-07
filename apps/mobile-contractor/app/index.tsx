@@ -38,8 +38,7 @@ export default function ContractorStartScreen() {
   }, [currentUser, hasToken, isLoading, router]);
 
   const showPublicLanding =
-    Platform.OS === 'web' &&
-    (typeof window === 'undefined' || hasToken === null || (hasToken === false && !isLoading));
+    Platform.OS === 'web' && (typeof window === 'undefined' || hasToken !== true);
 
   if (showPublicLanding) {
     return <GcLandingScreen />;

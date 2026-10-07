@@ -939,9 +939,17 @@ async function fetchJsonArray(pathname) {
   }
 }
 
+function articleCanonicalPath(article) {
+  const canonical = String(article?.canonicalPath || '').trim();
+  if (canonical.startsWith('/articles/')) return canonical;
+  const slug = String(article?.slug || '').trim();
+  if (!canonical && slug) return `/articles/${slug}`;
+  return '';
+}
+
 function buildArticleJsonLd(article) {
-  const canonicalPath = String(article.canonicalPath || '').trim();
-  if (!canonicalPath.startsWith('/articles/')) return null;
+  const canonicalPath = articleCanonicalPath(article);
+  if (!canonicalPath) return null;
   const canonicalUrl = `${WEB_URL}${canonicalPath}`;
   const title = String(article.title || '').trim();
   const description = String(article.description || article.excerpt || '').trim();
@@ -984,8 +992,8 @@ async function fetchCmsSeoPages() {
 
   for (const article of articles) {
     if (article?.isPublished === false) continue;
-    const route = String(article?.canonicalPath || '').trim();
-    if (!route.startsWith('/articles/')) continue;
+    const route = articleCanonicalPath(article);
+    if (!route) continue;
     const title = String(article?.title || '').trim();
     const description = String(article?.description || article?.excerpt || '').trim();
     if (!title || !description) continue;
