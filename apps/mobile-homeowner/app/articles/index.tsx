@@ -35,7 +35,9 @@ import {
 import { fetchResourceSections, resolveSidebarTopics } from '@/lib/resource-sections';
 import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
 import { PROPERTY_PURCHASE_ARTICLE_PATH } from '@/lib/property-purchase-safety-check';
+import { REDEVELOPMENT_ARTICLE_PATH } from '@/lib/redevelopment-readiness-check';
 import { useWebSeo } from '@/lib/seo';
+import BrandedLottieCover from '@/components/seo/BrandedLottieCover';
 import HouseRenovationLottieCover from '@/components/seo/HouseRenovationLottieCover';
 import PropertyPurchaseLottieCover from '@/components/seo/PropertyPurchaseLottieCover';
 
@@ -89,6 +91,17 @@ function ResourceCover({
 }) {
   if (item.href === PROPERTY_PURCHASE_ARTICLE_PATH) {
     return <PropertyPurchaseLottieCover className="mb-0 rounded-none border-0" height={height} />;
+  }
+  if (item.href === REDEVELOPMENT_ARTICLE_PATH) {
+    return (
+      <BrandedLottieCover
+        animationUrl="/lottie/construction-worker-building-wall.json"
+        label="Construction worker building a wall"
+        placeholder="house"
+        className="mb-0 rounded-none border-0"
+        height={height}
+      />
+    );
   }
   if (isGenericConstructionCover(coverUri(publishedIndexCoverSource(item)))) {
     return <HouseRenovationLottieCover className="mb-0 rounded-none border-0" height={height} />;

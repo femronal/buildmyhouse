@@ -12,6 +12,8 @@ import { lagosBuildingPermitsAndStageInspectionsPageContent as lagosGuide } from
 import { landVerificationInNigeriaGuideContent as landGuide } from '@/lib/land-verification-in-nigeria-guide-content';
 import { propertyPurchaseLagosDueDiligenceContent as purchaseGuide } from '@/lib/property-purchase-lagos-due-diligence-content';
 import { PROPERTY_PURCHASE_ARTICLE_PATH } from '@/lib/property-purchase-safety-check';
+import { redevelopmentReadinessContent as redevelopmentGuide } from '@/lib/redevelopment-readiness-content';
+import { REDEVELOPMENT_ARTICLE_PATH } from '@/lib/redevelopment-readiness-check';
 import { getSeoPageContent } from '@/lib/seo-pages';
 
 const webBase = () => (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
@@ -190,6 +192,20 @@ export function getStaticPublishedCatalogItems(): PublishedIndexItem[] {
       purchaseGuide.readingMinutes,
       [...purchaseGuide.tags],
       purchaseGuide.publishedAt,
+    ),
+    guideRow(
+      'article-redevelopment-readiness',
+      'developer-joint-venture-unfinished-building-nigeria',
+      'lagos-compliance',
+      REDEVELOPMENT_ARTICLE_PATH,
+      redevelopmentGuide.hero.title,
+      redevelopmentGuide.excerpt,
+      redevelopmentGuide.seo.description,
+      redevelopmentGuide.coverImage.src,
+      redevelopmentGuide.coverImage.alt,
+      redevelopmentGuide.readingMinutes,
+      [...redevelopmentGuide.tags],
+      redevelopmentGuide.publishedAt,
     ),
     guideRow(
       'seo-land-verification',

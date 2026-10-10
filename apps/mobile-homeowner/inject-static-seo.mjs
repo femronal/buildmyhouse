@@ -314,6 +314,11 @@ const SEO_PAGES = {
     description:
       'Buying a house or unfinished building in Lagos from abroad? Learn how to verify ownership, approvals, structural condition, drainage and hidden risks before you commit.',
   },
+  '/articles/developer-joint-venture-unfinished-building-nigeria': {
+    title: 'How to Develop Your Land or Unfinished Building With a Developer in Nigeria | BuildMyHouse',
+    description:
+      'Have land or an unfinished building but not enough money to complete it? Understand developer partnerships, Joint Ventures, Build–Operate–Transfer, financing and how to protect your property before signing a deal.',
+  },
   '/land-verification-in-nigeria-guide': {
     title: 'Land Verification in Nigeria Guide | BuildMyHouse',
     description:

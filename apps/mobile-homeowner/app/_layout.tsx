@@ -141,6 +141,10 @@ export default function RootLayout() {
             name="articles/buying-property-lagos-from-abroad-due-diligence"
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="articles/developer-joint-venture-unfinished-building-nigeria"
+            options={{ headerShown: false }}
+          />
           <Stack.Screen name="articles/[slug]" options={{ headerShown: false }} />
           <Stack.Screen name="blog/index" options={{ headerShown: false }} />
           <Stack.Screen

@@ -414,6 +414,16 @@ export function getDefaultSeoForPath(pathname?: string): SeoOptions {
     };
   }
 
+  if (normalized === '/articles/developer-joint-venture-unfinished-building-nigeria') {
+    return {
+      title: 'How to Develop Your Land or Unfinished Building With a Developer in Nigeria | BuildMyHouse',
+      description:
+        'Have land or an unfinished building but not enough money to complete it? Understand developer partnerships, Joint Ventures, Build–Operate–Transfer, financing and how to protect your property before signing a deal.',
+      canonicalPath,
+      robots: 'index,follow',
+    };
+  }
+
   if (normalized === '/articles' || normalized.startsWith('/articles/')) {
     return {
       title: 'BuildMyHouse Technologies Articles | Construction, Renovation, Diaspora Guides',
