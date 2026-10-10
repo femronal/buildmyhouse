@@ -10,41 +10,89 @@ const routesConfig = JSON.parse(
 );
 const indexableRoutes = routesConfig.exact ?? [];
 
-async function getCmsArticleRoutes() {
+async function fetchJson(url) {
+  let response;
   try {
-    const response = await fetch(`${API_URL}/articles`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    if (!Array.isArray(data)) return [];
-
-    return data
-      .filter((item) => item?.isPublished !== false)
-      .map((item) => String(item?.canonicalPath || '').trim())
-      .filter((routePath) => routePath.startsWith('/articles/'));
-  } catch {
-    return [];
+    response = await fetch(url);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`[seo] ${url} failed: ${message}`);
   }
+  if (!response.ok) {
+    throw new Error(`[seo] ${url} returned ${response.status}`);
+  }
+  return response.json();
 }
 
-async function getCmsServicePageRoutes() {
-  try {
-    const response = await fetch(`${API_URL}/service-pages`);
-    if (!response.ok) return [];
-    const data = await response.json();
-    if (!Array.isArray(data)) return [];
-
-    return data
-      .filter((item) => item?.isPublished !== false)
-      .map((item) => String(item?.canonicalPath || '').trim())
-      .filter((routePath) => routePath.startsWith('/services/'));
-  } catch {
-    return [];
+async function loadCmsSnapshot() {
+  const [articleList, serviceList] = await Promise.all([
+    fetchJson(`${API_URL}/articles?audience=homeowner`),
+    fetchJson(`${API_URL}/service-pages`),
+  ]);
+  if (!Array.isArray(articleList)) {
+    throw new Error('[seo] GET /articles?audience=homeowner did not return an array');
   }
+  if (!Array.isArray(serviceList)) {
+    throw new Error('[seo] GET /service-pages did not return an array');
+  }
+
+  const publishedArticles = articleList.filter((item) => item?.isPublished !== false && item?.slug);
+  const articles = await Promise.all(
+    publishedArticles.map(async (item) => {
+      const slug = encodeURIComponent(String(item.slug));
+      const detail = await fetchJson(`${API_URL}/articles/${slug}?audience=homeowner`);
+      if (!detail || typeof detail !== 'object' || Array.isArray(detail)) {
+        throw new Error(`[seo] Article ${item.slug} detail was empty`);
+      }
+      return detail;
+    }),
+  );
+
+  const servicePages = serviceList.filter((item) => item?.isPublished !== false);
+  return { articles, servicePages };
+}
+
+let cmsSnapshot;
+try {
+  cmsSnapshot = await loadCmsSnapshot();
+} catch (error) {
+  console.error(error instanceof Error ? error.message : error);
+  console.error('[seo] Refusing to continue with an empty CMS snapshot.');
+  process.exit(1);
+}
+
+const snapshotPath = path.resolve(process.cwd(), 'lib/cms-snapshot.generated.json');
+fs.writeFileSync(snapshotPath, `${JSON.stringify(cmsSnapshot, null, 2)}\n`, 'utf8');
+
+const pdfDir = path.join(outputDir, 'pdfs');
+const pdfs = fs.existsSync(pdfDir)
+  ? fs
+      .readdirSync(pdfDir)
+      .filter((name) => name.toLowerCase().endsWith('.pdf'))
+      .sort()
+  : [];
+fs.writeFileSync(
+  path.resolve(process.cwd(), 'lib/available-public-pdfs.json'),
+  `${JSON.stringify(pdfs, null, 2)}\n`,
+  'utf8',
+);
+console.log(
+  `[seo] Wrote CMS snapshot (${cmsSnapshot.articles.length} articles, ${cmsSnapshot.servicePages.length} service pages) and ${pdfs.length} public PDFs`,
+);
+
+function articleSitemapRoute(item) {
+  const canonical = String(item?.canonicalPath || '').trim();
+  if (canonical.startsWith('/articles/')) return canonical;
+  const slug = String(item?.slug || '').trim();
+  if (!canonical && slug) return `/articles/${slug}`;
+  return '';
 }
 
 const now = new Date().toISOString();
-const cmsRoutes = await getCmsArticleRoutes();
-const cmsServiceRoutes = await getCmsServicePageRoutes();
+const cmsRoutes = cmsSnapshot.articles.map(articleSitemapRoute).filter(Boolean);
+const cmsServiceRoutes = cmsSnapshot.servicePages
+  .map((item) => String(item?.canonicalPath || '').trim())
+  .filter((routePath) => routePath.startsWith('/services/'));
 const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes, ...cmsServiceRoutes])).sort();
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>

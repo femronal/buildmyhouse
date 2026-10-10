@@ -5,6 +5,7 @@ import { normalizeServicePageCanonicalPath } from '@buildmyhouse/shared-types';
 import ServiceExperiencePage from '@/components/service-experience/ServiceExperiencePage';
 import UnknownLagosServicePage from '@/components/service-experience/UnknownLagosServicePage';
 import type { ServiceExperienceContent } from '@/lib/service-experience-content';
+import { getSnapshotServicePageByPath } from '@/lib/cms-snapshot';
 import { fetchPublishedServicePageByPath, mapCmsServicePageToExperience } from '@/lib/cms-service-pages';
 import { getServiceExperienceContent } from '@/lib/service-experience-content';
 
@@ -12,11 +13,25 @@ type DynamicServiceExperiencePageProps = {
   canonicalPath: string;
 };
 
+function initialServiceContent(resolvedPath: string): ServiceExperienceContent | null {
+  const snapshotPage = getSnapshotServicePageByPath(resolvedPath);
+  if (snapshotPage?.payload) {
+    try {
+      return mapCmsServicePageToExperience(snapshotPage);
+    } catch {
+      // Incomplete CMS payload falls through to the bundled page.
+    }
+  }
+  return getServiceExperienceContent(resolvedPath);
+}
+
 export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicServiceExperiencePageProps) {
   const router = useRouter();
   const resolvedPath = normalizeServicePageCanonicalPath(canonicalPath);
-  const [content, setContent] = useState<ServiceExperienceContent | null>(null);
-  const [loading, setLoading] = useState(true);
+  const seeded = initialServiceContent(resolvedPath);
+  const hasSeed = Boolean(seeded);
+  const [content, setContent] = useState<ServiceExperienceContent | null>(seeded);
+  const [loading, setLoading] = useState(!hasSeed);
 
   useEffect(() => {
     if (resolvedPath !== canonicalPath) {
@@ -28,13 +43,12 @@ export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicS
     let cancelled = false;
 
     async function load() {
-      setLoading(true);
       const cmsPage = await fetchPublishedServicePageByPath(resolvedPath);
       if (cancelled) return;
 
       if (cmsPage) {
         setContent(mapCmsServicePageToExperience(cmsPage));
-      } else {
+      } else if (!hasSeed) {
         setContent(getServiceExperienceContent(resolvedPath));
       }
       setLoading(false);
@@ -44,7 +58,7 @@ export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicS
     return () => {
       cancelled = true;
     };
-  }, [resolvedPath]);
+  }, [resolvedPath, hasSeed]);
 
   if (loading) {
     return (

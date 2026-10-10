@@ -143,19 +143,6 @@ export function buildVideoObjectNode(params: {
   };
 }
 
-function reviewNodes(canonicalUrl: string, reviews: ReviewItem[]) {
-  return reviews.map((review, index) => ({
-    '@type': 'Review',
-    '@id': `${canonicalUrl}#review-${index + 1}`,
-    reviewBody: review.quote,
-    author: {
-      '@type': 'Person',
-      name: review.name,
-    },
-    itemReviewed: { '@id': `${canonicalUrl}#primary` },
-  }));
-}
-
 function howToNode(canonicalUrl: string, steps: ProcessStepItem[]) {
   return {
     '@type': 'HowTo',
@@ -179,6 +166,7 @@ export function buildSeoJsonLd(params: {
   faqs?: FaqItem[];
   breadcrumbs?: BreadcrumbItem[];
   image?: string;
+  /** Kept for callers. Review nodes are not emitted: itemReviewed pointed at a Service, which Search Console rejects. */
   reviews?: ReviewItem[];
   processSteps?: ProcessStepItem[];
 }) {
@@ -204,10 +192,6 @@ export function buildSeoJsonLd(params: {
 
   if (params.breadcrumbs?.length) {
     graph.push(breadcrumbNode(canonicalUrl, params.breadcrumbs));
-  }
-
-  if (params.reviews?.length) {
-    graph.push(...reviewNodes(canonicalUrl, params.reviews));
   }
 
   if (params.processSteps?.length) {
