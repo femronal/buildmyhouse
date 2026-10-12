@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Image, Text, View } from 'react-native';
-import { Clock3, Tag } from 'lucide-react-native';
+import { Image, Platform, Text, View } from 'react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import { ArticleBreadcrumb, ArticleByline, BlogTopBar, RelatedArticles } from '@/components/articles/ArticleChrome';
 import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import EgbedaWindowProcessTimeline from '@/components/blog/EgbedaWindowProcessTimeline';
 import CollapsibleFaqSection from '@/components/seo/CollapsibleFaqSection';
@@ -17,7 +17,8 @@ import { EGBEDA_WINDOW_CASE_STUDY_SLUG } from '@/lib/aluminium-window-repair-egb
 import { isGenericConstructionCover } from '@/lib/generic-construction-cover';
 import { normalizeStoredArticleContent } from '@/lib/article-content-normalize';
 import { articleContentToHtml } from '@/lib/article-tiptap-html';
-import { Article } from '@/lib/articles';
+import { type Article } from '@/lib/articles';
+import { articleToBlogCard } from '@/lib/articles-hub';
 import {
   buildArticleReadingAids,
   injectHeadingIdsIntoHtml,
@@ -28,11 +29,7 @@ type SeoArticlePageProps = {
 };
 
 export default function SeoArticlePage({ article }: SeoArticlePageProps) {
-  const publishedLabel = useMemo(() => {
-    const date = new Date(article.publishedAt);
-    return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
-  }, [article.publishedAt]);
-
+  const card = useMemo(() => articleToBlogCard(article), [article]);
   const deck = article.subtitle || article.description;
   const showEgbedaTimeline = article.slug === EGBEDA_WINDOW_CASE_STUDY_SLUG;
 
@@ -56,12 +53,11 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
 
   return (
     <BlogReadingChrome>
+      <BlogTopBar />
       <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
         <SeoContentBackButton />
 
-        <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          {showEgbedaTimeline ? 'BuildMyHouse Case Study' : 'BuildMyHouse Articles'}
-        </Text>
+        <ArticleBreadcrumb topicSlug={card.topicSlug} topicLabel={card.topicLabel} />
 
         <SeoHeading
           level={1}
@@ -75,31 +71,12 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           {deck}
         </Text>
 
-        <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 mb-4">
-          <View className="flex-row items-center">
-            <Clock3 size={14} color="#6b7280" />
-            <Text className={`${seoContentTypography.meta} ml-1.5`} style={{ fontFamily: 'Poppins_400Regular' }}>
-              {article.readingMinutes} min read
-            </Text>
-          </View>
-          {article.tags.length > 0 ? (
-            <View className="flex-row items-start flex-1 min-w-[220px]">
-              <Tag size={14} color="#6b7280" />
-              <View className="ml-1.5 flex-row flex-wrap gap-1.5 flex-1">
-                {article.tags.map((tag) => (
-                  <View key={tag} className="px-2 py-1 rounded-full bg-gray-100 border border-gray-200">
-                    <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      {tag}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : null}
-          <Text className={seoContentTypography.meta} style={{ fontFamily: 'Poppins_400Regular' }}>
-            Published {publishedLabel}
-          </Text>
-        </View>
+        <ArticleByline
+          authorName={article.authorName}
+          publishedAt={article.publishedAt}
+          updatedAt={article.updatedAt}
+          readingMinutes={article.readingMinutes}
+        />
 
         <BlogReadingAids takeaways={readingAids.takeaways} toc={readingAids.toc} />
       </SeoContentColumn>
@@ -109,13 +86,23 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           <HouseRenovationLottieCover className="mb-0" height={280} />
         ) : (
           <View className="rounded-3xl overflow-hidden bg-gray-100">
-            <Image
-              source={{ uri: article.coverImageUrl }}
-              accessibilityLabel={article.coverImageAlt}
-              className="w-full"
-              style={{ height: 320 }}
-              resizeMode="cover"
-            />
+            {Platform.OS === 'web' ? (
+              <img
+                src={article.coverImageUrl}
+                alt={article.coverImageAlt || article.title}
+                width={1200}
+                height={675}
+                style={{ width: '100%', height: 320, objectFit: 'cover', display: 'block' }}
+              />
+            ) : (
+              <Image
+                source={{ uri: article.coverImageUrl }}
+                accessibilityLabel={article.coverImageAlt}
+                className="w-full"
+                style={{ height: 320 }}
+                resizeMode="cover"
+              />
+            )}
           </View>
         )}
       </SeoContentColumn>
@@ -130,6 +117,10 @@ export default function SeoArticlePage({ article }: SeoArticlePageProps) {
           <CollapsibleFaqSection items={article.faqs} />
         </SeoContentColumn>
       ) : null}
+
+      <SeoContentColumn narrow className="mt-8">
+        <RelatedArticles currentHref={card.href} />
+      </SeoContentColumn>
 
       {article.internalLinks.length > 0 ? (
         <SeoContentColumn narrow className="mt-2">

@@ -336,6 +336,7 @@ export function getPropertyPurchaseLagosSchema() {
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Articles', path: '/articles' },
+      { name: 'Lagos permits', path: '/articles/topic/lagos-compliance' },
       { name: 'Buying property in Lagos from abroad', path: PROPERTY_PURCHASE_ARTICLE_PATH },
     ],
   }).map((node) => {

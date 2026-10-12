@@ -5,6 +5,7 @@ import {
   extractYoutubeVideoIdsFromContent,
   normalizeStoredArticleContent,
 } from '@/lib/article-content-normalize';
+import { inferArticlePillar } from '@/lib/article-pillars';
 import { buildVideoObjectNode } from '@/lib/seo-schema';
 
 export type ArticleAudience = 'homeowner' | 'gc';
@@ -421,12 +422,21 @@ export function getArticleSchema(article: Article) {
   const articleUrl = `${WEB_URL}${article.canonicalPath}`;
   const videoBlocks = extractYoutubeVideoIdsFromContent(article.content);
   const headline = article.seoTitle || article.title;
+  const topicKey = article.articlePillar ?? inferArticlePillar(article);
+  const topicName =
+    topicKey === 'build-abroad'
+      ? 'Build from abroad'
+      : topicKey === 'renovate-abroad'
+        ? 'Renovate from abroad'
+        : topicKey === 'lagos-compliance'
+          ? 'Lagos permits'
+          : 'More guides';
 
   const schema: Record<string, any>[] = [
     organizationSchema,
     {
       '@context': 'https://schema.org',
-      '@type': 'BlogPosting',
+      '@type': 'Article',
       mainEntityOfPage: articleUrl,
       headline,
       description: article.description,
@@ -465,6 +475,12 @@ export function getArticleSchema(article: Article) {
         {
           '@type': 'ListItem',
           position: 3,
+          name: topicName,
+          item: `${WEB_URL}/articles/topic/${topicKey}`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 4,
           name: headline,
           item: articleUrl,
         },

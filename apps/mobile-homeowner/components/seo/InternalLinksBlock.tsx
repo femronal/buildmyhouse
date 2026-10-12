@@ -1,5 +1,5 @@
-import { TouchableOpacity, View, Text, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, ScrollView } from 'react-native';
+import { Link } from 'expo-router';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { cardShadowStyle } from '@/lib/card-styles';
 
@@ -30,15 +30,12 @@ export default function InternalLinksBlock({
   dark = false,
   onPressLink,
 }: InternalLinksBlockProps) {
-  const router = useRouter();
-
   const chip = (item: InternalLinkItem) => (
-    <TouchableOpacity
+    <Link
       key={item.href}
-      onPress={() => {
-        onPressLink?.(item.href);
-        router.push(item.href as any);
-      }}
+      href={item.href as never}
+      accessibilityRole="link"
+      onPress={() => onPressLink?.(item.href)}
       className={`${dark ? 'bg-white/10' : 'bg-gray-100'} rounded-full items-center justify-center ${compact ? 'mr-2' : ''}`}
       style={compact ? LINK_CHIP_STYLE_COMPACT : LINK_CHIP_STYLE}
     >
@@ -49,7 +46,7 @@ export default function InternalLinksBlock({
       >
         {item.label}
       </Text>
-    </TouchableOpacity>
+    </Link>
   );
 
   return (

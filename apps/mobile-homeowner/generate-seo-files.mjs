@@ -89,11 +89,71 @@ function articleSitemapRoute(item) {
 }
 
 const now = new Date().toISOString();
+const ARTICLE_TOPICS = ['build-abroad', 'renovate-abroad', 'lagos-compliance', 'general'];
+const ARTICLES_PAGE_SIZE = 9;
+
+function articleLastMod(item) {
+  const value = String(item?.updatedAt || item?.publishedAt || '').trim();
+  const date = value ? new Date(value) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.toISOString() : now;
+}
+
+function articleTopic(item) {
+  const pillar = String(item?.articlePillar || '').trim();
+  return ARTICLE_TOPICS.includes(pillar) ? pillar : 'general';
+}
+
+const STATIC_ARTICLES = [
+  { route: '/articles/cost-to-build-house-in-nigeria-2026', topic: 'build-abroad', lastmod: '2026-03-24T00:00:00.000Z' },
+  { route: '/articles/renovation-checklist-for-homeowners-nigeria', topic: 'renovate-abroad', lastmod: '2026-03-24T00:00:00.000Z' },
+  { route: '/articles/diaspora-guide-build-in-nigeria-from-abroad', topic: 'build-abroad', lastmod: '2026-03-24T00:00:00.000Z' },
+  { route: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study', topic: 'renovate-abroad', lastmod: '2026-05-22T00:00:00.000Z' },
+  { route: '/articles/buying-property-lagos-from-abroad-due-diligence', topic: 'lagos-compliance', lastmod: '2026-10-06T00:00:00.000Z' },
+  { route: '/articles/developer-joint-venture-unfinished-building-nigeria', topic: 'general', lastmod: '2026-10-09T00:00:00.000Z' },
+];
+
 const cmsRoutes = cmsSnapshot.articles.map(articleSitemapRoute).filter(Boolean);
+const cmsRouteSet = new Set(cmsRoutes);
+const staticOnly = STATIC_ARTICLES.filter((item) => !cmsRouteSet.has(item.route));
+const allArticleRoutes = [...cmsRoutes, ...staticOnly.map((item) => item.route)];
+const topicRoutes = ARTICLE_TOPICS.map((slug) => `/articles/topic/${slug}`);
+const articleCount = Math.max(allArticleRoutes.length, 1);
+const articlePageCount = Math.ceil(articleCount / ARTICLES_PAGE_SIZE);
+const articlePageRoutes = Array.from({ length: Math.max(0, articlePageCount - 1) }, (_, index) => `/articles/page/${index + 2}`);
+const topicPageRoutes = ARTICLE_TOPICS.flatMap((slug) => {
+  const count =
+    cmsSnapshot.articles.filter((item) => articleTopic(item) === slug).length +
+    staticOnly.filter((item) => item.topic === slug).length;
+  const pages = Math.ceil(count / ARTICLES_PAGE_SIZE);
+  return Array.from({ length: Math.max(0, pages - 1) }, (_, index) => `/articles/topic/${slug}/page/${index + 2}`);
+});
 const cmsServiceRoutes = cmsSnapshot.servicePages
   .map((item) => String(item?.canonicalPath || '').trim())
   .filter((routePath) => routePath.startsWith('/services/'));
-const finalRoutes = Array.from(new Set([...indexableRoutes, ...cmsRoutes, ...cmsServiceRoutes])).sort();
+const finalRoutes = Array.from(
+  new Set([...indexableRoutes, ...cmsRoutes, ...topicRoutes, ...articlePageRoutes, ...topicPageRoutes, ...cmsServiceRoutes]),
+).sort();
+
+const lastModByRoute = new Map();
+for (const item of cmsSnapshot.articles) {
+  const route = articleSitemapRoute(item);
+  if (route) lastModByRoute.set(route, articleLastMod(item));
+}
+for (const item of staticOnly) {
+  lastModByRoute.set(item.route, item.lastmod);
+}
+for (const slug of ARTICLE_TOPICS) {
+  const dated = [
+    ...cmsSnapshot.articles.filter((item) => articleTopic(item) === slug).map(articleLastMod),
+    ...staticOnly.filter((item) => item.topic === slug).map((item) => item.lastmod),
+  ].sort();
+  if (dated.length) lastModByRoute.set(`/articles/topic/${slug}`, dated[dated.length - 1]);
+}
+const articleDates = [
+  ...cmsSnapshot.articles.map(articleLastMod),
+  ...staticOnly.map((item) => item.lastmod),
+].sort();
+if (articleDates.length) lastModByRoute.set('/articles', articleDates[articleDates.length - 1]);
 
 const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -101,7 +161,7 @@ ${finalRoutes
   .map(
     (route) => `  <url>
     <loc>${route === '/' ? WEB_URL : `${WEB_URL}${route}`}</loc>
-    <lastmod>${now}</lastmod>
+    <lastmod>${lastModByRoute.get(route) || now}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>${route === '/' ? '1.0' : route.startsWith('/services/lagos/') || route === '/start' || route.startsWith('/start/') ? '0.9' : '0.7'}</priority>
   </url>`,

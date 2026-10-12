@@ -198,6 +198,7 @@ export function getRedevelopmentReadinessSchema() {
     breadcrumbs: [
       { name: 'Home', path: '/' },
       { name: 'Articles', path: '/articles' },
+      { name: 'More guides', path: '/articles/topic/general' },
       { name: 'Developer partnership for an unfinished building', path: REDEVELOPMENT_ARTICLE_PATH },
     ],
   }).map((node) => {

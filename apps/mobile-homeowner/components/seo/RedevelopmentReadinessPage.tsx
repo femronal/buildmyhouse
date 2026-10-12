@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Linking, Platform, Text, TouchableOpacity, View } from 'react-native';
-import { Clock3 } from 'lucide-react-native';
 import ArticleHtmlBody from '@/components/articles/ArticleHtmlBody';
+import { ArticleBreadcrumb, ArticleByline, BlogTopBar, RelatedArticles } from '@/components/articles/ArticleChrome';
 import BlogReadingChrome, { BlogReadingAids } from '@/components/blog/BlogReadingChrome';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import BrandedLottieCover from '@/components/seo/BrandedLottieCover';
@@ -39,11 +39,6 @@ export default function RedevelopmentReadinessPage() {
     return [before, after, faq];
   }, [readingAids.toc]);
 
-  const updatedLabel = useMemo(() => {
-    const date = new Date(content.updatedAt);
-    return date.toLocaleDateString('en-NG', { year: 'numeric', month: 'long', day: 'numeric' });
-  }, []);
-
   useWebSeo({
     title: content.seo.title,
     description: content.seo.description,
@@ -76,9 +71,11 @@ export default function RedevelopmentReadinessPage() {
 
   return (
     <BlogReadingChrome>
+      <BlogTopBar />
       <View nativeID="redevelopment-readiness-article">
         <SeoContentColumn className="pt-10 pb-2 md:pt-14 md:pb-4">
           <SeoContentBackButton fallbackHref="/articles" />
+          <ArticleBreadcrumb topicSlug="general" topicLabel="More topics" />
           <Text className={seoContentTypography.eyebrow} style={{ fontFamily: 'Poppins_600SemiBold' }}>
             {content.hero.eyebrow}
           </Text>
@@ -88,20 +85,12 @@ export default function RedevelopmentReadinessPage() {
           <Text className={seoContentTypography.description} style={{ fontFamily: 'Poppins_400Regular' }}>
             {content.hero.description}
           </Text>
-          <View className="flex-row flex-wrap items-center gap-x-4 gap-y-2 mb-4">
-            <View className="flex-row items-center">
-              <Clock3 size={14} color="#6b7280" />
-              <Text className={`${seoContentTypography.meta} ml-1.5`} style={{ fontFamily: 'Poppins_400Regular' }}>
-                {content.readingMinutes} min read
-              </Text>
-            </View>
-            <Text className={seoContentTypography.meta} style={{ fontFamily: 'Poppins_400Regular' }}>
-              Updated {updatedLabel}
-            </Text>
-            <Text className={seoContentTypography.meta} style={{ fontFamily: 'Poppins_400Regular' }}>
-              BuildMyHouse Editorial
-            </Text>
-          </View>
+          <ArticleByline
+            authorName="BuildMyHouse Editorial"
+            publishedAt={content.publishedAt}
+            updatedAt={content.updatedAt}
+            readingMinutes={content.readingMinutes}
+          />
           <BlogReadingAids takeaways={readingAids.takeaways} toc={readingAids.toc} />
         </SeoContentColumn>
 
@@ -162,6 +151,10 @@ export default function RedevelopmentReadinessPage() {
 
         <SeoContentColumn narrow className="mb-6">
           {faqHtml ? <ArticleHtmlBody htmlFragment={faqHtml} /> : null}
+        </SeoContentColumn>
+
+        <SeoContentColumn narrow className="mt-8">
+          <RelatedArticles currentHref={REDEVELOPMENT_ARTICLE_PATH} />
         </SeoContentColumn>
 
         <SeoContentColumn narrow className="mt-2 mb-10">

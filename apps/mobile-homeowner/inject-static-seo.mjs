@@ -803,9 +803,11 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
         : isPrivateRoute(route)
           ? 'noindex,nofollow'
           : 'index,follow');
-  const title = (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || 'BuildMyHouse Technologies';
+  const hubMeta = articlesHubMeta(route);
+  const title = (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || hubMeta?.title || 'BuildMyHouse Technologies';
   const description =
     pageMeta?.description ||
+    hubMeta?.description ||
     'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.';
   const image =
     pageMeta?.image ||
@@ -848,6 +850,27 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
     next = upsertJsonLd(next, 'buildmyhouse-start-jsonld', startJsonLd(route, startIndexable[route]));
   }
   next = injectStartCrawlable(next, route);
+  next = injectArticlesHubLinks(next, route);
+  if (route === '/articles' || route.startsWith('/articles/page/') || route.startsWith('/articles/topic/')) {
+    const cards = publishedArticlesForHub
+      .map((article) => ({ href: articleCanonicalPath(article), title: String(article?.title || '') }))
+      .filter((item) => item.href && item.title);
+    next = upsertJsonLd(next, 'buildmyhouse-articles-hub-jsonld', {
+      '@context': 'https://schema.org',
+      '@graph': [
+        { '@type': 'Blog', name: 'BuildMyHouse Articles', url: `${WEB_URL}${route}` },
+        {
+          '@type': 'ItemList',
+          itemListElement: cards.map((card, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: card.title,
+            url: `${WEB_URL}${card.href}`,
+          })),
+        },
+      ],
+    });
+  }
   return next;
 }
 
@@ -962,28 +985,131 @@ function buildArticleJsonLd(article) {
   const datePublished = String(article.publishedAt || article.updatedAt || '').trim();
   const dateModified = String(article.updatedAt || article.publishedAt || '').trim();
 
+  const topicLabels = {
+    'build-abroad': 'Build from abroad',
+    'renovate-abroad': 'Renovate from abroad',
+    'lagos-compliance': 'Lagos permits',
+    general: 'More guides',
+  };
+  const topic = ['build-abroad', 'renovate-abroad', 'lagos-compliance', 'general'].includes(article.articlePillar)
+    ? article.articlePillar
+    : 'general';
   return {
     '@context': 'https://schema.org',
-    '@type': 'BlogPosting',
-    mainEntityOfPage: canonicalUrl,
-    headline: title,
-    description,
-    image: image ? [image] : undefined,
-    datePublished: datePublished || undefined,
-    dateModified: dateModified || undefined,
-    author: {
-      '@type': 'Person',
-      name: String(article.authorName || 'BuildMyHouse Editorial'),
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'BuildMyHouse Technologies',
-      logo: {
-        '@type': 'ImageObject',
-        url: `${WEB_URL}/favicon.png`,
+    '@graph': [
+      {
+        '@type': 'Article',
+        mainEntityOfPage: canonicalUrl,
+        headline: title,
+        description,
+        image: image ? [image] : undefined,
+        datePublished: datePublished || undefined,
+        dateModified: dateModified || undefined,
+        author: {
+          '@type': 'Person',
+          name: String(article.authorName || 'BuildMyHouse Editorial'),
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: 'BuildMyHouse Technologies',
+          logo: {
+            '@type': 'ImageObject',
+            url: `${WEB_URL}/favicon.png`,
+          },
+        },
       },
-    },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home', item: `${WEB_URL}/` },
+          { '@type': 'ListItem', position: 2, name: 'Articles', item: `${WEB_URL}/articles` },
+          { '@type': 'ListItem', position: 3, name: topicLabels[topic], item: `${WEB_URL}/articles/topic/${topic}` },
+          { '@type': 'ListItem', position: 4, name: title, item: canonicalUrl },
+        ],
+      },
+    ],
   };
+}
+
+let publishedArticlesForHub = [];
+
+const STATIC_HUB_ARTICLES = [
+  { canonicalPath: '/articles/cost-to-build-house-in-nigeria-2026', title: 'Cost to Build a House in Nigeria (2026 Guide)', articlePillar: 'build-abroad', publishedAt: '2026-03-24', updatedAt: '2026-03-24', description: 'A practical 2026 guide to building costs in Nigeria.' },
+  { canonicalPath: '/articles/renovation-checklist-for-homeowners-nigeria', title: 'Renovation Checklist for Homeowners in Nigeria', articlePillar: 'renovate-abroad', publishedAt: '2026-03-24', updatedAt: '2026-03-24', description: 'A renovation checklist for homeowners in Nigeria.' },
+  { canonicalPath: '/articles/diaspora-guide-build-in-nigeria-from-abroad', title: 'Diaspora Guide: How to Build in Nigeria from Abroad', articlePillar: 'build-abroad', publishedAt: '2026-03-24', updatedAt: '2026-03-24', description: 'How to build in Nigeria from abroad.' },
+  { canonicalPath: '/articles/aluminium-window-repair-egbeda-lagos-buildmyhouse-case-study', title: 'She Thought Her Window Needed Replacement. The Inspection Said Otherwise.', articlePillar: 'renovate-abroad', publishedAt: '2026-05-22', updatedAt: '2026-05-22', description: 'An Egbeda aluminium window repair case study.' },
+  { canonicalPath: '/articles/buying-property-lagos-from-abroad-due-diligence', title: "The Building Is There. That Doesn't Mean You Should Buy It.", articlePillar: 'lagos-compliance', publishedAt: '2026-10-06', updatedAt: '2026-10-06', description: 'Due diligence for buying property in Lagos from abroad.' },
+  { canonicalPath: '/articles/developer-joint-venture-unfinished-building-nigeria', title: 'Your Building Stopped Because the Money Stopped. That Does Not Mean You Should Give It Away.', articlePillar: 'general', publishedAt: '2026-10-09', updatedAt: '2026-10-09', description: 'How to approach a developer partnership for an unfinished building in Nigeria.' },
+];
+
+const HUB_TOPICS = {
+  'build-abroad': {
+    label: 'Build from abroad',
+    description: 'Plan funding, choose contractors, and run a new build remotely with milestones, evidence, and clearer accountability.',
+  },
+  'renovate-abroad': {
+    label: 'Renovate from abroad',
+    description: 'Scope upgrades, control spend, and track renovation progress from overseas without losing visibility on site.',
+  },
+  'lagos-compliance': {
+    label: 'Lagos permits',
+    description: 'Understand permit expectations, stage inspections, and how compliance reduces stop-work risk in Lagos.',
+  },
+  general: {
+    label: 'More topics',
+    description: 'Additional articles and tips that support your project planning.',
+  },
+};
+
+function articlesHubMeta(route) {
+  if (route === '/articles') {
+    return {
+      title: 'Articles | BuildMyHouse',
+      description: 'BuildMyHouse articles for homeowners in Nigeria and abroad: building costs, renovation, permits, and how to stay in control of a project.',
+    };
+  }
+  const pageMatch = route.match(/^\/articles\/page\/(\d+)$/);
+  if (pageMatch) {
+    return {
+      title: `Articles, page ${pageMatch[1]} | BuildMyHouse`,
+      description: 'More BuildMyHouse articles on building, renovation, and permits in Nigeria.',
+    };
+  }
+  const topicMatch = route.match(/^\/articles\/topic\/([a-z-]+)(?:\/page\/(\d+))?$/);
+  if (!topicMatch || !HUB_TOPICS[topicMatch[1]]) return null;
+  const topic = HUB_TOPICS[topicMatch[1]];
+  const page = topicMatch[2];
+  const name = page ? `${topic.label} articles, page ${page}` : `${topic.label} articles`;
+  return { title: `${name} | BuildMyHouse`, description: topic.description };
+}
+
+function articlesHubLinks(route) {
+  const topics = Object.entries(HUB_TOPICS)
+    .map(([slug, topic]) => `<li><a href="/articles/topic/${slug}">${escapeHtml(topic.label)}</a></li>`)
+    .join('');
+  const articles = publishedArticlesForHub
+    .map((article) => {
+      const href = articleCanonicalPath(article);
+      const title = String(article?.title || '').trim();
+      if (!href || !title) return '';
+      return `<li><a href="${escapeHtml(href)}">${escapeHtml(title)}</a></li>`;
+    })
+    .filter(Boolean)
+    .join('');
+  const pageCount = Math.max(1, Math.ceil(publishedArticlesForHub.length / 9));
+  const pageLinks = Array.from({ length: Math.max(0, pageCount - 1) }, (_, index) => {
+    const page = index + 2;
+    return `<li><a href="/articles/page/${page}">Page ${page}</a></li>`;
+  }).join('');
+  return `<nav data-bmh-article-links="1" aria-label="Articles"><p>Articles index ${escapeHtml(route)}</p><ul>${topics}</ul><ul>${pageLinks}</ul><ul>${articles}</ul></nav>`;
+}
+
+function injectArticlesHubLinks(html, route) {
+  const isHub = route === '/articles' || route.startsWith('/articles/page/') || route.startsWith('/articles/topic/');
+  if (!isHub || html.includes('data-bmh-article-links="1"')) return html;
+  const block = articlesHubLinks(route);
+  if (html.includes('id="root">')) return html.replace('id="root">', `id="root">${block}`);
+  return html.replace('</body>', `${block}</body>`);
 }
 
 async function fetchCmsSeoPages() {
@@ -991,6 +1117,15 @@ async function fetchCmsSeoPages() {
     fetchJsonArray('/articles'),
     fetchJsonArray('/service-pages'),
   ]);
+  const seen = new Set();
+  publishedArticlesForHub = [];
+  for (const article of [...articles, ...STATIC_HUB_ARTICLES]) {
+    if (article?.isPublished === false) continue;
+    const route = articleCanonicalPath(article);
+    if (!route || seen.has(route)) continue;
+    seen.add(route);
+    publishedArticlesForHub.push(article);
+  }
 
   /** @type {Record<string, { title: string; description: string; image?: string; ogType?: string; jsonLd?: Record<string, unknown> }>} */
   const pages = {};
