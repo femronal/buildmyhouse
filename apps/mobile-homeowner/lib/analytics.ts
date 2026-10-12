@@ -1,9 +1,13 @@
 import { Platform } from 'react-native';
 
+export const META_PIXEL_ID = '1184965440648017';
+
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
     rdt?: (...args: any[]) => void;
+    fbq?: (...args: any[]) => void;
+    _fbq?: (...args: any[]) => void;
   }
 }
 
@@ -11,6 +15,13 @@ export function trackWebEvent(eventName: string, params?: Record<string, any>) {
   if (Platform.OS !== 'web') return;
   if (typeof window === 'undefined' || typeof window.gtag !== 'function') return;
   window.gtag('event', eventName, params || {});
+}
+
+/** Later views in the same session. The first PageView is in the site HTML. */
+export function trackMetaPageView() {
+  if (Platform.OS !== 'web') return;
+  if (typeof window === 'undefined' || typeof window.fbq !== 'function') return;
+  window.fbq('track', 'PageView');
 }
 
 export function injectRedditPixel(pixelId?: string) {

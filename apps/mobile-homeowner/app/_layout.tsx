@@ -6,7 +6,7 @@ import { useFonts } from "expo-font";
 import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Platform, Text, TextInput } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
@@ -28,6 +28,7 @@ import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
 import NotificationListener from '@/components/NotificationListener';
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
 import AuthContinueModal from '@/components/AuthContinueModal';
+import { trackMetaPageView } from '@/lib/analytics';
 import { getDefaultSeoForPath, useWebSeo } from '@/lib/seo';
 import {
   initialWindowMetrics,
@@ -53,7 +54,16 @@ const WEB_SAFE_AREA_INITIAL: Metrics = {
 
 export default function RootLayout() {
   const pathname = usePathname();
+  const skipInitialMetaPageView = useRef(true);
   usePushTokenRegistration('homeowner');
+
+  useEffect(() => {
+    if (skipInitialMetaPageView.current) {
+      skipInitialMetaPageView.current = false;
+      return;
+    }
+    trackMetaPageView();
+  }, [pathname]);
 
   const [loaded] = useFonts({
     Poppins_400Regular,
