@@ -1101,7 +1101,9 @@ function articlesHubLinks(route) {
     const page = index + 2;
     return `<li><a href="/articles/page/${page}">Page ${page}</a></li>`;
   }).join('');
-  return `<nav data-bmh-article-links="1" aria-label="Articles"><p>Articles index ${escapeHtml(route)}</p><ul>${topics}</ul><ul>${pageLinks}</ul><ul>${articles}</ul></nav>`;
+  // #root is a flex row, so this crawlable list would sit beside the hub.
+  // Keep the links in the HTML and clip them out of the layout.
+  return `<nav data-bmh-article-links="1" aria-hidden="true" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0"><p>Articles index ${escapeHtml(route)}</p><ul>${topics}</ul><ul>${pageLinks}</ul><ul>${articles}</ul></nav>`;
 }
 
 function injectArticlesHubLinks(html, route) {

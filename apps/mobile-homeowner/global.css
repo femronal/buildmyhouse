@@ -2201,3 +2201,16 @@ body:has(.bmh-mps-screen) .seo-content-shell-scroll {
 body:has(.bmh-mps-screen) [aria-label='Open WhatsApp support chat'] {
   display: none !important;
 }
+
+/* Static article links are for crawlers. The hub shows the same links, and #root is a flex row. */
+nav[data-bmh-article-links] {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
