@@ -1249,7 +1249,7 @@ for (const filePath of walkHtmlFiles(distDir)) {
     continue;
   }
 
-  const html = fs.readFileSync(filePath, 'utf8');
+  const html = fs.readFileSync(filePath, 'utf8').replace(/<link\s+rel="preload"[^>]*\sas="font"[^>]*>\s*/g, '');
   const next = patchHtmlForRoute(html, route, dynamicSeoPages);
   if (next && next !== html) {
     fs.writeFileSync(filePath, next, 'utf8');

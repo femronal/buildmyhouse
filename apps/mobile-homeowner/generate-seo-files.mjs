@@ -49,7 +49,72 @@ async function loadCmsSnapshot() {
   );
 
   const servicePages = serviceList.filter((item) => item?.isPublished !== false);
-  return { articles, servicePages };
+  return rewriteCmsSnapshot({ articles, servicePages });
+}
+
+// CMS still stores a few redirect and 404 targets. Rewrite them here so the
+// bundled snapshot and static HTML point at live sitemap URLs. The /start-repair
+// redirect route itself is unchanged.
+const INTERNAL_LINK_REWRITES = {
+  '/start-repair': { href: '/start/repair' },
+  '/articles/benefits-of-regular-gutter-cleaning': {
+    href: '/services/roof-repair-nigeria',
+    label: 'Roof repair in Nigeria',
+  },
+  '/articles/understanding-gutter-maintenance': {
+    href: '/services/lagos/roof-repair',
+    label: 'Roof repair in Lagos',
+  },
+  '/articles/how-to-build-in-nigeria-from-abroad-without-getting-burnt': {
+    href: '/articles/diaspora-guide-build-in-nigeria-from-abroad',
+    label: 'Diaspora Guide: How to Build in Nigeria from Abroad',
+  },
+  '/services/property-maintenance-nigeria': {
+    href: '/services/lagos/property-maintenance',
+    label: 'Property maintenance in Lagos',
+  },
+  '/services/structural-inspection-assessment-nigeria': {
+    href: '/services/lagos/structural-inspection-assessment',
+    label: 'Structural inspection and technical assessment in Lagos',
+  },
+  '/services/tv-mounting-installation-nigeria': null,
+};
+
+function rewriteCmsValue(value) {
+  if (Array.isArray(value)) {
+    const next = [];
+    for (const item of value) {
+      const rewritten = rewriteCmsValue(item);
+      if (rewritten !== undefined) next.push(rewritten);
+    }
+    return next;
+  }
+  if (!value || typeof value !== 'object') return value;
+  if (typeof value.href === 'string' && Object.prototype.hasOwnProperty.call(INTERNAL_LINK_REWRITES, value.href)) {
+    const replacement = INTERNAL_LINK_REWRITES[value.href];
+    if (replacement == null) return undefined;
+    const rewritten = rewriteCmsObject(value);
+    rewritten.href = replacement.href;
+    if (replacement.label && typeof value.label === 'string') rewritten.label = replacement.label;
+    return rewritten;
+  }
+  return rewriteCmsObject(value);
+}
+
+function rewriteCmsObject(record) {
+  const next = {};
+  for (const [key, child] of Object.entries(record)) {
+    const rewritten = rewriteCmsValue(child);
+    if (rewritten !== undefined) next[key] = rewritten;
+  }
+  return next;
+}
+
+function rewriteCmsSnapshot(snapshot) {
+  return {
+    articles: rewriteCmsValue(snapshot.articles),
+    servicePages: rewriteCmsValue(snapshot.servicePages),
+  };
 }
 
 let cmsSnapshot;
