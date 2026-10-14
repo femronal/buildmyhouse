@@ -47,7 +47,21 @@ export default function DynamicServiceExperiencePage({ canonicalPath }: DynamicS
       if (cancelled) return;
 
       if (cmsPage) {
-        setContent(mapCmsServicePageToExperience(cmsPage));
+        const mapped = mapCmsServicePageToExperience(cmsPage);
+        const snapshotPage = getSnapshotServicePageByPath(resolvedPath);
+        if (snapshotPage?.payload) {
+          // The build rewrites known bad CMS links in the snapshot. Keep those
+          // hrefs so a later fetch does not put the redirect and 404 targets back.
+          const seededLinks = mapCmsServicePageToExperience(snapshotPage);
+          setContent({
+            ...mapped,
+            primaryCta: seededLinks.primaryCta,
+            secondaryCta: seededLinks.secondaryCta,
+            articleLinks: seededLinks.articleLinks,
+          });
+        } else {
+          setContent(mapped);
+        }
       } else if (!hasSeed) {
         setContent(getServiceExperienceContent(resolvedPath));
       }

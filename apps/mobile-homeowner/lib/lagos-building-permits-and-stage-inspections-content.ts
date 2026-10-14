@@ -291,8 +291,8 @@ export const lagosBuildingPermitsAndStageInspectionsPageContent = {
         href: "/construction/nigeria",
       },
       {
-        label: "How to build in Nigeria from abroad without getting burnt",
-        href: "/articles/how-to-build-in-nigeria-from-abroad-without-getting-burnt",
+        label: "Diaspora Guide: How to Build in Nigeria from Abroad",
+        href: "/articles/diaspora-guide-build-in-nigeria-from-abroad",
       },
       {
         label: "See how remote monitoring works",
