@@ -32,8 +32,8 @@ export default function Root({ children }: RootProps) {
         <meta name="twitter:title" content={GC_HOMEPAGE_META.title} />
         <meta name="twitter:description" content={GC_HOMEPAGE_META.description} />
         <meta name="twitter:image" content={GC_OG_IMAGE} />
-        <link rel="icon" href="https://buildmyhouse.app/favicon.png" type="image/png" sizes="48x48" />
-        <link rel="apple-touch-icon" href="https://buildmyhouse.app/apple-touch-icon.png" sizes="180x180" />
+        <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
