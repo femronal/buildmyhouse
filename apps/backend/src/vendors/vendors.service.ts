@@ -17,6 +17,7 @@ import {
   VendorVerificationStatus,
 } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
+import { directoryLocationValues } from '../common/nigeria-directory-location';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import {
@@ -1395,7 +1396,7 @@ export class VendorsService {
     if (dto.verifiedOnly) {
       and.push({ verificationStatus: VendorVerificationStatus.verified });
     }
-    if (dto.stateKey) and.push({ stateKey: dto.stateKey });
+    if (dto.stateKey) and.push(this.stateMatch(dto.stateKey));
     if (dto.cityKey) and.push({ cityKey: dto.cityKey });
     if (dto.localAreaKey) and.push({ localAreaKey: dto.localAreaKey });
     const categorySlug = dto.familyKey || dto.category;
@@ -1416,15 +1417,45 @@ export class VendorsService {
       });
     }
     if (dto.deliveryStateKey) {
+      const places = directoryLocationValues(dto.deliveryStateKey);
       and.push({
         OR: [
           { nationwideDelivery: true },
-          { serviceAreas: { some: { stateKey: dto.deliveryStateKey } } },
+          {
+            serviceAreas: {
+              some: {
+                OR: [
+                  { stateKey: { in: places } },
+                  ...places.map((place) => ({ stateLabel: { equals: place, mode: 'insensitive' as const } })),
+                ],
+              },
+            },
+          },
         ],
       });
     }
     if (and.length) where.AND = and;
     return where;
+  }
+
+  private stateMatch(stateKey: string): Prisma.VendorProfileWhereInput {
+    const places = directoryLocationValues(stateKey);
+    return {
+      OR: [
+        { stateKey: { in: places } },
+        ...places.map((place) => ({ stateLabel: { equals: place, mode: 'insensitive' as const } })),
+        {
+          serviceAreas: {
+            some: {
+              OR: [
+                { stateKey: { in: places } },
+                ...places.map((place) => ({ stateLabel: { equals: place, mode: 'insensitive' as const } })),
+              ],
+            },
+          },
+        },
+      ],
+    };
   }
 
   private buildAdminWhere(dto: AdminVendorSearchDto): Prisma.VendorProfileWhereInput {

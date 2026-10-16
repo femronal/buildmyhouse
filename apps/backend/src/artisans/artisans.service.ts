@@ -22,6 +22,7 @@ import {
   ArtisanVerificationStatus,
   Prisma,
 } from '@prisma/client';
+import { directoryLocationValues } from '../common/nigeria-directory-location';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { artisanProblemWhere } from './artisan-search';
@@ -332,6 +333,16 @@ export class ArtisansService implements OnModuleInit {
     return { deleted: true };
   }
 
+  private stateMatch(state: string): Prisma.ArtisanListingWhereInput {
+    const places = directoryLocationValues(state);
+    return {
+      OR: [
+        ...places.map((place) => ({ state: { equals: place, mode: 'insensitive' as const } })),
+        { serviceStates: { hasSome: places } },
+      ],
+    };
+  }
+
   async searchPublic(dto: PublicArtisanSearchDto) {
     const page = dto.page || 1;
     const limit = dto.limit || 20;
@@ -357,7 +368,7 @@ export class ArtisansService implements OnModuleInit {
         dto.trade ? { primaryTrade: { key: dto.trade } } : {},
         dto.service ? { capabilities: { some: { capability: { kind: 'service', key: dto.service, isActive: true } } } } : {},
         dto.problem ? artisanProblemWhere(dto.problem) : {},
-        dto.state ? { OR: [{ state: { equals: dto.state, mode: 'insensitive' } }, { serviceStates: { has: dto.state } }] } : {},
+        dto.state ? this.stateMatch(dto.state) : {},
         dto.city ? { OR: [{ city: { equals: dto.city, mode: 'insensitive' } }, { serviceCities: { has: dto.city } }] } : {},
         dto.verifiedOnly ? { verificationStatus: ArtisanVerificationStatus.verified } : {},
         dto.usedByBmh ? { usedByBmh: true } : {},

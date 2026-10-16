@@ -51,7 +51,14 @@ const FEATURED_PROBLEMS = [
   'Painting/repainting',
   'Plumbing problem',
 ];
-const FEATURED_STATES = ['Lagos', 'Ogun', 'FCT', 'Edo', 'Rivers', 'Oyo'];
+const FEATURED_STATES = [
+  { label: 'Lagos', value: 'Lagos' },
+  { label: 'Ogun', value: 'Ogun' },
+  { label: 'Abuja / FCT', value: 'FCT' },
+  { label: 'Edo', value: 'Edo' },
+  { label: 'Rivers', value: 'Rivers' },
+  { label: 'Oyo', value: 'Oyo' },
+];
 
 function problemKey(label: string) {
   return label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -153,10 +160,11 @@ export default function ArtisanDirectoryPage() {
   const selectedTrade = trades.find((item) => item.key === params.trade);
   const featuredLabel = FEATURED_PROBLEMS.find((label) => problemKey(label) === params.problem);
   const problemLabel = selectedProblem?.label || featuredLabel || (params.problem ? humanizeKey(params.problem) : undefined);
+  const selectedState = FEATURED_STATES.find((item) => item.value === params.state);
   const title = artisanDirectoryHeading({
     problemLabel,
     tradeLabel: selectedTrade?.label,
-    stateLabel: params.state,
+    stateLabel: selectedState?.label || params.state,
   });
   const summary = artisanDirectorySummary(problemLabel);
 
@@ -239,7 +247,7 @@ export default function ArtisanDirectoryPage() {
   if (params.trade && !tradeChips.some((item) => item.active)) {
     tradeChips.unshift(chip(`trade-${params.trade}`, selectedTrade?.label || params.trade, 'trade', params.trade));
   }
-  const stateChips = FEATURED_STATES.map((label) => chip(`state-${label}`, label, 'state', label));
+  const stateChips = FEATURED_STATES.map((item) => chip(`state-${item.value}`, item.label, 'state', item.value));
   const trustChips = [
     chip('verified', 'Verified', 'verified', '1'),
     chip('used', 'Used by BuildMyHouse', 'usedByBmh', '1'),

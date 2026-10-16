@@ -147,6 +147,17 @@ describe('ProfessionalsService', () => {
     expect(JSON.stringify(where)).toContain('review-variation-request');
     expect(JSON.stringify(where)).toContain('usedByBmh');
     expect(JSON.stringify(where)).toContain('verified');
+    expect(JSON.stringify(where)).toContain('lagos');
+  });
+
+  it('matches Abuja listings stored as Abuja / FCT when the filter key is fct', async () => {
+    const prisma = mockPrisma();
+    prisma.professionalListing.findMany.mockResolvedValue([]);
+    const service = new ProfessionalsService(prisma);
+    await service.searchPublic({ state: 'fct' });
+    const where = JSON.stringify(prisma.professionalListing.findMany.mock.calls[0][0].where);
+    expect(where).toContain('Abuja / FCT');
+    expect(where).toContain('FCT');
   });
 
   it('creates an application without publishing a listing or requiring a User', async () => {

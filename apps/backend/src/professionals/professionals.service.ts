@@ -19,6 +19,7 @@ import {
   ProfessionalVerificationStatus,
   Prisma,
 } from '@prisma/client';
+import { directoryLocationValues } from '../common/nigeria-directory-location';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3UploadService } from '../upload/s3-upload.service';
@@ -272,13 +273,12 @@ export class ProfessionalsService implements OnModuleInit {
       });
     }
     if (query.state) {
-      const state = query.state.toLowerCase();
+      const places = directoryLocationValues(query.state);
       and.push({
         OR: [
-          { stateKey: state },
-          { state: { equals: query.state, mode: 'insensitive' } },
-          { serviceStates: { has: query.state } },
-          { serviceStates: { has: state } },
+          { stateKey: { in: places.map((place) => place.toLowerCase()) } },
+          ...places.map((place) => ({ state: { equals: place, mode: 'insensitive' as const } })),
+          { serviceStates: { hasSome: places } },
         ],
       });
     }
