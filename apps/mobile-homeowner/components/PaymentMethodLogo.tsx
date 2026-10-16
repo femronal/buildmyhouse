@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { cardShadowStyle } from '@/lib/card-styles';
 
-export type PaymentMethodKey = 'stripe' | 'wise' | 'paystack' | 'zelle';
+export type PaymentMethodKey = 'stripe' | 'wise' | 'paystack' | 'zelle' | 'bank';
 
 const BRAND: Record<
   PaymentMethodKey,
@@ -17,6 +17,7 @@ const BRAND: Record<
   wise: { short: 'W', bg: '#00B9A7', fg: '#062A2B', label: 'Wise' },
   paystack: { short: 'P', bg: '#0BA4DB', fg: '#062A2B', label: 'Paystack' },
   zelle: { short: 'Z', bg: '#6D1ED4', fg: '#FFFFFF', label: 'Zelle' },
+  bank: { short: 'M', bg: '#111111', fg: '#FFFFFF', label: 'Moniepoint' },
 };
 
 export function PaymentMethodLogo(props: { method: PaymentMethodKey; size?: number }) {

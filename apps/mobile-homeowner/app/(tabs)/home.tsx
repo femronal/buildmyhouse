@@ -1,5 +1,5 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
-import { User, MapPin, Lock, Clock, X, ArrowUpRight } from "phosphor-react-native";
+import { User, MapPin, Lock, X, ArrowUpRight } from "phosphor-react-native";
 import AnimatedCtaButton from '@/components/AnimatedCtaButton';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +22,50 @@ import {
 } from "@/lib/responsive-layout";
 
 const CARD_BG = '#151515';
+
+const FUND_TRACKER = ['Inspection done', 'Quote agreed', 'Fund project', 'Work starts'] as const;
+
+function FundProjectTracker() {
+  return (
+    <View>
+      {FUND_TRACKER.map((label, index) => {
+        const done = index < 2;
+        const current = index === 2;
+        const last = index === FUND_TRACKER.length - 1;
+        return (
+          <View key={label} className="flex-row">
+            <View className="items-center mr-3" style={{ width: 18 }}>
+              <View
+                className="items-center justify-center rounded-full"
+                style={{
+                  width: 18,
+                  height: 18,
+                  backgroundColor: done ? '#ffffff' : current ? '#22c55e' : 'transparent',
+                  borderWidth: done ? 0 : 1.5,
+                  borderColor: current ? '#22c55e' : 'rgba(255,255,255,0.35)',
+                }}
+              >
+                {done ? <Text style={{ color: '#000', fontSize: 10, fontFamily: 'Poppins_700Bold' }}>✓</Text> : null}
+              </View>
+              {last ? null : (
+                <View style={{ width: 1.5, flex: 1, minHeight: 14, backgroundColor: 'rgba(255,255,255,0.25)' }} />
+              )}
+            </View>
+            <Text
+              className="text-sm pb-3 flex-1"
+              style={{
+                fontFamily: current ? 'Poppins_700Bold' : 'Poppins_500Medium',
+                color: done || current ? '#ffffff' : 'rgba(255,255,255,0.45)',
+              }}
+            >
+              {label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 export default function HomeScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
@@ -406,12 +450,15 @@ export default function HomeScreen() {
                 return (
                   <TouchableOpacity
                     key={uniqueKey}
-                    onPress={() => handleProjectPress(project)}
+                    onPress={() => {
+                      if (!isPaid && !isPaused) return;
+                      handleProjectPress(project);
+                    }}
                     activeOpacity={0.9}
                     className="bmh-product-card rounded-[28px] overflow-hidden mb-4"
                     style={{ backgroundColor: CARD_BG, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
                     accessibilityRole="button"
-                    accessibilityLabel={`${project.name || 'Untitled Project'} — ${statusLabel}`}
+                    accessibilityLabel={`${project.name || 'Untitled Project'}, ${statusLabel}`}
                   >
                     {/* Cover image fading into the dark canvas */}
                     <View className="relative overflow-hidden" style={{ backgroundColor: CARD_BG }}>
@@ -546,37 +593,26 @@ export default function HomeScreen() {
                           </View>
                         </>
                       ) : (
-                        /* Payment Info for Unpaid Projects */
-                        <View className="bg-white/10 border border-white/15 rounded-2xl p-4">
-                          <View className="flex-row items-center mb-2">
-                            <Clock size={16} color="#ffffff" weight="bold" />
-                            <Text
-                              className="text-white ml-2"
-                              style={{ fontFamily: 'Poppins_600SemiBold' }}
-                            >
-                              Payment Required
-                            </Text>
-                          </View>
-                          <Text
-                            className="text-white/70 text-sm mb-2"
-                            style={{ fontFamily: 'Poppins_400Regular' }}
-                          >
-                            GC has reviewed your project. Pay 100% to start building.
+                        <View>
+                          <Text className="text-white text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                            Your quote is agreed. Fund your project to start.
                           </Text>
-                          <View className="flex-row justify-between items-center">
-                            <Text
-                              className="text-white/80"
-                              style={{ fontFamily: 'Poppins_500Medium' }}
-                            >
-                              Amount Due:
+                          <Text className="text-white/70 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+                            Your money is held by BuildMyHouse and paid to your contractor one stage at a time, only after you approve each stage.
+                          </Text>
+                          <Text className="text-white text-2xl mb-3" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                            ₦{amountDue.toLocaleString()}
+                          </Text>
+                          <TouchableOpacity
+                            onPress={() => handleProjectPress(project)}
+                            className="rounded-full py-3.5 items-center mb-4"
+                            style={{ backgroundColor: '#22c55e' }}
+                          >
+                            <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                              Fund your project
                             </Text>
-                            <Text
-                              className="text-white text-lg"
-                              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                            >
-                              ₦{amountDue.toLocaleString()}
-                            </Text>
-                          </View>
+                          </TouchableOpacity>
+                          <FundProjectTracker />
                         </View>
                       )}
                     </View>
@@ -673,6 +709,12 @@ export default function HomeScreen() {
         projectBudget={projectBudget}
         projectId={selectedProjectForPayment?.id || selectedProjectForPayment?.projectId}
         projectName={selectedProjectForPayment?.name || 'Project'}
+        baseQuoteAmount={Number(getAcceptedRequest(selectedProjectForPayment)?.estimatedBudget || 0)}
+        monitoringFeeAmount={Number(getAcceptedRequest(selectedProjectForPayment)?.monitoringFeeAmount || 0)}
+        coordinationFeeAmount={Number(getAcceptedRequest(selectedProjectForPayment)?.coordinationFeeAmount || 0)}
+        contingencyFeeAmount={Number(getAcceptedRequest(selectedProjectForPayment)?.contingencyFeeAmount || 0)}
+        totalQuoteAmount={Number(getAcceptedRequest(selectedProjectForPayment)?.totalQuoteAmount || 0)}
+        externalPaymentLink={selectedProjectForPayment?.externalPaymentLink || undefined}
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}
         clientSecret={paymentClientSecret || undefined}

@@ -1,10 +1,7 @@
-import React from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { X, Lock, ExternalLink, FileText } from 'lucide-react-native';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import React, { useState } from 'react';
+import { View, Text, Modal, TouchableOpacity, ScrollView, Linking } from 'react-native';
+import { Copy, X } from 'lucide-react-native';
 import { PaymentMethodLogo, type PaymentMethodKey } from '@/components/PaymentMethodLogo';
-import { cardShadowStyle } from '@/lib/card-styles';
 import { BUILDMYHOUSE_CONTACT } from '@/lib/home-landing-content';
 
 interface PaymentModalProps {
@@ -19,10 +16,46 @@ interface PaymentModalProps {
   totalQuoteAmount?: number;
   projectId?: string;
   projectName?: string;
+  externalPaymentLink?: string;
   onPaymentSuccess: () => void;
   onPaymentError: (error: string) => void;
   clientSecret?: string;
-  externalError?: string; // Error message from parent component
+  externalError?: string;
+}
+
+const PAYMENT_STEPS = [
+  'Check your quote. Your total is the price you agreed with your contractor, plus BuildMyHouse\'s contingency.',
+  'Pay BuildMyHouse\'s verified account only. Never pay into your contractor\'s account.',
+  'Send your receipt and your signed quote to us on WhatsApp at +234 813 903 6559.',
+  'We confirm your payment and tell your contractor to start.',
+  'At each stage, your contractor uploads photos of the work. You review them in the app.',
+  'You approve, and we pay that stage. If something isn\'t right, raise it in the app and the payment waits until it\'s fixed.',
+];
+
+const METHODS: Array<{ key: PaymentMethodKey; title: string; description: string }> = [
+  { key: 'stripe', title: 'Stripe card invoice', description: 'Pay by card using an invoice link.' },
+  { key: 'wise', title: 'Wise', description: 'International bank transfer.' },
+  { key: 'paystack', title: 'Paystack', description: 'Local cards and bank transfer in Nigeria and Ghana.' },
+  { key: 'zelle', title: 'Zelle', description: 'Bank transfer for customers in the USA.' },
+  { key: 'bank', title: 'Bank transfer (Moniepoint)', description: 'Pay into the BuildMyHouse Moniepoint account.' },
+];
+
+const BANK_ROWS = [
+  { label: 'Bank', value: 'Moniepoint MFB' },
+  { label: 'Account number', value: '8139036559' },
+  { label: 'Account name', value: 'Amala Class Concepts (or Godswill Oluwafemi Okunola)' },
+];
+
+function money(value: number) {
+  return `₦${Number(value || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+async function copyText(value: string) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+  throw new Error('Clipboard is not available');
 }
 
 export default function PaymentModal({
@@ -30,319 +63,193 @@ export default function PaymentModal({
   onClose,
   amount,
   projectBudget,
-  baseQuoteAmount = 0,
-  monitoringFeeAmount = 0,
-  coordinationFeeAmount = 0,
   contingencyFeeAmount = 0,
   totalQuoteAmount = 0,
-  projectId,
   projectName = 'Project',
-  // These callbacks/fields are kept for compatibility with the existing call sites.
+  externalPaymentLink,
   onPaymentSuccess: _onPaymentSuccess,
   onPaymentError: _onPaymentError,
   clientSecret: _clientSecret,
   externalError: _externalError,
 }: PaymentModalProps) {
-  const router = useRouter();
-  const { data: currentUser } = useCurrentUser();
-  const firstName = (currentUser?.fullName || currentUser?.email || 'there').split(' ')[0];
-  // Use the most reliable budget value available.
-  const effectiveBudget = Math.max(
-    Number(totalQuoteAmount || 0),
-    Number(projectBudget || 0),
-    Number(amount || 0),
-    0,
-  );
-  const minDeposit = Math.max(effectiveBudget * 0.5, 0);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const [method, setMethod] = useState<PaymentMethodKey | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+  const agreedTotal = Math.max(Number(totalQuoteAmount || 0), Number(projectBudget || 0), Number(amount || 0), 0);
+  const visibleSteps = stepsOpen ? PAYMENT_STEPS : PAYMENT_STEPS.slice(0, 2);
+  const selected = METHODS.find((item) => item.key === method);
+
+  const onCopy = async (label: string, value: string) => {
+    try {
+      await copyText(value);
+      setCopied(label);
+    } catch {
+      setCopied(null);
+    }
+  };
+
+  const openWhatsApp = () => {
+    const text = encodeURIComponent(`Project: ${projectName}`);
+    const url = `https://wa.me/2348139036559?text=${text}`;
+    Linking.openURL(url).catch(() => undefined);
+  };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <View className="flex-1 bg-black/50 justify-end">
-        <View className="bg-white rounded-t-3xl p-6 max-h-[90%]">
-          {/* Drag Handle */}
-          <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
-
-          {/* Header */}
-          <View className="flex-row justify-between items-start mb-6">
-            <View className="flex-1">
-              <Text
-                className="text-2xl md:text-3xl text-black mb-2"
-                style={{ fontFamily: 'Poppins_800ExtraBold' }}
-              >
-                Project deposit
+        <View className="bg-white rounded-t-3xl px-5 pt-4 pb-6 max-h-[92%] w-full self-center" style={{ maxWidth: 560 }}>
+          <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
+          <View className="flex-row justify-between items-start mb-4">
+            <View className="flex-1 pr-3">
+              <Text className="text-2xl text-black" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
+                Fund your project
               </Text>
-              <Text
-                className="text-gray-600 text-sm"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-              >
+              <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                 {projectName}
               </Text>
             </View>
             <TouchableOpacity
               onPress={onClose}
-              className="w-10 h-10 items-center justify-center"
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
             >
-              <X size={24} color="#000000" strokeWidth={2} />
+              <X size={18} color="#000000" strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Amount card */}
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
-              <View className="flex-row items-center mb-4">
-                <Text className="text-gray-900 text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
-                <Text
-                  className="text-gray-900 text-lg ml-2"
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  Deposit required to start
-                </Text>
-              </View>
-              <Text
-                className="text-3xl md:text-4xl text-black mb-2"
-                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.7}
-              >
-                ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}+
-              </Text>
-              <Text
-                className="text-gray-700 text-sm"
-                style={{ fontFamily: 'Poppins_400Regular' }}
-              >
-                Minimum deposit is 50% of the project budget. 100% is recommended for faster execution.
-              </Text>
+            <Text className="text-4xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+              {money(agreedTotal)}
+            </Text>
+            <Text className="text-gray-700 text-sm mt-2 mb-4" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}>
+              Fund 100% of the agreed total. Nothing goes to the contractor until you approve a stage.
+            </Text>
 
-              <View style={cardShadowStyle} className="mt-4 bg-white rounded-xl p-4 border border-gray-200">
-                <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Recommended amounts
+            <View className="border border-gray-200 rounded-2xl px-4 py-3 mb-4">
+              <View className="flex-row justify-between items-start">
+                <Text className="text-black text-sm flex-1 pr-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Contingency
                 </Text>
-                <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  50% minimum: ₦{minDeposit.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </Text>
-                <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  100% recommended: ₦{effectiveBudget.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
+                  {money(contingencyFeeAmount)}
                 </Text>
               </View>
+              <Text className="text-gray-600 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}>
+                Covers emergencies and changes you agree to. Whatever isn't used becomes BuildMyHouse's project management fee.
+              </Text>
             </View>
 
-            {(baseQuoteAmount > 0 ||
-              monitoringFeeAmount > 0 ||
-              coordinationFeeAmount > 0 ||
-              contingencyFeeAmount > 0) && (
-              <View style={cardShadowStyle} className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
-                <Text className="text-gray-900 text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  BuildMyHouse quote breakdown
-                </Text>
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Engineer quote
-                  </Text>
-                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{baseQuoteAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Monitoring fee (5%)
-                  </Text>
-                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{monitoringFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Coordination fee (5%)
-                  </Text>
-                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{coordinationFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
-                <View className="flex-row justify-between mb-2">
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Contingency fee (20%)
-                  </Text>
-                  <Text className="text-gray-900 text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{contingencyFeeAmount.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
-                <View className="border-t border-gray-200 mt-2 pt-2 flex-row justify-between">
-                  <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    Total quote payable
-                  </Text>
-                  <Text className="text-black text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{effectiveBudget.toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </Text>
-                </View>
-              </View>
-            )}
-
-            {/* Project summary / timeline quick access */}
-            <View className="bg-black rounded-2xl p-5 mb-6">
-              <View className="flex-row items-center mb-2">
-                <FileText size={18} color="#FFFFFF" strokeWidth={2.2} />
-                <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Project summary & timeline
-                </Text>
-              </View>
-              <Text className="text-white/80 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                View project details and timeline reminders. Tracking remains locked until admin confirms payment.
+            <View className="border border-gray-200 rounded-2xl p-4 mb-4">
+              <Text className="text-black text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+                How payment works
               </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  if (!projectId) return;
-                  onClose();
-                  router.push(`/dashboard?projectId=${projectId}` as any);
-                }}
-                disabled={!projectId}
-                className={`rounded-xl py-3 px-4 border ${projectId ? 'bg-white border-white' : 'bg-white/20 border-white/20'}`}
-              >
-                <Text
-                  className={`text-center text-sm ${projectId ? 'text-black' : 'text-white/60'}`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  Open Project Dashboard
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* How it works */}
-            <View style={cardShadowStyle} className="bg-white rounded-2xl p-6 mb-6 border border-gray-200">
-              <View className="flex-row items-start mb-4">
-                <Lock size={20} color="#111827" strokeWidth={2} className="mt-1" />
-                <Text
-                  className="text-gray-900 text-base ml-2 flex-1"
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  How payment works
-                </Text>
-              </View>
-              {[
-                `You (${firstName}) pay BuildMyHouse using the verified account details below.`,
-                'Use your project quote PDF from email as payment reference.',
-                `Send receipt + quote PDF to BuildMyHouse WhatsApp: ${BUILDMYHOUSE_CONTACT.phoneDisplay}.`,
-                'BuildMyHouse confirms approval before project commencement.',
-              ].map((step) => (
+              {visibleSteps.map((step, index) => (
                 <View key={step} className="flex-row items-start mb-2">
-                  <View className="w-2 h-2 bg-black rounded-full mt-2 mr-2" />
-                  <Text className="text-gray-700 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-black text-sm w-5" style={{ fontFamily: 'Poppins_600SemiBold', lineHeight: 20 }}>
+                    {index + 1}.
+                  </Text>
+                  <Text className="text-gray-800 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}>
                     {step}
                   </Text>
                 </View>
               ))}
-            </View>
-
-            {/* Payment options */}
-            <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
-              <Text className="text-gray-900 text-base mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Ways to deposit to BuildMyHouse
-              </Text>
-
-              {[
-                {
-                  key: 'stripe' as PaymentMethodKey,
-                  title: 'Stripe Card Invoice',
-                  desc: 'Best for smaller projects like renovations and interior designing. Pay by card using an invoice link.',
-                },
-                {
-                  key: 'wise' as PaymentMethodKey,
-                  title: 'Wise Transfer',
-                  desc: 'Best for bigger projects like building a new home or buying a home/plot. Great for large international transfers (diaspora).',
-                },
-                {
-                  key: 'paystack' as PaymentMethodKey,
-                  title: 'Paystack',
-                  desc: 'Ideal for Nigerians and Ghanaians. Works like Stripe and supports multiple local payment methods.',
-                },
-                {
-                  key: 'zelle' as PaymentMethodKey,
-                  title: 'Zelle Transfer',
-                  desc: 'Fast and easy for USA-based customers who prefer bank-to-bank transfers.',
-                },
-              ].map((m) => (
-                <View key={m.title} style={cardShadowStyle} className="bg-white rounded-xl p-4 border border-gray-200 mb-3">
-                  <View className="flex-row items-start">
-                    <PaymentMethodLogo method={m.key} size={40} />
-                    <View className="flex-1 ml-3">
-                      <Text className="text-gray-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {m.title}
-                      </Text>
-                      <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {m.desc}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ))}
-
-              <View className="mt-3 bg-black rounded-xl p-4">
-                <Text className="text-white text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  BuildMyHouse Verified Account
+              <TouchableOpacity onPress={() => setStepsOpen((open) => !open)} className="mt-1 py-1">
+                <Text className="text-sm" style={{ fontFamily: 'Poppins_600SemiBold', color: '#16a34a' }}>
+                  {stepsOpen ? 'Show fewer steps' : 'Show all steps'}
                 </Text>
-                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Monipoint MFB
-                </Text>
-                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  8139036559
-                </Text>
-                <Text className="text-white/90 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Amala Class Concepts (or Godswill Oluwafemi Okunola)
-                </Text>
-              </View>
-              <Text className="text-gray-600 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                After payment, send receipt + quote PDF to WhatsApp: {BUILDMYHOUSE_CONTACT.phoneDisplay} for approval.
-              </Text>
-            </View>
-
-            {/* Action Buttons */}
-            <View className="mb-3">
-              <TouchableOpacity
-                onPress={() => {
-                  onClose();
-                  router.push('/billing-payments' as any);
-                }}
-                className="w-full rounded-xl py-4 px-6 bg-black"
-              >
-                <View className="flex-row items-center justify-center">
-                  <ExternalLink size={20} color="#FFFFFF" strokeWidth={2} />
-                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    View payment options
-                  </Text>
-                </View>
               </TouchableOpacity>
             </View>
-            
-            {/* Close Button */}
-            <TouchableOpacity
-              onPress={onClose}
-              className="w-full rounded-xl py-3 px-6 border-2 border-gray-300 bg-white"
-            >
-              <Text
-                className="text-center text-base text-gray-700"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Close
+
+            <Text className="text-black text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Payment method
+            </Text>
+            <View className="border border-gray-200 rounded-2xl overflow-hidden mb-4">
+              {METHODS.map((item, index) => {
+                const active = method === item.key;
+                return (
+                  <TouchableOpacity
+                    key={item.key}
+                    onPress={() => setMethod(item.key)}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: active }}
+                    className="flex-row items-center px-4 py-3"
+                    style={{ borderTopWidth: index === 0 ? 0 : 1, borderTopColor: '#e5e7eb' }}
+                  >
+                    <PaymentMethodLogo method={item.key} size={36} />
+                    <View className="flex-1 mx-3">
+                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {item.title}
+                      </Text>
+                      <Text className="text-gray-500 text-xs mt-0.5" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        {item.description}
+                      </Text>
+                    </View>
+                    <View
+                      className="rounded-full items-center justify-center"
+                      style={{ width: 22, height: 22, borderWidth: 1.5, borderColor: active ? '#22c55e' : '#d1d5db' }}
+                    >
+                      {active ? <View className="rounded-full" style={{ width: 12, height: 12, backgroundColor: '#22c55e' }} /> : null}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {selected ? (
+              <View className="border border-gray-200 rounded-2xl p-4 mb-4">
+                <Text className="text-black text-sm mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {selected.title}
+                </Text>
+                {selected.key === 'bank' ? (
+                  BANK_ROWS.map((row) => (
+                    <View key={row.label} className="flex-row items-center py-3 border-t border-gray-100">
+                      <View className="flex-1 pr-3">
+                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {row.label}
+                        </Text>
+                        <Text className="text-black text-sm mt-0.5" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          {row.value}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => onCopy(row.label, row.value)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Copy ${row.label}`}
+                        className="flex-row items-center"
+                      >
+                        <Copy size={16} color="#16a34a" strokeWidth={2.4} />
+                        <Text className="text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold', color: '#16a34a' }}>
+                          {copied === row.label ? 'Copied' : 'Copy'}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ))
+                ) : (
+                  <View>
+                    <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}>
+                      {selected.description}
+                    </Text>
+                    {externalPaymentLink ? (
+                      <TouchableOpacity onPress={() => Linking.openURL(externalPaymentLink).catch(() => undefined)} className="mt-3">
+                        <Text className="text-sm" style={{ fontFamily: 'Poppins_600SemiBold', color: '#16a34a' }}>
+                          Open payment instructions
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                )}
+              </View>
+            ) : null}
+
+            <TouchableOpacity onPress={openWhatsApp} className="rounded-full py-4 items-center mb-3" style={{ backgroundColor: '#22c55e' }}>
+              <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Send receipt on WhatsApp
               </Text>
             </TouchableOpacity>
-
-            {/* Security Note */}
-            <View className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-4">
-              <View className="flex-row items-start">
-                <Lock size={16} color="#2563eb" strokeWidth={2} className="mt-0.5" />
-                <Text
-                  className="text-blue-900 text-xs ml-2 flex-1"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  For safety and peace of mind, BuildMyHouse holds funds and releases them only after your stage-by-stage approval.
-                </Text>
-              </View>
-            </View>
+            <Text className="text-gray-500 text-xs text-center mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {BUILDMYHOUSE_CONTACT.phoneDisplay}
+            </Text>
           </ScrollView>
         </View>
       </View>
