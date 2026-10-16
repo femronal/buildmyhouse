@@ -122,19 +122,19 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               <View className="h-px bg-white/10 mt-6" />
 
               <View className="flex-row flex-wrap items-center gap-3 mt-5">
-                <Link href={'/start' as any} asChild>
+                <Link href={'/start/repair' as any} asChild>
                   <Pressable
                     onPress={() =>
                       trackWebEvent('homepage_primary_cta_clicked', {
                         placement: 'testimonials',
-                        href: '/start',
+                        href: '/start/repair',
                       })
                     }
                     className="h-12 px-6 rounded-lg bg-white justify-center bmh-glass-btn bmh-glass-btn-light"
                     accessibilityRole="link"
                   >
                     <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Start a Tracked Project
+                      Fix one repair at your family home
                     </Text>
                   </Pressable>
                 </Link>

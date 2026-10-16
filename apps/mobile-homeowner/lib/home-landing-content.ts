@@ -7,9 +7,9 @@ export const LANDING_SURFACE = '#F5F5F5';
 export const LANDING_ACCENT = '#000000';
 
 export const HOMEPAGE_META = {
-  title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
+  title: 'BuildMyHouse | Manage Repairs to Your Family Home in Nigeria From Abroad',
   description:
-    'BuildMyHouse helps you manage house building, repairs, renovations, remodeling work, and property work in Nigeria from abroad — with verified workers, clearer scope, stage evidence, and more control over when work and money move forward.',
+    'Manage repairs to your family home in Nigeria from abroad: documented scope, stage evidence, and your approval before money moves.',
   canonicalPath: '/',
 } as const;
 
@@ -83,9 +83,9 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     subheadline:
       "Whether you're fixing your parents' home, renovating an investment property, or building from the ground up. BuildMyHouse helps you work with verified professionals, clearer scope, and stage-by-stage evidence before money moves forward.",
     searchPlaceholder: 'What property work are you managing remotely?',
-    primaryCta: { label: 'Start a Tracked Project', href: '/start' },
+    primaryCta: { label: 'Fix one repair at your family home', href: '/start/repair' },
     secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
-    reassurance: 'Repairs, upgrades, renovations and full builds. Start as small as one job.',
+    reassurance: 'Start with one repair. Larger upgrades, renovations, and builds come later.',
   },
   'need-worker': {
     rotatingKeywords: HERO_KEYWORDS,
@@ -93,9 +93,9 @@ export const HERO_AUDIENCE_CONTENT: Record<AudienceTab['key'], HeroAudienceConte
     headlineSuffix: 'in Nigeria.',
     subheadline: HERO_SUBHEADLINE,
     searchPlaceholder: 'What do you need fixed, upgraded, or built?',
-    primaryCta: { label: 'Start a Tracked Project', href: '/start' },
+    primaryCta: { label: 'Fix one repair at your family home', href: '/start/repair' },
     secondaryCta: { label: 'Find a Verified Worker', href: '/location?mode=explore' },
-    reassurance: 'Repairs, upgrades, renovations and full builds.',
+    reassurance: 'Start with one repair. Larger upgrades, renovations, and builds come later.',
     tertiaryLink: {
       label: 'Managing from abroad? Stay in control remotely',
       href: '/diaspora/build-in-nigeria-from-abroad',
@@ -119,15 +119,15 @@ export const AUDIENCE_TABS: AudienceTab[] = [
     title: 'Track scope, stage updates, evidence, communication, and payment decisions from wherever you live.',
     description:
       'Use BuildMyHouse as your control layer so distance does not become loss of visibility.',
-    ctaLabel: 'Start a Tracked Project',
-    ctaHref: '/start',
+    ctaLabel: 'Fix one repair at your family home',
+    ctaHref: '/start/repair',
   },
   {
     key: 'need-worker',
     label: 'I need work done',
-    title: 'Find verified repairers and contractors for property work in Nigeria.',
+    title: 'Fix one repair at your family home, then grow into larger work.',
     description:
-      'Start with repairs, then move into upgrades, renovations, interiors, and larger projects with better structure.',
+      'Start with a single repair. Move into upgrades, renovations, interiors, and larger projects when you are ready.',
     ctaLabel: 'Find a Verified Worker',
     ctaHref: '/location?mode=explore',
   },
@@ -248,10 +248,10 @@ export const CREDENTIALS_SECTION = {
 } as const;
 
 export const PRODUCT_LADDER_SECTION = {
-  heading: 'Start with the job you need done now.',
+  heading: 'Start with one repair at the family home.',
   supporting:
-    "Fix one leaking pipe. Renovate your parents' bathroom. Upgrade a rental. Or manage a complete build. BuildMyHouse is designed to grow with the size of the work.",
-  primaryCta: { label: 'Start a Tracked Project', href: '/start' },
+    'Fix one leaking pipe or urgent fault first. Upgrades, renovations, interiors, land checks, and full builds stay available when you are ready for larger work.',
+  primaryCta: { label: 'Fix one repair at your family home', href: '/start/repair' },
   secondaryCta: { label: 'Browse Services', href: '/services/home-renovation-nigeria' },
 } as const;
 
@@ -269,7 +269,7 @@ export const OFFER_SECTION = {
     {
       title: 'Free first inspection',
       description:
-        'Qualifying first-time projects include a free first inspection / site assessment so the job starts from a clearer diagnosis, not a guess on WhatsApp.',
+        'Free when we have an artisan or contractor within 2 km of your property. The visit helps the job start from a clearer diagnosis, not a guess on WhatsApp.',
     },
     {
       title: 'Free access to homeowner tools',
@@ -291,7 +291,7 @@ export const OFFER_SECTION = {
   ],
   scarcity:
     'Early-user first-project slots are limited each month while we carefully onboard diaspora owners. Support stays personal, not mass-market chaos.',
-  primaryCta: { label: 'Claim Your First-Project Offer', href: '/start' },
+  primaryCta: { label: 'Claim Your First-Project Offer', href: '/start/repair' },
   secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
 } as const;
 
@@ -323,7 +323,7 @@ export const GUARANTEE_SECTION = {
   ],
   footnote:
     'Payment handling uses approved providers and platform policies. Refunds and holds follow the managed stage process and dispute review. They are not automatic blanket promises.',
-  primaryCta: { label: 'Start a Tracked Project', href: '/start' },
+  primaryCta: { label: 'Fix one repair at your family home', href: '/start/repair' },
 } as const;
 
 export const WORKSHEET_SECTION = {
@@ -355,11 +355,11 @@ export const TESTIMONIALS_SECTION = {
 
 export const FOOTER_CLOSE = {
   line1: 'Ready to stop guessing?',
-  line2: 'Start managing with clarity.',
+  line2: 'Start with one repair.',
   supporting:
-    'Claim your first-project offer. Get ₦0 BuildMyHouse commission, a free first inspection for qualifying projects, and tools that help you decide before money moves.',
-  ctaLabel: 'Start Your First Tracked Project',
-  ctaHref: '/start',
+    'Claim your first-project offer. Get ₦0 BuildMyHouse commission, a free first inspection when we have an artisan or contractor within 2 km of your property, and tools that help you decide before money moves.',
+  ctaLabel: 'Fix one repair at your family home',
+  ctaHref: '/start/repair',
 } as const;
 
 export type PopularChip = {
@@ -423,7 +423,7 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
   {
     title: 'Repairs',
     description:
-      'Fix urgent property problems like plumbing, electrical faults, roof leaks, drainage, windows, AC, and bathrooms.',
+      'The best first job: fix one urgent problem at the family home, like plumbing, electrical faults, roof leaks, drainage, windows, AC, or bathrooms.',
     href: '/start/repair',
     seoHref: '/services/plumbing-repair-nigeria',
     image: require('@/assets/images/repair.jpg'),
@@ -453,7 +453,7 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
   {
     title: 'Interiors',
     description:
-      'Manage finish selection, procurement, installation, and reporting.',
+      'Later-stage work: manage finish selection, procurement, installation, and reporting.',
     href: '/start/interiors',
     seoHref: '/interior-design/nigeria',
     image: require('@/assets/images/interiorDesign.jpg'),
@@ -463,7 +463,7 @@ export const PLATFORM_LADDER_GALLERY: PlatformGalleryItem[] = [
   {
     title: 'Full Builds',
     description:
-      'For bigger projects, work with verified professionals through structured project stages.',
+      'When you are ready for a larger project, work with verified professionals through structured project stages.',
     href: '/start/build',
     seoHref: '/construction/nigeria',
     image: require('@/assets/images/fullbuilds.jpg'),
@@ -708,7 +708,7 @@ export const FAQ_ITEMS = [
   {
     question: 'Is BuildMyHouse a construction company?',
     answer:
-      'No. BuildMyHouse is a software and operations coordination platform designed to improve visibility, accountability and owner control. It is the control layer between homeowner, scope, verified worker, stage, evidence, approval and money.',
+      'No. BuildMyHouse is a project management software-enabled platform designed to improve visibility, accountability and owner control. It is the control layer between homeowner, scope, verified worker, stage, evidence, approval and money. It is not a directory.',
   },
   {
     question: 'How do contractors join BuildMyHouse?',

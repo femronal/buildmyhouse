@@ -57,6 +57,7 @@ import {
   START_REASSURANCE,
   NOTE_MIN_LENGTH,
   NOTE_REQUIRED_HELPER,
+  WHAT_HAPPENS_NEXT,
   getPath,
   guardHref,
   hrefAfterAnswer,
@@ -358,7 +359,9 @@ function Hub({ wide }: { wide: boolean }) {
         {HUB.intro}
       </Text>
       <View className="flex-row flex-wrap justify-between" style={{ marginTop: 28 }}>
-        {(Object.values(START_PATHS)).map((item) => (
+        {(['repair', 'upgrade', 'interiors', 'build'] as const).map((pathId) => {
+          const item = START_PATHS[pathId];
+          return (
           <Link key={item.id} href={`/start/${item.id}` as never} asChild>
             <Pressable
               accessibilityRole="link"
@@ -382,6 +385,49 @@ function Hub({ wide }: { wide: boolean }) {
               </Text>
             </Pressable>
           </Link>
+          );
+        })}
+      </View>
+      <WhatHappensNext />
+    </View>
+  );
+}
+
+function WhatHappensNext() {
+  return (
+    <View
+      style={{
+        marginTop: 28,
+        borderWidth: 1,
+        borderColor: LINE,
+        borderRadius: 16,
+        padding: 16,
+        backgroundColor: '#FAFAFA',
+      }}
+    >
+      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 15, color: '#000' }}>
+        {WHAT_HAPPENS_NEXT.heading}
+      </Text>
+      <View style={{ marginTop: 14, gap: 12 }}>
+        {WHAT_HAPPENS_NEXT.steps.map((step, index) => (
+          <View key={step} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+            <View
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 999,
+                backgroundColor: '#000',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 1,
+              }}
+            >
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#fff' }}>{index + 1}</Text>
+            </View>
+            <Text style={{ flex: 1, fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#111', lineHeight: 22 }}>
+              {step}
+            </Text>
+          </View>
         ))}
       </View>
     </View>
@@ -953,6 +999,7 @@ function Review({
           {sending ? 'Opening WhatsApp…' : 'Send your request to WhatsApp'}
         </Text>
       </Pressable>
+      {path.id === 'repair' ? <WhatHappensNext /> : null}
     </View>
   );
 }
@@ -981,7 +1028,7 @@ function Sent({
         Request ready on WhatsApp
       </SeoHeading>
       <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: MUTED, marginTop: 12, lineHeight: 24 }}>
-        Press send in WhatsApp. An agent will reply to plan the next step.
+        Press send in WhatsApp so an agent can confirm the scope with you. Then you get a written scope and staged quote in the app before you approve stage 1.
       </Text>
       {reference ? (
         <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 15, color: '#000', marginTop: 16 }}>Reference {reference}</Text>
@@ -989,6 +1036,7 @@ function Sent({
       <Pressable accessibilityRole="link" onPress={() => void Linking.openURL(url)} style={{ marginTop: 28, minHeight: 44, justifyContent: 'center' }}>
         <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: GREEN }}>{"Didn't open? Tap here"}</Text>
       </Pressable>
+      {pathId === 'repair' ? <WhatHappensNext /> : null}
       <Pressable
         accessibilityRole="button"
         onPress={() => {

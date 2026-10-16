@@ -10,9 +10,9 @@ type RootProps = {
 const DEFAULT_GSC_VERIFICATION = 'oXMp0QHWTK-YkDQ5L8sNre1YHVZR_6Tt7VBUP8DQ5X8';
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
-const DEFAULT_PAGE_TITLE = 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Nigeria';
+const DEFAULT_PAGE_TITLE = 'BuildMyHouse | Manage Repairs to Your Family Home in Nigeria From Abroad';
 const DEFAULT_PAGE_DESCRIPTION =
-  'Find verified repairers, artisans, renovators, interior specialists, and contractors in Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.';
+  'Manage repairs to your family home in Nigeria from abroad: documented scope, stage evidence, and your approval before money moves.';
 const DEFAULT_OG_IMAGE = `${WEB_URL}/engineer-at-buildmyhouse.png`;
 
 export default function Root({ children }: RootProps) {

@@ -1,9 +1,9 @@
 {
   "/start": {
     "title": "Start a project in Nigeria | BuildMyHouse",
-    "description": "Start a repair, upgrade, full build, or interior project in Nigeria. Answer a few short questions and send the request to a BuildMyHouse agent on WhatsApp.",
+    "description": "Start a repair, upgrade, full build, or interior project in Nigeria. Answer a few short questions, confirm scope on WhatsApp, then get a written scope and staged quote in the BuildMyHouse app before you approve stage 1.",
     "h1": "What do you want to do?",
-    "intro": "Tell us what you want done, one question at a time. A BuildMyHouse agent picks it up on WhatsApp and plans the work with you, in stages you approve.",
+    "intro": "Tell us what you want done, one question at a time. An agent confirms the scope with you on WhatsApp, then you get a written scope and staged quote in the app before you approve and pay for stage 1.",
     "links": [
       { "href": "/start/repair", "title": "Repair", "description": "Fix something that's broken or leaking." },
       { "href": "/start/upgrade", "title": "Upgrade or renovation", "description": "Improve a room, a floor, or the whole house." },
@@ -13,9 +13,9 @@
   },
   "/start/repair": {
     "title": "Start a home repair in Nigeria | BuildMyHouse",
-    "description": "Tell us what needs fixing, where the property is, and when a visit works. A BuildMyHouse agent plans the repair with you on WhatsApp, in stages you approve.",
+    "description": "Tell us what needs fixing, where the property is, and when a visit works. An agent confirms the scope on WhatsApp, then you get a written scope and staged quote in the BuildMyHouse app before you approve stage 1.",
     "h1": "What needs fixing?",
-    "intro": "Tell us what's wrong, where the property is, and when works. A BuildMyHouse agent picks it up on WhatsApp and plans the repair with you, in stages you approve.",
+    "intro": "Tell us what's wrong, where the property is, and when works. An agent confirms the scope with you on WhatsApp, then you get a written scope and staged quote in the app before you approve and pay for stage 1.",
     "links": [
       { "href": "/start/repair/urgency", "title": "Plumbing", "description": "Leaks, blockages, taps, and pipes." },
       { "href": "/start/repair/urgency", "title": "Electrical", "description": "Power cuts, fittings, and wiring faults." },

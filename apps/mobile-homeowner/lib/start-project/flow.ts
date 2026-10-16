@@ -4,8 +4,18 @@ export const REPAIR_FEE_LINE = 'Platform service fee: ₦0 for repairs (free for
 export const READY_MADE_PLANS_HREF = '/design-library';
 export const NOTE_MIN_LENGTH = 5;
 export const START_REASSURANCE =
-  'A BuildMyHouse agent will reply on WhatsApp to plan the next step. Nothing is paid until you agree the scope.';
+  'A BuildMyHouse agent will confirm the scope with you on WhatsApp. Nothing is paid until you agree the scope.';
 export const NOTE_REQUIRED_HELPER = 'Tell us briefly what needs doing.';
+
+/** Shown under the primary CTA on /start and /start/repair so the path past WhatsApp is clear. */
+export const WHAT_HAPPENS_NEXT = {
+  heading: 'What happens next',
+  steps: [
+    'A BuildMyHouse agent confirms the scope with you on WhatsApp.',
+    'You get a written scope and a staged quote in the BuildMyHouse app.',
+    'You approve and pay for stage 1.',
+  ],
+} as const;
 
 export const DIAL_CODES = [
   { code: '+234', label: 'Nigeria' },
@@ -142,10 +152,10 @@ function timingStep(): FlowStep {
 export const HUB = {
   seoTitle: 'Start a project in Nigeria | BuildMyHouse',
   seoDescription:
-    'Start a repair, upgrade, full build, or interior project in Nigeria. Answer a few short questions and send the request to a BuildMyHouse agent on WhatsApp.',
+    'Start a repair, upgrade, full build, or interior project in Nigeria. Answer a few short questions, confirm scope on WhatsApp, then get a written scope and staged quote in the BuildMyHouse app before you approve stage 1.',
   question: 'What do you want to do?',
   intro:
-    'Tell us what you want done, one question at a time. A BuildMyHouse agent picks it up on WhatsApp and plans the work with you, in stages you approve.',
+    'Tell us what you want done, one question at a time. An agent confirms the scope with you on WhatsApp, then you get a written scope and staged quote in the app before you approve and pay for stage 1.',
 } as const;
 
 export const START_PATHS: Record<PathId, StartPath> = {
@@ -156,9 +166,9 @@ export const START_PATHS: Record<PathId, StartPath> = {
     letter: 'R',
     seoTitle: 'Start a home repair in Nigeria | BuildMyHouse',
     seoDescription:
-      'Tell us what needs fixing, where the property is, and when a visit works. A BuildMyHouse agent plans the repair with you on WhatsApp, in stages you approve.',
+      'Tell us what needs fixing, where the property is, and when a visit works. An agent confirms the scope on WhatsApp, then you get a written scope and staged quote in the BuildMyHouse app before you approve stage 1.',
     intro:
-      "Tell us what's wrong, where the property is, and when works. A BuildMyHouse agent picks it up on WhatsApp and plans the repair with you, in stages you approve.",
+      "Tell us what's wrong, where the property is, and when works. An agent confirms the scope with you on WhatsApp, then you get a written scope and staged quote in the app before you approve and pay for stage 1.",
     steps: [
       {
         id: 'type',
