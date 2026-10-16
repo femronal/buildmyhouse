@@ -7,6 +7,7 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import BeforeAcceptingNextSteps from "@/components/BeforeAcceptingNextSteps";
 
 const REJECTION_REASONS = [
   'Currently too busy',
@@ -891,6 +892,7 @@ export default function GCRequestDetailScreen() {
               <Text className="text-amber-200 text-sm mt-1 leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Contact the homeowner for a physical inspection first, then confirm final scope and pricing.
               </Text>
+              <BeforeAcceptingNextSteps />
             </View>
             <Text className="text-blue-400 text-base mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>
               {req.project.homeowner.email}

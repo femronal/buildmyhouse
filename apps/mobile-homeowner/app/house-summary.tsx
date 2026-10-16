@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { trackRedditProjectRequestSubmitted } from '@/lib/analytics';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import RequestPendingNextSteps from '@/components/RequestPendingNextSteps';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
@@ -1607,6 +1608,7 @@ export default function HouseSummaryScreen() {
             <Text className="text-yellow-700 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', fontStyle: 'italic' }}>
               You’ll be notified as soon as a contractor accepts your project.
             </Text>
+            <RequestPendingNextSteps />
           </View>
         )}
 
