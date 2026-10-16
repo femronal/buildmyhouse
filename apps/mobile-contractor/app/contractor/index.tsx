@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { HardHat, ChevronRight, Shield } from "lucide-react-native";
-import { getAuthToken } from "@/lib/auth";
+import { clearAuthToken, getAuthToken } from "@/lib/auth";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
@@ -17,13 +17,16 @@ export default function ContractorLandingScreen() {
     const check = async () => {
       if (isLoading) return;
       const token = await getAuthToken();
-      if (token) {
-        if (needsContractorIntroOnboarding(currentUser)) {
-          router.replace('/contractor/onboarding');
-          return;
-        }
-        router.replace('/contractor/gc-dashboard');
+      if (!token) return;
+      if (!currentUser?.id) {
+        await clearAuthToken();
+        return;
       }
+      if (needsContractorIntroOnboarding(currentUser)) {
+        router.replace('/contractor/onboarding');
+        return;
+      }
+      router.replace('/contractor/gc-dashboard');
     };
     void check();
   }, [currentUser, isLoading, router]);

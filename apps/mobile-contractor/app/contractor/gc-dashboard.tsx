@@ -14,6 +14,7 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 import { api } from "@/lib/api";
+import { clearAuthToken } from "@/lib/auth";
 
 export default function GCDashboardScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
@@ -50,6 +51,11 @@ export default function GCDashboardScreen() {
 
   useEffect(() => {
     if (loadingCurrentUser) return;
+    if (!currentUser?.id) {
+      void clearAuthToken();
+      router.replace('/');
+      return;
+    }
     if (needsContractorIntroOnboarding(currentUser)) {
       router.replace('/contractor/onboarding');
     }
@@ -239,6 +245,14 @@ export default function GCDashboardScreen() {
   const dashboardProjects = activeProjects.filter((project: any) =>
     isWithinCompletedDashboardWindow(project),
   );
+
+  if (loadingCurrentUser || !isAuthenticated) {
+    return (
+      <View className="flex-1 bg-[#0A1628] justify-center items-center">
+        <ActivityIndicator size="large" color="#3B82F6" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-[#0A1628]">

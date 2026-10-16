@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Platform, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getAuthToken } from '@/lib/auth';
+import { clearAuthToken, getAuthToken } from '@/lib/auth';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { needsContractorIntroOnboarding } from '@/lib/onboarding';
 import GcLandingScreen from '@/components/GcLandingScreen';
@@ -27,6 +27,12 @@ export default function ContractorStartScreen() {
       if (Platform.OS !== 'web') {
         router.replace('/login');
       }
+      return;
+    }
+
+    // A leftover token from an earlier visit is not a session. Stay on the public landing page.
+    if (!currentUser?.id) {
+      void clearAuthToken().then(() => setHasToken(false));
       return;
     }
 
