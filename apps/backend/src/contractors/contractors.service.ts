@@ -988,14 +988,20 @@ export class ContractorsService {
     estimatedDuration?: string,
     senderId?: string, // GC who is sending the request
   ) {
-    // If senderId is provided (GC sending request), ensure project has generalContractorId set
-    if (senderId) {
+    const sender =
+      senderId &&
+      (await this.prisma.user.findUnique({
+        where: { id: senderId },
+        select: { id: true, role: true },
+      }));
+
+    // A GC sending work onward can be recorded as the project GC. A homeowner request stays unassigned until that GC accepts.
+    if (sender?.role === 'general_contractor') {
       const project = await this.prisma.project.findUnique({
         where: { id: projectId },
         select: { generalContractorId: true },
       });
-      
-      // If project doesn't have a GC assigned, set it to the sender
+
       if (!project?.generalContractorId) {
         await this.prisma.project.update({
           where: { id: projectId },
@@ -1013,13 +1019,6 @@ export class ContractorsService {
     if (normalizedContractorIds.length === 0) {
       return [];
     }
-
-    const sender =
-      senderId &&
-      (await this.prisma.user.findUnique({
-        where: { id: senderId },
-        select: { id: true, role: true },
-      }));
 
     let contractorIdsForRequest = normalizedContractorIds;
     if (sender?.role === 'homeowner') {

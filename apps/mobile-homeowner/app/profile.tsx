@@ -125,6 +125,14 @@ export default function ProfileScreen() {
     return project?.status === 'completed' || progressValue >= 100;
   };
 
+  const gcHasAccepted = (project: any) => {
+    const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
+    if (requests.some((request: any) => request?.status === 'accepted')) return true;
+    const contractorId = project?.generalContractorId;
+    const homeownerId = project?.homeownerId || project?.homeowner?.id;
+    return Boolean(contractorId) && contractorId !== homeownerId;
+  };
+
   const handlePickProfilePicture = async () => {
     try {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -168,13 +176,18 @@ export default function ProfileScreen() {
     }
   };
   
-  // Completed = explicit completed status OR 100% progress.
-  const pendingProjects = allProjects.filter((p: any) => p?.status === 'pending_payment');
-  const trulyActiveProjects = allProjects.filter((p: any) => {
-    if (!p) return false;
-    if (isCompletedProject(p)) return false;
-    if (p.status === 'pending_payment' || p.status === 'paused' || p.status === 'cancelled') return false;
-    return true;
+  // Active means a general contractor has accepted. Everything still waiting on that acceptance is pending.
+  const pendingProjects = allProjects.filter((project: any) => {
+    if (!project) return false;
+    if (isCompletedProject(project)) return false;
+    if (project.status === 'paused' || project.status === 'cancelled') return false;
+    return !gcHasAccepted(project);
+  });
+  const trulyActiveProjects = allProjects.filter((project: any) => {
+    if (!project) return false;
+    if (isCompletedProject(project)) return false;
+    if (project.status === 'paused' || project.status === 'cancelled') return false;
+    return gcHasAccepted(project);
   });
   const completedProjectsAllTime = allProjects.filter((p: any) => isCompletedProject(p));
 
@@ -357,10 +370,7 @@ export default function ProfileScreen() {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              onPress={() => {
-                setActiveTab('pending');
-                router.push('/pending-projects');
-              }}
+              onPress={() => setActiveTab('pending')}
               className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'pending' ? 'bg-black' : ''}`}
             >
               <View className="flex-row items-center justify-center">
@@ -408,6 +418,46 @@ export default function ProfileScreen() {
                     <View className="flex-row items-center mt-2">
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
                         Progress: {project.progress}%
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+
+          {activeTab === 'pending' && (
+            <View>
+              {pendingProjects.length === 0 ? (
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                  <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No pending projects
+                  </Text>
+                </View>
+              ) : (
+                pendingProjects.map((project: any) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
+                    style={cardShadowStyle}
+                    className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
+                  >
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.name}
+                      </Text>
+                      <View className="bg-amber-100 rounded-full px-2 py-1">
+                        <Text className="text-amber-800 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Pending
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {project.address}
+                    </Text>
+                    <View className="flex-row items-center mt-2">
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        Waiting for the contractor to accept
                       </Text>
                     </View>
                   </TouchableOpacity>
