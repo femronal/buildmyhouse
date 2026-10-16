@@ -127,10 +127,16 @@ export default function ProfileScreen() {
 
   const gcHasAccepted = (project: any) => {
     const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
-    if (requests.some((request: any) => request?.status === 'accepted')) return true;
-    const contractorId = project?.generalContractorId;
-    const homeownerId = project?.homeownerId || project?.homeowner?.id;
-    return Boolean(contractorId) && contractorId !== homeownerId;
+    return requests.some((request: any) => request?.status === 'accepted');
+  };
+
+  const isPaidProject = (project: any) => {
+    if (project?.paymentConfirmationStatus === 'confirmed' || project?.paymentConfirmedAt) return true;
+    if (Number(project?.spent) > 0) return true;
+    const payments = Array.isArray(project?.payments) ? project.payments : [];
+    return payments.some((payment: any) =>
+      ['completed', 'succeeded', 'paid'].includes(String(payment?.status || '').toLowerCase()),
+    );
   };
 
   const handlePickProfilePicture = async () => {
@@ -176,19 +182,19 @@ export default function ProfileScreen() {
     }
   };
   
-  // Active means a general contractor has accepted. Everything still waiting on that acceptance is pending.
-  const pendingProjects = allProjects.filter((project: any) => {
+  // Active means the contractor accepted and the project has been paid for.
+  // Unpaid requests stay pending even if a contractor id was stored early.
+  const isOpenProject = (project: any) => {
     if (!project) return false;
     if (isCompletedProject(project)) return false;
     if (project.status === 'paused' || project.status === 'cancelled') return false;
-    return !gcHasAccepted(project);
-  });
+    return true;
+  };
   const trulyActiveProjects = allProjects.filter((project: any) => {
-    if (!project) return false;
-    if (isCompletedProject(project)) return false;
-    if (project.status === 'paused' || project.status === 'cancelled') return false;
-    return gcHasAccepted(project);
+    if (!isOpenProject(project)) return false;
+    return isPaidProject(project) || (project.status === 'active' && gcHasAccepted(project));
   });
+  const pendingProjects = allProjects.filter((project: any) => isOpenProject(project) && !trulyActiveProjects.includes(project));
   const completedProjectsAllTime = allProjects.filter((p: any) => isCompletedProject(p));
 
   return (
@@ -457,7 +463,7 @@ export default function ProfileScreen() {
                     </Text>
                     <View className="flex-row items-center mt-2">
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        Waiting for the contractor to accept
+                        {gcHasAccepted(project) ? 'Waiting for payment' : 'Waiting for the contractor to accept'}
                       </Text>
                     </View>
                   </TouchableOpacity>
