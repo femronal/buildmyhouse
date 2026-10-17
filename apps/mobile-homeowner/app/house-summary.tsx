@@ -19,6 +19,7 @@ import { trackRedditProjectRequestSubmitted } from '@/lib/analytics';
 import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RequestPendingNextSteps from '@/components/RequestPendingNextSteps';
+import PlanDetailView from '@/components/plan-detail/PlanDetailView';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
@@ -851,6 +852,42 @@ export default function HouseSummaryScreen() {
 
   return (
     <View className="flex-1 bg-white">
+      {isDesignSelection && designData ? (
+        <PlanDetailView
+          design={designData}
+          designName={typeof params.designName === 'string' ? params.designName : undefined}
+          gcRequestStatus={gcRequestStatus}
+          rejectionReason={gcAcceptanceData?.rejectionReason}
+          showAction={!!designGC}
+          busy={createProjectFromDesignMutation.isPending || isSendingRequests}
+          saveBusy={saveProjectForLaterMutation.isPending}
+          payBusy={isProcessingPayment || createPaymentIntentMutation.isPending || activateProjectMutation.isPending}
+          onBack={() => (router.canGoBack() ? router.back() : router.push('/(tabs)/home'))}
+          onWorkWithContractor={() => {
+            if (!designId) {
+              Alert.alert('Error', 'Design ID is missing. Please try again.');
+              return;
+            }
+            const address = (params.address as string) || '';
+            if (address && !selectedAddress) {
+              setSelectedAddress({
+                formattedAddress: address,
+                street: (params.street as string) || address.split(',')[0]?.trim() || '',
+                city: (params.city as string) || address.split(',')[1]?.trim() || '',
+                state: (params.state as string) || address.split(',')[2]?.trim() || '',
+                zipCode: (params.zipCode as string) || '',
+                country: (params.country as string) || 'Nigeria',
+                latitude: params.latitude ? parseFloat(params.latitude as string) : 0,
+                longitude: params.longitude ? parseFloat(params.longitude as string) : 0,
+              });
+            }
+            setShowAddressModal(true);
+          }}
+          onSaveForLater={handleSaveForLater}
+          onStartBuilding={handleStartBuilding}
+        />
+      ) : (
+      <>
       <View className="px-6 pb-2" style={{ paddingTop: Math.max(8, insets.top + 2) }}>
         <View className="flex-row items-center mb-2">
           <TouchableOpacity 
@@ -1708,6 +1745,8 @@ export default function HouseSummaryScreen() {
         )}
         
       </ScrollView>
+      </>
+      )}
 
       {/* Payment Modal */}
       <PaymentModal
