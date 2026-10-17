@@ -45,3 +45,5 @@ export {
 
 export { LEGAL_OPERATOR_LINE } from './legal-entity';
 
+export { startFreshWebBuildWatch } from './fresh-web-build';
+

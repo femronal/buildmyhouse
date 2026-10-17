@@ -24,6 +24,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InvestmentProvider } from '../contexts/InvestmentContext';
 import { AppAlertProvider } from "../components/AppAlertProvider";
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
+import { startFreshWebBuildWatch } from '@buildmyhouse/shared-utils';
 import NotificationListener from '@/components/NotificationListener';
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
@@ -36,6 +37,8 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
   usePushTokenRegistration('contractor');
+
+  useEffect(() => startFreshWebBuildWatch(), []);
 
   const [loaded] = useFonts({
     Poppins_400Regular,

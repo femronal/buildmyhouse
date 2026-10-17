@@ -25,6 +25,7 @@ import { InvestmentProvider } from '@/contexts/InvestmentContext';
 // eslint-disable-next-line import/no-unresolved
 import { StripeProvider } from '@/lib/stripe';
 import { usePushTokenRegistration } from '@/hooks/usePushTokenRegistration';
+import { startFreshWebBuildWatch } from '@buildmyhouse/shared-utils';
 import NotificationListener from '@/components/NotificationListener';
 import WhatsAppFloatingChat from '@/components/WhatsAppFloatingChat';
 import AuthContinueModal from '@/components/AuthContinueModal';
@@ -56,6 +57,8 @@ export default function RootLayout() {
   const pathname = usePathname();
   const skipInitialMetaPageView = useRef(true);
   usePushTokenRegistration('homeowner');
+
+  useEffect(() => startFreshWebBuildWatch(), []);
 
   useEffect(() => {
     if (skipInitialMetaPageView.current) {

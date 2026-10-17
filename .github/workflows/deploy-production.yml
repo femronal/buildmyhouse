@@ -297,8 +297,11 @@ jobs:
 
       - name: Deploy to S3
         if: env.AWS_S3_BUCKET_CONTRACTOR != ''
+        working-directory: apps/mobile-contractor
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET_CONTRACTOR }}
         run: |
-          aws s3 sync apps/mobile-contractor/dist "s3://$AWS_S3_BUCKET_CONTRACTOR" --delete --region "$AWS_REGION"
+          node ../mobile-homeowner/scripts/publish-web-assets.mjs
           if [ -n "$AWS_CLOUDFRONT_CONTRACTOR_ID" ]; then
             aws cloudfront create-invalidation --distribution-id "$AWS_CLOUDFRONT_CONTRACTOR_ID" --paths "/*" --region "$AWS_REGION"
           fi

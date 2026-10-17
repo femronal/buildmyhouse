@@ -2,7 +2,7 @@
 /**
  * Upload the Expo web export with:
  * - long cache on hashed /_expo assets
- * - no-cache on HTML
+ * - HTML must revalidate, so a normal refresh picks up a new build
  * - brotli and gzip siblings for JS, CSS, JSON, and SVG
  *
  * CloudFront's automatic compression skips files over 10MB, so the viewer
@@ -18,7 +18,7 @@ import { promisify } from 'node:util';
 import zlib from 'node:zlib';
 
 const execFileAsync = promisify(execFile);
-const bucket = process.env.AWS_S3_BUCKET_HOMEOWNER || '';
+const bucket = process.env.AWS_S3_BUCKET || process.env.AWS_S3_BUCKET_HOMEOWNER || '';
 const region = process.env.AWS_REGION || 'eu-north-1';
 const distDir = path.resolve(process.cwd(), 'dist');
 const COMPRESSIBLE = new Set(['.js', '.css', '.json', '.svg', '.html']);
@@ -92,7 +92,7 @@ function objectHeaders(rel) {
     rel.includes('_expo/static/') ||
     /-[a-f0-9]{8,}\.(js|css|json|svg|png|jpe?g|webp)(\.(br|gz))?$/.test(rel);
   const cacheControl = base.endsWith('.html')
-    ? 'public, max-age=300, stale-while-revalidate=86400'
+    ? 'no-cache'
     : base.startsWith('animations/')
       ? 'public, max-age=31536000, immutable'
     : hashed
@@ -167,7 +167,7 @@ if (entry) {
 }
 
 if (!bucket) {
-  console.log('[web] Skipped upload: AWS_S3_BUCKET_HOMEOWNER not set');
+  console.log('[web] Skipped upload: AWS_S3_BUCKET or AWS_S3_BUCKET_HOMEOWNER not set');
   process.exit(0);
 }
 
