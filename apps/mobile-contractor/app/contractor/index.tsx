@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { HardHat, ChevronRight, Shield } from "lucide-react-native";
+import LogoTextWhite from "@/assets/images/logo-text-white.svg";
 import { clearAuthToken, getAuthToken } from "@/lib/auth";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -43,14 +44,8 @@ export default function ContractorLandingScreen() {
       >
         {/* Header */}
         <View className="pb-6" style={{ paddingTop: headerPaddingTop }}>
-          <View className="flex-row items-center mb-2">
-            <HardHat size={32} color="#3B82F6" strokeWidth={2} />
-            <Text
-              className="text-3xl text-white ml-3"
-              style={{ fontFamily: 'Poppins_800ExtraBold' }}
-            >
-              BuildMyHouse
-            </Text>
+          <View className="mb-2">
+            <LogoTextWhite width={220} height={28} />
           </View>
           <Text className="text-blue-400 text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
             General Contractor Portal

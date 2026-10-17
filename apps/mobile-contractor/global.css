@@ -1,6 +1,83 @@
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins_400Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins_500Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins_600SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins_700Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins";
+  src: url("/fonts/Poppins_800ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins_400Regular";
+  src: url("/fonts/Poppins_400Regular.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins_500Medium";
+  src: url("/fonts/Poppins_500Medium.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins_600SemiBold";
+  src: url("/fonts/Poppins_600SemiBold.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins_700Bold";
+  src: url("/fonts/Poppins_700Bold.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Poppins_800ExtraBold";
+  src: url("/fonts/Poppins_800ExtraBold.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html,
+body,
+#root {
+  font-family: "Poppins", sans-serif;
+}
 
 .article-html-host {
   max-width: 680px;

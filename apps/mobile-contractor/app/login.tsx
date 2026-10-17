@@ -3,7 +3,8 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { signInWithGoogle, storeAuthToken } from "@/lib/auth";
 import { useResponsivePadding } from "@/lib/responsive-layout";
-import { LogIn, ArrowRight, HardHat } from "lucide-react-native";
+import { LogIn, ArrowRight } from "lucide-react-native";
+import LogoTextWhite from "@/assets/images/logo-text-white.svg";
 import { useAppAlert } from "../components/AppAlertProvider";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -75,17 +76,8 @@ export default function LoginScreen() {
           paddingHorizontal: Math.max(horizontalPad, 20),
         }}
       >
-        <View className="flex-row items-center mb-4 flex-wrap">
-          <HardHat size={36} color="#3B82F6" strokeWidth={2} />
-          <Text
-            className="text-3xl text-white ml-3 flex-1 min-w-0"
-            style={{ fontFamily: 'Poppins_800ExtraBold' }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
-          >
-            BuildMyHouse
-          </Text>
+        <View className="mb-4">
+          <LogoTextWhite width={220} height={28} />
         </View>
         <Text
           className="text-4xl text-white mb-3"

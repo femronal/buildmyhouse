@@ -18,7 +18,6 @@ import {
   ChevronDown,
   ClipboardList,
   ExternalLink,
-  HardHat,
   LogIn,
   MapPin,
   Phone,
@@ -26,9 +25,19 @@ import {
   Wallet,
   XCircle,
 } from 'lucide-react-native';
+import LogoTextWhite from '@/assets/images/logo-text-white.svg';
 import GcDashboardMockup from '@/components/landing/GcDashboardMockup';
+import { InstagramLogo, LinkedinLogo, XLogo, YoutubeLogo } from 'phosphor-react-native';
 import GcSeoJsonLd from '@/components/landing/GcSeoJsonLd';
 import { LEGAL_OPERATOR_LINE } from '@buildmyhouse/shared-utils';
+
+function SocialIcon({ id }: { id: string }) {
+  const props = { size: 18, color: '#ffffff', weight: 'fill' as const };
+  if (id === 'instagram') return <InstagramLogo {...props} />;
+  if (id === 'linkedin') return <LinkedinLogo {...props} />;
+  if (id === 'youtube') return <YoutubeLogo {...props} />;
+  return <XLogo {...props} />;
+}
 import {
   GC_AUDIENCE_TABS,
   GC_COMPARISON_ROWS,
@@ -185,10 +194,7 @@ export default function GcLandingPage() {
         <View className="gc-landing-header border-b border-blue-900/40" style={{ backgroundColor: 'rgba(10,22,40,0.92)' }}>
           <View className="max-w-7xl w-full self-center px-6 md:px-12 h-16 flex-row items-center justify-between">
             <View className="flex-row items-center gap-3 flex-1">
-              <HardHat size={28} color={GC_PRIMARY} strokeWidth={2} />
-              <Text className="text-xl text-white" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
-                BuildMyHouse
-              </Text>
+              <LogoTextWhite width={168} height={22} />
               <View className="hidden lg:flex flex-row items-center gap-6 ml-8">
                 {GC_NAV_ITEMS.map((item) => (
                   <Pressable
@@ -759,11 +765,9 @@ export default function GcLandingPage() {
                         onPress={() => Linking.openURL(social.href)}
                         accessibilityRole="link"
                         accessibilityLabel={social.label}
-                        className="px-3 py-2 rounded-full bg-white/15 border border-white/20"
+                        className="w-10 h-10 rounded-full bg-white/15 border border-white/20 items-center justify-center"
                       >
-                        <Text className="text-xs text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          {social.label}
-                        </Text>
+                        <SocialIcon id={social.id} />
                       </Pressable>
                     ))}
                   </View>
