@@ -8,6 +8,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { DesignsService } from './designs.service';
 import { CreateDesignDto } from './dto/create-design.dto';
@@ -24,7 +25,18 @@ export class DesignsController {
    * (Auth token is optional on the client; we keep this unguarded.)
    */
   @Get()
-  getAllDesigns() {
+  getAllDesigns(@Query() query: Record<string, string | undefined>) {
+    const limit = Number(query.limit);
+    if (Number.isFinite(limit) && limit > 0) {
+      return this.designsService.listDesignCards({
+        page: Number(query.page) || 1,
+        limit,
+        tab: query.tab,
+        q: query.q,
+        location: query.location,
+        tag: query.tag,
+      });
+    }
     return this.designsService.getAllDesigns();
   }
 

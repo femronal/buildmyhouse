@@ -920,12 +920,13 @@ model Design {
 }
 
 model DesignImage {
-  id        String   @id @default(uuid())
-  designId  String
-  url       String
-  label     String?
-  order     Int      @default(0)
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  designId     String
+  url          String
+  thumbnailUrl String?
+  label        String?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
 
   design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
 

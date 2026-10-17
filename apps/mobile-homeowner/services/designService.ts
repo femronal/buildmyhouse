@@ -49,6 +49,15 @@ export interface Design {
   updatedAt: string;
 }
 
+export type DesignCardPage = {
+  items: Design[];
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+  serverFiltered: boolean;
+};
+
 export const designService = {
   /**
    * Get all designs (for explore page)
@@ -56,6 +65,36 @@ export const designService = {
   getAllDesigns: async (): Promise<Design[]> => {
     const response = await api.get('/designs');
     return response;
+  },
+
+  listCatalog: async (params: {
+    page: number;
+    limit: number;
+    tab: string;
+    q?: string;
+    location?: string;
+    tag?: string;
+  }): Promise<DesignCardPage> => {
+    const search = new URLSearchParams({
+      page: String(params.page),
+      limit: String(params.limit),
+      tab: params.tab,
+    });
+    if (params.q?.trim()) search.set('q', params.q.trim());
+    if (params.location?.trim()) search.set('location', params.location.trim());
+    if (params.tag?.trim()) search.set('tag', params.tag.trim());
+    const response = await api.get(`/designs?${search.toString()}`);
+    if (Array.isArray(response)) {
+      return {
+        items: response,
+        page: 1,
+        limit: response.length,
+        total: response.length,
+        hasMore: false,
+        serverFiltered: false,
+      };
+    }
+    return { ...response, serverFiltered: true };
   },
 
   /**

@@ -28,6 +28,7 @@
     "prisma:delete-projects": "ts-node prisma/delete-projects.ts",
     "prisma:delete-test-reviews": "ts-node prisma/delete-test-reviews.ts",
     "prisma:backfill-gc-contractors": "ts-node prisma/backfill-gc-contractors.ts",
+    "prisma:compress-public-images": "ts-node prisma/compress-public-images.ts",
     "prisma:cleanup-orphaned-rental-viewing-interests": "ts-node prisma/cleanup-orphaned-rental-viewing-interests.ts",
     "matching:backtest": "ts-node prisma/backtest-gc-matching.ts"
   },

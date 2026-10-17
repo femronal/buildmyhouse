@@ -16,7 +16,7 @@ export {
 } from './useProjects';
 
 // Design hooks
-export { useDesigns, useDesign } from './useDesigns';
+export { useDesigns, useDesign, useDesignCatalog } from './useDesigns';
 
 // Houses for sale
 export { useHousesForSale, useHouseForSale } from './useHousesForSale';

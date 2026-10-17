@@ -1,15 +1,13 @@
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { ArrowUpRight, Heart, MapPin, Star } from 'phosphor-react-native';
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
+import { Platform, Pressable, Text, View, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { Heart, MapPin, Star } from 'phosphor-react-native';
 import { getDesignLocationTag } from '@/lib/design-location';
 
-const CARD_BG = '#151515';
+const ACCENT = '#22c55e';
 
-/** Resolve a full image URL from the backend. */
 export const getDesignImageUrl = (imageUrl: string) => {
-  if (imageUrl.startsWith('http')) {
-    return imageUrl;
-  }
+  if (!imageUrl) return '';
+  if (imageUrl.startsWith('http')) return imageUrl;
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   const backendOrigin = apiUrl
     ? apiUrl.replace(/\/api\/?$/, '')
@@ -25,19 +23,13 @@ const resolveUiProjectTag = (design: any): UiProjectTag => {
   if (explicitTag === 'upgrades') return 'upgrades';
   if (explicitTag === 'renovation') return 'renovation';
   if (explicitTag === 'full_builds') return 'full_builds';
-
   const legacyPlanType = `${design?.planType || ''}`.toLowerCase();
   if (legacyPlanType === 'interior_design') return 'upgrades';
   if (legacyPlanType === 'homebuilding') return 'full_builds';
   return 'renovation';
 };
 
-const formatTagLabel = (tag: UiProjectTag) => {
-  if (tag === 'repair') return 'Repair';
-  if (tag === 'upgrades') return 'Upgrade';
-  if (tag === 'renovation') return 'Renovation';
-  return 'Full Build';
-};
+const showsSize = (tag: UiProjectTag) => tag === 'renovation' || tag === 'full_builds';
 
 export type DesignProductCardProps = {
   design: any;
@@ -50,177 +42,129 @@ export type DesignProductCardProps = {
   onImageScroll?: (event: any) => void;
 };
 
-/**
- * Editorial product card — full-bleed photo on a dark canvas, fade-to-black footer
- * with GC attribution, title, meta, price, and category. Links to project details.
- */
+export function DesignCardSkeleton({ width }: { width: number }) {
+  return (
+    <View style={{ width, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E5E5', overflow: 'hidden' }}>
+      <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#E5E7EB' }} />
+      <View style={{ padding: 10, gap: 8 }}>
+        <View style={{ height: 14, width: '46%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+        <View style={{ height: 12, width: '88%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+        <View style={{ height: 12, width: '62%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+      </View>
+    </View>
+  );
+}
+
+function CardPhoto({ thumb, full, label }: { thumb: string; full: string; label: string }) {
+  if (Platform.OS === 'web') {
+    const srcSet = thumb && full && thumb !== full ? `${thumb} 600w, ${full} 1200w` : undefined;
+    return (
+      <img
+        alt={label}
+        src={thumb || full}
+        srcSet={srcSet}
+        sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+        loading="lazy"
+        decoding="async"
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+      />
+    );
+  }
+  return (
+    <Image
+      source={{ uri: thumb || full }}
+      style={{ width: '100%', height: '100%' }}
+      contentFit="cover"
+      cachePolicy="memory-disk"
+      recyclingKey={thumb || full}
+    />
+  );
+}
+
 export default function DesignProductCard({
   design,
   width,
-  height = 420,
   onPress,
   isFavorite,
   onToggleFavorite,
-  activeImageIndex = 0,
-  onImageScroll,
 }: DesignProductCardProps) {
-  const images = design.images || [];
+  const image = (design.images || [])[0];
+  const full = image ? getDesignImageUrl(image.url) : '';
+  const thumb = image?.thumbnailUrl ? getDesignImageUrl(image.thumbnailUrl) : full;
+  const tag = resolveUiProjectTag(design);
+  const categoryLabel = `${design?.projectTypeFilter || ''}`.trim() || (tag === 'repair' ? 'Repair' : tag === 'upgrades' ? 'Upgrade' : tag === 'renovation' ? 'Renovation' : 'Full build');
+  const gcName = `${design?.createdBy?.contractorProfile?.name || design?.createdBy?.fullName || ''}`.trim();
+  const verified = !!design?.createdBy?.contractorProfile?.verified;
+  const reviews = Number(design?.reviews || design?.createdBy?.contractorProfile?.reviews || 0);
+  const ratingValue = Number(design?.reviews ? design.rating : design?.createdBy?.contractorProfile?.rating || 0);
+  const { label: locationLabel } = getDesignLocationTag(design);
   const squareMeters = Math.round(design.squareMeters || (design.squareFootage || 0) * 0.092903);
-  const gcName = `${design?.createdBy?.fullName || ''}`.trim();
-  const kicker = gcName ? `By ${gcName}` : 'Verified GC scope';
-  const categoryLabel = `${design?.projectTypeFilter || ''}`.trim() || formatTagLabel(resolveUiProjectTag(design));
-  const rating = design.rating ? Number(design.rating).toFixed(1) : '0.0';
-  const gradientId = `bmh-card-fade-${design.id}`;
-  const { label: locationLabel, lga: locationLga } = getDesignLocationTag(design);
-  const locationDisplay = locationLga && !locationLabel.toLowerCase().includes(locationLga.toLowerCase())
-    ? `${locationLabel} · ${locationLga}`
-    : locationLabel;
-
-  const metaParts = [
-    `${design.bedrooms ?? 0} bed`,
-    `${design.bathrooms ?? 0} bath`,
-    squareMeters ? `${squareMeters} m²` : null,
-  ].filter(Boolean);
+  const sizeLine = showsSize(tag)
+    ? [`${design.bedrooms ?? 0} bed`, `${design.bathrooms ?? 0} bath`, squareMeters ? `${squareMeters} m2` : null].filter(Boolean).join(' · ')
+    : '';
 
   return (
     <Pressable
       onPress={onPress}
-      className="bmh-product-card rounded-[28px] overflow-hidden"
-      style={{ width, height, backgroundColor: CARD_BG, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+      style={{ width, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E5E5', overflow: 'hidden' }}
       accessibilityRole="button"
-      accessibilityLabel={`${design.name} — view project details`}
+      accessibilityLabel={`${design.name}, view project details`}
     >
-      {/* Full-bleed image (swipeable when multiple) */}
-      <View style={StyleSheet.absoluteFill}>
-        {images.length > 0 ? (
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={onImageScroll}
-            scrollEventThrottle={16}
-          >
-            {images.map((image: any, index: number) => (
-              <Image
-                key={image.id || index}
-                source={{ uri: getDesignImageUrl(image.url) }}
-                className="bmh-product-card-img"
-                style={{ width, height, opacity: 0.85 }}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
+      <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#F3F4F6' }}>
+        {full ? (
+          <CardPhoto thumb={thumb} full={full} label={design.name || 'Project photo'} />
         ) : (
-          <View style={{ width, height }} className="items-center justify-center bg-white/5">
-            <Text className="text-white/30 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-              No photos yet
-            </Text>
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontFamily: 'Poppins_400Regular', color: '#6B7280', fontSize: 12 }}>No photo yet</Text>
           </View>
         )}
+        {onToggleFavorite ? (
+          <TouchableOpacity
+            onPress={onToggleFavorite}
+            style={{ position: 'absolute', top: 8, right: 8, width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.92)', alignItems: 'center', justifyContent: 'center' }}
+            accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Heart size={16} color={isFavorite ? '#111111' : '#111111'} weight={isFavorite ? 'fill' : 'regular'} />
+          </TouchableOpacity>
+        ) : null}
       </View>
-
-      {/* Bottom fade for readability */}
-      <Svg
-        pointerEvents="none"
-        width="100%"
-        height="65%"
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-      >
-        <Defs>
-          <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
-            <Stop offset="0.55" stopColor={CARD_BG} stopOpacity="0.78" />
-            <Stop offset="1" stopColor={CARD_BG} stopOpacity="0.97" />
-          </SvgLinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${gradientId})`} />
-      </Svg>
-
-      {/* Favorite (optional) */}
-      {onToggleFavorite ? (
-        <TouchableOpacity
-          onPress={onToggleFavorite}
-          className="absolute top-4 left-4 w-10 h-10 rounded-full border border-white/20 bg-black/30 items-center justify-center"
-          accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
-        >
-          <Heart size={18} color="#ffffff" weight={isFavorite ? 'fill' : 'regular'} />
-        </TouchableOpacity>
-      ) : null}
-
-      {/* Open-details arrow */}
-      <View
-        pointerEvents="none"
-        className="bmh-product-card-arrow absolute top-4 right-4 w-10 h-10 rounded-full border border-white/20 bg-white/5 items-center justify-center"
-      >
-        <ArrowUpRight size={18} color="#ffffff" weight="regular" />
-      </View>
-
-      {/* Dots indicator */}
-      {images.length > 1 ? (
-        <View pointerEvents="none" className="absolute top-6 self-center flex-row">
-          {images.slice(0, 5).map((_: any, index: number) => (
-            <View
-              key={index}
-              className={`w-1.5 h-1.5 rounded-full mx-0.5 ${index === activeImageIndex ? 'bg-white' : 'bg-white/40'}`}
-            />
-          ))}
-        </View>
-      ) : null}
-
-      {/* Bottom content */}
-      <View pointerEvents="none" className="absolute bottom-0 left-0 right-0 p-5">
-        <Text
-          className="text-[10px] text-white/50 uppercase mb-1.5"
-          style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}
-          numberOfLines={1}
-        >
-          {kicker}
+      <View style={{ paddingHorizontal: 10, paddingTop: 8, paddingBottom: 12 }}>
+        <Text style={{ fontFamily: 'Poppins_700Bold', color: ACCENT, fontSize: 16 }}>
+          ₦{(design.estimatedCost || 0).toLocaleString()}
         </Text>
-
-        <Text
-          className="text-white text-[22px] leading-7 tracking-tight mb-2"
-          style={{ fontFamily: 'Poppins_500Medium' }}
-          numberOfLines={2}
-        >
+        <Text numberOfLines={2} style={{ fontFamily: 'Poppins_600SemiBold', color: '#111111', fontSize: 14, lineHeight: 18, marginTop: 2 }}>
           {design.name}
         </Text>
-
-        <View className="flex-row items-center mb-2 self-start max-w-full">
-          <View className="flex-row items-center gap-1 px-2.5 py-1 rounded-full border border-white/15 bg-black/35 max-w-full">
-            <MapPin size={11} color="#cbd5e1" weight="fill" />
-            <Text
-              className="text-[11px] text-white/85 shrink"
-              style={{ fontFamily: 'Poppins_500Medium' }}
-              numberOfLines={1}
-            >
-              {locationDisplay}
-            </Text>
-          </View>
-        </View>
-
-        <View className="flex-row items-center flex-wrap gap-x-2 mb-1">
-          <View className="flex-row items-center gap-1">
-            <Star size={11} color="#ffffff" weight="fill" />
-            <Text className="text-xs text-white/70" style={{ fontFamily: 'Poppins_500Medium' }}>
-              {rating} ({design.reviews || 0})
-            </Text>
-          </View>
-          <Text className="text-xs text-white/40" style={{ fontFamily: 'Poppins_400Regular' }}>
-            ·  {metaParts.join('  ·  ')}
+        <Text numberOfLines={1} style={{ fontFamily: 'Poppins_500Medium', color: '#374151', fontSize: 11, marginTop: 6 }}>
+          {categoryLabel}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+          <MapPin size={12} color="#6B7280" weight="fill" />
+          <Text numberOfLines={1} style={{ fontFamily: 'Poppins_400Regular', color: '#4B5563', fontSize: 12, flex: 1 }}>
+            {locationLabel}
           </Text>
         </View>
-
-        <View className="flex-row items-center justify-between border-t border-white/10 mt-3 pt-3.5">
-          <Text className="text-lg text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-            ₦{(design.estimatedCost || 0).toLocaleString()}
+        {gcName ? (
+          <Text numberOfLines={1} style={{ fontFamily: 'Poppins_500Medium', color: '#111111', fontSize: 12, marginTop: 4 }}>
+            {gcName}{verified ? ' ✓' : ''}
           </Text>
-          <Text
-            className="text-[10px] text-white/50 uppercase"
-            style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 1.5 }}
-            numberOfLines={1}
-          >
-            {categoryLabel}
-          </Text>
+        ) : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>
+          {reviews > 0 ? (
+            <>
+              <Star size={12} color="#111111" weight="fill" />
+              <Text style={{ fontFamily: 'Poppins_500Medium', color: '#111111', fontSize: 12 }}>
+                {ratingValue.toFixed(1)} ({reviews})
+              </Text>
+            </>
+          ) : (
+            <Text style={{ fontFamily: 'Poppins_500Medium', color: '#111111', fontSize: 12 }}>New</Text>
+          )}
+          {sizeLine ? (
+            <Text numberOfLines={1} style={{ fontFamily: 'Poppins_400Regular', color: '#6B7280', fontSize: 11, flex: 1 }}>
+              {sizeLine}
+            </Text>
+          ) : null}
         </View>
       </View>
     </Pressable>

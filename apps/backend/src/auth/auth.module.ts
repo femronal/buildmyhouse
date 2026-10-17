@@ -11,6 +11,7 @@ import { RolesGuard } from './rbac.guard';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { S3UploadService } from '../upload/s3-upload.service';
+import { ImageCompressionService } from '../upload/image-compression.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AdminAccessModule } from '../admin-access/admin-access.module';
 
@@ -44,6 +45,7 @@ import { AdminAccessModule } from '../admin-access/admin-access.module';
     RolesGuard,
     GoogleStrategy,
     S3UploadService,
+    ImageCompressionService,
   ],
   exports: [AuthService, JwtAuthService, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
 })
