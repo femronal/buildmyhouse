@@ -10,7 +10,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { extname } from 'path';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { S3UploadService } from './s3-upload.service';
-import { ImageCompressionService } from './image-compression.service';
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
@@ -43,10 +42,7 @@ export class UploadController {
     return false;
   }
 
-  constructor(
-    private readonly s3UploadService: S3UploadService,
-    private readonly imageCompressionService: ImageCompressionService,
-  ) {}
+  constructor(private readonly s3UploadService: S3UploadService) {}
 
   @Post('image')
   @UseInterceptors(
@@ -70,25 +66,20 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    const processed = await this.imageCompressionService.compressIfNeeded(file);
-    const targetOriginalName = processed.wasCompressed
-      ? `${(file.originalname || 'image').replace(/\.[^/.]+$/, '')}.jpg`
-      : file.originalname;
-
     const uploaded = await this.s3UploadService.uploadBuffer({
-      buffer: processed.buffer,
+      buffer: file.buffer,
       folder: 'images',
-      contentType: processed.contentType,
-      originalName: targetOriginalName,
+      contentType: file.mimetype,
+      originalName: file.originalname,
     });
 
     return {
       url: uploaded.url,
+      thumbnailUrl: uploaded.thumbnailUrl || null,
       key: uploaded.key,
       filename: uploaded.filename,
-      size: processed.size,
-      mimetype: processed.contentType,
-      compressed: processed.wasCompressed,
+      size: file.size,
+      mimetype: file.mimetype,
     };
   }
 
@@ -136,25 +127,19 @@ export class UploadController {
       throw new BadRequestException('No file uploaded');
     }
 
-    const processed = await this.imageCompressionService.compressIfNeeded(file);
-    const targetOriginalName = processed.wasCompressed
-      ? `${(file.originalname || 'file').replace(/\.[^/.]+$/, '')}.jpg`
-      : file.originalname;
-
     const uploaded = await this.s3UploadService.uploadBuffer({
-      buffer: processed.buffer,
+      buffer: file.buffer,
       folder: 'files',
-      contentType: processed.contentType,
-      originalName: targetOriginalName,
+      contentType: file.mimetype,
+      originalName: file.originalname,
     });
 
     return {
       url: uploaded.url,
       key: uploaded.key,
       filename: uploaded.filename,
-      size: processed.size,
-      mimetype: processed.contentType,
-      compressed: processed.wasCompressed,
+      size: file.size,
+      mimetype: file.mimetype,
     };
   }
 }

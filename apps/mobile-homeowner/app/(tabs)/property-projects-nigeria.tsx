@@ -1,14 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { User, FunnelSimple, MagnifyingGlass, CaretDown, CaretUp, Info } from "phosphor-react-native";
 import ProjectTypeTabs from '@/components/ProjectTypeTabs';
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useDesigns } from '@/hooks';
+import { useDesignCatalog } from '@/hooks';
 import { getBackendAssetUrl } from '@/lib/image';
 import NotificationBell from '@/components/NotificationBell';
-import DesignProductCard from '@/components/DesignProductCard';
+import DesignProductCard, { DesignCardSkeleton } from '@/components/DesignProductCard';
 import { useWebSeo } from '@/lib/seo';
 import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
@@ -53,17 +53,36 @@ export default function ExploreScreen() {
   );
   const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-10' : 'py-20';
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
-  const { data: designs = [], isLoading: designsLoading } = useDesigns();
-  const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeLocationFilter, setActiveLocationFilter] = useState(ALL_LOCATIONS_FILTER);
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
+  const catalog = useDesignCatalog({
+    tab: activeTab,
+    q: debouncedSearch,
+    location: activeLocationFilter,
+    tag: activeFilter,
+  });
+  const catalogPages = catalog.data?.pages || [];
+  const serverFiltered = catalogPages[0]?.serverFiltered === true;
+  const designs = catalogPages.flatMap((page) => page.items || []);
+  const designsLoading = catalog.isLoading;
+  const [localCount, setLocalCount] = useState(16);
+  useEffect(() => {
+    setLocalCount(16);
+  }, [activeTab, activeFilter, activeLocationFilter, debouncedSearch]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   const [isProjectsMessageExpanded, setIsProjectsMessageExpanded] = useState(false);
-  const [activeImageIndex, setActiveImageIndex] = useState<{[key: string]: number}>({});
   const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
+  const loadingMoreRef = useRef(false);
 
   // Collapsible header chrome (headline, tabs, search, notice) — collapses on
   // scroll down, restores when the list is scrolled back to the very top.
@@ -104,6 +123,18 @@ export default function ExploreScreen() {
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
+    const { layoutMeasurement, contentSize } = event.nativeEvent;
+    if (layoutMeasurement.height + currentScrollY >= contentSize.height - 480 && !loadingMoreRef.current) {
+      loadingMoreRef.current = true;
+      if (serverFiltered && catalog.hasNextPage && !catalog.isFetchingNextPage) {
+        void catalog.fetchNextPage();
+      } else if (!serverFiltered) {
+        setLocalCount((count) => count + 16);
+      }
+      setTimeout(() => {
+        loadingMoreRef.current = false;
+      }, 500);
+    }
     if (currentScrollY > lastScrollY.current + 2 && currentScrollY > 24) {
       setHeaderCollapsed(true);
       if (showFilters) {
@@ -119,13 +150,6 @@ export default function ExploreScreen() {
     }
     lastScrollY.current = currentScrollY;
   };
-
-  const handleImageScroll = useCallback((designId: string, event: any) => {
-    const contentOffset = event.nativeEvent.contentOffset.x;
-    const imageWidth = event.nativeEvent.layoutMeasurement.width;
-    const index = Math.round(contentOffset / imageWidth);
-    setActiveImageIndex(prev => ({ ...prev, [designId]: index }));
-  }, []);
 
   const filterHeight = useMemo(
     () =>
@@ -143,13 +167,11 @@ export default function ExploreScreen() {
 
   // 1 column on mobile, 3 on tablet, 4 on desktop
   const gridGap = 16;
-  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 1;
+  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 2;
   const cardWidth = useMemo(
     () => (screenWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns,
     [gridColumns, horizontalPadding, screenWidth],
   );
-  const cardHeight = gridColumns === 1 ? 460 : 420;
-
   const normalizeDesignTab = useCallback((design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' => {
     const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
     if (explicitTag === 'repair') return 'repairs';
@@ -238,6 +260,7 @@ export default function ExploreScreen() {
 
   // Filter GC plans based on keyword-aware phrase search + active tab + active filter
   const filteredDesigns = useMemo(() => {
+    if (serverFiltered) return designs || [];
     return (designs || []).filter((design: any) => {
       const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''}`.toLowerCase();
       const matchesSearch = matchesKeywordPhraseQuery({
@@ -264,7 +287,9 @@ export default function ExploreScreen() {
       const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
       return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
     });
-  }, [activeFilter, activeLocationFilter, activeTab, designs, normalizeDesignTab, searchQuery]);
+  }, [activeFilter, activeLocationFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered]);
+  const visibleDesigns = serverFiltered ? filteredDesigns : filteredDesigns.slice(0, localCount);
+  const canLoadMore = serverFiltered ? !!catalog.hasNextPage : filteredDesigns.length > visibleDesigns.length;
 
   useWebSeo({
     title: 'Property Projects in Nigeria | Repairs, Renovation & Builds | BuildMyHouse',
@@ -487,28 +512,13 @@ export default function ExploreScreen() {
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
-        {!listingChrome.mobileWeb && (
-          <InternalLinksBlock
-            dark
-            title="Popular searches in Nigeria"
-            links={[
-              { label: 'Construction in Lagos', href: '/construction/lagos' },
-              { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
-              { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
-              { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
-            ]}
-          />
-        )}
-
-        {/* GC Plans */}
-            {designsLoading ? (
-              <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
-                <ActivityIndicator size="large" color="#fff" />
-                <Text className="text-white/50 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Loading designs...
-                </Text>
+        {designsLoading ? (
+              <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap }}>
+                {Array.from({ length: gridColumns * 2 }).map((_, index) => (
+                  <DesignCardSkeleton key={index} width={cardWidth} />
+                ))}
               </View>
-            ) : filteredDesigns.length === 0 ? (
+            ) : visibleDesigns.length === 0 ? (
               <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
                 {!currentUser && !userLoading && !searchQuery ? (
                   <>
@@ -540,12 +550,11 @@ export default function ExploreScreen() {
               </View>
             ) : (
               <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap }}>
-                {filteredDesigns.map((design: any) => (
+                {visibleDesigns.map((design: any) => (
                   <DesignProductCard
                     key={design.id}
                     design={design}
                     width={cardWidth}
-                    height={cardHeight}
                     onPress={async () => {
                       const destinationPath = `/house-summary?designId=${encodeURIComponent(design.id)}&designName=${encodeURIComponent(design.name || '')}`;
                       const canContinue = await requireAuthToContinue({
@@ -560,26 +569,36 @@ export default function ExploreScreen() {
                     }}
                     isFavorite={favorites.includes(design.id)}
                     onToggleFavorite={() => toggleFavorite(design.id)}
-                    activeImageIndex={activeImageIndex[design.id] || 0}
-                    onImageScroll={(e) => handleImageScroll(design.id, e)}
                   />
                 ))}
               </View>
             )}
 
-        {listingChrome.mobileWeb && (
-          <InternalLinksBlock
-            compact
-            dark
-            title="Popular searches in Nigeria"
-            links={[
-              { label: 'Construction in Lagos', href: '/construction/lagos' },
-              { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
-              { label: 'Upgrade ideas in Nigeria', href: '/interior-design/nigeria' },
-              { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
-            ]}
-          />
-        )}
+        {canLoadMore ? (
+          <TouchableOpacity
+            onPress={() => {
+              if (serverFiltered) void catalog.fetchNextPage();
+              else setLocalCount((count) => count + 16);
+            }}
+            className="self-center mt-2 mb-6 rounded-full bg-white px-5 py-3"
+          >
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', color: '#111111' }}>
+              {catalog.isFetchingNextPage ? 'Loading more' : 'Load more'}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
+
+        <InternalLinksBlock
+          compact={listingChrome.mobileWeb}
+          dark
+          title="Popular searches in Nigeria"
+          links={[
+            { label: 'Construction in Lagos', href: '/construction/lagos' },
+            { label: 'Renovation in Nigeria', href: '/renovation/nigeria' },
+            { label: 'Interior Design in Nigeria', href: '/interior-design/nigeria' },
+            { label: 'Build from UK', href: '/diaspora/build-in-nigeria-from-uk' },
+          ]}
+        />
       </ScrollView>
     </View>
   );

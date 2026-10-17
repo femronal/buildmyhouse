@@ -36,7 +36,7 @@ export const designService = {
     imageUris: Array<{ uri: string; label?: string; fileName?: string; mimeType?: string }>,
   ) => {
     // 1. Upload each image to /upload/image and collect URLs
-    const imageResults: Array<{ url: string; label?: string; order: number }> = [];
+    const imageResults: Array<{ url: string; thumbnailUrl?: string; label?: string; order: number }> = [];
     for (let i = 0; i < imageUris.length; i++) {
       const img = imageUris[i];
       const uploadedUrl = await uploadFile(img.uri, 'image', {
@@ -47,6 +47,7 @@ export const designService = {
       const urlPath = uploadedUrl.startsWith('http') ? new URL(uploadedUrl).pathname : uploadedUrl;
       imageResults.push({
         url: urlPath,
+        thumbnailUrl: urlPath.replace(/(\.[^./]+)$/, '.card$1'),
         label: img.label || `Image ${i + 1}`,
         order: i,
       });

@@ -47,6 +47,62 @@ export class DesignsService {
     return designs;
   }
 
+  async listDesignCards(query: {
+    page?: number;
+    limit?: number;
+    tab?: string;
+    q?: string;
+    location?: string;
+    tag?: string;
+  }) {
+    const limit = Math.min(20, Math.max(1, Number(query.limit) || 16));
+    const page = Math.max(1, Number(query.page) || 1);
+    const designs = await this.prisma.design.findMany({
+      where: { isActive: true, adminApprovalStatus: 'approved' },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        planType: true,
+        projectTypeTag: true,
+        projectTypeFilter: true,
+        bedrooms: true,
+        bathrooms: true,
+        squareFootage: true,
+        squareMeters: true,
+        estimatedCost: true,
+        rating: true,
+        reviews: true,
+        createdAt: true,
+        images: {
+          orderBy: { order: 'asc' },
+          take: 1,
+          select: { id: true, url: true, thumbnailUrl: true, order: true },
+        },
+        createdBy: {
+          select: {
+            fullName: true,
+            contractorProfile: {
+              select: { name: true, location: true, verified: true, rating: true, reviews: true },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const filtered = designs.filter((design: any) => matchesDesignCard(design, query));
+    const start = (page - 1) * limit;
+    const items = filtered.slice(start, start + limit).map(toDesignCard);
+    return {
+      items,
+      page,
+      limit,
+      total: filtered.length,
+      hasMore: start + limit < filtered.length,
+    };
+  }
+
   async getDesignById(id: string) {
     const design = await this.prisma.design.findUnique({
       where: { id },
@@ -255,6 +311,7 @@ export class DesignsService {
         images: {
           create: (dto.images || []).map((img) => ({
             url: img.url,
+            thumbnailUrl: img.thumbnailUrl || null,
             label: img.label,
             order: img.order ?? 0,
           })),
@@ -638,6 +695,10 @@ export class DesignsService {
         : imageUpdates
             .map((image: any, index: number) => ({
               url: String(image?.url || '').trim(),
+              thumbnailUrl:
+                typeof image?.thumbnailUrl === 'string' && image.thumbnailUrl.trim()
+                  ? image.thumbnailUrl.trim()
+                  : null,
               label:
                 typeof image?.label === 'string' && image.label.trim()
                   ? image.label.trim()
@@ -708,4 +769,61 @@ function optionalDesignSpec(value: unknown): number | null {
     throw new BadRequestException('Property details must be zero or a positive number.');
   }
   return parsed;
+}
+
+function designTab(design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_builds' {
+  const explicitTag = `${design?.projectTypeTag || ''}`.toLowerCase();
+  if (explicitTag === 'repair') return 'repairs';
+  if (explicitTag === 'upgrades') return 'upgrades';
+  if (explicitTag === 'renovation') return 'renovation';
+  if (explicitTag === 'full_builds') return 'full_builds';
+  const apiPlanType = `${design?.planType || ''}`.toLowerCase();
+  if (apiPlanType === 'interior_design') return 'upgrades';
+  if (apiPlanType === 'homebuilding') return 'full_builds';
+  const searchable = `${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+  const likelyRepair = ['repair', 'fix', 'electrical', 'plumbing', 'roof', 'drainage'].some((keyword) =>
+    searchable.includes(keyword),
+  );
+  return likelyRepair ? 'repairs' : 'renovation';
+}
+
+function matchesDesignCard(
+  design: any,
+  query: { tab?: string; q?: string; location?: string; tag?: string },
+) {
+  if (query.tab && designTab(design) !== query.tab) return false;
+  const location = `${query.location || ''}`.trim();
+  if (location && location.toLowerCase() !== 'all locations') {
+    const label = `${design?.createdBy?.contractorProfile?.location || ''}`.toLowerCase();
+    if (!label.includes(location.toLowerCase())) return false;
+  }
+  const tag = `${query.tag || ''}`.trim();
+  if (tag && tag.toLowerCase() !== 'all') {
+    const haystack = `${design?.projectTypeFilter || ''} ${design?.name || ''} ${design?.description || ''}`.toLowerCase();
+    if (!haystack.includes(tag.toLowerCase())) return false;
+  }
+  const tokens = `${query.q || ''}`
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+  if (!tokens.length) return true;
+  const corpus = [
+    design?.name,
+    design?.description,
+    design?.projectTypeFilter,
+    design?.projectTypeTag,
+    design?.createdBy?.fullName,
+    design?.createdBy?.contractorProfile?.name,
+    design?.createdBy?.contractorProfile?.location,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return tokens.every((token) => corpus.includes(token));
+}
+
+function toDesignCard(design: any) {
+  const { description: _description, ...card } = design;
+  return card;
 }

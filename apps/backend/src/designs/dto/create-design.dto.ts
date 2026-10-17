@@ -6,6 +6,10 @@ export class DesignImageDto {
 
   @IsOptional()
   @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
   label?: string;
 
   @IsOptional()
