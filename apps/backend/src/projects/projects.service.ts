@@ -1786,6 +1786,11 @@ export class ProjectsService {
             status: true,
             contractorId: true,
             stageId: true,
+            contractor: {
+              select: {
+                fullName: true,
+              },
+            },
             updatedAt: true,
             gcNotes: true,
             estimatedBudget: true,

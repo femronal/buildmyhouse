@@ -1228,24 +1228,9 @@ export class ContractorsService {
       select: { role: true },
     });
 
-    // Backend guardrail: for GC project-level accept, ensure edited analysis is complete
-    // and phase costs sum exactly to estimatedBudget. GC Notes (free text) is optional.
-    if (contractor?.role === 'general_contractor' && !request.stageId) {
-      if (!estimatedDuration || !String(estimatedDuration).trim()) {
-        throw new BadRequestException('estimatedDuration is required');
-      }
-      const editedAnalysis = this.extractEditedAnalysisFromNotes(gcNotes);
-      if (!editedAnalysis) {
-        throw new BadRequestException('Edited project analysis is required');
-      }
-      this.validateEditedProjectAnalysisOrThrow(editedAnalysis, estimatedBudget);
-    }
-
+    // Accepting a project means the contractor will inspect. The agreed quote is a later step.
     const quoteGeneratedAt = new Date();
-    const quoteBreakdown =
-      contractor?.role === 'general_contractor' && !request.stageId && Number(estimatedBudget || 0) > 0
-        ? this.calculateBmhQuoteBreakdown(Number(estimatedBudget || 0))
-        : null;
+    const quoteBreakdown = null;
 
     // Update request
     const updatedRequest = await this.prisma.projectRequest.update({
@@ -1307,10 +1292,8 @@ export class ContractorsService {
         where: { id: request.projectId },
         data: {
           generalContractorId: contractorId,
-          // Update budget if GC provided one
-          ...(estimatedBudget && { budget: estimatedBudget }),
-          // Move project into "awaiting payment" once GC has reviewed/accepted
-          ...( !request.stageId && { status: 'pending_payment' } ),
+          // Inspection comes before a price. Funding starts only after the agreed quote.
+          ...( !request.stageId && { status: 'inspection' } ),
           // Persist edited analysis for homeowner visibility (and future stage generation)
           ...(editedAnalysis && { aiAnalysis: editedAnalysis, aiProcessedAt: new Date() }),
         },
@@ -1322,7 +1305,9 @@ export class ContractorsService {
           event: 'gc_accepted',
           projectId: request.projectId,
           generalContractorId: contractorId,
-          message: 'A General Contractor has accepted your project request',
+          message: request.stageId
+            ? 'A contractor has accepted your project request'
+            : 'A contractor will inspect your project. The price is agreed after the inspection.',
         },
       });
       
@@ -1333,8 +1318,10 @@ export class ContractorsService {
           : '';
         this.wsService.sendNotification(request.project.homeownerId, {
           type: 'gc_accepted',
-          title: 'Project Request Accepted!',
-          message: `A contractor has accepted your project: ${request.project.name}.${quoteTotalText}`,
+          title: request.stageId ? 'Project Request Accepted!' : 'Inspection next',
+          message: request.stageId
+            ? `A contractor has accepted your project: ${request.project.name}.${quoteTotalText}`
+            : `A contractor will inspect your project: ${request.project.name}. The price is agreed after the inspection.`,
           data: {
             projectId: request.projectId,
             requestId: updatedRequest.id,
@@ -1647,6 +1634,91 @@ export class ContractorsService {
     }));
 
     return [...contractors, ...homeowners];
+  }
+
+  /**
+   * Record the price agreed after inspection. This is the step that asks the homeowner to fund.
+   */
+  async agreeQuote(
+    requestId: string,
+    contractorId: string,
+    estimatedBudget?: number,
+    estimatedDuration?: string,
+    gcNotes?: string,
+  ) {
+    const request = await this.prisma.projectRequest.findFirst({
+      where: {
+        id: requestId,
+        contractorId,
+        status: 'accepted',
+        stageId: null,
+      },
+      include: {
+        project: {
+          select: {
+            id: true,
+            name: true,
+            status: true,
+            homeownerId: true,
+          },
+        },
+      },
+    });
+
+    if (!request) {
+      throw new BadRequestException('Inspect the project before submitting the agreed quote.');
+    }
+    if (request.project.status === 'pending_payment' || request.project.status === 'active') {
+      throw new BadRequestException('This project already has an agreed quote.');
+    }
+    if (!estimatedDuration || !String(estimatedDuration).trim()) {
+      throw new BadRequestException('estimatedDuration is required');
+    }
+    const editedAnalysis = this.extractEditedAnalysisFromNotes(gcNotes);
+    if (!editedAnalysis) {
+      throw new BadRequestException('Edited project analysis is required');
+    }
+    this.validateEditedProjectAnalysisOrThrow(editedAnalysis, estimatedBudget);
+
+    const quoteGeneratedAt = new Date();
+    const quoteBreakdown = this.calculateBmhQuoteBreakdown(Number(estimatedBudget || 0));
+    const updatedRequest = await this.prisma.projectRequest.update({
+      where: { id: requestId },
+      data: {
+        estimatedBudget,
+        monitoringFeeAmount: quoteBreakdown.monitoringFeeAmount,
+        coordinationFeeAmount: quoteBreakdown.coordinationFeeAmount,
+        contingencyFeeAmount: quoteBreakdown.contingencyFeeAmount,
+        totalQuoteAmount: quoteBreakdown.totalQuoteAmount,
+        quoteGeneratedAt,
+        estimatedDuration,
+        gcNotes,
+      },
+    });
+
+    await this.prisma.project.update({
+      where: { id: request.projectId },
+      data: {
+        status: 'pending_payment',
+        ...(estimatedBudget ? { budget: estimatedBudget } : {}),
+        aiAnalysis: editedAnalysis,
+        aiProcessedAt: new Date(),
+      },
+    });
+
+    if (request.project.homeownerId) {
+      this.wsService.sendNotification(request.project.homeownerId, {
+        type: 'gc_accepted',
+        title: 'Quote agreed',
+        message: `Your quote is agreed for ${request.project.name}. Fund the project to start. Total payable: ${this.formatNaira(quoteBreakdown.totalQuoteAmount)}.`,
+        data: {
+          projectId: request.projectId,
+          requestId: updatedRequest.id,
+        },
+      });
+    }
+
+    return updatedRequest;
   }
 
   /**

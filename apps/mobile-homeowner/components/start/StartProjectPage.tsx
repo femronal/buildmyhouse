@@ -950,7 +950,7 @@ function Review({
       >
         <WhatsappLogo size={20} color="#fff" weight="fill" />
         <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#fff' }}>
-          {sending ? 'Opening WhatsApp…' : 'Send your request to WhatsApp'}
+          {sending ? 'Opening WhatsApp…' : path.id === 'repair' ? 'Send this brief' : 'Send your request to WhatsApp'}
         </Text>
       </Pressable>
     </View>
@@ -978,10 +978,12 @@ function Sent({
           { fontFamily: 'Poppins_700Bold', fontSize: '32px', color: '#000', lineHeight: '40px', margin: 0 } as never
         }
       >
-        Request ready on WhatsApp
+        {pathId === 'repair' ? 'Brief sent' : 'Request ready on WhatsApp'}
       </SeoHeading>
       <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: MUTED, marginTop: 12, lineHeight: 24 }}>
-        Press send in WhatsApp. An agent will reply to plan the next step.
+        {pathId === 'repair'
+          ? 'This brief is not a price. A contractor inspects the property, then you agree the quote in the app.'
+          : 'Press send in WhatsApp. An agent will reply to plan the next step.'}
       </Text>
       {reference ? (
         <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 15, color: '#000', marginTop: 16 }}>Reference {reference}</Text>

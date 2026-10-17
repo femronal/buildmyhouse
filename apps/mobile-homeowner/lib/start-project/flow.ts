@@ -156,9 +156,9 @@ export const START_PATHS: Record<PathId, StartPath> = {
     letter: 'R',
     seoTitle: 'Start a home repair in Nigeria | BuildMyHouse',
     seoDescription:
-      'Tell us what needs fixing, where the property is, and when a visit works. A BuildMyHouse agent plans the repair with you on WhatsApp, in stages you approve.',
+      'Tell us what needs fixing. This is an intake brief. A contractor inspects the property, and that inspection sets the price.',
     intro:
-      "Tell us what's wrong, where the property is, and when works. A BuildMyHouse agent picks it up on WhatsApp and plans the repair with you, in stages you approve.",
+      "Tell us what's wrong, where the property is, and when a visit works. This brief is not a price. A contractor inspects first, then you agree the quote in the app.",
     steps: [
       {
         id: 'type',

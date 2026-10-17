@@ -648,7 +648,7 @@ export const FAQ_ITEMS = [
   {
     question: 'How do payments work?',
     answer:
-      'Projects are funded stage by stage, not as one lump sum. At the start of an approved stage, BuildMyHouse typically releases about 30–40% as mobilisation so the contractor can cover approved materials and start the work. After the stage is completed, independent verification may be required, you review the evidence, and the remaining 60–70% is released only after your approval — subject to normal banking processing. BuildMyHouse does not take a commission from the contractor’s agreed project amount. It earns primarily through the project contingency provision, so the incentive is to manage the project efficiently rather than take a percentage of the contractor’s fee.',
+      'You fund 100% of the agreed total to BuildMyHouse. That money is released to your contractor one stage at a time. At the start of a stage, about 30 to 40% may be released as mobilisation for approved materials. The rest of that stage is released only after you approve the proof. BuildMyHouse does not take a commission from the contractor\'s agreed project amount. It earns primarily through the project contingency provision.',
   },
   {
     question: 'Does BuildMyHouse take a cut of the contractor’s fee?',

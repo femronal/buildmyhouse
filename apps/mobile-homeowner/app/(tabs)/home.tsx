@@ -8,8 +8,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import ListingWelcomeModal from '@/components/listings/ListingWelcomeModal';
 import { listingWelcomeHandled, markListingWelcomeHandled, type ListingWelcomeKind } from '@/lib/listing-welcome';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useActiveProjects, usePendingProjects, usePausedProjects, useActivateProject } from '@/hooks';
-import { useCreatePaymentIntent } from '@/hooks/usePayment';
+import { useActiveProjects, useAllProjects, usePendingProjects, usePausedProjects, useActivateProject } from '@/hooks';
+import { contractorName, jobStep } from '@/lib/job-step';
 import PaymentModal from '@/components/PaymentModal';
 import NotificationBell from '@/components/NotificationBell';
 import LogoText from '@/components/LogoText';
@@ -91,7 +91,7 @@ export default function HomeScreen() {
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: pendingProjects = [], isLoading: loadingPending } = usePendingProjects();
   const { data: pausedProjects = [], isLoading: loadingPaused } = usePausedProjects();
-  const createPaymentIntentMutation = useCreatePaymentIntent();
+  const { data: everyProject = [] } = useAllProjects();
   const activateProjectMutation = useActivateProject();
   const queryClient = useQueryClient();
 
@@ -168,6 +168,18 @@ export default function HomeScreen() {
     ...activeProjectsWithStatus,
     ...pendingProjectsWithStatus,
     ...pausedProjectsWithStatus,
+    ...everyProject
+      .filter((project: any) => {
+        if (project?.status === 'inspection') return true;
+        if (project?.status !== 'draft') return false;
+        const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
+        return requests.some((request: any) => !request?.stageId);
+      })
+      .map((project: any, idx: number) => ({
+        ...project,
+        isPaid: false,
+        uniqueKey: `step-${project.id || idx}`,
+      })),
   ].filter((project: any) => {
     const projectId = project.id || project.projectId;
     if (!projectId) return false; // Skip projects without IDs
@@ -211,8 +223,9 @@ export default function HomeScreen() {
     if (project.isPaid) {
       // Active project - go to dashboard
       router.push(`/dashboard?projectId=${project.id || project.projectId}`);
+    } else if (project.status !== 'pending_payment') {
+      router.push(`/house-summary?projectId=${project.id || project.projectId}` as any);
     } else {
-      // Unpaid project - show payment modal
       const budget = getProjectBudget(project);
       let amount = budget * 1.0;
 
@@ -240,28 +253,8 @@ export default function HomeScreen() {
         return;
       }
 
-      setIsProcessingPayment(true);
+      setIsProcessingPayment(false);
       setShowPaymentModal(true);
-
-      try {
-        const paymentResult = await createPaymentIntentMutation.mutateAsync({
-          amount,
-          projectId: project.id || project.projectId,
-          currency: 'ngn',
-          description: `Project activation payment - ${project.name || 'Project'}`,
-        });
-
-        if (paymentResult?.paymentIntent?.clientSecret) {
-          setPaymentClientSecret(paymentResult.paymentIntent.clientSecret);
-          setIsProcessingPayment(false);
-        } else {
-          setPaymentError('Payment intent created but no client secret received.');
-          setIsProcessingPayment(false);
-        }
-      } catch (error: any) {
-        setPaymentError(error?.message || 'Failed to create payment intent');
-        setIsProcessingPayment(false);
-      }
     }
   };
 
@@ -442,7 +435,9 @@ export default function HomeScreen() {
                 const isPaid = project.isPaid;
                 const isPaused = project.status === 'paused';
                 const isCompleted = project.status === 'completed' || Number(project.progress || 0) >= 100;
-                const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : 'Unpaid';
+                const step = jobStep(project);
+                const namedContractor = contractorName(project);
+                const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : step.label;
                 const budget = getProjectBudget(project);
                 const amountDue = budget * 1.0;
                 const gradientId = `bmh-project-fade-${projectId}`;
@@ -451,6 +446,10 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={uniqueKey}
                     onPress={() => {
+                      if (!isPaid && !isPaused && step.key !== 'fund') {
+                        router.push(`/house-summary?projectId=${project.id || project.projectId}` as any);
+                        return;
+                      }
                       if (!isPaid && !isPaused) return;
                       handleProjectPress(project);
                     }}
@@ -592,11 +591,16 @@ export default function HomeScreen() {
                             </View>
                           </View>
                         </>
-                      ) : (
+                      ) : step.key === 'fund' ? (
                         <View>
                           <Text className="text-white text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                             Your quote is agreed. Fund your project to start.
                           </Text>
+                          {namedContractor ? (
+                            <Text className="text-white/80 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                              {namedContractor}
+                            </Text>
+                          ) : null}
                           <Text className="text-white/70 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
                             Your money is held by BuildMyHouse and paid to your contractor one stage at a time, only after you approve each stage.
                           </Text>
@@ -613,6 +617,17 @@ export default function HomeScreen() {
                             </Text>
                           </TouchableOpacity>
                           <FundProjectTracker />
+                        </View>
+                      ) : (
+                        <View>
+                          <Text className="text-white text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                            {step.detail}
+                          </Text>
+                          {namedContractor ? (
+                            <Text className="text-white/80 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
+                              {namedContractor}
+                            </Text>
+                          ) : null}
                         </View>
                       )}
                     </View>

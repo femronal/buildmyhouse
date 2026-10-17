@@ -253,6 +253,28 @@ export class ContractorsController {
     );
   }
 
+  @Post('requests/:requestId/agree-quote')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor')
+  async agreeQuote(
+    @Param('requestId') requestId: string,
+    @Request() req: any,
+    @Body()
+    body: {
+      estimatedBudget?: number;
+      estimatedDuration?: string;
+      gcNotes?: string;
+    },
+  ) {
+    return this.contractorsService.agreeQuote(
+      requestId,
+      req.user.sub,
+      body.estimatedBudget,
+      body.estimatedDuration,
+      body.gcNotes,
+    );
+  }
+
   @Post('requests/:requestId/reject')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'subcontractor')

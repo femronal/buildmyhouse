@@ -104,10 +104,10 @@ export default function BillingPaymentsScreen() {
           </View>
 
           {[
-            'Admin emails the GC to confirm readiness and project details.',
-            `After the GC confirms, admin emails you (${firstName}) to confirm the project is verified and ready to start.`,
-            'You deposit at least 50% (100% recommended) to BuildMyHouse to start the project.',
-            'BuildMyHouse holds the funds and releases them only after you approve each stage.',
+            'After the inspection, you and your contractor agree a price.',
+            'You fund 100% of that agreed total to BuildMyHouse. Nothing is paid to the contractor yet.',
+            'BuildMyHouse releases each stage only after you approve the proof. A mobilisation portion can be released at the start of a stage so the contractor can buy materials. The rest of that stage waits for your approval.',
+            'BuildMyHouse confirms your receipt before work starts.',
           ].map((step) => (
             <View key={step} className="flex-row items-start mb-2">
               <View className="w-2 h-2 bg-white rounded-full mt-2 mr-2" />
@@ -121,7 +121,7 @@ export default function BillingPaymentsScreen() {
             <View className="flex-row items-start">
               <Mail size={16} color="#FFFFFF" strokeWidth={2.5} />
               <Text className="text-white/80 text-xs ml-2 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Payment instructions are sent to your email after the GC confirms readiness.
+                Fund the agreed total from the project card. BuildMyHouse confirms the receipt before work starts.
               </Text>
             </View>
           </View>
@@ -234,12 +234,12 @@ export default function BillingPaymentsScreen() {
                         )}
                         <Text className="text-black text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                           {confirmationStatus === 'confirmed'
-                            ? 'Deposit confirmed'
+                            ? 'Funding confirmed'
                             : confirmationStatus === 'declared'
-                              ? 'Deposit under review'
+                              ? 'Funding under review'
                               : confirmationStatus === 'rejected'
-                                ? 'Deposit rejected'
-                                : 'Deposit required'}
+                                ? 'Funding rejected'
+                                : 'Funding required'}
                         </Text>
                       </View>
 

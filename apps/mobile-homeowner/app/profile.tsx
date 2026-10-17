@@ -13,6 +13,7 @@ import { getBackendAssetUrl } from '@/lib/image';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
+import { contractorName, isDeclinedProject, jobStep } from "@/lib/job-step";
 import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
 
 type MenuItem = {
@@ -63,7 +64,7 @@ export default function ProfileScreen() {
   const { data: currentUser, isLoading } = useCurrentUser();
   const uploadProfilePicture = useUploadProfilePicture();
   const { data: allProjects = [] } = useAllProjects();
-  const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'completed' | 'pending' | 'declined'>('active');
   const [profileImageFailed, setProfileImageFailed] = useState(false);
 
   const handleLogout = async () => {
@@ -125,18 +126,9 @@ export default function ProfileScreen() {
     return project?.status === 'completed' || progressValue >= 100;
   };
 
-  const gcRequestsFor = (project: any) => {
-    const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
-    return requests.filter((request: any) => !request?.stageId);
-  };
-
   const gcHasAccepted = (project: any) => {
-    return gcRequestsFor(project).some((request: any) => request?.status === 'accepted');
-  };
-
-  const isDeclinedProject = (project: any) => {
-    const requests = gcRequestsFor(project);
-    return requests.length > 0 && requests.every((request: any) => request?.status === 'rejected');
+    const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
+    return requests.some((request: any) => !request?.stageId && request?.status === 'accepted');
   };
 
   const isPaidProject = (project: any) => {
@@ -362,7 +354,7 @@ export default function ProfileScreen() {
           </Text>
           
           {/* Tabs */}
-          <View className="flex-row bg-gray-100 rounded-2xl p-1 mb-4">
+          <View className="flex-row flex-wrap bg-gray-100 rounded-2xl p-1 mb-4">
             <TouchableOpacity
               onPress={() => setActiveTab('active')}
               className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'active' ? 'bg-black' : ''}`}
@@ -398,6 +390,17 @@ export default function ProfileScreen() {
                   Pending ({pendingProjects.length})
                 </Text>
               </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setActiveTab('declined')}
+              className={`flex-1 py-2 px-2 rounded-xl ${activeTab === 'declined' ? 'bg-black' : ''}`}
+            >
+              <Text
+                className={`text-center text-sm ${activeTab === 'declined' ? 'text-white' : 'text-gray-600'}`}
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                Declined ({declinedProjects.length})
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -444,7 +447,7 @@ export default function ProfileScreen() {
 
           {activeTab === 'pending' && (
             <View>
-              {pendingProjects.length === 0 && declinedProjects.length === 0 ? (
+              {pendingProjects.length === 0 ? (
                 <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
                   <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No pending projects
@@ -471,41 +474,64 @@ export default function ProfileScreen() {
                     <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                       {project.address}
                     </Text>
+                    {contractorName(project) ? (
+                      <Text className="text-gray-700 text-sm mt-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {contractorName(project)}
+                      </Text>
+                    ) : null}
                     <View className="flex-row items-center mt-2">
                       <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {gcHasAccepted(project) ? 'Waiting for payment' : 'Waiting for the contractor to accept'}
+                        {jobStep(project).label}. {jobStep(project).detail}
                       </Text>
                     </View>
                   </TouchableOpacity>
                 ))
               )}
-              {declinedProjects.map((project: any) => (
-                <TouchableOpacity
-                  key={project.id}
-                  onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
-                  style={cardShadowStyle}
-                  className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
-                >
-                  <View className="flex-row items-center justify-between mb-1">
-                    <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {project.name}
+            </View>
+          )}
+
+          {activeTab === 'declined' && (
+            <View>
+              {declinedProjects.length === 0 ? (
+                <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
+                  <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    No declined projects
+                  </Text>
+                </View>
+              ) : (
+                declinedProjects.map((project: any) => (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
+                    style={cardShadowStyle}
+                    className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
+                  >
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.name}
+                      </Text>
+                      <View className="bg-red-100 rounded-full px-2 py-1">
+                        <Text className="text-red-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                          Declined
+                        </Text>
+                      </View>
+                    </View>
+                    <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      {project.address}
                     </Text>
-                    <View className="bg-red-100 rounded-full px-2 py-1">
-                      <Text className="text-red-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Declined
+                    {contractorName(project) ? (
+                      <Text className="text-gray-700 text-sm mt-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                        {contractorName(project)}
+                      </Text>
+                    ) : null}
+                    <View className="flex-row items-center mt-2">
+                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                        A contractor declined this project
                       </Text>
                     </View>
-                  </View>
-                  <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {project.address}
-                  </Text>
-                  <View className="flex-row items-center mt-2">
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      A contractor declined this project
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                ))
+              )}
             </View>
           )}
 

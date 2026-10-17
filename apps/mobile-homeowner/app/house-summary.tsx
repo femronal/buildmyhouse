@@ -919,10 +919,10 @@ export default function HouseSummaryScreen() {
                 <CheckCircle size={24} color="#FFFFFF" strokeWidth={2} />
                 <View className="ml-3 flex-1">
                   <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    AI Analysis Complete ({aiAnalysis?.confidence || 0}% confident)
+                    Estimate only
                   </Text>
                   <Text className="text-white/80 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {aiAnalysis?.notes || 'AI analysis complete'}
+                    This is an intake brief, not the price. The inspection replaces it.
                   </Text>
                 </View>
               </>
@@ -1026,7 +1026,7 @@ export default function HouseSummaryScreen() {
           <View>
             <View className="mb-3">
               <Text className="text-sm text-gray-500 mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Estimated Cost
+                Estimate only
               </Text>
               <Text className="text-2xl text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                 ₦{(isDesignSelection
@@ -1646,7 +1646,9 @@ export default function HouseSummaryScreen() {
             <Text className="text-green-800 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
               {isDesignSelection 
                 ? 'You\'ve selected this contractor to build your design. Review the details and proceed to payment.'
-                : 'A contractor has accepted your project. You can now start building!'}
+                : projectAnalysisData?.status === 'inspection'
+                ? 'Your contractor will inspect the property. The price is agreed after that, not from this estimate.'
+                : 'Your quote is agreed. Fund the project when you are ready to start.'}
             </Text>
             {!isDesignSelection && (
             <View className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mt-3">

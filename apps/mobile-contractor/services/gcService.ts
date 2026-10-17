@@ -48,6 +48,10 @@ export const gcService = {
     }
   },
 
+  agreeQuote: async (requestId: string, data: AcceptRequestData) => {
+    return api.post(`/contractors/requests/${requestId}/agree-quote`, data);
+  },
+
   acceptRequest: async (requestId: string, data: AcceptRequestData) => {
     try {
       const endpoint = `/contractors/requests/${requestId}/accept`;

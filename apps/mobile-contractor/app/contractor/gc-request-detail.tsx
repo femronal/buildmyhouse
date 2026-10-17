@@ -2,7 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, TextInput,
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, FileText, MapPin, User, Calendar, CheckCircle, XCircle, Download, Edit3, X, Phone, Image as ImageIcon } from "lucide-react-native";
 import { useState, useEffect } from "react";
-import { usePendingRequests, useAcceptRequest, useRejectRequest } from "../../hooks/useGC";
+import { usePendingRequests, useAcceptRequest, useAgreeQuote, useRejectRequest } from "../../hooks/useGC";
 import { useAppAlert } from "../../components/AppAlertProvider";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
@@ -38,16 +38,33 @@ function sumPhaseCostCents(phases: any[]): number {
 
 export default function GCRequestDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, step, projectId } = useLocalSearchParams<{ id: string; step?: string; projectId?: string }>();
   const { showAlert } = useAppAlert();
   const { data: pendingRequests = [], refetch, isLoading } = usePendingRequests();
   const acceptRequestMutation = useAcceptRequest();
+  const agreeQuoteMutation = useAgreeQuote();
   const rejectRequestMutation = useRejectRequest();
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
 
-  // Find the specific request
-  const request = pendingRequests.find((r) => r.id === id);
+  const pendingMatch = pendingRequests.find((r) => r.id === id);
+  const [quoteReady, setQuoteReady] = useState(step === 'quote');
+  const [fallbackRequest, setFallbackRequest] = useState<any>(null);
+  const request = pendingMatch || fallbackRequest;
+
+  useEffect(() => {
+    if (pendingMatch || step !== 'quote' || !projectId) return;
+    let cancelled = false;
+    api.get(`/projects/${projectId}`).then((project: any) => {
+      if (cancelled || !project) return;
+      const accepted = (project.projectRequests || []).find((item: any) => item.status === 'accepted' && !item.stageId);
+      if (!accepted) return;
+      setFallbackRequest({ ...accepted, project });
+    }).catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingMatch, projectId, step]);
 
   // Editable AI Analysis fields
   const [editedAnalysis, setEditedAnalysis] = useState<any>(null);
@@ -100,6 +117,26 @@ export default function GCRequestDetailScreen() {
       arr.splice(index, 1);
       return { ...prev, [field]: arr };
     });
+  };
+
+  const handleInspect = async () => {
+    if (!request) {
+      showAlert('Error', 'Request not found. Please go back and try again.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await acceptRequestMutation.mutateAsync({ requestId: request.id, data: {} });
+      setQuoteReady(true);
+      showAlert(
+        'Inspection next',
+        'Contact the homeowner and inspect the property. Submit the agreed quote on this page after you both agree the price.',
+      );
+    } catch (error: any) {
+      showAlert('Could not start inspection', error?.message || 'Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleAccept = async () => {
@@ -209,7 +246,7 @@ export default function GCRequestDetailScreen() {
         },
       };
 
-      await acceptRequestMutation.mutateAsync(acceptData);
+      await agreeQuoteMutation.mutateAsync(acceptData);
 
       // Clear timeout since we succeeded
       if (timeoutId) {
@@ -219,8 +256,8 @@ export default function GCRequestDetailScreen() {
 
       // Show success and navigate immediately (don't wait for refetch)
       showAlert(
-        'Project Accepted! ✅',
-        'You have successfully accepted this project request. The homeowner has been notified and can now proceed with the project.',
+        'Quote sent',
+        'The homeowner can fund the agreed total. Work starts after BuildMyHouse confirms that payment.',
         [
           {
             text: 'OK',
@@ -395,7 +432,7 @@ export default function GCRequestDetailScreen() {
   };
 
   // If still loading, show loading state
-  if (isLoading) {
+  if (isLoading || (step === 'quote' && !!projectId && !request)) {
     return (
       <View className="flex-1 bg-[#0A1628] items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
@@ -917,7 +954,7 @@ export default function GCRequestDetailScreen() {
 
           {/* Action Buttons */}
           <View className="flex-row mb-8" style={{ gap: 12 }}>
-            <TouchableOpacity
+            {!quoteReady ? <TouchableOpacity
               onPress={handleReject}
               disabled={isSubmitting}
               className="flex-1 bg-red-600/20 border border-red-600/50 rounded-xl py-4 flex-row items-center justify-center"
@@ -927,11 +964,10 @@ export default function GCRequestDetailScreen() {
               <Text className="text-red-400 text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Decline
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> : null}
 
             <TouchableOpacity
-              onPress={handleAccept}
-              // Keep this clickable so validation can show alerts instead of "nothing happens"
+              onPress={quoteReady ? handleAccept : handleInspect}
               disabled={isSubmitting}
               className="flex-1 bg-blue-600 rounded-xl py-4 flex-row items-center justify-center"
               style={{
@@ -945,7 +981,7 @@ export default function GCRequestDetailScreen() {
                 <>
                   <CheckCircle size={20} color="#FFFFFF" strokeWidth={2.5} />
                   <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    Accept
+                    {quoteReady ? 'Submit agreed quote' : "I'll inspect"}
                   </Text>
                 </>
               )}

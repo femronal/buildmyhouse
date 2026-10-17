@@ -599,7 +599,9 @@ export default function GCDashboardScreen() {
                     </Text>
                   </View>
                     <View className="bg-orange-600/20 rounded-full px-3 py-1">
-                      <Text className="text-orange-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Unpaid</Text>
+                      <Text className="text-orange-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {project.status === 'inspection' ? 'Inspection' : project.status === 'pending_payment' ? 'Fund' : 'Unpaid'}
+                      </Text>
                     </View>
                   </View>
                   
@@ -674,7 +676,9 @@ export default function GCDashboardScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    The homeowner has not yet paid 100% of the project fees. Once payment is received and the project status becomes active, you will be able to access the full project dashboard.
+                    {selectedUnpaidProject?.status === 'inspection'
+                      ? 'Inspect the property with the homeowner and agree the price. Submit that quote before they are asked to fund the project.'
+                      : 'The homeowner has not yet funded the agreed total. Once BuildMyHouse confirms that payment, you can open the project dashboard.'}
                   </Text>
                 </View>
               </View>
@@ -704,6 +708,24 @@ export default function GCDashboardScreen() {
             )}
 
             {/* Action Buttons */}
+            {selectedUnpaidProject?.status === 'inspection' ? (
+              <TouchableOpacity
+                onPress={() => {
+                  const quoteRequest = (selectedUnpaidProject.projectRequests || []).find((item: any) => item.status === 'accepted' && !item.stageId);
+                  if (!quoteRequest?.id) {
+                    showAlert('Quote', 'Open the original request to submit the agreed quote.');
+                    return;
+                  }
+                  setShowUnpaidModal(false);
+                  router.push(`/contractor/gc-request-detail?id=${quoteRequest.id}&step=quote&projectId=${selectedUnpaidProject.id}` as any);
+                }}
+                className="bg-white rounded-xl py-4 items-center mb-3"
+              >
+                <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Submit agreed quote
+                </Text>
+              </TouchableOpacity>
+            ) : null}
             <View className="flex-row" style={{ gap: 12 }}>
               <TouchableOpacity
                 onPress={handleCloseModal}

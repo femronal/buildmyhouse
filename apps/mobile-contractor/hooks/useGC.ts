@@ -26,6 +26,19 @@ export function useAcceptRequest() {
   });
 }
 
+export function useAgreeQuote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ requestId, data }: { requestId: string; data: AcceptRequestData }) =>
+      gcService.agreeQuote(requestId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pendingRequests'] });
+      queryClient.invalidateQueries({ queryKey: ['gc-projects'] });
+    },
+  });
+}
+
 export function useRejectRequest() {
   const queryClient = useQueryClient();
   

@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "When do I pay?",
-    a: "Deposit at least 50% (100% recommended) before work starts. BuildMyHouse holds the funds and releases them only after you approve each stage.",
+    a: "After the quote is agreed, fund 100% of that total to BuildMyHouse. BuildMyHouse releases it to your contractor one stage at a time, only after you approve each stage.",
   },
   {
     q: "How do I approve a stage?",

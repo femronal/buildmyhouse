@@ -260,7 +260,7 @@ export const GC_FAQ_ITEMS = [
   {
     question: 'How are contractor payments released?',
     answer:
-      'Projects are paid stage by stage. At the start of an approved stage, BuildMyHouse typically releases about 30–40% as mobilisation so you can cover approved materials and start the work. After completion, independent verification may be required. Once the stage passes verification and the homeowner approves it, the remaining 60–70% is released, subject to normal banking processing.',
+      'The homeowner funds the agreed total to BuildMyHouse. You are paid from that, stage by stage. At the start of a stage, about 30 to 40% may be released as mobilisation so you can cover approved materials. The rest of that stage is released after proof and the homeowner\'s approval.',
   },
   {
     question: 'Can I see the full scope, budget and milestones before I accept?',
