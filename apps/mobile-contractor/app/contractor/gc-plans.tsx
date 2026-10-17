@@ -179,6 +179,19 @@ function sumConstructionPhaseCents(
   return phases.reduce((sum, p) => sum + (moneyToCents(p?.estimatedCost) || 0), 0);
 }
 
+function optionalSpec(value: string): number | null | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
+function hasSpec(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0;
+}
+
 // Helper to get full image URL from backend
 const getImageUrl = (imageUrl: string) => {
   if (imageUrl?.startsWith('http')) {
@@ -206,6 +219,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   const [squareFootage, setSquareFootage] = useState("");
   const [estimatedCost, setEstimatedCost] = useState("");
   const [floors, setFloors] = useState("");
+  const [propertyDetailsOpen, setPropertyDetailsOpen] = useState(false);
+  useEffect(() => {
+    if (planType !== 'repair') setPropertyDetailsOpen(true);
+  }, [planType]);
   const [estimatedDuration, setEstimatedDuration] = useState("");
   const [rooms, setRooms] = useState<string[]>([]);
   const [materials, setMaterials] = useState<string[]>([]);
@@ -473,24 +490,16 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       showAlert('Validation Error', 'Please enter a design description');
       return;
     }
-    if (!bedrooms || parseInt(bedrooms) < 1) {
-      showAlert('Validation Error', 'Please enter a valid number of bedrooms');
-      return;
-    }
-    if (!bathrooms || parseInt(bathrooms) < 1) {
-      showAlert('Validation Error', 'Please enter a valid number of bathrooms');
-      return;
-    }
-    if (!squareFootage || parseFloat(squareFootage) < 1) {
-      showAlert('Validation Error', 'Please enter a valid square footage');
+    const bedroomCount = optionalSpec(bedrooms);
+    const bathroomCount = optionalSpec(bathrooms);
+    const area = optionalSpec(squareFootage);
+    const floorCount = optionalSpec(floors);
+    if (bedroomCount === undefined || bathroomCount === undefined || area === undefined || floorCount === undefined) {
+      showAlert('Validation Error', 'Property details must be zero or a positive number, or left blank.');
       return;
     }
     if (!estimatedCost || parseFloat(estimatedCost) <= 0) {
       showAlert('Validation Error', 'Please enter a valid estimated cost');
-      return;
-    }
-    if (!floors || parseInt(floors) < 1) {
-      showAlert('Validation Error', 'Please enter the number of floors');
       return;
     }
     if (!estimatedDuration.trim()) {
@@ -567,11 +576,11 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         planType: mapPlanTypeForApi(planType),
         projectTypeTag: planType,
         projectTypeFilter: resolvedPlanFilter,
-        bedrooms: parseInt(bedrooms, 10),
-        bathrooms: parseInt(bathrooms, 10),
-        squareFootage: parseFloat(squareFootage),
+        bedrooms: optionalSpec(bedrooms),
+        bathrooms: optionalSpec(bathrooms),
+        squareFootage: optionalSpec(squareFootage),
         estimatedCost: parseFloat(estimatedCost),
-        floors: parseInt(floors, 10),
+        floors: optionalSpec(floors),
         estimatedDuration: estimatedDuration.trim(),
         // Convert arrays to comma-separated strings for backend compatibility
         rooms: rooms.filter(r => r.trim()).map(r => r.trim()).join(', '),
@@ -759,10 +768,17 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
         )}
       </View>
 
-      {/* Specifications */}
       <View className="mb-4">
+        {planType === 'repair' && !propertyDetailsOpen ? (
+          <TouchableOpacity onPress={() => setPropertyDetailsOpen(true)} className="bg-[#0A1628] rounded-xl px-4 py-3 border border-blue-900">
+            <Text className="text-gray-300 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Property details (optional)
+            </Text>
+          </TouchableOpacity>
+        ) : (
+        <>
         <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
-          Specifications *
+          {planType === 'repair' ? 'Property details (optional)' : 'Specifications (optional)'}
         </Text>
         
         <View className="flex-row mb-3">
@@ -827,6 +843,8 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             </View>
           </View>
         </View>
+        </>
+        )}
       </View>
 
       {/* Edit Project Analysis Section - Matching Review Project Page Format */}
@@ -1235,6 +1253,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   const [squareFootage, setSquareFootage] = useState(design.squareFootage?.toString() || "");
   const [estimatedCost, setEstimatedCost] = useState(design.estimatedCost?.toString() || "");
   const [floors, setFloors] = useState(design.floors?.toString() || "");
+  const [propertyDetailsOpen, setPropertyDetailsOpen] = useState(initialPlanType !== 'repair' || hasSpec(design.bedrooms) || hasSpec(design.bathrooms) || hasSpec(design.squareFootage) || hasSpec(design.floors));
+  useEffect(() => {
+    if (planType !== 'repair') setPropertyDetailsOpen(true);
+  }, [planType]);
   const [estimatedDuration, setEstimatedDuration] = useState(design.estimatedDuration || "");
   const [rooms, setRooms] = useState<string[]>(Array.isArray(design.rooms) ? design.rooms : (design.rooms ? design.rooms.split(',').map((r: string) => r.trim()).filter((r: string) => r) : []));
   const [materials, setMaterials] = useState<string[]>(Array.isArray(design.materials) ? design.materials : (design.materials ? design.materials.split(',').map((m: string) => m.trim()).filter((m: string) => m) : []));
@@ -1281,24 +1303,16 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
       showAlert('Validation Error', 'Please enter a design description');
       return;
     }
-    if (!bedrooms || parseInt(bedrooms) < 1) {
-      showAlert('Validation Error', 'Please enter a valid number of bedrooms');
-      return;
-    }
-    if (!bathrooms || parseInt(bathrooms) < 1) {
-      showAlert('Validation Error', 'Please enter a valid number of bathrooms');
-      return;
-    }
-    if (!squareFootage || parseFloat(squareFootage) < 1) {
-      showAlert('Validation Error', 'Please enter a valid square footage');
+    const bedroomCount = optionalSpec(bedrooms);
+    const bathroomCount = optionalSpec(bathrooms);
+    const area = optionalSpec(squareFootage);
+    const floorCount = optionalSpec(floors);
+    if (bedroomCount === undefined || bathroomCount === undefined || area === undefined || floorCount === undefined) {
+      showAlert('Validation Error', 'Property details must be zero or a positive number, or left blank.');
       return;
     }
     if (!estimatedCost || parseFloat(estimatedCost) <= 0) {
       showAlert('Validation Error', 'Please enter a valid estimated cost');
-      return;
-    }
-    if (!floors || parseInt(floors) < 1) {
-      showAlert('Validation Error', 'Please enter the number of floors');
       return;
     }
     if (!estimatedDuration.trim()) {
@@ -1394,11 +1408,11 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
           planType: mapPlanTypeForApi(planType),
           projectTypeTag: planType,
           projectTypeFilter: resolvedPlanFilter,
-          bedrooms: parseInt(bedrooms),
-          bathrooms: parseInt(bathrooms),
-          squareFootage: parseFloat(squareFootage),
+          bedrooms: optionalSpec(bedrooms),
+          bathrooms: optionalSpec(bathrooms),
+          squareFootage: optionalSpec(squareFootage),
           estimatedCost: parseFloat(estimatedCost),
-          floors: parseInt(floors),
+          floors: optionalSpec(floors),
           estimatedDuration: estimatedDuration.trim(),
           // Convert arrays to comma-separated strings for backend compatibility
           rooms: rooms.filter(r => r.trim()).map(r => r.trim()).join(', '),
@@ -1686,10 +1700,17 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
           )}
         </View>
 
-        {/* Specifications */}
         <View className="mb-4">
+          {planType === 'repair' && !propertyDetailsOpen ? (
+            <TouchableOpacity onPress={() => setPropertyDetailsOpen(true)} className="bg-[#0A1628] rounded-xl px-4 py-3 border border-blue-900">
+              <Text className="text-gray-300 text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Property details (optional)
+              </Text>
+            </TouchableOpacity>
+          ) : (
+          <>
           <Text className="text-gray-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
-            Specifications *
+            {planType === 'repair' ? 'Property details (optional)' : 'Specifications (optional)'}
           </Text>
           
           <View className="flex-row mb-3">
@@ -1754,6 +1775,8 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               </View>
             </View>
           </View>
+        </>
+        )}
         </View>
 
         {/* Edit Project Analysis Section - Matching Review Project Page */}
@@ -2258,20 +2281,34 @@ export default function GCPlansScreen() {
                     </Text>
                   )}
 
+                  {(hasSpec(design.bedrooms) || hasSpec(design.bathrooms) || hasSpec(design.squareFootage) || hasSpec(design.squareMeters)) ? (
                   <View className="flex-row items-center mb-3">
-                    <Bed size={14} color="#9CA3AF" strokeWidth={2} />
-                    <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {design.bedrooms}
-                    </Text>
-                    <Bath size={14} color="#9CA3AF" strokeWidth={2} />
-                    <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {design.bathrooms}
-                    </Text>
-                    <Maximize size={14} color="#9CA3AF" strokeWidth={2} />
-                    <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {Math.round(design.squareMeters || design.squareFootage * 0.092903)}m²
-                    </Text>
+                    {hasSpec(design.bedrooms) ? (
+                      <>
+                        <Bed size={14} color="#9CA3AF" strokeWidth={2} />
+                        <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {design.bedrooms}
+                        </Text>
+                      </>
+                    ) : null}
+                    {hasSpec(design.bathrooms) ? (
+                      <>
+                        <Bath size={14} color="#9CA3AF" strokeWidth={2} />
+                        <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {design.bathrooms}
+                        </Text>
+                      </>
+                    ) : null}
+                    {hasSpec(design.squareMeters) || hasSpec(design.squareFootage) ? (
+                      <>
+                        <Maximize size={14} color="#9CA3AF" strokeWidth={2} />
+                        <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                          {Math.round(design.squareMeters || design.squareFootage * 0.092903)}m²
+                        </Text>
+                      </>
+                    ) : null}
                   </View>
+                  ) : null}
 
                   <Text className="text-blue-400 text-lg mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
                     ₦{design.estimatedCost.toLocaleString()}

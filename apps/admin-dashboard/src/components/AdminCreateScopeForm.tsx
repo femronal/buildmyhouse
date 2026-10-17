@@ -33,6 +33,14 @@ function mapPlanTypeForApi(planType: PlanType) {
   return 'renovation';
 }
 
+function optionalCount(value: string): number | null | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+  return parsed;
+}
+
 function moneyToCents(value: string) {
   const n = Number(String(value).replace(/[^0-9.-]/g, ''));
   if (!Number.isFinite(n)) return NaN;
@@ -71,6 +79,7 @@ export function AdminCreateScopeForm({
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [propertyDetailsOpen, setPropertyDetailsOpen] = useState(false);
 
   const filters = PLAN_TYPE_FILTER_OPTIONS[planType];
   const resolvedFilter = useMemo(
@@ -104,13 +113,14 @@ export function AdminCreateScopeForm({
     if (!name.trim()) return setError('Enter a scope name.');
     if (!description.trim()) return setError('Enter a description.');
     if (!resolvedFilter) return setError('Choose what kind of work this scope covers.');
-    const beds = Number(bedrooms);
-    const baths = Number(bathrooms);
-    const area = Number(squareFootage);
+    const beds = optionalCount(bedrooms);
+    const baths = optionalCount(bathrooms);
+    const area = optionalCount(squareFootage);
+    const floorCount = optionalCount(floors);
     const cost = Number(estimatedCost);
-    if (!Number.isFinite(beds) || beds < 1) return setError('Enter the number of bedrooms.');
-    if (!Number.isFinite(baths) || baths < 1) return setError('Enter the number of bathrooms.');
-    if (!Number.isFinite(area) || area < 1) return setError('Enter the square footage.');
+    if (beds === undefined || baths === undefined || area === undefined || floorCount === undefined) {
+      return setError('Property details must be zero or a positive number, or left blank.');
+    }
     if (!Number.isFinite(cost) || cost < 0) return setError('Enter the estimated cost.');
     if (!estimatedDuration.trim()) return setError('Enter the estimated duration.');
     if (photos.length === 0) return setError('Upload at least one photo.');
@@ -140,7 +150,7 @@ export function AdminCreateScopeForm({
         bathrooms: baths,
         squareFootage: area,
         estimatedCost: cost,
-        floors: floors.trim() ? Number(floors) : undefined,
+        floors: floorCount,
         estimatedDuration: estimatedDuration.trim(),
         rooms: rooms.map((item) => item.trim()).filter(Boolean).join(', '),
         materials: materials.map((item) => item.trim()).filter(Boolean).join(', '),
@@ -214,13 +224,29 @@ export function AdminCreateScopeForm({
             <input className={inputClass} value={customFilter} onChange={(e) => setCustomFilter(e.target.value)} />
           </label>
         ) : null}
-        <label className="block text-xs font-medium text-gray-600">Bedrooms *<input type="number" min={1} className={inputClass} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></label>
-        <label className="block text-xs font-medium text-gray-600">Bathrooms *<input type="number" min={1} className={inputClass} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} /></label>
-        <label className="block text-xs font-medium text-gray-600">Square footage *<input type="number" min={1} className={inputClass} value={squareFootage} onChange={(e) => setSquareFootage(e.target.value)} /></label>
         <label className="block text-xs font-medium text-gray-600">Estimated cost (NGN) *<input type="number" min={0} className={inputClass} value={estimatedCost} onChange={(e) => setEstimatedCost(e.target.value)} /></label>
-        <label className="block text-xs font-medium text-gray-600">Floors<input type="number" min={1} className={inputClass} value={floors} onChange={(e) => setFloors(e.target.value)} /></label>
         <label className="block text-xs font-medium text-gray-600">Estimated duration *<input className={inputClass} placeholder="e.g. 6-8 months" value={estimatedDuration} onChange={(e) => setEstimatedDuration(e.target.value)} /></label>
       </div>
+
+      {planType === 'repair' && !propertyDetailsOpen ? (
+        <button
+          type="button"
+          className="text-sm font-medium text-gray-700 underline"
+          onClick={() => setPropertyDetailsOpen(true)}
+        >
+          Property details (optional)
+        </button>
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          <p className="sm:col-span-2 text-xs font-medium text-gray-600">
+            {planType === 'repair' ? 'Property details (optional)' : 'Specifications (optional)'}
+          </p>
+          <label className="block text-xs font-medium text-gray-600">Bedrooms<input type="number" min={0} className={inputClass} value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} /></label>
+          <label className="block text-xs font-medium text-gray-600">Bathrooms<input type="number" min={0} className={inputClass} value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} /></label>
+          <label className="block text-xs font-medium text-gray-600">Square footage<input type="number" min={0} className={inputClass} value={squareFootage} onChange={(e) => setSquareFootage(e.target.value)} /></label>
+          <label className="block text-xs font-medium text-gray-600">Floors<input type="number" min={0} className={inputClass} value={floors} onChange={(e) => setFloors(e.target.value)} /></label>
+        </div>
+      )}
 
       <ListEditor label="Rooms" placeholder="Kitchen, living room" values={rooms} onChange={setRooms} addLabel="Add room" />
       <ListEditor label="Key materials" placeholder="Concrete, steel, wood" values={materials} onChange={setMaterials} addLabel="Add material" />

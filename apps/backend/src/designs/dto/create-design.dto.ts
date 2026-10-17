@@ -50,17 +50,20 @@ export class CreateDesignDto {
   @IsString()
   projectTypeFilter?: string;
 
+  @IsOptional()
   @IsNumber()
-  @Min(1)
-  bedrooms: number;
+  @Min(0)
+  bedrooms?: number | null;
 
+  @IsOptional()
   @IsNumber()
-  @Min(1)
-  bathrooms: number;
+  @Min(0)
+  bathrooms?: number | null;
 
+  @IsOptional()
   @IsNumber()
-  @Min(1)
-  squareFootage: number;
+  @Min(0)
+  squareFootage?: number | null;
 
   @IsNumber()
   @Min(0)
@@ -68,8 +71,8 @@ export class CreateDesignDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(1)
-  floors?: number;
+  @Min(0)
+  floors?: number | null;
 
   @IsOptional()
   @IsString()

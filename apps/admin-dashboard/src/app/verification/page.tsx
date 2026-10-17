@@ -502,11 +502,16 @@ export default function VerificationPage() {
       return Number.isFinite(n) ? n : NaN;
     };
 
-    const bedrooms = toNumber(editForm.bedrooms);
-    const bathrooms = toNumber(editForm.bathrooms);
-    const squareFootage = toNumber(editForm.squareFootage);
+    const optionalCount = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      return toNumber(trimmed);
+    };
+    const bedrooms = optionalCount(editForm.bedrooms);
+    const bathrooms = optionalCount(editForm.bathrooms);
+    const squareFootage = optionalCount(editForm.squareFootage);
     const estimatedCost = toNumber(editForm.estimatedCost);
-    const floors = editForm.floors.trim() ? toNumber(editForm.floors) : null;
+    const floors = optionalCount(editForm.floors);
 
     if (!editForm.name.trim()) {
       setFeedbackModal({ open: true, title: 'Validation', message: 'Design name is required.' });
@@ -516,16 +521,12 @@ export default function VerificationPage() {
       setFeedbackModal({ open: true, title: 'Validation', message: 'Project filter is required.' });
       return;
     }
-    if (bedrooms <= 0 || bathrooms <= 0 || squareFootage <= 0 || estimatedCost < 0) {
+    if ([bedrooms, bathrooms, squareFootage, floors].some((value) => value !== null && (Number.isNaN(value) || value < 0)) || Number.isNaN(estimatedCost) || estimatedCost < 0) {
       setFeedbackModal({
         open: true,
         title: 'Validation',
-        message: 'Bedrooms, bathrooms, square footage, and estimated cost must be valid numbers.',
+        message: 'Property details must be zero or a positive number, or left blank. Estimated cost must be zero or more.',
       });
-      return;
-    }
-    if (floors !== null && floors <= 0) {
-      setFeedbackModal({ open: true, title: 'Validation', message: 'Floors must be greater than 0.' });
       return;
     }
     if (editForm.images.length === 0) {
@@ -1059,7 +1060,7 @@ export default function VerificationPage() {
                     <label className="text-xs font-medium text-gray-600">Bedrooms</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={editForm.bedrooms}
                       onChange={(e) => handleEditField('bedrooms', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -1069,7 +1070,7 @@ export default function VerificationPage() {
                     <label className="text-xs font-medium text-gray-600">Bathrooms</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={editForm.bathrooms}
                       onChange={(e) => handleEditField('bathrooms', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -1079,7 +1080,7 @@ export default function VerificationPage() {
                     <label className="text-xs font-medium text-gray-600">Square Footage</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={editForm.squareFootage}
                       onChange={(e) => handleEditField('squareFootage', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -1099,7 +1100,7 @@ export default function VerificationPage() {
                     <label className="text-xs font-medium text-gray-600">Floors</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={editForm.floors}
                       onChange={(e) => handleEditField('floors', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"

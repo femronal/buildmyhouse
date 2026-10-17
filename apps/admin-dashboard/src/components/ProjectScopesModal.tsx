@@ -124,11 +124,16 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
       return Number.isFinite(n) ? n : NaN;
     };
 
-    const bedrooms = toNumber(scopeForm.bedrooms);
-    const bathrooms = toNumber(scopeForm.bathrooms);
-    const squareFootage = toNumber(scopeForm.squareFootage);
+    const optionalCount = (value: string) => {
+      const trimmed = value.trim();
+      if (!trimmed) return null;
+      return toNumber(trimmed);
+    };
+    const bedrooms = optionalCount(scopeForm.bedrooms);
+    const bathrooms = optionalCount(scopeForm.bathrooms);
+    const squareFootage = optionalCount(scopeForm.squareFootage);
     const estimatedCost = toNumber(scopeForm.estimatedCost);
-    const floors = scopeForm.floors.trim() ? toNumber(scopeForm.floors) : null;
+    const floors = optionalCount(scopeForm.floors);
 
     if (!scopeForm.name.trim()) {
       setFeedback({ title: 'Validation', message: 'Scope name is required.' });
@@ -138,15 +143,11 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
       setFeedback({ title: 'Validation', message: 'Project filter is required.' });
       return;
     }
-    if (bedrooms <= 0 || bathrooms <= 0 || squareFootage <= 0 || estimatedCost < 0) {
+    if ([bedrooms, bathrooms, squareFootage, floors].some((value) => value !== null && (Number.isNaN(value) || value < 0)) || Number.isNaN(estimatedCost) || estimatedCost < 0) {
       setFeedback({
         title: 'Validation',
-        message: 'Bedrooms, bathrooms, square footage, and estimated cost must be valid numbers.',
+        message: 'Property details must be zero or a positive number, or left blank. Estimated cost must be zero or more.',
       });
-      return;
-    }
-    if (floors !== null && floors <= 0) {
-      setFeedback({ title: 'Validation', message: 'Floors must be greater than 0.' });
       return;
     }
 
@@ -375,7 +376,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                     <label className="text-xs font-medium text-gray-600">Bedrooms</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={scopeForm.bedrooms}
                       onChange={(e) => patchForm('bedrooms', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -385,7 +386,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                     <label className="text-xs font-medium text-gray-600">Bathrooms</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={scopeForm.bathrooms}
                       onChange={(e) => patchForm('bathrooms', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -395,7 +396,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                     <label className="text-xs font-medium text-gray-600">Square Footage</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={scopeForm.squareFootage}
                       onChange={(e) => patchForm('squareFootage', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
@@ -415,7 +416,7 @@ export function ProjectScopesModal({ contractor, onClose }: Props) {
                     <label className="text-xs font-medium text-gray-600">Floors</label>
                     <input
                       type="number"
-                      min={1}
+                      min={0}
                       value={scopeForm.floors}
                       onChange={(e) => patchForm('floors', e.target.value)}
                       className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"

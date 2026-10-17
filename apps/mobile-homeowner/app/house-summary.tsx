@@ -193,7 +193,7 @@ export default function HouseSummaryScreen() {
       bedrooms: designData.bedrooms,
       bathrooms: designData.bathrooms,
       squareFootage: designData.squareFootage,
-      floors: designData.floors || Math.ceil(designData.bedrooms / 4) || 2,
+      floors: designData.floors ?? (designData.bedrooms ? Math.ceil(designData.bedrooms / 4) : null),
       estimatedBudget: designData.estimatedCost,
       estimatedDuration: designData.estimatedDuration || '12-18 months',
       confidence: 95,
@@ -991,36 +991,31 @@ export default function HouseSummaryScreen() {
             </View>
           )}
 
-          {/* Specs Pills */}
-          <View className="flex-row flex-wrap mb-6">
-            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
-              <Bed size={18} color="#000000" strokeWidth={2} />
-              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {aiAnalysis?.bedrooms || 'N/A'} Bedrooms
-              </Text>
-            </View>
-            
-            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
-              <Bath size={18} color="#000000" strokeWidth={2} />
-              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {aiAnalysis?.bathrooms || 'N/A'} Bathrooms
-              </Text>
-            </View>
-            
-            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
-              <Maximize size={18} color="#000000" strokeWidth={2} />
-              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {aiAnalysis?.squareFootage || 'N/A'} sqft
-              </Text>
-            </View>
-
-            <View className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
-              <Home size={18} color="#000000" strokeWidth={2} />
-              <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {aiAnalysis?.floors || 'N/A'} Floors
-              </Text>
-            </View>
-          </View>
+          {(() => {
+            const specValue = (value: unknown) => {
+              const parsed = Number(value);
+              return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+            };
+            const specs = [
+              specValue(aiAnalysis?.bedrooms) ? { key: 'beds', icon: <Bed size={18} color="#000000" strokeWidth={2} />, label: `${specValue(aiAnalysis?.bedrooms)} Bedrooms` } : null,
+              specValue(aiAnalysis?.bathrooms) ? { key: 'baths', icon: <Bath size={18} color="#000000" strokeWidth={2} />, label: `${specValue(aiAnalysis?.bathrooms)} Bathrooms` } : null,
+              specValue(aiAnalysis?.squareFootage) ? { key: 'area', icon: <Maximize size={18} color="#000000" strokeWidth={2} />, label: `${specValue(aiAnalysis?.squareFootage)} sqft` } : null,
+              specValue(aiAnalysis?.floors) ? { key: 'floors', icon: <Home size={18} color="#000000" strokeWidth={2} />, label: `${specValue(aiAnalysis?.floors)} Floors` } : null,
+            ].filter((spec): spec is { key: string; icon: JSX.Element; label: string } => spec !== null);
+            if (!specs.length) return null;
+            return (
+              <View className="flex-row flex-wrap mb-6">
+                {specs.map((spec) => (
+                  <View key={spec.key} className="bg-white rounded-full px-4 py-3 mr-3 mb-3 flex-row items-center border border-gray-200">
+                    {spec.icon}
+                    <Text className="text-black ml-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      {spec.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
 
           {/* Cost & Duration */}
           <View>

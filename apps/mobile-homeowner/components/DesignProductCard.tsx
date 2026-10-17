@@ -65,7 +65,11 @@ export default function DesignProductCard({
   onImageScroll,
 }: DesignProductCardProps) {
   const images = design.images || [];
-  const squareMeters = Math.round(design.squareMeters || (design.squareFootage || 0) * 0.092903);
+  const specNumber = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  };
+  const squareMeters = specNumber(design.squareMeters) || (specNumber(design.squareFootage) ? Math.round(Number(design.squareFootage) * 0.092903) : null);
   const gcName = `${design?.createdBy?.fullName || ''}`.trim();
   const kicker = gcName ? `By ${gcName}` : 'Verified GC scope';
   const categoryLabel = `${design?.projectTypeFilter || ''}`.trim() || formatTagLabel(resolveUiProjectTag(design));
@@ -77,9 +81,10 @@ export default function DesignProductCard({
     : locationLabel;
 
   const metaParts = [
-    `${design.bedrooms ?? 0} bed`,
-    `${design.bathrooms ?? 0} bath`,
+    specNumber(design.bedrooms) ? `${specNumber(design.bedrooms)} bed` : null,
+    specNumber(design.bathrooms) ? `${specNumber(design.bathrooms)} bath` : null,
     squareMeters ? `${squareMeters} m²` : null,
+    specNumber(design.floors) ? `${specNumber(design.floors)} floors` : null,
   ].filter(Boolean);
 
   return (
@@ -205,9 +210,11 @@ export default function DesignProductCard({
               {rating} ({design.reviews || 0})
             </Text>
           </View>
-          <Text className="text-xs text-white/40" style={{ fontFamily: 'Poppins_400Regular' }}>
-            ·  {metaParts.join('  ·  ')}
-          </Text>
+          {metaParts.length ? (
+            <Text className="text-xs text-white/40" style={{ fontFamily: 'Poppins_400Regular' }}>
+              ·  {metaParts.join('  ·  ')}
+            </Text>
+          ) : null}
         </View>
 
         <View className="flex-row items-center justify-between border-t border-white/10 mt-3 pt-3.5">

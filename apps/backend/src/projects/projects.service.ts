@@ -1922,7 +1922,7 @@ export class ProjectsService {
           bedrooms: design.bedrooms,
           bathrooms: design.bathrooms,
           squareFootage: design.squareFootage,
-          floors: design.floors || Math.ceil(design.bedrooms / 4) || 2,
+          floors: design.floors ?? (design.bedrooms ? Math.ceil(design.bedrooms / 4) : null),
           projectType: design.planType || 'homebuilding',
           estimatedBudget: design.estimatedCost,
           estimatedDuration: design.estimatedDuration || '12-18 months',

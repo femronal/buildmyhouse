@@ -237,11 +237,11 @@ export class DesignsService {
             ? dto.projectTypeFilter.trim()
             : null,
         createdById: userId,
-        bedrooms: dto.bedrooms,
-        bathrooms: dto.bathrooms,
-        squareFootage: dto.squareFootage,
+        bedrooms: optionalDesignSpec(dto.bedrooms),
+        bathrooms: optionalDesignSpec(dto.bathrooms),
+        squareFootage: optionalDesignSpec(dto.squareFootage),
         estimatedCost: dto.estimatedCost,
-        floors: dto.floors,
+        floors: optionalDesignSpec(dto.floors),
         estimatedDuration: dto.estimatedDuration,
         rooms,
         materials,
@@ -601,6 +601,11 @@ export class DesignsService {
         allowed[key] = params.data[key];
       }
     }
+    for (const key of ['bedrooms', 'bathrooms', 'squareFootage', 'floors']) {
+      if (allowed[key] !== undefined) {
+        allowed[key] = optionalDesignSpec(allowed[key]);
+      }
+    }
 
     // Keep update payload compatible with DB types (frontend sends CSV strings)
     if (typeof allowed.rooms === 'string') {
@@ -696,3 +701,11 @@ export class DesignsService {
   }
 }
 
+function optionalDesignSpec(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new BadRequestException('Property details must be zero or a positive number.');
+  }
+  return parsed;
+}

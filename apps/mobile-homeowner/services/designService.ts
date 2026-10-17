@@ -13,9 +13,9 @@ export interface Design {
   planType?: 'homebuilding' | 'renovation' | 'interior_design';
   projectTypeTag?: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
   projectTypeFilter?: string;
-  bedrooms: number;
-  bathrooms: number;
-  squareFootage: number;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  squareFootage?: number | null;
   squareMeters?: number;
   estimatedCost: number;
   floors?: number;

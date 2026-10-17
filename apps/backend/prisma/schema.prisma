@@ -891,9 +891,9 @@ model Design {
   projectTypeTag      String?
   projectTypeFilter   String?
   createdById         String
-  bedrooms            Int
-  bathrooms           Int
-  squareFootage       Float
+  bedrooms            Int?
+  bathrooms           Int?
+  squareFootage       Float?
   squareMeters        Float?
   estimatedCost       Float
   rating              Float       @default(0)
