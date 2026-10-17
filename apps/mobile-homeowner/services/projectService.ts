@@ -94,9 +94,10 @@ export const projectService = {
       const project = response.data || response;
       
       // Check for accepted project requests FIRST (most reliable indicator)
-      const allRequests = project.projectRequests || [];
+      const allRequests = (project.projectRequests || []).filter((req: any) => !req?.stageId);
       const acceptedRequests = allRequests.filter((req: any) => req.status === 'accepted');
       const pendingRequests = allRequests.filter((req: any) => req.status === 'pending');
+      const rejectedRequests = allRequests.filter((req: any) => req.status === 'rejected');
       
       // GC has accepted if there's an accepted request
       // generalContractorId should also be set when GC accepts, but check requests first
@@ -108,6 +109,8 @@ export const projectService = {
         hasPendingRequest: pendingRequests.length > 0,
         pendingRequestsCount: pendingRequests.length,
         acceptedRequestsCount: acceptedRequests.length,
+        allContractorsDeclined: allRequests.length > 0 && rejectedRequests.length === allRequests.length,
+        rejectionReason: rejectedRequests.map((req: any) => String(req?.gcNotes || '').trim()).filter(Boolean).join('\n'),
         project,
       };
     } catch (error: any) {

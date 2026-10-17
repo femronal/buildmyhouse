@@ -125,7 +125,7 @@ export default function HouseSummaryScreen() {
   const [selectedGCs, setSelectedGCs] = useState<Set<string>>(new Set());
   const [isSendingRequests, setIsSendingRequests] = useState(false);
   const [projectId, setProjectId] = useState<string | null>(null);
-  const [gcRequestStatus, setGcRequestStatus] = useState<'none' | 'pending' | 'accepted'>('none');
+  const [gcRequestStatus, setGcRequestStatus] = useState<'none' | 'pending' | 'accepted' | 'declined'>('none');
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
@@ -381,7 +381,11 @@ export default function HouseSummaryScreen() {
           refetchAnalysis();
         }, 500);
       }
-    } else if (gcAcceptanceData.hasPendingRequest && gcRequestStatus === 'none') {
+    } else if (gcAcceptanceData.allContractorsDeclined) {
+      if (gcRequestStatus !== 'declined') {
+        setGcRequestStatus('declined');
+      }
+    } else if (gcAcceptanceData.hasPendingRequest && (gcRequestStatus === 'none' || gcRequestStatus === 'declined')) {
       // Request has been sent but not yet accepted - update status to pending
       setGcRequestStatus('pending');
     } else if (!gcAcceptanceData.hasPendingRequest && !gcAcceptanceData.hasAcceptedGC && gcRequestStatus !== 'none') {
@@ -1590,6 +1594,25 @@ export default function HouseSummaryScreen() {
               </>
             )}
           </TouchableOpacity>
+        )}
+
+        {gcRequestStatus === 'declined' && (
+          <View className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-4">
+            <View className="flex-row items-center mb-2">
+              <AlertCircle size={20} color="#b91c1c" strokeWidth={2} />
+              <Text className="text-red-900 text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                Request declined
+              </Text>
+            </View>
+            <Text className="text-red-800 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              A contractor declined this project. It is no longer waiting for a response.
+            </Text>
+            {gcAcceptanceData?.rejectionReason ? (
+              <Text className="text-red-800 text-sm mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                {gcAcceptanceData.rejectionReason}
+              </Text>
+            ) : null}
+          </View>
         )}
 
         {gcRequestStatus === 'pending' && (

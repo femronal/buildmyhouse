@@ -125,9 +125,18 @@ export default function ProfileScreen() {
     return project?.status === 'completed' || progressValue >= 100;
   };
 
-  const gcHasAccepted = (project: any) => {
+  const gcRequestsFor = (project: any) => {
     const requests = Array.isArray(project?.projectRequests) ? project.projectRequests : [];
-    return requests.some((request: any) => request?.status === 'accepted');
+    return requests.filter((request: any) => !request?.stageId);
+  };
+
+  const gcHasAccepted = (project: any) => {
+    return gcRequestsFor(project).some((request: any) => request?.status === 'accepted');
+  };
+
+  const isDeclinedProject = (project: any) => {
+    const requests = gcRequestsFor(project);
+    return requests.length > 0 && requests.every((request: any) => request?.status === 'rejected');
   };
 
   const isPaidProject = (project: any) => {
@@ -194,7 +203,8 @@ export default function ProfileScreen() {
     if (!isOpenProject(project)) return false;
     return isPaidProject(project) || (project.status === 'active' && gcHasAccepted(project));
   });
-  const pendingProjects = allProjects.filter((project: any) => isOpenProject(project) && !trulyActiveProjects.includes(project));
+  const declinedProjects = allProjects.filter((project: any) => isOpenProject(project) && isDeclinedProject(project) && !trulyActiveProjects.includes(project));
+  const pendingProjects = allProjects.filter((project: any) => isOpenProject(project) && !isDeclinedProject(project) && !trulyActiveProjects.includes(project));
   const completedProjectsAllTime = allProjects.filter((p: any) => isCompletedProject(p));
 
   return (
@@ -434,7 +444,7 @@ export default function ProfileScreen() {
 
           {activeTab === 'pending' && (
             <View>
-              {pendingProjects.length === 0 ? (
+              {pendingProjects.length === 0 && declinedProjects.length === 0 ? (
                 <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 items-center border border-gray-200">
                   <Text className="text-gray-500 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No pending projects
@@ -469,6 +479,33 @@ export default function ProfileScreen() {
                   </TouchableOpacity>
                 ))
               )}
+              {declinedProjects.map((project: any) => (
+                <TouchableOpacity
+                  key={project.id}
+                  onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
+                  style={cardShadowStyle}
+                  className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
+                >
+                  <View className="flex-row items-center justify-between mb-1">
+                    <Text className="text-black text-base flex-1 pr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {project.name}
+                    </Text>
+                    <View className="bg-red-100 rounded-full px-2 py-1">
+                      <Text className="text-red-700 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        Declined
+                      </Text>
+                    </View>
+                  </View>
+                  <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {project.address}
+                  </Text>
+                  <View className="flex-row items-center mt-2">
+                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      A contractor declined this project
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           )}
 

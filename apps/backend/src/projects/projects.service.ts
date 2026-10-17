@@ -1778,13 +1778,14 @@ export class ProjectsService {
       where: whereClause,
       include: {
         projectRequests: {
-          where: { status: { in: ['accepted', 'pending'] } },
+          where: { status: { in: ['accepted', 'pending', 'rejected'] } },
           orderBy: { updatedAt: 'desc' },
-          take: 5,
+          take: 50,
           select: {
             id: true,
             status: true,
             contractorId: true,
+            stageId: true,
             updatedAt: true,
             gcNotes: true,
             estimatedBudget: true,
