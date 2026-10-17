@@ -19,6 +19,10 @@ import zlib from 'node:zlib';
 
 const execFileAsync = promisify(execFile);
 const bucket = process.env.AWS_S3_BUCKET || process.env.AWS_S3_BUCKET_HOMEOWNER || '';
+// Ignore objects written while this publish is running. A second deploy can
+// upload its CSS and JS after we started; deleting those leaves the new HTML
+// pointing at files that no longer exist.
+const keepObjectsModifiedAfter = new Date(Date.now() - 20 * 60 * 1000);
 const region = process.env.AWS_REGION || 'eu-north-1';
 const distDir = path.resolve(process.cwd(), 'dist');
 const COMPRESSIBLE = new Set(['.js', '.css', '.json', '.svg', '.html']);
@@ -132,16 +136,28 @@ async function pool(items, limit, worker) {
   );
 }
 
-function listRemoteKeys() {
-  const output = execFileSync('aws', ['s3', 'ls', `s3://${bucket}`, '--recursive', '--region', region], {
-    encoding: 'utf8',
-  });
-  return output
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => line.split(/\s+/).slice(3).join(' '))
-    .filter(Boolean);
+function listRemoteObjects() {
+  const objects = [];
+  let token = '';
+  do {
+    const args = [
+      's3api',
+      'list-objects-v2',
+      '--bucket',
+      bucket,
+      '--region',
+      region,
+      '--max-keys',
+      '1000',
+    ];
+    if (token) args.push('--continuation-token', token);
+    const page = JSON.parse(
+      execFileSync('aws', args, { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 }),
+    );
+    objects.push(...(page.Contents || []));
+    token = page.IsTruncated ? page.NextContinuationToken : '';
+  } while (token);
+  return objects;
 }
 
 for (const file of walk(distDir)) {
@@ -176,11 +192,15 @@ await pool(localFiles, 12, async (file) => {
   await upload(file, relPath(file));
 });
 
-const stale = listRemoteKeys().filter((key) => !localKeys.has(key));
+const stale = listRemoteObjects().filter((object) => {
+  if (!object.Key || localKeys.has(object.Key)) return false;
+  const modified = object.LastModified ? new Date(object.LastModified) : null;
+  return !modified || modified < keepObjectsModifiedAfter;
+});
 if (stale.length) {
   console.log(`[web] Removing ${stale.length} stale objects`);
-  await pool(stale, 12, async (key) => {
-    await execFileAsync('aws', ['s3', 'rm', `s3://${bucket}/${key}`, '--region', region, '--only-show-errors']);
+  await pool(stale, 12, async (object) => {
+    await execFileAsync('aws', ['s3', 'rm', `s3://${bucket}/${object.Key}`, '--region', region, '--only-show-errors']);
   });
 }
 

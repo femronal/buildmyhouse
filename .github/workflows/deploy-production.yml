@@ -1,5 +1,11 @@
 name: Deploy to Production
 
+# Queue production deploys. Overlapping publishes were deleting each other's
+# CSS and JS after the new HTML was already live.
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 on:
   push:
     branches: [main]
