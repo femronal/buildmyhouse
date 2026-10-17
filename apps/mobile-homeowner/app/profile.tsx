@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Briefcase, Clock, Smartphone } from "lucide-react-native";
+import { ArrowLeft, User, Settings, CreditCard, HelpCircle, LogOut, ChevronRight, Bell, Shield, FileText, Briefcase, Clock, Smartphone, CheckCircle2, XCircle } from "lucide-react-native";
 import { useEffect, useMemo, useState } from "react";
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
@@ -354,54 +354,44 @@ export default function ProfileScreen() {
           </Text>
           
           {/* Tabs */}
-          <View className="flex-row flex-wrap bg-gray-100 rounded-2xl p-1 mb-4">
-            <TouchableOpacity
-              onPress={() => setActiveTab('active')}
-              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'active' ? 'bg-black' : ''}`}
-            >
-              <Text 
-                className={`text-center text-sm ${activeTab === 'active' ? 'text-white' : 'text-gray-600'}`}
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Active ({trulyActiveProjects.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveTab('completed')}
-              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'completed' ? 'bg-black' : ''}`}
-            >
-              <Text 
-                className={`text-center text-sm ${activeTab === 'completed' ? 'text-white' : 'text-gray-600'}`}
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Completed ({completedProjectsAllTime.length})
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveTab('pending')}
-              className={`flex-1 py-2 px-4 rounded-xl ${activeTab === 'pending' ? 'bg-black' : ''}`}
-            >
-              <View className="flex-row items-center justify-center">
-                <Clock size={14} color={activeTab === 'pending' ? '#FFFFFF' : '#6B7280'} strokeWidth={2} />
-                <Text 
-                  className={`ml-1 text-sm ${activeTab === 'pending' ? 'text-white' : 'text-gray-600'}`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+          <View className="flex-row bg-gray-100 rounded-2xl p-1 mb-4">
+            {(
+              [
+                { id: 'active' as const, label: 'Active', count: trulyActiveProjects.length, Icon: Briefcase },
+                { id: 'completed' as const, label: 'Completed', count: completedProjectsAllTime.length, Icon: CheckCircle2 },
+                { id: 'pending' as const, label: 'Pending', count: pendingProjects.length, Icon: Clock },
+                { id: 'declined' as const, label: 'Declined', count: declinedProjects.length, Icon: XCircle },
+              ]
+            ).map(({ id, label, count, Icon }) => {
+              const selected = activeTab === id;
+              const color = selected ? '#FFFFFF' : '#6B7280';
+              return (
+                <TouchableOpacity
+                  key={id}
+                  onPress={() => setActiveTab(id)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`${label}, ${count}`}
+                  className={`flex-1 items-center justify-center py-2 px-1 rounded-xl ${selected ? 'bg-black' : ''}`}
                 >
-                  Pending ({pendingProjects.length})
-                </Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveTab('declined')}
-              className={`flex-1 py-2 px-2 rounded-xl ${activeTab === 'declined' ? 'bg-black' : ''}`}
-            >
-              <Text
-                className={`text-center text-sm ${activeTab === 'declined' ? 'text-white' : 'text-gray-600'}`}
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                Declined ({declinedProjects.length})
-              </Text>
-            </TouchableOpacity>
+                  <Icon size={16} color={color} strokeWidth={2.2} />
+                  <Text
+                    numberOfLines={1}
+                    className="text-center mt-1"
+                    style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 10, color }}
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    numberOfLines={1}
+                    className="text-center"
+                    style={{ fontFamily: 'Poppins_500Medium', fontSize: 10, color }}
+                  >
+                    {count}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Projects List */}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Linking, Platform, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -11,6 +11,7 @@ import {
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { clearAuthToken } from '@/lib/auth';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import {
@@ -18,7 +19,8 @@ import {
   previewProfessionalClaim,
   type ProfessionalClaimPreview,
 } from '@/lib/professional-manage';
-import { ownerHomeWithListingWelcome } from '@/lib/listing-welcome';
+
+const CONTRACTOR_APP_URL = 'https://gc.buildmyhouse.app/';
 
 type Step = 'loading' | 'ready' | 'claiming' | 'done' | 'error';
 
@@ -86,8 +88,13 @@ export default function ProfessionalClaimPage() {
     setStep('claiming');
     try {
       await acceptProfessionalClaim(token);
-      await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-      router.replace(ownerHomeWithListingWelcome('professional') as any);
+      await clearAuthToken();
+      queryClient.clear();
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.location.assign(CONTRACTOR_APP_URL);
+        return;
+      }
+      await Linking.openURL(CONTRACTOR_APP_URL);
     } catch (e: any) {
       setError(e?.message || 'Unable to claim this listing right now.');
       setStep('ready');

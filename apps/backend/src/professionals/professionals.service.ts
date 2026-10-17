@@ -1211,7 +1211,10 @@ export class ProfessionalsService implements OnModuleInit {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    const listing = await this.prisma.professionalListing.findUnique({ where: { id: invite.professionalListingId } });
+    const listing = await this.prisma.professionalListing.findUnique({
+      where: { id: invite.professionalListingId },
+      include: { primaryProfession: { select: { label: true } } },
+    });
     if (!listing) throw new NotFoundException('Professional not found');
     if (listing.claimedByUserId && listing.claimedByUserId !== userId) {
       throw new ConflictException('This listing has already been claimed');
@@ -1230,12 +1233,12 @@ export class ProfessionalsService implements OnModuleInit {
       throw new ConflictException('This account already manages another professional listing');
     }
 
-    await this.prisma.$transaction([
-      this.prisma.professionalClaimInvite.update({
+    await this.prisma.$transaction(async (tx) => {
+      await tx.professionalClaimInvite.update({
         where: { id: invite.id },
         data: { usedAt: new Date() },
-      }),
-      this.prisma.professionalListing.update({
+      });
+      await tx.professionalListing.update({
         where: { id: listing.id },
         data: {
           claimedByUserId: userId,
@@ -1243,10 +1246,60 @@ export class ProfessionalsService implements OnModuleInit {
           claimedAt: listing.claimedAt || new Date(),
           claimEmail: invite.email,
         },
-      }),
-    ]);
+      });
+      await this.grantClaimedProfessionalContractorAccess(tx, user, listing);
+    });
 
     return this.getManagedProfile(userId);
+  }
+
+  /**
+   * A claimed professional is a general contractor. Homeowner accounts are promoted.
+   * The listing claim is left as-is, and the contractor profile stays unverified.
+   */
+  private async grantClaimedProfessionalContractorAccess(
+    tx: Prisma.TransactionClient,
+    user: { id: string; role: string; fullName: string | null },
+    listing: {
+      displayName: string;
+      yearsExperience: number | null;
+      city: string | null;
+      state: string | null;
+      primaryProfession?: { label: string } | null;
+    },
+  ) {
+    if (user.role !== 'homeowner' && user.role !== 'general_contractor') return;
+
+    if (user.role === 'homeowner') {
+      await tx.user.update({
+        where: { id: user.id },
+        data: { role: 'general_contractor', profileSetupCompleted: true },
+      });
+    }
+
+    const existing = await tx.contractor.findUnique({ where: { userId: user.id } });
+    if (existing) return;
+
+    const profession = listing.primaryProfession?.label?.trim() || 'General Contractor';
+    const location = [listing.city, listing.state].map((part) => part?.trim()).filter(Boolean).join(', ') || null;
+    await tx.contractor.create({
+      data: {
+        userId: user.id,
+        name: user.fullName?.trim() || listing.displayName?.trim() || profession,
+        specialty: profession,
+        specialtyCategory: 'general_contractor',
+        specialtyTags: [profession],
+        location,
+        experienceYears: listing.yearsExperience,
+        type: 'general_contractor',
+        platformKind: 'general_contractor',
+        hiringFee: 0,
+        rating: 0,
+        reviews: 0,
+        projects: 0,
+        verified: false,
+      },
+    });
   }
 
   async getManagedProfile(userId: string) {

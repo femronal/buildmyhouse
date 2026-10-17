@@ -89,7 +89,7 @@ export default function EmailLoginScreen() {
       const userRole = data.user?.role;
       if (!userRole || userRole !== 'homeowner') {
         alert(
-          `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nPlease use the contractor app to sign in.`
+          `This app is for homeowners only.\n\nYour account role: ${userRole || 'unknown'}\n\nSign in at https://gc.buildmyhouse.app`
         );
         return;
       }

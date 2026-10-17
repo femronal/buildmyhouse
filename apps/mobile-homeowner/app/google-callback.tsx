@@ -31,7 +31,7 @@ export default function GoogleCallbackScreen() {
 
         if (result.user.role !== "homeowner") {
           throw new Error(
-            `This app is for homeowners only. Your account role: ${result.user.role || "unknown"}.`,
+            `This app is for homeowners only. Your account role: ${result.user.role || "unknown"}. Sign in at https://gc.buildmyhouse.app.`,
           );
         }
 

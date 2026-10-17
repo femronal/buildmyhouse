@@ -22,8 +22,9 @@ function serviceWith(overrides: Record<string, any> = {}) {
     },
     professionalDocument: { create: jest.fn() },
     professionalListingService: { deleteMany: jest.fn(), createMany: jest.fn() },
-    user: { findUnique: jest.fn() },
-    $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),
+    user: { findUnique: jest.fn(), update: jest.fn() },
+    contractor: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
+    $transaction: jest.fn(async (arg: any) => (typeof arg === 'function' ? arg(prisma) : Promise.all(arg))),
     ...overrides,
   };
   const email = { send: jest.fn().mockResolvedValue({ id: 'email-1' }) };
@@ -99,15 +100,71 @@ describe('professional claim invites', () => {
 
     await service.acceptClaim(raw, 'user1');
 
-    const writes = prisma.$transaction.mock.calls[0][0];
-    expect(writes).toHaveLength(2);
     const listingWrite = prisma.professionalListing.update.mock.calls[0][0].data;
     expect(listingWrite.claimedByUserId).toBe('user1');
     expect(listingWrite.linkedUserId).toBe('user1');
     expect(listingWrite.claimedAt).toBeInstanceOf(Date);
     expect(listingWrite.ownershipStatus).toBeUndefined();
     expect(listingWrite.verificationStatus).toBeUndefined();
-    expect(prisma.user.update).toBeUndefined();
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 'user1' },
+      data: { role: 'general_contractor', profileSetupCompleted: true },
+    });
+    expect(prisma.contractor.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: 'user1',
+          type: 'general_contractor',
+          platformKind: 'general_contractor',
+          verified: false,
+          rating: 0,
+          projects: 0,
+          hiringFee: 0,
+        }),
+      }),
+    );
+  });
+
+  it('does not promote an admin or replace an existing contractor profile', async () => {
+    const { prisma, service } = serviceWith();
+    const raw = 'abc123';
+    const tokenHash = require('crypto').createHash('sha256').update(raw).digest('hex');
+    prisma.professionalClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      professionalListingId: 'p1',
+      tokenHash,
+      email: 'owner@example.com',
+      expiresAt: new Date(Date.now() + 86400000),
+      usedAt: null,
+      revokedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({ id: 'user1', role: 'admin', fullName: 'Admin' });
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      id: 'p1',
+      displayName: 'IAA',
+      claimedByUserId: null,
+      linkedUserId: null,
+      claimedAt: null,
+      city: 'Lagos',
+      state: 'Lagos',
+      yearsExperience: 8,
+      primaryProfession: { label: 'Electrical Engineer' },
+    });
+    prisma.professionalListing.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'p1',
+      slug: 'iaa',
+      displayName: 'IAA',
+      credentials: [],
+      services: [],
+      documents: [],
+      serviceStates: [],
+      serviceCities: [],
+    });
+
+    await service.acceptClaim(raw, 'user1');
+
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    expect(prisma.contractor.create).not.toHaveBeenCalled();
   });
 
   it('rejects a used, expired, or revoked token without writing', async () => {
