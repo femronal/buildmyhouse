@@ -1,17 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ForbiddenException, Optional } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { EmailService } from '../email/email.service';
 
+const HOMEOWNER_EMAIL_PAUSE_MS = 250;
+
 @Injectable()
 export class DesignsService {
-  // Use `any` for model access to avoid tight coupling when Prisma schema evolves.
-  private prisma = new PrismaClient() as any;
+  private readonly logger = new Logger(DesignsService.name);
+  private readonly prisma: PrismaClient;
   constructor(
     private readonly wsService: WebSocketService,
     private readonly emailService: EmailService,
-  ) {}
+    @Optional() prismaClient?: PrismaClient,
+  ) {
+    this.prisma = prismaClient ?? new PrismaClient();
+  }
 
   async getAllDesigns() {
     const designs = await this.prisma.design.findMany({
@@ -206,6 +211,9 @@ export class DesignsService {
     }
 
     const contractorName = String(contractor.name || contractorUser.fullName || 'Your general contractor').trim();
+    this.logger.log(
+      `createDesignOnBehalfOfContractor start adminId=${params.adminUserId} contractorId=${contractorUserId} imageCount=${params.dto.images?.length || 0}`,
+    );
     const created = await this.createDesign(contractorUserId, params.dto, {
       publishImmediately: true,
       reviewedById: params.adminUserId,
@@ -282,6 +290,10 @@ export class DesignsService {
       }
     }
 
+    const startedAt = Date.now();
+    this.logger.log(
+      `createDesign start adminId=${options?.reviewedById || 'none'} contractorId=${userId} imageCount=${dto.images?.length || 0}`,
+    );
     const created = await this.prisma.design.create({
       data: {
         name: dto.name,
@@ -344,18 +356,29 @@ export class DesignsService {
       },
     });
 
+    this.logger.log(`createDesign created designId=${created.id} ms=${Date.now() - startedAt}`);
     const contractorName =
       options?.homeownerNoticeName ||
       created.createdBy?.contractorProfile?.name ||
       created.createdBy?.fullName ||
       'A general contractor';
+    this.logger.log(`createDesign post-create email queued designId=${created.id}`);
     void this.emailHomeownersAboutNewProjectPlan({
+      designId: created.id,
       contractorName,
       scopeName: created.name,
       projectTypeTag: created.projectTypeTag,
       planType: created.planType,
       isLive: !!options?.publishImmediately,
-    });
+    })
+      .then(() => {
+        this.logger.log(`createDesign post-create email finished designId=${created.id}`);
+      })
+      .catch((error) => {
+        this.logger.error(
+          `createDesign post-create email failed designId=${created.id} message=${errorMessage(error)}`,
+        );
+      });
 
     if (!options?.publishImmediately) {
       const section = this.catalogSectionLabel(created.projectTypeTag, created.planType);
@@ -388,45 +411,75 @@ export class DesignsService {
   }
 
   private async emailHomeownersAboutNewProjectPlan(params: {
+    designId: string;
     contractorName: string;
     scopeName: string;
     projectTypeTag?: string | null;
     planType?: string | null;
     isLive: boolean;
   }) {
-    const homeowners = await this.prisma.user.findMany({
-      where: {
-        role: 'homeowner',
-        email: { not: null },
-      },
-      select: { email: true },
-    });
-    const section = this.catalogSectionLabel(params.projectTypeTag, params.planType);
-    const projectsUrl = 'https://buildmyhouse.app/property-projects-nigeria';
-    const subject = `${params.contractorName} added a new project plan`;
-    const instruction = params.isLive
-      ? `Open Projects on BuildMyHouse and choose ${section}. Use this plan as the starting point when you have a future project with a similar issue.`
-      : `BuildMyHouse is reviewing this plan. After it is published, open Projects and choose ${section}, then use it as the starting point for a future project with a similar issue.`;
-    const text = [
-      `${params.contractorName} added a new project plan, "${params.scopeName}".`,
-      'This is a project plan you can use on future projects with similar issues.',
-      instruction,
-      projectsUrl,
-    ].join('\n\n');
-    const html = [
-      `<p><strong>${this.escapeHtml(params.contractorName)}</strong> added a new project plan, <strong>${this.escapeHtml(params.scopeName)}</strong>.</p>`,
-      '<p>This is a project plan you can use on future projects with similar issues.</p>',
-      `<p>${this.escapeHtml(instruction)}</p>`,
-      `<p><a href="${projectsUrl}">Open Projects</a></p>`,
-    ].join('');
-    for (const homeowner of homeowners) {
-      const to = String(homeowner.email || '').trim();
-      if (!to) continue;
-      try {
-        await this.emailService.send({ to, subject, html, text });
-      } catch {
-        // One failed inbox should not undo the uploaded scope.
+    try {
+      if (process.env.HOMEOWNER_NEW_PLAN_EMAILS_ENABLED !== 'true') {
+        this.logger.log(`skipped (flag off) designId=${params.designId}`);
+        return;
       }
+
+      const homeowners = await this.prisma.user.findMany({
+        where: {
+          role: 'homeowner',
+          email: { not: '' },
+        },
+        select: { email: true },
+      });
+      const section = this.catalogSectionLabel(params.projectTypeTag, params.planType);
+      const projectsUrl = 'https://buildmyhouse.app/property-projects-nigeria';
+      const subject = `${params.contractorName} added a new project plan`;
+      const instruction = params.isLive
+        ? `Open Projects on BuildMyHouse and choose ${section}. Use this plan as the starting point when you have a future project with a similar issue.`
+        : `BuildMyHouse is reviewing this plan. After it is published, open Projects and choose ${section}, then use it as the starting point for a future project with a similar issue.`;
+      const text = [
+        `${params.contractorName} added a new project plan, "${params.scopeName}".`,
+        'This is a project plan you can use on future projects with similar issues.',
+        instruction,
+        projectsUrl,
+      ].join('\n\n');
+      const html = [
+        `<p><strong>${this.escapeHtml(params.contractorName)}</strong> added a new project plan, <strong>${this.escapeHtml(params.scopeName)}</strong>.</p>`,
+        '<p>This is a project plan you can use on future projects with similar issues.</p>',
+        `<p>${this.escapeHtml(instruction)}</p>`,
+        `<p><a href="${projectsUrl}">Open Projects</a></p>`,
+      ].join('');
+
+      let sent = 0;
+      let failed = 0;
+      let skipped = 0;
+      for (let index = 0; index < homeowners.length; index += 1) {
+        const to = String(homeowners[index]?.email || '').trim();
+        if (!to) {
+          skipped += 1;
+        } else {
+          try {
+            await this.emailService.send({ to, subject, html, text });
+            sent += 1;
+          } catch (error) {
+            failed += 1;
+            this.logger.error(
+              `homeowner plan email failed designId=${params.designId} step=send message=${errorMessage(error)}`,
+            );
+          }
+        }
+        if (index < homeowners.length - 1) {
+          await delay(HOMEOWNER_EMAIL_PAUSE_MS);
+        }
+      }
+      this.logger.log(
+        `homeowner plan email summary designId=${params.designId} sent=${sent} failed=${failed} skipped=${skipped}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `homeowner plan email failed designId=${params.designId} step=load-homeowners message=${errorMessage(error)}`,
+      );
+      throw error;
     }
   }
 
@@ -545,13 +598,23 @@ export class DesignsService {
       contractor?.name || updated.createdBy?.fullName || 'A general contractor',
     ).trim();
     if (!alreadyLive) {
+      this.logger.log(`approveDesignGoLive post-create email queued designId=${updated.id}`);
       void this.emailHomeownersAboutNewProjectPlan({
+        designId: updated.id,
         contractorName,
         scopeName: updated.name,
         projectTypeTag: updated.projectTypeTag,
         planType: updated.planType,
         isLive: true,
-      });
+      })
+        .then(() => {
+          this.logger.log(`approveDesignGoLive post-create email finished designId=${updated.id}`);
+        })
+        .catch((error) => {
+          this.logger.error(
+            `approveDesignGoLive post-create email failed designId=${updated.id} message=${errorMessage(error)}`,
+          );
+        });
     }
 
     return updated;
@@ -760,6 +823,15 @@ export class DesignsService {
     await this.prisma.design.delete({ where: { id: params.designId } });
     return { message: 'Design deleted successfully' };
   }
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function optionalDesignSpec(value: unknown): number | null {

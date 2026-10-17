@@ -17,6 +17,18 @@ if (!globalThis.crypto) {
   });
 }
 
+process.on('unhandledRejection', (reason) => {
+  const error = reason instanceof Error ? reason : new Error(String(reason));
+  console.error(`[unhandledRejection] ${error.message}`);
+  if (error.stack) console.error(error.stack);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error(`[uncaughtException] ${error.message}`);
+  if (error.stack) console.error(error.stack);
+  process.exit(1);
+});
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false, // We add custom body parser to support Stripe webhook raw body

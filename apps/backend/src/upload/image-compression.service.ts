@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { extname } from 'path';
-import sharp from './sharp.util';
+import sharp, { SHARP_INPUT_PIXEL_LIMIT } from './sharp.util';
 
 const FULL_EDGE = 1200;
 const CARD_EDGE = 600;
@@ -84,28 +84,24 @@ export class ImageCompressionService {
   }
 
   private async encodeWebp(input: Buffer, maxEdge: number, targetBytes: number): Promise<Buffer> {
-    let edge = maxEdge;
-    let quality = 80;
-    let best = input;
+    const resized = await sharp(input, { failOn: 'none', limitInputPixels: SHARP_INPUT_PIXEL_LIMIT })
+      .rotate()
+      .resize({
+        width: maxEdge,
+        height: maxEdge,
+        fit: 'inside',
+        withoutEnlargement: true,
+      })
+      .toBuffer();
 
+    let quality = 80;
+    let best = resized;
     for (let attempt = 0; attempt < 8; attempt += 1) {
-      const next = await sharp(input, { failOn: 'none' })
-        .rotate()
-        .resize({
-          width: edge,
-          height: edge,
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
+      const next = await sharp(resized, { failOn: 'none', limitInputPixels: SHARP_INPUT_PIXEL_LIMIT })
         .webp({ quality, effort: 4 })
         .toBuffer();
       best = next;
-      if (next.length <= targetBytes || quality <= MIN_QUALITY) {
-        if (next.length <= targetBytes || edge <= 480) return next;
-        edge = Math.max(480, Math.round(edge * 0.85));
-        quality = 72;
-        continue;
-      }
+      if (next.length <= targetBytes || quality <= MIN_QUALITY) return next;
       quality = Math.max(MIN_QUALITY, quality - 8);
     }
 
