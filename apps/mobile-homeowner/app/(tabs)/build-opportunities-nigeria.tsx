@@ -24,6 +24,7 @@ import {
   Info,
 } from "phosphor-react-native";
 import OpportunityDetailSections from '@/components/OpportunityDetailSections';
+import OpportunityProductCard, { OpportunityCardSkeleton } from '@/components/OpportunityProductCard';
 import { useEffect, useMemo, useRef, useState } from "react";
 import ImageCarousel from '@/components/ImageCarousel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -51,7 +52,8 @@ import {
 } from "@/lib/build-opportunity-taxonomy";
 import { matchesKeywordPhraseQuery } from "@/lib/keyword-search";
 import ProjectTypeTabs, { type UnderlineTabItem } from '@/components/ProjectTypeTabs';
-import OpportunityProductCard from '@/components/OpportunityProductCard';
+import { locationMatchesState, secondaryListingLabel, sourceLabel, specsLine } from '@/lib/opportunity-card';
+import { NIGERIA_STATES } from '@/lib/nigeria-location';
 
 const OPPORTUNITY_TABS: UnderlineTabItem<BuildOpportunityCategoryKey>[] = [
   { key: 'residential', label: 'Residential' },
@@ -73,6 +75,9 @@ type BuildOpportunity = {
   opportunityType?: string | null;
   location: string;
   priceLabel: string;
+  sourceLabel: string;
+  secondaryLabel?: string;
+  specsLine?: string;
   bedrooms?: number;
   bathrooms?: number;
   sizeLabel: string;
@@ -119,9 +124,10 @@ export default function RentScreen() {
   );
   const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-12' : 'py-24';
   const { data: currentUser } = useCurrentUser();
-  const { data: rentalsForLease = [] } = useRentalsForLease();
-  const { data: housesForSale = [] } = useHousesForSale();
-  const { data: landsForSale = [] } = useLandsForSale();
+  const { data: rentalsForLease = [], isLoading: rentalsLoading } = useRentalsForLease();
+  const { data: housesForSale = [], isLoading: housesLoading } = useHousesForSale();
+  const { data: landsForSale = [], isLoading: landsLoading } = useLandsForSale();
+  const listingsLoading = rentalsLoading || housesLoading || landsLoading;
   const requestInspectionMutation = useRequestRentalInspection();
   const scheduleHouseViewingMutation = useScheduleHouseViewing();
   const scheduleLandViewingMutation = useScheduleLandViewing();
@@ -131,6 +137,7 @@ export default function RentScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [stateFilter, setStateFilter] = useState('All');
   const [activeTab, setActiveTab] = useState<BuildOpportunityCategoryKey>('residential');
   const [isBuildMessageExpanded, setIsBuildMessageExpanded] = useState(false);
 
@@ -157,26 +164,20 @@ export default function RentScreen() {
     }).start();
   };
 
-  // 1 column on mobile, 3 on tablet, 4 on desktop
+  const GRID_MAX_WIDTH = 1280;
   const gridGap = 16;
-  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 1;
+  const gridColumns = screenWidth >= 1024 ? 4 : screenWidth >= 768 ? 3 : 2;
+  const contentWidth = Math.min(screenWidth, GRID_MAX_WIDTH);
   const cardWidth = useMemo(
-    () => (screenWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns,
-    [gridColumns, horizontalPadding, screenWidth],
+    () => (contentWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns,
+    [gridColumns, horizontalPadding, contentWidth],
   );
-  const cardHeight = gridColumns === 1 ? 460 : 420;
-
-  const [activeImageIndex, setActiveImageIndex] = useState<{ [key: string]: number }>({});
-  const handleImageScroll = (id: string, event: any) => {
-    const index = Math.round(event.nativeEvent.contentOffset.x / cardWidth);
-    setActiveImageIndex((prev) => (prev[id] === index ? prev : { ...prev, [id]: index }));
-  };
 
   const filterHeight = useMemo(
     () =>
       filterAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, listingChrome.mobileWeb ? 52 : 60],
+        outputRange: [0, listingChrome.mobileWeb ? 96 : 112],
       }),
     [filterAnim, listingChrome.mobileWeb],
   );
@@ -231,9 +232,22 @@ export default function RentScreen() {
       opportunityType: listing.opportunityType || undefined,
       location: listing.location,
       priceLabel: `${formatNaira(listing.annualRent)}/yr`,
+      sourceLabel: sourceLabel('rental'),
+      secondaryLabel: secondaryListingLabel({
+        source: 'rental',
+        title: listing.title,
+        propertyType: listing.propertyType,
+      }) || undefined,
+      specsLine: specsLine({
+        source: 'rental',
+        bedrooms: listing.bedrooms,
+        bathrooms: listing.bathrooms,
+        size: listing.sizeSqm,
+        sizeUnit: 'm²',
+      }) || undefined,
       bedrooms: listing.bedrooms,
       bathrooms: listing.bathrooms,
-      sizeLabel: `${listing.sizeSqm}m²`,
+      sizeLabel: listing.sizeSqm > 0 ? `${listing.sizeSqm}m²` : '',
       serviceHint: `Service: ${formatNaira(listing.serviceCharge)}`,
       annualRent: listing.annualRent,
       serviceCharge: listing.serviceCharge,
@@ -286,9 +300,22 @@ export default function RentScreen() {
       opportunityType: house.opportunityType || undefined,
       location: house.location,
       priceLabel: formatNaira(house.price),
+      sourceLabel: sourceLabel('house'),
+      secondaryLabel: secondaryListingLabel({
+        source: 'house',
+        title: house.name,
+        propertyType: house.propertyType,
+      }) || undefined,
+      specsLine: specsLine({
+        source: 'house',
+        bedrooms: house.bedrooms,
+        bathrooms: house.bathrooms,
+        size: house.squareMeters,
+        sizeUnit: 'm²',
+      }) || undefined,
       bedrooms: house.bedrooms,
       bathrooms: house.bathrooms,
-      sizeLabel: `${house.squareMeters ?? Math.round(house.squareFootage * 0.092903)}m²`,
+      sizeLabel: house.squareMeters && house.squareMeters > 0 ? `${house.squareMeters}m²` : '',
       serviceHint: house.condition ? `Condition: ${house.condition}` : undefined,
       verificationDocs: house.documents,
       extraDocs: house.amenities,
@@ -322,7 +349,19 @@ export default function RentScreen() {
       opportunityType: land.opportunityType || undefined,
       location: land.location,
       priceLabel: formatNaira(land.price),
-      sizeLabel: `${land.sizeSqm} sqm`,
+      sourceLabel: sourceLabel('land'),
+      secondaryLabel: secondaryListingLabel({
+        source: 'land',
+        title: land.name,
+        zoningType: land.zoningType,
+        opportunityType: land.opportunityType,
+      }) || undefined,
+      specsLine: specsLine({
+        source: 'land',
+        size: land.sizeSqm,
+        sizeUnit: 'sqm',
+      }) || undefined,
+      sizeLabel: land.sizeSqm > 0 ? `${land.sizeSqm} sqm` : '',
       serviceHint: land.roadAccess ? `Road access: ${land.roadAccess}` : undefined,
       verificationDocs: land.documents,
       extraDocs: land.restrictions,
@@ -377,9 +416,10 @@ export default function RentScreen() {
         ],
       });
       const filterMatch = activeFilter === 'All' || listing.opportunityType === activeFilter;
-      return tabMatch && queryMatch && filterMatch;
+      const stateMatch = locationMatchesState(listing.location, stateFilter);
+      return tabMatch && queryMatch && filterMatch && stateMatch;
     });
-  }, [activeTab, searchQuery, activeFilter, allOpportunities]);
+  }, [activeTab, searchQuery, activeFilter, stateFilter, allOpportunities]);
 
   useEffect(() => {
     if (!availableFilters.includes(activeFilter)) {
@@ -559,6 +599,20 @@ export default function RentScreen() {
       </Animated.View>
 
       <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: 6 }}>
+          {['All', ...NIGERIA_STATES].map((state) => (
+            <TouchableOpacity
+              key={state}
+              onPress={() => setStateFilter(state)}
+              className={`rounded-full mr-2 items-center justify-center ${stateFilter === state ? 'bg-white' : 'bg-white/10'}`}
+              style={FILTER_PILL_STYLE}
+            >
+              <Text className={stateFilter === state ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
+                {state === 'All' ? 'All states' : state}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
           {availableFilters.map((tag) => (
             <TouchableOpacity
@@ -606,40 +660,40 @@ export default function RentScreen() {
           />
         )}
 
-        {filteredListings.length === 0 ? (
+        {listingsLoading ? (
+          <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap, alignSelf: 'center', width: contentWidth - horizontalPadding * 2 + horizontalPadding * 0 }}>
+            {Array.from({ length: gridColumns * 2 }).map((_, index) => (
+              <OpportunityCardSkeleton key={index} width={cardWidth} />
+            ))}
+          </View>
+        ) : filteredListings.length === 0 ? (
           <View className={`items-center justify-center ${listEmptyVerticalClass}`}>
             <Text className="text-white/70 text-center text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              No opportunities match this filter
+              {stateFilter === 'All' ? 'No opportunities match this filter' : `No opportunities in ${stateFilter} yet. Try all of Nigeria.`}
             </Text>
             <Text className="text-white/40 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
               Try another category, filter, or location keyword.
             </Text>
           </View>
         ) : (
-          <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap }}>
+          <View className="pb-8" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: gridGap, alignSelf: 'center', maxWidth: contentWidth, width: '100%' }}>
             {filteredListings.map((listing) => (
               <OpportunityProductCard
                 key={listing.id}
                 listing={{
                   id: listing.id,
                   title: listing.title,
-                  subtitle: listing.subtitle,
                   location: listing.location,
                   priceLabel: listing.priceLabel,
-                  bedrooms: listing.bedrooms,
-                  bathrooms: listing.bathrooms,
-                  sizeLabel: listing.sizeLabel,
-                  serviceHint: listing.serviceHint,
-                  tagLabel: formatBuildOpportunityKey(listing.opportunityType || listing.source),
+                  specsLine: listing.specsLine,
+                  sourceLabel: listing.sourceLabel,
+                  secondaryLabel: listing.secondaryLabel,
                   images: listing.images || [],
                 }}
                 width={cardWidth}
-                height={cardHeight}
                 onPress={() => openRentModal(listing)}
                 isFavorite={favorites.includes(listing.id)}
                 onToggleFavorite={() => toggleFavorite(listing.id)}
-                activeImageIndex={activeImageIndex[listing.id] || 0}
-                onImageScroll={(event) => handleImageScroll(listing.id, event)}
               />
             ))}
           </View>

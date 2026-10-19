@@ -111,13 +111,17 @@ export function OpportunityDetailSections({ entity, data }: Props) {
           {profile.snapshotIntro}
         </Text>
         {profile.snapshotRows.map((row) => (
-          <Text
-            key={row.fieldKey}
-            className="text-gray-700 text-sm mb-1"
-            style={{ fontFamily: row.fieldKey === 'agencyFeePercent' ? 'Poppins_600SemiBold' : 'Poppins_400Regular' }}
-          >
-            {row.label}: {formatOpportunityCheckValue(row, displayData)}
-          </Text>
+          <View key={row.fieldKey} className="flex-row justify-between py-2 border-b border-gray-200">
+            <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {row.label}
+            </Text>
+            <Text
+              className="text-black text-sm"
+              style={{ fontFamily: row.fieldKey === 'agencyFeePercent' ? 'Poppins_600SemiBold' : 'Poppins_500Medium' }}
+            >
+              {formatOpportunityCheckValue(row, displayData)}
+            </Text>
+          </View>
         ))}
       </View>
 

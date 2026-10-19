@@ -983,12 +983,16 @@ model HouseForSale {
   contactName         String?
   contactPhone        String?
   isActive            Boolean  @default(true)
+  stateSlug           String?
+  lgaSlug             String?
+  areaSlug            String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   images           HouseForSaleImage[]
   viewingInterests HouseViewingInterest[]
 
+  @@index([stateSlug])
   @@map("house_for_sale")
 }
 
@@ -996,12 +1000,14 @@ model HouseForSaleImage {
   id             String   @id @default(uuid())
   houseForSaleId String
   url            String
+  thumbnailUrl   String?
   label          String?
   order          Int      @default(0)
   createdAt      DateTime @default(now())
 
   houseForSale HouseForSale @relation(fields: [houseForSaleId], references: [id], onDelete: Cascade)
 
+  @@index([houseForSaleId])
   @@map("house_for_sale_images")
 }
 
@@ -1049,12 +1055,16 @@ model LandForSale {
   contactName         String?
   contactPhone        String?
   isActive            Boolean  @default(true)
+  stateSlug           String?
+  lgaSlug             String?
+  areaSlug            String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   images           LandForSaleImage[]
   viewingInterests LandViewingInterest[]
 
+  @@index([stateSlug])
   @@map("land_for_sale")
 }
 
@@ -1062,6 +1072,7 @@ model LandForSaleImage {
   id            String   @id @default(uuid())
   landForSaleId String
   url           String
+  thumbnailUrl  String?
   label         String?
   order         Int      @default(0)
   createdAt     DateTime @default(now())
@@ -1124,12 +1135,16 @@ model RentalListing {
   proximity           String[] @default([])
   verificationDocs    String[] @default([])
   isActive            Boolean  @default(true)
+  stateSlug           String?
+  lgaSlug             String?
+  areaSlug            String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
   images           RentalListingImage[]
   viewingInterests RentalViewingInterest[]
 
+  @@index([stateSlug])
   @@map("rental_listings")
 }
 
@@ -1137,6 +1152,7 @@ model RentalListingImage {
   id              String   @id @default(uuid())
   rentalListingId String
   url             String
+  thumbnailUrl    String?
   label           String?
   order           Int      @default(0)
   createdAt       DateTime @default(now())

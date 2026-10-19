@@ -3,6 +3,7 @@ import { CreateLandForSaleDto } from './dto/create-land-for-sale.dto';
 import { UpdateLandForSaleDto } from './dto/update-land-for-sale.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebSocketService } from '../websocket/websocket.service';
+import { locationSlugsFromText } from '../listings/location-slugs';
 
 @Injectable()
 export class LandsService {
@@ -38,13 +39,40 @@ export class LandsService {
     return raw;
   }
 
-  async getAll() {
+  async getAll(query?: Record<string, string | undefined>) {
     const landModel = this.getLandModel();
-    return landModel.findMany({
-      where: { isActive: true },
-      include: { images: { orderBy: { order: 'asc' } } },
-      orderBy: { createdAt: 'desc' },
-    });
+    const hasListParams = Boolean(
+      query && ['page', 'limit', 'q', 'state', 'lga', 'minPrice', 'maxPrice'].some((key) => query[key]),
+    );
+    if (!hasListParams) {
+      return landModel.findMany({
+        where: { isActive: true },
+        include: { images: { orderBy: { order: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(20, Math.max(1, Number(query?.limit) || 16));
+    const where: any = { isActive: true };
+    if (query?.state) where.stateSlug = query.state.toLowerCase();
+    if (query?.lga) where.lgaSlug = query.lga.toLowerCase();
+    if (query?.q) where.OR = [{ name: { contains: query.q, mode: 'insensitive' } }, { location: { contains: query.q, mode: 'insensitive' } }];
+    if (query?.minPrice || query?.maxPrice) {
+      where.price = {};
+      if (query.minPrice) where.price.gte = Number(query.minPrice);
+      if (query.maxPrice) where.price.lte = Number(query.maxPrice);
+    }
+    const [items, total] = await Promise.all([
+      landModel.findMany({
+        where,
+        include: { images: { orderBy: { order: 'asc' }, take: 1 } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      landModel.count({ where }),
+    ]);
+    return { items, total, page, limit };
   }
 
   async getById(id: string) {
@@ -74,6 +102,7 @@ export class LandsService {
         opportunityCategory: dto.opportunityCategory,
         opportunityType: dto.opportunityType,
         location: dto.location,
+        ...locationSlugsFromText(dto.location),
         price: Number(dto.price),
         sizeSqm: Number(dto.sizeSqm),
         titleDocument: dto.titleDocument,
@@ -89,6 +118,7 @@ export class LandsService {
         images: {
           create: (dto.images || []).map((img, i: number) => ({
             url: this.normalizeAssetUrl(img.url),
+            thumbnailUrl: this.normalizeAssetUrl(img.thumbnailUrl) || null,
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
           })),
@@ -133,6 +163,7 @@ export class LandsService {
                 deleteMany: {},
                 create: (dto.images || []).map((img, i: number) => ({
                   url: this.normalizeAssetUrl(img.url),
+            thumbnailUrl: this.normalizeAssetUrl(img.thumbnailUrl) || null,
                   label: img.label || `Image ${i + 1}`,
                   order: img.order ?? i,
                 })),

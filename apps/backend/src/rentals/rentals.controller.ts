@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -21,8 +22,8 @@ export class RentalsController {
   constructor(private readonly rentalsService: RentalsService) {}
 
   @Get()
-  getAll() {
-    return this.rentalsService.getAll();
+  getAll(@Query() query: Record<string, string | undefined>) {
+    return this.rentalsService.getAll(query);
   }
 
   @Get('admin/list')

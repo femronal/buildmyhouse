@@ -1,189 +1,110 @@
-import { View, Text, Image, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { ArrowUpRight, Heart, MapPin } from 'phosphor-react-native';
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from 'react-native-svg';
-import { getBackendAssetUrl } from '@/lib/image';
+import { Platform, Pressable, Text, View, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
+import { Heart, MapPin } from 'phosphor-react-native';
+import { getDesignImageUrl } from '@/components/DesignProductCard';
 
-const CARD_BG = '#151515';
-const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80';
+const ACCENT = '#22c55e';
 
 export type OpportunityCardListing = {
   id: string;
   title: string;
-  subtitle?: string;
   location: string;
   priceLabel: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  sizeLabel: string;
-  serviceHint?: string;
-  tagLabel: string;
-  images: { id?: string; url: string }[];
+  specsLine?: string;
+  sourceLabel: string;
+  secondaryLabel?: string;
+  images: { id?: string; url: string; thumbnailUrl?: string | null }[];
 };
 
-export type OpportunityProductCardProps = {
-  listing: OpportunityCardListing;
-  width: number;
-  height?: number;
-  onPress: () => void;
-  isFavorite?: boolean;
-  onToggleFavorite?: () => void;
-  activeImageIndex?: number;
-  onImageScroll?: (event: any) => void;
-};
+export function OpportunityCardSkeleton({ width }: { width: number }) {
+  return (
+    <View style={{ width, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E5E5', overflow: 'hidden' }}>
+      <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#E5E7EB' }} />
+      <View style={{ padding: 10, gap: 8 }}>
+        <View style={{ height: 14, width: '46%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+        <View style={{ height: 12, width: '88%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+        <View style={{ height: 12, width: '62%', borderRadius: 6, backgroundColor: '#E5E7EB' }} />
+      </View>
+    </View>
+  );
+}
 
-/**
- * Editorial opportunity card — full-bleed photo on a dark canvas, fade-to-black
- * footer with category attribution, title, location, meta, price, and type tag.
- */
 export default function OpportunityProductCard({
   listing,
   width,
-  height = 420,
   onPress,
   isFavorite,
   onToggleFavorite,
-  activeImageIndex = 0,
-  onImageScroll,
-}: OpportunityProductCardProps) {
-  const images = listing.images?.length ? listing.images : [{ url: FALLBACK_IMAGE }];
-  const gradientId = `bmh-opp-fade-${listing.id}`;
-
-  const metaParts = [
-    typeof listing.bedrooms === 'number' ? `${listing.bedrooms} bed` : null,
-    typeof listing.bathrooms === 'number' ? `${listing.bathrooms} bath` : null,
-    listing.sizeLabel || null,
-  ].filter(Boolean);
+}: {
+  listing: OpportunityCardListing;
+  width: number;
+  onPress: () => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
+}) {
+  const image = listing.images?.[0];
+  const full = image?.url ? getDesignImageUrl(image.url) : '';
+  const thumb = image?.thumbnailUrl ? getDesignImageUrl(image.thumbnailUrl) : full;
 
   return (
     <Pressable
       onPress={onPress}
-      className="bmh-product-card rounded-[28px] overflow-hidden"
-      style={{ width, height, backgroundColor: CARD_BG, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)' }}
+      style={{ width, backgroundColor: '#FFFFFF', borderRadius: 16, borderWidth: 1, borderColor: '#E5E5E5', overflow: 'hidden' }}
       accessibilityRole="button"
-      accessibilityLabel={`${listing.title} — view opportunity details`}
+      accessibilityLabel={`${listing.title}, view opportunity details`}
     >
-      {/* Full-bleed image (swipeable when multiple) */}
-      <View style={StyleSheet.absoluteFill}>
-        <ScrollView
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={onImageScroll}
-          scrollEventThrottle={16}
-        >
-          {images.map((image, index) => (
-            <Image
-              key={image.id || index}
-              source={{ uri: getBackendAssetUrl(image.url) || image.url }}
-              className="bmh-product-card-img"
-              style={{ width, height, opacity: 0.85 }}
-              resizeMode="cover"
+      <View style={{ width: '100%', aspectRatio: 4 / 3, backgroundColor: '#F5F5F5' }}>
+        {thumb ? (
+          Platform.OS === 'web' ? (
+            <img
+              alt={listing.title}
+              src={thumb}
+              srcSet={thumb !== full ? `${thumb} 600w, ${full} 1200w` : undefined}
+              sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
+              loading="lazy"
+              decoding="async"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
-          ))}
-        </ScrollView>
-      </View>
-
-      {/* Bottom fade for readability */}
-      <Svg
-        pointerEvents="none"
-        width="100%"
-        height="65%"
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
-      >
-        <Defs>
-          <SvgLinearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={CARD_BG} stopOpacity="0" />
-            <Stop offset="0.55" stopColor={CARD_BG} stopOpacity="0.78" />
-            <Stop offset="1" stopColor={CARD_BG} stopOpacity="0.97" />
-          </SvgLinearGradient>
-        </Defs>
-        <Rect width="100%" height="100%" fill={`url(#${gradientId})`} />
-      </Svg>
-
-      {/* Favorite (optional) */}
-      {onToggleFavorite ? (
-        <TouchableOpacity
-          onPress={onToggleFavorite}
-          className="absolute top-4 left-4 w-10 h-10 rounded-full border border-white/20 bg-black/30 items-center justify-center"
-          accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
-        >
-          <Heart size={18} color="#ffffff" weight={isFavorite ? 'fill' : 'regular'} />
-        </TouchableOpacity>
-      ) : null}
-
-      {/* Open-details arrow */}
-      <View
-        pointerEvents="none"
-        className="bmh-product-card-arrow absolute top-4 right-4 w-10 h-10 rounded-full border border-white/20 bg-white/5 items-center justify-center"
-      >
-        <ArrowUpRight size={18} color="#ffffff" weight="regular" />
-      </View>
-
-      {/* Dots indicator */}
-      {images.length > 1 ? (
-        <View pointerEvents="none" className="absolute top-6 self-center flex-row">
-          {images.slice(0, 5).map((_, index) => (
-            <View
-              key={index}
-              className={`w-1.5 h-1.5 rounded-full mx-0.5 ${index === activeImageIndex ? 'bg-white' : 'bg-white/40'}`}
-            />
-          ))}
+          ) : (
+            <Image source={{ uri: thumb }} style={{ width: '100%', height: '100%' }} contentFit="cover" cachePolicy="memory-disk" />
+          )
+        ) : null}
+        <View className="absolute top-2 left-2 bg-white rounded-full px-2 py-1">
+          <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 11, color: '#111111' }}>{listing.sourceLabel}</Text>
         </View>
-      ) : null}
-
-      {/* Bottom content */}
-      <View pointerEvents="none" className="absolute bottom-0 left-0 right-0 p-5">
-        <Text
-          className="text-[10px] text-white/50 uppercase mb-1.5"
-          style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 2 }}
-          numberOfLines={1}
-        >
-          {listing.subtitle || 'Verified opportunity'}
+        {onToggleFavorite ? (
+          <TouchableOpacity
+            onPress={onToggleFavorite}
+            className="absolute top-2 right-2 w-8 h-8 rounded-full bg-white items-center justify-center"
+            accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+          >
+            <Heart size={16} color={isFavorite ? ACCENT : '#111111'} weight={isFavorite ? 'fill' : 'regular'} />
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      <View style={{ padding: 10 }}>
+        <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, color: ACCENT }} numberOfLines={1}>
+          {listing.priceLabel}
         </Text>
-
-        <Text
-          className="text-white text-[22px] leading-7 tracking-tight mb-2"
-          style={{ fontFamily: 'Poppins_500Medium' }}
-          numberOfLines={2}
-        >
+        {listing.secondaryLabel ? (
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#6B7280', marginTop: 2 }} numberOfLines={1}>
+            {listing.secondaryLabel}
+          </Text>
+        ) : null}
+        <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: '#111111', marginTop: 4 }} numberOfLines={2}>
           {listing.title}
         </Text>
-
-        <View className="flex-row items-center gap-1 mb-1">
-          <MapPin size={11} color="#ffffff" weight="fill" />
-          <Text
-            className="text-xs text-white/70 flex-1"
-            style={{ fontFamily: 'Poppins_500Medium' }}
-            numberOfLines={1}
-          >
+        <View className="flex-row items-center mt-1">
+          <MapPin size={12} color="#6B7280" weight="fill" />
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#6B7280', marginLeft: 4, flex: 1 }} numberOfLines={1}>
             {listing.location}
           </Text>
         </View>
-
-        {metaParts.length > 0 ? (
-          <Text className="text-xs text-white/40" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
-            {metaParts.join('  ·  ')}
+        {listing.specsLine ? (
+          <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#374151', marginTop: 4 }} numberOfLines={1}>
+            {listing.specsLine}
           </Text>
         ) : null}
-
-        <View className="flex-row items-center justify-between border-t border-white/10 mt-3 pt-3.5">
-          <Text
-            className="text-lg text-white flex-shrink"
-            style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
-            {listing.priceLabel}
-          </Text>
-          <Text
-            className="text-[10px] text-white/50 uppercase pl-2"
-            style={{ fontFamily: 'Poppins_500Medium', letterSpacing: 1.5 }}
-            numberOfLines={1}
-          >
-            {listing.tagLabel}
-          </Text>
-        </View>
       </View>
     </Pressable>
   );

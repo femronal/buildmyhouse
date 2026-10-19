@@ -6,6 +6,10 @@ export class HouseForSaleImageDto {
 
   @IsOptional()
   @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
   label?: string;
 
   @IsOptional()

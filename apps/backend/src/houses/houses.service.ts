@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
+import { locationSlugsFromText } from '../listings/location-slugs';
 import { UpdateHouseForSaleDto } from './dto/update-house-for-sale.dto';
 
 @Injectable()
@@ -20,14 +21,40 @@ export class HousesService {
     return raw;
   }
 
-  async getAll() {
-    return this.prisma.houseForSale.findMany({
-      where: { isActive: true },
-      include: {
-        images: { orderBy: { order: 'asc' } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getAll(query?: Record<string, string | undefined>) {
+    const hasListParams = Boolean(
+      query && ['page', 'limit', 'q', 'state', 'lga', 'minPrice', 'maxPrice', 'beds'].some((key) => query[key]),
+    );
+    if (!hasListParams) {
+      return this.prisma.houseForSale.findMany({
+        where: { isActive: true },
+        include: { images: { orderBy: { order: 'asc' } } },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    const page = Math.max(1, Number(query?.page) || 1);
+    const limit = Math.min(20, Math.max(1, Number(query?.limit) || 16));
+    const where: any = { isActive: true };
+    if (query?.state) where.stateSlug = query.state.toLowerCase();
+    if (query?.lga) where.lgaSlug = query.lga.toLowerCase();
+    if (query?.q) where.OR = [{ name: { contains: query.q, mode: 'insensitive' } }, { location: { contains: query.q, mode: 'insensitive' } }];
+    if (query?.minPrice || query?.maxPrice) {
+      where.price = {};
+      if (query.minPrice) where.price.gte = Number(query.minPrice);
+      if (query.maxPrice) where.price.lte = Number(query.maxPrice);
+    }
+    if (query?.beds) where.bedrooms = query.beds === '5' ? { gte: 5 } : Number(query.beds);
+    const [items, total] = await Promise.all([
+      this.prisma.houseForSale.findMany({
+        where,
+        include: { images: { orderBy: { order: 'asc' }, take: 1 } },
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.houseForSale.count({ where }),
+    ]);
+    return { items, total, page, limit };
   }
 
   async getById(id: string) {
@@ -51,6 +78,7 @@ export class HousesService {
         opportunityCategory: dto.opportunityCategory,
         opportunityType: dto.opportunityType,
         location: dto.location,
+        ...locationSlugsFromText(dto.location),
         price: Number(dto.price),
         bedrooms: Number(dto.bedrooms),
         bathrooms: Number(dto.bathrooms),
@@ -68,6 +96,7 @@ export class HousesService {
         images: {
           create: (dto.images || []).map((img: any, i: number) => ({
             url: this.normalizeAssetUrl(img.url),
+            thumbnailUrl: this.normalizeAssetUrl(img.thumbnailUrl) || null,
             label: img.label || `Image ${i + 1}`,
             order: img.order ?? i,
           })),
@@ -119,6 +148,7 @@ export class HousesService {
                 deleteMany: {},
                 create: (dto.images || []).map((img, i: number) => ({
                   url: this.normalizeAssetUrl(img.url),
+            thumbnailUrl: this.normalizeAssetUrl(img.thumbnailUrl) || null,
                   label: img.label || `Image ${i + 1}`,
                   order: img.order ?? i,
                 })),

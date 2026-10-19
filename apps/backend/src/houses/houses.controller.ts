@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Param, Body, Query, Req, UseGuards } from '@nestjs/common';
 import { HousesService } from './houses.service';
 import { CreateHouseForSaleDto } from './dto/create-house-for-sale.dto';
 import { UpdateHouseForSaleDto } from './dto/update-house-for-sale.dto';
@@ -11,8 +11,8 @@ export class HousesController {
   constructor(private readonly housesService: HousesService) {}
 
   @Get()
-  getAll() {
-    return this.housesService.getAll();
+  getAll(@Query() query: Record<string, string | undefined>) {
+    return this.housesService.getAll(query);
   }
 
   @Get('admin/list')

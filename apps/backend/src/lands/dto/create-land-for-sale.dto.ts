@@ -6,6 +6,10 @@ export class LandForSaleImageDto {
 
   @IsOptional()
   @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  @IsString()
   label?: string;
 
   @IsOptional()

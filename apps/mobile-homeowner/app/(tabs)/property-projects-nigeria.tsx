@@ -18,6 +18,9 @@ import {
   designMatchesLocationFilter,
   getDesignLocationSearchFields,
 } from '@/lib/design-location';
+import { getDesignLocationLabel } from '@/lib/design-location';
+import { locationMatchesState } from '@/lib/opportunity-card';
+import { NIGERIA_STATES } from '@/lib/nigeria-location';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -59,6 +62,7 @@ export default function ExploreScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [activeLocationFilter, setActiveLocationFilter] = useState(ALL_LOCATIONS_FILTER);
+  const [stateFilter, setStateFilter] = useState('All');
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const catalog = useDesignCatalog({
     tab: activeTab,
@@ -155,7 +159,7 @@ export default function ExploreScreen() {
     () =>
       filterAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, listingChrome.mobileWeb ? 104 : 132],
+        outputRange: [0, listingChrome.mobileWeb ? 148 : 176],
       }),
     [filterAnim, listingChrome.mobileWeb],
   );
@@ -167,7 +171,7 @@ export default function ExploreScreen() {
 
   // 1 column on mobile, 3 on tablet, 4 on desktop
   const gridGap = 16;
-  const gridColumns = screenWidth >= 1200 ? 4 : screenWidth >= 768 ? 3 : 2;
+  const gridColumns = screenWidth >= 1024 ? 4 : screenWidth >= 768 ? 3 : 2;
   const cardWidth = useMemo(
     () => (screenWidth - horizontalPadding * 2 - gridGap * (gridColumns - 1)) / gridColumns,
     [gridColumns, horizontalPadding, screenWidth],
@@ -279,6 +283,7 @@ export default function ExploreScreen() {
       if (!matchesSearch) return false;
 
       if (!designMatchesLocationFilter(design, activeLocationFilter)) return false;
+      if (!locationMatchesState(getDesignLocationLabel(design), stateFilter)) return false;
 
       if (normalizeDesignTab(design) !== activeTab) return false;
 
@@ -287,7 +292,7 @@ export default function ExploreScreen() {
       const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
       return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
     });
-  }, [activeFilter, activeLocationFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered]);
+  }, [activeFilter, activeLocationFilter, stateFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered]);
   const visibleDesigns = serverFiltered ? filteredDesigns : filteredDesigns.slice(0, localCount);
   const canLoadMore = serverFiltered ? !!catalog.hasNextPage : filteredDesigns.length > visibleDesigns.length;
 
@@ -430,7 +435,7 @@ export default function ExploreScreen() {
                     <Text className="text-white/60" style={{ fontFamily: 'Poppins_400Regular', fontSize: 10, lineHeight: 14 }}>
                       {isProjectsMessageExpanded
                         ? 'Each scope shows the contractor service location on the card. Search by neighbourhood or filter by Lagos LGA to find scopes that fit your property. Filter by project type and compare options before you speak to anyone on site. '
-                        : 'Each scope shows a service location — search or filter by Lagos LGA to find a fit.'}
+                        : 'Each scope shows a service location. Search or filter by state to find a fit.'}
                       {isProjectsMessageExpanded ? tabDescription[activeTab] : ''}
                     </Text>
                   </View>
@@ -465,6 +470,20 @@ export default function ExploreScreen() {
                 {tag}
               </Text>
             </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: 6 }}>
+            {['All', ...NIGERIA_STATES].map((state) => (
+              <TouchableOpacity
+                key={state}
+                onPress={() => setStateFilter(state)}
+                className={`rounded-full mr-2 items-center justify-center ${stateFilter === state ? 'bg-white' : 'bg-white/10'}`}
+                style={FILTER_PILL_STYLE}
+              >
+                <Text className={stateFilter === state ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
+                  {state === 'All' ? 'All states' : state}
+                </Text>
+              </TouchableOpacity>
             ))}
           </ScrollView>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>

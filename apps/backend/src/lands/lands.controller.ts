@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { CreateLandForSaleDto } from './dto/create-land-for-sale.dto';
@@ -11,8 +11,8 @@ export class LandsController {
   constructor(private readonly landsService: LandsService) {}
 
   @Get()
-  getAll() {
-    return this.landsService.getAll();
+  getAll(@Query() query: Record<string, string | undefined>) {
+    return this.landsService.getAll(query);
   }
 
   @Get('admin/list')
