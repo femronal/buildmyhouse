@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { WebSocketService } from '../websocket/websocket.service';
 import { locationSlugsFromText } from '../listings/location-slugs';
+import { geocodeArea } from '../listings/geocode-area';
 import { UpdateHouseForSaleDto } from './dto/update-house-for-sale.dto';
 
 @Injectable()
@@ -71,6 +72,7 @@ export class HousesService {
   }
 
   async create(dto: any) {
+    const coords = await geocodeArea(dto.location);
     const created = await this.prisma.houseForSale.create({
       data: {
         name: dto.name,
@@ -79,6 +81,7 @@ export class HousesService {
         opportunityType: dto.opportunityType,
         location: dto.location,
         ...locationSlugsFromText(dto.location),
+        ...(coords || {}),
         price: Number(dto.price),
         bedrooms: Number(dto.bedrooms),
         bathrooms: Number(dto.bathrooms),

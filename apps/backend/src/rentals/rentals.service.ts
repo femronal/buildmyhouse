@@ -4,6 +4,7 @@ import { CreateRentalListingDto } from './dto/create-rental-listing.dto';
 import { UpdateRentalListingDto } from './dto/update-rental-listing.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { locationSlugsFromText } from '../listings/location-slugs';
+import { geocodeArea } from '../listings/geocode-area';
 
 @Injectable()
 export class RentalsService {
@@ -74,6 +75,7 @@ export class RentalsService {
   }
 
   async create(dto: CreateRentalListingDto) {
+    const coords = await geocodeArea(dto.location);
     return this.prisma.rentalListing.create({
       data: {
         title: dto.title,
@@ -83,6 +85,7 @@ export class RentalsService {
         propertyType: dto.propertyType,
         location: dto.location,
         ...locationSlugsFromText(dto.location),
+        ...(coords || {}),
         annualRent: Number(dto.annualRent),
         serviceCharge: Number(dto.serviceCharge),
         cautionDeposit: Number(dto.cautionDeposit),

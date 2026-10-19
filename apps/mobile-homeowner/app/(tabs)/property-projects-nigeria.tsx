@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Animated, NativeSyntheticEvent, NativeScrollEvent, useWindowDimensions } from "react-native";
-import { useRouter } from "expo-router";
-import { User, FunnelSimple, MagnifyingGlass, CaretDown, CaretUp, Info } from "phosphor-react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { ListingFilterBar } from '@/components/directory/ListingFilterBar';
+import { User, MagnifyingGlass, CaretDown, CaretUp, Info } from "phosphor-react-native";
 import ProjectTypeTabs from '@/components/ProjectTypeTabs';
 import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
@@ -14,13 +15,11 @@ import InternalLinksBlock from '@/components/seo/InternalLinksBlock';
 import { matchesKeywordPhraseQuery } from '@/lib/keyword-search';
 import {
   ALL_LOCATIONS_FILTER,
-  LAGOS_LGAS,
   designMatchesLocationFilter,
+  getDesignLocationLabel,
   getDesignLocationSearchFields,
 } from '@/lib/design-location';
-import { getDesignLocationLabel } from '@/lib/design-location';
 import { locationMatchesState } from '@/lib/opportunity-card';
-import { NIGERIA_STATES } from '@/lib/nigeria-location';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -28,11 +27,6 @@ import {
   getTabContentBottomPadding,
   getTabListingChrome,
 } from "@/lib/responsive-layout";
-
-const FILTER_PILL_STYLE = { paddingHorizontal: 12, paddingVertical: 5 } as const;
-const FILTER_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 16 } as const;
-const FILTER_LOCATION_PILL_STYLE = { paddingHorizontal: 10, paddingVertical: 5 } as const;
-const FILTER_LOCATION_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 11, lineHeight: 14 } as const;
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -55,20 +49,20 @@ export default function ExploreScreen() {
     [tabBarMetrics, listingChrome.mobileWeb],
   );
   const listEmptyVerticalClass = listingChrome.mobileWeb ? 'py-10' : 'py-20';
+  const params = useLocalSearchParams<{ service?: string; state?: string; lga?: string }>();
   const { data: currentUser, isLoading: userLoading } = useCurrentUser();
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [activeLocationFilter, setActiveLocationFilter] = useState(ALL_LOCATIONS_FILTER);
-  const [stateFilter, setStateFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState(typeof params.service === 'string' && params.service ? params.service : 'All');
+  const [activeLocationFilter, setActiveLocationFilter] = useState(typeof params.lga === 'string' && params.lga ? params.lga : ALL_LOCATIONS_FILTER);
+  const [stateFilter, setStateFilter] = useState(typeof params.state === 'string' && params.state ? params.state : 'All');
   const [activeTab, setActiveTab] = useState<'repairs' | 'upgrades' | 'renovation' | 'full_builds'>('repairs');
   const catalog = useDesignCatalog({
     tab: activeTab,
     q: debouncedSearch,
-    location: activeLocationFilter,
-    tag: activeFilter,
+    location: activeLocationFilter !== ALL_LOCATIONS_FILTER ? activeLocationFilter : stateFilter !== 'All' ? stateFilter : undefined,
+    tag: activeFilter === 'All' ? undefined : activeFilter,
   });
   const catalogPages = catalog.data?.pages || [];
   const serverFiltered = catalogPages[0]?.serverFiltered === true;
@@ -84,7 +78,6 @@ export default function ExploreScreen() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
   const [isProjectsMessageExpanded, setIsProjectsMessageExpanded] = useState(false);
-  const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
   const loadingMoreRef = useRef(false);
 
@@ -115,16 +108,6 @@ export default function ExploreScreen() {
     );
   };
 
-  const toggleFilters = () => {
-    const toValue = showFilters ? 0 : 1;
-    Animated.timing(filterAnim, {
-      toValue,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-    setShowFilters(!showFilters);
-  };
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     const { layoutMeasurement, contentSize } = event.nativeEvent;
@@ -141,35 +124,13 @@ export default function ExploreScreen() {
     }
     if (currentScrollY > lastScrollY.current + 2 && currentScrollY > 24) {
       setHeaderCollapsed(true);
-      if (showFilters) {
-        Animated.timing(filterAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
-        setShowFilters(false);
-      }
     } else if (currentScrollY <= 4) {
       setHeaderCollapsed(false);
     }
     lastScrollY.current = currentScrollY;
   };
 
-  const filterHeight = useMemo(
-    () =>
-      filterAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, listingChrome.mobileWeb ? 148 : 176],
-      }),
-    [filterAnim, listingChrome.mobileWeb],
-  );
-
-  const filterOpacity = filterAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
-  // 1 column on mobile, 3 on tablet, 4 on desktop
+  // 2 columns on mobile, 3 on tablet, 4 on desktop
   const gridGap = 16;
   const gridColumns = screenWidth >= 1024 ? 4 : screenWidth >= 768 ? 3 : 2;
   const cardWidth = useMemo(
@@ -407,14 +368,42 @@ export default function ExploreScreen() {
                   style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
                 />
               </View>
-              <TouchableOpacity 
-                onPress={toggleFilters}
-                className={`rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
-                style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
-              >
-                <FunnelSimple size={listingChrome.mobileWeb ? 18 : 20} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
-              </TouchableOpacity>
             </View>
+            <ListingFilterBar
+              quick={(tabFilters[activeTab] || []).filter((tag) => tag !== 'All').slice(0, 6).map((tag) => ({ label: tag, value: tag, count: 1 }))}
+              serviceTitle="Service"
+              serviceOptions={(tabFilters[activeTab] || []).filter((tag) => tag !== 'All').map((tag) => ({
+                label: tag,
+                value: tag,
+                count: serverFiltered ? 1 : (designs || []).filter((design: any) => `${design?.projectTypeFilter || ''} ${design?.name || ''}`.toLowerCase().includes(tag.toLowerCase())).length,
+              }))}
+              serviceValue={activeFilter}
+              onService={(value) => {
+                setActiveFilter(value);
+                router.setParams({ service: value === 'All' ? '' : value });
+              }}
+              stateValue={stateFilter}
+              onState={(value) => {
+                setStateFilter(value);
+                setActiveLocationFilter(ALL_LOCATIONS_FILTER);
+                router.setParams({ state: value === 'All' ? '' : value, lga: '' });
+              }}
+              areaValue={activeLocationFilter === ALL_LOCATIONS_FILTER ? 'All' : activeLocationFilter}
+              onArea={(value) => {
+                const next = value === 'All' ? ALL_LOCATIONS_FILTER : value;
+                setActiveLocationFilter(next);
+                router.setParams({ lga: value === 'All' ? '' : value });
+              }}
+              activeCount={[activeFilter !== 'All', stateFilter !== 'All', activeLocationFilter !== ALL_LOCATIONS_FILTER].filter(Boolean).length}
+              resultCount={catalogPages[0]?.total ?? filteredDesigns.length}
+              noun="project"
+              onClear={() => {
+                setActiveFilter('All');
+                setStateFilter('All');
+                setActiveLocationFilter(ALL_LOCATIONS_FILTER);
+                router.setParams({ service: '', state: '', lga: '' });
+              }}
+            />
           </View>
 
           <View style={{ paddingHorizontal: horizontalPadding, marginBottom: 12 }}>
@@ -452,78 +441,6 @@ export default function ExploreScreen() {
           </View>
         </View>
       </Animated.View>
-
-      {/* Animated Filter Tags */}
-      <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-1" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-            {(tabFilters[activeTab] || ['All']).map((tag) => (
-            <TouchableOpacity 
-              key={tag}
-              onPress={() => setActiveFilter(tag)}
-              className={`rounded-full mr-2 items-center justify-center ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
-              style={FILTER_PILL_STYLE}
-            >
-              <Text 
-                className={activeFilter === tag ? 'text-black' : 'text-white/80'}
-                style={FILTER_PILL_TEXT}
-              >
-                {tag}
-              </Text>
-            </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: 6 }}>
-            {['All', ...NIGERIA_STATES].map((state) => (
-              <TouchableOpacity
-                key={state}
-                onPress={() => setStateFilter(state)}
-                className={`rounded-full mr-2 items-center justify-center ${stateFilter === state ? 'bg-white' : 'bg-white/10'}`}
-                style={FILTER_PILL_STYLE}
-              >
-                <Text className={stateFilter === state ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
-                  {state === 'All' ? 'All states' : state}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-            {[ALL_LOCATIONS_FILTER, ...LAGOS_LGAS].map((location) => (
-              <TouchableOpacity
-                key={location}
-                onPress={() => setActiveLocationFilter(location)}
-                className={`rounded-full mr-2 border items-center justify-center ${
-                  activeLocationFilter === location ? 'bg-white border-white' : 'bg-white/5 border-white/15'
-                }`}
-                style={FILTER_LOCATION_PILL_STYLE}
-              >
-                <Text
-                  className={activeLocationFilter === location ? 'text-black' : 'text-white/75'}
-                  style={FILTER_LOCATION_PILL_TEXT}
-                >
-                  {location}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-      </Animated.View>
-
-      {/* Current Filter Indicator */}
-      <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
-          <TouchableOpacity onPress={toggleFilters} className="flex-row items-center flex-wrap gap-x-2">
-            <Text
-              className="text-white"
-              style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
-            >
-              {activeFilter}
-            </Text>
-            {activeLocationFilter !== ALL_LOCATIONS_FILTER ? (
-              <Text className="text-white/70" style={{ fontFamily: 'Poppins_500Medium', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
-                · {activeLocationFilter}
-              </Text>
-            ) : null}
-            <CaretDown size={16} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
-          </TouchableOpacity>
-      </View>
 
       <ScrollView 
         className="flex-1"

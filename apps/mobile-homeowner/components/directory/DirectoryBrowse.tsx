@@ -1,7 +1,6 @@
 import { Children, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'expo-router';
 import {
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -12,28 +11,17 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronDown, Search, SlidersHorizontal, X } from 'lucide-react-native';
+import { DirectoryChipButton, DirectoryFilterSheet, type DirectoryChip, type DirectoryFilterSection } from '@/components/directory/DirectoryFilterSheet';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { seoContentTypography } from '@/components/seo/SeoContentLayout';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED, LANDING_SURFACE } from '@/lib/home-landing-content';
 import type { DirectorySort } from '@/lib/directory-listing';
 
+export type { DirectoryChip, DirectoryFilterSection };
+
 const INK = LANDING_INK;
 const MUTED = LANDING_MUTED;
 const LINE = LANDING_BORDER;
-
-export type DirectoryChip = {
-  key: string;
-  label: string;
-  active: boolean;
-  href: string;
-};
-
-export type DirectoryFilterSection = {
-  id: string;
-  title: string;
-  hint?: string;
-  chips: DirectoryChip[];
-};
 
 type DirectoryBrowseProps = {
   title: string;
@@ -61,43 +49,6 @@ type DirectoryBrowseProps = {
   empty?: ReactNode;
   children: ReactNode;
 };
-
-function ChipLink({
-  chip,
-  flush = false,
-}: {
-  chip: DirectoryChip;
-  flush?: boolean;
-}) {
-  return (
-    <Link href={chip.href as any} asChild>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityState={{ selected: chip.active }}
-        style={{
-          borderRadius: 999,
-          paddingHorizontal: 14,
-          paddingVertical: 8,
-          marginRight: 8,
-          marginBottom: flush ? 0 : 8,
-          borderWidth: 1,
-          borderColor: chip.active ? INK : LINE,
-          backgroundColor: chip.active ? INK : '#fff',
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: 'Poppins_600SemiBold',
-            fontSize: 13,
-            color: chip.active ? '#fff' : INK,
-          }}
-        >
-          {chip.label}
-        </Text>
-      </Pressable>
-    </Link>
-  );
-}
 
 function DirectorySearch({
   value,
@@ -302,7 +253,7 @@ export default function DirectoryBrowse({
             </Text>
           </Pressable>
           {shownChips.map((chip) => (
-            <ChipLink key={chip.key} chip={chip} flush />
+            <DirectoryChipButton key={chip.key} chip={chip} flush />
           ))}
           {compact && rowChips.length > shownChips.length ? (
             <Pressable
@@ -436,96 +387,15 @@ export default function DirectoryBrowse({
         </View>
       ) : null}
 
-      <Modal visible={filtersOpen} transparent animationType="slide" onRequestClose={() => setFiltersOpen(false)}>
-        <View style={{ flex: 1, justifyContent: wide ? 'center' : 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' }}>
-          <Pressable
-            accessibilityLabel="Close filters"
-            onPress={() => setFiltersOpen(false)}
-            style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 }}
-          />
-          <View
-            style={{
-              backgroundColor: '#fff',
-              maxHeight: wide ? '80%' : '88%',
-              width: wide ? 520 : '100%',
-              alignSelf: wide ? 'center' : 'stretch',
-              borderTopLeftRadius: 20,
-              borderTopRightRadius: 20,
-              borderBottomLeftRadius: wide ? 20 : 0,
-              borderBottomRightRadius: wide ? 20 : 0,
-              paddingBottom: Math.max(insets.bottom, 16),
-            }}
-          >
-            <View
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingHorizontal: 20,
-                paddingTop: 16,
-                paddingBottom: 8,
-              }}
-            >
-              <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: INK }}>Filters</Text>
-              <Pressable onPress={() => setFiltersOpen(false)} accessibilityLabel="Close filters" hitSlop={8}>
-                <X size={20} color={INK} />
-              </Pressable>
-            </View>
-            <ScrollView style={{ flexShrink: 1, paddingHorizontal: 20 }} keyboardShouldPersistTaps="handled">
-              {sections.map((section) => (
-                <View key={section.id} style={{ marginBottom: 16 }}>
-                  <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: INK, marginBottom: 4 }}>
-                    {section.title}
-                  </Text>
-                  {section.hint ? (
-                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: MUTED, marginBottom: 8 }}>
-                      {section.hint}
-                    </Text>
-                  ) : null}
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                    {section.chips.map((chip) => (
-                      <ChipLink key={chip.key} chip={chip} />
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-            <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingTop: 8 }}>
-              <Link href={clearHref as any} asChild>
-                <Pressable
-                  onPress={() => setFiltersOpen(false)}
-                  accessibilityRole="link"
-                  style={{
-                    borderWidth: 1,
-                    borderColor: LINE,
-                    borderRadius: 999,
-                    paddingHorizontal: 16,
-                    paddingVertical: 12,
-                    marginRight: 8,
-                  }}
-                >
-                  <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: INK }}>Clear</Text>
-                </Pressable>
-              </Link>
-              <Pressable
-                onPress={() => setFiltersOpen(false)}
-                accessibilityRole="button"
-                style={{
-                  flex: 1,
-                  backgroundColor: INK,
-                  borderRadius: 999,
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#fff' }}>
-                  {loading || resultCount == null ? 'Show results' : `Show ${countLabel.toLowerCase()}`}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <DirectoryFilterSheet
+        visible={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        sections={sections}
+        clearHref={clearHref}
+        resultLabel={loading || resultCount == null ? 'Show results' : `Show ${countLabel.toLowerCase()}`}
+        wide={wide}
+        bottomInset={insets.bottom}
+      />
     </View>
   );
 }

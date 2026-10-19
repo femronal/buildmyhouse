@@ -986,6 +986,8 @@ model HouseForSale {
   stateSlug           String?
   lgaSlug             String?
   areaSlug            String?
+  latitude            Float?
+  longitude           Float?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -1058,6 +1060,8 @@ model LandForSale {
   stateSlug           String?
   lgaSlug             String?
   areaSlug            String?
+  latitude            Float?
+  longitude           Float?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -1138,6 +1142,8 @@ model RentalListing {
   stateSlug           String?
   lgaSlug             String?
   areaSlug            String?
+  latitude            Float?
+  longitude           Float?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 

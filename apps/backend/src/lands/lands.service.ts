@@ -4,6 +4,7 @@ import { UpdateLandForSaleDto } from './dto/update-land-for-sale.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { WebSocketService } from '../websocket/websocket.service';
 import { locationSlugsFromText } from '../listings/location-slugs';
+import { geocodeArea } from '../listings/geocode-area';
 
 @Injectable()
 export class LandsService {
@@ -95,6 +96,7 @@ export class LandsService {
 
   async create(dto: CreateLandForSaleDto) {
     const landModel = this.getLandModel();
+    const coords = await geocodeArea(dto.location);
     return landModel.create({
       data: {
         name: dto.name,
@@ -103,6 +105,7 @@ export class LandsService {
         opportunityType: dto.opportunityType,
         location: dto.location,
         ...locationSlugsFromText(dto.location),
+        ...(coords || {}),
         price: Number(dto.price),
         sizeSqm: Number(dto.sizeSqm),
         titleDocument: dto.titleDocument,

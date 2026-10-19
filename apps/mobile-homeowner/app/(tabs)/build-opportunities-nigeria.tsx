@@ -17,21 +17,21 @@ import {
   X,
   Check,
   User,
-  FunnelSimple,
   MagnifyingGlass,
   CaretDown,
   CaretUp,
   Info,
 } from "phosphor-react-native";
-import OpportunityDetailSections from '@/components/OpportunityDetailSections';
+import OpportunityDetailView from '@/components/OpportunityDetailView';
+import { ListingFilterBar } from '@/components/directory/ListingFilterBar';
+import type { DirectoryFilterSection } from '@/components/directory/DirectoryFilterSheet';
 import OpportunityProductCard, { OpportunityCardSkeleton } from '@/components/OpportunityProductCard';
 import { useEffect, useMemo, useRef, useState } from "react";
-import ImageCarousel from '@/components/ImageCarousel';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useRentalsForLease } from '@/hooks/useRentalsForLease';
+import { useRentalsForLease, type RentalListing } from '@/hooks/useRentalsForLease';
 import { useRequestRentalInspection } from '@/hooks/useRentalInspection';
-import { useHousesForSale } from '@/hooks/useHousesForSale';
-import { useLandsForSale } from '@/hooks/useLandsForSale';
+import { useHousesForSale, type HouseForSale } from '@/hooks/useHousesForSale';
+import { useLandsForSale, type LandForSale } from '@/hooks/useLandsForSale';
 import { useScheduleHouseViewing } from '@/hooks/useHouseViewing';
 import { useScheduleLandViewing } from '@/hooks/useLandViewing';
 import { getBackendAssetUrl } from '@/lib/image';
@@ -53,7 +53,6 @@ import {
 import { matchesKeywordPhraseQuery } from "@/lib/keyword-search";
 import ProjectTypeTabs, { type UnderlineTabItem } from '@/components/ProjectTypeTabs';
 import { locationMatchesState, secondaryListingLabel, sourceLabel, specsLine } from '@/lib/opportunity-card';
-import { NIGERIA_STATES } from '@/lib/nigeria-location';
 
 const OPPORTUNITY_TABS: UnderlineTabItem<BuildOpportunityCategoryKey>[] = [
   { key: 'residential', label: 'Residential' },
@@ -62,9 +61,6 @@ const OPPORTUNITY_TABS: UnderlineTabItem<BuildOpportunityCategoryKey>[] = [
   { key: 'industrial_construction', label: 'Industrial' },
   { key: 'environmental_construction', label: 'Environmental' },
 ];
-
-const FILTER_PILL_STYLE = { paddingHorizontal: 12, paddingVertical: 5 } as const;
-const FILTER_PILL_TEXT = { fontFamily: 'Poppins_500Medium', fontSize: 12, lineHeight: 16 } as const;
 
 type BuildOpportunity = {
   id: string;
@@ -75,6 +71,7 @@ type BuildOpportunity = {
   opportunityType?: string | null;
   location: string;
   priceLabel: string;
+  priceAmount: number;
   sourceLabel: string;
   secondaryLabel?: string;
   specsLine?: string;
@@ -135,9 +132,11 @@ export default function RentScreen() {
 
   const [favorites, setFavorites] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [stateFilter, setStateFilter] = useState('All');
+  const [listingKind, setListingKind] = useState<'all' | 'rental' | 'house' | 'land'>('all');
+  const [priceBand, setPriceBand] = useState('all');
+  const [bedsFilter, setBedsFilter] = useState('any');
   const [activeTab, setActiveTab] = useState<BuildOpportunityCategoryKey>('residential');
   const [isBuildMessageExpanded, setIsBuildMessageExpanded] = useState(false);
 
@@ -145,7 +144,6 @@ export default function RentScreen() {
   const [selectedOpportunity, setSelectedOpportunity] = useState<BuildOpportunity | null>(null);
   const [rentRequestSuccess, setRentRequestSuccess] = useState(false);
 
-  const filterAnim = useRef(new Animated.Value(0)).current;
   const lastScrollY = useRef(0);
 
   // Collapsible header chrome (headline, tabs, search, notice) — collapses on
@@ -173,19 +171,6 @@ export default function RentScreen() {
     [gridColumns, horizontalPadding, contentWidth],
   );
 
-  const filterHeight = useMemo(
-    () =>
-      filterAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0, listingChrome.mobileWeb ? 96 : 112],
-      }),
-    [filterAnim, listingChrome.mobileWeb],
-  );
-  const filterOpacity = filterAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-
   useWebSeo({
     title: 'Build Opportunities in Nigeria | Land, Homes & Investment Properties | BuildMyHouse',
     description:
@@ -194,28 +179,10 @@ export default function RentScreen() {
     robots: 'index,follow',
   });
 
-  const toggleFilters = () => {
-    const toValue = showFilters ? 0 : 1;
-    Animated.timing(filterAnim, {
-      toValue,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-    setShowFilters(!showFilters);
-  };
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const currentScrollY = event.nativeEvent.contentOffset.y;
     if (currentScrollY > lastScrollY.current + 2 && currentScrollY > 24) {
       setHeaderCollapsed(true);
-      if (showFilters) {
-        Animated.timing(filterAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: false,
-        }).start();
-        setShowFilters(false);
-      }
     } else if (currentScrollY <= 4) {
       setHeaderCollapsed(false);
     }
@@ -223,7 +190,7 @@ export default function RentScreen() {
   };
 
   const allOpportunities = useMemo<BuildOpportunity[]>(() => {
-    const rentalOpportunities: BuildOpportunity[] = rentalsForLease.map((listing) => ({
+    const rentalOpportunities: BuildOpportunity[] = rentalsForLease.map((listing: RentalListing) => ({
       id: listing.id,
       source: 'rental',
       title: listing.title,
@@ -232,6 +199,7 @@ export default function RentScreen() {
       opportunityType: listing.opportunityType || undefined,
       location: listing.location,
       priceLabel: `${formatNaira(listing.annualRent)}/yr`,
+      priceAmount: listing.annualRent,
       sourceLabel: sourceLabel('rental'),
       secondaryLabel: secondaryListingLabel({
         source: 'rental',
@@ -286,12 +254,14 @@ export default function RentScreen() {
         rules: listing.rules,
         inspectionWindow: listing.inspectionWindow,
         proximity: listing.proximity,
+        latitude: (listing as { latitude?: number }).latitude,
+        longitude: (listing as { longitude?: number }).longitude,
         verificationDocs: listing.verificationDocs,
       },
       images: listing.images || [],
     }));
 
-    const houseOpportunities: BuildOpportunity[] = housesForSale.map((house) => ({
+    const houseOpportunities: BuildOpportunity[] = housesForSale.map((house: HouseForSale) => ({
       id: house.id,
       source: 'house',
       title: house.name,
@@ -300,6 +270,7 @@ export default function RentScreen() {
       opportunityType: house.opportunityType || undefined,
       location: house.location,
       priceLabel: formatNaira(house.price),
+      priceAmount: house.price,
       sourceLabel: sourceLabel('house'),
       secondaryLabel: secondaryListingLabel({
         source: 'house',
@@ -334,13 +305,15 @@ export default function RentScreen() {
         condition: house.condition,
         parking: house.parking,
         documents: house.documents,
+        latitude: (house as { latitude?: number }).latitude,
+        longitude: (house as { longitude?: number }).longitude,
         amenities: house.amenities,
         nearbyFacilities: house.nearbyFacilities,
       },
       images: house.images || [],
     }));
 
-    const landOpportunities: BuildOpportunity[] = landsForSale.map((land) => ({
+    const landOpportunities: BuildOpportunity[] = landsForSale.map((land: LandForSale) => ({
       id: land.id,
       source: 'land',
       title: land.name,
@@ -349,6 +322,7 @@ export default function RentScreen() {
       opportunityType: land.opportunityType || undefined,
       location: land.location,
       priceLabel: formatNaira(land.price),
+      priceAmount: land.price,
       sourceLabel: sourceLabel('land'),
       secondaryLabel: secondaryListingLabel({
         source: 'land',
@@ -378,6 +352,8 @@ export default function RentScreen() {
         roadAccess: land.roadAccess,
         ownershipType: land.ownershipType,
         documents: land.documents,
+        latitude: (land as { latitude?: number }).latitude,
+        longitude: (land as { longitude?: number }).longitude,
         nearbyLandmarks: land.nearbyLandmarks,
         restrictions: land.restrictions,
       },
@@ -386,6 +362,36 @@ export default function RentScreen() {
 
     return [...rentalOpportunities, ...houseOpportunities, ...landOpportunities];
   }, [rentalsForLease, housesForSale, landsForSale]);
+
+  const opportunityExtraFilters = useMemo<DirectoryFilterSection[]>(() => {
+    const chip = (key: string, label: string, active: boolean, onPress: () => void) => ({ key, label, active, href: '', onPress });
+    return [
+      {
+        id: 'listing',
+        title: 'Type',
+        chips: (['all', 'rental', 'house', 'land'] as const).map((kind) =>
+          chip(`type-${kind}`, kind === 'all' ? 'All' : kind === 'house' ? 'For sale' : kind === 'land' ? 'Land' : 'Rental', listingKind === kind, () => setListingKind(kind)),
+        ),
+      },
+      {
+        id: 'price',
+        title: 'Price range',
+        chips: [
+          chip('price-all', 'Any', priceBand === 'all', () => setPriceBand('all')),
+          chip('price-under', 'Under ₦20m', priceBand === 'under-20', () => setPriceBand('under-20')),
+          chip('price-mid', '₦20m to ₦100m', priceBand === '20-100', () => setPriceBand('20-100')),
+          chip('price-over', 'Over ₦100m', priceBand === 'over-100', () => setPriceBand('over-100')),
+        ],
+      },
+      ...(listingKind === 'land' ? [] : [{
+        id: 'beds',
+        title: 'Bedrooms',
+        chips: ['any', '1', '2', '3', '4', '5'].map((value) =>
+          chip(`beds-${value}`, value === 'any' ? 'Any' : value === '5' ? '5+' : value, bedsFilter === value, () => setBedsFilter(value)),
+        ),
+      }]),
+    ];
+  }, [listingKind, priceBand, bedsFilter]);
 
   const availableFilters = useMemo(() => {
     const baseFilters = BUILD_OPPORTUNITY_FILTERS[activeTab] || [];
@@ -415,11 +421,19 @@ export default function RentScreen() {
           ...(listing.extraDocs || []),
         ],
       });
-      const filterMatch = activeFilter === 'All' || listing.opportunityType === activeFilter;
+      const filterMatch = activeFilter === 'All'
+        || (activeFilter === 'land' ? listing.source === 'land' : listing.opportunityType === activeFilter);
       const stateMatch = locationMatchesState(listing.location, stateFilter);
-      return tabMatch && queryMatch && filterMatch && stateMatch;
+      const kindMatch = listingKind === 'all' || listing.source === listingKind;
+      const priceMatch = priceBand === 'all'
+        || (priceBand === 'under-20' && listing.priceAmount < 20_000_000)
+        || (priceBand === '20-100' && listing.priceAmount >= 20_000_000 && listing.priceAmount <= 100_000_000)
+        || (priceBand === 'over-100' && listing.priceAmount > 100_000_000);
+      const bedsMatch = listing.source === 'land' || bedsFilter === 'any'
+        || (bedsFilter === '5' ? Number(listing.bedrooms) >= 5 : Number(listing.bedrooms) === Number(bedsFilter));
+      return tabMatch && queryMatch && filterMatch && stateMatch && kindMatch && priceMatch && bedsMatch;
     });
-  }, [activeTab, searchQuery, activeFilter, stateFilter, allOpportunities]);
+  }, [activeTab, searchQuery, activeFilter, stateFilter, listingKind, priceBand, bedsFilter, allOpportunities]);
 
   useEffect(() => {
     if (!availableFilters.includes(activeFilter)) {
@@ -553,14 +567,44 @@ export default function RentScreen() {
                   style={{ fontFamily: 'Poppins_400Regular', outlineStyle: 'none' } as any}
                 />
               </View>
-              <TouchableOpacity
-                onPress={toggleFilters}
-                className={`rounded-full items-center justify-center border ${showFilters ? 'bg-white border-white' : 'bg-white/5 border-white/15'}`}
-                style={{ width: listingChrome.avatarSize, height: listingChrome.avatarSize }}
-              >
-                <FunnelSimple size={listingChrome.mobileWeb ? 18 : 20} color={showFilters ? '#000000' : '#FFFFFF'} weight="bold" />
-              </TouchableOpacity>
             </View>
+            <ListingFilterBar
+              quick={['duplex', 'bungalow', 'terrace', 'apartment_block', 'mini_estate', 'land'].map((value) => ({
+                label: value === 'land' ? 'Land' : formatBuildOpportunityKey(value),
+                value,
+                count: 1,
+              }))}
+              serviceTitle="Service"
+              serviceOptions={(availableFilters.filter((tag) => tag !== 'All')).map((tag) => ({
+                label: formatBuildOpportunityKey(tag),
+                value: tag,
+                count: allOpportunities.filter((item) => item.opportunityType === tag && (item.opportunityCategory || 'residential') === activeTab).length || (allOpportunities.some((item) => item.opportunityType === tag) ? 1 : 0),
+              }))}
+              serviceValue={activeFilter}
+              onService={(value) => {
+                setActiveFilter(value);
+                router.setParams({ type: value === 'All' ? '' : value });
+              }}
+              stateValue={stateFilter}
+              onState={(value) => {
+                setStateFilter(value);
+                router.setParams({ state: value === 'All' ? '' : value });
+              }}
+              areaValue="All"
+              onArea={() => undefined}
+              extraSections={opportunityExtraFilters}
+              activeCount={[activeFilter !== 'All', stateFilter !== 'All', listingKind !== 'all', priceBand !== 'all', bedsFilter !== 'any'].filter(Boolean).length}
+              resultCount={filteredListings.length}
+              noun="opportunity"
+              onClear={() => {
+                setActiveFilter('All');
+                setStateFilter('All');
+                setListingKind('all');
+                setPriceBand('all');
+                setBedsFilter('any');
+                router.setParams({ type: '', state: '', listing: '', price: '', beds: '' });
+              }}
+            />
           </View>
 
           <View style={{ marginBottom: 12, paddingHorizontal: horizontalPadding }}>
@@ -597,49 +641,6 @@ export default function RentScreen() {
           </View>
         </View>
       </Animated.View>
-
-      <Animated.View style={{ height: filterHeight, opacity: filterOpacity, overflow: 'hidden' }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: horizontalPadding, paddingBottom: 6 }}>
-          {['All', ...NIGERIA_STATES].map((state) => (
-            <TouchableOpacity
-              key={state}
-              onPress={() => setStateFilter(state)}
-              className={`rounded-full mr-2 items-center justify-center ${stateFilter === state ? 'bg-white' : 'bg-white/10'}`}
-              style={FILTER_PILL_STYLE}
-            >
-              <Text className={stateFilter === state ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
-                {state === 'All' ? 'All states' : state}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="pb-2" contentContainerStyle={{ paddingHorizontal: horizontalPadding }}>
-          {availableFilters.map((tag) => (
-            <TouchableOpacity
-              key={tag}
-              onPress={() => setActiveFilter(tag)}
-              className={`rounded-full mr-2 items-center justify-center ${activeFilter === tag ? 'bg-white' : 'bg-white/10'}`}
-              style={FILTER_PILL_STYLE}
-            >
-              <Text className={activeFilter === tag ? 'text-black' : 'text-white/80'} style={FILTER_PILL_TEXT}>
-                {tag === 'All' ? 'All' : formatBuildOpportunityKey(tag)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </Animated.View>
-
-      <View style={{ marginBottom: listingChrome.filterIndicatorMarginBottom, paddingHorizontal: horizontalPadding }}>
-        <TouchableOpacity onPress={toggleFilters} className="flex-row items-center">
-          <Text
-            className="text-white"
-            style={{ fontFamily: 'Poppins_600SemiBold', fontSize: listingChrome.mobileWeb ? 15 : 18 }}
-          >
-            {activeFilter === 'All' ? 'All' : formatBuildOpportunityKey(activeFilter)}
-          </Text>
-          <CaretDown size={16} color="#FFFFFF" weight="bold" style={{ marginLeft: 4 }} />
-        </TouchableOpacity>
-      </View>
 
       <ScrollView
         className="flex-1"
@@ -734,63 +735,22 @@ export default function RentScreen() {
                   </TouchableOpacity>
                 </View>
 
-                <ImageCarousel
-                  images={
-                    selectedOpportunity?.images?.length
-                      ? selectedOpportunity.images.map((img: any, index: number) => ({
-                          url: getBackendAssetUrl(img.url) || img.url,
-                          label: img.label || (index === 0 ? 'Exterior' : 'Interior'),
-                        }))
-                      : [
-                          {
-                            url: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80',
-                            label: 'Exterior',
-                          },
-                        ]
-                  }
-                  aspectRatio={4 / 3}
-                  maxHeight={320}
-                />
-
-                <View className="bg-blue-50 border border-blue-200 rounded-2xl p-3 mt-4 mb-3">
-                  <Text className="text-blue-900 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    This opportunity is tied to a real location and should be inspected before any commitment.
-                  </Text>
-                </View>
-
                 {selectedOpportunity ? (
-                  <OpportunityDetailSections
-                    entity={
-                      selectedOpportunity.source === 'rental'
-                        ? 'rental'
-                        : selectedOpportunity.source === 'house'
-                          ? 'house'
-                          : 'land'
-                    }
+                  <OpportunityDetailView
+                    entity={selectedOpportunity.source === 'rental' ? 'rental' : selectedOpportunity.source === 'house' ? 'house' : 'land'}
                     data={selectedOpportunity.profileData}
+                    title={selectedOpportunity.title}
+                    priceLabel={selectedOpportunity.priceLabel}
+                    location={selectedOpportunity.location}
+                    sourceLabel={selectedOpportunity.sourceLabel}
+                    images={(selectedOpportunity.images || []).map((img: any) => ({
+                      url: getBackendAssetUrl(img.thumbnailUrl || img.url) || img.url,
+                      label: img.label,
+                    }))}
+                    onRequestInspection={requestRentInspection}
+                    requesting={requestInspectionMutation.isPending || scheduleHouseViewingMutation.isPending || scheduleLandViewingMutation.isPending}
                   />
                 ) : null}
-
-                <TouchableOpacity
-                  onPress={requestRentInspection}
-                  disabled={
-                    requestInspectionMutation.isPending ||
-                    scheduleHouseViewingMutation.isPending ||
-                    scheduleLandViewingMutation.isPending
-                  }
-                  className="bg-black rounded-full py-4 px-8 mb-2"
-                >
-                  <Text className="text-white text-base text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {(requestInspectionMutation.isPending ||
-                      scheduleHouseViewingMutation.isPending ||
-                      scheduleLandViewingMutation.isPending)
-                      ? 'Submitting...'
-                      : 'Request Property Inspection'}
-                  </Text>
-                </TouchableOpacity>
-                <Text className="text-gray-500 text-xs text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  BuildMyHouse will coordinate inspection and next steps for this location-specific scope.
-                </Text>
               </ScrollView>
             ) : (
               <View className="items-center py-8">
