@@ -15,6 +15,7 @@ const stageStatusStyles: Record<string, string> = {
   in_progress: 'bg-blue-100 text-blue-700',
   completed: 'bg-green-100 text-green-700',
   blocked: 'bg-red-100 text-red-700',
+  pending_homeowner_approval: 'bg-gray-100 text-gray-800',
 };
 
 function TagListEditor({
@@ -171,6 +172,12 @@ export default function AdminProjectDetailPage() {
             </span>
           </div>
           <p className="text-gray-500 mt-1">{project.address}</p>
+          {project.acceptedBy?.fullName ? (
+            <p className="text-sm text-gray-600 mt-1">Accepted by {project.acceptedBy.fullName}</p>
+          ) : null}
+          {project.completedAt ? (
+            <p className="text-sm text-gray-600">Completed at {new Date(project.completedAt).toLocaleString()}</p>
+          ) : null}
         </div>
       </div>
 

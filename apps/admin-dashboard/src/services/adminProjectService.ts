@@ -142,6 +142,13 @@ export type AdminProjectStage = {
   estimatedDuration: string;
   startDate?: string | null;
   completionDate?: string | null;
+  submittedForApprovalAt?: string | null;
+  approvedAt?: string | null;
+  approvalMethod?: string | null;
+  approvalNote?: string | null;
+  approvalEvidenceUrl?: string | null;
+  approvalReminderCount?: number;
+  approvedBy?: { fullName?: string | null } | null;
   teamMembers?: StageTeamMember[];
   materials?: StageMaterial[];
   media?: StageMedia[];
@@ -160,6 +167,8 @@ export type AdminProject = {
   projectType?: string | null;
   managedByAdmin?: boolean;
   needsExtraMonitoring?: boolean;
+  completedAt?: string | null;
+  acceptedBy?: { fullName?: string | null } | null;
   aiAnalysis?: Record<string, unknown> | null;
   homeowner?: { fullName?: string | null; email?: string | null } | null;
   generalContractor?: { fullName?: string | null; email?: string | null } | null;

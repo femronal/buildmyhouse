@@ -18,6 +18,7 @@ type StageView = {
   estimatedDuration?: string | null;
   startDate?: string | null;
   completionDate?: string | null;
+  submittedForApprovalAt?: string | null;
 };
 
 type ApiProject = {
@@ -146,6 +147,8 @@ export default function ProjectsPage() {
       const params = new URLSearchParams();
       if (statusFilter === 'extra_monitoring') {
         params.set('needsExtraMonitoring', 'true');
+      } else if (statusFilter === 'waiting_approval') {
+        params.set('waitingForApproval', 'true');
       } else if (statusFilter === 'archived') {
         params.set('status', 'archived');
       } else if (statusFilter !== 'all') {
@@ -400,6 +403,7 @@ export default function ProjectsPage() {
               <option value="cancelled">Cancelled</option>
               <option value="archived">Archived</option>
               <option value="extra_monitoring">Extra monitoring</option>
+              <option value="waiting_approval">Waiting for homeowner approval</option>
             </select>
           </div>
 
@@ -475,7 +479,46 @@ export default function ProjectsPage() {
         </div>
       ) : null}
 
-      <div className={`grid grid-cols-1 xl:grid-cols-2 gap-6 ${statusFilter === 'extra_monitoring' ? 'hidden' : ''}`}>
+      {statusFilter === 'waiting_approval' ? (
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
+              <tr>
+                <th className="px-4 py-3">Project</th>
+                <th className="px-4 py-3">Waiting stage</th>
+                <th className="px-4 py-3">Waiting since</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(projectsQuery.data || []).map((project) => {
+                const waiting = (project.stages || [])
+                  .filter((stage) => stage.status === 'pending_homeowner_approval')
+                  .sort((a, b) => String(a.submittedForApprovalAt || '').localeCompare(String(b.submittedForApprovalAt || '')));
+                const oldest = waiting[0];
+                const waited = oldest?.submittedForApprovalAt
+                  ? `${Math.max(0, Math.floor((Date.now() - new Date(oldest.submittedForApprovalAt).getTime()) / 86400000))} days`
+                  : '';
+                return (
+                  <tr key={project.id} className="border-b last:border-0">
+                    <td className="px-4 py-3">
+                      <Link href={`/projects/${project.id}`} className="font-medium text-gray-900 hover:underline">
+                        {project.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{waiting.map((stage) => stage.name).join(', ')}</td>
+                    <td className="px-4 py-3">{waited}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {!projectsQuery.isLoading && (projectsQuery.data || []).length === 0 ? (
+            <p className="p-6 text-sm text-gray-500">No stages are waiting for homeowner approval.</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={`grid grid-cols-1 xl:grid-cols-2 gap-6 ${statusFilter === 'extra_monitoring' || statusFilter === 'waiting_approval' ? 'hidden' : ''}`}>
         {projectsQuery.isLoading && (
           <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500 xl:col-span-2">
             Loading projects…

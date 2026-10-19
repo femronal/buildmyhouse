@@ -1,10 +1,11 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine } from "lucide-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine, MessageCircle } from "lucide-react-native";
 import { useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
 import { stageDocumentationService } from '@/services/stageDocumentationService';
+import { projectService } from '@/services/projectService';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadFile } from '@/utils/fileUpload';
@@ -53,7 +54,6 @@ export default function GCStageDetailScreen() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [confirmations, setConfirmations] = useState({
     stageComplete: false,
-    homeownerSatisfied: false,
   });
   
   // Documentation requirements modal
@@ -121,13 +121,15 @@ export default function GCStageDetailScreen() {
     mediaEvidence: [] as { uri: string; name: string; mimeType?: string; file?: File | null }[],
   });
 
-  const isComplete = status === 'complete' || status === 'completed';
-  const isInProgress = status === 'in-progress' || status === 'in_progress';
-
   // Fetch project to get stage data
   const { data: project, refetch: refetchProject } = useProject(projectId as string || null);
 
   const stage = project?.stages?.find((s: any) => s.id === stageId) as any;
+  const actualStatus = stage?.status || status;
+  const isWaiting = actualStatus === 'pending_homeowner_approval';
+  const isComplete = actualStatus === 'complete' || actualStatus === 'completed';
+  const isInProgress = !isWaiting && !isComplete && (actualStatus === 'in-progress' || actualStatus === 'in_progress');
+  const homeownerFirstName = String(project?.homeowner?.fullName || 'the homeowner').trim().split(' ')[0];
   const materials = stage?.materials || [];
   const teamMembers = stage?.teamMembers || [];
   const media = stage?.media || [];
@@ -880,14 +882,19 @@ export default function GCStageDetailScreen() {
             <PenLine size={18} color="#60A5FA" strokeWidth={2.2} />
           </TouchableOpacity>
         </View>
-        <View className={`rounded-full px-3 py-1 self-start ${isComplete ? 'bg-green-600' : 'bg-blue-600'}`}>
+        <View className={`rounded-full px-3 py-1 self-start ${isComplete ? 'bg-green-600' : isWaiting ? 'bg-gray-500' : 'bg-blue-600'}`}>
           <Text 
             className="text-xs text-white"
             style={{ fontFamily: 'Poppins_500Medium' }}
           >
-            {isComplete ? 'Complete' : 'In Progress'}
+            {isComplete ? 'Complete' : isWaiting ? 'Waiting for homeowner approval' : 'In Progress'}
           </Text>
         </View>
+        {isWaiting && stage?.submittedForApprovalAt ? (
+          <Text className="text-gray-300 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Submitted {new Date(stage.submittedForApprovalAt).toLocaleString()}
+          </Text>
+        ) : null}
         {!!pendingStageChangeRequest && (
           <Text className="text-amber-300 text-xs mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
             Stage change request pending admin review
@@ -1241,6 +1248,27 @@ export default function GCStageDetailScreen() {
               Congratulations! This stage has been successfully completed.
             </Text>
           </View>
+        ) : isWaiting ? (
+          <>
+            <TouchableOpacity
+              onPress={() =>
+                router.push(
+                  `/contractor/chat?projectId=${projectId}&userId=${project?.homeowner?.id || project?.homeownerId}&name=${encodeURIComponent(project?.homeowner?.fullName || homeownerFirstName)}`,
+                )
+              }
+              className="bg-black rounded-full py-5 px-8"
+            >
+              <View className="flex-row items-center justify-center">
+                <MessageCircle size={18} color="#FFFFFF" strokeWidth={2} />
+                <Text className="text-white text-lg text-center ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Message {homeownerFirstName}
+                </Text>
+              </View>
+            </TouchableOpacity>
+            <Text className="text-gray-400 text-xs text-center mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              No reply yet? Follow up with the homeowner in chat.
+            </Text>
+          </>
         ) : isInProgress ? (
           <>
             <TouchableOpacity
@@ -1258,7 +1286,7 @@ export default function GCStageDetailScreen() {
               className="text-gray-400 text-xs text-center mt-3"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Confirm that this stage is complete and homeowner is satisfied
+              Confirm that this stage is complete
             </Text>
           </>
         ) : (
@@ -2408,7 +2436,7 @@ export default function GCStageDetailScreen() {
         transparent={true}
         onRequestClose={() => {
           setShowCompleteModal(false);
-          setConfirmations({ stageComplete: false, homeownerSatisfied: false });
+          setConfirmations({ stageComplete: false });
         }}
       >
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
@@ -2443,26 +2471,6 @@ export default function GCStageDetailScreen() {
                 </View>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => setConfirmations(prev => ({ ...prev, homeownerSatisfied: !prev.homeownerSatisfied }))}
-                className="flex-row items-start p-4 bg-[#0A1628] rounded-xl border border-blue-900 mb-6"
-              >
-                <View className={`w-6 h-6 rounded border-2 mr-3 mt-0.5 items-center justify-center ${
-                  confirmations.homeownerSatisfied ? 'bg-green-600 border-green-600' : 'border-gray-400'
-                }`}>
-                  {confirmations.homeownerSatisfied && (
-                    <Check size={16} color="#FFFFFF" strokeWidth={3} />
-                  )}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Homeowner Has Reviewed Everything
-                  </Text>
-                  <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    I confirm that the homeowner has reviewed all videos, team members, materials, and files for this stage and is satisfied.
-                  </Text>
-                </View>
-              </TouchableOpacity>
             </ScrollView>
 
             {/* Action Buttons */}
@@ -2470,7 +2478,7 @@ export default function GCStageDetailScreen() {
               <TouchableOpacity
                 onPress={() => {
                   setShowCompleteModal(false);
-                  setConfirmations({ stageComplete: false, homeownerSatisfied: false });
+                  setConfirmations({ stageComplete: false });
                 }}
                 className="flex-1 bg-[#0A1628] rounded-xl py-3 border border-blue-900"
               >
@@ -2480,21 +2488,20 @@ export default function GCStageDetailScreen() {
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => {
-                  if (!confirmations.stageComplete || !confirmations.homeownerSatisfied) {
-                    Alert.alert('Required', 'Please confirm both statements before completing the stage');
+                  if (!confirmations.stageComplete) {
+                    Alert.alert('Required', 'Please confirm this stage is complete');
                     return;
                   }
                   
                   try {
-                    await updateStageStatusMutation.mutateAsync({
-                      projectId: projectId as string,
-                      stageId: stageId as string,
-                      status: 'completed',
-                    });
+                    await projectService.submitStageForApproval(projectId as string, stageId as string);
                     setShowCompleteModal(false);
-                    setConfirmations({ stageComplete: false, homeownerSatisfied: false });
+                    setConfirmations({ stageComplete: false });
                     refetchProject();
-                    Alert.alert('Success', 'Stage marked as complete!');
+                    Alert.alert(
+                      'Waiting for approval',
+                      `Project will be completed once ${homeownerFirstName} approves the evidence you have submitted.`,
+                    );
                   } catch (error: any) {
                     // Extract the error message and show it clearly
                     const errorMessage = error?.message || 'Failed to complete stage';
@@ -2509,18 +2516,14 @@ export default function GCStageDetailScreen() {
                     }
                   }
                 }}
-                disabled={!confirmations.stageComplete || !confirmations.homeownerSatisfied || updateStageStatusMutation.isPending}
+                disabled={!confirmations.stageComplete}
                 className={`flex-1 bg-green-600 rounded-xl py-3 ${
-                  (!confirmations.stageComplete || !confirmations.homeownerSatisfied || updateStageStatusMutation.isPending) ? 'opacity-50' : ''
+                  !confirmations.stageComplete ? 'opacity-50' : ''
                 }`}
               >
-                {updateStageStatusMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
                   <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Confirm & Complete
                   </Text>
-                )}
               </TouchableOpacity>
             </View>
           </View>

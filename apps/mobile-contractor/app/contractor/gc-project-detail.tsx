@@ -19,6 +19,7 @@ import {
 } from "lucide-react-native";
 import { useState } from "react";
 import { useProject, useUpdateStageStatus } from "@/hooks/useProjects";
+import { projectService } from "@/services/projectService";
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
@@ -161,16 +162,16 @@ export default function GCProjectDetailScreen() {
     if (!id || !selectedStage) return;
 
     try {
-      await updateStageStatusMutation.mutateAsync({
-        projectId: id as string,
-        stageId: selectedStage.id,
-        status: 'completed',
-      });
+      await projectService.submitStageForApproval(id as string, selectedStage.id);
       setShowCompleteModal(false);
       setSelectedStage(null);
       setConfirmations({ stageComplete: false, evidenceProvided: false });
-      refetch(); // Refetch to update UI
-      Alert.alert('Success', 'Stage marked as complete successfully.');
+      refetch();
+      const firstName = String(project?.homeowner?.fullName || 'the homeowner').trim().split(' ')[0];
+      Alert.alert(
+        'Waiting for approval',
+        `Project will be completed once ${firstName} approves the evidence you have submitted.`,
+      );
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to complete stage. Please try again.');
     }
@@ -545,7 +546,7 @@ export default function GCProjectDetailScreen() {
             </View>
           ) : (
             stages.map((stage: any, index: number) => {
-              const isClickable = stage.status === 'completed' || stage.status === 'in_progress';
+              const isClickable = stage.status === 'completed' || stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval';
               const canStart = stage.status === 'not_started' && canStartStage(index, stages);
               const isLocked = stage.status === 'not_started' && !canStartStage(index, stages);
 
@@ -555,6 +556,8 @@ export default function GCProjectDetailScreen() {
                     return 'complete';
                   case 'in_progress':
                     return 'in-progress';
+                  case 'pending_homeowner_approval':
+                    return 'pending_homeowner_approval';
                   default:
                     return 'not-started';
                 }
@@ -572,6 +575,12 @@ export default function GCProjectDetailScreen() {
                     return (
                       <View className="bg-blue-600 rounded-full px-3 py-1">
                         <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>In Progress</Text>
+                      </View>
+                    );
+                  case 'pending_homeowner_approval':
+                    return (
+                      <View className="bg-gray-500 rounded-full px-3 py-1">
+                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>Waiting for approval</Text>
                       </View>
                     );
                   default:

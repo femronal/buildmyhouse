@@ -244,6 +244,8 @@ model User {
   // Relations
   homeownerProjects            Project[]               @relation("HomeownerProjects")
   contractorProjects           Project[]               @relation("ContractorProjects")
+  stagesApproved               Stage[]                 @relation("StageApprovedBy")
+  projectsAccepted             Project[]               @relation("ProjectAcceptedBy")
   sentMessages                 Message[]               @relation("SentMessages")
   receivedConversations        Conversation[]          @relation("Participants")
   vendorMaterials              Material[]              @relation("VendorMaterials")
@@ -490,12 +492,15 @@ model Project {
   managedByAdmin            Boolean                   @default(false)
   needsExtraMonitoring      Boolean                   @default(false)
   monitoringReason          String?
+  acceptedById              String?
+  completedAt               DateTime?
   createdAt                 DateTime                  @default(now())
   updatedAt                 DateTime                  @updatedAt
 
   // Relations
   homeowner           User                  @relation("HomeownerProjects", fields: [homeownerId], references: [id])
   generalContractor   User?                 @relation("ContractorProjects", fields: [generalContractorId], references: [id])
+  acceptedBy          User?                 @relation("ProjectAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
   stages              Stage[]
   payments            Payment[]
   projectRequests     ProjectRequest[]
@@ -515,18 +520,27 @@ model Stage {
   id                String    @id @default(uuid())
   projectId         String
   name              String
-  status            String    @default("not_started") // 'not_started' | 'in_progress' | 'completed' | 'blocked'
+  status            String    @default("not_started") // 'not_started' | 'in_progress' | 'pending_homeowner_approval' | 'completed' | 'blocked'
   order             Int
   estimatedCost     Float
   actualCost        Float?
   estimatedDuration String
   startDate         DateTime?
   completionDate    DateTime?
+  submittedForApprovalAt DateTime?
+  approvedById      String?
+  approvedAt        DateTime?
+  approvalMethod    String?
+  approvalNote      String?   @db.Text
+  approvalEvidenceUrl String?
+  lastApprovalReminderAt DateTime?
+  approvalReminderCount Int     @default(0)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   // Relations
   project         Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approvedBy      User?                 @relation("StageApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
   payments        Payment[]
   projectRequests ProjectRequest[]
   teamMembers     StageTeamMember[]
@@ -537,6 +551,7 @@ model Stage {
   changeRequests           StageChangeRequest[]
   professionalEngagements  ProfessionalEngagement[]
 
+  @@index([status])
   @@map("stages")
 }
 

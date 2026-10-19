@@ -1341,7 +1341,16 @@ export class ProjectsService {
   /**
    * Update stage status (start or complete)
    */
-  async updateStageStatus(projectId: string, stageId: string, status: 'not_started' | 'in_progress' | 'completed' | 'blocked') {
+  async updateStageStatus(
+    projectId: string,
+    stageId: string,
+    status: 'not_started' | 'in_progress' | 'completed' | 'blocked',
+    actorRole?: string,
+  ) {
+    if (status === 'completed' && actorRole === 'general_contractor') {
+      return this.submitStageForApproval(projectId, stageId);
+    }
+
     // Verify stage belongs to project
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
@@ -1382,81 +1391,14 @@ export class ProjectsService {
       include: { project: true },
     });
 
-    // Update project progress and currentStage
-    const allStages = await this.prisma.stage.findMany({
-      where: { projectId },
-      orderBy: { order: 'asc' },
-    });
-    const completedStages = allStages.filter((s) => s.status === 'completed');
-    const progress = allStages.length > 0 ? Math.round(
-      (completedStages.length / allStages.length) * 100,
-    ) : 0;
-
-    // Calculate spent amount from completed stages' estimatedCost
-    const spent = completedStages.reduce((sum, stage) => sum + (stage.estimatedCost || 0), 0);
-
-    // Find current stage (first in_progress stage, or last completed stage if none in progress)
-    const inProgressStage = allStages.find((s) => s.status === 'in_progress');
-    const currentStage = inProgressStage?.name || (completedStages.length > 0 ? completedStages[completedStages.length - 1].name : null);
-
     const previousProgress = Number(stage.project?.progress || 0);
-    const updatedProject = await this.prisma.project.update({
-      where: { id: projectId },
-      data: { 
-        progress,
-        currentStage,
-        spent,
-      },
-    });
-
-    const isProjectNowComplete = allStages.length > 0 && completedStages.length === allStages.length;
     const wasProjectComplete = previousProgress >= 100 || stage.project?.status === 'completed';
-    if (isProjectNowComplete && !wasProjectComplete && stage.project?.homeownerId) {
-      const contractorProfile = stage.project?.generalContractorId
-        ? await this.prisma.contractor.findUnique({
-            where: { userId: stage.project.generalContractorId },
-            select: { id: true },
-          })
-        : null;
-      const reviewLink = this.buildContractorReviewLink(contractorProfile?.id, projectId);
-
-      await this.wsService.sendNotification(stage.project.homeownerId, {
-        type: 'project_completed',
-        title: 'Project completed - congratulations!',
-        message:
-          'Congratulations! Your project has been fully completed. Kindly share a short review about your GC experience.',
-        data: {
-          projectId,
-          contractorId: contractorProfile?.id || null,
-          reviewLink: reviewLink || null,
-          ctaUrl: reviewLink || null,
-          ctaLabel: 'Leave your review',
-        },
-      });
-    }
-
-    // Emit stage update notification
-    this.wsService.emitStageCompletion(projectId, {
-      id: updatedStage.id,
-      name: updatedStage.name,
-      status: updatedStage.status,
-      completionDate: updatedStage.completionDate,
-      startDate: updatedStage.startDate,
-    });
-
-    // Also emit project progress update
-    this.wsService.emitProjectUpdate(projectId, {
-      type: 'progress_update',
-      data: {
-        progress,
-        currentStage,
-        projectStatus: updatedProject?.status,
-        stageUpdated: {
-          id: updatedStage.id,
-          name: updatedStage.name,
-          status: updatedStage.status,
-        },
-      },
+    const { progress, currentStage, updatedProject } = await this.syncProjectAfterStageChange({
+      projectId,
+      stage: updatedStage,
+      status,
+      previousProgress,
+      wasProjectComplete,
     });
 
     const stageEventTitle =
@@ -1637,7 +1579,273 @@ export class ProjectsService {
    * Complete a stage and emit notification
    */
   async completeStage(projectId: string, stageId: string) {
-    return this.updateStageStatus(projectId, stageId, 'completed');
+    return this.submitStageForApproval(projectId, stageId);
+  }
+
+  async submitStageForApproval(projectId: string, stageId: string) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: stageId },
+      include: {
+        project: {
+          include: {
+            homeowner: { select: { id: true, email: true, fullName: true } },
+          },
+        },
+      },
+    });
+    if (!stage || stage.projectId !== projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+    if (stage.status === 'pending_homeowner_approval') {
+      throw new BadRequestException('This stage is already waiting for homeowner approval');
+    }
+    if (stage.status === 'completed') {
+      throw new BadRequestException('This stage is already complete');
+    }
+    await this.validateStageCompletion(stageId);
+    const updated = await this.prisma.stage.update({
+      where: { id: stageId },
+      data: {
+        status: 'pending_homeowner_approval',
+        submittedForApprovalAt: new Date(),
+      },
+    });
+    const stageUrl = `${this.getHomeownerAppUrl()}/stage-detail?stageId=${encodeURIComponent(stageId)}&projectId=${encodeURIComponent(projectId)}`;
+    const message =
+      'The general contractor has marked this stage of your project as complete. Please review the evidence in the app and click Approve.';
+    await this.notifyApprovalRecipient({
+      userId: stage.project.homeownerId,
+      email: stage.project.homeowner?.email,
+      fullName: stage.project.homeowner?.fullName,
+      type: 'stage_pending_approval',
+      title: 'Review stage evidence',
+      message,
+      data: { projectId, stageId, ctaUrl: stageUrl, ctaLabel: 'Review evidence' },
+    });
+    return updated;
+  }
+
+  async approveStage(params: {
+    projectId: string;
+    stageId: string;
+    approverId: string;
+    method: 'homeowner_app' | 'admin_on_behalf';
+    note?: string | null;
+    evidenceUrl?: string | null;
+  }) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: params.stageId },
+      include: {
+        project: {
+          include: {
+            homeowner: { select: { id: true, email: true, fullName: true } },
+            generalContractor: { select: { id: true, email: true, fullName: true } },
+          },
+        },
+      },
+    });
+    if (!stage || stage.projectId !== params.projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+    if (params.method === 'homeowner_app' && stage.project.homeownerId !== params.approverId) {
+      throw new ForbiddenException('Only the homeowner of this project can approve this stage');
+    }
+    if (stage.status !== 'pending_homeowner_approval') {
+      throw new BadRequestException('This stage is not waiting for homeowner approval');
+    }
+    if (params.method === 'admin_on_behalf' && !String(params.note || '').trim()) {
+      throw new BadRequestException('A note is required');
+    }
+    await this.validateStageCompletion(params.stageId);
+
+    const now = new Date();
+    const allStages = await this.prisma.stage.findMany({ where: { projectId: params.projectId } });
+    const otherCompleted = allStages.filter((item) => item.id !== stage.id && item.status === 'completed').length;
+    const isLastStage = allStages.length > 0 && otherCompleted + 1 === allStages.length;
+    const previousProgress = Number(stage.project?.progress || 0);
+    const wasProjectComplete = previousProgress >= 100 || stage.project?.status === 'completed';
+
+    const [updatedStage] = await this.prisma.$transaction([
+      this.prisma.stage.update({
+        where: { id: stage.id },
+        data: {
+          status: 'completed',
+          completionDate: now,
+          approvedById: params.approverId,
+          approvedAt: now,
+          approvalMethod: params.method,
+          approvalNote: params.note?.trim() || null,
+          approvalEvidenceUrl: params.evidenceUrl?.trim() || null,
+        },
+        include: { project: true },
+      }),
+      ...(isLastStage
+        ? [
+            this.prisma.project.update({
+              where: { id: params.projectId },
+              data: {
+                status: 'completed',
+                completedAt: now,
+                acceptedById: params.approverId,
+              },
+            }),
+          ]
+        : []),
+    ]);
+
+    await this.syncProjectAfterStageChange({
+      projectId: params.projectId,
+      stage: { ...stage, ...updatedStage, project: stage.project },
+      status: 'completed',
+      previousProgress,
+      wasProjectComplete,
+    });
+
+    const homeownerFirst = String(stage.project.homeowner?.fullName || 'The homeowner').trim().split(' ')[0];
+    const approvalMessage = `${homeownerFirst} approved ${stage.name}`;
+    if (stage.project.generalContractorId) {
+      await this.notifyApprovalRecipient({
+        userId: stage.project.generalContractorId,
+        email: stage.project.generalContractor?.email,
+        fullName: stage.project.generalContractor?.fullName,
+        recipientRole: 'general_contractor',
+        type: 'stage_approved',
+        title: 'Stage approved',
+        message: approvalMessage,
+        data: {
+          projectId: params.projectId,
+          stageId: stage.id,
+          ctaUrl: `${String(this.configService.get<string>('CONTRACTOR_APP_URL') || 'https://gc.buildmyhouse.app').replace(/\/+$/, '')}/contractor/gc-project-detail?id=${encodeURIComponent(params.projectId)}`,
+          ctaLabel: 'Open project',
+        },
+      });
+    }
+    if (params.method === 'admin_on_behalf') {
+      const behalfMessage = `${stage.name} was approved on your behalf.`;
+      await this.notifyApprovalRecipient({
+        userId: stage.project.homeownerId,
+        email: stage.project.homeowner?.email,
+        fullName: stage.project.homeowner?.fullName,
+        type: 'stage_approved_on_behalf',
+        title: 'Stage approved on your behalf',
+        message: behalfMessage,
+        data: { projectId: params.projectId, stageId: stage.id },
+      });
+    }
+    return updatedStage;
+  }
+
+  private async notifyApprovalRecipient(params: {
+    userId: string;
+    email?: string | null;
+    fullName?: string | null;
+    recipientRole?: string;
+    type: string;
+    title: string;
+    message: string;
+    data?: Record<string, unknown>;
+  }) {
+    try {
+      await this.prisma.notification.create({
+        data: {
+          userId: params.userId,
+          type: params.type,
+          title: params.title,
+          message: params.message,
+          data: params.data || {},
+        },
+      });
+    } catch (error) {
+      this.logger.error(
+        `approval notification failed userId=${params.userId} type=${params.type} message=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
+    const email = String(params.email || '').trim();
+    if (!email) return;
+    try {
+      await this.emailService.sendNotificationEmail({
+        to: email,
+        recipientName: params.fullName || undefined,
+        recipientRole: params.recipientRole,
+        notificationType: params.type,
+        title: params.title,
+        message: params.message,
+        data: params.data,
+      });
+    } catch (error) {
+      this.logger.error(
+        `approval email failed userId=${params.userId} type=${params.type} message=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
+  }
+
+  private async syncProjectAfterStageChange(params: {
+    projectId: string;
+    stage: any;
+    status: string;
+    previousProgress: number;
+    wasProjectComplete: boolean;
+  }) {
+    const { projectId, stage, status } = params;
+    const allStages = await this.prisma.stage.findMany({
+      where: { projectId },
+      orderBy: { order: 'asc' },
+    });
+    const completedStages = allStages.filter((item) => item.status === 'completed');
+    const progress = allStages.length > 0 ? Math.round((completedStages.length / allStages.length) * 100) : 0;
+    const spent = completedStages.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
+    const inProgressStage = allStages.find((item) => item.status === 'in_progress');
+    const currentStage = inProgressStage?.name || (completedStages.length > 0 ? completedStages[completedStages.length - 1].name : null);
+    const updatedProject = await this.prisma.project.update({
+      where: { id: projectId },
+      data: { progress, currentStage, spent },
+    });
+    const isProjectNowComplete = allStages.length > 0 && completedStages.length === allStages.length;
+    if (isProjectNowComplete && !params.wasProjectComplete && stage.project?.homeownerId) {
+      try {
+        const contractorProfile = stage.project?.generalContractorId
+          ? await this.prisma.contractor.findUnique({
+              where: { userId: stage.project.generalContractorId },
+              select: { id: true },
+            })
+          : null;
+        const reviewLink = this.buildContractorReviewLink(contractorProfile?.id, projectId);
+        await this.wsService.sendNotification(stage.project.homeownerId, {
+          type: 'project_completed',
+          title: 'Project completed - congratulations!',
+          message:
+            'Congratulations! Your project has been fully completed. Kindly share a short review about your GC experience.',
+          data: {
+            projectId,
+            contractorId: contractorProfile?.id || null,
+            reviewLink: reviewLink || null,
+            ctaUrl: reviewLink || null,
+            ctaLabel: 'Leave your review',
+          },
+        });
+      } catch (error) {
+        this.logger.error(
+          `project completed notice failed projectId=${projectId} message=${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      }
+    }
+    this.wsService.emitStageCompletion(projectId, {
+      id: stage.id,
+      name: stage.name,
+      status,
+      completionDate: stage.completionDate,
+      startDate: stage.startDate,
+    });
+    this.wsService.emitProjectUpdate(projectId, {
+      type: 'progress_update',
+      data: {
+        progress,
+        currentStage,
+        projectStatus: updatedProject?.status,
+        stageUpdated: { id: stage.id, name: stage.name, status },
+      },
+    });
+    return { progress, currentStage, updatedProject };
   }
 
   /**
@@ -1731,9 +1939,11 @@ export class ProjectsService {
             },
           },
         },
+        acceptedBy: { select: { id: true, fullName: true } },
         stages: {
           orderBy: { order: 'asc' },
           include: {
+            approvedBy: { select: { id: true, fullName: true } },
             teamMembers: true,
             materials: true,
             media: {
@@ -2353,10 +2563,13 @@ export class ProjectsService {
   /**
    * Get all projects (for admin or public listing)
    */
-  async getAllProjects(status?: string, includeArchived = false, needsExtraMonitoring = false) {
+  async getAllProjects(status?: string, includeArchived = false, needsExtraMonitoring = false, waitingForApproval = false) {
     const whereClause: any = {};
     if (needsExtraMonitoring) {
       whereClause.needsExtraMonitoring = true;
+    }
+    if (waitingForApproval) {
+      whereClause.stages = { some: { status: 'pending_homeowner_approval' } };
     }
 
     if (status === 'archived') {

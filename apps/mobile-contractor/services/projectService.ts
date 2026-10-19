@@ -114,6 +114,15 @@ export const projectService = {
   /**
    * Update stage status
    */
+  submitStageForApproval: async (projectId: string, stageId: string) => {
+    try {
+      return await api.post(`/projects/${projectId}/stages/${stageId}/submit-for-approval`, {});
+    } catch (error: any) {
+      console.error('❌ [projectService] Error submitting stage for approval:', error);
+      throw error;
+    }
+  },
+
   updateStageStatus: async (projectId: string, stageId: string, status: 'not_started' | 'in_progress' | 'completed' | 'blocked') => {
     try {
       const response = await api.patch(`/projects/${projectId}/stages/${stageId}`, { status });

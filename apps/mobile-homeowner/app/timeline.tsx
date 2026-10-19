@@ -79,6 +79,8 @@ export default function TimelineScreen() {
         return 'complete';
       case 'in_progress':
         return 'in-progress';
+      case 'pending_homeowner_approval':
+        return 'pending_homeowner_approval';
       case 'not_started':
       default:
         return 'not-started';
@@ -117,6 +119,14 @@ export default function TimelineScreen() {
               style={{ fontFamily: 'Poppins_500Medium' }}
             >
               In Progress
+            </Text>
+          </View>
+        );
+      case "pending_homeowner_approval":
+        return (
+          <View className="bg-gray-100 rounded-full px-3 py-1 border border-gray-300">
+            <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Waiting for your approval
             </Text>
           </View>
         );
@@ -164,7 +174,7 @@ export default function TimelineScreen() {
 
   const handleStagePress = (stage: any) => {
     // Only allow clicking on complete or in-progress stages
-    if (stage.status === 'completed' || stage.status === 'in_progress') {
+    if (stage.status === 'completed' || stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval') {
       router.push(`/stage-detail?stageId=${stage.id}&projectId=${projectId}&name=${stage.name}&status=${getDisplayStatus(stage.status)}`);
     }
   };
@@ -449,7 +459,7 @@ export default function TimelineScreen() {
             </View>
           ) : (
             stages.map((stage: any, index: number) => {
-              const isClickable = stage.status === 'completed' || stage.status === 'in_progress';
+              const isClickable = stage.status === 'completed' || stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval';
               
               return (
                 <View key={stage.id} className="flex-row mb-6">

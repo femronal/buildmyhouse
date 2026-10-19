@@ -380,25 +380,9 @@ export default function StageDetailScreen() {
             </Text>
           </View>
         ) : (
-          <>
-            <TouchableOpacity
-              onPress={() => setShowPaymentModal(true)}
-              className="bg-black rounded-full py-5 px-8"
-            >
-              <Text 
-                className="text-white text-lg text-center"
-                style={{ fontFamily: 'Poppins_700Bold' }}
-              >
-                Approve Payment
-              </Text>
-            </TouchableOpacity>
-            <Text 
-              className="text-gray-500 text-xs text-center mt-3"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Your GC will mark this stage complete
-            </Text>
-          </>
+          <Text className="text-gray-500 text-sm text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Open this stage from the project to update it.
+          </Text>
         )}
       </View>
 

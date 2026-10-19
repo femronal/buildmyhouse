@@ -92,13 +92,19 @@ export class ProjectsController {
     @Query('status') status?: string,
     @Query('includeArchived') includeArchived?: string,
     @Query('needsExtraMonitoring') needsExtraMonitoring?: string,
+    @Query('waitingForApproval') waitingForApproval?: string,
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
 
     // Admin can see all projects, others see only their own
     if (userRole === 'admin') {
-      return this.projectsService.getAllProjects(status, includeArchived === 'true', needsExtraMonitoring === 'true');
+      return this.projectsService.getAllProjects(
+        status,
+        includeArchived === 'true',
+        needsExtraMonitoring === 'true',
+        waitingForApproval === 'true',
+      );
     }
     return this.projectsService.getUserProjects(userId, status);
   }
@@ -131,7 +137,7 @@ export class ProjectsController {
     
     // Admins can always update
     if (userRole === 'admin') {
-      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status, userRole);
     }
     
     // Homeowners can only set status to 'in_progress' (approve payment) for their own projects
@@ -142,15 +148,65 @@ export class ProjectsController {
       if (body.status !== 'in_progress') {
         throw new ForbiddenException('Homeowners can only approve payment (set status to in_progress)');
       }
-      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status, userRole);
     }
     
     // GCs can update if they're the contractor for this project
     if (userRole === 'general_contractor' && project.generalContractorId === userId) {
-      return this.projectsService.updateStageStatus(projectId, stageId, body.status);
+      return this.projectsService.updateStageStatus(projectId, stageId, body.status, userRole);
     }
 
     throw new ForbiddenException('You do not have permission to update stages for this project');
+  }
+
+  @Post(':projectId/stages/:stageId/submit-for-approval')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor')
+  async submitStageForApproval(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+  ) {
+    const project = await this.projectsService.getProject(projectId);
+    if (project.generalContractorId !== req.user.sub) {
+      throw new ForbiddenException('You do not have permission to update stages for this project');
+    }
+    return this.projectsService.submitStageForApproval(projectId, stageId);
+  }
+
+  @Post(':projectId/stages/:stageId/approve')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner')
+  async approveStage(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+  ) {
+    return this.projectsService.approveStage({
+      projectId,
+      stageId,
+      approverId: req.user.sub,
+      method: 'homeowner_app',
+    });
+  }
+
+  @Post(':projectId/stages/:stageId/approve-on-behalf')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async approveStageOnBehalf(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: { note?: string; evidenceUrl?: string },
+  ) {
+    return this.projectsService.approveStage({
+      projectId,
+      stageId,
+      approverId: req.user.sub,
+      method: 'admin_on_behalf',
+      note: body?.note,
+      evidenceUrl: body?.evidenceUrl,
+    });
   }
 
   @Patch(':projectId/stages/:stageId/details')

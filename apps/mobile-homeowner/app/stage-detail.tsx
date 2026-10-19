@@ -69,6 +69,22 @@ export default function StageDetailScreen() {
     },
   });
 
+  const approveStageMutation = useMutation({
+    mutationFn: async () => {
+      const projId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
+      const stageIdValue = typeof actualStageId === 'string' ? actualStageId : actualStageId?.[0] || '';
+      return projectService.approveStage(projId, stageIdValue);
+    },
+    onSuccess: () => {
+      const projId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
+      queryClient.invalidateQueries({ queryKey: ['project', projId] });
+      setShowApproveSheet(false);
+    },
+    onError: (error: any) => {
+      Alert.alert('Could not approve', error?.message || 'Please try again.');
+    },
+  });
+
   const submitDisputeMutation = useMutation({
     mutationFn: async (payload: { reasons: string[]; otherReason?: string }) => {
       const resolvedProjectId = typeof projectId === 'string' ? projectId : projectId?.[0] || '';
@@ -87,8 +103,10 @@ export default function StageDetailScreen() {
   
   // Use actual stage status from project data, fallback to URL param
   const actualStatus = stage?.status || status;
+  const isWaiting = actualStatus === 'pending_homeowner_approval';
   const isComplete = actualStatus === 'complete' || actualStatus === 'completed';
   const isInProgress = actualStatus === 'in-progress' || actualStatus === 'in_progress';
+  const [showApproveSheet, setShowApproveSheet] = useState(false);
   const { width } = useWindowDimensions();
   const isCompactMobile = useMemo(() => width <= 768, [width]);
   const materials = stage?.materials || [];
@@ -416,6 +434,19 @@ export default function StageDetailScreen() {
         className="flex-1 px-6"
         contentContainerStyle={{ paddingBottom: isCompactMobile ? (isInProgress ? 88 : 120) : 140 }}
       >
+        {isWaiting ? (
+          <View className="mb-5 rounded-2xl border border-gray-200 bg-white p-4">
+            <Text className="text-black text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Evidence to review
+            </Text>
+            <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              {media.filter((item: any) => item.type === 'photo').length} photos, {media.filter((item: any) => item.type === 'video').length} videos, {teamMembers.length} team, {materials.length} materials, {documents.length} files.
+            </Text>
+            <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              If you are not happy with the work, use the dispute or change request actions already on this page.
+            </Text>
+          </View>
+        ) : null}
         {stageChangeRequests.length > 0 && (
           <View className="mb-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -705,7 +736,17 @@ export default function StageDetailScreen() {
           paddingVertical: isCompactMobile && isInProgress ? 10 : 24,
         }}
       >
-        {isComplete ? (
+        {isWaiting ? (
+          <TouchableOpacity
+            onPress={() => setShowApproveSheet(true)}
+            className="bg-black rounded-full py-5 px-8"
+            disabled={approveStageMutation.isPending}
+          >
+            <Text className="text-white text-lg text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Approve
+            </Text>
+          </TouchableOpacity>
+        ) : isComplete ? (
           <View className="bg-black rounded-2xl p-5">
             <View className="flex-row items-center justify-center mb-2">
               <CheckCircle size={24} color="#FFFFFF" weight="fill" />
@@ -722,6 +763,11 @@ export default function StageDetailScreen() {
             >
               Congratulations! This stage has been successfully completed.
             </Text>
+            {stage?.approvedAt && stage?.approvalMethod !== 'admin_on_behalf' ? (
+              <Text className="text-white/80 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                Approved by you on {new Date(stage.approvedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </Text>
+            ) : null}
           </View>
         ) : isInProgress ? (
           <View
@@ -781,6 +827,30 @@ export default function StageDetailScreen() {
           </>
         )}
       </View>
+
+      <Modal visible={showApproveSheet} transparent animationType="slide" onRequestClose={() => setShowApproveSheet(false)}>
+        <TouchableOpacity activeOpacity={1} onPress={() => setShowApproveSheet(false)} className="flex-1 bg-black/50 justify-end">
+          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl px-6 pt-6 pb-8">
+            <Text className="text-black text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Approve this stage as complete?
+            </Text>
+            <Text className="text-black text-base mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              You are confirming that the work and evidence for {stage?.name || name} are acceptable.
+            </Text>
+            <TouchableOpacity
+              onPress={() => approveStageMutation.mutate()}
+              className="bg-black rounded-full py-4 mt-6"
+            >
+              <Text className="text-white text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                {approveStageMutation.isPending ? 'Approving' : 'Approve'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setShowApproveSheet(false)} className="py-4">
+              <Text className="text-gray-600 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>Not yet</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Payment Modal */}
       <Modal
