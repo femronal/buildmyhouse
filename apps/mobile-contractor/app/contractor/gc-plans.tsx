@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Platform, Modal, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, Edit, Trash2, Plus, Info, Calendar, Edit3, Upload } from "lucide-react-native";
+import { ArrowLeft, Camera, X, FileText, Bed, Bath, Maximize, Plus, Calendar, Edit3, Upload } from "lucide-react-native";
 import { useState, useRef, useEffect } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import { designService } from '@/services/designService';
@@ -11,6 +11,11 @@ import { useGCProfile } from '@/hooks/useGCProfile';
 import { useResponsivePadding } from '@/lib/responsive-layout';
 import { uploadFile } from '@/utils/fileUpload';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AboutPlansBox } from '@/components/gc-plans/AboutPlansBox';
+import { DraftPlanRow, PlanCard } from '@/components/gc-plans/PlanCard';
+import { PlanFilterTabs } from '@/components/gc-plans/PlanFilterTabs';
+import { PlanSummaryStrip } from '@/components/gc-plans/PlanSummaryStrip';
+import { getPlanStatus } from '@/components/gc-plans/plan-status';
 
 interface ImageWithLabel {
   uri: string;
@@ -2069,10 +2074,36 @@ export default function GCPlansScreen() {
   const { data: designs = [], isLoading } = useMyDesigns();
   const { data: profileData } = useGCProfile();
   const deleteDesignMutation = useDeleteDesign();
-  const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
+  const { horizontalPad, headerPaddingTop, scrollBottomPadding, width } =
     useResponsivePadding("stack");
 
   const isVerifiedGC = !!profileData?.verified;
+  const [planTab, setPlanTab] = useState<'all' | 'live' | 'pending' | 'rejected' | 'draft'>('all');
+  const [hasDraft, setHasDraft] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [aboutReady, setAboutReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      const [draft, dismissed] = await Promise.all([
+        AsyncStorage.getItem(UPLOAD_FORM_DRAFT_STORAGE_KEY),
+        AsyncStorage.getItem('gc_plans_about_dismissed'),
+      ]);
+      if (!mounted) return;
+      setHasDraft(Boolean(draft));
+      setShowAbout(dismissed !== 'true');
+      setAboutReady(true);
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [showUploadForm]);
+
+  const dismissAbout = () => {
+    setShowAbout(false);
+    void AsyncStorage.setItem('gc_plans_about_dismissed', 'true');
+  };
 
   const handleDelete = (design: any) => {
     setDesignToDelete(design);
@@ -2130,14 +2161,41 @@ export default function GCPlansScreen() {
     );
   }
 
+  const sortedDesigns = [...designs].sort(
+    (a: any, b: any) => new Date(b.updatedAt || b.createdAt || 0).getTime() - new Date(a.updatedAt || a.createdAt || 0).getTime(),
+  );
+  const counts = {
+    live: sortedDesigns.filter((design: any) => getPlanStatus(design) === 'live').length,
+    pending: sortedDesigns.filter((design: any) => getPlanStatus(design) === 'pending').length,
+    rejected: sortedDesigns.filter((design: any) => getPlanStatus(design) === 'rejected').length,
+    draft: hasDraft ? 1 : 0,
+    all: sortedDesigns.length + (hasDraft ? 1 : 0),
+  };
+  const visibleDesigns = sortedDesigns.filter((design: any) => {
+    const status = getPlanStatus(design);
+    if (planTab === 'all') return true;
+    return status === planTab;
+  });
+  const showDraftRow = hasDraft && (planTab === 'all' || planTab === 'draft');
+  const twoColumns = width > 768;
+  const emptyCopy =
+    planTab === 'pending'
+      ? 'No plans waiting for review.'
+      : planTab === 'live'
+        ? 'No live plans.'
+        : planTab === 'rejected'
+          ? 'No rejected plans.'
+          : planTab === 'draft'
+            ? 'No unfinished plan.'
+            : '';
+
   return (
-    <View className="flex-1 bg-[#0A1628]">
-      {/* Header */}
+    <View className="flex-1 bg-white">
       <View
         className="pb-4 flex-row items-center"
         style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
       >
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => {
             if (router.canGoBack()) {
               router.back();
@@ -2145,12 +2203,12 @@ export default function GCPlansScreen() {
               router.push('/contractor/gc-dashboard');
             }
           }}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
+          className="w-10 h-10 bg-[#F5F5F5] rounded-full items-center justify-center mr-4 flex-shrink-0"
         >
-          <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
+          <ArrowLeft size={22} color="#111111" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
-          My Design Plans
+        <Text className="text-black text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
+          My project plans
         </Text>
       </View>
 
@@ -2162,203 +2220,74 @@ export default function GCPlansScreen() {
           paddingBottom: scrollBottomPadding,
         }}
       >
-        {/* Upload Button */}
         <TouchableOpacity
           onPress={() => setShowUploadForm(true)}
-          className="rounded-2xl p-6 mb-6 flex-row items-center justify-center bg-black"
+          className="rounded-2xl py-4 mb-4 flex-row items-center justify-center bg-black"
           activeOpacity={0.7}
         >
-          <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
-          <Text className="text-white text-lg ml-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            Upload New Design Plan
+          <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
+          <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Upload a plan
           </Text>
         </TouchableOpacity>
         {!isVerifiedGC && (
-          <View className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
-            <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+          <View className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#F5F5F5' }}>
+            <Text className="text-gray-700" style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20 }}>
               You can upload plans now. Your account is not verified yet, so BuildMyHouse will keep a closer eye on projects that start from your plans. Finish your verification in Profile to get the Verified badge.
             </Text>
           </View>
         )}
+        {aboutReady && showAbout ? <AboutPlansBox onDismiss={dismissAbout} /> : null}
+        <PlanSummaryStrip counts={counts} onSelect={setPlanTab} />
+        <PlanFilterTabs selected={planTab} counts={counts} onSelect={setPlanTab} />
 
-        {/* Info Message */}
-        <View className="bg-blue-900/30 border border-blue-700 rounded-xl p-4 mb-6 flex-row">
-          <Info size={20} color="#60A5FA" strokeWidth={2} className="mr-3 mt-0.5" />
-          <View className="flex-1">
-            <Text className="text-blue-300 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              About Design Plans
-            </Text>
-            <Text className="text-blue-200 text-xs leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Your design plans can be purchased by homeowners who are interested in them. Once purchased, 
-              homeowners can either build using our app&apos;s construction management system or build outside of the app.
-            </Text>
-          </View>
-        </View>
-
-        {/* Designs List */}
         {isLoading ? (
           <View className="items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#3B82F6" />
-            <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Loading your designs...
-            </Text>
+            <ActivityIndicator size="large" color="#111111" />
           </View>
-        ) : designs.length === 0 ? (
-          <View className="items-center justify-center py-20">
-            <FileText size={48} color="#6B7280" strokeWidth={1.5} />
-            <Text className="text-gray-400 text-center text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              No design plans yet
+        ) : counts.all === 0 ? (
+          <View className="items-center justify-center py-16 px-4">
+            <Text className="text-black text-center text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+              No plans yet
             </Text>
-            <Text className="text-gray-500 text-center text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              Upload your first design plan to get started
+            <Text className="text-gray-600 text-center mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22 }}>
+              Upload the jobs you do best so homeowners can find and request you.
             </Text>
+            <TouchableOpacity
+              onPress={() => setShowUploadForm(true)}
+              className="rounded-full bg-black px-5 py-3 mt-5"
+            >
+              <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>Upload a plan</Text>
+            </TouchableOpacity>
           </View>
         ) : (
-          <View className="mb-8">
-            {designs.map((design: any) => {
-              const uiPlanType = resolveUiPlanTypeFromDesign(design);
-              const tagClasses = getPlanTypeTagClasses(uiPlanType);
-              return (
-              <View key={design.id} className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900/50">
-                {/* Image Carousel */}
-                {design.images && design.images.length > 0 ? (
-                  <View className="relative">
-                    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                      {design.images.map((image: any, index: number) => (
-                        <Image
-                          key={image.id || index}
-                          source={{ uri: getImageUrl(image.url) }}
-                          className="w-full h-48"
-                          style={{ width: 400 }}
-                          resizeMode="cover"
-                        />
-                      ))}
-                    </ScrollView>
-                    {design.images[0]?.label && (
-                      <View className="absolute bottom-2 left-2 bg-black/70 rounded-full px-3 py-1">
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-                          {design.images[0].label}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ) : (
-                  <View className="w-full h-48 bg-[#0A1628] items-center justify-center">
-                    <FileText size={48} color="#6B7280" strokeWidth={1.5} />
-                  </View>
-                )}
-
-                {/* Design Info */}
-                <View className="p-4">
-                  <Text className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    {design.name}
-                  </Text>
-                  <View className={`self-start border rounded-full px-3 py-1 mb-2 ${tagClasses.container}`}>
-                    <Text className={`${tagClasses.text} text-xs`} style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {formatPlanTypeLabel(uiPlanType)}
-                    </Text>
-                  </View>
-                  {design.projectTypeFilter && (
-                    <View className="self-start border border-blue-500 bg-blue-500/20 rounded-full px-3 py-1 mb-2">
-                      <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {design.projectTypeFilter}
-                      </Text>
-                    </View>
-                  )}
-                  
-                  {design.description && (
-                    <Text className="text-gray-400 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      {design.description}
-                    </Text>
-                  )}
-
-                  {(hasSpec(design.bedrooms) || hasSpec(design.bathrooms) || hasSpec(design.squareFootage) || hasSpec(design.squareMeters)) ? (
-                  <View className="flex-row items-center mb-3">
-                    {hasSpec(design.bedrooms) ? (
-                      <>
-                        <Bed size={14} color="#9CA3AF" strokeWidth={2} />
-                        <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {design.bedrooms}
-                        </Text>
-                      </>
-                    ) : null}
-                    {hasSpec(design.bathrooms) ? (
-                      <>
-                        <Bath size={14} color="#9CA3AF" strokeWidth={2} />
-                        <Text className="text-gray-400 text-xs ml-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {design.bathrooms}
-                        </Text>
-                      </>
-                    ) : null}
-                    {hasSpec(design.squareMeters) || hasSpec(design.squareFootage) ? (
-                      <>
-                        <Maximize size={14} color="#9CA3AF" strokeWidth={2} />
-                        <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {Math.round(design.squareMeters || design.squareFootage * 0.092903)}m²
-                        </Text>
-                      </>
-                    ) : null}
-                  </View>
-                  ) : null}
-
-                  <Text className="text-blue-400 text-lg mb-4" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                    ₦{design.estimatedCost.toLocaleString()}
-                  </Text>
-
-                  {design.adminApprovalStatus === 'pending' && (
-                    <View className="mb-4 self-start rounded-full border border-amber-500 bg-amber-500/20 px-3 py-1">
-                      <Text className="text-amber-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Pending admin verification
-                      </Text>
-                    </View>
-                  )}
-                  {design.adminApprovalStatus === 'approved' && (
-                    <View className="mb-4 self-start rounded-full border border-green-500 bg-green-500/20 px-3 py-1">
-                      <Text className="text-green-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Live
-                      </Text>
-                    </View>
-                  )}
-                  {design.adminApprovalStatus === 'rejected' && (
-                    <View className="mb-4 self-start rounded-full border border-red-500 bg-red-500/20 px-3 py-1">
-                      <Text className="text-red-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Rejected - needs update
-                      </Text>
-                    </View>
-                  )}
-                  {design.adminApprovalStatus === 'rejected' && design.adminReviewReason && (
-                    <Text className="text-red-300 text-xs mb-4" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Reason: {design.adminReviewReason}
-                    </Text>
-                  )}
-
-                  {/* Action Buttons */}
-                  <View className="flex-row gap-3">
-                    <TouchableOpacity
-                      onPress={() => handleEdit(design)}
-                      className="flex-1 bg-blue-600/20 border border-blue-600 rounded-xl py-3 flex-row items-center justify-center"
-                      activeOpacity={0.7}
-                    >
-                      <Edit size={16} color="#60A5FA" strokeWidth={2} />
-                      <Text className="text-blue-400 text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Edit
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => handleDelete(design)}
-                      className="flex-1 bg-red-600/20 border border-red-600 rounded-xl py-3 flex-row items-center justify-center"
-                      activeOpacity={0.7}
-                    >
-                      <Trash2 size={16} color="#F87171" strokeWidth={2} />
-                      <Text className="text-red-400 text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        Delete
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+          <View className={twoColumns ? 'flex-row flex-wrap justify-between' : ''}>
+            {showDraftRow ? (
+              <View style={twoColumns ? { width: '48%' } : undefined}>
+                <DraftPlanRow onPress={() => setShowUploadForm(true)} />
               </View>
+            ) : null}
+            {visibleDesigns.map((design: any) => {
+              const image = design.images?.[0];
+              const imageUrl = image?.thumbnailUrl
+                ? getImageUrl(image.thumbnailUrl)
+                : image?.url
+                  ? getImageUrl(image.url)
+                  : null;
+              return (
+                <View key={design.id} style={twoColumns ? { width: '48%' } : undefined}>
+                  <PlanCard
+                    design={design}
+                    imageUrl={imageUrl}
+                    onEdit={() => handleEdit(design)}
+                    onDelete={() => handleDelete(design)}
+                  />
+                </View>
               );
             })}
+            {!showDraftRow && visibleDesigns.length === 0 ? (
+              <Text className="text-gray-500 py-8" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14 }}>{emptyCopy}</Text>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -2403,38 +2332,22 @@ export default function GCPlansScreen() {
         onRequestClose={cancelDelete}
       >
         <View className="flex-1 bg-black/50 items-center justify-center px-6">
-          <View className="bg-[#1E3A5F] rounded-3xl p-6 w-full max-w-md border border-red-600/50">
-            {/* Warning Icon */}
-            <View className="items-center mb-4">
-              <View className="w-16 h-16 bg-red-600/20 rounded-full items-center justify-center mb-3">
-                <Trash2 size={32} color="#F87171" strokeWidth={2} />
-              </View>
-              <Text className="text-white text-xl text-center mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Delete Design Plan?
-              </Text>
-              <Text className="text-gray-300 text-sm text-center leading-5" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Are you sure you want to delete &quot;{designToDelete?.name}&quot;? This action cannot be undone and will permanently remove it from both your plans page and the Explore page.
-              </Text>
-            </View>
-
-            {/* Warning Message */}
-            <View className="bg-red-900/30 border border-red-700/50 rounded-xl p-3 mb-6">
-              <View className="flex-row items-start">
-                <X size={18} color="#F87171" strokeWidth={2} className="mr-2 mt-0.5" />
-                <Text className="text-red-300 text-xs flex-1 leading-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  This will remove the design from the database and it will no longer be visible to homeowners.
-                </Text>
-              </View>
-            </View>
+          <View className="bg-white rounded-3xl p-6 w-full max-w-md">
+            <Text className="text-black text-xl text-center mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Delete this plan?
+            </Text>
+            <Text className="text-gray-700 text-sm text-center leading-5 mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Homeowners will no longer see it. This cannot be undone.
+            </Text>
 
             {/* Action Buttons */}
             <View className="flex-row gap-3">
               <TouchableOpacity
                 onPress={cancelDelete}
                 disabled={isDeleting}
-                className="flex-1 bg-[#0A1628] border border-gray-700 rounded-xl py-4 items-center"
+                className="flex-1 bg-white border border-gray-300 rounded-xl py-4 items-center"
               >
-                <Text className="text-gray-300 text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-black text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
