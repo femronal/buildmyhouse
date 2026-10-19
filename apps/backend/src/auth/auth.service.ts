@@ -436,6 +436,7 @@ export class AuthService {
         managedParticipant: true,
         artisanClaimAccess: true,
         listingManagementIntroSeenAt: true,
+        inviteClientPromptSeenAt: true,
         phone: true,
         address: true,
         city: true,
@@ -455,10 +456,26 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    const [artisanClaims, professionalClaims] = await Promise.all([
+      this.prisma.artisanListing.count({
+        where: { linkedUserId: userId, archivedAt: null },
+      }),
+      this.prisma.professionalListing.count({
+        where: {
+          archivedAt: null,
+          OR: [{ claimedByUserId: userId }, { linkedUserId: userId }],
+        },
+      }),
+    ]);
+    const withClaim = {
+      ...user,
+      hasClaimedListing: artisanClaims + professionalClaims > 0,
+    };
+
     if (user.role === 'admin' && this.adminAccessPermissions) {
       const effective = await this.adminAccessPermissions.getEffectivePermissions(userId);
       return {
-        ...user,
+        ...withClaim,
         permissions: {
           isSuperAdmin: effective.isSuperAdmin,
           permissions: effective.permissions,
@@ -469,7 +486,7 @@ export class AuthService {
       };
     }
 
-    return user;
+    return withClaim;
   }
 
   async updateCurrentUser(userId: string, updateMeDto: UpdateMeDto) {

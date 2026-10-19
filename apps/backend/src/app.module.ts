@@ -34,6 +34,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { ArtisansModule } from './artisans/artisans.module';
 import { StartRequestsModule } from './start-requests/start-requests.module';
+import { ReferralsModule } from './referrals/referrals.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { StartRequestsModule } from './start-requests/start-requests.module';
     ProfessionalsModule,
     ArtisansModule,
     StartRequestsModule,
+    ReferralsModule,
   ],
   controllers: [],
   providers: [

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Copy, Link2, X } from 'lucide-react';
 import { api } from '@/lib/api';
+import { useReferralList } from '@/hooks/useReferrals';
 import {
   ManagedProjectScopeFields,
   buildManagedProjectPayload,
@@ -39,6 +40,8 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
   const [scope, setScope] = useState<ManagedProjectScope>(createDefaultScope());
   const [contacts, setContacts] = useState(emptyContacts);
   const [error, setError] = useState('');
+  const [referrerId, setReferrerId] = useState('');
+  const referrers = useReferralList({});
   const [createdLinks, setCreatedLinks] = useState<CreateManagedProjectResponse['links'] | null>(null);
 
   useEffect(() => {
@@ -46,12 +49,13 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
     setScope(createDefaultScope());
     setContacts(emptyContacts);
     setError('');
+    setReferrerId('');
     setCreatedLinks(null);
   }, [open]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const payload = buildManagedProjectPayload(scope, contacts);
+      const payload = { ...buildManagedProjectPayload(scope, contacts), referrerId: referrerId || undefined };
       return api.post<CreateManagedProjectResponse>(
         '/project-access/admin/managed-projects',
         payload,
@@ -215,6 +219,20 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
                   </label>
                 </div>
               </div>
+
+              <label className="space-y-1 block">
+                <span className="text-sm font-medium text-gray-700">Referred by</span>
+                <select
+                  value={referrerId}
+                  onChange={(event) => setReferrerId(event.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm"
+                >
+                  <option value="">No referrer</option>
+                  {(referrers.data || []).map((row) => (
+                    <option key={row.id} value={row.id}>{row.name} ({row.code})</option>
+                  ))}
+                </select>
+              </label>
 
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button type="button" className="px-4 py-2 border rounded-lg text-sm" onClick={onClose}>

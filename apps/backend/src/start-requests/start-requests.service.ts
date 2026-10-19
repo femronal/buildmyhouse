@@ -3,14 +3,20 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateStartRequestDto } from './dto/create-start-request.dto';
 import { formatStartReference, randomStartSerial } from './start-request-reference';
+import { ReferralsService } from '../referrals/referrals.service';
 
 @Injectable()
 export class StartRequestsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly referrals: ReferralsService,
+  ) {}
 
   async create(dto: CreateStartRequestDto) {
     const answers = parseObject(dto.answersJson, 'answersJson');
     const utm = dto.utmJson ? parseObject(dto.utmJson, 'utmJson') : undefined;
+
+    const referrerId = await this.referrals.referralIdForLead(dto.referralCode);
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const reference = formatStartReference(dto.path, randomStartSerial());
@@ -24,6 +30,7 @@ export class StartRequestsService {
             whatsapp: dto.whatsapp.trim(),
             source: dto.source?.trim() || null,
             referrer: dto.referrer?.trim() || null,
+            referrerId,
             utm: utm ? (utm as Prisma.InputJsonValue) : undefined,
           },
         });

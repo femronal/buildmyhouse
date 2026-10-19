@@ -131,6 +131,7 @@ export class AdminProfessionalWriteDto {
   @IsOptional() @IsEnum(ProfessionalProcurementStatus) procurementStatus?: ProfessionalProcurementStatus;
   @IsOptional() @IsEnum(ProfessionalSourceType) sourceType?: ProfessionalSourceType;
   @IsOptional() @IsString() @MaxLength(4000) sourceNotes?: string;
+  @IsOptional() @IsString() referrerId?: string | null;
   @IsOptional() @IsArray() @IsUrl({}, { each: true }) @ArrayMaxSize(10) sourceUrls?: string[];
   @IsOptional() @IsBoolean() usedByBmh?: boolean;
   @IsOptional() @IsString() usedByBmhSince?: string;

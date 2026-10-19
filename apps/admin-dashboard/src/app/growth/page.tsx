@@ -76,6 +76,21 @@ export default function GrowthOverviewPage() {
         </Link>
       </section>
 
+      <section className="mb-6" aria-labelledby="growth-referrals-heading">
+        <Link
+          href="/growth/referrals"
+          className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-gray-900"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#22c55e]">Live</p>
+          <h2 id="growth-referrals-heading" className="mt-1 text-lg font-semibold text-gray-900">
+            Referrals and affiliates
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+            See who brought in a listing or a homeowner job, and how many of those jobs are paid and completed.
+          </p>
+        </Link>
+      </section>
+
       <section aria-labelledby="growth-modules-heading">
         <h2 id="growth-modules-heading" className="sr-only">
           Planned Growth modules

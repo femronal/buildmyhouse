@@ -159,6 +159,9 @@ export type AdminProject = {
   currentStage?: string | null;
   projectType?: string | null;
   managedByAdmin?: boolean;
+  referrerId?: string | null;
+  referralSource?: string | null;
+  referredAt?: string | null;
   aiAnalysis?: Record<string, unknown> | null;
   homeowner?: { fullName?: string | null; email?: string | null } | null;
   generalContractor?: { fullName?: string | null; email?: string | null } | null;

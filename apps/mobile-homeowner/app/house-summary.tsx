@@ -20,6 +20,7 @@ import { setPostAuthReturnPath } from '@/lib/post-auth-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RequestPendingNextSteps from '@/components/RequestPendingNextSteps';
 import PlanDetailView from '@/components/plan-detail/PlanDetailView';
+import { ReferralCodeField } from '@/components/ReferralCodeField';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
@@ -2031,6 +2032,7 @@ export default function HouseSummaryScreen() {
                 </View>
               </View>
             </ScrollView>
+            <ReferralCodeField />
 
             {/* Continue Button */}
             <TouchableOpacity

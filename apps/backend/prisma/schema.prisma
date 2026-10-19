@@ -226,6 +226,8 @@ model User {
   artisanClaimAccess           Boolean   @default(false)
   /// Set when the post-claim "Manage your listings" intro has been opened or dismissed.
   listingManagementIntroSeenAt DateTime?
+  /// Set when the post-claim "Invite your client" prompt has been opened or dismissed.
+  inviteClientPromptSeenAt DateTime?
   accessClaimedAt              DateTime?
   adminDashboardAccess         Boolean   @default(false)
   /// Bumped on suspend/revoke/session revoke so existing JWTs stop working.
@@ -278,6 +280,8 @@ model User {
   orders                       Order[]                 @relation("UserOrders")
   reviews                      Review[]                @relation("UserReviews")
   paymentMethods               PaymentMethod[]
+  referrerProfile              Referrer?               @relation("ReferrerUser")
+  referrersCreated             Referrer[]              @relation("ReferrerCreatedByAdmin")
   createdDesigns               Design[]                @relation("DesignCreatedBy")
   reviewedDesigns              Design[]                @relation("DesignReviewedByAdmin")
   contractorProjectRequests    ProjectRequest[]        @relation("ProjectRequestContractor")
@@ -488,11 +492,16 @@ model Project {
   planPdfUrl                String?
   archivedAt                DateTime?
   managedByAdmin            Boolean                   @default(false)
+  referrerId                String?
+  referredAt                DateTime?
+  /// link | code_entered | admin
+  referralSource            String?
   createdAt                 DateTime                  @default(now())
   updatedAt                 DateTime                  @updatedAt
 
   // Relations
   homeowner           User                  @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  referrer            Referrer?             @relation(fields: [referrerId], references: [id], onDelete: SetNull)
   generalContractor   User?                 @relation("ContractorProjects", fields: [generalContractorId], references: [id])
   stages              Stage[]
   payments            Payment[]
@@ -505,6 +514,7 @@ model Project {
   vendorActivities         VendorActivity[]
   professionalEngagements  ProfessionalEngagement[]
 
+  @@index([referrerId])
   @@map("projects")
 }
 
@@ -3956,6 +3966,7 @@ model ProfessionalListing {
   claimEmail           String?
   claimedByUserId      String?                        @unique
   sourceType           ProfessionalSourceType         @default(admin_research)
+  referrerId           String?
   sourceNotes          String?
   sourceUrls           String[]                       @default([])
   completenessScore    Int                            @default(0)
@@ -3974,6 +3985,7 @@ model ProfessionalListing {
   linkedUser        User?                             @relation("UserProfessionalListing", fields: [linkedUserId], references: [id], onDelete: SetNull)
   claimedBy         User?                             @relation("ProfessionalListingClaimedBy", fields: [claimedByUserId], references: [id], onDelete: SetNull)
   createdByAdmin    User?                             @relation("ProfessionalListingCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  referrer          Referrer?                         @relation(fields: [referrerId], references: [id], onDelete: SetNull)
   specialties       ProfessionalListingSpecialty[]
   services          ProfessionalListingService[]
   deliverables      ProfessionalListingDeliverable[]
@@ -3992,6 +4004,7 @@ model ProfessionalListing {
   @@index([stateKey, listingStatus])
   @@index([usedByBmh, listingStatus])
   @@index([ownershipStatus])
+  @@index([referrerId])
   @@index([searchRank, displayName])
   @@index([normalizedName])
   @@index([normalizedPhone])
@@ -4277,6 +4290,39 @@ model ProfessionalEnquiry {
   @@map("professional_enquiries")
 }
 
+enum ReferrerType {
+  referrer
+  affiliate
+}
+
+model Referrer {
+  id               String       @id @default(uuid())
+  type             ReferrerType @default(referrer)
+  name             String
+  phone            String?
+  whatsapp         String?
+  email            String?
+  /// Unique, stored uppercase. Used in links as ?ref=CODE.
+  code             String       @unique
+  /// Set when the referrer is a BMH user (for example a contractor inviting clients).
+  userId           String?      @unique
+  notes            String?      @db.Text
+  createdByAdminId String?
+  archivedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  user                 User?                  @relation("ReferrerUser", fields: [userId], references: [id], onDelete: SetNull)
+  createdByAdmin       User?                  @relation("ReferrerCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  projects             Project[]
+  artisanListings      ArtisanListing[]
+  professionalListings ProfessionalListing[]
+  startRequests        StartRequest[]
+
+  @@index([type, archivedAt])
+  @@map("referrers")
+}
+
 model StartRequest {
   id        String   @id @default(uuid())
   reference String   @unique
@@ -4284,12 +4330,16 @@ model StartRequest {
   answers   Json
   name      String
   whatsapp  String
-  source    String?
-  referrer  String?
-  utm       Json?
-  createdAt DateTime @default(now())
+  source     String?
+  referrer   String?
+  referrerId String?
+  utm        Json?
+  createdAt  DateTime @default(now())
+
+  referredBy Referrer? @relation(fields: [referrerId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+  @@index([referrerId])
   @@map("start_requests")
 }
 
@@ -4477,6 +4527,7 @@ model ArtisanListing {
   trustScore Int @default(0)
 
   sourceType        ArtisanSourceType @default(admin_research)
+  referrerId        String?
   sourceNotes       String?           @db.Text
   sourceUrls        String[]          @default([])
   /// high | medium. Internal research confidence. Not shown publicly.
@@ -4521,6 +4572,7 @@ model ArtisanListing {
   owner        User?        @relation("ArtisanListingOwner", fields: [linkedUserId], references: [id], onDelete: SetNull)
   contractor   Contractor?  @relation("ArtisanListingContractor", fields: [linkedContractorId], references: [id], onDelete: SetNull)
   createdBy    User?        @relation("ArtisanListingCreatedBy", fields: [createdByAdminId], references: [id], onDelete: SetNull)
+  referrer     Referrer?    @relation(fields: [referrerId], references: [id], onDelete: SetNull)
   capabilities ArtisanListingCapability[]
   media        ArtisanMedia[]
   checks       ArtisanVerificationCheck[]
@@ -4530,6 +4582,7 @@ model ArtisanListing {
   @@index([listingStatus, primaryTradeId])
   @@index([state, city])
   @@index([claimStatus])
+  @@index([referrerId])
   @@index([verificationStatus])
   @@index([recruitmentStatus])
   @@index([normalizedPhone])

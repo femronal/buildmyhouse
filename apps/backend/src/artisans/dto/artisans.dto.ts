@@ -155,6 +155,7 @@ export class AdminArtisanPatchDto {
   @IsOptional() @IsBoolean() usedByBmh?: boolean;
   @IsOptional() @IsString() usedByBmhNote?: string;
   @IsOptional() @IsString() sourceNotes?: string;
+  @IsOptional() @IsString() referrerId?: string | null;
   @IsOptional() @IsArray() @IsString({ each: true }) sourceUrls?: string[];
 }
 

@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
 
 export interface RecommendedGC {
   id: string;
@@ -243,9 +244,18 @@ export const projectService = {
     planFileName?: string;
     projectDescription?: string;
     successCriteria?: string;
+    referralCode?: string;
+    referralSource?: 'link' | 'code_entered';
   }) => {
     try {
-      const response = await api.post('/projects/from-design', data);
+      const typed = typedReferralCodeValue();
+      const stored = getReferralCode();
+      const referralCode = data.referralCode || typed || stored || undefined;
+      const response = await api.post('/projects/from-design', {
+        ...data,
+        referralCode,
+        referralSource: data.referralSource || (typed ? 'code_entered' : referralCode ? 'link' : undefined),
+      });
       return response.data || response;
     } catch (error: any) {
       console.error('❌ [projectService] Error creating project from design:', error);

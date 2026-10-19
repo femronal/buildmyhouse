@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsOptional, IsDateString, Min, Max } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, IsDateString, Min, Max } from 'class-validator';
 
 export class CreateProjectDto {
   @IsString()
@@ -50,6 +50,14 @@ export class CreateProjectDto {
   @IsOptional()
   @IsString()
   generalContractorId?: string;
+
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
+
+  @IsOptional()
+  @IsIn(['link', 'code_entered'])
+  referralSource?: 'link' | 'code_entered';
 }
 
 

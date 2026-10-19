@@ -15,6 +15,7 @@ import { useResponsivePadding } from "@/lib/responsive-layout";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 import { api } from "@/lib/api";
 import { clearAuthToken } from "@/lib/auth";
+import { InviteClientSheet } from "@/components/InviteClientSheet";
 
 export default function GCDashboardScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
@@ -22,6 +23,8 @@ export default function GCDashboardScreen() {
   const introParams = useLocalSearchParams<{ listingIntro?: string | string[] }>();
   const listingIntro = (Array.isArray(introParams.listingIntro) ? introParams.listingIntro[0] : introParams.listingIntro) === '1';
   const [showListingIntro, setShowListingIntro] = useState(false);
+  const [listingIntroDismissed, setListingIntroDismissed] = useState(false);
+  const [showInviteClient, setShowInviteClient] = useState(false);
   const [listingCount, setListingCount] = useState(0);
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stackBottomNav");
@@ -69,8 +72,20 @@ export default function GCDashboardScreen() {
     return () => clearTimeout(timer);
   }, [listingIntro, loadingCurrentUser, currentUser]);
 
+  useEffect(() => {
+    if (loadingCurrentUser || !currentUser) return;
+    const profile = currentUser as { hasClaimedListing?: boolean; inviteClientPromptSeenAt?: string | null; listingManagementIntroSeenAt?: string | null };
+    if (!profile.hasClaimedListing || profile.inviteClientPromptSeenAt) return;
+    const introPending = listingIntro && !listingIntroDismissed && !profile.listingManagementIntroSeenAt;
+    if (introPending || showListingIntro) return;
+    const delay = listingIntro ? 1000 : 3000;
+    const timer = setTimeout(() => setShowInviteClient(true), delay);
+    return () => clearTimeout(timer);
+  }, [loadingCurrentUser, currentUser, listingIntro, listingIntroDismissed, showListingIntro]);
+
   const dismissListingIntro = async (openListings: boolean) => {
     setShowListingIntro(false);
+    setListingIntroDismissed(true);
     try {
       await api.post('/artisans/my-listings/intro-seen', {});
     } catch {
@@ -923,6 +938,7 @@ export default function GCDashboardScreen() {
           <Text className="text-gray-500 text-base mt-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Earnings</Text>
         </TouchableOpacity>
       </View>
+      <InviteClientSheet visible={showInviteClient} onClose={() => setShowInviteClient(false)} />
       <Modal visible={showListingIntro} transparent animationType="fade" onRequestClose={() => dismissListingIntro(false)}>
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.62)', justifyContent: 'center', padding: 24 }}>
           <View style={{ backgroundColor: '#fff', borderRadius: 24, padding: 24 }}>

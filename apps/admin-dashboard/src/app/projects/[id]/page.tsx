@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ChevronRight, Plus, Save, Trash2 } from 'lucide-react';
 import { ProjectAccessLinksPanel } from '@/components/ProjectAccessLinksPanel';
+import { ReferrerSelect } from '@/components/growth/ReferrerSelect';
 import { adminProjectService } from '@/services/adminProjectService';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
@@ -170,6 +171,15 @@ export default function AdminProjectDetailPage() {
           <p className="text-gray-500 mt-1">{project.address}</p>
         </div>
       </div>
+
+      <ReferrerSelect
+        targetType="project"
+        targetId={projectId}
+        currentId={project.referrerId}
+        referralSource={project.referralSource}
+        referredAt={project.referredAt}
+        label="Referred by"
+      />
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3">{error}</div>

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger, Optional } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { WebSocketService } from '../websocket/websocket.service';
@@ -11,6 +11,8 @@ import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto'
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
 import { ProjectAccessService } from '../project-access/project-access.service';
+import { ReferralsService } from '../referrals/referrals.service';
+import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
 
 @Injectable()
 export class ProjectsService {
@@ -43,7 +45,13 @@ export class ProjectsService {
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
     private readonly projectAccessService: ProjectAccessService,
+    @Optional() private readonly referrals?: ReferralsService,
   ) {}
+
+  private async referralCreateFields(homeownerId: string, code?: string | null, source?: string | null) {
+    if (!this.referrals) return {};
+    return this.referrals.referralFieldsForNewProject(homeownerId, code, source);
+  }
 
   private extractDurationDays(durationText?: string | null): number | null {
     if (!durationText) return null;
@@ -1855,6 +1863,8 @@ export class ProjectsService {
     planFileName?: string,
     projectDescription?: string,
     successCriteria?: string,
+    referralCode?: string,
+    referralSource?: string,
   ) {
     // Get design with creator info
     const design = await this.prisma.design.findUnique({
@@ -1916,6 +1926,7 @@ export class ProjectsService {
         status: 'draft',
         progress: 0,
         spent: 0,
+        ...(await this.referralCreateFields(homeownerId, referralCode, referralSource)),
         planPdfUrl: normalizedPdfUrl,
         planFileName: normalizedPdfName,
         aiAnalysis: {
@@ -2055,6 +2066,11 @@ export class ProjectsService {
         status: 'draft',
         progress: 0,
         spent: 0,
+        ...(await this.referralCreateFields(
+          homeownerId,
+          createProjectDto.referralCode,
+          createProjectDto.referralSource,
+        )),
       },
       include: {
         homeowner: {
@@ -2153,6 +2169,7 @@ export class ProjectsService {
         ...(updateProjectDto.startDate && { startDate: new Date(updateProjectDto.startDate) }),
         ...(updateProjectDto.dueDate && { dueDate: new Date(updateProjectDto.dueDate) }),
         ...(updateProjectDto.generalContractorId && { generalContractorId: updateProjectDto.generalContractorId }),
+        ...adminReferrerUpdate(userRole, updateProjectDto.referrerId),
       },
       include: {
         homeowner: {

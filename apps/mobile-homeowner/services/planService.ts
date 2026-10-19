@@ -1,4 +1,5 @@
 import { api } from '@/lib/api';
+import { getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
 
 export interface UploadPlanData {
   name: string;
@@ -18,6 +19,8 @@ export interface UploadPlanData {
   projectTypeFilter?: string;
   projectDescription?: string;
   successCriteria?: string;
+  referralCode?: string;
+  referralSource?: 'link' | 'code_entered';
 }
 
 export const planService = {
@@ -93,6 +96,12 @@ export const planService = {
     if (planData.projectTypeFilter) formData.append('projectTypeFilter', planData.projectTypeFilter);
     if (planData.projectDescription) formData.append('projectDescription', planData.projectDescription);
     if (planData.successCriteria) formData.append('successCriteria', planData.successCriteria);
+    const typed = typedReferralCodeValue();
+    const referralCode = planData.referralCode || typed || getReferralCode();
+    if (referralCode) {
+      formData.append('referralCode', referralCode);
+      formData.append('referralSource', planData.referralSource || (typed ? 'code_entered' : 'link'));
+    }
 
     // For FormData, don't set Content-Type header - browser will set it automatically with boundary
     const response = await api.post('/plans/upload', formData);
