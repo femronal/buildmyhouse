@@ -3,7 +3,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { PermissionsGuard } from '../hr/permissions/permissions.guard';
 import { RequirePermissions } from '../hr/permissions/require-permissions.decorator';
-import { AttachReferrerDto, CreateReferrerDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { AttachReferrerDto, CreateReferrerDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
 import { ReferralsService } from './referrals.service';
 
 @Controller('admin/referrals')
@@ -16,6 +16,18 @@ export class ReferralsAdminController {
   @RequirePermissions('referrals.view')
   list(@Query('type') type?: string, @Query('q') q?: string, @Query('includeArchived') includeArchived?: string) {
     return this.referrals.list({ type, q, includeArchived });
+  }
+
+  @Get('settings')
+  @RequirePermissions('referrals.view')
+  settings() {
+    return this.referrals.getSettings();
+  }
+
+  @Patch('settings')
+  @RequirePermissions('referrals.edit')
+  updateSettings(@Body() body: UpdateReferralProgramDto) {
+    return this.referrals.updateSettings(body);
   }
 
   @Get('summary')

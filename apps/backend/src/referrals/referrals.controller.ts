@@ -8,6 +8,12 @@ import { ReferralsService } from './referrals.service';
 export class ReferralsController {
   constructor(private readonly referrals: ReferralsService) {}
 
+  @Get('program')
+  @Throttle({ short: { limit: 60, ttl: 60000 } })
+  program() {
+    return this.referrals.publicProgram();
+  }
+
   @Get('code/:code')
   @Throttle({ short: { limit: 30, ttl: 60000 } })
   code(@Param('code') code: string) {

@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, TextInput, View } from 'react-native';
-import { setTypedReferralCode, SHOW_REFERRAL_CODE_FIELD } from '@/lib/referral-code';
+import { loadReferralProgram, referralProgram, setTypedReferralCode } from '@/lib/referral-code';
 
 export function ReferralCodeField() {
+  const [visible, setVisible] = useState(false);
   const [value, setValue] = useState('');
-  if (!SHOW_REFERRAL_CODE_FIELD) return null;
+
+  useEffect(() => {
+    void loadReferralProgram().then((settings) => setVisible(settings.allowHomeownerTypedCode));
+  }, []);
+
+  if (!visible && !referralProgram().allowHomeownerTypedCode) return null;
+  if (!visible) return null;
   return (
     <View style={{ marginBottom: 12 }}>
       <Text style={{ fontFamily: 'Poppins_500Medium', marginBottom: 6 }}>Have a referral code?</Text>

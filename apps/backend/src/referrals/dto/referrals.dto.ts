@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateReferrerDto {
   @IsIn(['referrer', 'affiliate'])
@@ -76,9 +76,38 @@ export class UpdateReferrerDto {
   archived?: boolean;
 }
 
+export class UpdateReferralProgramDto {
+  @IsOptional()
+  @IsBoolean()
+  allowHomeownerTypedCode?: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  linkValidityDays?: number;
+
+  @IsOptional()
+  @IsIn(['first_touch', 'latest_code'])
+  attributionRule?: 'first_touch' | 'latest_code';
+
+  @IsOptional()
+  @IsBoolean()
+  trackVendors?: boolean;
+
+  @IsOptional()
+  @IsIn(['undecided', 'listing', 'job_created', 'job_paid', 'job_completed'])
+  countsWhen?: 'undecided' | 'listing' | 'job_created' | 'job_paid' | 'job_completed';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  payoutRules?: string;
+}
+
 export class AttachReferrerDto {
-  @IsIn(['project', 'artisan_listing', 'professional_listing'])
-  targetType!: 'project' | 'artisan_listing' | 'professional_listing';
+  @IsIn(['project', 'artisan_listing', 'professional_listing', 'vendor'])
+  targetType!: 'project' | 'artisan_listing' | 'professional_listing' | 'vendor';
 
   @IsUUID()
   targetId!: string;

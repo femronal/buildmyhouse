@@ -6,7 +6,7 @@ import { useReferralList } from '@/hooks/useReferrals';
 import { formatLagosDate } from '@/lib/referrals';
 
 type Props = {
-  targetType: 'project' | 'artisan_listing' | 'professional_listing';
+  targetType: 'project' | 'artisan_listing' | 'professional_listing' | 'vendor';
   targetId: string;
   currentId?: string | null;
   referralSource?: string | null;

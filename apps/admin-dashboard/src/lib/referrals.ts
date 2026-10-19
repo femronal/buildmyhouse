@@ -32,6 +32,16 @@ export type ReferralSummary = {
   completedJobsCount: number;
   projectsWithoutReferrer: number;
   listingsWithoutReferrer: number;
+  countsWhen?: string;
+};
+
+export type ReferralProgramSettings = {
+  allowHomeownerTypedCode: boolean;
+  linkValidityDays: number;
+  attributionRule: 'first_touch' | 'latest_code';
+  trackVendors: boolean;
+  countsWhen: 'undecided' | 'listing' | 'job_created' | 'job_paid' | 'job_completed';
+  payoutRules: string | null;
 };
 
 export function formatLagosDate(value?: string | null) {

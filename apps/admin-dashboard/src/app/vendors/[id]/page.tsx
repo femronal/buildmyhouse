@@ -20,6 +20,8 @@ import {
   useVendor,
   useVendorAction,
 } from '@/hooks/useVendors';
+import { ReferrerSelect } from '@/components/growth/ReferrerSelect';
+import { useReferralSettings } from '@/hooks/useReferrals';
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -43,6 +45,7 @@ export default function VendorDetailPage() {
   const params = useParams();
   const id = String(params?.id || '');
   const { data: vendor, isLoading, error } = useVendor(id || null);
+  const referralSettings = useReferralSettings();
   const actions = useVendorAction(id);
   const updateVendor = useUpdateVendor(id);
 
@@ -140,6 +143,10 @@ export default function VendorDetailPage() {
               Procurement: {vendor.procurementRelationship}
             </span>
           </div>
+
+          {referralSettings.data?.trackVendors ? (
+            <ReferrerSelect targetType="vendor" targetId={id} currentId={vendor.referrerId} label="Brought in by" />
+          ) : null}
 
           <div className="grid gap-4 xl:grid-cols-3">
             <div className="xl:col-span-2 space-y-4">

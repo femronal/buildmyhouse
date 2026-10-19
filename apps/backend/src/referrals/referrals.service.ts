@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, ReferrerType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { AttachReferrerDto, CreateReferrerDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { AttachReferrerDto, CreateReferrerDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
 import { assertCustomReferralCode, normalizeReferralCode, randomReferralCode } from './referral-code';
 
 const LIST_CAP = 200;
+const SETTINGS_ID = 'default';
 
 type MetricRow = {
   listingsCount: number;
@@ -23,6 +24,45 @@ export class ReferralsService {
   private readonly logger = new Logger(ReferralsService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async getSettings() {
+    const existing = await this.prisma.referralProgramSettings.findUnique({ where: { id: SETTINGS_ID } });
+    if (existing) return existing;
+    return this.prisma.referralProgramSettings.create({
+      data: {
+        id: SETTINGS_ID,
+        allowHomeownerTypedCode: false,
+        linkValidityDays: 30,
+        attributionRule: 'first_touch',
+        trackVendors: false,
+        countsWhen: 'undecided',
+      },
+    });
+  }
+
+  async updateSettings(dto: UpdateReferralProgramDto) {
+    await this.getSettings();
+    return this.prisma.referralProgramSettings.update({
+      where: { id: SETTINGS_ID },
+      data: {
+        allowHomeownerTypedCode: dto.allowHomeownerTypedCode,
+        linkValidityDays: dto.linkValidityDays,
+        attributionRule: dto.attributionRule,
+        trackVendors: dto.trackVendors,
+        countsWhen: dto.countsWhen,
+        payoutRules: dto.payoutRules !== undefined ? blankToNull(dto.payoutRules) : undefined,
+      },
+    });
+  }
+
+  async publicProgram() {
+    const settings = await this.getSettings();
+    return {
+      allowHomeownerTypedCode: settings.allowHomeownerTypedCode,
+      linkValidityDays: settings.linkValidityDays,
+      attributionRule: settings.attributionRule,
+    };
+  }
 
   async list(query: { type?: string; q?: string; includeArchived?: string }) {
     const where: Prisma.ReferrerWhereInput = {};
@@ -75,11 +115,15 @@ export class ReferralsService {
       totals.paidJobsCount += row.paidJobsCount;
       totals.completedJobsCount += row.completedJobsCount;
     }
-    const [projectsWithoutReferrer, artisanListingsWithoutReferrer, professionalListingsWithoutReferrer] =
+    const settings = await this.getSettings();
+    const [projectsWithoutReferrer, artisanListingsWithoutReferrer, professionalListingsWithoutReferrer, vendorsWithoutReferrer] =
       await Promise.all([
         this.prisma.project.count({ where: { referrerId: null, archivedAt: null } }),
         this.prisma.artisanListing.count({ where: { referrerId: null, archivedAt: null } }),
         this.prisma.professionalListing.count({ where: { referrerId: null, archivedAt: null } }),
+        settings.trackVendors
+          ? this.prisma.vendorProfile.count({ where: { referrerId: null, deletedAt: null } })
+          : Promise.resolve(0),
       ]);
     return {
       listingsCount: totals.listingsCount,
@@ -87,7 +131,8 @@ export class ReferralsService {
       paidJobsCount: totals.paidJobsCount,
       completedJobsCount: totals.completedJobsCount,
       projectsWithoutReferrer,
-      listingsWithoutReferrer: artisanListingsWithoutReferrer + professionalListingsWithoutReferrer,
+      listingsWithoutReferrer: artisanListingsWithoutReferrer + professionalListingsWithoutReferrer + vendorsWithoutReferrer,
+      countsWhen: settings.countsWhen,
     };
   }
 
@@ -95,7 +140,8 @@ export class ReferralsService {
     const row = await this.prisma.referrer.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Referrer not found');
     const metrics = await this.metricsFor([id]);
-    const [artisans, professionals, projects, leads] = await Promise.all([
+    const settings = await this.getSettings();
+    const [artisans, professionals, projects, leads, vendors] = await Promise.all([
       this.prisma.artisanListing.findMany({
         where: { referrerId: id },
         orderBy: { createdAt: 'desc' },
@@ -143,6 +189,14 @@ export class ReferralsService {
         take: LIST_CAP,
         select: { reference: true, path: true, createdAt: true },
       }),
+      settings.trackVendors
+        ? this.prisma.vendorProfile.findMany({
+            where: { referrerId: id, deletedAt: null },
+            orderBy: { createdAt: 'desc' },
+            take: LIST_CAP,
+            select: { id: true, tradingName: true, slug: true, stateLabel: true, claimStatus: true, createdAt: true },
+          })
+        : Promise.resolve([]),
     ]);
     return {
       ...row,
@@ -165,6 +219,15 @@ export class ReferralsService {
           slug: item.slug,
           state: item.state,
           claimStatus: item.ownershipStatus,
+          createdAt: item.createdAt,
+        })),
+        ...vendors.map((item) => ({
+          id: item.id,
+          kind: 'vendor' as const,
+          displayName: item.tradingName,
+          slug: item.slug,
+          state: item.stateLabel,
+          claimStatus: item.claimStatus,
           createdAt: item.createdAt,
         })),
       ]
@@ -251,6 +314,17 @@ export class ReferralsService {
         select: { id: true, referrerId: true },
       });
     }
+    if (dto.targetType === 'vendor') {
+      const settings = await this.getSettings();
+      if (!settings.trackVendors) {
+        throw new BadRequestException('Vendor tracking is turned off. Turn it on in referral rules.');
+      }
+      return this.prisma.vendorProfile.update({
+        where: { id: dto.targetId },
+        data: { referrerId },
+        select: { id: true, referrerId: true },
+      });
+    }
     return this.prisma.professionalListing.update({
       where: { id: dto.targetId },
       data: { referrerId },
@@ -268,6 +342,16 @@ export class ReferralsService {
         select: { id: true, name: true },
       });
       return rows.map((row) => ({ id: row.id, label: row.name }));
+    }
+    if (targetType === 'vendor') {
+      const settings = await this.getSettings();
+      if (!settings.trackVendors) return [];
+      const rows = await this.prisma.vendorProfile.findMany({
+        where: { deletedAt: null, tradingName: { contains: query, mode: 'insensitive' } },
+        take: 20,
+        select: { id: true, tradingName: true },
+      });
+      return rows.map((row) => ({ id: row.id, label: row.tradingName }));
     }
     if (targetType === 'artisan_listing') {
       const rows = await this.prisma.artisanListing.findMany({
@@ -470,6 +554,20 @@ export class ReferralsService {
       if (target) {
         target.professionalListingsCount += row._count._all;
         target.listingsCount += row._count._all;
+      }
+    }
+    const settings = await this.getSettings();
+    if (settings.trackVendors) {
+      const vendors = await this.prisma.vendorProfile.groupBy({
+        by: ['referrerId'],
+        where: { referrerId: whereIds, deletedAt: null },
+        _count: { _all: true },
+        _min: { createdAt: true },
+        _max: { createdAt: true },
+      });
+      for (const row of vendors) {
+        const target = bump(row.referrerId, row._count._all, row._min.createdAt, row._max.createdAt);
+        if (target) target.listingsCount += row._count._all;
       }
     }
     for (const row of jobs) {

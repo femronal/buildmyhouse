@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import type { ReferralSummary, ReferrerListItem } from '@/lib/referrals';
+import type { ReferralProgramSettings, ReferralSummary, ReferrerListItem } from '@/lib/referrals';
 
 export function useReferralList(params: { type?: string; q?: string; includeArchived?: boolean }) {
   const search = new URLSearchParams();
@@ -13,6 +13,13 @@ export function useReferralList(params: { type?: string; q?: string; includeArch
   return useQuery({
     queryKey: ['admin-referrals', query],
     queryFn: () => api.get<ReferrerListItem[]>(`/admin/referrals${query ? `?${query}` : ''}`),
+  });
+}
+
+export function useReferralSettings() {
+  return useQuery({
+    queryKey: ['admin-referral-settings'],
+    queryFn: () => api.get<ReferralProgramSettings>('/admin/referrals/settings'),
   });
 }
 
@@ -37,6 +44,7 @@ export function useReferralMutations() {
     await client.invalidateQueries({ queryKey: ['admin-referrals'] });
     await client.invalidateQueries({ queryKey: ['admin-referrals-summary'] });
     await client.invalidateQueries({ queryKey: ['admin-referral'] });
+    await client.invalidateQueries({ queryKey: ['admin-referral-settings'] });
   };
   return {
     create: useMutation({

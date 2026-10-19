@@ -4,17 +4,18 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
-import { useReferral, useReferralMutations } from '@/hooks/useReferrals';
+import { useReferral, useReferralMutations, useReferralSettings } from '@/hooks/useReferrals';
 import { formatLagosDate } from '@/lib/referrals';
 
 export default function ReferralDetailPage() {
   const params = useParams<{ id: string }>();
+  const settings = useReferralSettings();
   const query = useReferral(params.id);
   const mutations = useReferralMutations();
   const row = query.data;
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState('');
-  const [attachKind, setAttachKind] = useState<'project' | 'artisan_listing' | 'professional_listing'>('artisan_listing');
+  const [attachKind, setAttachKind] = useState<'project' | 'artisan_listing' | 'professional_listing' | 'vendor'>('artisan_listing');
   const [search, setSearch] = useState('');
   const [matches, setMatches] = useState<{ id: string; label: string }[]>([]);
 
@@ -92,7 +93,7 @@ export default function ReferralDetailPage() {
           rows={(row.listings || []).map((item: any) => ({
             key: `${item.kind}-${item.id}`,
             cells: [
-              <Link key="n" href={item.kind === 'artisan' ? `/artisans/${item.id}` : `/professionals/${item.id}`} className="hover:underline">
+              <Link key="n" href={item.kind === 'artisan' ? `/artisans/${item.id}` : item.kind === 'vendor' ? `/vendors/${item.id}` : `/professionals/${item.id}`} className="hover:underline">
                 {item.displayName}
               </Link>,
               item.kind,
@@ -176,7 +177,7 @@ function CopyLine({ label, value }: { label: string; value: string }) {
 
 function AttachSearch(props: {
   kind: string;
-  onKind: (value: 'project' | 'artisan_listing' | 'professional_listing') => void;
+  onKind: (value: 'project' | 'artisan_listing' | 'professional_listing' | 'vendor') => void;
   search: string;
   onSearch: (value: string) => void;
   matches: { id: string; label: string }[];
@@ -189,6 +190,7 @@ function AttachSearch(props: {
         <select className="rounded-lg border px-3 py-2 text-sm" value={props.kind} onChange={(event) => props.onKind(event.target.value as any)}>
           <option value="artisan_listing">Artisan listing</option>
           <option value="professional_listing">Professional listing</option>
+          {settings.data?.trackVendors ? <option value="vendor">Vendor</option> : null}
           <option value="project">Homeowner job</option>
         </select>
         <input

@@ -46,6 +46,17 @@ describe('ReferralsService', () => {
 
   it('counts a paid job once when both payment signals are present', async () => {
     const prisma = {
+      referralProgramSettings: {
+        findUnique: jest.fn(async () => ({
+          id: 'default',
+          trackVendors: false,
+          countsWhen: 'undecided',
+          allowHomeownerTypedCode: false,
+          linkValidityDays: 30,
+          attributionRule: 'first_touch',
+          payoutRules: 'Pay after the job is completed.',
+        })),
+      },
       referrer: { findMany: jest.fn(async () => [{ id: 'r1' }]) },
       artisanListing: {
         groupBy: jest.fn(async () => []),
@@ -79,6 +90,51 @@ describe('ReferralsService', () => {
     expect(summary.paidJobsCount).toBe(1);
     expect(summary.completedJobsCount).toBe(1);
     expect(summary.jobsCount).toBe(2);
+    expect(summary.countsWhen).toBe('undecided');
+  });
+
+  it('records program rules and hides payout notes from the public response', async () => {
+    const saved = {
+      id: 'default',
+      allowHomeownerTypedCode: true,
+      linkValidityDays: 14,
+      attributionRule: 'latest_code',
+      trackVendors: true,
+      countsWhen: 'job_paid',
+      payoutRules: 'Agree the amount offline.',
+    };
+    const prisma = {
+      referralProgramSettings: {
+        findUnique: jest.fn(async () => saved),
+        update: jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({ ...saved, ...data })),
+      },
+    };
+    const service = buildService(prisma);
+    await expect(service.publicProgram()).resolves.toEqual({
+      allowHomeownerTypedCode: true,
+      linkValidityDays: 14,
+      attributionRule: 'latest_code',
+    });
+    await service.updateSettings({ payoutRules: 'Pay nothing until a rule is agreed.', countsWhen: 'job_completed' });
+    expect(prisma.referralProgramSettings.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ countsWhen: 'job_completed', payoutRules: 'Pay nothing until a rule is agreed.' }),
+      }),
+    );
+  });
+
+  it('refuses a vendor attach while vendor tracking is off', async () => {
+    const prisma = {
+      referralProgramSettings: {
+        findUnique: jest.fn(async () => ({ trackVendors: false })),
+      },
+      referrer: { findUnique: jest.fn(async () => ({ id: 'r1', archivedAt: null })) },
+      vendorProfile: { update: jest.fn() },
+    };
+    await expect(
+      buildService(prisma).attach({ targetType: 'vendor', targetId: '11111111-1111-1111-1111-111111111111', referrerId: 'r1' }),
+    ).rejects.toThrow('Vendor tracking is turned off');
+    expect(prisma.vendorProfile.update).not.toHaveBeenCalled();
   });
 
   it('returns only a valid flag for a public code check', async () => {

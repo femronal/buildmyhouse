@@ -2,8 +2,9 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { useReferralList, useReferralMutations, useReferralSummary } from '@/hooks/useReferrals';
-import { formatLagosDate, type ReferrerListItem } from '@/lib/referrals';
+import { useReferralList, useReferralMutations, useReferralSettings, useReferralSummary } from '@/hooks/useReferrals';
+import { api } from '@/lib/api';
+import { formatLagosDate, type ReferralProgramSettings, type ReferrerListItem } from '@/lib/referrals';
 
 const CHIPS = [
   { id: '', label: 'All' },
@@ -45,12 +46,14 @@ export default function ReferralsPage() {
         </button>
       </header>
 
+      <ReferralRules />
+
       <section className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <Funnel label="Listings brought in" value={summary.data?.listingsCount} />
-          <Funnel label="Homeowner jobs" value={summary.data?.jobsCount} />
-          <Funnel label="Paid jobs" value={summary.data?.paidJobsCount} accent />
-          <Funnel label="Completed jobs" value={summary.data?.completedJobsCount} accent />
+          <Funnel label="Listings brought in" value={summary.data?.listingsCount} counts={summary.data?.countsWhen === 'listing'} />
+          <Funnel label="Homeowner jobs" value={summary.data?.jobsCount} counts={summary.data?.countsWhen === 'job_created'} />
+          <Funnel label="Paid jobs" value={summary.data?.paidJobsCount} accent counts={summary.data?.countsWhen === 'job_paid'} />
+          <Funnel label="Completed jobs" value={summary.data?.completedJobsCount} accent counts={summary.data?.countsWhen === 'job_completed'} />
         </div>
         <p className="mt-3 text-xs text-gray-500">
           {summary.data?.projectsWithoutReferrer ?? 0} projects and {summary.data?.listingsWithoutReferrer ?? 0} listings have no referrer yet.
@@ -145,12 +148,130 @@ export default function ReferralsPage() {
   );
 }
 
-function Funnel({ label, value, accent }: { label: string; value?: number; accent?: boolean }) {
+function Funnel({ label, value, accent, counts }: { label: string; value?: number; accent?: boolean; counts?: boolean }) {
   return (
     <div>
       <p className="text-xs text-gray-500">{label}</p>
       <p className={`mt-1 text-2xl font-semibold ${accent ? 'text-[#22c55e]' : 'text-gray-900'}`}>{value ?? 0}</p>
+      {counts ? <p className="mt-1 text-xs text-[#22c55e]">This is the number that counts</p> : null}
     </div>
+  );
+}
+
+function ReferralRules() {
+  const query = useReferralSettings();
+  const [form, setForm] = useState<ReferralProgramSettings | null>(null);
+  const [status, setStatus] = useState('');
+  const current = form || query.data;
+  if (!current) return null;
+  const set = (patch: Partial<ReferralProgramSettings>) => setForm({ ...current, ...patch });
+  return (
+    <section className="mb-4 rounded-xl border border-gray-200 bg-white p-4">
+      <h2 className="text-base font-semibold text-gray-900">Referral rules</h2>
+      <p className="mt-1 text-sm text-gray-600">These choices are saved here. Change them on this page. They are not fixed in the app.</p>
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <label className="flex items-start gap-2 text-sm text-gray-800">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={current.allowHomeownerTypedCode}
+            onChange={(event) => set({ allowHomeownerTypedCode: event.target.checked })}
+          />
+          <span>
+            <span className="font-medium">Homeowners can type a referral code</span>
+            <span className="mt-1 block text-xs text-gray-500">Shows a code field when someone starts a job or uploads a plan.</span>
+          </span>
+        </label>
+        <label className="text-sm text-gray-800">
+          <span className="font-medium">A shared link stays valid for</span>
+          <span className="mt-1 flex items-center gap-2">
+            <input
+              type="number"
+              min={1}
+              max={365}
+              className="w-24 rounded-lg border border-gray-200 px-3 py-2"
+              value={current.linkValidityDays}
+              onChange={(event) => set({ linkValidityDays: Number(event.target.value) })}
+            />
+            <span>days</span>
+          </span>
+        </label>
+        <label className="text-sm text-gray-800">
+          <span className="font-medium">If a newer code arrives</span>
+          <select
+            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+            value={current.attributionRule}
+            onChange={(event) => set({ attributionRule: event.target.value as ReferralProgramSettings['attributionRule'] })}
+          >
+            <option value="first_touch">Keep the first code during the validity window</option>
+            <option value="latest_code">Replace it with the newest code</option>
+          </select>
+        </label>
+        <label className="text-sm text-gray-800">
+          <span className="font-medium">A referral counts when</span>
+          <select
+            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+            value={current.countsWhen}
+            onChange={(event) => set({ countsWhen: event.target.value as ReferralProgramSettings['countsWhen'] })}
+          >
+            <option value="undecided">Not decided yet</option>
+            <option value="listing">A listing is brought in</option>
+            <option value="job_created">A homeowner job is created</option>
+            <option value="job_paid">A homeowner job is paid</option>
+            <option value="job_completed">A homeowner job is completed</option>
+          </select>
+        </label>
+        <label className="flex items-start gap-2 text-sm text-gray-800 md:col-span-2">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={current.trackVendors}
+            onChange={(event) => set({ trackVendors: event.target.checked })}
+          />
+          <span>
+            <span className="font-medium">Track vendors as well</span>
+            <span className="mt-1 block text-xs text-gray-500">Lets you attach a referrer on a vendor page. Off means vendors stay out of this list.</span>
+          </span>
+        </label>
+        <label className="text-sm text-gray-800 md:col-span-2">
+          <span className="font-medium">Payout rules</span>
+          <span className="mt-1 block text-xs text-gray-500">Write the rule you want followed. This page records it. It does not send money.</span>
+          <textarea
+            className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2"
+            rows={3}
+            value={current.payoutRules || ''}
+            onChange={(event) => set({ payoutRules: event.target.value })}
+          />
+        </label>
+      </div>
+      <div className="mt-4 flex items-center gap-3">
+        <button
+          type="button"
+          className="rounded-lg bg-black px-4 py-2 text-sm text-white"
+          onClick={async () => {
+            setStatus('');
+            try {
+              await api.patch('/admin/referrals/settings', {
+                allowHomeownerTypedCode: current.allowHomeownerTypedCode,
+                linkValidityDays: current.linkValidityDays,
+                attributionRule: current.attributionRule,
+                trackVendors: current.trackVendors,
+                countsWhen: current.countsWhen,
+                payoutRules: current.payoutRules || '',
+              });
+              setStatus('Saved.');
+              setForm(null);
+              await query.refetch();
+            } catch (error) {
+              setStatus(error instanceof Error ? error.message : 'Could not save.');
+            }
+          }}
+        >
+          Save rules
+        </button>
+        {status ? <p className="text-sm text-gray-600">{status}</p> : null}
+      </div>
+    </section>
   );
 }
 

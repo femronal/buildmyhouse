@@ -3302,6 +3302,7 @@ model VendorProfile {
 
   procurementRelationship VendorProcurementRelationship @default(never_contacted)
   previouslyUsedByBmh     Boolean @default(false)
+  referrerId              String?
 
   createdByAdminId String?
   approvedByAdminId String?
@@ -3317,6 +3318,7 @@ model VendorProfile {
   updatedAt        DateTime @updatedAt
 
   user           User? @relation("UserVendorProfile", fields: [userId], references: [id], onDelete: SetNull)
+  referrer       Referrer? @relation(fields: [referrerId], references: [id], onDelete: SetNull)
   createdByAdmin User? @relation("VendorProfileCreatedByAdmin", fields: [createdByAdminId], references: [id], onDelete: SetNull)
   approvedByAdmin User? @relation("VendorProfileApprovedByAdmin", fields: [approvedByAdminId], references: [id], onDelete: SetNull)
   verifiedByAdmin User? @relation("VendorProfileVerifiedByAdmin", fields: [verifiedByAdminId], references: [id], onDelete: SetNull)
@@ -3336,6 +3338,7 @@ model VendorProfile {
 
   @@index([listingStatus, verificationStatus])
   @@index([listingStatus, stateKey])
+  @@index([referrerId])
   @@index([claimStatus])
   @@index([acquisitionSource])
   @@index([procurementRelationship])
@@ -4318,9 +4321,25 @@ model Referrer {
   artisanListings      ArtisanListing[]
   professionalListings ProfessionalListing[]
   startRequests        StartRequest[]
+  vendorProfiles       VendorProfile[]
 
   @@index([type, archivedAt])
   @@map("referrers")
+}
+
+model ReferralProgramSettings {
+  id                      String   @id
+  allowHomeownerTypedCode Boolean  @default(false)
+  linkValidityDays        Int      @default(30)
+  /// first_touch | latest_code
+  attributionRule         String   @default("first_touch")
+  trackVendors            Boolean  @default(false)
+  /// undecided | listing | job_created | job_paid | job_completed
+  countsWhen              String   @default("undecided")
+  payoutRules             String?  @db.Text
+  updatedAt               DateTime @updatedAt
+
+  @@map("referral_program_settings")
 }
 
 model StartRequest {
