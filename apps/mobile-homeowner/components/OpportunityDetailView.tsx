@@ -48,10 +48,9 @@ export default function OpportunityDetailView({
     .map((row) => ({ label: row.label, value: shown(formatOpportunityCheckValue(row, data)) }))
     .filter((row) => row.value && !/price|rent|fee|deposit/i.test(row.label));
   const description = shown(String(data.description || ''));
-  const listed = [
+  const sellerListed = [
     ...splitCommaList(data[profile.verificationDocField]),
     ...(profile.verificationExtraField ? splitCommaList(data[profile.verificationExtraField]) : []),
-    ...facts.map((fact) => `${fact.label}: ${fact.value}`),
   ].filter(Boolean);
   const photos = images.filter((image) => image.url).slice(0, 12);
   const beds = Number(data.bedrooms);
@@ -107,25 +106,25 @@ export default function OpportunityDetailView({
         ) : null}
       </View>
 
-      <View style={{ flexDirection: width >= 768 ? 'row' : 'column', marginTop: 16 }}>
-        <View style={{ flex: 1, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14, marginRight: width >= 768 ? 8 : 0, marginBottom: 8 }}>
+      <View style={{ marginTop: 16, flexDirection: width >= 768 ? 'row' : 'column', alignItems: 'stretch' }}>
+        <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: width >= 768 ? 0 : 'auto', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14, marginRight: width >= 768 ? 8 : 0, marginBottom: 12, overflow: 'hidden' }}>
           <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, marginBottom: 6 }}>Checked by BuildMyHouse</Text>
           <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#374151', lineHeight: 20 }}>
             Not checked by BuildMyHouse yet. Request an inspection to have it checked.
           </Text>
         </View>
-        <View style={{ flex: 1, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14, marginBottom: 8 }}>
+        <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: width >= 768 ? 0 : 'auto', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14, marginBottom: 12, overflow: 'hidden' }}>
           <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, marginBottom: 6 }}>Listed by the seller</Text>
           <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: '#6B7280', marginBottom: 6 }}>Not verified by BuildMyHouse.</Text>
-          {listed.slice(0, 8).map((item) => (
-            <Text key={item} style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#111', marginBottom: 4 }}>{item}</Text>
+          {sellerListed.slice(0, 8).map((item) => (
+            <Text key={item} style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#111', marginBottom: 4, lineHeight: 20 }}>{item}</Text>
           ))}
         </View>
       </View>
 
       {description ? (
-        <View style={{ marginTop: 8 }}>
-          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, marginBottom: 6 }}>About this property</Text>
+        <View style={{ marginTop: 8, marginBottom: 8 }}>
+          <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, marginBottom: 8 }}>About this property</Text>
           <Text numberOfLines={aboutOpen ? undefined : 3} style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#374151', lineHeight: 22 }}>{description}</Text>
           <Pressable onPress={() => setAboutOpen((open) => !open)}>
             <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, marginTop: 6 }}>{aboutOpen ? 'Show less' : 'Show more'}</Text>
@@ -147,11 +146,11 @@ export default function OpportunityDetailView({
         </View>
       ) : null}
 
-      {listed.length > 0 ? (
+      {sellerListed.length > 0 ? (
         <View style={{ marginTop: 16 }}>
           <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, marginBottom: 8 }}>Features</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            {listed.map((item) => (
+            {sellerListed.map((item) => (
               <View key={item} style={{ borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginRight: 8, marginBottom: 8 }}>
                 <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 12, color: '#111' }}>{item}</Text>
               </View>

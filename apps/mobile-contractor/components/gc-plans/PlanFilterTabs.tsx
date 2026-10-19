@@ -28,12 +28,12 @@ export function PlanFilterTabs({
               style={{
                 fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_400Regular',
                 fontSize: 14,
-                color: active ? '#111111' : '#6B7280',
+                color: active ? '#FFFFFF' : '#93C5FD',
               }}
             >
               {tab.label} {count}
             </Text>
-            {active ? <View style={{ height: 2, backgroundColor: '#111111', marginTop: 6 }} /> : null}
+            {active ? <View style={{ height: 2, backgroundColor: '#3B82F6', marginTop: 6 }} /> : null}
           </TouchableOpacity>
         );
       })}

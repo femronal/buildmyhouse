@@ -353,9 +353,9 @@ export default function ExploreScreen() {
 
           {/* Search & Filter */}
           <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
-            <View className="flex-row items-center">
+            <View className="flex-row items-center" style={{ marginBottom: 4 }}>
               <View
-                className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 flex-row items-center mr-3"
+                className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 flex-row items-center"
                 style={{ paddingVertical: listingChrome.searchBarPaddingY }}
               >
                 <MagnifyingGlass size={18} color="#8a8a8a" weight="regular" />

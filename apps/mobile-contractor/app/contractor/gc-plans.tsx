@@ -659,7 +659,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
   };
 
   return (
-    <ScrollView className="flex-1 px-6" showsVerticalScrollIndicator={false}>
+    <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
       {/* Design Name */}
       <View className="mb-4">
         <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -908,10 +908,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             Rooms
           </Text>
           {rooms.map((room, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Room name (e.g., Kitchen, Living Room)"
                 placeholderTextColor="#6B7280"
                 value={room}
@@ -923,9 +923,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               />
               <TouchableOpacity
                 onPress={() => setRooms(rooms.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -945,10 +946,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             Key Materials
           </Text>
           {materials.map((material, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Material name (e.g., Concrete, Steel, Wood)"
                 placeholderTextColor="#6B7280"
                 value={material}
@@ -960,9 +961,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               />
               <TouchableOpacity
                 onPress={() => setMaterials(materials.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -982,10 +984,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
             Features
           </Text>
           {features.map((feature, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Feature name (e.g., Solar Panels, Smart Home)"
                 placeholderTextColor="#6B7280"
                 value={feature}
@@ -997,9 +999,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
               />
               <TouchableOpacity
                 onPress={() => setFeatures(features.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -1081,10 +1084,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                 </View>
                 <TouchableOpacity
                   onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
-                  className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center flex-shrink-0"
-                  style={{ minWidth: 40 }}
+                  className="bg-red-600/20 rounded-lg justify-center items-center"
+                  style={{ width: 36, height: 36, flexShrink: 0 }}
                 >
-                  <X size={18} color="#F87171" strokeWidth={2} />
+                  <X size={16} color="#F87171" strokeWidth={2} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -1496,8 +1499,8 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
   };
 
   return (
-    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-      <View className="p-6">
+    <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+      <View className="pt-4 pb-2 w-full max-w-full">
         {/* Design Name */}
         <View className="mb-4">
           <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -1507,7 +1510,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             <FileText size={20} color="#6B7280" strokeWidth={2} />
             <TextInput
               className="flex-1 ml-3 text-white text-base"
-              style={{ fontFamily: 'Poppins_400Regular' }}
+              style={{ fontFamily: 'Poppins_400Regular', minWidth: 0 }}
               placeholder="e.g., Modern Minimalist"
               placeholderTextColor="#6B7280"
               value={name}
@@ -1840,10 +1843,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             Rooms
           </Text>
           {rooms.map((room, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Room name (e.g., Kitchen, Living Room)"
                 placeholderTextColor="#6B7280"
                 value={room}
@@ -1855,9 +1858,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               />
               <TouchableOpacity
                 onPress={() => setRooms(rooms.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -1877,10 +1881,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             Key Materials
           </Text>
           {materials.map((material, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Material name (e.g., Concrete, Steel, Wood)"
                 placeholderTextColor="#6B7280"
                 value={material}
@@ -1892,9 +1896,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               />
               <TouchableOpacity
                 onPress={() => setMaterials(materials.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -1914,10 +1919,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
             Features
           </Text>
           {features.map((feature, index) => (
-            <View key={index} className="flex-row items-center mb-2">
+            <View key={index} className="flex-row items-center mb-2 w-full" style={{ gap: 8 }}>
               <TextInput
-                className="flex-1 bg-[#0A1628] rounded-xl px-4 py-3 text-white text-base border border-blue-900"
-                style={{ fontFamily: 'Poppins_400Regular' }}
+                className="bg-[#0A1628] rounded-xl px-3 py-2.5 text-white text-sm border border-blue-900"
+                style={{ fontFamily: 'Poppins_400Regular', flex: 1, minWidth: 0 }}
                 placeholder="Feature name (e.g., Solar Panels, Smart Home)"
                 placeholderTextColor="#6B7280"
                 value={feature}
@@ -1929,9 +1934,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
               />
               <TouchableOpacity
                 onPress={() => setFeatures(features.filter((_, i) => i !== index))}
-                className="ml-2 bg-red-600/20 rounded-xl px-4 py-3"
+                className="bg-red-600/20 rounded-lg items-center justify-center"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
               >
-                <X size={20} color="#F87171" strokeWidth={2} />
+                <X size={16} color="#F87171" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           ))}
@@ -2013,10 +2019,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                   </View>
                   <TouchableOpacity
                     onPress={() => setConstructionPhases(constructionPhases.filter((_, i) => i !== index))}
-                    className="bg-red-600/20 rounded-lg px-3 py-2 justify-center items-center flex-shrink-0"
-                    style={{ minWidth: 40 }}
+                    className="bg-red-600/20 rounded-lg justify-center items-center"
+                    style={{ width: 36, height: 36, flexShrink: 0 }}
                   >
-                    <X size={18} color="#F87171" strokeWidth={2} />
+                    <X size={16} color="#F87171" strokeWidth={2} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -2190,9 +2196,9 @@ export default function GCPlansScreen() {
             : '';
 
   return (
-    <View className="flex-1 bg-white">
+    <View className="flex-1 bg-[#0A1628]">
       <View
-        className="pb-4 flex-row items-center"
+        className="pb-4 flex-row items-center border-b border-blue-900"
         style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
       >
         <TouchableOpacity
@@ -2203,11 +2209,11 @@ export default function GCPlansScreen() {
               router.push('/contractor/gc-dashboard');
             }
           }}
-          className="w-10 h-10 bg-[#F5F5F5] rounded-full items-center justify-center mr-4 flex-shrink-0"
+          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
         >
-          <ArrowLeft size={22} color="#111111" strokeWidth={2} />
+          <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-black text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
+        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
           My project plans
         </Text>
       </View>
@@ -2222,7 +2228,7 @@ export default function GCPlansScreen() {
       >
         <TouchableOpacity
           onPress={() => setShowUploadForm(true)}
-          className="rounded-2xl py-4 mb-4 flex-row items-center justify-center bg-black"
+          className="rounded-2xl py-4 mb-4 flex-row items-center justify-center bg-blue-600"
           activeOpacity={0.7}
         >
           <Plus size={20} color="#FFFFFF" strokeWidth={2.5} />
@@ -2231,8 +2237,8 @@ export default function GCPlansScreen() {
           </Text>
         </TouchableOpacity>
         {!isVerifiedGC && (
-          <View className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#F5F5F5' }}>
-            <Text className="text-gray-700" style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20 }}>
+          <View className="rounded-xl p-4 mb-4" style={{ backgroundColor: '#1E3A5F', borderWidth: 1, borderColor: '#1E40AF66' }}>
+            <Text className="text-blue-100" style={{ fontFamily: 'Poppins_500Medium', fontSize: 13, lineHeight: 20 }}>
               You can upload plans now. Your account is not verified yet, so BuildMyHouse will keep a closer eye on projects that start from your plans. Finish your verification in Profile to get the Verified badge.
             </Text>
           </View>
@@ -2243,19 +2249,19 @@ export default function GCPlansScreen() {
 
         {isLoading ? (
           <View className="items-center justify-center py-20">
-            <ActivityIndicator size="large" color="#111111" />
+            <ActivityIndicator size="large" color="#60A5FA" />
           </View>
         ) : counts.all === 0 ? (
           <View className="items-center justify-center py-16 px-4">
-            <Text className="text-black text-center text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
+            <Text className="text-white text-center text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
               No plans yet
             </Text>
-            <Text className="text-gray-600 text-center mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22 }}>
+            <Text className="text-blue-200/70 text-center mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 22 }}>
               Upload the jobs you do best so homeowners can find and request you.
             </Text>
             <TouchableOpacity
               onPress={() => setShowUploadForm(true)}
-              className="rounded-full bg-black px-5 py-3 mt-5"
+              className="rounded-full bg-blue-600 px-5 py-3 mt-5"
             >
               <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>Upload a plan</Text>
             </TouchableOpacity>
@@ -2286,7 +2292,7 @@ export default function GCPlansScreen() {
               );
             })}
             {!showDraftRow && visibleDesigns.length === 0 ? (
-              <Text className="text-gray-500 py-8" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14 }}>{emptyCopy}</Text>
+              <Text className="text-blue-200/70 py-8" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14 }}>{emptyCopy}</Text>
             ) : null}
           </View>
         )}

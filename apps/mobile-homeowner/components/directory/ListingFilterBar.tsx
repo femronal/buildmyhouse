@@ -93,8 +93,13 @@ export function ListingFilterBar({
   const showLabel = `Show ${resultCount.toLocaleString('en-US')} ${resultCount === 1 ? noun : `${noun}s`}`;
 
   return (
-    <View style={{ marginBottom: 12 }}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center', paddingRight: 8 }}>
+    <View style={{ marginTop: 14, marginBottom: 4 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginTop: 2 }}
+        contentContainerStyle={{ alignItems: 'center', paddingRight: 8, paddingVertical: 4, gap: 8 }}
+      >
         <Pressable
           onPress={() => setOpen(true)}
           accessibilityRole="button"
@@ -105,7 +110,7 @@ export function ListingFilterBar({
             borderRadius: 999,
             paddingHorizontal: 14,
             paddingVertical: 8,
-            marginRight: 8,
+            marginRight: 0,
             backgroundColor: activeCount > 0 ? '#fff' : 'transparent',
             borderWidth: 1,
             borderColor: '#fff',
@@ -124,7 +129,7 @@ export function ListingFilterBar({
               borderRadius: 999,
               paddingHorizontal: 14,
               paddingVertical: 8,
-              marginRight: 8,
+              marginRight: 0,
               backgroundColor: serviceValue === item.value ? '#fff' : 'rgba(255,255,255,0.08)',
             }}
           >
