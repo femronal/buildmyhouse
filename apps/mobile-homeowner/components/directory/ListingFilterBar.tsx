@@ -93,12 +93,12 @@ export function ListingFilterBar({
   const showLabel = `Show ${resultCount.toLocaleString('en-US')} ${resultCount === 1 ? noun : `${noun}s`}`;
 
   return (
-    <View style={{ marginTop: 14, marginBottom: 4 }}>
+    <View style={{ marginTop: 0, marginBottom: 8, paddingTop: 0 }}>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginTop: 2 }}
-        contentContainerStyle={{ alignItems: 'center', paddingRight: 8, paddingVertical: 4, gap: 8 }}
+        style={{ flexGrow: 0 }}
+        contentContainerStyle={{ alignItems: 'center', paddingRight: 8, paddingTop: 4, paddingBottom: 4, gap: 10 }}
       >
         <Pressable
           onPress={() => setOpen(true)}

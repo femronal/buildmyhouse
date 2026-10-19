@@ -552,7 +552,7 @@ export default function RentScreen() {
 
           {/* Search & Filter */}
           <View style={{ marginBottom: listingChrome.searchSectionMarginBottom, paddingHorizontal: horizontalPadding }}>
-            <View className="flex-row items-center" style={{ marginBottom: 4 }}>
+            <View className="flex-row items-center" style={{ marginBottom: 20 }}>
               <View
                 className="flex-1 bg-white/5 border border-white/15 rounded-full px-4 flex-row items-center"
                 style={{ paddingVertical: listingChrome.searchBarPaddingY }}
@@ -722,10 +722,14 @@ export default function RentScreen() {
         onRequestClose={() => setShowRentModal(false)}
       >
         <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white rounded-t-3xl p-5 max-h-[90%]">
+          <View className="bg-white rounded-t-3xl max-h-[90%]" style={{ paddingTop: 12, paddingHorizontal: 20, paddingBottom: 20 }}>
             <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-4" />
             {!rentRequestSuccess ? (
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 28 }}
+                style={{ flexGrow: 0 }}
+              >
                 <View className="flex-row justify-between items-start mb-3">
                   <Text className="text-xl text-black flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     {selectedOpportunity?.title}
