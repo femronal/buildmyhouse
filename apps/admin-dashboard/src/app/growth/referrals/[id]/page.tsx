@@ -78,6 +78,7 @@ export default function ReferralDetailPage() {
       <section className="mt-6 rounded-xl border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold">Listings</h2>
         <AttachSearch
+          trackVendors={settings.data?.trackVendors === true}
           kind={attachKind}
           onKind={setAttachKind}
           search={search}
@@ -176,6 +177,7 @@ function CopyLine({ label, value }: { label: string; value: string }) {
 }
 
 function AttachSearch(props: {
+  trackVendors: boolean;
   kind: string;
   onKind: (value: 'project' | 'artisan_listing' | 'professional_listing' | 'vendor') => void;
   search: string;
@@ -190,7 +192,7 @@ function AttachSearch(props: {
         <select className="rounded-lg border px-3 py-2 text-sm" value={props.kind} onChange={(event) => props.onKind(event.target.value as any)}>
           <option value="artisan_listing">Artisan listing</option>
           <option value="professional_listing">Professional listing</option>
-          {settings.data?.trackVendors ? <option value="vendor">Vendor</option> : null}
+          {props.trackVendors ? <option value="vendor">Vendor</option> : null}
           <option value="project">Homeowner job</option>
         </select>
         <input

@@ -69,9 +69,9 @@ export type UpdateDesignPlanPayload = Partial<{
   planType: 'homebuilding' | 'renovation' | 'interior_design';
   projectTypeTag: 'repair' | 'upgrades' | 'renovation' | 'full_builds';
   projectTypeFilter: string | null;
-  bedrooms: number;
-  bathrooms: number;
-  squareFootage: number;
+  bedrooms: number | null;
+  bathrooms: number | null;
+  squareFootage: number | null;
   estimatedCost: number;
   floors: number | null;
   estimatedDuration: string | null;
