@@ -134,6 +134,7 @@ export default function HouseSummaryScreen() {
   const [paymentClientSecret, setPaymentClientSecret] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showUnverifiedNotice, setShowUnverifiedNotice] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<AddressDetails | null>(null);
   const [requestPhotos, setRequestPhotos] = useState<any[]>([]);
   const [requestPdf, setRequestPdf] = useState<any | null>(null);
@@ -866,6 +867,10 @@ export default function HouseSummaryScreen() {
           onWorkWithContractor={() => {
             if (!designId) {
               Alert.alert('Error', 'Design ID is missing. Please try again.');
+              return;
+            }
+            if (!designGC?.verified) {
+              setShowUnverifiedNotice(true);
               return;
             }
             const address = (params.address as string) || '';
@@ -1771,6 +1776,50 @@ export default function HouseSummaryScreen() {
         clientSecret={paymentClientSecret || undefined}
         externalError={paymentError || undefined}
       />
+
+      <Modal
+        visible={showUnverifiedNotice}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowUnverifiedNotice(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setShowUnverifiedNotice(false)}
+          className="flex-1 bg-black/50 justify-end"
+        >
+          <TouchableOpacity activeOpacity={1} className="bg-white rounded-t-3xl px-6 pt-6 pb-8">
+            <Text className="text-black text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+              This contractor is not verified yet
+            </Text>
+            <Text className="text-black text-base mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              This general contractor is not verified yet. BuildMyHouse has received your request and will monitor the project closely with you.
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setShowUnverifiedNotice(false);
+                const address = (params.address as string) || '';
+                if (address && !selectedAddress) {
+                  setSelectedAddress({
+                    formattedAddress: address,
+                    street: (params.street as string) || address.split(',')[0]?.trim() || '',
+                    city: (params.city as string) || address.split(',')[1]?.trim() || '',
+                    state: (params.state as string) || address.split(',')[2]?.trim() || '',
+                    zipCode: (params.zipCode as string) || '',
+                    country: (params.country as string) || 'Nigeria',
+                    latitude: params.latitude ? parseFloat(params.latitude as string) : 0,
+                    longitude: params.longitude ? parseFloat(params.longitude as string) : 0,
+                  });
+                }
+                setShowAddressModal(true);
+              }}
+              className="bg-black rounded-full py-4 mt-6"
+            >
+              <Text className="text-white text-center text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Continue</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       {/* Address Input Modal */}
       <Modal

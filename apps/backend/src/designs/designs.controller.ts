@@ -64,7 +64,7 @@ export class DesignsController {
   }
 
   /**
-   * Admin: upload a scope in a verified GC's name.
+   * Admin: upload a scope in a general contractor's name.
    * The design is owned by the contractor and emailed to homeowners as theirs.
    */
   @Post('admin/contractor/:userId')

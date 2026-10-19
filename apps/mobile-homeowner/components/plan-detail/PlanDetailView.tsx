@@ -448,7 +448,14 @@ export default function PlanDetailView({
                   <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#111111' }}>
                     {contractorName}
                   </Text>
-                  {profile?.verified ? <Check size={16} color={ACCENT} weight="bold" /> : null}
+                  {profile?.verified ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Check size={16} color={ACCENT} weight="bold" />
+                      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: ACCENT }}>Verified</Text>
+                    </View>
+                  ) : (
+                    <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 12, color: '#6B7280' }}>Not verified yet</Text>
+                  )}
                 </View>
                 {profile?.specialty ? (
                   <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#374151', marginTop: 2 }}>

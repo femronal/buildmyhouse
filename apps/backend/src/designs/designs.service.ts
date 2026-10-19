@@ -206,11 +206,8 @@ export class DesignsService {
       where: { userId: contractorUserId },
       select: { verified: true, name: true },
     });
-    if (!contractor?.verified) {
-      throw new ForbiddenException('Scopes can only be uploaded for a verified general contractor');
-    }
 
-    const contractorName = String(contractor.name || contractorUser.fullName || 'Your general contractor').trim();
+    const contractorName = String(contractor?.name || contractorUser.fullName || 'Your general contractor').trim();
     this.logger.log(
       `createDesignOnBehalfOfContractor start adminId=${params.adminUserId} contractorId=${contractorUserId} imageCount=${params.dto.images?.length || 0}`,
     );
@@ -241,19 +238,6 @@ export class DesignsService {
     });
     if (!actor) {
       throw new NotFoundException('User not found');
-    }
-
-    // Product rule: only verified GCs can publish plan uploads.
-    if (actor.role === 'general_contractor') {
-      const contractor = await this.prisma.contractor.findUnique({
-        where: { userId },
-        select: { verified: true },
-      });
-      if (!contractor?.verified) {
-        throw new ForbiddenException(
-          "Your account hasn't been approved yet. BuildMyHouse will let you know once we've checked your details.",
-        );
-      }
     }
 
     // DTO currently models some list fields as strings (for easy admin input). Convert to arrays if provided.

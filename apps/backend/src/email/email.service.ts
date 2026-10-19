@@ -6,6 +6,7 @@ import {
   renderGCVerificationApprovedEmail,
 } from './templates/gc-verification-approved.template';
 import { GC_WEEKLY_VERIFICATION_REMINDER_TEMPLATE } from './templates/gc-weekly-verification-reminder.template';
+import { renderExtraMonitoringAdminEmail, renderProjectRequestEmail } from './templates/project-request.template';
 
 export interface SendEmailOptions {
   to: string;
@@ -347,6 +348,46 @@ After payment, send your receipt and the attached quote PDF to BuildMyHouse What
         checkedAt,
       };
     }
+  }
+
+  async sendProjectRequestEmail(params: {
+    to: string;
+    contractorName: string;
+    homeownerFirstName: string;
+    planTitle: string;
+    location: string;
+    projectId: string;
+    extraMonitoring: boolean;
+  }) {
+    const projectUrl = `${this.getContractorAppUrl()}/contractor/gc-project-detail?id=${encodeURIComponent(params.projectId)}`;
+    const rendered = renderProjectRequestEmail({ ...params, projectUrl });
+    return this.send({
+      to: params.to,
+      subject: 'You have a new project request on BuildMyHouse',
+      html: rendered.html,
+      text: rendered.text,
+    });
+  }
+
+  async sendExtraMonitoringAdminEmail(params: {
+    to: string;
+    projectName: string;
+    projectId: string;
+    homeownerName: string;
+    homeownerEmail: string;
+    gcName: string;
+    gcEmail: string;
+    planTitle: string;
+    createdAt: string;
+  }) {
+    const adminUrl = `${this.getAdminAppUrl()}/projects/${params.projectId}`;
+    const rendered = renderExtraMonitoringAdminEmail({ ...params, adminUrl });
+    return this.send({
+      to: params.to,
+      subject: 'Extra monitoring: new project with an unverified contractor',
+      html: rendered.html,
+      text: rendered.text,
+    });
   }
 
   /**

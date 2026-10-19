@@ -11,6 +11,7 @@ import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto'
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
 import { ProjectAccessService } from '../project-access/project-access.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class ProjectsService {
@@ -43,6 +44,7 @@ export class ProjectsService {
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
     private readonly projectAccessService: ProjectAccessService,
+    private readonly emailService: EmailService,
   ) {}
 
   private extractDurationDays(durationText?: string | null): number | null {
@@ -1863,6 +1865,9 @@ export class ProjectsService {
         createdBy: {
           select: {
             id: true,
+            fullName: true,
+            email: true,
+            contractorProfile: { select: { verified: true, name: true } },
           },
         },
         images: {
@@ -1916,6 +1921,8 @@ export class ProjectsService {
         status: 'draft',
         progress: 0,
         spent: 0,
+        needsExtraMonitoring: design.createdBy?.contractorProfile?.verified !== true,
+        monitoringReason: design.createdBy?.contractorProfile?.verified !== true ? 'unverified_gc' : null,
         planPdfUrl: normalizedPdfUrl,
         planFileName: normalizedPdfName,
         aiAnalysis: {
@@ -2029,7 +2036,84 @@ export class ProjectsService {
       data: { ...project, event: 'project_created_from_design' },
     });
 
+    await this.notifyProjectRequest({
+      project,
+      contractor: projectRequest.contractor,
+      planTitle: design.name,
+      extraMonitoring: project.needsExtraMonitoring === true,
+    });
+
     return projectWithRequests || project;
+  }
+
+  private async notifyProjectRequest(params: {
+    project: { id: string; name: string; address?: string | null; createdAt?: Date; homeowner?: { fullName?: string | null; email?: string | null } | null };
+    contractor: { fullName?: string | null; email?: string | null; contractorProfile?: { name?: string | null; verified?: boolean | null } | null } | null;
+    planTitle: string;
+    extraMonitoring: boolean;
+  }) {
+    const contractorEmail = String(params.contractor?.email || '').trim();
+    const contractorName = String(params.contractor?.contractorProfile?.name || params.contractor?.fullName || 'there').trim();
+    const homeownerName = String(params.project.homeowner?.fullName || 'A homeowner').trim();
+    const homeownerFirstName = homeownerName.split(' ')[0] || 'A homeowner';
+    try {
+      if (contractorEmail) {
+        await this.emailService.sendProjectRequestEmail({
+          to: contractorEmail,
+          contractorName,
+          homeownerFirstName,
+          planTitle: params.planTitle,
+          location: params.project.address || 'Nigeria',
+          projectId: params.project.id,
+          extraMonitoring: params.extraMonitoring,
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `project request email failed projectId=${params.project.id} message=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
+
+    if (!params.extraMonitoring) return;
+    try {
+      const admins = await this.prisma.user.findMany({
+        where: { role: 'admin' },
+        select: { id: true, email: true },
+      });
+      const createdAt = params.project.createdAt
+        ? new Date(params.project.createdAt).toISOString()
+        : new Date().toISOString();
+      for (const admin of admins) {
+        const email = String(admin.email || '').trim();
+        if (!email) continue;
+        await this.emailService.sendExtraMonitoringAdminEmail({
+          to: email,
+          projectName: params.project.name,
+          projectId: params.project.id,
+          homeownerName,
+          homeownerEmail: params.project.homeowner?.email || '',
+          gcName: contractorName,
+          gcEmail: contractorEmail,
+          planTitle: params.planTitle,
+          createdAt,
+        });
+      }
+      if (admins.length) {
+        await this.prisma.notification.createMany({
+          data: admins.map((admin) => ({
+            userId: admin.id,
+            type: 'extra_monitoring_project',
+            title: 'Extra monitoring: new project with an unverified contractor',
+            message: `${params.project.name} was created with ${contractorName}.`,
+            data: { projectId: params.project.id },
+          })),
+        });
+      }
+    } catch (error) {
+      this.logger.error(
+        `extra monitoring notice failed projectId=${params.project.id} message=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
   }
 
   /**
@@ -2269,8 +2353,11 @@ export class ProjectsService {
   /**
    * Get all projects (for admin or public listing)
    */
-  async getAllProjects(status?: string, includeArchived = false) {
+  async getAllProjects(status?: string, includeArchived = false, needsExtraMonitoring = false) {
     const whereClause: any = {};
+    if (needsExtraMonitoring) {
+      whereClause.needsExtraMonitoring = true;
+    }
 
     if (status === 'archived') {
       whereClause.archivedAt = { not: null };
@@ -2298,6 +2385,20 @@ export class ProjectsService {
             id: true,
             email: true,
             fullName: true,
+            contractorProfile: { select: { verified: true, name: true } },
+          },
+        },
+        projectRequests: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            contractor: {
+              select: {
+                fullName: true,
+                email: true,
+                contractorProfile: { select: { verified: true, name: true } },
+              },
+            },
           },
         },
         stages: {

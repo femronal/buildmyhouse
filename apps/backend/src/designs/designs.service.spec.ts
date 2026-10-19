@@ -70,6 +70,17 @@ describe('DesignsService homeowner plan emails', () => {
     process.off('unhandledRejection', onRejection);
   });
 
+  it('lets an unverified general contractor create a plan', async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const service = buildService(findMany, jest.fn());
+    (service as any).prisma.contractor.findUnique.mockResolvedValue({ verified: false, name: 'Ada' });
+
+    const created = await service.createDesign('gc-1', dto);
+
+    expect(created.id).toBe('design-1');
+    expect((service as any).prisma.design.create).toHaveBeenCalled();
+  });
+
   it('does not query homeowners with email not null', async () => {
     process.env.HOMEOWNER_NEW_PLAN_EMAILS_ENABLED = 'true';
     const findMany = jest.fn().mockResolvedValue([]);

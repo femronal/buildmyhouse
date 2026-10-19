@@ -154,7 +154,10 @@ export default function DesignProductCard({
         </View>
         {gcName ? (
           <Text numberOfLines={1} style={{ fontFamily: 'Poppins_500Medium', color: '#111111', fontSize: 12, marginTop: 4 }}>
-            {gcName}{verified ? ' ✓' : ''}
+            {gcName}
+            <Text style={{ color: verified ? '#22c55e' : '#6B7280' }}>
+              {verified ? ' · Verified' : ' · Not verified yet'}
+            </Text>
           </Text>
         ) : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4, gap: 4 }}>

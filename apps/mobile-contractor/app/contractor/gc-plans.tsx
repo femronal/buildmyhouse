@@ -2164,17 +2164,8 @@ export default function GCPlansScreen() {
       >
         {/* Upload Button */}
         <TouchableOpacity
-          onPress={() => {
-            if (!isVerifiedGC) {
-              showAlert(
-                'Verification required',
-                'Your GC account is currently unverified. Upload all required verification documents in Profile > Professional, then wait for admin approval before uploading plans.',
-              );
-              return;
-            }
-            setShowUploadForm(true);
-          }}
-          className={`rounded-2xl p-6 mb-6 flex-row items-center justify-center ${isVerifiedGC ? 'bg-blue-600' : 'bg-gray-600'}`}
+          onPress={() => setShowUploadForm(true)}
+          className="rounded-2xl p-6 mb-6 flex-row items-center justify-center bg-black"
           activeOpacity={0.7}
         >
           <Plus size={24} color="#FFFFFF" strokeWidth={2.5} />
@@ -2183,9 +2174,9 @@ export default function GCPlansScreen() {
           </Text>
         </TouchableOpacity>
         {!isVerifiedGC && (
-          <View className="bg-amber-900/30 border border-amber-700 rounded-xl p-4 mb-6">
-            <Text className="text-amber-200 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Plan upload is locked for unverified GCs. Complete all verification uploads in your profile and wait for admin approval.
+          <View className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+            <Text className="text-gray-700 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
+              You can upload plans now. Your account is not verified yet, so BuildMyHouse will keep a closer eye on projects that start from your plans. Finish your verification in Profile to get the Verified badge.
             </Text>
           </View>
         )}

@@ -488,6 +488,8 @@ model Project {
   planPdfUrl                String?
   archivedAt                DateTime?
   managedByAdmin            Boolean                   @default(false)
+  needsExtraMonitoring      Boolean                   @default(false)
+  monitoringReason          String?
   createdAt                 DateTime                  @default(now())
   updatedAt                 DateTime                  @updatedAt
 
@@ -505,6 +507,7 @@ model Project {
   vendorActivities         VendorActivity[]
   professionalEngagements  ProfessionalEngagement[]
 
+  @@index([needsExtraMonitoring])
   @@map("projects")
 }
 

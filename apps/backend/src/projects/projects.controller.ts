@@ -91,13 +91,14 @@ export class ProjectsController {
     @Request() req: any,
     @Query('status') status?: string,
     @Query('includeArchived') includeArchived?: string,
+    @Query('needsExtraMonitoring') needsExtraMonitoring?: string,
   ) {
     const userId = req.user.sub;
     const userRole = req.user.role;
 
     // Admin can see all projects, others see only their own
     if (userRole === 'admin') {
-      return this.projectsService.getAllProjects(status, includeArchived === 'true');
+      return this.projectsService.getAllProjects(status, includeArchived === 'true', needsExtraMonitoring === 'true');
     }
     return this.projectsService.getUserProjects(userId, status);
   }

@@ -163,6 +163,9 @@ export default function AdminProjectDetailPage() {
             {project.managedByAdmin && (
               <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">managed</span>
             )}
+            {project.needsExtraMonitoring && (
+              <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-800">Extra monitoring</span>
+            )}
             <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-700 capitalize">
               {project.status.replace('_', ' ')}
             </span>

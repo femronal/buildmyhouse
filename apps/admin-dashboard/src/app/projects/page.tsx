@@ -36,8 +36,20 @@ type ApiProject = {
   paymentConfirmationStatus?: 'not_declared' | 'declared' | 'confirmed' | 'rejected' | string;
   archivedAt?: string | null;
   managedByAdmin?: boolean;
+  needsExtraMonitoring?: boolean;
+  createdAt?: string;
   homeowner?: { fullName?: string | null; email?: string | null } | null;
-  generalContractor?: { fullName?: string | null; email?: string | null } | null;
+  generalContractor?: {
+    fullName?: string | null;
+    email?: string | null;
+    contractorProfile?: { verified?: boolean; name?: string | null } | null;
+  } | null;
+  projectRequests?: {
+    contractor?: {
+      fullName?: string | null;
+      contractorProfile?: { verified?: boolean; name?: string | null } | null;
+    } | null;
+  }[] | null;
   stages?: StageView[] | null;
 };
 
@@ -132,7 +144,9 @@ export default function ProjectsPage() {
     queryKey: ['admin-projects', statusFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (statusFilter === 'archived') {
+      if (statusFilter === 'extra_monitoring') {
+        params.set('needsExtraMonitoring', 'true');
+      } else if (statusFilter === 'archived') {
         params.set('status', 'archived');
       } else if (statusFilter !== 'all') {
         params.set('status', statusFilter);
@@ -385,6 +399,7 @@ export default function ProjectsPage() {
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
               <option value="archived">Archived</option>
+              <option value="extra_monitoring">Extra monitoring</option>
             </select>
           </div>
 
@@ -411,7 +426,56 @@ export default function ProjectsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {statusFilter === 'extra_monitoring' ? (
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
+              <tr>
+                <th className="px-4 py-3">Project</th>
+                <th className="px-4 py-3">Contractor</th>
+                <th className="px-4 py-3">Verification</th>
+                <th className="px-4 py-3">Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(projectsQuery.data || []).map((project) => {
+                const requestGc = project.projectRequests?.[0]?.contractor;
+                const gcName =
+                  project.generalContractor?.contractorProfile?.name ||
+                  project.generalContractor?.fullName ||
+                  requestGc?.contractorProfile?.name ||
+                  requestGc?.fullName ||
+                  'Unknown';
+                const verified =
+                  project.generalContractor?.contractorProfile?.verified ??
+                  requestGc?.contractorProfile?.verified ??
+                  false;
+                return (
+                  <tr key={project.id} className="border-b last:border-0">
+                    <td className="px-4 py-3">
+                      <Link href={`/projects/${project.id}`} className="font-medium text-gray-900 hover:underline">
+                        {project.name}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3">{gcName}</td>
+                    <td className="px-4 py-3">{verified ? 'Verified' : 'Not verified yet'}</td>
+                    <td className="px-4 py-3">
+                      {project.createdAt
+                        ? new Date(project.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : ''}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {!projectsQuery.isLoading && (projectsQuery.data || []).length === 0 ? (
+            <p className="p-6 text-sm text-gray-500">No projects need extra monitoring.</p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={`grid grid-cols-1 xl:grid-cols-2 gap-6 ${statusFilter === 'extra_monitoring' ? 'hidden' : ''}`}>
         {projectsQuery.isLoading && (
           <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500 xl:col-span-2">
             Loading projects…
