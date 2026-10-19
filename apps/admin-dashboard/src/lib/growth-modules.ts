@@ -34,24 +34,6 @@ export const GROWTH_MODULES: readonly GrowthModule[] = [
     icon: 'partnerships',
   },
   {
-    id: 'referrals',
-    title: 'Referrals',
-    description:
-      'Track customers, professionals and partners who introduce new people and projects to BuildMyHouse.',
-    futureHint: 'Referral attribution, conversion tracking and reward status.',
-    status: 'coming-soon',
-    icon: 'referrals',
-  },
-  {
-    id: 'affiliates',
-    title: 'Affiliates',
-    description:
-      'Manage future affiliate relationships that promote BuildMyHouse through trackable channels.',
-    futureHint: 'Links, codes, conversions and commissions.',
-    status: 'coming-soon',
-    icon: 'affiliates',
-  },
-  {
     id: 'leads',
     title: 'Leads',
     description:

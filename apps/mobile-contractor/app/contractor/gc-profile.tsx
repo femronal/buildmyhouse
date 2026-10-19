@@ -1,6 +1,7 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform, Share } from "react-native";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2, Smartphone } from "lucide-react-native";
+import { InviteClientSheet } from "@/components/InviteClientSheet";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { clearAuthToken } from "@/lib/auth";
 import { useQueryClient } from '@tanstack/react-query';
@@ -54,6 +55,7 @@ export default function GCProfileScreen() {
   const uploadProfilePicture = useUploadProfilePicture();
 
   const [activeSection, setActiveSection] = useState<'overview' | 'billing' | 'settings' | 'professional'>('overview');
+  const [showInvite, setShowInvite] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
@@ -555,6 +557,16 @@ export default function GCProfileScreen() {
             Artisan listings linked to this account.
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setShowInvite(true)}
+          className="bg-white rounded-2xl px-4 py-4 mb-4 border border-gray-200"
+        >
+          <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Invite your client</Text>
+          <Text className="text-gray-500 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Send the link a client uses to follow the work.
+          </Text>
+        </TouchableOpacity>
+        <InviteClientSheet visible={showInvite} onClose={() => setShowInvite(false)} />
 
         <View className="mb-6">
           <View className="flex-row bg-[#1E3A5F] rounded-2xl p-1 border border-blue-900">

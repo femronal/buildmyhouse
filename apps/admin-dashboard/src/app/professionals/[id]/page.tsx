@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { CredentialCheckPanel } from '@/components/CredentialCheckPanel';
 import ClaimLinkPanel from '@/components/ClaimLinkPanel';
+import { ReferrerSelect } from '@/components/growth/ReferrerSelect';
 import {
   LISTING_STATUS_LABELS,
   ownerClaimLabel,
@@ -51,6 +52,9 @@ export default function ProfessionalDetailPage() {
             {data.profession?.label} · Completeness {data.completenessScore}% · {ownerClaimLabel(data)}
           </p>
           <p className="text-xs text-gray-400 mt-1">Listed ≠ claimed ≠ credential checked ≠ used by BMH.</p>
+          <div className="mt-4 max-w-xl">
+            <ReferrerSelect targetType="professional_listing" targetId={id} currentId={data.referrerId} label="Brought in by" />
+          </div>
           {data.primaryCredential?.registrationNumber && (
             <p className="text-sm text-gray-700 mt-2">
               {data.profession?.regulatorLabel || 'Licence'} {data.primaryCredential.registrationNumber}

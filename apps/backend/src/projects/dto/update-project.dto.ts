@@ -72,6 +72,11 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsString()
   generalContractorId?: string;
+
+  /** Admin only. Homeowner and contractor updates ignore this field. */
+  @IsOptional()
+  @IsString()
+  referrerId?: string | null;
 }
 
 

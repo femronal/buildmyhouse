@@ -92,6 +92,15 @@ export class UploadPlanDto {
   @IsString()
   @MaxLength(240)
   successCriteria?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  referralCode?: string;
+
+  @IsOptional()
+  @IsIn(['link', 'code_entered'])
+  referralSource?: 'link' | 'code_entered';
 }
 
 

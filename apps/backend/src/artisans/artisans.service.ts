@@ -846,6 +846,7 @@ export class ArtisansService implements OnModuleInit {
         usedByBmhNote: dto.usedByBmhNote,
         usedByBmhSince: dto.usedByBmh ? existing.usedByBmhSince || new Date() : undefined,
         sourceNotes: dto.sourceNotes,
+        ...(dto.referrerId !== undefined ? { referrerId: dto.referrerId || null } : {}),
         sourceUrls: dto.sourceUrls,
         lastResearchedAt: new Date(),
         normalizedName:

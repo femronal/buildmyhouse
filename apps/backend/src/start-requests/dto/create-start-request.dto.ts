@@ -34,4 +34,13 @@ export class CreateStartRequestDto {
   @IsString()
   @MaxLength(1000)
   utmJson?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  referralCode?: string;
+
+  @IsOptional()
+  @IsIn(['link', 'code_entered'])
+  referralSource?: 'link' | 'code_entered';
 }

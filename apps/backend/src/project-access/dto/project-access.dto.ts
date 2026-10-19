@@ -106,6 +106,10 @@ export class CreateManagedProjectDto {
   estimatedDuration?: string;
 
   @IsOptional()
+  @IsUUID()
+  referrerId?: string;
+
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
   rooms?: string[];

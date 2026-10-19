@@ -177,6 +177,7 @@ export function aggregateVerification(credentials: Array<{
 
 export const PUBLIC_DTO_FORBIDDEN_KEYS = [
   'sourceNotes',
+  'referrerId',
   'sourceUrls',
   'usedByBmhNote',
   'procurementStatus',

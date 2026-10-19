@@ -95,6 +95,7 @@ export type VendorListItem = {
 };
 
 export type VendorDetail = VendorListItem & {
+  referrerId?: string | null;
   description?: string | null;
   logoUrl?: string | null;
   yearEstablished?: number | null;

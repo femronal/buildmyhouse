@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger, Optional } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { OpenAIService } from '../openai/openai.service';
 import { UploadPlanDto } from './dto/upload-plan.dto';
@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { S3UploadService } from '../upload/s3-upload.service';
+import { ReferralsService } from '../referrals/referrals.service';
 import sharp from '../upload/sharp.util';
 
 @Injectable()
@@ -25,6 +26,7 @@ export class PlansService {
     private readonly openaiService: OpenAIService,
     private readonly configService: ConfigService,
     private readonly s3UploadService: S3UploadService,
+    @Optional() private readonly referrals?: ReferralsService,
   ) {
     this.bucket = (this.configService.get<string>('AWS_S3_BUCKET') || '').trim();
     this.region = (this.configService.get<string>('AWS_REGION') || '').trim();
@@ -128,6 +130,13 @@ export class PlansService {
           status: 'draft',
           progress: 0,
           spent: 0,
+          ...(this.referrals
+            ? await this.referrals.referralFieldsForNewProject(
+                homeownerId,
+                uploadPlanDto.referralCode,
+                uploadPlanDto.referralSource,
+              )
+            : {}),
           planPdfUrl,
           planFileName,
           aiAnalysis: {

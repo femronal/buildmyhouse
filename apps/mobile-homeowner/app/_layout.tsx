@@ -7,6 +7,7 @@ import { Stack, usePathname } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef } from "react";
+import { captureReferralCode, loadReferralProgram } from "@/lib/referral-code";
 import { Platform, Text, TextInput } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
@@ -59,6 +60,11 @@ export default function RootLayout() {
   usePushTokenRegistration('homeowner');
 
   useEffect(() => startFreshWebBuildWatch(), []);
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      void loadReferralProgram().then(() => captureReferralCode());
+    }
+  }, []);
 
   useEffect(() => {
     if (skipInitialMetaPageView.current) {

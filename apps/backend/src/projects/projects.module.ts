@@ -5,9 +5,10 @@ import { WebSocketModule } from '../websocket/websocket.module';
 import { AuthModule } from '../auth/auth.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { ProjectAccessModule } from '../project-access/project-access.module';
+import { ReferralsModule } from '../referrals/referrals.module';
 
 @Module({
-  imports: [WebSocketModule, AuthModule, PaymentsModule, ProjectAccessModule],
+  imports: [WebSocketModule, AuthModule, PaymentsModule, ProjectAccessModule, ReferralsModule],
   controllers: [ProjectsController],
   providers: [ProjectsService],
   exports: [ProjectsService],

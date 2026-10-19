@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { api } from '@/lib/api';
+import { InviteClientSheet } from '@/components/InviteClientSheet';
 
 export default function MyListingsScreen() {
   const router = useRouter();
   const [rows, setRows] = useState<any[]>([]);
   const [error, setError] = useState('');
+  const [showInvite, setShowInvite] = useState(false);
 
   useEffect(() => {
     void api.get('/artisans/my-listings').then(setRows).catch((err) => setError(err.message));
@@ -18,6 +20,10 @@ export default function MyListingsScreen() {
       <Text style={{ fontFamily: 'Poppins_400Regular', color: '#525252', marginTop: 6, marginBottom: 16 }}>
         Listings claimed by this account. A trust score is profile information, not verification.
       </Text>
+      <Pressable onPress={() => setShowInvite(true)} style={{ borderWidth: 1, borderColor: '#111', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+        <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Invite your client</Text>
+      </Pressable>
+      <InviteClientSheet visible={showInvite} onClose={() => setShowInvite(false)} />
       {error ? <Text style={{ color: '#B91C1C' }}>{error}</Text> : null}
       {rows.map((row) => (
         <Pressable key={row.id} onPress={() => router.push(`/contractor/listings/${row.id}` as any)} style={{ borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14, marginBottom: 12 }}>

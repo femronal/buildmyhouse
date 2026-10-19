@@ -456,6 +456,9 @@ export class ProjectAccessService implements OnModuleInit {
         aiProcessedAt: new Date(),
         startDate: dto.startDate ? new Date(dto.startDate) : new Date(),
         currentStage: phases[0]?.name || null,
+        ...(dto.referrerId
+          ? { referrerId: dto.referrerId, referralSource: 'admin', referredAt: new Date() }
+          : {}),
         stages: {
           create: phases.map((phase, index) => ({
             name: phase.name,

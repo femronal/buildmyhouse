@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import ClaimLinkPanel from '@/components/ClaimLinkPanel';
+import { ReferrerSelect } from '@/components/growth/ReferrerSelect';
 import { useArtisan } from '@/hooks/useArtisans';
 
 export default function ArtisanAdminDetailPage() {
@@ -38,6 +39,7 @@ export default function ArtisanAdminDetailPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
         <ClaimLinkPanel kind="artisans" id={id} email={artisan.email} />
       </section>
+      <ReferrerSelect targetType="artisan_listing" targetId={id} currentId={artisan.referrerId} label="Brought in by" />
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
         <h2 className="font-semibold">Overview</h2>
         <p className="mt-2 text-sm text-gray-700">Claim: {artisan.claimStatus}. Verification: {artisan.verificationStatus}. Recruitment: {artisan.recruitmentStatus}. Used by BMH: {artisan.usedByBmh ? 'Yes' : 'No'}.</p>

@@ -8,6 +8,7 @@ import {
   type PathId,
 } from '@/lib/start-project/flow';
 import { BUILDMYHOUSE_CONTACT } from '@/lib/home-landing-content';
+import { getReferralCode } from '@/lib/referral-code';
 
 export function startWhatsAppUrl(text: string): string {
   const phone = BUILDMYHOUSE_CONTACT.phoneTel.replace(/\D/g, '');
@@ -34,6 +35,8 @@ export async function saveStartRequest(input: {
     whatsapp: input.whatsapp.trim(),
     source: input.pathId,
     referrer: input.referrer || undefined,
+    referralCode: getReferralCode() || undefined,
+    referralSource: getReferralCode() ? 'link' : undefined,
     utmJson: Object.keys(input.utm).length ? JSON.stringify(input.utm) : undefined,
   };
 

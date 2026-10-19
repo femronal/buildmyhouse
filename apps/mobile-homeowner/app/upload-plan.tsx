@@ -10,6 +10,7 @@ import { api } from '@/lib/api';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
+import { ReferralCodeField } from "@/components/ReferralCodeField";
 
 type ProjectType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 
@@ -979,6 +980,7 @@ export default function UploadPlanScreen() {
             />
           </View>
         </View>
+        <ReferralCodeField />
 
         <TouchableOpacity
           onPress={handleUpload}

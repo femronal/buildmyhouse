@@ -62,6 +62,8 @@ export class ProjectsController {
       planFileName?: string;
       projectDescription?: string;
       successCriteria?: string;
+      referralCode?: string;
+      referralSource?: 'link' | 'code_entered';
     },
   ) {
     const userId = req.user.sub;
@@ -82,6 +84,8 @@ export class ProjectsController {
       body.planFileName,
       body.projectDescription,
       body.successCriteria,
+      body.referralCode,
+      body.referralSource,
     );
   }
 
