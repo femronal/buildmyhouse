@@ -114,9 +114,6 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.1017.0
         version: 3.1017.0
-      '@buildmyhouse/shared-utils':
-        specifier: workspace:*
-        version: link:../../packages/shared-utils
       '@clerk/clerk-sdk-node':
         specifier: ^5.1.6
         version: 5.1.6(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(svix@1.84.1)
