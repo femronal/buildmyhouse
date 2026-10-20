@@ -281,7 +281,7 @@ export default function ContractorsPage() {
                           <MessageSquare className="w-3.5 h-3.5" />
                           Message GC
                         </button>
-                        {c.verified && !!userId && (
+                        {!!userId && (
                           <button
                             onClick={() =>
                               setProjectScopesGC({

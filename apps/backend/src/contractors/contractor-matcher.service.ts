@@ -732,10 +732,6 @@ export class ContractorMatcherService {
         filteredCounts.nonGcRole += 1;
         continue;
       }
-      if (!candidate.verified || !candidate.user?.verified) {
-        filteredCounts.unverified += 1;
-        continue;
-      }
 
       const profileCompletenessScore = this.computeProfileCompleteness(candidate);
       if (profileCompletenessScore < 0.34) {
@@ -770,8 +766,13 @@ export class ContractorMatcherService {
 
       const rawScore = capabilityFit + geoFit + qualityReliability + commercialFit;
       const confidenceBoost = (entry.profileCompletenessScore - 0.5) * 8;
+      const unverifiedPenalty =
+        entry.candidate.verified && entry.candidate.user?.verified ? 0 : 8;
       const confidenceAdjustment = Math.max(-4, Math.min(4, confidenceBoost));
-      const matchScore = Math.max(0, Math.min(100, Math.round(rawScore + confidenceAdjustment)));
+      const matchScore = Math.max(
+        0,
+        Math.min(100, Math.round(rawScore + confidenceAdjustment - unverifiedPenalty)),
+      );
 
       const breakdown: MatchBreakdown = {
         capabilityFit: Number(capabilityFit.toFixed(1)),

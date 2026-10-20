@@ -755,8 +755,8 @@ export class ContractorsService {
   }
 
   /**
-   * Recommend verified GCs for a project with deterministic scoring.
-   * Returns backward-compatible matchScore and richer scoring details.
+   * Recommend GCs for a project with deterministic scoring.
+   * Unverified contractors stay eligible and rank below verified peers.
    */
   async recommendGCs(projectId: string, limit: number = 3) {
     const project = await this.prisma.project.findUnique({
@@ -780,7 +780,6 @@ export class ContractorsService {
     const contractors = await this.prisma.contractor.findMany({
       where: {
         type: 'general_contractor',
-        verified: true,
       },
       include: {
         user: {
@@ -1033,7 +1032,6 @@ export class ContractorsService {
         where: {
           userId: { in: normalizedContractorIds },
           type: 'general_contractor',
-          verified: true,
         },
         select: { userId: true },
       });
@@ -1041,7 +1039,7 @@ export class ContractorsService {
       const invalidIds = normalizedContractorIds.filter((id) => !eligibleIds.has(id));
       if (invalidIds.length > 0) {
         throw new BadRequestException(
-          'Only verified general contractors can receive homeowner project requests',
+          'Only general contractors can receive homeowner project requests',
         );
       }
       contractorIdsForRequest = normalizedContractorIds.filter((id) => eligibleIds.has(id));

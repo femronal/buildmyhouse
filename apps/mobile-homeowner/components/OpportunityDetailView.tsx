@@ -40,6 +40,7 @@ export default function OpportunityDetailView({
   requesting: boolean;
 }) {
   const { width } = useWindowDimensions();
+  const desktopHero = width >= 1024;
   const [aboutOpen, setAboutOpen] = useState(false);
   const [viewer, setViewer] = useState<number | null>(null);
   const category = (data.opportunityCategory || 'residential') as BuildOpportunityCategoryKey;
@@ -89,11 +90,17 @@ export default function OpportunityDetailView({
 
       <View style={{ marginTop: 16 }}>
         <Pressable onPress={() => photos[0] && setViewer(0)}>
-          {photos[0] ? (
-            <Image source={{ uri: photos[0].url }} style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: '#F3F4F6' }} />
-          ) : (
-            <View style={{ width: '100%', aspectRatio: 4 / 3, borderRadius: 16, backgroundColor: '#F3F4F6' }} />
-          )}
+          <View
+            style={
+              desktopHero
+                ? { width: '100%', height: 420, borderRadius: 16, overflow: 'hidden', backgroundColor: '#F3F4F6' }
+                : { width: '100%', aspectRatio: 4 / 3, borderRadius: 16, overflow: 'hidden', backgroundColor: '#F3F4F6' }
+            }
+          >
+            {photos[0] ? (
+              <Image source={{ uri: photos[0].url }} resizeMode="cover" style={{ width: '100%', height: '100%' }} />
+            ) : null}
+          </View>
         </Pressable>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
           {photos.slice(1, 5).map((photo, index) => (
