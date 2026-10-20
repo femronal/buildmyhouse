@@ -21,6 +21,8 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { uploadFile } from "@/utils/fileUpload";
 import { api } from "@/lib/api";
+import { StateLgaPicker } from "@/components/location/StateLgaPicker";
+import { composeLocationLabel, parseLocationToStateLga } from "@/lib/nigeria-lgas";
 
 type Scope = "repairer" | "upgrader" | "renovator" | "general_contractor";
 type Step = "scope" | "work" | "about" | "proof";
@@ -191,6 +193,8 @@ export default function OnboardingScreen() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [location, setLocation] = useState("");
+  const [stateLabel, setStateLabel] = useState("");
+  const [lgaLabel, setLgaLabel] = useState("");
   const [years, setYears] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -208,6 +212,16 @@ export default function OnboardingScreen() {
     if (!profileData || hydrated.current) return;
     hydrated.current = true;
     setLocation(String(profileData.location || ""));
+    const existingState = String(profileData.stateLabel || "").trim();
+    const existingLga = String(profileData.lgaLabel || "").trim();
+    if (existingState && existingLga) {
+      setStateLabel(existingState);
+      setLgaLabel(existingLga);
+    } else {
+      const parsed = parseLocationToStateLga(profileData.location);
+      if (parsed.stateLabel) setStateLabel(parsed.stateLabel);
+      if (parsed.lgaLabel) setLgaLabel(parsed.lgaLabel);
+    }
     if (profileData.experienceYears) setYears(String(profileData.experienceYears));
     const category = profileData.specialtyCategory;
     if (category === "repairer" || category === "upgrader" || category === "renovator" || category === "general_contractor") {
@@ -264,8 +278,8 @@ export default function OnboardingScreen() {
   };
 
   const saveAbout = async () => {
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !location.trim()) {
-      setError("Name, email, phone, and where you work are required.");
+    if (!fullName.trim() || !email.trim() || !phone.trim() || !stateLabel.trim() || !lgaLabel.trim()) {
+      setError("Name, email, phone, state, and area are required.");
       return;
     }
     const experienceYears = years.trim() ? Number(years) : undefined;
@@ -273,6 +287,7 @@ export default function OnboardingScreen() {
       setError("Years of experience should be a number.");
       return;
     }
+    const composedLocation = composeLocationLabel(lgaLabel.trim(), stateLabel.trim());
     setBusy(true);
     setError("");
     try {
@@ -283,11 +298,14 @@ export default function OnboardingScreen() {
           phone: phone.trim(),
         }),
         updateGCProfile.mutateAsync({
-          location: location.trim(),
+          stateLabel: stateLabel.trim(),
+          lgaLabel: lgaLabel.trim(),
+          location: composedLocation,
           ...(scope ? { specialtyCategory: scope, specialtyTags: tags } : {}),
           ...(experienceYears !== undefined ? { experienceYears } : {}),
         }),
       ]);
+      setLocation(composedLocation);
       setStep("proof");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save your details.");
@@ -300,8 +318,14 @@ export default function OnboardingScreen() {
     setBusy(true);
     setError("");
     try {
+      const composedLocation =
+        stateLabel.trim() && lgaLabel.trim()
+          ? composeLocationLabel(lgaLabel.trim(), stateLabel.trim())
+          : location.trim();
       await updateGCProfile.mutateAsync({
-        location: location.trim(),
+        ...(stateLabel.trim() && lgaLabel.trim()
+          ? { stateLabel: stateLabel.trim(), lgaLabel: lgaLabel.trim(), location: composedLocation }
+          : { location: composedLocation }),
         professionalOnboardingSkipped: skipped,
         professionalOnboardingCompleted: !skipped,
         ...(scope ? { specialtyCategory: scope, specialtyTags: tags } : {}),
@@ -485,7 +509,13 @@ export default function OnboardingScreen() {
             <Field label="Your name" value={fullName} onChangeText={setFullName} />
             <Field label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <Field label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-            <Field label="Where you work" value={location} onChangeText={setLocation} placeholder="Ikeja, Lagos" />
+            <StateLgaPicker
+              stateValue={stateLabel}
+              lgaValue={lgaLabel}
+              onState={setStateLabel}
+              onLga={setLgaLabel}
+              dark
+            />
             <Field label="Years doing this work, optional" value={years} onChangeText={setYears} keyboardType="number-pad" />
           </View>
         ) : null}

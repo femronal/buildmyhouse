@@ -28,6 +28,13 @@ import {
   ContractorMatcherRequestStats,
   ContractorMatcherService,
 } from './contractor-matcher.service';
+import {
+  composeLocationLabel,
+  isValidStateLga,
+  NIGERIA_STATE_LGAS,
+  parseLocationToStateLga,
+  resolvePopularAreaToLga,
+} from '../common/nigeria-lgas';
 
 const GC_SPECIALTY_LABELS: Record<GCSpecialtyCategory, string> = {
   repairer: 'Repairer',
@@ -2043,6 +2050,8 @@ export class ContractorsService {
       verified: user.verified,
       profileSetupCompleted: user.profileSetupCompleted,
       location: contractor?.location || null,
+      stateLabel: contractor?.stateLabel || null,
+      lgaLabel: contractor?.lgaLabel || null,
       specialty: this.buildContractorSpecialtyDisplay({
         category: contractor?.specialtyCategory as GCSpecialtyCategory | null,
         tags: contractor?.specialtyTags || [],
@@ -2136,6 +2145,8 @@ export class ContractorsService {
     data: {
       experienceYears?: number;
       location?: string;
+      stateLabel?: string;
+      lgaLabel?: string;
       specialtyCategory?: GCSpecialtyCategory;
       specialtyTags?: string[];
       professionalOnboardingCompleted?: boolean;
@@ -2147,9 +2158,37 @@ export class ContractorsService {
     if (typeof data.experienceYears === 'number' && data.experienceYears >= 0) {
       updateData.experienceYears = data.experienceYears;
     }
-    if (typeof data.location === 'string') {
+    const hasStructuredLocation =
+      typeof data.stateLabel === 'string' || typeof data.lgaLabel === 'string';
+    if (hasStructuredLocation) {
+      const stateLabel = typeof data.stateLabel === 'string' ? data.stateLabel.trim() : '';
+      const rawLga = typeof data.lgaLabel === 'string' ? data.lgaLabel.trim() : '';
+      if (!stateLabel || !NIGERIA_STATE_LGAS[stateLabel]) {
+        throw new BadRequestException('Choose a valid Nigerian state.');
+      }
+      if (!rawLga) {
+        throw new BadRequestException('Choose the area (LGA) where you work.');
+      }
+      const resolvedLga = resolvePopularAreaToLga(stateLabel, rawLga) || rawLga;
+      if (!isValidStateLga(stateLabel, resolvedLga) && !isValidStateLga(stateLabel, rawLga)) {
+        throw new BadRequestException('Choose a valid area for that state.');
+      }
+      const lgaLabel = isValidStateLga(stateLabel, resolvedLga) ? resolvedLga : rawLga;
+      updateData.stateLabel = stateLabel;
+      updateData.lgaLabel = lgaLabel;
+      const composed = composeLocationLabel(rawLga, stateLabel);
+      updateData.location =
+        typeof data.location === 'string' && data.location.trim()
+          ? data.location.trim()
+          : composed;
+    } else if (typeof data.location === 'string') {
       const location = data.location.trim();
       updateData.location = location || null;
+      if (location) {
+        const parsed = parseLocationToStateLga(location);
+        if (parsed.stateLabel) updateData.stateLabel = parsed.stateLabel;
+        if (parsed.lgaLabel) updateData.lgaLabel = parsed.lgaLabel;
+      }
     }
     if (data.specialtyCategory || (data.specialtyTags && data.specialtyTags.length > 0)) {
       const specialtyCategory = data.specialtyCategory;

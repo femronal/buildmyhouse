@@ -4,16 +4,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SlidersHorizontal } from 'lucide-react-native';
 import { DirectoryFilterSheet, type DirectoryChip, type DirectoryFilterSection } from '@/components/directory/DirectoryFilterSheet';
 import { NIGERIA_STATES } from '@/lib/nigeria-location';
-import { LAGOS_LGAS } from '@/lib/lagos-lgas';
-
-const AREAS: Record<string, string[]> = {
-  Lagos: [...LAGOS_LGAS],
-  Ogun: ['Mowe', 'Ibafo', 'Abeokuta', 'Sango Ota', 'Obafemi Owode'],
-  FCT: ['Gwarinpa', 'Lugbe', 'Kubwa', 'Maitama', 'Wuse'],
-};
+import { areasForState as areasForStateFromMap } from '@/lib/nigeria-lgas';
 
 export function areasForState(state: string) {
-  return AREAS[state] || [];
+  return areasForStateFromMap(state);
 }
 
 type Option = { label: string; value: string; count: number };
@@ -166,9 +160,14 @@ export function ListingFilterBar({
             ))}
           </ScrollView>
           {stateValue !== 'All' && areas.length > 0 ? (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
-              {pill(areaValue === 'All', 'All areas', () => onArea('All'))}
-              {areas.map((area) => pill(areaValue === area, area, () => onArea(area)))}
+            <View style={{ marginTop: 12 }}>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: '#111', marginBottom: 8 }}>
+                {stateValue}
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {pill(areaValue === 'All', 'All areas', () => onArea('All'))}
+                {areas.map((area) => pill(areaValue === area, area, () => onArea(area)))}
+              </View>
             </View>
           ) : null}
         </View>

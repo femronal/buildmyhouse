@@ -61,12 +61,14 @@ export default function ExploreScreen() {
   const catalog = useDesignCatalog({
     tab: activeTab,
     q: debouncedSearch,
-    location: activeLocationFilter !== ALL_LOCATIONS_FILTER ? activeLocationFilter : stateFilter !== 'All' ? stateFilter : undefined,
-    tag: activeFilter === 'All' ? undefined : activeFilter,
+    service: activeFilter === 'All' ? undefined : activeFilter,
+    state: stateFilter !== 'All' ? stateFilter : undefined,
+    lga: activeLocationFilter !== ALL_LOCATIONS_FILTER ? activeLocationFilter : undefined,
   });
   const catalogPages = catalog.data?.pages || [];
   const serverFiltered = catalogPages[0]?.serverFiltered === true;
   const designs = catalogPages.flatMap((page) => page.items || []);
+  const serviceFacets = catalogPages[0]?.facets?.services || [];
   const designsLoading = catalog.isLoading;
   const [localCount, setLocalCount] = useState(16);
   useEffect(() => {
@@ -155,59 +157,44 @@ export default function ExploreScreen() {
     return likelyRepair ? 'repairs' : 'renovation';
   }, []);
 
-  const tabFilters = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]>>(
-    () => {
-      const defaults = {
-        repairs: [
-          'Electricals',
-          'Plumbing Fixes',
-          'Roof Leak Repair',
-          'Drainage Fix',
-          'Bathroom Repair',
-          'Gate/Fence Repair',
-        ],
-        upgrades: [
-          'Kitchen Upgrade',
-          'Bedroom Upgrade',
-          'Security Gate Upgrade',
-          'Door Upgrade',
-          'Bathroom Upgrade',
-          'Lighting Upgrade',
-        ],
-        renovation: ['Room-by-Room', 'Occupied Home', 'Family Home Rehab', 'Rental Prep', 'Interior Refresh'],
-        full_builds: ['Bungalow Build', 'Duplex Build', 'Blockwork + Roofing', 'Shell to Finish', 'Turnkey Build'],
-      } as const;
+  const serviceOptions = useMemo(() => {
+    const fromFacets = (serviceFacets || [])
+      .filter((item) => item.count > 0 || item.label === activeFilter)
+      .map((item) => ({ label: item.label, value: item.label, count: item.count }));
+    if (fromFacets.length > 0) return fromFacets;
 
-      const dynamicByTab: Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string[]> = {
-        repairs: [],
-        upgrades: [],
-        renovation: [],
-        full_builds: [],
-      };
-
-      (designs || []).forEach((design: any) => {
-        const filter = `${design?.projectTypeFilter || ''}`.trim();
-        if (!filter) return;
-        dynamicByTab[normalizeDesignTab(design)].push(filter);
+    // Fallback when server facets are missing (legacy full list response).
+    const counts = new Map<string, { label: string; count: number }>();
+    (designs || []).forEach((design: any) => {
+      const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
+        ? design.createdBy.contractorProfile.specialtyTags
+        : [];
+      const seen = new Set<string>();
+      tags.forEach((tag) => {
+        const label = `${tag || ''}`.trim();
+        if (!label) return;
+        const key = label.toLowerCase();
+        if (seen.has(key)) return;
+        seen.add(key);
+        const existing = counts.get(key);
+        if (existing) existing.count += 1;
+        else counts.set(key, { label, count: 1 });
       });
+    });
+    return Array.from(counts.values())
+      .filter((item) => item.count > 0 || item.label === activeFilter)
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+      .map((item) => ({ label: item.label, value: item.label, count: item.count }));
+  }, [serviceFacets, designs, activeFilter]);
 
-      const mergeFilters = (tab: 'repairs' | 'upgrades' | 'renovation' | 'full_builds') => {
-        const merged = [...defaults[tab], ...dynamicByTab[tab]];
-        const unique = Array.from(new Set(merged.map((item) => item.toLowerCase()))).map(
-          (lower) => merged.find((item) => item.toLowerCase() === lower) as string,
-        );
-        return ['All', ...unique];
-      };
-
-      return {
-        repairs: mergeFilters('repairs'),
-        upgrades: mergeFilters('upgrades'),
-        renovation: mergeFilters('renovation'),
-        full_builds: mergeFilters('full_builds'),
-      };
-    },
-    [designs, normalizeDesignTab],
-  );
+  useEffect(() => {
+    if (activeFilter === 'All') return;
+    const stillVisible = serviceOptions.some((item) => item.value === activeFilter);
+    if (!stillVisible) {
+      setActiveFilter('All');
+      router.setParams({ service: '' });
+    }
+  }, [activeTab, serviceOptions, activeFilter, router]);
 
   const tabDescription = useMemo<Record<'repairs' | 'upgrades' | 'renovation' | 'full_builds', string>>(
     () => ({
@@ -223,11 +210,10 @@ export default function ExploreScreen() {
     [],
   );
 
-  // Filter GC plans based on keyword-aware phrase search + active tab + active filter
+  // Filter GC plans based on keyword-aware phrase search + active tab + specialty/location
   const filteredDesigns = useMemo(() => {
     if (serverFiltered) return designs || [];
     return (designs || []).filter((design: any) => {
-      const searchable = `${design?.name || ''} ${design?.description || ''} ${design?.createdBy?.fullName || ''}`.toLowerCase();
       const matchesSearch = matchesKeywordPhraseQuery({
         query: searchQuery,
         fields: [
@@ -237,21 +223,24 @@ export default function ExploreScreen() {
           design?.projectTypeFilter,
           design?.projectTypeTag,
           design?.planType,
+          ...(design?.createdBy?.contractorProfile?.specialtyTags || []),
           ...getDesignLocationSearchFields(design),
           ...(design?.images || []).map((image: any) => image?.label || ''),
         ],
       });
       if (!matchesSearch) return false;
 
-      if (!designMatchesLocationFilter(design, activeLocationFilter)) return false;
+      if (!designMatchesLocationFilter(design, activeLocationFilter, stateFilter)) return false;
       if (!locationMatchesState(getDesignLocationLabel(design), stateFilter)) return false;
 
       if (normalizeDesignTab(design) !== activeTab) return false;
 
       if (activeFilter === 'All') return true;
       const normalizedFilter = activeFilter.toLowerCase();
-      const explicitFilter = `${design?.projectTypeFilter || ''}`.toLowerCase();
-      return explicitFilter.includes(normalizedFilter) || searchable.includes(normalizedFilter);
+      const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
+        ? design.createdBy.contractorProfile.specialtyTags
+        : [];
+      return tags.some((tag) => `${tag || ''}`.toLowerCase() === normalizedFilter);
     });
   }, [activeFilter, activeLocationFilter, stateFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered]);
   const visibleDesigns = serverFiltered ? filteredDesigns : filteredDesigns.slice(0, localCount);
@@ -370,13 +359,9 @@ export default function ExploreScreen() {
               </View>
             </View>
             <ListingFilterBar
-              quick={(tabFilters[activeTab] || []).filter((tag) => tag !== 'All').slice(0, 6).map((tag) => ({ label: tag, value: tag, count: 1 }))}
+              quick={serviceOptions.slice(0, 6)}
               serviceTitle="Service"
-              serviceOptions={(tabFilters[activeTab] || []).filter((tag) => tag !== 'All').map((tag) => ({
-                label: tag,
-                value: tag,
-                count: serverFiltered ? 1 : (designs || []).filter((design: any) => `${design?.projectTypeFilter || ''} ${design?.name || ''}`.toLowerCase().includes(tag.toLowerCase())).length,
-              }))}
+              serviceOptions={serviceOptions}
               serviceValue={activeFilter}
               onService={(value) => {
                 setActiveFilter(value);
@@ -423,8 +408,8 @@ export default function ExploreScreen() {
                     </Text>
                     <Text className="text-white/60" style={{ fontFamily: 'Poppins_400Regular', fontSize: 10, lineHeight: 14 }}>
                       {isProjectsMessageExpanded
-                        ? 'Each scope shows the contractor service location on the card. Search by neighbourhood or filter by Lagos LGA to find scopes that fit your property. Filter by project type and compare options before you speak to anyone on site. '
-                        : 'Each scope shows a service location. Search or filter by state to find a fit.'}
+                        ? 'Each scope uses the contractor service location (state and area). Search or filter by state and LGA, and by the contractor specialties present in the listings. '
+                        : 'Each scope shows a service location. Search or filter by state and specialty to find a fit.'}
                       {isProjectsMessageExpanded ? tabDescription[activeTab] : ''}
                     </Text>
                   </View>

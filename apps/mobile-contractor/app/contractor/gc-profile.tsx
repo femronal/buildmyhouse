@@ -21,6 +21,8 @@ import { useBankAccounts, useBankAccount, useCreateBankAccount, useUpdateBankAcc
 import { getBackendAssetUrl } from "@/lib/image";
 import { uploadFile } from "@/utils/fileUpload";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { StateLgaPicker } from "@/components/location/StateLgaPicker";
+import { composeLocationLabel, parseLocationToStateLga } from "@/lib/nigeria-lgas";
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -63,6 +65,8 @@ export default function GCProfileScreen() {
   const [projectNotifications, setProjectNotifications] = useState(true);
   const [editModal, setEditModal] = useState<'company' | 'email' | 'phone' | 'location' | 'experience' | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [editStateLabel, setEditStateLabel] = useState('');
+  const [editLgaLabel, setEditLgaLabel] = useState('');
   const [certModalVisible, setCertModalVisible] = useState(false);
   const [certForm, setCertForm] = useState({ name: '', expiryYear: '' });
   const [pendingCertFile, setPendingCertFile] = useState<{ uri: string; name: string } | null>(null);
@@ -157,8 +161,19 @@ export default function GCProfileScreen() {
     if (field === 'company') setEditValue(profileData?.fullName ?? '');
     else if (field === 'email') setEditValue(profileData?.email ?? '');
     else if (field === 'phone') setEditValue(profileData?.phone ?? '');
-    else if (field === 'location') setEditValue(profileData?.location ?? '');
-    else setEditValue(String(profileData?.experienceYears ?? ''));
+    else if (field === 'location') {
+      const state = String(profileData?.stateLabel || '').trim();
+      const lga = String(profileData?.lgaLabel || '').trim();
+      if (state && lga) {
+        setEditStateLabel(state);
+        setEditLgaLabel(lga);
+      } else {
+        const parsed = parseLocationToStateLga(profileData?.location);
+        setEditStateLabel(parsed.stateLabel || '');
+        setEditLgaLabel(parsed.lgaLabel || '');
+      }
+      setEditValue(profileData?.location ?? '');
+    } else setEditValue(String(profileData?.experienceYears ?? ''));
   };
 
   const saveEdit = async () => {
@@ -171,7 +186,15 @@ export default function GCProfileScreen() {
       } else if (editModal === 'phone') {
         await updateUser.mutateAsync({ phone: editValue.trim() || undefined });
       } else if (editModal === 'location') {
-        await updateGCProfile.mutateAsync({ location: editValue.trim() });
+        if (!editStateLabel.trim() || !editLgaLabel.trim()) {
+          Alert.alert('Missing location', 'Choose both a state and an area (LGA).');
+          return;
+        }
+        await updateGCProfile.mutateAsync({
+          stateLabel: editStateLabel.trim(),
+          lgaLabel: editLgaLabel.trim(),
+          location: composeLocationLabel(editLgaLabel.trim(), editStateLabel.trim()),
+        });
       } else if (editModal === 'experience') {
         const years = parseInt(editValue.trim(), 10);
         if (isNaN(years) || years < 0 || years > 100) {
@@ -1028,29 +1051,41 @@ export default function GCProfileScreen() {
 
       <Modal visible={!!editModal} transparent animationType="fade">
         <View className="flex-1 bg-black/50 justify-center items-center p-6">
-          <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900">
+          <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900" style={{ maxHeight: '90%' }}>
             <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Edit {editModal === 'company' ? 'Company Name' : editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : editModal === 'location' ? 'Address' : 'Years of Experience'}
+              Edit {editModal === 'company' ? 'Company Name' : editModal === 'email' ? 'Email' : editModal === 'phone' ? 'Phone' : editModal === 'location' ? 'Where you work' : 'Years of Experience'}
             </Text>
-            <TextInput
-              value={editValue}
-              onChangeText={setEditValue}
-              placeholder={editModal === 'company' ? 'Company name' : editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : editModal === 'location' ? 'Enter your address' : 'e.g. 10'}
-              placeholderTextColor="#6B7280"
-              keyboardType={
-                editModal === 'experience'
-                  ? 'number-pad'
-                  : editModal === 'email'
-                    ? 'email-address'
-                    : editModal === 'phone'
-                      ? 'phone-pad'
-                      : 'default'
-              }
-              autoCapitalize={editModal === 'location' ? 'sentences' : 'none'}
-              className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-4"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            />
-            <View className="flex-row gap-3">
+            {editModal === 'location' ? (
+              <ScrollView style={{ maxHeight: 420 }} nestedScrollEnabled>
+                <StateLgaPicker
+                  stateValue={editStateLabel}
+                  lgaValue={editLgaLabel}
+                  onState={setEditStateLabel}
+                  onLga={setEditLgaLabel}
+                  dark
+                />
+              </ScrollView>
+            ) : (
+              <TextInput
+                value={editValue}
+                onChangeText={setEditValue}
+                placeholder={editModal === 'company' ? 'Company name' : editModal === 'email' ? 'Email address' : editModal === 'phone' ? 'Phone number' : 'e.g. 10'}
+                placeholderTextColor="#6B7280"
+                keyboardType={
+                  editModal === 'experience'
+                    ? 'number-pad'
+                    : editModal === 'email'
+                      ? 'email-address'
+                      : editModal === 'phone'
+                        ? 'phone-pad'
+                        : 'default'
+                }
+                autoCapitalize="none"
+                className="bg-[#0A1628] rounded-xl px-4 py-3 text-white border border-blue-900 mb-4"
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              />
+            )}
+            <View className="flex-row gap-3 mt-2">
               <TouchableOpacity
                 onPress={() => setEditModal(null)}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"

@@ -3,6 +3,11 @@ import { PrismaClient } from '@prisma/client';
 import { CreateDesignDto } from './dto/create-design.dto';
 import { WebSocketService } from '../websocket/websocket.service';
 import { EmailService } from '../email/email.service';
+import {
+  normalizeLocationText,
+  parseLocationToStateLga,
+  resolvePopularAreaToLga,
+} from '../common/nigeria-lgas';
 
 const HOMEOWNER_EMAIL_PAUSE_MS = 250;
 
@@ -34,8 +39,12 @@ export class DesignsService {
                 id: true,
                 name: true,
                 specialty: true,
+                specialtyCategory: true,
+                specialtyTags: true,
                 description: true,
                 location: true,
+                stateLabel: true,
+                lgaLabel: true,
                 rating: true,
                 reviews: true,
                 projects: true,
@@ -59,6 +68,9 @@ export class DesignsService {
     q?: string;
     location?: string;
     tag?: string;
+    service?: string;
+    state?: string;
+    lga?: string;
   }) {
     const limit = Math.min(20, Math.max(1, Number(query.limit) || 16));
     const page = Math.max(1, Number(query.page) || 1);
@@ -88,7 +100,17 @@ export class DesignsService {
           select: {
             fullName: true,
             contractorProfile: {
-              select: { name: true, location: true, verified: true, rating: true, reviews: true },
+              select: {
+                name: true,
+                location: true,
+                stateLabel: true,
+                lgaLabel: true,
+                specialtyCategory: true,
+                specialtyTags: true,
+                verified: true,
+                rating: true,
+                reviews: true,
+              },
             },
           },
         },
@@ -96,6 +118,9 @@ export class DesignsService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const baseQuery = { ...query, service: undefined, tag: undefined };
+    const located = designs.filter((design: any) => matchesDesignCard(design, baseQuery));
+    const facets = buildServiceFacets(located);
     const filtered = designs.filter((design: any) => matchesDesignCard(design, query));
     const start = (page - 1) * limit;
     const items = filtered.slice(start, start + limit).map(toDesignCard);
@@ -105,6 +130,7 @@ export class DesignsService {
       limit,
       total: filtered.length,
       hasMore: start + limit < filtered.length,
+      facets: { services: facets },
     };
   }
 
@@ -843,27 +869,83 @@ function designTab(design: any): 'repairs' | 'upgrades' | 'renovation' | 'full_b
   return likelyRepair ? 'repairs' : 'renovation';
 }
 
+function contractorStateLga(profile: any): { stateLabel: string | null; lgaLabel: string | null } {
+  const stateLabel = `${profile?.stateLabel || ''}`.trim() || null;
+  const lgaLabel = `${profile?.lgaLabel || ''}`.trim() || null;
+  if (stateLabel) return { stateLabel, lgaLabel };
+  return parseLocationToStateLga(profile?.location);
+}
+
+function matchesStateLgaFilter(profile: any, state?: string, lga?: string, legacyLocation?: string) {
+  const stateFilter = `${state || ''}`.trim();
+  const lgaFilter = `${lga || ''}`.trim();
+  const location = `${legacyLocation || ''}`.trim();
+
+  if (stateFilter && stateFilter.toLowerCase() !== 'all') {
+    const resolved = contractorStateLga(profile);
+    if (!resolved.stateLabel) return false;
+    if (normalizeLocationText(resolved.stateLabel) !== normalizeLocationText(stateFilter)) return false;
+    if (lgaFilter && lgaFilter.toLowerCase() !== 'all' && lgaFilter.toLowerCase() !== 'all locations') {
+      const canonicalFilter = resolvePopularAreaToLga(stateFilter, lgaFilter) || lgaFilter;
+      const profileLga = resolved.lgaLabel;
+      if (!profileLga) return false;
+      const profileNorm = normalizeLocationText(profileLga);
+      const filterNorm = normalizeLocationText(canonicalFilter);
+      const rawNorm = normalizeLocationText(lgaFilter);
+      if (profileNorm !== filterNorm && profileNorm !== rawNorm) return false;
+    }
+    return true;
+  }
+
+  if (location && location.toLowerCase() !== 'all locations' && location.toLowerCase() !== 'all') {
+    const resolved = contractorStateLga(profile);
+    const label = `${profile?.location || ''}`.toLowerCase();
+    const locationNorm = normalizeLocationText(location);
+    if (resolved.stateLabel && normalizeLocationText(resolved.stateLabel) === locationNorm) return true;
+    if (resolved.lgaLabel && normalizeLocationText(resolved.lgaLabel) === locationNorm) return true;
+    if (label.includes(location.toLowerCase())) return true;
+    return false;
+  }
+
+  return true;
+}
+
+function matchesServiceFilter(design: any, service?: string, tag?: string) {
+  const serviceFilter = `${service || tag || ''}`.trim();
+  if (!serviceFilter || serviceFilter.toLowerCase() === 'all') return true;
+  const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
+    ? design.createdBy.contractorProfile.specialtyTags
+    : [];
+  const needle = normalizeLocationText(serviceFilter);
+  return tags.some((item) => normalizeLocationText(String(item || '')) === needle);
+}
+
 function matchesDesignCard(
   design: any,
-  query: { tab?: string; q?: string; location?: string; tag?: string },
+  query: {
+    tab?: string;
+    q?: string;
+    location?: string;
+    tag?: string;
+    service?: string;
+    state?: string;
+    lga?: string;
+  },
 ) {
   if (query.tab && designTab(design) !== query.tab) return false;
-  const location = `${query.location || ''}`.trim();
-  if (location && location.toLowerCase() !== 'all locations') {
-    const label = `${design?.createdBy?.contractorProfile?.location || ''}`.toLowerCase();
-    if (!label.includes(location.toLowerCase())) return false;
+  if (!matchesStateLgaFilter(design?.createdBy?.contractorProfile, query.state, query.lga, query.location)) {
+    return false;
   }
-  const tag = `${query.tag || ''}`.trim();
-  if (tag && tag.toLowerCase() !== 'all') {
-    const haystack = `${design?.projectTypeFilter || ''} ${design?.name || ''} ${design?.description || ''}`.toLowerCase();
-    if (!haystack.includes(tag.toLowerCase())) return false;
-  }
+  if (!matchesServiceFilter(design, query.service, query.tag)) return false;
   const tokens = `${query.q || ''}`
     .toLowerCase()
     .split(/[^a-z0-9]+/i)
     .map((token) => token.trim())
     .filter((token) => token.length >= 2);
   if (!tokens.length) return true;
+  const tags = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
+    ? design.createdBy.contractorProfile.specialtyTags.join(' ')
+    : '';
   const corpus = [
     design?.name,
     design?.description,
@@ -872,11 +954,35 @@ function matchesDesignCard(
     design?.createdBy?.fullName,
     design?.createdBy?.contractorProfile?.name,
     design?.createdBy?.contractorProfile?.location,
+    design?.createdBy?.contractorProfile?.stateLabel,
+    design?.createdBy?.contractorProfile?.lgaLabel,
+    tags,
   ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
   return tokens.every((token) => corpus.includes(token));
+}
+
+function buildServiceFacets(designs: any[]): Array<{ label: string; count: number }> {
+  const counts = new Map<string, { label: string; count: number }>();
+  for (const design of designs) {
+    const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
+      ? design.createdBy.contractorProfile.specialtyTags
+      : [];
+    const seen = new Set<string>();
+    for (const tag of tags) {
+      const label = `${tag || ''}`.trim();
+      if (!label) continue;
+      const key = normalizeLocationText(label);
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      const existing = counts.get(key);
+      if (existing) existing.count += 1;
+      else counts.set(key, { label, count: 1 });
+    }
+  }
+  return Array.from(counts.values()).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 function toDesignCard(design: any) {

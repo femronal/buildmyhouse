@@ -35,6 +35,9 @@ export class DesignsController {
         q: query.q,
         location: query.location,
         tag: query.tag,
+        service: query.service,
+        state: query.state,
+        lga: query.lga,
       });
     }
     return this.designsService.getAllDesigns();

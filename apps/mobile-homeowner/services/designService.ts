@@ -36,8 +36,12 @@ export interface Design {
       id: string;
       name: string;
       specialty?: string | null;
+      specialtyCategory?: string | null;
+      specialtyTags?: string[];
       description?: string | null;
       location?: string | null;
+      stateLabel?: string | null;
+      lgaLabel?: string | null;
       rating?: number | null;
       reviews?: number | null;
       projects?: number | null;
@@ -49,6 +53,8 @@ export interface Design {
   updatedAt: string;
 }
 
+export type DesignServiceFacet = { label: string; count: number };
+
 export type DesignCardPage = {
   items: Design[];
   page: number;
@@ -56,6 +62,7 @@ export type DesignCardPage = {
   total: number;
   hasMore: boolean;
   serverFiltered: boolean;
+  facets?: { services: DesignServiceFacet[] };
 };
 
 export const designService = {
@@ -74,6 +81,9 @@ export const designService = {
     q?: string;
     location?: string;
     tag?: string;
+    service?: string;
+    state?: string;
+    lga?: string;
   }): Promise<DesignCardPage> => {
     const search = new URLSearchParams({
       page: String(params.page),
@@ -83,6 +93,9 @@ export const designService = {
     if (params.q?.trim()) search.set('q', params.q.trim());
     if (params.location?.trim()) search.set('location', params.location.trim());
     if (params.tag?.trim()) search.set('tag', params.tag.trim());
+    if (params.service?.trim()) search.set('service', params.service.trim());
+    if (params.state?.trim()) search.set('state', params.state.trim());
+    if (params.lga?.trim()) search.set('lga', params.lga.trim());
     const response = await api.get(`/designs?${search.toString()}`);
     if (Array.isArray(response)) {
       return {
@@ -92,6 +105,7 @@ export const designService = {
         total: response.length,
         hasMore: false,
         serverFiltered: false,
+        facets: { services: [] },
       };
     }
     return { ...response, serverFiltered: true };

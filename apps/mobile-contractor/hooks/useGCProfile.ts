@@ -20,6 +20,8 @@ export interface GCProfile {
   verified: boolean;
   profileSetupCompleted?: boolean;
   location?: string | null;
+  stateLabel?: string | null;
+  lgaLabel?: string | null;
   specialty: string;
   experienceYears?: number | null;
   experience?: string | null;
@@ -67,6 +69,8 @@ export function useUpdateGCProfile() {
     mutationFn: (data: {
       experienceYears?: number;
       location?: string;
+      stateLabel?: string;
+      lgaLabel?: string;
       specialtyCategory?: 'repairer' | 'upgrader' | 'renovator' | 'general_contractor';
       specialtyTags?: string[];
       professionalOnboardingCompleted?: boolean;

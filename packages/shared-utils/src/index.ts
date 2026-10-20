@@ -47,3 +47,16 @@ export { LEGAL_OPERATOR_LINE } from './legal-entity';
 
 export { startFreshWebBuildWatch } from './fresh-web-build';
 
+export {
+  NIGERIA_STATES,
+  NIGERIA_STATE_LGAS,
+  POPULAR_AREA_ALIASES,
+  areasForState,
+  resolvePopularAreaToLga,
+  isValidStateLga,
+  composeLocationLabel,
+  parseLocationToStateLga,
+  normalizeLocationText,
+  type NigeriaStateWithLgas,
+} from './nigeria-lgas';
+

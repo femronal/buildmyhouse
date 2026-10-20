@@ -704,6 +704,10 @@ model Contractor {
   specialtyTags                   String[] @default([])
   description                     String?
   location                        String?
+  /// Canonical Nigerian state label (e.g. Lagos, FCT) for catalog filters.
+  stateLabel                      String?
+  /// Canonical LGA / area council label within stateLabel.
+  lgaLabel                        String?
   experienceYears                 Int? // Years of experience (e.g. 15)
   rating                          Float    @default(5.0)
   reviews                         Int      @default(0)

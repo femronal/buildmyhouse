@@ -19,6 +19,9 @@ export function useDesignCatalog(params: {
   q?: string;
   location?: string;
   tag?: string;
+  service?: string;
+  state?: string;
+  lga?: string;
 }) {
   return useInfiniteQuery({
     queryKey: ['designs', 'catalog', params],
@@ -31,6 +34,9 @@ export function useDesignCatalog(params: {
         q: params.q,
         location: params.location,
         tag: params.tag,
+        service: params.service,
+        state: params.state,
+        lga: params.lga,
       }),
     getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.page + 1 : undefined),
   });
