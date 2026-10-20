@@ -102,6 +102,7 @@ export class DesignsService {
             contractorProfile: {
               select: {
                 name: true,
+                specialty: true,
                 location: true,
                 stateLabel: true,
                 lgaLabel: true,
@@ -910,14 +911,27 @@ function matchesStateLgaFilter(profile: any, state?: string, lga?: string, legac
   return true;
 }
 
+function designServiceLabels(design: any): string[] {
+  const profile = design?.createdBy?.contractorProfile;
+  const tags: string[] = Array.isArray(profile?.specialtyTags)
+    ? profile.specialtyTags.map((item: unknown) => `${item || ''}`.trim()).filter(Boolean)
+    : [];
+  if (tags.length > 0) return tags;
+
+  const specialty = `${profile?.specialty || ''}`.trim();
+  if (specialty && !/^general\s*contractor$/i.test(specialty)) {
+    return [specialty];
+  }
+
+  const planService = `${design?.projectTypeFilter || ''}`.trim();
+  return planService ? [planService] : [];
+}
+
 function matchesServiceFilter(design: any, service?: string, tag?: string) {
   const serviceFilter = `${service || tag || ''}`.trim();
   if (!serviceFilter || serviceFilter.toLowerCase() === 'all') return true;
-  const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
-    ? design.createdBy.contractorProfile.specialtyTags
-    : [];
   const needle = normalizeLocationText(serviceFilter);
-  return tags.some((item) => normalizeLocationText(String(item || '')) === needle);
+  return designServiceLabels(design).some((item) => normalizeLocationText(item) === needle);
 }
 
 function matchesDesignCard(
@@ -943,9 +957,6 @@ function matchesDesignCard(
     .map((token) => token.trim())
     .filter((token) => token.length >= 2);
   if (!tokens.length) return true;
-  const tags = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
-    ? design.createdBy.contractorProfile.specialtyTags.join(' ')
-    : '';
   const corpus = [
     design?.name,
     design?.description,
@@ -956,7 +967,8 @@ function matchesDesignCard(
     design?.createdBy?.contractorProfile?.location,
     design?.createdBy?.contractorProfile?.stateLabel,
     design?.createdBy?.contractorProfile?.lgaLabel,
-    tags,
+    design?.createdBy?.contractorProfile?.specialty,
+    ...designServiceLabels(design),
   ]
     .filter(Boolean)
     .join(' ')
@@ -967,13 +979,8 @@ function matchesDesignCard(
 function buildServiceFacets(designs: any[]): Array<{ label: string; count: number }> {
   const counts = new Map<string, { label: string; count: number }>();
   for (const design of designs) {
-    const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
-      ? design.createdBy.contractorProfile.specialtyTags
-      : [];
     const seen = new Set<string>();
-    for (const tag of tags) {
-      const label = `${tag || ''}`.trim();
-      if (!label) continue;
+    for (const label of designServiceLabels(design)) {
       const key = normalizeLocationText(label);
       if (!key || seen.has(key)) continue;
       seen.add(key);

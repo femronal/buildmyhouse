@@ -157,24 +157,31 @@ export default function ExploreScreen() {
     return likelyRepair ? 'repairs' : 'renovation';
   }, []);
 
+  const serviceLabelsForDesign = useCallback((design: any): string[] => {
+    const profile = design?.createdBy?.contractorProfile;
+    const tags: string[] = Array.isArray(profile?.specialtyTags)
+      ? profile.specialtyTags.map((item: unknown) => `${item || ''}`.trim()).filter(Boolean)
+      : [];
+    if (tags.length > 0) return tags;
+    const specialty = `${profile?.specialty || ''}`.trim();
+    if (specialty && !/^general\s*contractor$/i.test(specialty)) return [specialty];
+    const planService = `${design?.projectTypeFilter || ''}`.trim();
+    return planService ? [planService] : [];
+  }, []);
+
   const serviceOptions = useMemo(() => {
     const fromFacets = (serviceFacets || [])
       .filter((item) => item.count > 0 || item.label === activeFilter)
       .map((item) => ({ label: item.label, value: item.label, count: item.count }));
     if (fromFacets.length > 0) return fromFacets;
 
-    // Fallback when server facets are missing (legacy full list response).
+    // Fallback: build from loaded cards (specialty tags, else specialty, else plan service).
     const counts = new Map<string, { label: string; count: number }>();
     (designs || []).forEach((design: any) => {
-      const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
-        ? design.createdBy.contractorProfile.specialtyTags
-        : [];
       const seen = new Set<string>();
-      tags.forEach((tag) => {
-        const label = `${tag || ''}`.trim();
-        if (!label) return;
+      serviceLabelsForDesign(design).forEach((label) => {
         const key = label.toLowerCase();
-        if (seen.has(key)) return;
+        if (!key || seen.has(key)) return;
         seen.add(key);
         const existing = counts.get(key);
         if (existing) existing.count += 1;
@@ -185,7 +192,7 @@ export default function ExploreScreen() {
       .filter((item) => item.count > 0 || item.label === activeFilter)
       .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
       .map((item) => ({ label: item.label, value: item.label, count: item.count }));
-  }, [serviceFacets, designs, activeFilter]);
+  }, [serviceFacets, designs, activeFilter, serviceLabelsForDesign]);
 
   useEffect(() => {
     if (activeFilter === 'All') return;
@@ -237,12 +244,9 @@ export default function ExploreScreen() {
 
       if (activeFilter === 'All') return true;
       const normalizedFilter = activeFilter.toLowerCase();
-      const tags: string[] = Array.isArray(design?.createdBy?.contractorProfile?.specialtyTags)
-        ? design.createdBy.contractorProfile.specialtyTags
-        : [];
-      return tags.some((tag) => `${tag || ''}`.toLowerCase() === normalizedFilter);
+      return serviceLabelsForDesign(design).some((tag) => tag.toLowerCase() === normalizedFilter);
     });
-  }, [activeFilter, activeLocationFilter, stateFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered]);
+  }, [activeFilter, activeLocationFilter, stateFilter, activeTab, designs, normalizeDesignTab, searchQuery, serverFiltered, serviceLabelsForDesign]);
   const visibleDesigns = serverFiltered ? filteredDesigns : filteredDesigns.slice(0, localCount);
   const canLoadMore = serverFiltered ? !!catalog.hasNextPage : filteredDesigns.length > visibleDesigns.length;
 
