@@ -113,15 +113,19 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPO:${{ github.sha }}
           docker push $ECR_REGISTRY/$ECR_REPO:latest
 
-      # Keeps ECS container start command in sync with apps/backend/Dockerfile (migrate + start).
+      # Pin the image to this commit SHA so ECS cannot keep an old :latest digest.
       - name: Register ECS task definition (backend)
         id: backend-taskdef
         run: |
+          IMAGE="$ECR_REGISTRY/$ECR_REPO:${{ github.sha }}"
+          jq --arg IMAGE "$IMAGE" \
+            '.containerDefinitions[0].image = $IMAGE' \
+            infrastructure/ecs/backend-task-definition.json > /tmp/backend-task-definition.json
           TASK_DEF_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://infrastructure/ecs/backend-task-definition.json \
+            --cli-input-json file:///tmp/backend-task-definition.json \
             --region "$AWS_REGION" \
             --query 'taskDefinition.taskDefinitionArn' --output text)
-          echo "Registered $TASK_DEF_ARN"
+          echo "Registered $TASK_DEF_ARN with $IMAGE"
           echo "arn=$TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
 
       - name: Deploy to ECS
@@ -132,14 +136,19 @@ jobs:
             --task-definition "${{ steps.backend-taskdef.outputs.arn }}" \
             --force-new-deployment \
             --region $AWS_REGION
+          aws ecs wait services-stable \
+            --cluster $ECS_CLUSTER \
+            --services $ECS_SERVICE \
+            --region $AWS_REGION
 
       - name: Health check
-        continue-on-error: true
         run: |
-          echo "🔍 Waiting 60s for deployment, then checking health..."
-          sleep 60
-          curl -sf --connect-timeout 10 https://api.buildmyhouse.app/api/health || echo "⚠️ Health check skipped (service may still be starting)"
-          echo "✅ Deploy step complete"
+          echo "🔍 Checking API health after stable ECS rollout..."
+          curl -sf --connect-timeout 10 https://api.buildmyhouse.app/api/health
+          curl -sf --connect-timeout 10 "https://api.buildmyhouse.app/api/designs?page=1&limit=1&tab=repairs" \
+            | grep -q '"facets"' \
+            || (echo "Catalog response missing facets; backend image may be stale" && exit 1)
+          echo "✅ Backend deploy verified"
 
   deploy-homeowner:
     name: Deploy Homeowner Web App
