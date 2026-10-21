@@ -1,8 +1,8 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, ActivityIndicator, Modal } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Linking } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Bell, Briefcase, Clock, Users, ChevronRight, MessageCircle, TrendingUp, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign, Camera } from "lucide-react-native";
+import { Bell, Briefcase, Clock, Users, ChevronRight, MessageCircle, FileText, User, AlertCircle, X, Trash2, Lock, DollarSign, Camera, Eye, Check } from "lucide-react-native";
 import { useState, useMemo, useEffect } from "react";
-import { usePendingRequests } from "../../hooks/useGC";
+import { usePendingRequests, useGCEarnings } from "../../hooks/useGC";
 import { useActiveProjects, useUnpaidProjects, useDeleteProject } from "../../hooks/useProjects";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useUserConversations } from "../../hooks/useChat";
@@ -10,12 +10,22 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from "@/hooks/useGCProfile";
 import { useBankAccounts } from "@/hooks/useBankAccounts";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { needsContractorIntroOnboarding } from "@/lib/onboarding";
 import { api } from "@/lib/api";
 import { clearAuthToken } from "@/lib/auth";
 import { InviteClientSheet } from "@/components/InviteClientSheet";
+import { buildGcWhatsAppSupportUrl } from "@/lib/whatsapp-support";
+
+const shortName = (fullName?: string | null) => {
+  const full = String(fullName || '').trim();
+  if (!full) return '';
+  const [first, last] = full.split(/\s+/);
+  return last ? `${first} ${last[0]}.` : first;
+};
+
+const acceptedQuoteRequest = (project: any) =>
+  (project?.projectRequests || []).find((item: any) => item?.status === 'accepted' && !item?.stageId);
 
 export default function GCDashboardScreen() {
   const DASHBOARD_COMPLETED_VISIBILITY_HOURS = 48;
@@ -35,22 +45,12 @@ export default function GCDashboardScreen() {
   const isAuthenticated = !!currentUser?.id;
   const { data: unreadData } = useUnreadCount(isAuthenticated);
   const notificationUnreadCount = unreadData?.unreadCount ?? 0;
-  const [activeTab, setActiveTab] = useState<'active' | 'pending'>('active');
   const [showUnpaidModal, setShowUnpaidModal] = useState(false);
   const [selectedUnpaidProject, setSelectedUnpaidProject] = useState<any | null>(null);
   const [showPausedModal, setShowPausedModal] = useState(false);
   const [selectedPausedProject, setSelectedPausedProject] = useState<any | null>(null);
   const [showAuthPromptModal, setShowAuthPromptModal] = useState(false);
-  const [profileImageFailed, setProfileImageFailed] = useState(false);
   const deleteProjectMutation = useDeleteProject();
-  const profileImageUrl =
-    !profileImageFailed && profileData?.pictureUrl
-      ? getBackendAssetUrl(profileData.pictureUrl)
-      : null;
-
-  useEffect(() => {
-    setProfileImageFailed(false);
-  }, [profileData?.pictureUrl]);
 
   useEffect(() => {
     if (loadingCurrentUser) return;
@@ -100,6 +100,7 @@ export default function GCDashboardScreen() {
   // Fetch real projects
   const { data: activeProjects = [], isLoading: loadingActive } = useActiveProjects();
   const { data: unpaidProjects = [], isLoading: loadingUnpaid } = useUnpaidProjects();
+  const { data: earnings = [], isLoading: loadingEarnings } = useGCEarnings();
   
   // Fetch conversations with unread counts
   const { data: conversations = [] } = useUserConversations(isAuthenticated);
@@ -149,98 +150,6 @@ export default function GCDashboardScreen() {
     );
   };
 
-  // Calculate totals from real data
-  const totalEarnings = useMemo(() => {
-    return activeProjects.reduce((sum, p) => sum + (p.spent || 0), 0);
-  }, [activeProjects]);
-
-  const totalBudget = useMemo(() => {
-    return activeProjects.reduce((sum, p) => sum + (p.budget || 0), 0);
-  }, [activeProjects]);
-
-  // Format date helper
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    const month = date.toLocaleDateString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${month} ${year}`;
-  };
-
-  // Keep cover photo stable across unpaid/paid transitions.
-  const getProjectImage = (project: any) => {
-    let aiAnalysis = project?.aiAnalysis;
-    if (typeof aiAnalysis === 'string') {
-      try {
-        aiAnalysis = JSON.parse(aiAnalysis);
-      } catch {
-        aiAnalysis = null;
-      }
-    }
-
-    const parsedFromAcceptedNotes = (() => {
-      const acceptedReq = (project?.projectRequests || []).find((r: any) => r?.status === 'accepted');
-      const notes = acceptedReq?.gcNotes;
-      if (!notes || typeof notes !== 'string') return null;
-      const match = notes.match(/\{[\s\S]*\}$/);
-      if (!match) return null;
-      try {
-        const parsed = JSON.parse(match[0]);
-        return parsed?.projectImageUrl || parsed?.planImageUrl || null;
-      } catch {
-        return null;
-      }
-    })();
-
-    const coverUrl =
-      aiAnalysis?.projectImageUrl ||
-      aiAnalysis?.designPlanImageUrl ||
-      aiAnalysis?.planImageUrl ||
-      project?.projectImageUrl ||
-      project?.planImageUrl ||
-      parsedFromAcceptedNotes;
-
-    if (coverUrl) {
-      return getBackendAssetUrl(coverUrl) || "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
-    }
-    return "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&q=80";
-  };
-
-  const getHomeownerFileSummary = (project: any) => {
-    const homeownerFiles = project?.homeownerFiles || {};
-    const photoUrlsFromHomeownerFiles = Array.isArray(homeownerFiles.photoUrls)
-      ? homeownerFiles.photoUrls
-      : Array.isArray(homeownerFiles.photos)
-        ? homeownerFiles.photos
-            .map((photo: any) => String(photo?.url || '').trim())
-            .filter(Boolean)
-        : [];
-
-    let aiAnalysis = project?.aiAnalysis;
-    if (typeof aiAnalysis === 'string') {
-      try {
-        aiAnalysis = JSON.parse(aiAnalysis);
-      } catch {
-        aiAnalysis = null;
-      }
-    }
-
-    const photoUrlsFromAi = Array.isArray(aiAnalysis?.projectImageUrls)
-      ? aiAnalysis.projectImageUrls.map((url: any) => String(url || '').trim()).filter(Boolean)
-      : [];
-    const singleAiImage = String(aiAnalysis?.projectImageUrl || '').trim();
-
-    const photoCount =
-      Number(homeownerFiles.totalPhotos || 0) ||
-      photoUrlsFromHomeownerFiles.length ||
-      photoUrlsFromAi.length ||
-      (singleAiImage ? 1 : 0);
-
-    const hasPdf = !!homeownerFiles.hasPdf || !!homeownerFiles.pdfUrl || !!project?.planPdfUrl;
-
-    return { photoCount, hasPdf };
-  };
-
   const isCompletedProject = (project: any) =>
     project?.status === 'completed' || Number(project?.progress || 0) >= 100;
 
@@ -261,6 +170,89 @@ export default function GCDashboardScreen() {
     isWithinCompletedDashboardWindow(project),
   );
 
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const displayName = shortName(profileData?.fullName) || 'there';
+
+  const paidToYou = useMemo(
+    () => earnings.reduce((sum, item) => sum + (Number(item.earned) || 0), 0),
+    [earnings],
+  );
+  const waitingForApproval = useMemo(
+    () => earnings.reduce((sum, item) => sum + (Number(item.pending) || 0), 0),
+    [earnings],
+  );
+
+  const nextJobs = useMemo(() => {
+    const byId = new Map<string, any>();
+    for (const project of unpaidProjects) byId.set(project.id, project);
+    for (const project of dashboardProjects) byId.set(project.id, project);
+    return Array.from(byId.values())
+      .map((project) => {
+        const progress = Math.max(0, Math.min(100, Math.round(Number(project?.progress || 0))));
+        const status = String(project?.status || '');
+        const quote = acceptedQuoteRequest(project);
+        let line = 'Waiting for homeowner';
+        let button = 'See job';
+        let action: 'price' | 'photos' | 'paused' | 'unpaid' | 'job' = 'unpaid';
+        let priority = 3;
+        if (status === 'paused') {
+          line = 'Job paused. Talk to BMH';
+          button = 'See why';
+          action = 'paused';
+          priority = 2;
+        } else if (status === 'completed' || progress >= 100) {
+          line = 'Job finished';
+          button = 'See job';
+          action = 'job';
+          priority = 4;
+        } else if (status === 'inspection' && quote?.id) {
+          line = 'Visit the site and send your price';
+          button = 'Send your price';
+          action = 'price';
+          priority = 0;
+        } else if (status === 'pending_payment') {
+          line = 'Waiting for homeowner to pay';
+          button = 'See job';
+          action = 'unpaid';
+          priority = 3;
+        } else if (status === 'active') {
+          line = "Send photos of today's work";
+          button = 'Take photos now';
+          action = 'photos';
+          priority = 1;
+        }
+        return { project, progress, line, button, action, priority, quoteId: quote?.id };
+      })
+      .sort((a, b) => a.priority - b.priority || String(a.project?.name || '').localeCompare(String(b.project?.name || '')));
+  }, [dashboardProjects, unpaidProjects]);
+
+  const openNextJob = (job: (typeof nextJobs)[number]) => {
+    const project = job.project;
+    if (job.action === 'paused') {
+      handlePausedProjectPress(project);
+      return;
+    }
+    if (job.action === 'price' && job.quoteId) {
+      router.push(`/contractor/gc-request-detail?id=${job.quoteId}&step=quote&projectId=${project.id}` as any);
+      return;
+    }
+    if (job.action === 'unpaid') {
+      handleUnpaidProjectPress(project);
+      return;
+    }
+    router.push(`/contractor/gc-project-detail?id=${project.id}`);
+  };
+
+  const openWhatsAppHelp = () => {
+    Linking.openURL(buildGcWhatsAppSupportUrl()).catch(() => {});
+  };
+
   if (loadingCurrentUser || !isAuthenticated) {
     return (
       <View className="flex-1 bg-[#0A1628] justify-center items-center">
@@ -271,49 +263,25 @@ export default function GCDashboardScreen() {
 
   return (
     <View className="flex-1 bg-[#0A1628]">
-      {/* Header */}
       <View
         className="pb-4 flex-row items-center justify-between"
         style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
       >
-        <View className="flex-row items-center flex-1 min-w-0 mr-2">
-          <TouchableOpacity
-            onPress={() => router.push('/contractor/gc-profile?openLogoUpload=1')}
-            activeOpacity={0.85}
-          >
-            {profileImageUrl ? (
-              <Image
-                source={{ uri: profileImageUrl }}
-                className="w-12 h-12 rounded-full"
-                resizeMode="cover"
-                onError={() => setProfileImageFailed(true)}
-              />
-            ) : (
-              <View className="w-12 h-12 rounded-full bg-[#1E3A5F] border border-blue-900 items-center justify-center">
-                <Text className="text-[9px] text-gray-400 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Logo
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <View className="ml-3 flex-1 min-w-0">
-            <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Welcome back,</Text>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
-              {profileData?.fullName
-                ? (() => {
-                    const [first, last] = profileData.fullName.split(' ');
-                    return last ? `${first} ${last[0]}.` : first || '—';
-                  })()
-                : '—'}
-            </Text>
-          </View>
+        <View className="flex-1 min-w-0 mr-3">
+          <Text className="text-slate-300 text-base" style={{ fontFamily: 'Poppins_500Medium' }}>
+            {greeting} 👋
+          </Text>
+          <Text className="text-white text-3xl" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={1}>
+            {displayName}
+          </Text>
         </View>
         <View className="flex-row flex-shrink-0">
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push('/contractor/chat')}
-            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
+            accessibilityLabel="Messages"
+            className="w-12 h-12 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
           >
-            <MessageCircle size={20} color="#3B82F6" strokeWidth={2} />
+            <MessageCircle size={22} color="#FFFFFF" strokeWidth={2} />
             {totalUnreadCount > 0 && (
               <View className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full items-center justify-center border-2 border-[#0A1628]">
                 <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -322,11 +290,12 @@ export default function GCDashboardScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.push('/contractor/gc-notifications')}
-            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
+            accessibilityLabel="Notifications"
+            className="w-12 h-12 bg-[#1E3A5F] rounded-full items-center justify-center mr-2"
           >
-            <Bell size={20} color="#3B82F6" strokeWidth={2} />
+            <Bell size={22} color="#FFFFFF" strokeWidth={2} />
             {notificationUnreadCount > 0 && (
               <View className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full items-center justify-center border-2 border-[#0A1628]">
                 <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>
@@ -335,7 +304,7 @@ export default function GCDashboardScreen() {
               </View>
             )}
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               if (!isAuthenticated) {
                 setShowAuthPromptModal(true);
@@ -343,9 +312,10 @@ export default function GCDashboardScreen() {
               }
               router.push('/contractor/gc-profile');
             }}
-            className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center"
+            accessibilityLabel="Profile"
+            className="w-12 h-12 bg-[#1E3A5F] rounded-full items-center justify-center"
           >
-            <User size={20} color="#3B82F6" strokeWidth={2} />
+            <User size={22} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -366,299 +336,147 @@ export default function GCDashboardScreen() {
             <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
               Add your bank details so we can pay you
             </Text>
-            <Text className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-gray-700 text-base mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
               This is only needed after BuildMyHouse has approved you.
             </Text>
           </TouchableOpacity>
         ) : null}
-        {!loadingCurrentUser && !isAuthenticated && (
-          <View className="mb-6">
-            <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-700">
-              <Text className="text-white text-xl mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Start handling projects
-              </Text>
-              <Text className="text-gray-300 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Sign up or sign in to receive project requests, upload stage updates, and get paid.
-              </Text>
-              <TouchableOpacity
-                onPress={() => router.push('/login')}
-                className="bg-blue-600 rounded-xl py-3 px-4"
-              >
-                <Text className="text-white text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Sign up / Sign in
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
+        {pendingRequests.length > 0 ? (
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-requests')}
+            accessibilityRole="button"
+            accessibilityLabel={`${pendingRequests.length} new jobs waiting`}
+            className="bg-amber-500 rounded-2xl px-5 mb-6 flex-row items-center"
+            style={{ minHeight: 72 }}
+          >
+            <Text className="text-black text-3xl mr-3" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
+              {pendingRequests.length}
+            </Text>
+            <Text className="text-black text-base flex-1" style={{ fontFamily: 'Poppins_700Bold' }}>
+              {pendingRequests.length === 1 ? 'New job waiting for you' : 'New jobs waiting for you'}
+            </Text>
+            <ChevronRight size={28} color="#000000" strokeWidth={2.5} />
+          </TouchableOpacity>
+        ) : null}
 
-        {/* Stats Cards */}
-        <View className="mb-6">
-          <View className="flex-row">
-            <View className="flex-1 bg-blue-600 rounded-2xl p-4 mr-2">
-              <View className="flex-row items-center mb-2">
-                <Briefcase size={18} color="#FFFFFF" strokeWidth={2} />
-                <Text className="text-white/70 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Active Projects</Text>
-              </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{dashboardProjects.length}</Text>
-            </View>
-            <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 ml-2 border border-blue-900">
-              <View className="flex-row items-center mb-2">
-                <Clock size={18} color="#F59E0B" strokeWidth={2} />
-                <Text className="text-gray-400 text-xs ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>Unpaid</Text>
-              </View>
-              <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{unpaidProjects.length}</Text>
-            </View>
+        <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+          Do this next
+        </Text>
+        {loadingActive || loadingUnpaid ? (
+          <View className="py-10 items-center mb-6">
+            <ActivityIndicator size="large" color="#3B82F6" />
           </View>
-
-          <View className="bg-[#1E3A5F] rounded-2xl p-5 mt-4 border border-blue-900">
-            <View className="flex-row justify-between items-start mb-4">
-              <View>
-                <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earnings</Text>
-                <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalEarnings.toLocaleString()}</Text>
-              </View>
-              <View className="bg-green-600/20 rounded-full px-3 py-1 flex-row items-center">
-                <TrendingUp size={14} color="#10B981" strokeWidth={2} />
-                <Text className="text-green-400 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>+12.5%</Text>
-              </View>
-            </View>
-            <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
-              <View className="h-full bg-blue-600 rounded-full" style={{ width: `${(totalEarnings / totalBudget) * 100}%` }} />
-            </View>
-            <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              ₦{totalEarnings.toLocaleString()} of ₦{totalBudget.toLocaleString()} total project value
+        ) : nextJobs.length === 0 ? (
+          <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-6 border border-blue-900">
+            <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              No jobs to do right now
+            </Text>
+            <Text className="text-slate-300 text-base mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+              New requests and jobs you are working on will show up here.
             </Text>
           </View>
-        </View>
+        ) : (
+          nextJobs.map((job) => {
+            const homeowner = shortName(job.project?.homeowner?.fullName) || 'the homeowner';
+            const urgent = job.action === 'photos' || job.action === 'price';
+            const StatusIcon = job.action === 'photos' ? Camera : job.action === 'price' ? DollarSign : job.action === 'paused' ? Lock : job.action === 'job' ? Check : Clock;
+            const ButtonIcon = job.action === 'photos' ? Camera : job.action === 'price' ? DollarSign : job.action === 'paused' ? Lock : Eye;
+            return (
+              <View key={job.project.id} className="bg-[#1E3A5F] rounded-2xl p-4 mb-4 border border-blue-900">
+                <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {job.project.name}
+                </Text>
+                <Text className="text-slate-300 text-base mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  For {homeowner}
+                </Text>
+                <View className="bg-[#0A1628] rounded-xl px-4 py-3 mb-3 flex-row items-center" style={{ minHeight: 56 }}>
+                  <StatusIcon size={20} color="#FFFFFF" strokeWidth={2} />
+                  <Text className="text-white text-base ml-3 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {job.line}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => openNextJob(job)}
+                  accessibilityRole="button"
+                  className={`${urgent ? 'bg-blue-600' : 'bg-[#0A1628] border border-blue-800'} rounded-2xl px-4 flex-row items-center justify-center`}
+                  style={{ minHeight: 64 }}
+                >
+                  <ButtonIcon size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    {job.button}
+                  </Text>
+                </TouchableOpacity>
+                <Text className="text-slate-300 text-base mt-3 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                  Job {job.progress}% done
+                </Text>
+                <View className="h-3 bg-[#0A1628] rounded-full overflow-hidden">
+                  <View className="h-full bg-green-500 rounded-full" style={{ width: `${job.progress}%` }} />
+                </View>
+              </View>
+            );
+          })
+        )}
 
-        {/* Projects Section */}
-        <View className="mb-6">
-          <View className="flex-row items-center justify-between mb-4 gap-2">
-            <Text className="text-white text-2xl flex-1 min-w-0" style={{ fontFamily: 'Poppins_800ExtraBold' }} numberOfLines={1}>Projects</Text>
-            <View className="flex-row bg-[#1E3A5F] rounded-full p-1 flex-shrink-0">
-              <TouchableOpacity 
-                onPress={() => setActiveTab('active')}
-                className={`px-4 py-2 rounded-full ${activeTab === 'active' ? 'bg-blue-600' : ''}`}
-              >
-                <Text className={`text-xs ${activeTab === 'active' ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>Active</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={() => setActiveTab('pending')}
-                className={`px-4 py-2 rounded-full ${activeTab === 'pending' ? 'bg-blue-600' : ''}`}
-              >
-                <Text className={`text-xs ${activeTab === 'pending' ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>Unpaid</Text>
-              </TouchableOpacity>
+        <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+          Your money
+        </Text>
+        <View className="flex-row mb-6">
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-earnings')}
+            accessibilityRole="button"
+            accessibilityLabel="Paid to you"
+            className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 mr-2 border border-blue-900"
+            style={{ minHeight: 112 }}
+          >
+            <View className="flex-row items-center mb-3">
+              <Check size={18} color="#4ADE80" strokeWidth={2.5} />
+              <Text className="text-slate-300 text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Paid to you
+              </Text>
             </View>
-          </View>
-
-          {activeTab === 'active' ? (
-            loadingActive ? (
-              <View className="py-10 items-center">
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Loading active projects...
-                </Text>
-              </View>
-            ) : dashboardProjects.length === 0 ? (
-              <View className="items-center py-10">
-                <Briefcase size={48} color="#6B7280" strokeWidth={1.5} />
-                <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  No Active Projects
-                </Text>
-                <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Projects you have reviewed and been paid for will appear here
-                </Text>
-              </View>
+            {loadingEarnings ? (
+              <ActivityIndicator color="#FFFFFF" />
             ) : (
-            dashboardProjects.map((project) => (
-              (() => {
-                const fileSummary = getHomeownerFileSummary(project);
-                return (
-              <TouchableOpacity
-                key={project.id}
-                onPress={() => {
-                  if (project.status === 'paused') {
-                    handlePausedProjectPress(project);
-                    return;
-                  }
-                  router.push(`/contractor/gc-project-detail?id=${project.id}`);
-                }}
-                className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-blue-900"
-              >
-                  <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
-                <View className="p-4">
-                  <View className="flex-row justify-between items-start mb-2">
-                    <View className="flex-1">
-                      <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
-                        <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
-                          {project.homeowner?.fullName || 'Unknown Client'}
-                        </Text>
-                      </View>
-                      <View
-                        className={`${
-                          project.status === 'paused'
-                            ? 'bg-orange-600/20'
-                            : project.status === 'completed' || Number(project.progress || 0) >= 100
-                              ? 'bg-emerald-600/20'
-                              : 'bg-green-600/20'
-                        } rounded-full px-3 py-1 flex-row items-center`}
-                      >
-                        {project.status === 'paused' && <Lock size={12} color="#F59E0B" strokeWidth={2.5} />}
-                        <Text
-                          className={`${
-                            project.status === 'paused'
-                              ? 'text-orange-300'
-                              : project.status === 'completed' || Number(project.progress || 0) >= 100
-                                ? 'text-emerald-300'
-                                : 'text-green-400'
-                          } text-xs ${project.status === 'paused' ? 'ml-1' : ''}`}
-                          style={{ fontFamily: 'Poppins_600SemiBold' }}
-                        >
-                          {project.status === 'paused'
-                            ? 'Paused'
-                            : project.status === 'completed' || Number(project.progress || 0) >= 100
-                              ? 'Completed'
-                              : 'Active'}
-                        </Text>
-                      </View>
-                    </View>
-                    
-                    {project.currentStage && (
-                      <View className="mb-2">
-                        <View className="bg-blue-600/20 rounded-full px-3 py-1 self-start">
-                      <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.currentStage}</Text>
-                    </View>
-                  </View>
-                    )}
-
-                    <View className="flex-row items-center mb-3 flex-wrap">
-                      <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                        <Camera size={12} color="#60A5FA" strokeWidth={2} />
-                        <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          {fileSummary.photoCount} photo{fileSummary.photoCount === 1 ? '' : 's'}
-                        </Text>
-                      </View>
-                      <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                        <FileText size={12} color="#60A5FA" strokeWidth={2} />
-                        <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          {fileSummary.hasPdf ? 'PDF available' : 'No PDF'}
-                        </Text>
-                      </View>
-                    </View>
-                  
-                  <View className="mb-3">
-                    <View className="flex-row justify-between mb-1">
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>{project.progress || 0}%</Text>
-                    </View>
-                    <View className="h-2 bg-blue-900 rounded-full overflow-hidden">
-                        <View className="h-full bg-blue-600 rounded-full" style={{ width: `${project.progress || 0}%` }} />
-                    </View>
-                  </View>
-
-                    <View className="flex-row justify-between items-center">
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.spent || 0).toLocaleString()}</Text>
-                      </View>
-                      <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.budget || 0).toLocaleString()}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Due Date</Text>
-                        <Text className="text-white" style={{ fontFamily: 'Poppins_500Medium' }}>{formatDate(project.dueDate)}</Text>
-                    </View>
-                    <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
-                  </View>
-                </View>
-              </TouchableOpacity>
-                );
-              })()
-            ))
-            )
-          ) : loadingUnpaid ? (
-            <View className="py-10 items-center">
-              <ActivityIndicator size="large" color="#3B82F6" />
-              <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Loading unpaid projects...
+              <Text className="text-white text-xl" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold' }}>
+                ₦{paidToYou.toLocaleString()}
+              </Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-earnings')}
+            accessibilityRole="button"
+            accessibilityLabel="Waiting for approval"
+            className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 ml-2 border border-blue-900"
+            style={{ minHeight: 112 }}
+          >
+            <View className="flex-row items-center mb-3">
+              <Clock size={18} color="#FBBF24" strokeWidth={2.5} />
+              <Text className="text-slate-300 text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Waiting for approval
               </Text>
             </View>
-          ) : unpaidProjects.length === 0 ? (
-            <View className="items-center py-10">
-              <Clock size={48} color="#6B7280" strokeWidth={1.5} />
-              <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                No Unpaid Projects
+            {loadingEarnings ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text className="text-white text-xl" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold' }}>
+                ₦{waitingForApproval.toLocaleString()}
               </Text>
-              <Text className="text-gray-500 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Projects you have reviewed but have not been paid for will appear here
-              </Text>
-            </View>
-          ) : (
-            unpaidProjects.map((project) => (
-              (() => {
-                const fileSummary = getHomeownerFileSummary(project);
-                return (
-              <TouchableOpacity
-                key={project.id}
-                onPress={() => handleUnpaidProjectPress(project)}
-                className="bg-[#1E3A5F] rounded-2xl mb-4 overflow-hidden border border-orange-900"
-              >
-                <Image source={{ uri: getProjectImage(project) }} className="w-full h-32" resizeMode="cover" />
-                <View className="p-4">
-                  <View className="flex-row justify-between items-start mb-2">
-                  <View className="flex-1">
-                      <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_800ExtraBold' }}>{project.name}</Text>
-                      <Text className="text-gray-400 text-lg" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        {project.homeowner?.fullName || 'Unknown Client'}
-                    </Text>
-                  </View>
-                    <View className="bg-orange-600/20 rounded-full px-3 py-1">
-                      <Text className="text-orange-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {project.status === 'inspection' ? 'Inspection' : project.status === 'pending_payment' ? 'Fund' : 'Unpaid'}
-                      </Text>
-                    </View>
-                  </View>
-                  
-                <Text className="text-gray-500 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {project.address}
-                </Text>
-
-                <View className="flex-row items-center mb-3 flex-wrap">
-                  <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                    <Camera size={12} color="#60A5FA" strokeWidth={2} />
-                    <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {fileSummary.photoCount} photo{fileSummary.photoCount === 1 ? '' : 's'}
-                    </Text>
-                  </View>
-                  <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2 flex-row items-center">
-                    <FileText size={12} color="#60A5FA" strokeWidth={2} />
-                    <Text className="text-blue-300 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {fileSummary.hasPdf ? 'PDF available' : 'No PDF'}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="flex-row justify-between items-center">
-                  <View>
-                    <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                      <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{(project.budget || 0).toLocaleString()}</Text>
-                    </View>
-                    <View>
-                      <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Status</Text>
-                      <Text className="text-orange-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                        {project.status === 'pending_payment' ? 'Pending Payment' : project.status}
-                    </Text>
-                  </View>
-                    <ChevronRight size={24} color="#3B82F6" strokeWidth={2} />
-                  </View>
-                </View>
-              </TouchableOpacity> 
-                );
-              })()
-            )) 
-          )} 
+            )}
+          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          onPress={openWhatsAppHelp}
+          accessibilityRole="button"
+          accessibilityLabel="Help on WhatsApp"
+          className="bg-green-500 rounded-full px-6 flex-row items-center justify-center self-center"
+          style={{ minHeight: 64 }}
+        >
+          <MessageCircle size={20} color="#FFFFFF" strokeWidth={2.2} />
+          <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Help on WhatsApp
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Unpaid Project Modal */}
