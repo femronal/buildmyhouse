@@ -16,6 +16,7 @@ function getNotificationLink(item: NotificationItem): string | null {
   if (!data) return null;
   if (data.disputeId || (data.projectId && item.type?.includes('dispute')))
     return '/disputes';
+  if (item.type === 'plan_quote_check' && data.projectId) return `/projects/${data.projectId}`;
   if (data.projectId) return '/projects';
   if (data.interestId || data.rentalListingId) return '/opportunities?tab=rentals';
   if (data.houseForSaleId || item.type === 'house_viewing_request') return '/opportunities?tab=houses';

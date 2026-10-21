@@ -1461,6 +1461,12 @@ export class ContractorsService {
         title: 'Quote accepted',
         message: `${homeownerName} accepted the quote. BuildMyHouse will check it.`,
       });
+      await this.wsService.sendNotificationToRole('admin', {
+        type: 'plan_quote_check',
+        title: 'Quote needs a BuildMyHouse check',
+        message: `${gcName}’s quote for ${request.project?.name || 'a project'} is waiting. Decide if it is fair, too high, or too low before the project can proceed.`,
+        data: { projectId: request.projectId, requestId },
+      });
     } else if (body.action === 'dispute') {
       if (!isHomeowner) throw new BadRequestException('Only the homeowner can say this did not happen');
       if (current.actor !== 'homeowner') throw new BadRequestException('There is nothing to confirm right now');

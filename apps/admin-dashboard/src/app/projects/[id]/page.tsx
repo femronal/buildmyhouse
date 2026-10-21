@@ -66,24 +66,129 @@ function TagListEditor({
   );
 }
 
-function QuoteCheckForm({ requestId, onDone }: { requestId: string; onDone: () => void }) {
+function naira(value: unknown) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return '—';
+  return `₦${amount.toLocaleString('en-NG')}`;
+}
+
+function readInspectionQuote(notes?: string | null) {
+  try {
+    const parsed = JSON.parse(String(notes || ''));
+    if (parsed?.kind === 'plan_quote' || parsed?.kind === 'plan_quote_draft') return parsed;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+function QuoteCheckForm({
+  request,
+  design,
+  analysis,
+  needsDecision,
+  onDone,
+}: {
+  request: {
+    id: string;
+    gcNotes?: string | null;
+    quoteFileId?: string | null;
+    estimatedBudget?: number | null;
+    totalQuoteAmount?: number | null;
+    monitoringFeeAmount?: number | null;
+    coordinationFeeAmount?: number | null;
+    contingencyFeeAmount?: number | null;
+    bmhCheckResult?: string | null;
+    bmhCheckNote?: string | null;
+  };
+  design?: { name?: string | null; estimatedCost?: number | null; description?: string | null } | null;
+  analysis?: Record<string, any> | null;
+  needsDecision: boolean;
+  onDone: () => void;
+}) {
   const [note, setNote] = useState('');
   const [error, setError] = useState('');
+  const quote = readInspectionQuote(request.gcNotes);
+  const stages = Array.isArray(quote?.stages)
+    ? quote.stages
+    : Array.isArray(analysis?.phases)
+      ? analysis.phases
+      : [];
+  const fileUrl = getBackendAssetUrl(quote?.quoteFileUrl || request.quoteFileId || '');
   const check = useMutation({
     mutationFn: (result: 'fair' | 'too_high' | 'too_low') =>
-      api.patch(`/contractors/requests/${requestId}/step`, { action: 'quote_check', result, note }),
+      api.patch(`/contractors/requests/${request.id}/step`, { action: 'quote_check', result, note }),
     onSuccess: () => onDone(),
     onError: (e: Error) => setError(e.message),
   });
   return (
-    <div className="space-y-2">
-      <div className="font-medium">Quote check</div>
-      <textarea className="w-full border rounded-lg p-2 text-sm" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for both sides" />
-      <div className="flex gap-2">
-        <button type="button" className="px-3 py-2 rounded-lg bg-black text-white text-sm" onClick={() => check.mutate('fair')}>Fair</button>
-        <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_high')}>Too high</button>
-        <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_low')}>Too low</button>
+    <div className="space-y-4">
+      <div>
+        <div className="font-medium">Quote check</div>
+        <p className="text-sm text-gray-600 mt-1">
+          Compare the plan the homeowner selected with the quote the contractor uploaded and the scope prepared from it.
+        </p>
       </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border p-3 text-sm">
+          <div className="font-medium">Selected plan</div>
+          <div className="mt-1">{design?.name || '—'}</div>
+          <div className="text-gray-600">Estimate {naira(design?.estimatedCost)}</div>
+          {design?.description ? <p className="mt-2 text-gray-700 whitespace-pre-wrap">{design.description}</p> : null}
+        </div>
+        <div className="rounded-lg border p-3 text-sm">
+          <div className="font-medium">Uploaded quote</div>
+          <div className="mt-1">Signed total {naira(quote?.signedTotal || request.estimatedBudget)}</div>
+          <div className="text-gray-600">Contractor amount {naira(quote?.contractorAmount || request.estimatedBudget)}</div>
+          <div className="text-gray-600">
+            Monitoring {naira(quote?.monitoringFee || request.monitoringFeeAmount)} · Coordination {naira(quote?.coordinationFee || request.coordinationFeeAmount)} · Contingency {naira(quote?.contingencyFee || request.contingencyFeeAmount)}
+          </div>
+          <div className="mt-1">Total to fund {naira(quote?.totalPayable || request.totalQuoteAmount)}</div>
+          {fileUrl ? (
+            <a href={fileUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block font-medium underline">
+              Open the contractor’s quote file
+            </a>
+          ) : (
+            <p className="mt-2 text-gray-500">No quote file was uploaded.</p>
+          )}
+        </div>
+      </div>
+      {quote?.notice ? <p className="text-sm text-gray-700">{quote.notice}</p> : null}
+      {stages.length > 0 ? (
+        <div className="space-y-2">
+          <div className="text-sm font-medium">Scope prepared from the quote</div>
+          {stages.map((stage: any, index: number) => (
+            <div key={`${stage?.name || 'stage'}-${index}`} className="rounded-lg border p-3 text-sm">
+              <div className="font-medium">{stage?.name || `Stage ${index + 1}`}</div>
+              <div>{naira(stage?.amount || stage?.estimatedCost)}</div>
+              {stage?.doneWhen || stage?.description ? (
+                <p className="text-gray-600 mt-1">Done when: {stage.doneWhen || stage.description}</p>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      ) : quote?.materials || quote?.labour || quote?.stages ? (
+        <div className="rounded-lg border p-3 text-sm space-y-2">
+          {quote.materials ? <p><span className="font-medium">Materials. </span>{quote.materials}</p> : null}
+          {quote.labour ? <p><span className="font-medium">Labour. </span>{quote.labour}</p> : null}
+          {typeof quote.stages === 'string' ? <p><span className="font-medium">Stages. </span>{quote.stages}</p> : null}
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500">The contractor has not sent a quote for this project yet.</p>
+      )}
+      {request.bmhCheckResult ? (
+        <p className="text-sm">Last decision: {String(request.bmhCheckResult).replace(/_/g, ' ')}{request.bmhCheckNote ? `. ${request.bmhCheckNote}` : ''}</p>
+      ) : null}
+      {needsDecision ? (
+        <>
+          <textarea className="w-full border rounded-lg p-2 text-sm" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for both sides" />
+          <div className="flex gap-2">
+            <button type="button" className="px-3 py-2 rounded-lg bg-black text-white text-sm" onClick={() => check.mutate('fair')}>Fair</button>
+            <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_high')}>Too high</button>
+            <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_low')}>Too low</button>
+          </div>
+        </>
+      ) : null}
       {error ? <div className="text-sm text-red-600">{error}</div> : null}
     </div>
   );
@@ -178,11 +283,25 @@ export default function AdminProjectDetailPage() {
 
   const planProject = project as typeof project & {
     designId?: string | null;
-    projectRequests?: { id: string; stageId?: string | null }[];
+    design?: { name?: string | null; estimatedCost?: number | null; description?: string | null } | null;
+    projectRequests?: Array<{
+      id: string;
+      stageId?: string | null;
+      gcNotes?: string | null;
+      quoteFileId?: string | null;
+      estimatedBudget?: number | null;
+      totalQuoteAmount?: number | null;
+      monitoringFeeAmount?: number | null;
+      coordinationFeeAmount?: number | null;
+      contingencyFeeAmount?: number | null;
+      bmhCheckResult?: string | null;
+      bmhCheckNote?: string | null;
+    }>;
     planRequestStep?: { step: number; state: string; label: string; lateReason?: string };
   };
   const planRequest = (planProject.projectRequests || []).find((item) => !item.stageId);
   const planStep = planProject.planRequestStep;
+  const quoteOnFile = planRequest ? readInspectionQuote(planRequest.gcNotes) : null;
 
   return (
     <div className="p-8 space-y-8 max-w-5xl">
@@ -190,8 +309,14 @@ export default function AdminProjectDetailPage() {
         <div className="border rounded-xl p-4 space-y-3">
           <div className="font-semibold">Plan request · Step {planStep?.step || 1} of 6 {planStep?.state === 'late' ? '· Late' : ''}</div>
           <div className="text-sm text-gray-600">{planStep?.label} {planStep?.lateReason || ''}</div>
-          {planStep?.step === 5 ? (
-            <QuoteCheckForm requestId={planRequest.id} onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })} />
+          {quoteOnFile || planStep?.step === 5 ? (
+            <QuoteCheckForm
+              request={planRequest}
+              design={planProject.design}
+              analysis={analysis}
+              needsDecision={planStep?.step === 5}
+              onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
+            />
           ) : null}
         </div>
       ) : null}

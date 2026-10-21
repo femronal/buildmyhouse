@@ -75,7 +75,7 @@ type ProjectView = {
   archivedAt?: string | null;
   managedByAdmin?: boolean;
   stages?: StageView[] | null;
-  planRequestStep?: { state?: string } | null;
+  planRequestStep?: { step?: number; state?: string; label?: string } | null;
 };
 
 function formatUpdatedAt(updatedAt?: string) {
@@ -567,7 +567,12 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  {(project as { planRequestStep?: { state?: string } }).planRequestStep?.state === 'late' && (
+                  {project.planRequestStep?.step === 5 && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-900">
+                      Quote check
+                    </span>
+                  )}
+                  {project.planRequestStep?.state === 'late' && (
                     <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
                       Late
                     </span>
