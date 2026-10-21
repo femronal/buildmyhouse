@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -20,15 +20,44 @@ export function PlanRequestPanel({
   const step = request?.project?.planRequestStep;
   const [date, setDate] = useState('');
   const [fee, setFee] = useState('');
-  const [materials, setMaterials] = useState('');
-  const [labour, setLabour] = useState('');
-  const [stages, setStages] = useState('');
+  const [quoteTotal, setQuoteTotal] = useState('');
+  const [quoteFileUrl, setQuoteFileUrl] = useState('');
+  const [quoteNotice, setQuoteNotice] = useState('');
+  const [lumpSum, setLumpSum] = useState(true);
+  const [stages, setStages] = useState<Array<{ name: string; doneWhen: string; amount: string; duration: string }>>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const number = step?.step || 1;
   const waiting = step?.state === 'waiting_other_side';
   const late = step?.state === 'late';
+
+  const loadQuoteDraft = (notes?: string | null) => {
+    try {
+      const parsed = JSON.parse(String(notes || ''));
+      if (parsed?.kind !== 'plan_quote_draft' && parsed?.kind !== 'plan_quote') return;
+      if (parsed.signedTotal) setQuoteTotal(String(parsed.signedTotal));
+      if (parsed.quoteFileUrl) setQuoteFileUrl(String(parsed.quoteFileUrl));
+      const homeownerNote = String(parsed.homeownerNote || '').trim();
+      const notice = String(parsed.notice || '').trim();
+      setQuoteNotice([homeownerNote, notice].filter(Boolean).join('\n\n'));
+      setLumpSum(parsed.lumpSum !== false);
+      if (Array.isArray(parsed.stages)) {
+        setStages(parsed.stages.map((stage: any) => ({
+          name: String(stage?.name || ''),
+          doneWhen: String(stage?.doneWhen || ''),
+          amount: String(stage?.amount ?? ''),
+          duration: String(stage?.duration || 'As agreed'),
+        })));
+      }
+    } catch {
+      return;
+    }
+  };
+
+  useEffect(() => {
+    loadQuoteDraft(request?.gcNotes);
+  }, [request?.id, request?.gcNotes]);
 
   const send = async (body: Record<string, unknown>) => {
     setBusy(true);
@@ -101,29 +130,121 @@ export function PlanRequestPanel({
       ) : null}
       {number === 4 && step?.actor === 'gc' ? (
         <View className="mt-3">
-          <TextInput value={materials} onChangeText={setMaterials} placeholder="Materials" placeholderTextColor="#9CA3AF" className="bg-[#0A1628] text-white rounded-xl px-3 py-3 mb-2 border border-blue-900" />
-          <TextInput value={labour} onChangeText={setLabour} placeholder="Labour" placeholderTextColor="#9CA3AF" className="bg-[#0A1628] text-white rounded-xl px-3 py-3 mb-2 border border-blue-900" />
-          <TextInput value={stages} onChangeText={setStages} placeholder="Stages" placeholderTextColor="#9CA3AF" className="bg-[#0A1628] text-white rounded-xl px-3 py-3 mb-2 border border-blue-900" />
+          <Text className="text-gray-300 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            Enter the total on the quote the homeowner already signed, then upload that file.
+          </Text>
+          <TextInput
+            value={quoteTotal}
+            onChangeText={setQuoteTotal}
+            placeholder="Signed quote total (₦)"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="numeric"
+            className="bg-[#0A1628] text-white rounded-xl px-3 py-3 mb-2 border border-blue-900"
+          />
           <Pressable
             disabled={busy}
             onPress={async () => {
-              const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
+              const total = Number(quoteTotal.replace(/[^0-9.]/g, ''));
+              if (!Number.isFinite(total) || total <= 0) {
+                setError('Enter the signed quote total.');
+                return;
+              }
+              const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: ['application/pdf', 'image/*'] });
               if (picked.canceled) return;
               const file = picked.assets?.[0];
-              const url = file ? await uploadFile(file.uri, 'document', { fileName: file.name, mimeType: file.mimeType }) : '';
-              await send({
-                action: 'quote_uploaded',
-                materials,
-                labour,
-                stages,
-                quoteFileUrl: url,
-                estimatedBudget: Number(request?.project?.design?.estimatedCost || request?.project?.budget || 0),
-              });
+              if (!file) return;
+              setBusy(true);
+              setError('');
+              try {
+                const url = await uploadFile(file.uri, 'document', { fileName: file.name, mimeType: file.mimeType });
+                setQuoteFileUrl(url);
+                const updated: any = await api.patch(`/contractors/requests/${request.id}/step`, {
+                  action: 'prepare_quote',
+                  quoteFileUrl: url,
+                  quoteTotal: total,
+                });
+                loadQuoteDraft(updated?.gcNotes);
+                onChanged();
+              } catch (err) {
+                setError(err instanceof Error ? err.message : 'Could not read this quote');
+              } finally {
+                setBusy(false);
+              }
             }}
-            className="bg-blue-600 rounded-full py-3 items-center"
+            className="border border-blue-400 rounded-full py-3 items-center mb-3"
           >
-            <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold' }}>Upload quote</Text>
+            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              {quoteFileUrl ? 'Replace signed quote' : 'Upload signed quote'}
+            </Text>
           </Pressable>
+          {quoteNotice ? (
+            <Text className="text-amber-200 mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>{quoteNotice}</Text>
+          ) : null}
+          {stages.map((stage, index) => (
+            <View key={`${stage.name}-${index}`} className="bg-[#0A1628] rounded-xl p-3 mb-2 border border-blue-900">
+              <TextInput
+                value={stage.name}
+                onChangeText={(value) => setStages((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, name: value } : item))}
+                placeholder="Stage name"
+                placeholderTextColor="#9CA3AF"
+                className="text-white mb-2"
+              />
+              <TextInput
+                value={stage.amount}
+                onChangeText={(value) => setStages((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, amount: value } : item))}
+                placeholder="Amount (₦)"
+                placeholderTextColor="#9CA3AF"
+                keyboardType="numeric"
+                className="text-white mb-2"
+              />
+              <TextInput
+                value={stage.doneWhen}
+                onChangeText={(value) => setStages((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, doneWhen: value } : item))}
+                placeholder="Done when the homeowner can see…"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                className="text-white"
+              />
+              {stages.length > 2 ? (
+                <Pressable onPress={() => setStages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="mt-2">
+                  <Text className="text-red-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Remove stage</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ))}
+          {stages.length > 0 ? (
+            <Pressable
+              onPress={() => setStages((current) => [...current, { name: '', doneWhen: '', amount: '', duration: 'As agreed' }])}
+              className="mb-3"
+            >
+              <Text className="text-blue-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Add stage</Text>
+            </Pressable>
+          ) : null}
+          {stages.length > 0 ? (
+            <Text className="text-gray-300 mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Stages total ₦{stages.reduce((sum, stage) => sum + (Number(String(stage.amount).replace(/[^0-9.]/g, '')) || 0), 0).toLocaleString('en-NG')} · Signed quote ₦{(Number(quoteTotal.replace(/[^0-9.]/g, '')) || 0).toLocaleString('en-NG')}. Monitoring, coordination, and contingency are shown to the homeowner separately.
+            </Text>
+          ) : null}
+          {stages.length > 0 ? (
+            <Pressable
+              disabled={busy}
+              onPress={() => send({
+                action: 'quote_uploaded',
+                quoteTotal: Number(quoteTotal.replace(/[^0-9.]/g, '')),
+                quoteFileUrl,
+                lumpSum,
+                stages: stages.map((stage) => ({
+                  name: stage.name,
+                  doneWhen: stage.doneWhen,
+                  amount: Number(String(stage.amount).replace(/[^0-9.]/g, '')),
+                  duration: stage.duration || 'As agreed',
+                })),
+              })}
+              className="bg-blue-600 rounded-full py-3 items-center"
+            >
+              <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold' }}>Send scope to homeowner</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
       {number === 5 ? (

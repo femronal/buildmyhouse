@@ -29,6 +29,7 @@ import {
   ContractorMatcherService,
 } from './contractor-matcher.service';
 import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
+import { buildInspectionScope, normalizeSubmittedStages, QuoteStageDraft } from './quote-scope';
 import { notifyPlanRequestLate } from './plan-request-notify';
 import {
   composeLocationLabel,
@@ -1220,8 +1221,11 @@ export class ContractorsService {
       photoUrls?: string[];
       materials?: string;
       labour?: string;
-      stages?: string;
+      stages?: QuoteStageDraft[];
       quoteFileUrl?: string;
+      quoteTotal?: number;
+      lumpSum?: boolean;
+      fileReadable?: boolean;
       estimatedBudget?: number;
       estimatedDuration?: string;
       result?: 'fair' | 'too_high' | 'too_low';
@@ -1299,26 +1303,52 @@ export class ContractorsService {
         title: 'Inspection photos are in',
         message: `${firstName} marked the inspection done. Please confirm in the app.`,
       });
+    } else if (body.action === 'prepare_quote') {
+      if (!isGc || current.step !== 4 || current.actor !== 'gc') {
+        throw new BadRequestException('You cannot prepare a quote at this step');
+      }
+      const draft = await this.draftInspectionScope(request, body);
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: {
+          quoteFileId: draft.quoteFileUrl || null,
+          gcNotes: JSON.stringify({ kind: 'plan_quote_draft', ...draft.scope }),
+        },
+      });
     } else if (body.action === 'quote_uploaded') {
       if (!isGc || current.step !== 4 || current.actor !== 'gc') {
         throw new BadRequestException('You cannot upload a quote at this step');
       }
-      const materials = String(body.materials || '').trim();
-      const labour = String(body.labour || '').trim();
-      const stages = String(body.stages || '').trim();
-      const quoteFileUrl = String(body.quoteFileUrl || '').trim();
-      if (!materials || !labour || !stages) {
-        throw new BadRequestException('Materials, labour, and stages are required');
+      const signedTotal = Number(body.quoteTotal);
+      let stages: QuoteStageDraft[];
+      try {
+        stages = normalizeSubmittedStages(signedTotal, body.stages || []);
+      } catch (error) {
+        throw new BadRequestException(error instanceof Error ? error.message : 'Check the stages and try again');
       }
-      const budget = Number(body.estimatedBudget || request.project.design?.estimatedCost || 0);
-      const breakdown = this.calculateBmhQuoteBreakdown(budget);
+      const quoteFileUrl = String(body.quoteFileUrl || '').trim();
+      const breakdown = this.calculateBmhQuoteBreakdown(signedTotal);
+      const scope = {
+        kind: 'plan_quote',
+        signedTotal,
+        lumpSum: body.lumpSum !== false,
+        fileReadable: body.fileReadable !== false,
+        notice: "Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection.",
+        quoteFileUrl,
+        stages,
+        contractorAmount: breakdown.baseBudgetAmount,
+        monitoringFee: breakdown.monitoringFeeAmount,
+        coordinationFee: breakdown.coordinationFeeAmount,
+        contingencyFee: breakdown.contingencyFeeAmount,
+        totalPayable: breakdown.totalQuoteAmount,
+      };
       await this.prisma.projectRequest.update({
         where: { id: requestId },
         data: {
           quoteGeneratedAt: new Date(),
           quoteFileId: quoteFileUrl || null,
-          estimatedBudget: budget,
-          estimatedDuration: body.estimatedDuration || null,
+          estimatedBudget: signedTotal,
+          estimatedDuration: stages.map((stage) => stage.duration).filter(Boolean).slice(0, 3).join(', ') || null,
           monitoringFeeAmount: breakdown.monitoringFeeAmount,
           coordinationFeeAmount: breakdown.coordinationFeeAmount,
           contingencyFeeAmount: breakdown.contingencyFeeAmount,
@@ -1326,15 +1356,67 @@ export class ContractorsService {
           homeownerAcceptedQuoteAt: null,
           bmhCheckResult: null,
           homeownerDisputedStep: null,
-          gcNotes: JSON.stringify({ kind: 'plan_quote', materials, labour, stages }),
+          gcNotes: JSON.stringify(scope),
+        },
+      });
+      const existingAnalysis = (request.project?.aiAnalysis && typeof request.project.aiAnalysis === 'object')
+        ? request.project.aiAnalysis
+        : {};
+      await this.prisma.project.update({
+        where: { id: request.projectId },
+        data: {
+          budget: signedTotal,
+          aiAnalysis: {
+            ...existingAnalysis,
+            estimatedBudget: signedTotal,
+            inspectedScope: true,
+            quoteFileUrl: quoteFileUrl || null,
+            phases: stages.map((stage) => ({
+              name: stage.name,
+              description: stage.doneWhen,
+              doneWhen: stage.doneWhen,
+              estimatedDuration: stage.duration,
+              estimatedCost: stage.amount,
+            })),
+          },
         },
       });
       await this.notifyPlanSide({
         userId: request.project.homeownerId,
         email: request.project.homeowner?.email,
         name: homeownerName,
-        title: 'A quote is ready',
-        message: `${firstName} uploaded a quote. Check it in the app.`,
+        title: 'Scope after inspection',
+        message: `${firstName} sent the project scope from the inspection. Check it in the app.`,
+      });
+    } else if (body.action === 'revise_quote') {
+      if (!isHomeowner || current.step !== 4 || current.actor !== 'homeowner') {
+        throw new BadRequestException('You cannot send this quote back at this step');
+      }
+      let previous: any = {};
+      try {
+        previous = JSON.parse(String(request.gcNotes || '{}'));
+      } catch {
+        previous = {};
+      }
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: {
+          quoteGeneratedAt: null,
+          homeownerAcceptedQuoteAt: null,
+          bmhCheckResult: null,
+          gcNotes: JSON.stringify({
+            ...previous,
+            kind: 'plan_quote_draft',
+            homeownerNote: String(body.note || 'This is not the quote I signed.').trim(),
+          }),
+        },
+      });
+      await this.notifyPlanSide({
+        userId: request.contractorId,
+        email: request.contractor?.email,
+        name: gcName,
+        title: 'Quote needs another look',
+        message: `${homeownerName} says this is not the quote they signed. Update the scope and send it again.`,
       });
     } else if (body.action === 'confirm_contact') {
       if (!isHomeowner || current.step !== 2) throw new BadRequestException('You cannot confirm contact at this step');
@@ -1431,6 +1513,55 @@ export class ContractorsService {
     }
 
     return this.prisma.projectRequest.findUnique({ where: { id: requestId } });
+  }
+
+  private cataloguePhases(project: any) {
+    const analysis = project?.aiAnalysis;
+    const phases = analysis && typeof analysis === 'object' ? analysis.phases : null;
+    return Array.isArray(phases) ? phases : [];
+  }
+
+  private async readQuoteText(url: string): Promise<string> {
+    const raw = String(url || '').trim();
+    if (!/^https?:\/\//i.test(raw)) return '';
+    try {
+      const response = await fetch(raw, { signal: AbortSignal.timeout(8000) });
+      if (!response.ok) return '';
+      const type = response.headers.get('content-type') || '';
+      if (!type.includes('pdf') && !raw.toLowerCase().includes('.pdf')) return '';
+      const bytes = Buffer.from(await response.arrayBuffer());
+      return this.openAIService.extractTextFromPdf(bytes);
+    } catch (error) {
+      this.logger.warn(`Could not read quote file: ${error instanceof Error ? error.message : error}`);
+      return '';
+    }
+  }
+
+  private async draftInspectionScope(request: any, body: { quoteFileUrl?: string; quoteTotal?: number }) {
+    const signedTotal = Number(body.quoteTotal);
+    if (!Number.isFinite(signedTotal) || signedTotal <= 0) {
+      throw new BadRequestException('Enter the signed quote total.');
+    }
+    const quoteFileUrl = String(body.quoteFileUrl || '').trim();
+    if (!quoteFileUrl) throw new BadRequestException('Upload the quote the homeowner signed.');
+    const quoteText = await this.readQuoteText(quoteFileUrl);
+    const phases = this.cataloguePhases(request.project);
+    let suggestion = null;
+    if (quoteText) {
+      suggestion = await this.openAIService.suggestInspectionStages({
+        quoteText,
+        signedTotal,
+        phaseNames: phases.map((phase: any) => String(phase?.name || '')).filter(Boolean),
+      });
+    }
+    const scope = buildInspectionScope({
+      signedTotal,
+      quoteText,
+      cataloguePhases: phases,
+      suggestion,
+      fileReadable: quoteText.length > 0,
+    });
+    return { quoteFileUrl, scope };
   }
 
   private async notifyPlanSide(params: { userId?: string | null; email?: string | null; name?: string | null; title: string; message: string }) {

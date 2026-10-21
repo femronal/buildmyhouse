@@ -99,7 +99,8 @@ export class ProjectsService {
     }
 
     const normalizedPhases = Array.isArray(phases) ? [...phases] : [];
-    while (normalizedPhases.length < 3) {
+    const pricedCount = normalizedPhases.filter((phase) => Number(phase?.estimatedCost || phase?.estimated_cost || 0) > 0).length;
+    while (pricedCount < 2 && normalizedPhases.length < 3) {
       normalizedPhases.push({
         name: `Execution Milestone ${normalizedPhases.length + 1}`,
         description: 'Milestone added to keep project tracking practical and reviewable.',

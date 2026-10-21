@@ -20,8 +20,8 @@ export const REQUEST_STATUS_COPY = {
     },
     {
       title: 'Quote agreed',
-      detail: 'The contractor gives you an itemised quote.',
-      now: 'Check the quote. Tap Accept quote if you agree.',
+      detail: 'The contractor sends the scope from the inspection.',
+      now: 'Check the stages and the signed quote. Accept the scope, or say it is not the quote you signed.',
     },
     {
       title: 'BMH check',

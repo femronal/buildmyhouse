@@ -977,6 +977,63 @@ export class OpenAIService {
       return '';
     }
   }
+
+  async suggestInspectionStages(params: {
+    quoteText: string;
+    signedTotal: number;
+    phaseNames: string[];
+  }): Promise<{ lumpSum: boolean; stages: Array<{ name: string; doneWhen: string; weight: number }> } | null> {
+    if (!this.hasApiKey || !params.quoteText.trim()) return null;
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: this.model,
+        temperature: 0.2,
+        max_tokens: 1200,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You turn a contractor quote into payment stages for a home project in Nigeria.',
+              'The signed total is fixed. Do not change it.',
+              'If the quote is one price, set lumpSum true and propose 3 to 5 stages.',
+              'Put material purchases in an early stage.',
+              'Weights must be positive and should sum to 1.',
+              'Each doneWhen is one plain sentence describing what the homeowner can see when the stage is finished.',
+              'If the quote already prices separate stages, set lumpSum false and keep those stages.',
+              'Return JSON only: {"lumpSum": true, "stages": [{"name": "", "doneWhen": "", "weight": 0.4}]}',
+            ].join(' '),
+          },
+          {
+            role: 'user',
+            content: [
+              `Signed total in naira: ${params.signedTotal}`,
+              `Plan stages already on the project: ${params.phaseNames.join(', ') || 'none'}`,
+              'Quote text:',
+              params.quoteText.slice(0, 12000),
+            ].join('\n'),
+          },
+        ],
+      });
+      const raw = completion.choices?.[0]?.message?.content || '';
+      const parsed = JSON.parse(raw);
+      const stages = Array.isArray(parsed?.stages) ? parsed.stages : [];
+      const usable = stages
+        .map((stage: any) => ({
+          name: String(stage?.name || '').trim(),
+          doneWhen: String(stage?.doneWhen || '').trim(),
+          weight: Number(stage?.weight),
+        }))
+        .filter((stage: { name: string }) => stage.name);
+      if (usable.length < 2) return null;
+      return { lumpSum: parsed?.lumpSum !== false, stages: usable };
+    } catch (error) {
+      this.logger.warn(
+        `Inspection quote staging failed, using the project plan: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
 }
 
 

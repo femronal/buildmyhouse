@@ -5,7 +5,7 @@ const STEPS = [
   'Contact the homeowner within 24 to 48 hours to book a physical inspection.',
   'Agree your inspection fee with the homeowner before you go, and collect it on site.',
   'Inspect, then agree the final scope and price directly with the homeowner. Don\'t accept based on the estimate alone.',
-  'Send an itemised quotation, with materials and labour listed separately, exact materials and sizes, and the stages. The homeowner signs it.',
+  'Upload the quote the homeowner signed. BuildMyHouse turns a lump sum into stages you can edit, without changing your public plan. The homeowner accepts that scope in the app.',
   'All project payments go through BuildMyHouse. Never ask the homeowner to pay into your own account for the project. If you do, you lose BuildMyHouse protection and your listing.',
   'You\'re paid per stage. Upload photos when each stage is done, and once the homeowner approves, that stage\'s payment is released.',
   'Your reviews bring you more jobs. Every homeowner rates you at handover, and good ratings get you more projects on BuildMyHouse.',

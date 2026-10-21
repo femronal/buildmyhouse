@@ -55,11 +55,11 @@ export default function RequestStatusScreen() {
   const declined = step?.state === 'declined';
   const afterInspection = !!step?.inspectionAlreadyHappened;
 
-  const act = async (action: string) => {
+  const act = async (action: string, extra?: Record<string, unknown>) => {
     if (!request?.id) return;
     setBusy(true);
     try {
-      await api.patch(`/contractors/requests/${request.id}/step`, { action });
+      await api.patch(`/contractors/requests/${request.id}/step`, { action, ...extra });
       await queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'plan-request'] });
     } finally {
       setBusy(false);
@@ -169,16 +169,57 @@ export default function RequestStatusScreen() {
       ) : null}
       {quote && step?.step === 4 ? (
         <View style={{ marginTop: 12, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14 }}>
-          <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Materials</Text>
-          <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>{quote.materials}</Text>
-          <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Labour</Text>
-          <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>{quote.labour}</Text>
-          <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Stages</Text>
-          <Text style={{ fontFamily: 'Poppins_400Regular' }}>{quote.stages}</Text>
+          {Array.isArray(quote.stages) ? (
+            <>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', marginBottom: 8 }}>
+                Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection.
+              </Text>
+              {quote.stages.map((stage: any) => (
+                <View key={`${stage.name}-${stage.amount}`} style={{ marginBottom: 10 }}>
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>{stage.name}</Text>
+                  <Text style={{ fontFamily: 'Poppins_400Regular' }}>₦{Number(stage.amount || 0).toLocaleString('en-NG')}</Text>
+                  {stage.doneWhen ? <Text style={{ fontFamily: 'Poppins_400Regular', color: '#374151' }}>Done when: {stage.doneWhen}</Text> : null}
+                </View>
+              ))}
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', marginTop: 4 }}>Contractor's quote</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>₦{Number(quote.contractorAmount || quote.signedTotal || 0).toLocaleString('en-NG')}</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', color: '#374151' }}>
+                Monitoring ₦{Number(quote.monitoringFee || 0).toLocaleString('en-NG')} · Coordination ₦{Number(quote.coordinationFee || 0).toLocaleString('en-NG')} · Contingency ₦{Number(quote.contingencyFee || 0).toLocaleString('en-NG')}
+              </Text>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold', marginTop: 8 }}>
+                Total to fund ₦{Number(quote.totalPayable || 0).toLocaleString('en-NG')}
+              </Text>
+              {quote.quoteFileUrl ? (
+                <Pressable onPress={() => Linking.openURL(getBackendAssetUrl(quote.quoteFileUrl))} style={{ marginTop: 12 }}>
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Open the signed quote</Text>
+                </Pressable>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Materials</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>{quote.materials}</Text>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Labour</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>{quote.labour}</Text>
+              <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Stages</Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular' }}>{quote.stages}</Text>
+            </>
+          )}
           {step?.actor === 'homeowner' ? (
-            <Pressable disabled={busy} onPress={() => act('accept_quote')} style={{ marginTop: 12, backgroundColor: '#22c55e', borderRadius: 999, paddingVertical: 12, alignItems: 'center' }}>
-              <Text style={{ fontFamily: 'Poppins_700Bold' }}>Accept quote</Text>
-            </Pressable>
+            <View style={{ marginTop: 12 }}>
+              <Pressable disabled={busy} onPress={() => act('accept_quote')} style={{ backgroundColor: '#22c55e', borderRadius: 999, paddingVertical: 12, alignItems: 'center' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold' }}>Accept this scope</Text>
+              </Pressable>
+              {Array.isArray(quote.stages) ? (
+                <Pressable
+                  disabled={busy}
+                  onPress={() => act('revise_quote', { note: 'This is not the quote I signed.' })}
+                  style={{ marginTop: 8, borderWidth: 1, borderColor: '#111', borderRadius: 999, paddingVertical: 12, alignItems: 'center' }}
+                >
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>This is not the quote I signed</Text>
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
         </View>
       ) : null}

@@ -5,7 +5,7 @@ export const REQUEST_STEP_COPY = {
     'Call or WhatsApp the homeowner within 24 to 48 hours.',
     'Agree the inspection date and fee, then tap I\'ve contacted the homeowner.',
     'Visit the site. Take photos, then tap Inspection done.',
-    'Upload your itemised quote: materials, labour and stages.',
+    'Upload the quote the homeowner signed. BuildMyHouse turns it into stages you can edit.',
     'BuildMyHouse is checking the quote.',
     'Tap Accept job to start.',
   ],
