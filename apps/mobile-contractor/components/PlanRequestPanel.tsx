@@ -24,7 +24,7 @@ export function PlanRequestPanel({
   const [quoteFileUrl, setQuoteFileUrl] = useState('');
   const [quoteNotice, setQuoteNotice] = useState('');
   const [lumpSum, setLumpSum] = useState(true);
-  const [stages, setStages] = useState<Array<{ name: string; doneWhen: string; amount: string; duration: string }>>([]);
+  const [stages, setStages] = useState<Array<{ name: string; doneWhen: string; amount: string; duration: string; evidence: string[] }>>([]);
   const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -48,6 +48,7 @@ export function PlanRequestPanel({
           doneWhen: String(stage?.doneWhen || ''),
           amount: String(stage?.amount ?? ''),
           duration: String(stage?.duration || 'As agreed'),
+          evidence: Array.isArray(stage?.evidence) ? stage.evidence.map((item: unknown) => String(item || '')).filter(Boolean) : [],
         })));
       }
     } catch {
@@ -207,6 +208,15 @@ export function PlanRequestPanel({
                 multiline
                 className="text-white"
               />
+              {stage.evidence?.length ? (
+                <View className="mt-2">
+                  {stage.evidence.map((item) => (
+                    <Text key={item} className="text-gray-300 text-xs" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 18 }}>
+                      • {item}
+                    </Text>
+                  ))}
+                </View>
+              ) : null}
               {stages.length > 2 ? (
                 <Pressable onPress={() => setStages((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="mt-2">
                   <Text className="text-red-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Remove stage</Text>
@@ -216,7 +226,7 @@ export function PlanRequestPanel({
           ))}
           {stages.length > 0 ? (
             <Pressable
-              onPress={() => setStages((current) => [...current, { name: '', doneWhen: '', amount: '', duration: 'As agreed' }])}
+              onPress={() => setStages((current) => [...current, { name: '', doneWhen: '', amount: '', duration: 'As agreed', evidence: [] }])}
               className="mb-3"
             >
               <Text className="text-blue-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Add stage</Text>
@@ -240,6 +250,7 @@ export function PlanRequestPanel({
                   doneWhen: stage.doneWhen,
                   amount: Number(String(stage.amount).replace(/[^0-9.]/g, '')),
                   duration: stage.duration || 'As agreed',
+                  evidence: stage.evidence || [],
                 })),
               })}
               className="bg-blue-600 rounded-full py-3 items-center"

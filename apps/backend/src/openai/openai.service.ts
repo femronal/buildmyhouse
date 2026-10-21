@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import OpenAI from 'openai';
+import { cleanEvidence, parseDescribedStages, StageEvidence } from '../contractors/stage-evidence';
 
 export interface PlanAnalysis {
   projectType: string; // 'repair' | 'upgrades' | 'renovation' | 'full_builds'
@@ -982,13 +983,13 @@ export class OpenAIService {
     quoteText: string;
     signedTotal: number;
     phaseNames: string[];
-  }): Promise<{ lumpSum: boolean; stages: Array<{ name: string; doneWhen: string; weight: number }> } | null> {
+  }): Promise<{ lumpSum: boolean; stages: Array<{ name: string; doneWhen: string; weight: number; evidence: string[] }> } | null> {
     if (!this.hasApiKey || !params.quoteText.trim()) return null;
     try {
       const completion = await this.openai.chat.completions.create({
         model: this.model,
         temperature: 0.2,
-        max_tokens: 1200,
+        max_tokens: 1800,
         response_format: { type: 'json_object' },
         messages: [
           {
@@ -1000,8 +1001,10 @@ export class OpenAIService {
               'Put material purchases in an early stage.',
               'Weights must be positive and should sum to 1.',
               'Each doneWhen is one plain sentence describing what the homeowner can see when the stage is finished.',
+              'Each evidence list has 4 to 6 short checks taken from this quote: a material, quantity, location, test, or finished result the homeowner must confirm before that stage is paid.',
+              'Do not invent work the quote does not support. Do not use photo or video counts as a check.',
               'If the quote already prices separate stages, set lumpSum false and keep those stages.',
-              'Return JSON only: {"lumpSum": true, "stages": [{"name": "", "doneWhen": "", "weight": 0.4}]}',
+              'Return JSON only: {"lumpSum": true, "stages": [{"name": "", "doneWhen": "", "weight": 0.4, "evidence": ["", ""]}]}',
             ].join(' '),
           },
           {
@@ -1023,6 +1026,7 @@ export class OpenAIService {
           name: String(stage?.name || '').trim(),
           doneWhen: String(stage?.doneWhen || '').trim(),
           weight: Number(stage?.weight),
+          evidence: cleanEvidence(stage?.evidence),
         }))
         .filter((stage: { name: string }) => stage.name);
       if (usable.length < 2) return null;
@@ -1030,6 +1034,56 @@ export class OpenAIService {
     } catch (error) {
       this.logger.warn(
         `Inspection quote staging failed, using the project plan: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  async describeStageEvidence(params: {
+    projectName: string;
+    quoteText: string;
+    stages: Array<{ name: string; doneWhen: string }>;
+  }): Promise<StageEvidence[] | null> {
+    if (!this.hasApiKey || params.stages.length === 0) return null;
+    const quoteText = String(params.quoteText || '').trim();
+    if (!quoteText) return null;
+    try {
+      const completion = await this.openai.chat.completions.create({
+        model: this.model,
+        temperature: 0.2,
+        max_tokens: 1800,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: [
+              'You define what done means for each payment stage, so a homeowner can decide whether to release that stage.',
+              'Use only the quote and the stage list. Do not invent rooms, materials, or tests that the quote or the stage does not support.',
+              'Keep each stage name exactly as given.',
+              'doneWhen is one plain sentence describing the finished result.',
+              'evidence is 4 to 6 short checks. Each check is a specific thing to look at: a material, a quantity, a location, a test, or a finished result from the quote.',
+              'Do not use a count of photos or videos as a check.',
+              'Return JSON only: {"stages":[{"name":"","doneWhen":"","evidence":["",""]}]}',
+            ].join(' '),
+          },
+          {
+            role: 'user',
+            content: [
+              `Project: ${params.projectName || 'Project'}`,
+              'Stages:',
+              params.stages.map((stage, index) => `${index + 1}. ${stage.name}: ${stage.doneWhen || 'Not yet defined'}`).join('\n'),
+              'Quote:',
+              quoteText.slice(0, 12000),
+            ].join('\n'),
+          },
+        ],
+      }, { timeout: 20000 });
+      const raw = completion.choices?.[0]?.message?.content || '';
+      const parsed = parseDescribedStages(raw);
+      return parsed.length > 0 ? parsed : null;
+    } catch (error) {
+      this.logger.warn(
+        `Stage evidence could not be read from the quote: ${error instanceof Error ? error.message : String(error)}`,
       );
       return null;
     }

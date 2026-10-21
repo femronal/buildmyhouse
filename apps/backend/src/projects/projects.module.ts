@@ -6,9 +6,10 @@ import { AuthModule } from '../auth/auth.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { ProjectAccessModule } from '../project-access/project-access.module';
 import { ReferralsModule } from '../referrals/referrals.module';
+import { OpenAIModule } from '../openai/openai.module';
 
 @Module({
-  imports: [WebSocketModule, AuthModule, PaymentsModule, ProjectAccessModule, ReferralsModule],
+  imports: [WebSocketModule, AuthModule, PaymentsModule, ProjectAccessModule, ReferralsModule, OpenAIModule],
   controllers: [ProjectsController],
   providers: [ProjectsService],
   exports: [ProjectsService],

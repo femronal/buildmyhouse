@@ -1,3 +1,5 @@
+import { cleanEvidence } from './stage-evidence';
+
 export type CataloguePhase = {
   name?: string;
   description?: string;
@@ -10,6 +12,7 @@ export type QuoteStageDraft = {
   doneWhen: string;
   amount: number;
   duration: string;
+  evidence?: string[];
 };
 
 export type QuoteScopeDraft = {
@@ -27,7 +30,7 @@ export type QuoteScopeDraft = {
 
 export type StageSuggestion = {
   lumpSum: boolean;
-  stages: Array<{ name?: string; doneWhen?: string; weight?: number }>;
+  stages: Array<{ name?: string; doneWhen?: string; weight?: number; evidence?: string[] }>;
 };
 
 const MONITORING_RATE = 0.05;
@@ -135,6 +138,7 @@ function catalogueStages(phases: CataloguePhase[] | undefined, total: number): Q
       doneWhen: phase.doneWhen || `This stage is done when ${phase.name.toLowerCase()} is finished and photographed.`,
       amount: fromKobo(amounts[index]),
       duration: phase.duration,
+      evidence: cleanEvidence((phase as { evidence?: string[] }).evidence),
     }));
   }
   const workName = usable[0]?.name || 'Main work';
@@ -202,6 +206,7 @@ export function buildInspectionScope(input: {
       doneWhen: `This stage is done when ${line.name.toLowerCase()} is finished and photographed.`,
       amount: fromKobo(amounts[index]),
       duration: 'As agreed',
+      evidence: [],
     }));
   } else if (input.suggestion && input.suggestion.stages.length >= 2) {
     lumpSum = input.suggestion.lumpSum !== false;
@@ -210,6 +215,7 @@ export function buildInspectionScope(input: {
         name: cleanText(stage.name, ''),
         doneWhen: cleanText(stage.doneWhen, ''),
         weight: Number(stage.weight) > 0 ? Number(stage.weight) : 1,
+        evidence: cleanEvidence(stage.evidence),
       }))
       .filter((stage) => stage.name)
       .slice(0, 8);
@@ -220,6 +226,7 @@ export function buildInspectionScope(input: {
         doneWhen: stage.doneWhen || `This stage is done when ${stage.name.toLowerCase()} is finished and photographed.`,
         amount: fromKobo(amounts[index]),
         duration: 'As agreed',
+        evidence: stage.evidence,
       }));
       lumpSum = input.suggestion.lumpSum !== false;
     } else {
@@ -253,6 +260,7 @@ export function normalizeSubmittedStages(signedTotal: number, stages: QuoteStage
     doneWhen: cleanText(stage?.doneWhen, ''),
     amount: fromKobo(toKobo(Number(stage?.amount))),
     duration: cleanText(stage?.duration, 'As agreed'),
+    evidence: cleanEvidence(stage?.evidence),
     index,
   }));
   if (normalized.some((stage) => !stage.name || !stage.doneWhen || !(stage.amount > 0))) {
@@ -270,5 +278,5 @@ export function normalizeSubmittedStages(signedTotal: number, stages: QuoteStage
   if (tooLarge) {
     throw new Error(`“${tooLarge.name}” is more than 75% of the quote. Split it so you are paid as each part is done.`);
   }
-  return normalized.map(({ name, doneWhen, amount, duration }) => ({ name, doneWhen, amount, duration }));
+  return normalized.map(({ name, doneWhen, amount, duration, evidence }) => ({ name, doneWhen, amount, duration, evidence }));
 }

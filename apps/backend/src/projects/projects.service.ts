@@ -15,6 +15,8 @@ import { EmailService } from '../email/email.service';
 import { ReferralsService } from '../referrals/referrals.service';
 import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
 import { getPlanRequestStep } from '../contractors/plan-request-step';
+import { applyDescribedEvidence, reviewForStage, storedEvidence } from '../contractors/stage-evidence';
+import { OpenAIService } from '../openai/openai.service';
 import { activationAmount } from '../funding/funding-invoice';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
@@ -23,6 +25,7 @@ export class ProjectsService {
   // Use `any` for model access to reduce coupling to Prisma schema changes.
   private prisma = new PrismaClient() as any;
   private readonly logger = new Logger(ProjectsService.name);
+  private readonly evidenceInflight = new Map<string, Promise<any>>();
 
   private getHomeownerAppUrl(): string {
     return String(
@@ -51,6 +54,7 @@ export class ProjectsService {
     private readonly projectAccessService: ProjectAccessService,
     private readonly emailService: EmailService,
     @Optional() private readonly referrals?: ReferralsService,
+    @Optional() private readonly openai?: OpenAIService,
   ) {}
 
   private async referralCreateFields(homeownerId: string, code?: string | null, source?: string | null) {
@@ -1997,13 +2001,129 @@ export class ProjectsService {
         request: planRequest,
         project,
       });
+    }
+
+    const presented = await this.presentStageEvidence(project);
+    if (project.designId && planRequest) {
       return {
-        ...project,
+        ...presented,
         planRequestStep: getPlanRequestStep(planRequest, project, viewer),
       };
     }
 
-    return project;
+    return presented;
+  }
+
+  private matchEvidencePhase(phases: any[], stage: any, index: number) {
+    const name = String(stage?.name || '').trim().toLowerCase();
+    const byName = phases.find((phase) => String(phase?.name || '').trim().toLowerCase() === name);
+    if (byName) return byName;
+    const order = Number(stage?.order);
+    if (Number.isFinite(order) && order > 0 && phases[order - 1]) return phases[order - 1];
+    return phases[index] || null;
+  }
+
+  private async presentStageEvidence(project: any) {
+    const analysis = await this.ensureStageEvidence(project);
+    const phases = Array.isArray(analysis?.phases) ? analysis.phases : [];
+    const stages = (project.stages || []).map((stage: any, index: number) => {
+      const review = reviewForStage(stage, this.matchEvidencePhase(phases, stage, index));
+      return { ...stage, doneWhen: review.objective, evidenceToReview: review.checks };
+    });
+    return { ...project, aiAnalysis: analysis || project.aiAnalysis, stages };
+  }
+
+  private async ensureStageEvidence(project: any): Promise<any> {
+    const analysis = project?.aiAnalysis && typeof project.aiAnalysis === 'object' ? { ...project.aiAnalysis } : {};
+    const phases = Array.isArray(analysis.phases) ? analysis.phases.map((phase: any) => ({ ...phase })) : [];
+    const subjects = phases.length > 0
+      ? phases
+      : (project.stages || []).map((stage: any) => ({
+          name: stage.name,
+          doneWhen: '',
+          description: '',
+          estimatedCost: stage.estimatedCost,
+          estimatedDuration: stage.estimatedDuration,
+        }));
+    if (subjects.length === 0 || subjects.every((phase: any) => storedEvidence(phase).length >= 2)) {
+      return { ...analysis, phases: phases.length > 0 ? phases : analysis.phases };
+    }
+    const attemptedAt = analysis.evidenceReviewAttemptedAt ? new Date(analysis.evidenceReviewAttemptedAt).getTime() : 0;
+    const recentMiss = Number.isFinite(attemptedAt) && attemptedAt > 0 && Date.now() - attemptedAt < 60 * 60 * 1000;
+    if (recentMiss || !this.openai?.isConfigured()) {
+      return { ...analysis, phases: subjects };
+    }
+    const inflight = this.evidenceInflight.get(project.id);
+    if (inflight) return inflight;
+    const job = this.writeStageEvidence(project, analysis, subjects).finally(() => {
+      this.evidenceInflight.delete(project.id);
+    });
+    this.evidenceInflight.set(project.id, job);
+    return job;
+  }
+
+  private async writeStageEvidence(project: any, analysis: any, subjects: any[]): Promise<any> {
+    let quoteText = '';
+    const quoteUrl = String(analysis.quoteFileUrl || '').trim();
+    if (quoteUrl && /^https?:\/\//i.test(quoteUrl)) {
+      try {
+        const response = await fetch(quoteUrl, { signal: AbortSignal.timeout(8000) });
+        const type = response.headers.get('content-type') || '';
+        if (response.ok && (type.includes('pdf') || quoteUrl.toLowerCase().includes('.pdf'))) {
+          quoteText = await this.openai!.extractTextFromPdf(Buffer.from(await response.arrayBuffer()));
+        }
+      } catch (error) {
+        this.logger.warn(`Could not read the quote for stage evidence: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+    if (!quoteText) {
+      quoteText = subjects
+        .map((phase) => `${phase.name || ''}: ${phase.doneWhen || phase.description || ''}`.trim())
+        .filter((line) => line.length > 2)
+        .join('\n');
+    }
+    const described = quoteText.length > 20
+      ? await this.openai!.describeStageEvidence({
+          projectName: project?.name || '',
+          quoteText,
+          stages: subjects.map((phase) => ({
+            name: String(phase?.name || ''),
+            doneWhen: String(phase?.doneWhen || phase?.description || ''),
+          })),
+        })
+      : null;
+    const nextPhases = described
+      ? subjects.map((phase) => {
+          const applied = applyDescribedEvidence(
+            [{
+              name: String(phase?.name || ''),
+              doneWhen: String(phase?.doneWhen || phase?.description || ''),
+              evidence: storedEvidence(phase),
+            }],
+            described,
+          )[0];
+          return {
+            ...phase,
+            doneWhen: applied?.doneWhen || phase?.doneWhen || '',
+            description: phase?.description || applied?.doneWhen || '',
+            evidenceToReview: applied?.evidence || [],
+          };
+        })
+      : subjects;
+    const saved = {
+      ...analysis,
+      phases: nextPhases,
+      evidenceReviewAttemptedAt: new Date().toISOString(),
+    };
+    try {
+      await this.prisma.project.update({
+        where: { id: project.id },
+        data: { aiAnalysis: saved },
+      });
+    } catch (error) {
+      this.logger.warn(`Could not save stage evidence: ${error instanceof Error ? error.message : error}`);
+    }
+    return saved;
   }
 
   /**

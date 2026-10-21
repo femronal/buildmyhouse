@@ -24,6 +24,23 @@ describe('inspection quote scope', () => {
     expect(scope.stages.every((stage) => stage.doneWhen.length > 0)).toBe(true);
   });
 
+  it('keeps the checks the quote analysis attached to each stage', () => {
+    const scope = buildInspectionScope({
+      signedTotal: 100000,
+      quoteText: 'One price for the whole repair',
+      suggestion: {
+        lumpSum: true,
+        stages: [
+          { name: 'Repair', doneWhen: 'The machine completes a wash cycle.', weight: 0.6, evidence: ['The cycle finishes without stopping.', 'The inlet hose does not leak.'] },
+          { name: 'Handover', doneWhen: 'The homeowner has seen it run.', weight: 0.4, evidence: ['The machine is demonstrated.', 'The work area is left clear.'] },
+        ],
+      },
+      fileReadable: true,
+    });
+    expect(scope.stages[0].evidence).toEqual(['The cycle finishes without stopping.', 'The inlet hose does not leak.']);
+    expect(scope.stages[1].evidence).toEqual(['The machine is demonstrated.', 'The work area is left clear.']);
+  });
+
   it('keeps priced lines from a quote that already has stages', () => {
     const lines = parsePricedLines('Foundation ₦40,000\nBlockwork ₦60,000');
     expect(lines).toHaveLength(2);

@@ -1,6 +1,6 @@
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, ActivityIndicator, Linking, Alert, TextInput, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, Package, Users, FileText, CheckCircle, File, VideoCamera, Image as ImageIcon, MusicNote, House, Phone, DownloadSimple, Lock, CreditCard, Clock, Warning, Check } from "phosphor-react-native";
+import { ArrowLeft, Package, Users, FileText, CheckCircle, File, VideoCamera, Image as ImageIcon, MusicNote, House, Phone, DownloadSimple, Lock, CreditCard, Clock, Warning, Check, CaretDown } from "phosphor-react-native";
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
@@ -33,6 +33,25 @@ const getChangeStatusClasses = (status: string) => {
   if (status === 'approved') return { bg: 'bg-green-100', text: 'text-green-700' };
   if (status === 'rejected') return { bg: 'bg-red-100', text: 'text-red-700' };
   return { bg: 'bg-amber-100', text: 'text-amber-700' };
+};
+
+const countLabel = (count: number, singular: string, plural: string) =>
+  `${count} ${count === 1 ? singular : plural}`;
+
+const reviewForStage = (stage: any) => {
+  const name = String(stage?.name || '').trim() || 'this stage';
+  const objective = String(stage?.doneWhen || '').replace(/\s+/g, ' ').trim()
+    || `This stage is done when ${name} matches the signed quote.`;
+  const stored = Array.isArray(stage?.evidenceToReview)
+    ? stage.evidenceToReview.map((item: unknown) => String(item || '').replace(/\s+/g, ' ').trim()).filter((item: string) => item.length > 8).slice(0, 6)
+    : [];
+  const checks = stored.length >= 2 ? stored : [
+    `Confirm this is true on site: ${objective.replace(/\.$/, '')}.`,
+    `Compare the work with the signed quote for “${name}”, including the materials, quantities, and locations named there.`,
+    `Look for unfinished work, damage, or a substitution the quote did not include.`,
+    `The photos and videos should show that finished work, not a different part of the project.`,
+  ];
+  return { objective, checks };
 };
 
 export default function StageDetailScreen() {
@@ -107,6 +126,7 @@ export default function StageDetailScreen() {
   const isComplete = actualStatus === 'complete' || actualStatus === 'completed';
   const isInProgress = actualStatus === 'in-progress' || actualStatus === 'in_progress';
   const [showApproveSheet, setShowApproveSheet] = useState(false);
+  const [evidenceOpen, setEvidenceOpen] = useState(false);
   const { width } = useWindowDimensions();
   const isCompactMobile = useMemo(() => width <= 768, [width]);
   const materials = stage?.materials || [];
@@ -114,6 +134,7 @@ export default function StageDetailScreen() {
   const media = stage?.media || [];
   const documents = stage?.documents || [];
   const stageChangeRequests = (stage?.changeRequests || []) as any[];
+  const stageReview = reviewForStage(stage);
 
   const openReceipt = (url?: string) => {
     if (!url) return;
@@ -434,17 +455,65 @@ export default function StageDetailScreen() {
         className="flex-1 px-6"
         contentContainerStyle={{ paddingBottom: isCompactMobile ? (isInProgress ? 88 : 120) : 140 }}
       >
-        {isWaiting ? (
+        {stage ? (
           <View className="mb-5 rounded-2xl border border-gray-200 bg-white p-4">
-            <Text className="text-black text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-              Evidence to review
-            </Text>
-            <Text className="text-gray-700 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-              {media.filter((item: any) => item.type === 'photo').length} photos, {media.filter((item: any) => item.type === 'video').length} videos, {teamMembers.length} team, {materials.length} materials, {documents.length} files.
-            </Text>
-            <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-              If you are not happy with the work, use the dispute or change request actions already on this page.
-            </Text>
+            <TouchableOpacity
+              onPress={() => setEvidenceOpen((open) => !open)}
+              accessibilityRole="button"
+              accessibilityLabel={evidenceOpen ? 'Hide evidence to review' : 'Expand evidence to review'}
+              accessibilityState={{ expanded: evidenceOpen }}
+              className="flex-row items-center justify-between"
+            >
+              <View className="flex-1 pr-3">
+                <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Evidence to review
+                </Text>
+                {!evidenceOpen ? (
+                  <Text className="text-gray-500 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {stageReview.checks.length} checks for this stage
+                  </Text>
+                ) : null}
+              </View>
+              <View className="flex-row items-center">
+                <Text className="text-black text-xs mr-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  {evidenceOpen ? 'Hide' : 'Expand'}
+                </Text>
+                <View style={{ transform: [{ rotate: evidenceOpen ? '180deg' : '0deg' }] }}>
+                  <CaretDown size={14} color="#000000" weight="bold" />
+                </View>
+              </View>
+            </TouchableOpacity>
+            {evidenceOpen ? (
+              <View className="mt-3">
+                <Text className="text-gray-500 text-xs mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Done means
+                </Text>
+                <Text className="text-black text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}>
+                  {stageReview.objective}
+                </Text>
+                <Text className="text-gray-500 text-xs mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Check these before you approve
+                </Text>
+                {stageReview.checks.map((item, index) => (
+                  <Text
+                    key={`${index}-${item}`}
+                    className="text-gray-800 text-sm mb-2"
+                    style={{ fontFamily: 'Poppins_400Regular', lineHeight: 20 }}
+                  >
+                    {index + 1}. {item}
+                  </Text>
+                ))}
+                <Text className="text-gray-800 text-sm mt-1" style={{ fontFamily: 'Poppins_500Medium', lineHeight: 20 }}>
+                  Before you approve, have an independent inspector look at the site.
+                </Text>
+                <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 18 }}>
+                  If you are not happy with the work, tap the dispute icon at the top right.
+                </Text>
+                <Text className="text-gray-400 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {countLabel(media.filter((item: any) => item.type === 'photo').length, 'photo', 'photos')}, {countLabel(media.filter((item: any) => item.type === 'video').length, 'video', 'videos')}, {countLabel(teamMembers.length, 'team member', 'team members')}, {countLabel(materials.length, 'material', 'materials')}, {countLabel(documents.length, 'file', 'files')}.
+                </Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
         {stageChangeRequests.length > 0 && (

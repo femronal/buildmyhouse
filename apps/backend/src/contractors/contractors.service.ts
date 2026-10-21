@@ -32,6 +32,7 @@ import {
 } from './contractor-matcher.service';
 import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
 import { buildInspectionScope, normalizeSubmittedStages, QuoteStageDraft } from './quote-scope';
+import { applyDescribedEvidence } from './stage-evidence';
 import { notifyPlanRequestLate } from './plan-request-notify';
 import {
   composeLocationLabel,
@@ -1325,9 +1326,30 @@ export class ContractorsService {
       const signedTotal = Number(body.quoteTotal);
       let stages: QuoteStageDraft[];
       try {
-        stages = normalizeSubmittedStages(signedTotal, body.stages || []);
+        let incoming = Array.isArray(body.stages) ? body.stages : [];
+        try {
+          const previous = JSON.parse(String(request.gcNotes || '{}'));
+          const drafted = Array.isArray(previous?.stages) ? previous.stages : [];
+          incoming = incoming.map((stage: any) => {
+            const match = drafted.find((item: any) => String(item?.name || '').trim().toLowerCase() === String(stage?.name || '').trim().toLowerCase());
+            const evidence = Array.isArray(stage?.evidence) && stage.evidence.length > 0 ? stage.evidence : match?.evidence;
+            return { ...stage, evidence };
+          });
+        } catch {
+          incoming = Array.isArray(body.stages) ? body.stages : [];
+        }
+        stages = normalizeSubmittedStages(signedTotal, incoming);
       } catch (error) {
         throw new BadRequestException(error instanceof Error ? error.message : 'Check the stages and try again');
+      }
+      if (stages.some((stage) => (stage.evidence || []).length < 2)) {
+        const quoteText = await this.readQuoteText(String(body.quoteFileUrl || ''));
+        const described = await this.openAIService.describeStageEvidence({
+          projectName: request.project?.name || '',
+          quoteText: quoteText || stages.map((stage) => `${stage.name}: ${stage.doneWhen}`).join('\n'),
+          stages: stages.map((stage) => ({ name: stage.name, doneWhen: stage.doneWhen })),
+        });
+        if (described) stages = applyDescribedEvidence(stages, described);
       }
       const quoteFileUrl = String(body.quoteFileUrl || '').trim();
       const breakdown = this.calculateBmhQuoteBreakdown(signedTotal);
@@ -1380,6 +1402,7 @@ export class ContractorsService {
               doneWhen: stage.doneWhen,
               estimatedDuration: stage.duration,
               estimatedCost: stage.amount,
+              evidenceToReview: stage.evidence || [],
             })),
           },
         },
@@ -1603,13 +1626,21 @@ export class ContractorsService {
         phaseNames: phases.map((phase: any) => String(phase?.name || '')).filter(Boolean),
       });
     }
-    const scope = buildInspectionScope({
+    let scope = buildInspectionScope({
       signedTotal,
       quoteText,
       cataloguePhases: phases,
       suggestion,
       fileReadable: quoteText.length > 0,
     });
+    if (quoteText && scope.stages.some((stage) => (stage.evidence || []).length < 2)) {
+      const described = await this.openAIService.describeStageEvidence({
+        projectName: request.project?.name || '',
+        quoteText,
+        stages: scope.stages.map((stage) => ({ name: stage.name, doneWhen: stage.doneWhen })),
+      });
+      if (described) scope = { ...scope, stages: applyDescribedEvidence(scope.stages, described) };
+    }
     return { quoteFileUrl, scope };
   }
 
