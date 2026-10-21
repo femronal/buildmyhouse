@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine, MessageCircle } from "lucide-react-native";
 import { useState } from "react";
@@ -10,6 +10,25 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadFile } from '@/utils/fileUpload';
 import { useResponsivePadding } from '@/lib/responsive-layout';
+import { useAppAlert } from '../../components/AppAlertProvider';
+
+const MATERIAL_UNITS = ['bags', 'kg', 'pieces', 'liters', 'meters', 'tonnes'] as const;
+
+type MaterialFieldErrors = {
+  name: boolean;
+  quantity: boolean;
+  unitPrice: boolean;
+  photo: boolean;
+  receipt: boolean;
+};
+
+const emptyMaterialErrors = (): MaterialFieldErrors => ({
+  name: false,
+  quantity: false,
+  unitPrice: false,
+  photo: false,
+  receipt: false,
+});
 
 const getFileIcon = (type: string) => {
   switch (type) {
@@ -29,6 +48,9 @@ const getFileIcon = (type: string) => {
 
 export default function GCStageDetailScreen() {
   const router = useRouter();
+  const { showAlert } = useAppAlert();
+  const { width: screenWidth } = useWindowDimensions();
+  const unitLabelSize = screenWidth < 480 ? 10 : 12;
   const { stageId, name, status, projectId } = useLocalSearchParams();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'materials' | 'team' | 'files'>('materials');
@@ -96,6 +118,8 @@ export default function GCStageDetailScreen() {
     photoName: '' as string,
     receiptName: '' as string,
   });
+  const [materialFieldErrors, setMaterialFieldErrors] = useState<MaterialFieldErrors>(emptyMaterialErrors);
+  const [materialSubmitError, setMaterialSubmitError] = useState('');
   
   const [fileForm, setFileForm] = useState({
     type: 'photo' as 'photo' | 'video' | 'document',
@@ -478,10 +502,14 @@ export default function GCStageDetailScreen() {
         photoName: '',
         receiptName: '',
       });
-      Alert.alert('Success', 'Material added successfully');
+      setMaterialFieldErrors(emptyMaterialErrors());
+      setMaterialSubmitError('');
+      showAlert('Material added', 'The material was saved.');
     },
     onError: (error: any) => {
-      Alert.alert('Error', error?.message || 'Failed to add material');
+      const message = error?.message || 'The material was not saved. Check the connection and try again.';
+      setMaterialSubmitError(message);
+      showAlert('Could not add this material', message);
     },
   });
 
@@ -587,10 +615,28 @@ export default function GCStageDetailScreen() {
   };
 
   const handleAddMaterial = () => {
-    if (!materialForm.name || !materialForm.quantity || !materialForm.unitPrice) {
-      Alert.alert('Required Fields', 'Name, quantity, and unit price are required');
+    const errors: MaterialFieldErrors = {
+      name: !String(materialForm.name || '').trim(),
+      quantity: !(Number(materialForm.quantity) > 0),
+      unitPrice: !(Number(materialForm.unitPrice) > 0),
+      photo: !materialForm.photoUri,
+      receipt: !materialForm.receiptUri,
+    };
+    setMaterialFieldErrors(errors);
+    const missing = [
+      errors.name ? 'material name' : '',
+      errors.quantity ? 'quantity' : '',
+      errors.unitPrice ? 'unit price' : '',
+      errors.photo ? 'material photo' : '',
+      errors.receipt ? 'receipt' : '',
+    ].filter(Boolean);
+    if (missing.length > 0) {
+      const message = `Add ${missing.join(', ')} before submitting.`;
+      setMaterialSubmitError(message);
+      showAlert('Could not add this material', message);
       return;
     }
+    setMaterialSubmitError('');
     addMaterialMutation.mutate(materialForm);
   };
 
@@ -1801,16 +1847,27 @@ export default function GCStageDetailScreen() {
               <Text className="text-2xl text-white" style={{ fontFamily: 'Poppins_700Bold' }}>
                 Add Material
               </Text>
-              <TouchableOpacity onPress={() => setShowMaterialModal(false)}>
+              <TouchableOpacity onPress={() => {
+                setMaterialFieldErrors(emptyMaterialErrors());
+                setMaterialSubmitError('');
+                setShowMaterialModal(false);
+              }}>
                 <X size={24} color="#FFFFFF" strokeWidth={2} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* Photo Upload */}
+              {materialSubmitError ? (
+                <Text className="text-red-400 mb-4" style={{ fontFamily: 'Poppins_500Medium', lineHeight: 20 }}>
+                  {materialSubmitError}
+                </Text>
+              ) : null}
               <TouchableOpacity
-                onPress={() => pickImage('photo')}
-                className="bg-[#0A1628] rounded-xl p-6 mb-4 items-center border border-blue-900"
+                onPress={() => {
+                  setMaterialFieldErrors((prev) => ({ ...prev, photo: false }));
+                  pickImage('photo');
+                }}
+                className={`bg-[#0A1628] rounded-xl p-6 mb-4 items-center border ${materialFieldErrors.photo ? 'border-red-500' : 'border-blue-900'}`}
               >
                 {materialForm.photoUri ? (
                   <View className="items-center">
@@ -1831,24 +1888,27 @@ export default function GCStageDetailScreen() {
                   </View>
                 ) : (
                   <>
-                    <Camera size={32} color="#6B7280" strokeWidth={2} />
-                    <Text className="text-gray-400 mt-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                      Add Material Photo
+                    <Camera size={32} color={materialFieldErrors.photo ? '#F87171' : '#6B7280'} strokeWidth={2} />
+                    <Text className={`mt-2 ${materialFieldErrors.photo ? 'text-red-400' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                      Add Material Photo *
                     </Text>
                   </>
                 )}
               </TouchableOpacity>
 
               {/* Name */}
-              <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+              <Text className={`mb-2 ${materialFieldErrors.name ? 'text-red-400' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
                 Material Name *
               </Text>
               <TextInput
                 value={materialForm.name}
-                onChangeText={(text) => setMaterialForm(prev => ({ ...prev, name: text }))}
+                onChangeText={(text) => {
+                  setMaterialFieldErrors((prev) => ({ ...prev, name: false }));
+                  setMaterialForm(prev => ({ ...prev, name: text }));
+                }}
                 placeholder="Enter material name"
                 placeholderTextColor="#6B7280"
-                className="bg-[#0A1628] rounded-xl p-4 mb-4 text-white border border-blue-900"
+                className={`bg-[#0A1628] rounded-xl p-4 mb-4 text-white border ${materialFieldErrors.name ? 'border-red-500' : 'border-blue-900'}`}
                 style={{ fontFamily: 'Poppins_400Regular' }}
               />
 
@@ -1866,61 +1926,60 @@ export default function GCStageDetailScreen() {
               />
 
               {/* Quantity and Unit */}
-              <View className="flex-row mb-4">
-                <View className="flex-1 mr-2">
-                  <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Quantity *
-                  </Text>
-                  <TextInput
-                    value={materialForm.quantity}
-                    onChangeText={(text) => setMaterialForm(prev => ({ ...prev, quantity: text }))}
-                    placeholder="0"
-                    placeholderTextColor="#6B7280"
-                    keyboardType="decimal-pad"
-                    className="bg-[#0A1628] rounded-xl p-4 text-white border border-blue-900"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  />
-                </View>
-                <View className="flex-1 ml-2">
-                  <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Unit
-                  </Text>
-                  <View className="flex-row">
-                    {['bags', 'kg', 'pieces', 'liters', 'meters'].map((unit) => (
-                      <TouchableOpacity
-                        key={unit}
-                        onPress={() => setMaterialForm(prev => ({ ...prev, unit }))}
-                        className={`flex-1 py-3 rounded-xl mr-1 border ${
-                          materialForm.unit === unit
-                            ? 'bg-blue-600 border-blue-600'
-                            : 'bg-[#0A1628] border-blue-900'
-                        }`}
-                      >
-                        <Text
-                          className={`text-center text-xs ${
-                            materialForm.unit === unit ? 'text-white' : 'text-gray-400'
-                          }`}
-                          style={{ fontFamily: 'Poppins_500Medium' }}
-                        >
-                          {unit}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
+              <Text className={`mb-2 ${materialFieldErrors.quantity ? 'text-red-400' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
+                Quantity *
+              </Text>
+              <TextInput
+                value={materialForm.quantity}
+                onChangeText={(text) => {
+                  setMaterialFieldErrors((prev) => ({ ...prev, quantity: false }));
+                  setMaterialForm(prev => ({ ...prev, quantity: text }));
+                }}
+                placeholder="0"
+                placeholderTextColor="#6B7280"
+                keyboardType="decimal-pad"
+                className={`bg-[#0A1628] rounded-xl p-4 mb-4 text-white border ${materialFieldErrors.quantity ? 'border-red-500' : 'border-blue-900'}`}
+                style={{ fontFamily: 'Poppins_400Regular' }}
+              />
+              <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+                Unit
+              </Text>
+              <View className="flex-row flex-wrap mb-4" style={{ gap: 6 }}>
+                {MATERIAL_UNITS.map((unit) => (
+                  <TouchableOpacity
+                    key={unit}
+                    onPress={() => setMaterialForm(prev => ({ ...prev, unit }))}
+                    className={`px-2.5 py-1.5 rounded-full border ${
+                      materialForm.unit === unit
+                        ? 'bg-blue-600 border-blue-600'
+                        : 'bg-[#0A1628] border-blue-900'
+                    }`}
+                  >
+                    <Text
+                      numberOfLines={1}
+                      className={materialForm.unit === unit ? 'text-white' : 'text-gray-400'}
+                      style={{ fontFamily: 'Poppins_500Medium', fontSize: unitLabelSize }}
+                    >
+                      {unit}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
               </View>
 
               {/* Unit Price */}
-              <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
+              <Text className={`mb-2 ${materialFieldErrors.unitPrice ? 'text-red-400' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
                 Unit Price *
               </Text>
               <TextInput
                 value={materialForm.unitPrice}
-                onChangeText={(text) => setMaterialForm(prev => ({ ...prev, unitPrice: text }))}
+                onChangeText={(text) => {
+                  setMaterialFieldErrors((prev) => ({ ...prev, unitPrice: false }));
+                  setMaterialForm(prev => ({ ...prev, unitPrice: text }));
+                }}
                 placeholder="Enter price per unit"
                 placeholderTextColor="#6B7280"
                 keyboardType="decimal-pad"
-                className="bg-[#0A1628] rounded-xl p-4 mb-4 text-white border border-blue-900"
+                className={`bg-[#0A1628] rounded-xl p-4 mb-4 text-white border ${materialFieldErrors.unitPrice ? 'border-red-500' : 'border-blue-900'}`}
                 style={{ fontFamily: 'Poppins_400Regular' }}
               />
 
@@ -1952,13 +2011,16 @@ export default function GCStageDetailScreen() {
 
               {/* Receipt Upload */}
               <TouchableOpacity
-                onPress={() => pickImage('receipt')}
-                className="bg-[#0A1628] rounded-xl p-4 mb-4 flex-row items-center border border-blue-900"
+                onPress={() => {
+                  setMaterialFieldErrors((prev) => ({ ...prev, receipt: false }));
+                  pickImage('receipt');
+                }}
+                className={`bg-[#0A1628] rounded-xl p-4 mb-4 flex-row items-center border ${materialFieldErrors.receipt ? 'border-red-500' : 'border-blue-900'}`}
               >
-                <FileText size={20} color="#6B7280" strokeWidth={2} />
+                <FileText size={20} color={materialFieldErrors.receipt ? '#F87171' : '#6B7280'} strokeWidth={2} />
                 <View className="flex-1 ml-2">
-                  <Text className="text-gray-400" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {materialForm.receiptUri ? (materialForm.receiptName || 'Receipt uploaded') : 'Upload Receipt'}
+                  <Text className={materialFieldErrors.receipt ? 'text-red-400' : 'text-gray-400'} style={{ fontFamily: 'Poppins_400Regular' }}>
+                    {materialForm.receiptUri ? (materialForm.receiptName || 'Receipt uploaded') : 'Upload Receipt *'}
                   </Text>
                 </View>
                 {materialForm.receiptUri && (
@@ -2005,7 +2067,11 @@ export default function GCStageDetailScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => setShowMaterialModal(false)}
+                onPress={() => {
+                  setMaterialFieldErrors(emptyMaterialErrors());
+                  setMaterialSubmitError('');
+                  setShowMaterialModal(false);
+                }}
                 className="py-3"
               >
                 <Text className="text-gray-400 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>

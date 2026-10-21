@@ -12,7 +12,7 @@ export class CreateStageMaterialDto {
   quantity: number;
 
   @IsString()
-  unit: string; // 'kg' | 'bags' | 'pieces' | 'liters' | 'meters' | etc.
+  unit: string; // 'kg' | 'bags' | 'pieces' | 'liters' | 'meters' | 'tonnes' | etc.
 
   @IsNumber()
   unitPrice: number;
