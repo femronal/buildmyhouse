@@ -1,64 +1,56 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Alert, Linking, ActivityIndicator, Modal } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert, Linking, ActivityIndicator, Modal } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Calendar,
-  CheckCircle, 
-  Clock, 
+import {
+  ArrowLeft,
+  MapPin,
+  CheckCircle,
   MessageCircle,
-  ChevronRight,
-  AlertCircle,
   FileText,
   Phone,
-  X,
   Home,
   Lock,
-  Star,
-  Image as ImageIcon
+  Camera,
+  Play,
+  Eye,
+  ThumbsUp,
 } from "lucide-react-native";
 import { useState } from "react";
 import { useProject, useUpdateStageStatus } from "@/hooks/useProjects";
-import { projectService } from "@/services/projectService";
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useGCEarnings } from "@/hooks/useGC";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
-// Format date helper
 const formatDate = (dateString?: string) => {
-  if (!dateString) return 'N/A';
+  if (!dateString) return '';
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '';
   const month = date.toLocaleDateString('en-US', { month: 'short' });
   const year = date.getFullYear();
   return `${month} ${year}`;
 };
 
-// Get initials from name
-const getInitials = (name: string) => {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .substring(0, 2);
+const naira = (value?: number | null) => `₦${Number(value || 0).toLocaleString()}`;
+
+const stageRouteStatus = (status: string) => {
+  if (status === 'completed') return 'complete';
+  if (status === 'in_progress') return 'in-progress';
+  if (status === 'pending_homeowner_approval') return 'pending_homeowner_approval';
+  return 'not-started';
 };
 
 export default function GCProjectDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const projectId = id as string;
-  const [showCompleteModal, setShowCompleteModal] = useState(false);
-  const [selectedStage, setSelectedStage] = useState<any>(null);
-  const [confirmations, setConfirmations] = useState({
-    stageComplete: false,
-    evidenceProvided: false,
-  });
-  
+  const [stepsExpanded, setStepsExpanded] = useState(false);
+
   const { data: project, isLoading: projectLoading, error: projectError, refetch } = useProject(projectId || null);
+  const { data: earnings = [], isLoading: loadingEarnings } = useGCEarnings();
   const updateStageStatusMutation = useUpdateStageStatus();
   const { data: currentUser } = useCurrentUser();
   
@@ -82,9 +74,6 @@ export default function GCProjectDetailScreen() {
   const { data: unreadCount = 0 } = useConversationUnreadCount(conversation?.id);
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
-
-  // Reviews/marketplace removed for MVP
-  const projectReview = null;
 
   const handleDownloadPDF = async () => {
     const rawProjectPdfUrl =
@@ -150,30 +139,6 @@ export default function GCProjectDetailScreen() {
       refetch(); // Refetch to update UI
     } catch (error: any) {
       Alert.alert('Error', error?.message || 'Failed to start stage. Please try again.');
-    }
-  };
-
-  const handleConfirmComplete = async () => {
-    if (!confirmations.stageComplete || !confirmations.evidenceProvided) {
-      Alert.alert('Confirmation Required', 'Please confirm both conditions before marking the stage as complete.');
-      return;
-    }
-
-    if (!id || !selectedStage) return;
-
-    try {
-      await projectService.submitStageForApproval(id as string, selectedStage.id);
-      setShowCompleteModal(false);
-      setSelectedStage(null);
-      setConfirmations({ stageComplete: false, evidenceProvided: false });
-      refetch();
-      const firstName = String(project?.homeowner?.fullName || 'the homeowner').trim().split(' ')[0];
-      Alert.alert(
-        'Waiting for approval',
-        `Project will be completed once ${firstName} approves the evidence you have submitted.`,
-      );
-    } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to complete stage. Please try again.');
     }
   };
 
@@ -276,7 +241,7 @@ export default function GCProjectDetailScreen() {
 
   const stages = project.stages || [];
   const homeowner = project.homeowner;
-  const homeownerInitials = getInitials(homeowner?.fullName || 'Homeowner');
+  const homeownerName = homeowner?.fullName || 'Homeowner';
   const homeownerPhotoUrls = (() => {
     const normalizedFromHomeownerFiles = Array.isArray((project as any)?.homeownerFiles?.photoUrls)
       ? (project as any).homeownerFiles.photoUrls
@@ -306,13 +271,33 @@ export default function GCProjectDetailScreen() {
     const singleImage = String(aiAnalysis?.projectImageUrl || '').trim();
     return singleImage ? [singleImage] : [];
   })();
-  const homeownerPdfFileName =
-    (project as any)?.homeownerFiles?.pdfFileName ||
-    project?.planFileName ||
-    'plan.pdf';
-  
-  // Check if project is complete (all stages completed)
-  const isProjectComplete = stages.length > 0 && stages.every((stage: any) => stage.status === 'completed');
+  const hasPlan = !!((project as any)?.homeownerFiles?.hasPdf || project?.planPdfUrl);
+  const dueLabel = formatDate(project.dueDate);
+  const jobMoney = loadingEarnings ? null : earnings.find((item) => item.id === project.id);
+  const activeIndex = stages.findIndex(
+    (stage: any) => stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval',
+  );
+  const focusIndex = activeIndex >= 0
+    ? activeIndex
+    : stages.findIndex((stage: any, index: number) => stage.status === 'not_started' && canStartStage(index, stages));
+  const currentStage = focusIndex >= 0 ? stages[focusIndex] : null;
+  const allDone = stages.length > 0 && stages.every((stage: any) => stage.status === 'completed');
+  const doneStages = stages.filter((stage: any) => stage.status === 'completed');
+  const lockedStages = focusIndex >= 0 ? stages.slice(focusIndex + 1) : [];
+  const progress = Math.max(0, Math.min(100, Math.round(Number(project.progress || 0))));
+
+  const openHomeownerChat = () => {
+    const ownerId = (project as any)?.homeownerId || homeowner?.id;
+    if (ownerId) {
+      router.push(`/contractor/chat?projectId=${project.id}&userId=${ownerId}&name=${encodeURIComponent(homeownerName)}`);
+      return;
+    }
+    router.push(`/contractor/chat?projectId=${project.id}`);
+  };
+
+  const openStage = (stage: any) => {
+    router.push(`/contractor/stage-detail?stageId=${stage.id}&name=${encodeURIComponent(stage.name)}&status=${stageRouteStatus(stage.status)}&projectId=${projectId}`);
+  };
 
   const handleOpenPhoto = async (rawUrl?: string | null) => {
     const normalized = getBackendAssetUrl(rawUrl);
@@ -336,28 +321,20 @@ export default function GCProjectDetailScreen() {
     <View className="flex-1 bg-[#0A1628]">
       <View className="pb-4" style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}>
         <View className="flex-row items-center mb-4 flex-wrap gap-2">
-          <TouchableOpacity 
-            onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')} 
+          <TouchableOpacity
+            onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')}
             className="w-10 h-10 bg-black/50 rounded-full items-center justify-center mr-3"
           >
             <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => router.push('/contractor/gc-dashboard')} 
+          <TouchableOpacity
+            onPress={() => router.push('/contractor/gc-dashboard')}
             className="w-10 h-10 bg-black/50 rounded-full items-center justify-center"
           >
             <Home size={20} color="#FFFFFF" strokeWidth={2} />
           </TouchableOpacity>
-          <TouchableOpacity 
-            onPress={() => {
-              const homeownerId = (project as any)?.homeownerId || (project as any)?.homeowner?.id;
-              const homeownerName = (project as any)?.homeowner?.fullName || 'Homeowner';
-              if (homeownerId) {
-                router.push(`/contractor/chat?projectId=${project.id}&userId=${homeownerId}&name=${encodeURIComponent(homeownerName)}`);
-              } else {
-                router.push(`/contractor/chat?projectId=${project.id}`);
-              }
-            }}
+          <TouchableOpacity
+            onPress={openHomeownerChat}
             className="ml-auto w-10 h-10 bg-black/50 rounded-full items-center justify-center"
           >
             <MessageCircle size={20} color="#FFFFFF" strokeWidth={2} />
@@ -370,19 +347,21 @@ export default function GCProjectDetailScreen() {
             )}
           </TouchableOpacity>
         </View>
-        
-        <Text 
-          className="text-3xl text-white mb-2"
-          style={{ fontFamily: 'Poppins_800ExtraBold' }}
-        >
+
+        <Text className="text-white mb-2" style={{ fontFamily: 'Poppins_800ExtraBold', fontSize: 24, lineHeight: 32 }}>
           {project.name}
         </Text>
-        <View className="flex-row items-center mb-4">
-          <MapPin size={16} color="#6B7280" strokeWidth={2} />
-          <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+        <View className="flex-row items-center">
+          <MapPin size={16} color="#CBD5E1" strokeWidth={2} />
+          <Text className="ml-2 flex-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
             {project.address}
           </Text>
         </View>
+        {dueLabel ? (
+          <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+            Due {dueLabel}
+          </Text>
+        ) : null}
       </View>
 
       <ScrollView
@@ -390,507 +369,299 @@ export default function GCProjectDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: horizontalPad,
-          paddingBottom: scrollBottomPadding,
+          paddingBottom: scrollBottomPadding + 48,
         }}
       >
-        {/* Homeowner Info */}
-        <View className="bg-[#1E3A5F] rounded-xl p-4 mb-6 border border-blue-900">
-          <View className="flex-row items-center">
-            <View className="w-12 h-12 bg-blue-600 rounded-full items-center justify-center">
-              <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>{homeownerInitials}</Text>
-            </View>
-            <View className="flex-1 ml-3">
-              <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{homeowner?.fullName || 'Homeowner'}</Text>
-              <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Homeowner</Text>
-            </View>
-            <TouchableOpacity 
-              onPress={handleContactHomeowner}
-              className="bg-blue-600 rounded-full px-4 py-2 flex-row items-center"
-            >
-              <Phone size={14} color="#FFFFFF" strokeWidth={2} />
-              <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>Contact</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Homeowner Files */}
-        <View className="bg-[#1E3A5F] rounded-xl p-4 mb-6 border border-blue-900">
-          <Text className="text-white text-lg mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            Homeowner Reference Files
-          </Text>
-          <View className="flex-row flex-wrap mb-3">
-            <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2">
-              <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Photos: {homeownerPhotoUrls.length}
-              </Text>
-            </View>
-            <View className="bg-blue-600/20 rounded-full px-3 py-1 mr-2 mb-2">
-              <Text className="text-blue-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                PDF: {((project as any)?.homeownerFiles?.hasPdf || !!project?.planPdfUrl) ? 'Available' : 'Not provided'}
-              </Text>
-            </View>
-          </View>
-
-          {((project as any)?.homeownerFiles?.hasPdf || !!project?.planPdfUrl) && (
-            <TouchableOpacity
-              onPress={handleDownloadPDF}
-              className="bg-blue-600 rounded-lg px-4 py-3 flex-row items-center justify-center mb-4"
-            >
-              <FileText size={16} color="#FFFFFF" strokeWidth={2} />
-              <Text className="text-white text-sm ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                Open Plan PDF ({homeownerPdfFileName})
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {homeownerPhotoUrls.length > 0 ? (
-            <>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {homeownerPhotoUrls.map((url: string, index: number) => {
-                  const assetUrl = getBackendAssetUrl(url);
-                  return (
-                    <TouchableOpacity
-                      key={`${url}-${index}`}
-                      onPress={() => handleOpenPhoto(assetUrl)}
-                      className="mr-3"
-                      activeOpacity={0.85}
-                    >
-                      <View className="w-28 h-28 rounded-xl overflow-hidden bg-[#0A1628] border border-blue-900">
-                        <Image source={{ uri: assetUrl }} className="w-full h-full" resizeMode="cover" />
-                      </View>
-                      <Text
-                        className="text-gray-400 text-xs mt-1 max-w-[112px]"
-                        style={{ fontFamily: 'Poppins_400Regular' }}
-                        numberOfLines={1}
-                      >
-                        Photo {index + 1}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-              <Text className="text-gray-500 text-xs mt-3" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Tap a photo to open full-size.
-              </Text>
-            </>
-          ) : (
-            <View className="bg-[#0A1628] rounded-lg px-4 py-3 border border-blue-900 flex-row items-center">
-              <ImageIcon size={16} color="#6B7280" strokeWidth={2} />
-              <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                No homeowner photos uploaded.
-              </Text>
-            </View>
-          )}
-        </View>
-
-        {/* Stats Row */}
-        <View className="flex-row mb-6">
-          <View className="flex-1 bg-[#1E3A5F] rounded-xl p-4 mr-2 border border-blue-900">
-            <View className="flex-row items-center mb-1">
-              <Text className="text-green-500 text-xs" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
-              <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-            </View>
-            <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-              ₦{(project.budget || 0).toLocaleString()}
+        {stages.length === 0 ? (
+          <View className="bg-[#1E3A5F] rounded-xl p-6 items-center border border-blue-900 mb-6">
+            <Text className="text-white text-lg mt-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+              No Stages Yet
+            </Text>
+            <Text className="text-center mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+              Stages will appear here once the project is activated
             </Text>
           </View>
-          <View className="flex-1 bg-[#1E3A5F] rounded-xl p-4 mx-2 border border-blue-900">
-            <View className="flex-row items-center mb-1">
-              <Calendar size={16} color="#F59E0B" strokeWidth={2} />
-              <Text className="text-gray-400 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>Due</Text>
-            </View>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              {formatDate(project.dueDate)}
+        ) : allDone ? (
+          <View className="bg-green-900/40 rounded-2xl p-5 mb-6 border border-green-500">
+            <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+              All steps done. Well done!
             </Text>
           </View>
-          <View className="flex-1 bg-blue-600 rounded-xl p-4 ml-2">
-            <View className="flex-row items-center mb-1">
-              <CheckCircle size={16} color="#FFFFFF" strokeWidth={2} />
-              <Text className="text-white/70 text-xs ml-1" style={{ fontFamily: 'Poppins_400Regular' }}>Progress</Text>
-            </View>
-            <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
-              {project.progress || 0}%
+        ) : currentStage ? (
+          <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border-2 border-blue-600">
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: '#93C5FD' }}>
+              DO THIS NOW · STEP {focusIndex + 1} OF {stages.length}
             </Text>
-          </View>
-        </View>
-
-        {/* Progress Timeline - Stages */}
-        <View className="mb-6">
-          <View className="flex-row items-center justify-between mb-4">
-            <View className="flex-row items-center">
-              <Calendar size={24} color="#FFFFFF" strokeWidth={2} />
-              <Text 
-                className="text-xl text-white ml-2"
-                style={{ fontFamily: 'Poppins_700Bold' }}
-              >
-                Project Stages
-              </Text>
-            </View>
-            <Text 
-              className="text-gray-400 text-sm"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              {stages.filter((s: any) => s.status === 'completed').length}/{stages.length} Complete
+            <Text className="text-white mt-2" numberOfLines={2} style={{ fontFamily: 'Poppins_700Bold', fontSize: 21, lineHeight: 28 }}>
+              {currentStage.name}
             </Text>
-          </View>
-          
-          {stages.length === 0 ? (
-            <View className="bg-[#1E3A5F] rounded-xl p-6 items-center border border-blue-900">
-              <Clock size={48} color="#6B7280" strokeWidth={1.5} />
-              <Text className="text-gray-400 text-lg mt-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                No Stages Yet
-              </Text>
-              <Text className="text-gray-500 text-sm mt-2 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Stages will appear here once the project is activated
-              </Text>
-            </View>
-          ) : (
-            stages.map((stage: any, index: number) => {
-              const isClickable = stage.status === 'completed' || stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval';
-              const canStart = stage.status === 'not_started' && canStartStage(index, stages);
-              const isLocked = stage.status === 'not_started' && !canStartStage(index, stages);
-
-              const getDisplayStatus = (status: string) => {
-                switch (status) {
-                  case 'completed':
-                    return 'complete';
-                  case 'in_progress':
-                    return 'in-progress';
-                  case 'pending_homeowner_approval':
-                    return 'pending_homeowner_approval';
-                  default:
-                    return 'not-started';
-                }
-              };
-
-              const getStatusBadge = (status: string) => {
-                switch (status) {
-                  case 'completed':
-                    return (
-                      <View className="bg-green-600 rounded-full px-3 py-1">
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>Complete</Text>
-                      </View>
-                    );
-                  case 'in_progress':
-                    return (
-                      <View className="bg-blue-600 rounded-full px-3 py-1">
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>In Progress</Text>
-                      </View>
-                    );
-                  case 'pending_homeowner_approval':
-                    return (
-                      <View className="bg-gray-500 rounded-full px-3 py-1">
-                        <Text className="text-white text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>Waiting for approval</Text>
-                      </View>
-                    );
-                  default:
-                    return (
-                      <View className="bg-gray-600/20 rounded-full px-3 py-1">
-                        <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>Not Started</Text>
-                      </View>
-                    );
-                }
-              };
-
-              const getStatusIcon = (status: string) => {
-                switch (status) {
-                  case 'completed':
-                    return <CheckCircle size={20} color="#10B981" strokeWidth={2} />;
-                  case 'in_progress':
-                    return <Clock size={20} color="#3B82F6" strokeWidth={2} />;
-                  default:
-                    return <View className="w-10 h-10 bg-gray-600/20 rounded-full items-center justify-center">
-                      <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>{index + 1}</Text>
-                    </View>;
-                }
-              };
-
-              return (
-                <TouchableOpacity
-                  key={stage.id}
-                  onPress={() => {
-                    if (isClickable) {
-                      router.push(`/contractor/stage-detail?stageId=${stage.id}&name=${encodeURIComponent(stage.name)}&status=${getDisplayStatus(stage.status)}&projectId=${projectId}`);
-                    }
-                  }}
-                  disabled={!isClickable && !canStart}
-                  className={`bg-[#1E3A5F] rounded-xl p-4 mb-3 border border-blue-900 ${!isClickable && !canStart ? 'opacity-60' : ''}`}
-                >
-                  <View className="flex-row items-center">
-                    {getStatusIcon(stage.status)}
-                    <View className="flex-1 ml-3">
-                      <Text className={`text-base ${isClickable ? 'text-white' : 'text-gray-400'}`} style={{ fontFamily: 'Poppins_600SemiBold' }}>{stage.name}</Text>
-                      <Text className={`text-sm ${isClickable ? 'text-gray-400' : 'text-gray-500'}`} style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                        ₦{(stage.estimatedCost || 0).toLocaleString()}
-                      </Text>
-                    </View>
-                    {getStatusBadge(stage.status)}
-                    {isClickable && (
-                      <ChevronRight size={20} color="#6B7280" strokeWidth={2} className="ml-2" />
-                    )}
-                  </View>
-                  
-                  {isLocked && (
-                    <View className="bg-gray-700/50 rounded-lg py-3 mt-3 items-center">
-                      <Text className="text-gray-400 text-center text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>
-                        Complete previous stage to unlock
-                      </Text>
-                    </View>
-                  )}
-
-                  {canStart && (
-                    <TouchableOpacity 
-                      onPress={(e) => {
-                        e.stopPropagation();
-                        handleStartStage(stage.id);
-                      }}
-                      disabled={updateStageStatusMutation.isPending}
-                      className={`bg-blue-600 rounded-lg py-3 mt-3 ${updateStageStatusMutation.isPending ? 'opacity-50' : ''}`}
-                    >
-                      {updateStageStatusMutation.isPending ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                      ) : (
-                        <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          Start Stage
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
-                </TouchableOpacity>
-              );
-            })
-          )}
-        </View>
-
-        {/* Project Rating Section */}
-        <View className="mb-6">
-          {isProjectComplete && projectReview && projectReview.rating ? (
-            // Show actual review if project is complete and review exists
-            <View className="bg-[#1E3A5F] rounded-xl p-5 border border-blue-900">
-              <View className="flex-row items-center mb-3">
-                <Star size={24} color="#FCD34D" strokeWidth={2} fill="#FCD34D" />
-                <Text 
-                  className="text-white text-lg ml-2"
-                  style={{ fontFamily: 'Poppins_700Bold' }}
-                >
-                  Homeowner&apos;s Rating
-                </Text>
-              </View>
-              
-              {/* Star Display */}
-              <View className="flex-row items-center mb-3">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    size={20}
-                    color={star <= (projectReview.rating || 0) ? "#FCD34D" : "#4B5563"}
-                    strokeWidth={star <= (projectReview.rating || 0) ? 0 : 2}
-                    fill={star <= (projectReview.rating || 0) ? "#FCD34D" : "transparent"}
-                  />
-                ))}
-                <Text 
-                  className="text-gray-300 ml-2"
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  {projectReview.rating} out of 5
-                </Text>
-              </View>
-
-              {/* Feedback Display */}
-              {projectReview.comment && (
-                <View className="bg-[#0A1628] rounded-xl p-4 border border-blue-900">
-                  <Text 
-                    className="text-gray-300 text-sm"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    &quot;{projectReview.comment}&quot;
-                  </Text>
-                  {projectReview.user && (
-                    <Text 
-                      className="text-gray-500 text-xs mt-2"
-                      style={{ fontFamily: 'Poppins_400Regular' }}
-                    >
-                      — {projectReview.user.fullName}
-                    </Text>
-                  )}
-                </View>
-              )}
-            </View>
-          ) : (
-            // Show reminder message if project is not complete
-            <View className="bg-[#1E3A5F] rounded-xl p-5 border border-blue-900">
-              <View className="flex-row items-center mb-3">
-                <AlertCircle size={24} color="#FCD34D" strokeWidth={2} />
-                <Text 
-                  className="text-white text-lg ml-2"
-                  style={{ fontFamily: 'Poppins_700Bold' }}
-                >
-                  Project Review Reminder
-                </Text>
-              </View>
-              
-              <View className="bg-[#0A1628] rounded-xl p-4 border border-blue-900">
-                <Text 
-                  className="text-gray-300 text-sm leading-6"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  Your work will be reviewed by the homeowner once all project stages are completed. Please maintain honesty and transparency throughout the building process by:
-                </Text>
-                <View className="mt-3 space-y-2">
-                  <View className="flex-row items-start">
-                    <Text className="text-blue-400 mr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>•</Text>
-                    <Text className="text-gray-300 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Providing accurate documentation (photos, videos, receipts) for each stage
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-blue-400 mr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>•</Text>
-                    <Text className="text-gray-300 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Communicating clearly with the homeowner about progress and any issues
-                    </Text>
-                  </View>
-                  <View className="flex-row items-start">
-                    <Text className="text-blue-400 mr-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>•</Text>
-                    <Text className="text-gray-300 text-sm flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                      Ensuring quality workmanship that meets or exceeds specifications
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Completion Confirmation Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={showCompleteModal}
-        onRequestClose={() => {
-          setShowCompleteModal(false);
-          setSelectedStage(null);
-          setConfirmations({ stageComplete: false, evidenceProvided: false });
-        }}
-      >
-        <View className="flex-1 justify-end bg-black/50">
-          <View className="bg-[#1E3A5F] rounded-t-3xl p-6 max-h-[80%] border-t border-blue-900">
-            {/* Header */}
-            <View className="flex-row items-center justify-between mb-6">
-              <View className="flex-1">
-                <Text className="text-black text-2xl mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Confirm Stage Completion
-                </Text>
-                <Text className="text-gray-500 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {selectedStage?.name}
-                </Text>
-              </View>
+            <Text className="mt-2 mb-4" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, lineHeight: 22, color: '#CBD5E1' }}>
+              {currentStage.status === 'pending_homeowner_approval'
+                ? 'Waiting for the homeowner to check your work.'
+                : currentStage.status === 'in_progress'
+                  ? 'When you finish, take photos so the homeowner can see.'
+                  : 'Start this step when you are ready.'}
+            </Text>
+            {currentStage.status === 'not_started' ? (
               <TouchableOpacity
-                onPress={() => {
-                  setShowCompleteModal(false);
-                  setSelectedStage(null);
-                  setConfirmations({ stageComplete: false, evidenceProvided: false });
-                }}
-                className="ml-4"
-              >
-                <X size={24} color="#6B7280" strokeWidth={2} />
-              </TouchableOpacity>
-            </View>
-
-            {/* Warning */}
-            <View className="bg-yellow-50 rounded-xl p-4 mb-6 border border-yellow-200">
-              <View className="flex-row items-start">
-                <AlertCircle size={20} color="#F59E0B" strokeWidth={2} className="mt-0.5" />
-                <View className="flex-1 ml-3">
-                  <Text className="text-yellow-800 text-sm mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Important Confirmation Required
-                  </Text>
-                  <Text className="text-gray-600 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Please confirm both conditions below before marking this stage as complete. This action will notify the homeowner.
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Confirmation Checkboxes */}
-            <View className="mb-6">
-              <TouchableOpacity
-                onPress={() => setConfirmations(prev => ({ ...prev, stageComplete: !prev.stageComplete }))}
-                className="flex-row items-start mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200"
-              >
-                <View className={`w-6 h-6 rounded border-2 mr-3 mt-0.5 items-center justify-center ${
-                  confirmations.stageComplete ? 'bg-black border-black' : 'border-gray-400'
-                }`}>
-                  {confirmations.stageComplete && (
-                    <CheckCircle size={16} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
-                  )}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Stage is Truly Complete
-                  </Text>
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    I confirm that this stage of the building process has been fully completed according to specifications.
-                  </Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => setConfirmations(prev => ({ ...prev, evidenceProvided: !prev.evidenceProvided }))}
-                className="flex-row items-start p-4 bg-gray-50 rounded-xl border border-gray-200"
-              >
-                <View className={`w-6 h-6 rounded border-2 mr-3 mt-0.5 items-center justify-center ${
-                  confirmations.evidenceProvided ? 'bg-black border-black' : 'border-gray-400'
-                }`}>
-                  {confirmations.evidenceProvided && (
-                    <CheckCircle size={16} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
-                  )}
-                </View>
-                <View className="flex-1">
-                  <Text className="text-black text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Evidence Provided to Homeowner
-                  </Text>
-                  <Text className="text-gray-600 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    I confirm that the homeowner has been provided with sufficient evidence (pictures, videos, documents) documenting this building process stage.
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Action Buttons */}
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={() => {
-                  setShowCompleteModal(false);
-                  setSelectedStage(null);
-                  setConfirmations({ stageComplete: false, evidenceProvided: false });
-                }}
-                className="flex-1 bg-gray-200 rounded-full py-4"
-              >
-                <Text className="text-black text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Cancel
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleConfirmComplete}
-                disabled={!confirmations.stageComplete || !confirmations.evidenceProvided || updateStageStatusMutation.isPending}
-                className={`flex-1 bg-black rounded-full py-4 ${
-                  (!confirmations.stageComplete || !confirmations.evidenceProvided || updateStageStatusMutation.isPending) ? 'opacity-50' : ''
-                }`}
+                onPress={() => handleStartStage(currentStage.id)}
+                disabled={updateStageStatusMutation.isPending}
+                accessibilityRole="button"
+                className="bg-blue-600 rounded-2xl px-4 flex-row items-center justify-center"
+                style={{ minHeight: 64, opacity: updateStageStatusMutation.isPending ? 0.7 : 1 }}
               >
                 {updateStageStatusMutation.isPending ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Confirm & Complete
-                  </Text>
+                  <>
+                    <Play size={20} color="#FFFFFF" strokeWidth={2.2} />
+                    <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                      Start this step
+                    </Text>
+                  </>
                 )}
               </TouchableOpacity>
+            ) : null}
+            {currentStage.status === 'in_progress' ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => openStage(currentStage)}
+                  accessibilityRole="button"
+                  className="bg-blue-600 rounded-2xl px-4 flex-row items-center justify-center"
+                  style={{ minHeight: 64 }}
+                >
+                  <Camera size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Take photos of this step
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => openStage(currentStage)}
+                  accessibilityRole="button"
+                  className="rounded-2xl px-4 flex-row items-center justify-center mt-3"
+                  style={{ minHeight: 64, backgroundColor: '#334E73' }}
+                >
+                  <CheckCircle size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    This step is done
+                  </Text>
+                </TouchableOpacity>
+              </>
+            ) : null}
+            {currentStage.status === 'pending_homeowner_approval' ? (
+              <TouchableOpacity
+                onPress={() => openStage(currentStage)}
+                accessibilityRole="button"
+                className="rounded-2xl px-4 flex-row items-center justify-center"
+                style={{ minHeight: 64, backgroundColor: '#334E73' }}
+              >
+                <Eye size={20} color="#FFFFFF" strokeWidth={2.2} />
+                <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  See this step
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+        ) : null}
+
+        {stages.length > 0 ? (
+          <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">
+            <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Your job steps
+            </Text>
+            {doneStages.map((stage: any) => {
+              const stepNumber = stages.findIndex((item: any) => item.id === stage.id) + 1;
+              return (
+              <TouchableOpacity
+                key={stage.id}
+                onPress={() => openStage(stage)}
+                accessibilityRole="button"
+                className="flex-row items-center py-2"
+                style={{ minHeight: 56 }}
+              >
+                <View className="w-8 h-8 rounded-full bg-green-600 items-center justify-center mr-3">
+                  <CheckCircle size={18} color="#FFFFFF" strokeWidth={2.4} />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white" numberOfLines={2} style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, lineHeight: 22 }}>
+                    {stepNumber}. {stage.name}
+                  </Text>
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                    Done · {naira(stage.estimatedCost)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              );
+            })}
+            {currentStage ? (
+              <View className="flex-row items-center py-2" style={{ minHeight: 56 }}>
+                <View className="w-8 h-8 rounded-full bg-blue-600 items-center justify-center mr-3">
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold', fontSize: 14 }}>
+                    {focusIndex + 1}
+                  </Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white" numberOfLines={2} style={{ fontFamily: 'Poppins_700Bold', fontSize: 16, lineHeight: 22 }}>
+                    {focusIndex + 1}. {currentStage.name}
+                  </Text>
+                  <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                    {currentStage.status === 'pending_homeowner_approval' ? 'Waiting for homeowner' : 'Doing now'} · {naira(currentStage.estimatedCost)}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+            {lockedStages.length > 0 ? (
+              <>
+                <TouchableOpacity
+                  onPress={() => setStepsExpanded((open) => !open)}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: stepsExpanded }}
+                  className="flex-row items-center py-2"
+                  style={{ minHeight: 56 }}
+                >
+                  <View className="w-8 h-8 rounded-full bg-[#0A1628] items-center justify-center mr-3">
+                    <Lock size={16} color="#CBD5E1" strokeWidth={2.2} />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }}>
+                      {lockedStages.length === 1 ? '1 more step' : `${lockedStages.length} more steps`}
+                    </Text>
+                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                      Open after step {focusIndex + 1} · Tap to see
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+                {stepsExpanded ? lockedStages.map((stage: any) => (
+                  <View key={stage.id} className="pl-11 py-2">
+                    <Text numberOfLines={2} style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, lineHeight: 22, color: '#CBD5E1' }}>
+                      {stage.name}
+                    </Text>
+                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                      {naira(stage.estimatedCost)}
+                    </Text>
+                  </View>
+                )) : null}
+              </>
+            ) : null}
+            <Text className="mt-3 mb-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+              Job {progress}% done
+            </Text>
+            <View className="bg-[#0A1628] rounded-full overflow-hidden" style={{ height: 10 }}>
+              <View className="bg-green-500 rounded-full" style={{ height: 10, width: `${progress}%` }} />
             </View>
           </View>
-        </View>
-      </Modal>
+        ) : null}
 
+        <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">
+          <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Your money for this job
+          </Text>
+          {jobMoney ? (
+            <View className="flex-row mb-3">
+              <View className="flex-1 bg-[#0A1628] rounded-xl p-3 mr-2" style={{ minHeight: 88 }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
+                <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                  {naira(jobMoney.earned)}
+                </Text>
+              </View>
+              <View className="flex-1 bg-[#0A1628] rounded-xl p-3 ml-2" style={{ minHeight: 88 }}>
+                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Waiting</Text>
+                <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                  {naira(jobMoney.pending)}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+            Job price {naira(project.budget)}
+          </Text>
+        </View>
+
+        <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">
+          <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Homeowner: {homeownerName}
+          </Text>
+          <View className="flex-row">
+            <TouchableOpacity
+              onPress={handleContactHomeowner}
+              accessibilityRole="button"
+              className="flex-1 bg-blue-600 rounded-2xl px-3 flex-row items-center justify-center mr-2"
+              style={{ minHeight: 64 }}
+            >
+              <Phone size={20} color="#FFFFFF" strokeWidth={2.2} />
+              <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>Call</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={openHomeownerChat}
+              accessibilityRole="button"
+              className="flex-1 rounded-2xl px-3 flex-row items-center justify-center ml-2"
+              style={{ minHeight: 64, backgroundColor: '#16A34A' }}
+            >
+              <MessageCircle size={20} color="#FFFFFF" strokeWidth={2.2} />
+              <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>Message</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {homeownerPhotoUrls.length > 0 || hasPlan ? (
+          <View className="mb-6">
+            <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Homeowner files
+            </Text>
+            <View className="flex-row" style={{ gap: 12 }}>
+              {homeownerPhotoUrls.length > 0 ? (
+                <TouchableOpacity
+                  onPress={() => handleOpenPhoto(homeownerPhotoUrls[0])}
+                  accessibilityRole="button"
+                  className="flex-1 bg-[#1E3A5F] rounded-2xl px-3 flex-row items-center justify-center border border-blue-900"
+                  style={{ minHeight: 56 }}
+                >
+                  <Camera size={18} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    {homeownerPhotoUrls.length === 1 ? '1 photo' : `${homeownerPhotoUrls.length} photos`}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              {hasPlan ? (
+                <TouchableOpacity
+                  onPress={handleDownloadPDF}
+                  accessibilityRole="button"
+                  className="flex-1 bg-[#1E3A5F] rounded-2xl px-3 flex-row items-center justify-center border border-blue-900"
+                  style={{ minHeight: 56 }}
+                >
+                  <FileText size={18} color="#FFFFFF" strokeWidth={2.2} />
+                  <Text className="text-white text-base ml-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Open plan
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
+        <View className="bg-[#1E3A5F] rounded-2xl p-4 border border-blue-900">
+          <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+            Remember
+          </Text>
+          {[
+            { icon: Camera, label: 'Take photos of every step' },
+            { icon: MessageCircle, label: 'Tell the homeowner what you did' },
+            { icon: ThumbsUp, label: 'Do good, clean work' },
+          ].map((item) => {
+            const Icon = item.icon;
+            return (
+              <View key={item.label} className="flex-row items-center mb-3" style={{ minHeight: 56 }}>
+                <View className="w-10 h-10 rounded-full bg-[#0A1628] items-center justify-center mr-3">
+                  <Icon size={18} color="#FFFFFF" strokeWidth={2.2} />
+                </View>
+                <Text className="text-white flex-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, lineHeight: 22 }}>
+                  {item.label}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </ScrollView>
     </View>
   );
 }
