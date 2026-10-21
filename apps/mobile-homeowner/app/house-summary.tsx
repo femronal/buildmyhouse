@@ -300,7 +300,15 @@ export default function HouseSummaryScreen() {
 
   // For design selection, show only the GC who uploaded the design
   // For project flow, fetch recommended GCs
-  const { data: recommendedGCsData = [], isLoading: loadingGCs, error: gcError } = useRecommendedGCs(isDesignSelection ? null : projectId);
+  const planDesignId = (projectAnalysisData as any)?.designId;
+  useEffect(() => {
+    if (!isDesignSelection && planDesignId && projectId && projectId !== 'test-project-123') {
+      router.replace(`/request-status?projectId=${projectId}` as any);
+    }
+  }, [isDesignSelection, planDesignId, projectId, router]);
+  const { data: recommendedGCsData = [], isLoading: loadingGCs, error: gcError } = useRecommendedGCs(
+    isDesignSelection || planDesignId || loadingAnalysis ? null : projectId,
+  );
   const recommendedGCs = recommendedGCsData || [];
 
   // Create GC object from design creator for design selection flow

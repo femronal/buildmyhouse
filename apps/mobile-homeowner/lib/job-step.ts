@@ -29,6 +29,13 @@ export function isDeclinedProject(project: any): boolean {
 }
 
 export function jobStep(project: any): { key: JobStepKey; label: string; detail: string } {
+  if (project?.designId && project?.planRequestStep?.label) {
+    return {
+      key: project.planRequestStep.state === 'declined' ? 'declined' : 'request_sent',
+      label: `Step ${project.planRequestStep.step} of 6`,
+      detail: project.planRequestStep.label,
+    };
+  }
   if (project?.status === 'completed' || Number(project?.progress || 0) >= 100) {
     return { key: 'completed', label: 'Completed', detail: 'This project is complete.' };
   }

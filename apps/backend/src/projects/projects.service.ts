@@ -14,6 +14,8 @@ import { ProjectAccessService } from '../project-access/project-access.service';
 import { EmailService } from '../email/email.service';
 import { ReferralsService } from '../referrals/referrals.service';
 import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
+import { getPlanRequestStep } from '../contractors/plan-request-step';
+import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
 @Injectable()
 export class ProjectsService {
@@ -1888,7 +1890,7 @@ export class ProjectsService {
   /**
    * Get project by ID
    */
-  async getProject(projectId: string) {
+  async getProject(projectId: string, viewer: 'homeowner' | 'gc' | 'admin' = 'homeowner') {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -1918,6 +1920,16 @@ export class ProjectsService {
                 location: true,
               },
             },
+          },
+        },
+        design: {
+          select: {
+            id: true,
+            name: true,
+            estimatedCost: true,
+            description: true,
+            estimatedDuration: true,
+            images: { orderBy: { order: 'asc' }, take: 1, select: { url: true, thumbnailUrl: true } },
           },
         },
         projectRequests: {
@@ -1972,6 +1984,20 @@ export class ProjectsService {
 
     if (!project) {
       throw new NotFoundException('Project not found');
+    }
+
+    const planRequest = (project.projectRequests || []).find((item: any) => !item.stageId) || null;
+    if (project.designId && planRequest) {
+      await notifyPlanRequestLate({
+        prisma: this.prisma,
+        emailService: this.emailService,
+        request: planRequest,
+        project,
+      });
+      return {
+        ...project,
+        planRequestStep: getPlanRequestStep(planRequest, project, viewer),
+      };
     }
 
     return project;
@@ -2138,6 +2164,7 @@ export class ProjectsService {
         budget: design.estimatedCost,
         projectType: design.planType || 'homebuilding',
         homeownerId,
+        designId: design.id,
         status: 'draft',
         progress: 0,
         spent: 0,
@@ -2600,7 +2627,7 @@ export class ProjectsService {
       }
     }
 
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where: whereClause,
       include: {
         homeowner: {
@@ -2619,6 +2646,7 @@ export class ProjectsService {
           },
         },
         projectRequests: {
+          where: { stageId: null },
           take: 1,
           orderBy: { createdAt: 'desc' },
           include: {
@@ -2636,6 +2664,15 @@ export class ProjectsService {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+    return projects.map((project: any) => {
+      const planRequest = project.projectRequests?.[0];
+      return {
+        ...project,
+        planRequestStep: project.designId && planRequest
+          ? getPlanRequestStep(planRequest, project, 'admin')
+          : null,
+      };
     });
   }
 

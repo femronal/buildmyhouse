@@ -8,6 +8,7 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import BeforeAcceptingNextSteps from "@/components/BeforeAcceptingNextSteps";
+import { PlanRequestPanel } from "@/components/PlanRequestPanel";
 
 const REJECTION_REASONS = [
   'Currently too busy',
@@ -527,8 +528,11 @@ export default function GCRequestDetailScreen() {
           {/* Project Header */}
           <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
             <Text className="text-white text-2xl mb-2" style={{ fontFamily: 'Poppins_800ExtraBold' }}>
-              {req.project.name || 'New Project'}
+              {req.project.designId ? 'Project request' : (req.project.name || 'New Project')}
             </Text>
+            {req.project.designId ? (
+              <Text className="text-white text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>{req.project.name}</Text>
+            ) : null}
             <View className="flex-row items-center mb-3">
               <User size={16} color="#9CA3AF" strokeWidth={2} />
               <Text className="text-gray-400 text-base ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>
@@ -578,7 +582,7 @@ export default function GCRequestDetailScreen() {
                 <View className="flex-row items-center flex-1">
                   <FileText size={24} color="#3B82F6" strokeWidth={2} />
                   <Text className="text-white text-lg ml-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    Architectural Plan
+                    {req.project.designId ? 'Your project plan' : 'Architectural Plan'}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -597,7 +601,9 @@ export default function GCRequestDetailScreen() {
                 </Text>
               )}
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Review the plan PDF before accepting the project
+                {req.project.designId
+                  ? 'This is the plan the homeowner picked. The final price comes after your inspection.'
+                  : 'Review the plan PDF before accepting the project'}
               </Text>
             </View>
           )}
@@ -641,8 +647,17 @@ export default function GCRequestDetailScreen() {
             </View>
           )}
 
+          {req.project.designId ? (
+            <PlanRequestPanel
+              request={req}
+              onChanged={() => { void refetch(); }}
+              onAccept={() => { void handleAccept(); }}
+              onDecline={handleReject}
+            />
+          ) : null}
+
           {/* Editable AI Analysis Section */}
-          <View className="bg-[#1E3A5F] rounded-2xl mb-4 border-2 border-yellow-600/30" style={{ padding: 20 }}>
+          {!req.project.designId ? <View className="bg-[#1E3A5F] rounded-2xl mb-4 border-2 border-yellow-600/30" style={{ padding: 20 }}>
             <View className="flex-row items-center justify-between mb-4">
               <View className="flex-row items-center">
                 <Edit3 size={20} color="#F59E0B" strokeWidth={2} />
@@ -915,7 +930,7 @@ export default function GCRequestDetailScreen() {
                 numberOfLines={4}
               />
             </View>
-          </View>
+          </View> : null}
 
           {/* Contact Info */}
           <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-6 border border-blue-900">
@@ -953,7 +968,7 @@ export default function GCRequestDetailScreen() {
           </View>
 
           {/* Action Buttons */}
-          <View className="flex-row mb-8" style={{ gap: 12 }}>
+          {!req.project.designId ? <View className="flex-row mb-8" style={{ gap: 12 }}>
             {!quoteReady ? <TouchableOpacity
               onPress={handleReject}
               disabled={isSubmitting}
@@ -986,7 +1001,7 @@ export default function GCRequestDetailScreen() {
                 </>
               )}
             </TouchableOpacity>
-          </View>
+          </View> : null}
         </View>
       </ScrollView>
 

@@ -220,6 +220,10 @@ export default function HomeScreen() {
       setShowPausedModal(true);
       return;
     }
+    if (project.designId && !project.isPaid) {
+      router.push(`/request-status?projectId=${project.id || project.projectId}` as any);
+      return;
+    }
     if (project.isPaid) {
       // Active project - go to dashboard
       router.push(`/dashboard?projectId=${project.id || project.projectId}`);
@@ -446,6 +450,10 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     key={uniqueKey}
                     onPress={() => {
+                      if (project.designId && !isPaid) {
+                        router.push(`/request-status?projectId=${project.id || project.projectId}` as any);
+                        return;
+                      }
                       if (!isPaid && !isPaused && step.key !== 'fund') {
                         router.push(`/house-summary?projectId=${project.id || project.projectId}` as any);
                         return;

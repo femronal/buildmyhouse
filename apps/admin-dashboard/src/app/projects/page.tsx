@@ -75,6 +75,7 @@ type ProjectView = {
   archivedAt?: string | null;
   managedByAdmin?: boolean;
   stages?: StageView[] | null;
+  planRequestStep?: { state?: string } | null;
 };
 
 function formatUpdatedAt(updatedAt?: string) {
@@ -177,6 +178,7 @@ export default function ProjectsPage() {
       homeowner: p.homeowner?.fullName || '—',
       homeownerEmail: p.homeowner?.email ?? null,
       gc: p.generalContractor?.fullName || '—',
+      planRequestStep: (p as ApiProject & { planRequestStep?: ProjectView['planRequestStep'] }).planRequestStep,
       gcEmail: p.generalContractor?.email ?? null,
       status: computeDisplayStatus(p),
       risk: computeRisk(p),
@@ -565,6 +567,11 @@ export default function ProjectsPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  {(project as { planRequestStep?: { state?: string } }).planRequestStep?.state === 'late' && (
+                    <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
+                      Late
+                    </span>
+                  )}
                   {project.managedByAdmin && (
                     <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">
                       managed

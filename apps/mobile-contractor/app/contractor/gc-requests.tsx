@@ -96,6 +96,12 @@ export default function GCRequestsScreen() {
                       <Text className="text-white text-lg" style={{ fontFamily: "Poppins_700Bold" }}>
                         {req.project?.name || "Project Request"}
                       </Text>
+                      {req.project?.planRequestStep ? (
+                        <Text className="text-sm mt-1" style={{ fontFamily: "Poppins_600SemiBold", color: req.project.planRequestStep.state === "late" ? "#f59e0b" : "#93C5FD" }}>
+                          Step {req.project.planRequestStep.step} of 6: {req.project.planRequestStep.label}
+                          {req.project.planRequestStep.state === "waiting_other_side" ? " · Waiting for homeowner" : ""}
+                        </Text>
+                      ) : null}
                       <View className="flex-row items-center mt-2">
                         <MapPin size={14} color="#9CA3AF" strokeWidth={2} />
                         <Text
@@ -103,7 +109,9 @@ export default function GCRequestsScreen() {
                           style={{ fontFamily: "Poppins_400Regular" }}
                           numberOfLines={1}
                         >
-                          {req.project?.address || "—"}
+                          {req.project?.designId
+                            ? [req.project?.city, req.project?.state].filter(Boolean).join(", ") || req.project?.address || "—"
+                            : req.project?.address || "—"}
                         </Text>
                       </View>
                       <View className="flex-row items-center mt-2">
@@ -115,14 +123,16 @@ export default function GCRequestsScreen() {
                       <View className="flex-row items-center mt-2">
                         <Text className="text-gray-400 text-sm" style={{ fontFamily: "Poppins_700Bold" }}>₦</Text>
                         <Text className="text-gray-400 text-sm ml-2" style={{ fontFamily: "Poppins_400Regular" }}>
-                          Budget: {typeof req.estimatedBudget === "number" ? `₦${req.estimatedBudget.toLocaleString()}` : "—"}
+                          {req.project?.designId
+                            ? `Plan price: ₦${Number(req.project?.design?.estimatedCost || 0).toLocaleString()}`
+                            : `Budget: ${typeof req.estimatedBudget === "number" ? `₦${req.estimatedBudget.toLocaleString()}` : "—"}`}
                         </Text>
                       </View>
                       {hasPdf ? (
                         <View className="flex-row items-center mt-2">
                           <FileText size={14} color="#3B82F6" strokeWidth={2} />
                           <Text className="text-blue-300 text-sm ml-2" style={{ fontFamily: "Poppins_600SemiBold" }}>
-                            Plan attached
+                            {req.project?.designId ? "Project plan" : "Plan attached"}
                           </Text>
                         </View>
                       ) : null}

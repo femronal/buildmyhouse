@@ -63,7 +63,7 @@ export default function ChatScreen() {
   
   // Fetch project to get GC info
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
-  const gcId = project?.generalContractorId || (project as any)?.generalContractor?.id;
+  const gcId = (params as any).contractorId || project?.generalContractorId || (project as any)?.generalContractor?.id;
   const currentStage = (project as any)?.stages?.find((s: any) => s.status === 'in_progress') || 
                        (project as any)?.stages?.find((s: any) => s.status === 'completed');
   const stageName = currentStage?.name || 'General';

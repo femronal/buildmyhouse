@@ -37,10 +37,34 @@ export class ChatService {
     });
 
     // Update conversation updatedAt
-    await this.prisma.conversation.update({
+    const conversationRecord = await this.prisma.conversation.update({
       where: { id: conversationId },
       data: { updatedAt: new Date() },
     });
+
+    if (conversationRecord.projectId) {
+      const planRequest = await this.prisma.projectRequest.findFirst({
+        where: {
+          projectId: conversationRecord.projectId,
+          contractorId: senderId,
+          status: 'pending',
+          stageId: null,
+          contactedAt: null,
+          project: { designId: { not: null } },
+        },
+        select: { id: true },
+      });
+      if (planRequest) {
+        await this.prisma.projectRequest.update({
+          where: { id: planRequest.id },
+          data: { contactedAt: new Date() },
+        });
+        await this.prisma.project.update({
+          where: { id: conversationRecord.projectId },
+          data: { generalContractorId: senderId },
+        });
+      }
+    }
 
     // Emit real-time message to all clients in the conversation
     this.wsService.emitNewMessage(conversationId, {

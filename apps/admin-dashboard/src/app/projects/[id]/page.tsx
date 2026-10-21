@@ -66,6 +66,29 @@ function TagListEditor({
   );
 }
 
+function QuoteCheckForm({ requestId, onDone }: { requestId: string; onDone: () => void }) {
+  const [note, setNote] = useState('');
+  const [error, setError] = useState('');
+  const check = useMutation({
+    mutationFn: (result: 'fair' | 'too_high' | 'too_low') =>
+      api.patch(`/contractors/requests/${requestId}/step`, { action: 'quote_check', result, note }),
+    onSuccess: () => onDone(),
+    onError: (e: Error) => setError(e.message),
+  });
+  return (
+    <div className="space-y-2">
+      <div className="font-medium">Quote check</div>
+      <textarea className="w-full border rounded-lg p-2 text-sm" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Note for both sides" />
+      <div className="flex gap-2">
+        <button type="button" className="px-3 py-2 rounded-lg bg-black text-white text-sm" onClick={() => check.mutate('fair')}>Fair</button>
+        <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_high')}>Too high</button>
+        <button type="button" className="px-3 py-2 rounded-lg border text-sm" onClick={() => check.mutate('too_low')}>Too low</button>
+      </div>
+      {error ? <div className="text-sm text-red-600">{error}</div> : null}
+    </div>
+  );
+}
+
 export default function AdminProjectDetailPage() {
   const params = useParams();
   const projectId = String(params.id || '');
@@ -153,8 +176,25 @@ export default function AdminProjectDetailPage() {
     return <div className="p-8 text-red-600">Project not found.</div>;
   }
 
+  const planProject = project as typeof project & {
+    designId?: string | null;
+    projectRequests?: { id: string; stageId?: string | null }[];
+    planRequestStep?: { step: number; state: string; label: string; lateReason?: string };
+  };
+  const planRequest = (planProject.projectRequests || []).find((item) => !item.stageId);
+  const planStep = planProject.planRequestStep;
+
   return (
     <div className="p-8 space-y-8 max-w-5xl">
+      {planProject.designId && planRequest ? (
+        <div className="border rounded-xl p-4 space-y-3">
+          <div className="font-semibold">Plan request · Step {planStep?.step || 1} of 6 {planStep?.state === 'late' ? '· Late' : ''}</div>
+          <div className="text-sm text-gray-600">{planStep?.label} {planStep?.lateReason || ''}</div>
+          {planStep?.step === 5 ? (
+            <QuoteCheckForm requestId={planRequest.id} onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })} />
+          ) : null}
+        </div>
+      ) : null}
       <div className="flex items-start gap-4">
         <Link href="/projects" className="mt-1 p-2 border rounded-lg hover:bg-gray-50" aria-label="Back">
           <ArrowLeft className="w-4 h-4" />

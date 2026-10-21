@@ -471,7 +471,8 @@ export class ProjectsController {
     const userId = req.user.sub;
     const userRole = req.user.role;
 
-    const project = await this.projectsService.getProject(id);
+    const viewer = userRole === 'admin' ? 'admin' : userRole === 'general_contractor' ? 'gc' : 'homeowner';
+    const project = await this.projectsService.getProject(id, viewer);
 
     // Check authorization: user must be homeowner, contractor, admin, or subcontractor with accepted request
     if (userRole === 'admin') {

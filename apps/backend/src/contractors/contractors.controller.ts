@@ -232,6 +232,21 @@ export class ContractorsController {
     }
   }
 
+  @Patch('requests/:requestId/step')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'homeowner', 'admin')
+  async updatePlanRequestStep(
+    @Param('requestId') requestId: string,
+    @Request() req: any,
+    @Body() body: any,
+  ) {
+    return this.contractorsService.updatePlanRequestStep(
+      requestId,
+      { userId: req.user.sub, role: req.user.role },
+      body || {},
+    );
+  }
+
   @Post('requests/:requestId/accept')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'subcontractor')

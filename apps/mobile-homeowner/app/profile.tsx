@@ -447,7 +447,7 @@ export default function ProfileScreen() {
                 pendingProjects.map((project: any) => (
                   <TouchableOpacity
                     key={project.id}
-                    onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
+                    onPress={() => router.push(`${project.designId ? '/request-status' : '/house-summary'}?projectId=${project.id}` as any)}
                     style={cardShadowStyle}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >
@@ -492,7 +492,7 @@ export default function ProfileScreen() {
                 declinedProjects.map((project: any) => (
                   <TouchableOpacity
                     key={project.id}
-                    onPress={() => router.push(`/house-summary?projectId=${project.id}` as any)}
+                    onPress={() => router.push(`${project.designId ? '/request-status' : '/house-summary'}?projectId=${project.id}` as any)}
                     style={cardShadowStyle}
                     className="bg-gray-50 rounded-2xl p-4 mb-3 border border-gray-200"
                   >

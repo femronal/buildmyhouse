@@ -28,6 +28,8 @@ import {
   ContractorMatcherRequestStats,
   ContractorMatcherService,
 } from './contractor-matcher.service';
+import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
+import { notifyPlanRequestLate } from './plan-request-notify';
 import {
   composeLocationLabel,
   isValidStateLga,
@@ -1122,6 +1124,15 @@ export class ContractorsService {
         },
         project: {
           include: {
+            design: {
+              select: {
+                id: true,
+                name: true,
+                estimatedCost: true,
+                estimatedDuration: true,
+                images: { orderBy: { order: 'asc' }, take: 1, select: { url: true, thumbnailUrl: true } },
+              },
+            },
             homeowner: {
               select: {
                 id: true,
@@ -1147,7 +1158,20 @@ export class ContractorsService {
       },
     });
 
-    return requests.map((request: any) => {
+    const decorated = [];
+    for (const request of requests as any[]) {
+      if (request?.project?.designId) {
+        await notifyPlanRequestLate({
+          prisma: this.prisma,
+          emailService: this.emailService,
+          request,
+          project: request.project,
+        });
+      }
+      decorated.push(request);
+    }
+
+    return decorated.map((request: any) => {
       const fallbackPhone = request?.sender?.phone || null;
       const fallbackEmail = request?.sender?.email || null;
       const photoUrls = this.extractProjectImageUrls(request?.project?.aiAnalysis);
@@ -1173,6 +1197,9 @@ export class ContractorsService {
           },
           planPdfUrl: rawPlanPdfUrl || request?.project?.planPdfUrl || null,
           planFileName,
+          planRequestStep: request.project?.designId
+            ? getPlanRequestStep(request, request.project, 'gc')
+            : null,
           homeowner: {
             ...request.project.homeowner,
             phone: request.project?.homeowner?.phone || fallbackPhone,
@@ -1181,6 +1208,252 @@ export class ContractorsService {
         },
       };
     });
+  }
+
+  async updatePlanRequestStep(
+    requestId: string,
+    actor: { userId: string; role: string },
+    body: {
+      action: string;
+      inspectionDate?: string;
+      inspectionFee?: number;
+      photoUrls?: string[];
+      materials?: string;
+      labour?: string;
+      stages?: string;
+      quoteFileUrl?: string;
+      estimatedBudget?: number;
+      estimatedDuration?: string;
+      result?: 'fair' | 'too_high' | 'too_low';
+      note?: string;
+    },
+  ) {
+    const request = await this.prisma.projectRequest.findUnique({
+      where: { id: requestId },
+      include: {
+        project: {
+          include: {
+            homeowner: { select: { id: true, fullName: true, email: true } },
+            design: { select: { id: true, name: true, estimatedCost: true } },
+          },
+        },
+        contractor: { select: { id: true, fullName: true, email: true, contractorProfile: { select: { name: true } } } },
+      },
+    });
+    if (!request || request.stageId) {
+      throw new BadRequestException('Request not found');
+    }
+    if (!request.project?.designId) {
+      throw new BadRequestException('This request is not a project plan request');
+    }
+    if (request.status === 'rejected') {
+      throw new BadRequestException('This request was declined');
+    }
+
+    const viewer: PlanStepViewer = actor.role === 'admin' ? 'admin' : actor.role === 'homeowner' ? 'homeowner' : 'gc';
+    const current = getPlanRequestStep(request, request.project, viewer);
+    const gcName = request.contractor?.contractorProfile?.name || request.contractor?.fullName || 'Your contractor';
+    const firstName = String(gcName).split(' ')[0] || 'Your contractor';
+    const homeownerName = request.project.homeowner?.fullName || 'The homeowner';
+
+    const isGc = actor.role === 'general_contractor' && request.contractorId === actor.userId;
+    const isHomeowner = actor.role === 'homeowner' && request.project.homeownerId === actor.userId;
+    const isAdmin = actor.role === 'admin';
+
+    if (body.action === 'contacted') {
+      if (!isGc || current.step !== 1) throw new BadRequestException('You cannot mark contact at this step');
+      const inspectionDate = body.inspectionDate ? new Date(body.inspectionDate) : null;
+      const fee = Number(body.inspectionFee);
+      if (!inspectionDate || !Number.isFinite(inspectionDate.getTime()) || !Number.isFinite(fee) || fee < 0) {
+        throw new BadRequestException('Inspection date and fee are required');
+      }
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { contactedAt: new Date(), inspectionDate, inspectionFee: fee, homeownerDisputedStep: null },
+      });
+      await this.prisma.project.update({
+        where: { id: request.projectId },
+        data: { generalContractorId: request.contractorId },
+      });
+      await this.notifyPlanSide({
+        userId: request.project.homeownerId,
+        email: request.project.homeowner?.email,
+        name: homeownerName,
+        title: `${firstName} contacted you`,
+        message: `${firstName} says they contacted you. Please confirm in the app.`,
+      });
+    } else if (body.action === 'inspection_done') {
+      if (!isGc || current.step !== 3 || current.actor !== 'gc') {
+        throw new BadRequestException('You cannot mark the inspection at this step');
+      }
+      const photos = (body.photoUrls || []).map((url) => String(url || '').trim()).filter(Boolean);
+      if (photos.length < 2) throw new BadRequestException('Add at least 2 site photos');
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { inspectedAt: new Date(), inspectionPhotoIds: photos, homeownerDisputedStep: null },
+      });
+      await this.notifyPlanSide({
+        userId: request.project.homeownerId,
+        email: request.project.homeowner?.email,
+        name: homeownerName,
+        title: 'Inspection photos are in',
+        message: `${firstName} marked the inspection done. Please confirm in the app.`,
+      });
+    } else if (body.action === 'quote_uploaded') {
+      if (!isGc || current.step !== 4 || current.actor !== 'gc') {
+        throw new BadRequestException('You cannot upload a quote at this step');
+      }
+      const materials = String(body.materials || '').trim();
+      const labour = String(body.labour || '').trim();
+      const stages = String(body.stages || '').trim();
+      const quoteFileUrl = String(body.quoteFileUrl || '').trim();
+      if (!materials || !labour || !stages) {
+        throw new BadRequestException('Materials, labour, and stages are required');
+      }
+      const budget = Number(body.estimatedBudget || request.project.design?.estimatedCost || 0);
+      const breakdown = this.calculateBmhQuoteBreakdown(budget);
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: {
+          quoteGeneratedAt: new Date(),
+          quoteFileId: quoteFileUrl || null,
+          estimatedBudget: budget,
+          estimatedDuration: body.estimatedDuration || null,
+          monitoringFeeAmount: breakdown.monitoringFeeAmount,
+          coordinationFeeAmount: breakdown.coordinationFeeAmount,
+          contingencyFeeAmount: breakdown.contingencyFeeAmount,
+          totalQuoteAmount: breakdown.totalQuoteAmount,
+          homeownerAcceptedQuoteAt: null,
+          bmhCheckResult: null,
+          homeownerDisputedStep: null,
+          gcNotes: JSON.stringify({ kind: 'plan_quote', materials, labour, stages }),
+        },
+      });
+      await this.notifyPlanSide({
+        userId: request.project.homeownerId,
+        email: request.project.homeowner?.email,
+        name: homeownerName,
+        title: 'A quote is ready',
+        message: `${firstName} uploaded a quote. Check it in the app.`,
+      });
+    } else if (body.action === 'confirm_contact') {
+      if (!isHomeowner || current.step !== 2) throw new BadRequestException('You cannot confirm contact at this step');
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { homeownerConfirmedContactAt: new Date(), homeownerDisputedStep: null },
+      });
+      await this.notifyPlanSide({
+        userId: request.contractorId,
+        email: request.contractor?.email,
+        name: gcName,
+        title: 'Contact confirmed',
+        message: `${homeownerName} confirmed you contacted them.`,
+      });
+    } else if (body.action === 'confirm_inspection') {
+      if (!isHomeowner || current.step !== 3 || current.actor !== 'homeowner') {
+        throw new BadRequestException('You cannot confirm the inspection at this step');
+      }
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { homeownerConfirmedInspectionAt: new Date(), homeownerDisputedStep: null },
+      });
+      await this.notifyPlanSide({
+        userId: request.contractorId,
+        email: request.contractor?.email,
+        name: gcName,
+        title: 'Inspection confirmed',
+        message: `${homeownerName} confirmed the inspection.`,
+      });
+    } else if (body.action === 'accept_quote') {
+      if (!isHomeowner || current.step !== 4 || current.actor !== 'homeowner') {
+        throw new BadRequestException('You cannot accept the quote at this step');
+      }
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { homeownerAcceptedQuoteAt: new Date(), homeownerDisputedStep: null },
+      });
+      await this.notifyPlanSide({
+        userId: request.contractorId,
+        email: request.contractor?.email,
+        name: gcName,
+        title: 'Quote accepted',
+        message: `${homeownerName} accepted the quote. BuildMyHouse will check it.`,
+      });
+    } else if (body.action === 'dispute') {
+      if (!isHomeowner) throw new BadRequestException('Only the homeowner can say this did not happen');
+      if (current.actor !== 'homeowner') throw new BadRequestException('There is nothing to confirm right now');
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: { homeownerDisputedStep: current.step },
+      });
+      await notifyPlanRequestLate({
+        prisma: this.prisma,
+        emailService: this.emailService,
+        request: { ...request, homeownerDisputedStep: current.step },
+        project: request.project,
+        force: true,
+      });
+    } else if (body.action === 'quote_check') {
+      if (!isAdmin || current.step !== 5) throw new BadRequestException('The quote is not ready for a BuildMyHouse check');
+      const result = body.result;
+      if (result !== 'fair' && result !== 'too_high' && result !== 'too_low') {
+        throw new BadRequestException('Choose fair, too high, or too low');
+      }
+      const note = String(body.note || '').trim();
+      await this.prisma.projectRequest.update({
+        where: { id: requestId },
+        data: {
+          bmhCheckResult: result,
+          bmhCheckNote: note || null,
+          bmhCheckAt: new Date(),
+          ...(result !== 'fair' ? { homeownerAcceptedQuoteAt: null } : {}),
+        },
+      });
+      const line = result === 'fair'
+        ? 'BuildMyHouse checked the quote: Fair. You can now accept the job.'
+        : `BuildMyHouse asked for the quote to be looked at again: ${note || result.replace('_', ' ')}`;
+      await this.notifyPlanSide({
+        userId: request.contractorId,
+        email: request.contractor?.email,
+        name: gcName,
+        title: 'Quote check',
+        message: line,
+      });
+      await this.notifyPlanSide({
+        userId: request.project.homeownerId,
+        email: request.project.homeowner?.email,
+        name: homeownerName,
+        title: 'Quote check',
+        message: line,
+      });
+    } else {
+      throw new BadRequestException('Unknown step action');
+    }
+
+    return this.prisma.projectRequest.findUnique({ where: { id: requestId } });
+  }
+
+  private async notifyPlanSide(params: { userId?: string | null; email?: string | null; name?: string | null; title: string; message: string }) {
+    if (params.userId) {
+      this.wsService.sendNotification(params.userId, {
+        type: 'plan_request_step',
+        title: params.title,
+        message: params.message,
+        data: {},
+      });
+    }
+    const email = String(params.email || '').trim();
+    if (!email) return;
+    try {
+      await this.emailService.sendNotificationEmail({
+        to: email,
+        recipientName: params.name || undefined,
+        title: params.title,
+        message: params.message,
+      });
+    } catch (error) {
+      console.warn(`plan request email failed: ${error instanceof Error ? error.message : error}`);
+    }
   }
 
   /**
@@ -1206,6 +1479,7 @@ export class ContractorsService {
             id: true,
             name: true,
             address: true,
+            designId: true,
             homeownerId: true,
             homeowner: {
               select: {
@@ -1224,6 +1498,10 @@ export class ContractorsService {
       console.error('  Request ID:', requestId);
       console.error('  Contractor ID:', contractorId);
       throw new Error('Request not found or already processed');
+    }
+
+    if (!request.stageId && request.project?.designId && request.bmhCheckResult !== 'fair') {
+      throw new BadRequestException('Waiting for BuildMyHouse check');
     }
 
 
@@ -1765,6 +2043,7 @@ export class ContractorsService {
       data: {
         status: 'rejected',
         respondedAt: new Date(),
+        declineReason: rejectionReason || null,
         gcNotes: rejectionReason || null,
       },
       include: {

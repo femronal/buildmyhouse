@@ -502,11 +502,14 @@ model Project {
   referredAt                DateTime?
   /// link | code_entered | admin
   referralSource            String?
+  /// Set when the project was started from a GC project plan.
+  designId                  String?
   createdAt                 DateTime                  @default(now())
   updatedAt                 DateTime                  @updatedAt
 
   // Relations
   homeowner           User                  @relation("HomeownerProjects", fields: [homeownerId], references: [id])
+  design              Design?               @relation(fields: [designId], references: [id], onDelete: SetNull)
   referrer            Referrer?             @relation(fields: [referrerId], references: [id], onDelete: SetNull)
   generalContractor   User?                 @relation("ContractorProjects", fields: [generalContractorId], references: [id])
   acceptedBy          User?                 @relation("ProjectAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
@@ -523,6 +526,7 @@ model Project {
 
   @@index([needsExtraMonitoring])
   @@index([referrerId])
+  @@index([designId])
   @@map("projects")
 }
 
@@ -947,6 +951,7 @@ model Design {
   createdBy       User          @relation("DesignCreatedBy", fields: [createdById], references: [id])
   adminReviewedBy User?         @relation("DesignReviewedByAdmin", fields: [adminReviewedById], references: [id])
   images          DesignImage[]
+  projects        Project[]
 
   @@map("designs")
 }
@@ -1218,6 +1223,22 @@ model ProjectRequest {
   quoteGeneratedAt      DateTime?
   sentAt                DateTime  @default(now())
   respondedAt           DateTime?
+  contactedAt           DateTime?
+  inspectionDate        DateTime?
+  inspectionFee         Decimal?  @db.Decimal(12, 2)
+  inspectedAt           DateTime?
+  inspectionPhotoIds    String[]  @default([])
+  homeownerConfirmedContactAt DateTime?
+  homeownerConfirmedInspectionAt DateTime?
+  quoteFileId           String?
+  homeownerAcceptedQuoteAt DateTime?
+  /// fair | too_high | too_low
+  bmhCheckResult        String?
+  bmhCheckNote          String?
+  bmhCheckAt            DateTime?
+  declineReason         String?
+  homeownerDisputedStep Int?
+  lateNotifiedStep      Int?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
