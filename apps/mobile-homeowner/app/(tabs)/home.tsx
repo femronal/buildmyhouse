@@ -9,7 +9,7 @@ import ListingWelcomeModal from '@/components/listings/ListingWelcomeModal';
 import { listingWelcomeHandled, markListingWelcomeHandled, type ListingWelcomeKind } from '@/lib/listing-welcome';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, useAllProjects, usePendingProjects, usePausedProjects, useActivateProject } from '@/hooks';
-import { contractorName, jobStep } from '@/lib/job-step';
+import { contractorName, FUND_INVOICE_LINE, jobStep } from '@/lib/job-step';
 import PaymentModal from '@/components/PaymentModal';
 import NotificationBell from '@/components/NotificationBell';
 import LogoText from '@/components/LogoText';
@@ -441,7 +441,15 @@ export default function HomeScreen() {
                 const isCompleted = project.status === 'completed' || Number(project.progress || 0) >= 100;
                 const step = jobStep(project);
                 const namedContractor = contractorName(project);
-                const statusLabel = isPaused ? 'Paused' : isCompleted ? 'Completed' : isPaid ? 'Active' : step.label;
+                const statusLabel = isPaused
+                  ? 'Paused'
+                  : isCompleted
+                    ? 'Completed'
+                    : isPaid
+                      ? 'Active'
+                      : step.key === 'fund' && project.designId
+                        ? 'Payment'
+                        : step.label;
                 const budget = getProjectBudget(project);
                 const amountDue = budget * 1.0;
                 const gradientId = `bmh-project-fade-${projectId}`;
@@ -599,6 +607,15 @@ export default function HomeScreen() {
                             </View>
                           </View>
                         </>
+                      ) : step.key === 'fund' && project.designId ? (
+                        <View>
+                          <Text className="text-white text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                            {FUND_INVOICE_LINE}
+                          </Text>
+                          <Text className="text-white/70 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+                            Work starts after BuildMyHouse confirms that payment.
+                          </Text>
+                        </View>
                       ) : step.key === 'fund' ? (
                         <View>
                           <Text className="text-white text-base mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>

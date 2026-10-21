@@ -35,6 +35,7 @@ import { ProfessionalsModule } from './professionals/professionals.module';
 import { ArtisansModule } from './artisans/artisans.module';
 import { StartRequestsModule } from './start-requests/start-requests.module';
 import { ReferralsModule } from './referrals/referrals.module';
+import { FundingModule } from './funding/funding.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { ReferralsModule } from './referrals/referrals.module';
     ArtisansModule,
     StartRequestsModule,
     ReferralsModule,
+    FundingModule,
   ],
   controllers: [],
   providers: [

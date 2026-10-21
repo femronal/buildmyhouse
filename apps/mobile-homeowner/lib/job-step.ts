@@ -1,3 +1,6 @@
+export const FUND_INVOICE_LINE =
+  'The invoice is in your email, and you should reply with your receipt.';
+
 export type JobStepKey =
   | 'request_sent'
   | 'inspection'
@@ -29,6 +32,13 @@ export function isDeclinedProject(project: any): boolean {
 }
 
 export function jobStep(project: any): { key: JobStepKey; label: string; detail: string } {
+  if (project?.status === 'pending_payment' && project?.designId) {
+    return {
+      key: 'fund',
+      label: FUND_INVOICE_LINE,
+      detail: 'Work starts after BuildMyHouse confirms that payment.',
+    };
+  }
   if (project?.designId && project?.planRequestStep?.label) {
     return {
       key: project.planRequestStep.state === 'declined' ? 'declined' : 'request_sent',

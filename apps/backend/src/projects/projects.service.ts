@@ -15,6 +15,7 @@ import { EmailService } from '../email/email.service';
 import { ReferralsService } from '../referrals/referrals.service';
 import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
 import { getPlanRequestStep } from '../contractors/plan-request-step';
+import { activationAmount } from '../funding/funding-invoice';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
 @Injectable()
@@ -790,10 +791,11 @@ export class ProjectsService {
     // Record one activation payment when admin confirms (idempotent)
     const project = await this.prisma.project.findUnique({
       where: { id: params.projectId },
-      select: { budget: true },
+      select: { budget: true, aiAnalysis: true },
     });
-    if (project?.budget != null) {
-      await this.paymentsService.createManualActivationPayment(params.projectId, project.budget);
+    const amount = activationAmount(project);
+    if (amount > 0) {
+      await this.paymentsService.createManualActivationPayment(params.projectId, amount);
     }
 
     this.wsService.emitProjectUpdate(params.projectId, {

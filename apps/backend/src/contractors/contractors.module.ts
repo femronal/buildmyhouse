@@ -9,9 +9,10 @@ import { AdminAccessModule } from '../admin-access/admin-access.module';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { OpenAIModule } from '../openai/openai.module';
+import { FundingModule } from '../funding/funding.module';
 
 @Module({
-  imports: [AuthModule, AdminAccessModule, WebSocketModule, PaymentsModule, OpenAIModule, EmailModule],
+  imports: [AuthModule, AdminAccessModule, WebSocketModule, PaymentsModule, OpenAIModule, EmailModule, FundingModule],
   controllers: [ContractorsController],
   providers: [ContractorsService, ContractorMatcherService, PlanRequestLateScheduler],
   exports: [ContractorsService],

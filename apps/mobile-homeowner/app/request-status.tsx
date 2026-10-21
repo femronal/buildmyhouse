@@ -1,11 +1,24 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Linking, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '@/services/projectService';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 import { REQUEST_STATUS_COPY } from '@/lib/request-status-copy';
+import { FUND_INVOICE_LINE } from '@/lib/job-step';
+
+function leaveStatus(router: ReturnType<typeof useRouter>) {
+  if (router.canGoBack()) {
+    router.back();
+    return;
+  }
+  if (Platform.OS === 'web' && typeof window !== 'undefined' && window.history.length > 1) {
+    window.history.back();
+    return;
+  }
+  router.replace('/(tabs)/home');
+}
 
 function formatWhen(value?: string | null) {
   if (!value) return '';
@@ -89,7 +102,7 @@ export default function RequestStatusScreen() {
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: '#fff' }} contentContainerStyle={{ padding: 20, paddingBottom: 48 }}>
-      <Pressable onPress={() => router.back()} style={{ marginBottom: 12 }}>
+      <Pressable onPress={() => leaveStatus(router)} style={{ marginBottom: 12 }}>
         <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>Back</Text>
       </Pressable>
       {cover ? (
@@ -138,8 +151,12 @@ export default function RequestStatusScreen() {
       </View>
 
       {!declined ? (
-        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, lineHeight: 24 }}>
-          {step?.step === 2 ? REQUEST_STATUS_COPY.steps[1].confirm : copy?.now || copy?.detail}
+        <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, lineHeight: 24 }}>
+          {project?.status === 'pending_payment'
+            ? FUND_INVOICE_LINE
+            : step?.step === 2
+              ? REQUEST_STATUS_COPY.steps[1].confirm
+              : copy?.now || copy?.detail}
         </Text>
       ) : (
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, lineHeight: 24 }}>
@@ -223,12 +240,6 @@ export default function RequestStatusScreen() {
           ) : null}
         </View>
       ) : null}
-      {project?.status === 'pending_payment' ? (
-        <Pressable onPress={() => router.push('/pending-projects' as any)} style={{ marginTop: 16, backgroundColor: '#111', borderRadius: 999, paddingVertical: 14, alignItems: 'center' }}>
-          <Text style={{ color: '#fff', fontFamily: 'Poppins_700Bold' }}>Fund project</Text>
-        </Pressable>
-      ) : null}
-
       <Text style={{ fontFamily: 'Poppins_500Medium', marginTop: 20, lineHeight: 22 }}>{REQUEST_STATUS_COPY.safety}</Text>
 
       <Pressable

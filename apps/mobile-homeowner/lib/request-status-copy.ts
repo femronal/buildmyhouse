@@ -26,12 +26,12 @@ export const REQUEST_STATUS_COPY = {
     {
       title: 'BMH check',
       detail: 'BuildMyHouse checks the quote is fair and adds a contingency.',
-      now: 'Nothing. We will message you.',
+      now: 'Wait for our message. Nothing to do for now.',
     },
     {
       title: 'Accepted',
       detail: 'Your project is approved.',
-      now: 'Fund your project through BuildMyHouse to start.',
+      now: 'The contractor accepts the job next.',
     },
   ],
   late: 'We are following this up for you.',

@@ -9,12 +9,12 @@ import { REQUEST_STEP_COPY } from '@/lib/request-step-copy';
 export function PlanRequestPanel({
   request,
   onChanged,
-  onAccept,
+  onJobAccepted,
   onDecline,
 }: {
   request: any;
   onChanged: () => void;
-  onAccept: () => void;
+  onJobAccepted: () => void;
   onDecline: () => void;
 }) {
   const step = request?.project?.planRequestStep;
@@ -65,8 +65,10 @@ export function PlanRequestPanel({
     try {
       await api.patch(`/contractors/requests/${request.id}/step`, body);
       onChanged();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not update this step');
+      return false;
     } finally {
       setBusy(false);
     }
@@ -253,7 +255,14 @@ export function PlanRequestPanel({
         </View>
       ) : null}
       {number === 6 && step?.actor === 'gc' ? (
-        <Pressable disabled={busy || request?.bmhCheckResult !== 'fair'} onPress={onAccept} className="bg-blue-600 rounded-full py-3 items-center mt-3">
+        <Pressable
+          disabled={busy || request?.bmhCheckResult !== 'fair'}
+          onPress={async () => {
+            const accepted = await send({ action: 'accept_job' });
+            if (accepted) onJobAccepted();
+          }}
+          className="bg-blue-600 rounded-full py-3 items-center mt-3"
+        >
           <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold' }}>Accept job</Text>
         </Pressable>
       ) : null}

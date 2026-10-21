@@ -651,7 +651,13 @@ export default function GCRequestDetailScreen() {
             <PlanRequestPanel
               request={req}
               onChanged={() => { void refetch(); }}
-              onAccept={() => { void handleAccept(); }}
+              onJobAccepted={() => {
+                showAlert(
+                  'Job accepted',
+                  'The invoice is in the homeowner’s email. They reply with a receipt, and the project opens after BuildMyHouse confirms that payment.',
+                  [{ text: 'OK', onPress: () => router.replace('/contractor/gc-dashboard') }],
+                );
+              }}
               onDecline={handleReject}
             />
           ) : null}

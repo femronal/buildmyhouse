@@ -7,6 +7,7 @@ import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
 import * as WebBrowser from 'expo-web-browser';
 import { cardShadowStyle } from '@/lib/card-styles';
+import { FUND_INVOICE_LINE } from '@/lib/job-step';
 
 export default function PendingProjectsScreen() {
   const router = useRouter();
@@ -269,6 +270,7 @@ export default function PendingProjectsScreen() {
               (project.gcEditedAnalysis?.projectType as string | undefined) ||
               (project.acceptedRequest?.gcEditedAnalysis?.projectType as string | undefined);
             const isHomebuilding = projectType === 'homebuilding';
+            const emailInvoice = Boolean(project.designId);
             const externalPaymentLink = project.externalPaymentLink as string | undefined;
             const paymentConfirmationStatus =
               (project.paymentConfirmationStatus as string | undefined) || 'not_declared';
@@ -410,8 +412,13 @@ export default function PendingProjectsScreen() {
                     </View>
                   </View>
 
-                  {/* Homebuilding manual payment instructions */}
-                  {isHomebuilding && (
+                  {emailInvoice ? (
+                    <View className="bg-white rounded-2xl p-4 mb-3 border border-gray-200">
+                      <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                        {FUND_INVOICE_LINE}
+                      </Text>
+                    </View>
+                  ) : isHomebuilding && (
                     <View className="bg-white rounded-2xl p-4 mb-3 border border-gray-200">
                       <View className="flex-row items-center mb-2">
                         {paymentConfirmationStatus === 'confirmed' ? (
@@ -460,7 +467,7 @@ export default function PendingProjectsScreen() {
                         </Text>
                       </TouchableOpacity>
 
-                      {isHomebuilding ? (
+                      {emailInvoice ? null : isHomebuilding ? (
                         <TouchableOpacity
                           onPress={(e) => {
                             e.stopPropagation();
@@ -494,7 +501,7 @@ export default function PendingProjectsScreen() {
                       )}
                     </View>
 
-                    {isHomebuilding && (paymentConfirmationStatus === 'not_declared' || paymentConfirmationStatus === 'rejected') && (
+                    {!emailInvoice && isHomebuilding && (paymentConfirmationStatus === 'not_declared' || paymentConfirmationStatus === 'rejected') && (
                       <TouchableOpacity
                         onPress={(e) => {
                           e.stopPropagation();
@@ -519,7 +526,7 @@ export default function PendingProjectsScreen() {
                       </TouchableOpacity>
                     )}
 
-                    {isHomebuilding && paymentConfirmationStatus === 'declared' && (
+                    {!emailInvoice && isHomebuilding && paymentConfirmationStatus === 'declared' && (
                       <TouchableOpacity
                         onPress={(e) => {
                           e.stopPropagation();

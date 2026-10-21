@@ -37,12 +37,14 @@ async function bootstrap() {
   // Raw body for Stripe + Paystack webhook signature verification (before JSON parser)
   const webhookPaths = new Set([
     '/api/payments/webhooks/stripe',
+    '/api/payments/webhooks/resend',
     '/api/payments/paystack/webhook',
   ]);
   app.use(
     express.json({
       verify: (req: any, _res, buf: Buffer, encoding: BufferEncoding) => {
-        if (webhookPaths.has(req.originalUrl) && buf?.length) {
+        const path = String(req.originalUrl || '').split('?')[0];
+        if (webhookPaths.has(path) && buf?.length) {
           req.rawBody = buf.toString(encoding || 'utf8');
         }
       },

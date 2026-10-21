@@ -66,6 +66,48 @@ function TagListEditor({
   );
 }
 
+function FundingInvoicePanel({
+  projectId,
+  analysis,
+  onDone,
+}: {
+  projectId: string;
+  analysis: Record<string, any>;
+  onDone: () => void;
+}) {
+  const invoice = analysis.fundingInvoice;
+  const [message, setMessage] = useState('');
+  const resend = useMutation({
+    mutationFn: () => api.post<{ sent?: boolean }>(`/funding/projects/${projectId}/invoice`, {}),
+    onSuccess: (result) => {
+      setMessage(result?.sent ? 'Invoice sent.' : 'The invoice was not sent. Save today’s account on the projects page, then try again.');
+      onDone();
+    },
+    onError: (error: Error) => setMessage(error.message),
+  });
+  const receipt = getBackendAssetUrl(invoice?.receipt?.url || '');
+  return (
+    <div className="rounded-lg border p-3 text-sm space-y-2">
+      <div className="font-medium">Funding invoice</div>
+      <p className="text-gray-600">The homeowner pays from the email and replies with the receipt. Confirm payment on the projects list after the receipt arrives.</p>
+      {invoice?.reference ? <div>Reference {invoice.reference}</div> : <div className="text-gray-500">No invoice sent yet.</div>}
+      {invoice?.amount ? <div>Total to fund {naira(invoice.amount)}</div> : null}
+      {invoice?.account ? (
+        <div>{invoice.account.bankName} · {invoice.account.accountNumber} · {invoice.account.accountName}</div>
+      ) : null}
+      {receipt ? (
+        <a href={receipt} target="_blank" rel="noreferrer" className="inline-block font-medium underline">Open the receipt</a>
+      ) : (
+        <div className="text-gray-500">No receipt yet.</div>
+      )}
+      <button type="button" className="px-3 py-2 border rounded-lg disabled:opacity-50" disabled={resend.isPending} onClick={() => resend.mutate()}>
+        {invoice?.sentAt ? 'Resend invoice' : 'Send invoice'}
+      </button>
+      {message ? <p>{message}</p> : null}
+    </div>
+  );
+}
+
 function naira(value: unknown) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return '—';
@@ -318,6 +360,11 @@ export default function AdminProjectDetailPage() {
               onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
             />
           ) : null}
+          <FundingInvoicePanel
+            projectId={projectId}
+            analysis={analysis}
+            onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
+          />
         </div>
       ) : null}
       <div className="flex items-start gap-4">

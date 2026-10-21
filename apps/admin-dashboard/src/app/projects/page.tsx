@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Plus, Search, ShieldAlert, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { getBackendAssetUrl } from '@/lib/image';
 import { CreateManagedProjectModal } from '@/components/CreateManagedProjectModal';
 import { ProjectAccessLinksPanel } from '@/components/ProjectAccessLinksPanel';
 
@@ -52,6 +53,12 @@ type ApiProject = {
     } | null;
   }[] | null;
   stages?: StageView[] | null;
+  aiAnalysis?: {
+    fundingInvoice?: {
+      reference?: string;
+      receipt?: { url?: string; fileName?: string } | null;
+    } | null;
+  } | null;
 };
 
 type ProjectView = {
@@ -76,6 +83,8 @@ type ProjectView = {
   managedByAdmin?: boolean;
   stages?: StageView[] | null;
   planRequestStep?: { step?: number; state?: string; label?: string } | null;
+  fundingReference?: string | null;
+  fundingReceiptUrl?: string | null;
 };
 
 function formatUpdatedAt(updatedAt?: string) {
@@ -139,6 +148,10 @@ export default function ProjectsPage() {
   const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string>('');
   const [createManagedOpen, setCreateManagedOpen] = useState(false);
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountNotice, setAccountNotice] = useState('');
 
   const queryClient = useQueryClient();
 
@@ -160,6 +173,28 @@ export default function ProjectsPage() {
       return res;
     },
     retry: 1,
+  });
+
+  const accountQuery = useQuery({
+    queryKey: ['funding-account'],
+    queryFn: () => api.get<{ account: { bankName: string; accountNumber: string; accountName: string } | null }>('/funding/account'),
+  });
+
+  useEffect(() => {
+    const account = accountQuery.data?.account;
+    if (!account) return;
+    setBankName((value) => value || account.bankName);
+    setAccountNumber((value) => value || account.accountNumber);
+    setAccountName((value) => value || account.accountName);
+  }, [accountQuery.data]);
+
+  const saveAccountMutation = useMutation({
+    mutationFn: () => api.patch('/funding/account', { bankName, accountNumber, accountName }),
+    onSuccess: async () => {
+      setAccountNotice('Saved. New invoices use this account.');
+      await queryClient.invalidateQueries({ queryKey: ['funding-account'] });
+    },
+    onError: (error: Error) => setAccountNotice(error.message || 'Could not save the account'),
   });
 
   const invalidateProjectQueries = async () => {
@@ -193,6 +228,8 @@ export default function ProjectsPage() {
       archivedAt: p.archivedAt ?? null,
       managedByAdmin: p.managedByAdmin ?? false,
       stages: p.stages ?? null,
+      fundingReference: p.aiAnalysis?.fundingInvoice?.reference ?? null,
+      fundingReceiptUrl: p.aiAnalysis?.fundingInvoice?.receipt?.url ?? null,
     }));
   }, [projectsQuery.data]);
 
@@ -429,6 +466,34 @@ export default function ProjectsPage() {
             <option value="progress">Sort by Progress</option>
             <option value="budget">Sort by Budget</option>
           </select>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl shadow p-4 space-y-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">Payment account for invoices</p>
+          <p className="text-xs text-gray-500 mt-1">
+            This is the account on today’s invoice. Change it when the bank changes. An invoice already sent keeps the account it was sent with until you resend it.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Bank name" value={bankName} onChange={(e) => setBankName(e.target.value)} />
+          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
+          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Account name" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg disabled:opacity-50"
+            disabled={saveAccountMutation.isPending}
+            onClick={() => {
+              setAccountNotice('');
+              saveAccountMutation.mutate();
+            }}
+          >
+            Save account
+          </button>
+          {accountNotice ? <p className="text-sm text-gray-600">{accountNotice}</p> : null}
         </div>
       </div>
 
@@ -706,7 +771,17 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                {project.externalPaymentLink ? (
+                {project.fundingReceiptUrl ? (
+                  <a
+                    href={getBackendAssetUrl(project.fundingReceiptUrl) || project.fundingReceiptUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open receipt {project.fundingReference ? `(${project.fundingReference})` : ''}
+                  </a>
+                ) : project.externalPaymentLink ? (
                   <a
                     href={project.externalPaymentLink}
                     target="_blank"
@@ -717,7 +792,7 @@ export default function ProjectsPage() {
                     View payment instructions
                   </a>
                 ) : (
-                  <p className="text-xs text-gray-500">No external payment link set yet.</p>
+                  <p className="text-xs text-gray-500">No receipt yet. The invoice email collects it.</p>
                 )}
               </div>
 

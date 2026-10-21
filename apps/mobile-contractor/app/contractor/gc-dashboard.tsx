@@ -693,7 +693,7 @@ export default function GCDashboardScreen() {
                   <Text className="text-orange-300 text-sm leading-5" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {selectedUnpaidProject?.status === 'inspection'
                       ? 'Inspect the property with the homeowner and agree the price. Submit that quote before they are asked to fund the project.'
-                      : 'The homeowner has not yet funded the agreed total. Once BuildMyHouse confirms that payment, you can open the project dashboard.'}
+                      : 'The invoice is in the homeowner’s email. Once they reply with a receipt and BuildMyHouse confirms that payment, you can open the project dashboard.'}
                   </Text>
                 </View>
               </View>

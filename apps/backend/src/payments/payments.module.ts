@@ -6,9 +6,10 @@ import { StripeService } from './services/stripe.service';
 import { WebSocketModule } from '../websocket/websocket.module';
 import { AuthModule } from '../auth/auth.module';
 import { AdminAccessModule } from '../admin-access/admin-access.module';
+import { FundingModule } from '../funding/funding.module';
 
 @Module({
-  imports: [WebSocketModule, AuthModule, AdminAccessModule],
+  imports: [WebSocketModule, AuthModule, AdminAccessModule, FundingModule],
   controllers: [PaymentsController, WebhooksController],
   providers: [PaymentsService, StripeService],
   exports: [PaymentsService, StripeService],

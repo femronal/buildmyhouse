@@ -43,6 +43,7 @@ describe('ContractorsService.recommendGCs', () => {
       matcher,
       emailService,
       openAIService,
+      { sendProjectInvoice: jest.fn().mockResolvedValue({ sent: false }) } as any,
     );
 
     const prismaMock = {

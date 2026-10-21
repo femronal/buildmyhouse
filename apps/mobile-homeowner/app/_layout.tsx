@@ -12,16 +12,7 @@ import { Platform, Text, TextInput } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "react-native-reanimated";
 import "../global.css";
-import {
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from '@expo-google-fonts/poppins';
-import {
-  JetBrainsMono_500Medium,
-} from '@expo-google-fonts/jetbrains-mono';
+import { appFonts } from '@/lib/app-fonts';
 import { InvestmentProvider } from '@/contexts/InvestmentContext';
 // eslint-disable-next-line import/no-unresolved
 import { StripeProvider } from '@/lib/stripe';
@@ -74,14 +65,7 @@ export default function RootLayout() {
     trackMetaPageView();
   }, [pathname]);
 
-  const [loaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
-    JetBrainsMono_500Medium,
-  });
+  const [loaded] = useFonts(appFonts);
 
   useEffect(() => {
     if (Platform.OS === 'web') {

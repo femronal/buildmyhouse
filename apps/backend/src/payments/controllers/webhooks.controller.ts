@@ -7,11 +7,15 @@ import {
   Logger,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import { Request } from 'express';
 import { StripeService } from '../services/stripe.service';
 import { PaymentsService } from '../services/payments.service';
+import { FundingService } from '../../funding/funding.service';
+import { verifyResendWebhook } from '../../funding/resend-webhook';
 
 @Controller('payments/webhooks')
 @SkipThrottle() // Webhooks from Stripe must not be rate-limited
@@ -21,7 +25,35 @@ export class WebhooksController {
   constructor(
     private readonly stripeService: StripeService,
     private readonly paymentsService: PaymentsService,
+    private readonly fundingService: FundingService,
+    private readonly config: ConfigService,
   ) {}
+
+  @Post('resend')
+  @HttpCode(HttpStatus.OK)
+  async handleResendWebhook(@Req() req: RawBodyRequest<Request>) {
+    const raw = req.rawBody;
+    const payload = typeof raw === 'string' ? raw : raw ? Buffer.from(raw).toString('utf8') : '';
+    const valid = verifyResendWebhook({
+      payload,
+      id: req.header('svix-id'),
+      timestamp: req.header('svix-timestamp'),
+      signature: req.header('svix-signature'),
+      secret: this.config.get<string>('RESEND_WEBHOOK_SECRET'),
+    });
+    if (!valid) {
+      this.logger.warn('Rejected Resend webhook: signature did not match');
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
+    let event: unknown;
+    try {
+      event = JSON.parse(payload);
+    } catch {
+      return { received: false };
+    }
+    await this.fundingService.receiveResendEvent(event as any);
+    return { received: true };
+  }
 
   @Post('stripe')
   @HttpCode(HttpStatus.OK)

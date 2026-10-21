@@ -10,16 +10,7 @@ import { useEffect } from "react";
 import { Text, TextInput } from "react-native";
 import "react-native-reanimated";
 import "../global.css";
-import {
-  Poppins_400Regular,
-  Poppins_500Medium,
-  Poppins_600SemiBold,
-  Poppins_700Bold,
-  Poppins_800ExtraBold,
-} from '@expo-google-fonts/poppins';
-import {
-  JetBrainsMono_500Medium,
-} from '@expo-google-fonts/jetbrains-mono';
+import { appFonts } from '@/lib/app-fonts';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { InvestmentProvider } from '../contexts/InvestmentContext';
 import { AppAlertProvider } from "../components/AppAlertProvider";
@@ -40,14 +31,7 @@ export default function RootLayout() {
 
   useEffect(() => startFreshWebBuildWatch(), []);
 
-  const [loaded] = useFonts({
-    Poppins_400Regular,
-    Poppins_500Medium,
-    Poppins_600SemiBold,
-    Poppins_700Bold,
-    Poppins_800ExtraBold,
-    JetBrainsMono_500Medium,
-  });
+  const [loaded] = useFonts(appFonts);
 
   useEffect(() => {
     if (loaded) {

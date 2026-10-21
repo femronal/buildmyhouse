@@ -42,6 +42,32 @@ describe('getPlanRequestStep', () => {
     expect(step.state).toBe('declined');
   });
 
+  it('lets the contractor accept the job only after a fair check', () => {
+    const ready = {
+      status: 'pending',
+      sentAt,
+      contactedAt: sentAt,
+      homeownerConfirmedContactAt: sentAt,
+      inspectedAt: sentAt,
+      homeownerConfirmedInspectionAt: sentAt,
+      quoteGeneratedAt: sentAt,
+      homeownerAcceptedQuoteAt: sentAt,
+      bmhCheckResult: 'fair',
+      bmhCheckAt: sentAt,
+    };
+    const waiting = getPlanRequestStep(ready, project, 'gc', new Date('2026-10-20T12:00:00.000Z'));
+    expect(waiting.step).toBe(6);
+    expect(waiting.actor).toBe('gc');
+    const accepted = getPlanRequestStep(
+      { ...ready, status: 'accepted', respondedAt: sentAt },
+      project,
+      'homeowner',
+      new Date('2026-10-20T12:00:00.000Z'),
+    );
+    expect(accepted.step).toBe(6);
+    expect(accepted.state).toBe('done');
+  });
+
   it('sends a failed quote check back to the contractor', () => {
     const step = getPlanRequestStep(
       {

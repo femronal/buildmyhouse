@@ -13,6 +13,7 @@ export interface SendEmailOptions {
   subject: string;
   html: string;
   text?: string;
+  replyTo?: string;
   attachments?: Array<{
     filename: string;
     content: Buffer | string;
@@ -89,6 +90,7 @@ export class EmailService {
         subject: options.subject,
         html: options.html,
         text: options.text,
+        ...(options.replyTo ? { replyTo: options.replyTo } : {}),
         attachments: (options.attachments || []).map((attachment) => ({
           filename: attachment.filename,
           content:
@@ -348,6 +350,69 @@ After payment, send your receipt and the attached quote PDF to BuildMyHouse What
         checkedAt,
       };
     }
+  }
+
+  async sendFundingInvoiceEmail(params: {
+    to: string;
+    replyTo: string;
+    homeownerName: string;
+    projectName: string;
+    amount: number;
+    reference: string;
+    account: { bankName: string; accountNumber: string; accountName: string };
+  }): Promise<boolean> {
+    const name = this.escapeHtml(params.homeownerName || 'Homeowner');
+    const project = this.escapeHtml(params.projectName || 'your project');
+    const reference = this.escapeHtml(params.reference);
+    const amount = this.formatNaira(params.amount);
+    const bank = this.escapeHtml(params.account.bankName);
+    const number = this.escapeHtml(params.account.accountNumber);
+    const accountName = this.escapeHtml(params.account.accountName);
+    const subject = `Invoice ${params.reference}: ${params.projectName}`;
+    const html = `
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;margin:0 auto;padding:24px;">
+    <tr>
+      <td style="background:#ffffff;border-radius:12px;padding:28px;">
+        <h1 style="margin:0 0 12px 0;font-size:20px;color:#111827;">Pay BuildMyHouse to start ${project}</h1>
+        <p style="margin:0 0 16px 0;font-size:14px;color:#374151;">Hi ${name}, your contractor accepted the job. Pay the total below before work starts.</p>
+        <p style="margin:0 0 16px 0;font-size:22px;font-weight:700;color:#111827;">${amount}</p>
+        <p style="margin:0 0 16px 0;font-size:13px;color:#4b5563;">This is the signed contractor amount plus monitoring, coordination, and contingency.</p>
+        <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:16px;">
+          <p style="margin:0 0 8px 0;font-size:13px;font-weight:700;color:#111827;">Pay into this account</p>
+          <p style="margin:0;font-size:14px;line-height:1.7;color:#111827;">
+            ${bank}<br>${number}<br>${accountName}
+          </p>
+        </div>
+        <p style="margin:0 0 8px 0;font-size:14px;color:#111827;">Use this reference: <strong>${reference}</strong></p>
+        <p style="margin:0;font-size:14px;color:#111827;">Reply to this email with your payment receipt. BuildMyHouse confirms the payment, and the project opens after that.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`.trim();
+    const text = `Hi ${params.homeownerName || 'Homeowner'},
+
+Your contractor accepted ${params.projectName}. Pay ${amount} to BuildMyHouse before work starts.
+This is the signed contractor amount plus monitoring, coordination, and contingency.
+
+Pay into this account:
+${params.account.bankName}
+${params.account.accountNumber}
+${params.account.accountName}
+
+Reference: ${params.reference}
+
+Reply to this email with your payment receipt. BuildMyHouse confirms the payment, and the project opens after that.`;
+    return this.send({
+      to: params.to,
+      replyTo: params.replyTo,
+      subject,
+      html,
+      text,
+    });
   }
 
   async sendProjectRequestEmail(params: {

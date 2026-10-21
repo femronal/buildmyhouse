@@ -12,6 +12,8 @@ import { WebSocketService } from '../websocket/websocket.service';
 import { StripeService } from '../payments/services/stripe.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { FundingService } from '../funding/funding.service';
+import { FUND_INVOICE_LINE } from '../funding/funding-invoice';
 import PDFDocument = require('pdfkit');
 import { OpenAIService, RerankContractorInput } from '../openai/openai.service';
 import {
@@ -336,6 +338,7 @@ export class ContractorsService {
     private readonly contractorMatcherService: ContractorMatcherService,
     private readonly emailService: EmailService,
     private readonly openAIService: OpenAIService,
+    private readonly fundingService: FundingService,
   ) {}
 
   private async getContractorProfileOrThrow(userId: string) {
@@ -1513,6 +1516,46 @@ export class ContractorsService {
         name: homeownerName,
         title: 'Quote check',
         message: line,
+      });
+    } else if (body.action === 'accept_job') {
+      if (!isGc || current.step !== 6 || current.actor !== 'gc') {
+        throw new BadRequestException('You cannot accept this job yet');
+      }
+      if (request.bmhCheckResult !== 'fair') {
+        throw new BadRequestException('BuildMyHouse has not marked this quote fair');
+      }
+      const currentStatus = request.project.status;
+      const nextStatus = currentStatus === 'active' || currentStatus === 'pending_payment' || currentStatus === 'completed'
+        ? currentStatus
+        : 'pending_payment';
+      await this.prisma.$transaction([
+        this.prisma.projectRequest.update({
+          where: { id: requestId },
+          data: { status: 'accepted', respondedAt: new Date() },
+        }),
+        this.prisma.project.update({
+          where: { id: request.projectId },
+          data: {
+            status: nextStatus,
+            generalContractorId: request.contractorId,
+          },
+        }),
+      ]);
+      let invoiceSent = false;
+      try {
+        const invoice = await this.fundingService.sendProjectInvoice(request.projectId);
+        invoiceSent = invoice.sent;
+      } catch (error) {
+        this.logger.warn(`Funding invoice failed: ${error instanceof Error ? error.message : error}`);
+      }
+      await this.notifyPlanSide({
+        userId: request.project.homeownerId,
+        email: request.project.homeowner?.email,
+        name: homeownerName,
+        title: 'Contractor accepted the job',
+        message: invoiceSent
+          ? `${firstName} accepted the job. ${FUND_INVOICE_LINE} Work starts after BuildMyHouse confirms that payment.`
+          : `${firstName} accepted the job. BuildMyHouse will email your invoice. Reply to that email with your receipt. Work starts after BuildMyHouse confirms that payment.`,
       });
     } else {
       throw new BadRequestException('Unknown step action');
