@@ -1,6 +1,7 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform, Share } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, TextInput, Switch, Alert, Modal, ActivityIndicator, Platform, Share, Linking, BackHandler } from "react-native";
 import { useRouter, useNavigation, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, User, CreditCard, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2, Smartphone } from "lucide-react-native";
+import { ArrowLeft, User, Settings, Shield, FileText, HelpCircle, LogOut, ChevronRight, Building2, Award, Mail, Phone, MapPin, Calendar, Banknote, CheckCircle, Edit2, Plus, Trash2, Smartphone, Wrench, Star, UserPlus, Briefcase, Tag, MessageCircle, Camera, Hourglass } from "lucide-react-native";
+import { GC_WHATSAPP_URL } from "@/lib/whatsapp-support";
 import { InviteClientSheet } from "@/components/InviteClientSheet";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { clearAuthToken } from "@/lib/auth";
@@ -23,6 +24,43 @@ import { uploadFile } from "@/utils/fileUpload";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { StateLgaPicker } from "@/components/location/StateLgaPicker";
 import { composeLocationLabel, parseLocationToStateLga } from "@/lib/nigeria-lgas";
+
+function profileInitials(name?: string | null) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const letters = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() || '').join('');
+  return letters || 'GC';
+}
+
+function existingProjectPhoto(project: any): string {
+  const homeownerPhotos = project?.homeownerFiles?.photoUrls || project?.homeownerFiles?.photos;
+  const direct = [
+    project?.projectImageUrl,
+    project?.coverImageUrl,
+    project?.imageUrl,
+    project?.thumbnailUrl,
+    project?.photoUrl,
+    Array.isArray(homeownerPhotos) ? homeownerPhotos[0] : '',
+  ]
+    .map((value) => String(value || '').trim())
+    .find(Boolean);
+  if (direct) return direct;
+  let analysis = project?.aiAnalysis;
+  if (typeof analysis === 'string') {
+    try {
+      analysis = JSON.parse(analysis);
+    } catch {
+      analysis = null;
+    }
+  }
+  const listed = Array.isArray(analysis?.projectImageUrls) ? String(analysis.projectImageUrls[0] || '').trim() : '';
+  return String(analysis?.projectImageUrl || listed || '').trim();
+}
+
+function jobArea(project: any) {
+  const city = String(project?.city || '').trim();
+  if (city) return city;
+  return String(project?.address || project?.location || '').split(',')[0].trim();
+}
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -56,7 +94,8 @@ export default function GCProfileScreen() {
   const changePassword = useChangePassword();
   const uploadProfilePicture = useUploadProfilePicture();
 
-  const [activeSection, setActiveSection] = useState<'overview' | 'billing' | 'settings' | 'professional'>('overview');
+  const [activeSection, setActiveSection] = useState<'menu' | 'overview' | 'billing' | 'settings' | 'professional'>('menu');
+  const scrollRef = useRef<ScrollView>(null);
   const [showInvite, setShowInvite] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(true);
@@ -311,6 +350,30 @@ export default function GCProfileScreen() {
     void handlePickProfilePicture();
   }, [handlePickProfilePicture, params.openLogoUpload]);
 
+  useEffect(() => {
+    if (activeSection === 'menu') return undefined;
+    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      setActiveSection('menu');
+      return true;
+    });
+    return () => subscription.remove();
+  }, [activeSection]);
+
+  const leaveProfile = () => {
+    if (activeSection !== 'menu') {
+      setActiveSection('menu');
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    if (router.canGoBack()) router.back();
+    else router.push('/contractor/gc-dashboard');
+  };
+
+  const openSection = (section: 'overview' | 'billing' | 'settings' | 'professional') => {
+    setActiveSection(section);
+    setTimeout(() => scrollRef.current?.scrollTo({ y: 0, animated: false }), 40);
+  };
+
   const handleSaveBankAccount = async () => {
     const { bankName, accountNumber, accountOwnerName } = bankForm;
     if (!bankName.trim() || !accountNumber.trim() || !accountOwnerName.trim()) {
@@ -416,7 +479,7 @@ export default function GCProfileScreen() {
     return (
       <View className="flex-1 bg-[#0A1628] items-center justify-center">
         <ActivityIndicator size="large" color="#3B82F6" />
-        <Text className="text-gray-400 mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>Loading profile...</Text>
+        <Text className="text-slate-300 text-base mt-4" style={{ fontFamily: 'Poppins_400Regular' }}>Loading profile...</Text>
       </View>
     );
   }
@@ -424,11 +487,11 @@ export default function GCProfileScreen() {
   if (error || !profileData) {
     return (
       <View className="flex-1 bg-[#0A1628] items-center justify-center p-6">
-        <Text className="text-red-400 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
+        <Text className="text-red-400 text-base text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
           Failed to load profile. Please try again.
         </Text>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4 px-6 py-2 bg-blue-600 rounded-lg">
-          <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>Go back</Text>
+        <TouchableOpacity onPress={() => router.back()} className="mt-4 px-6 bg-blue-600 rounded-lg items-center justify-center" style={{ minHeight: 56 }}>
+          <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>Go back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -459,9 +522,13 @@ export default function GCProfileScreen() {
   const completedProjectsCount = loadingProjects
     ? profileData.completedProjects
     : completedProjectsAllTime.length;
-  const totalProjectsCount = loadingProjects
-    ? profileData.totalProjects
-    : allProjects.length;
+  const detailsReady = Boolean(
+    String(profileData.email || '').trim() &&
+    String(profileData.phone || '').trim() &&
+    String(profileData.location || profileData.stateLabel || '').trim(),
+  );
+  const uploadedDocuments = requiredVerificationDocs.filter((doc) => doc.uploaded).length;
+  const tradeLine = [profileData.specialty, profileData.experience].filter(Boolean).join(' · ');
 
   return (
     <View className="flex-1 bg-[#0A1628]">
@@ -470,151 +537,283 @@ export default function GCProfileScreen() {
         style={{ paddingTop: headerPaddingTop, paddingHorizontal: horizontalPad }}
       >
         <TouchableOpacity
-          onPress={() => router.canGoBack() ? router.back() : router.push('/contractor/gc-dashboard')}
-          className="w-10 h-10 bg-[#1E3A5F] rounded-full items-center justify-center mr-4 flex-shrink-0"
+          onPress={leaveProfile}
+          accessibilityRole="button"
+          accessibilityLabel="Back"
+          className="bg-[#1E3A5F] rounded-full items-center justify-center mr-3 flex-shrink-0"
+          style={{ width: 56, height: 56 }}
         >
           <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2} />
         </TouchableOpacity>
-        <Text className="text-white text-lg flex-1 min-w-0" style={{ fontFamily: 'Poppins_700Bold' }} numberOfLines={2}>
-          Profile & Settings
+        <Text className="text-white flex-1 min-w-0" style={{ fontFamily: 'Poppins_800ExtraBold', fontSize: 24 }} numberOfLines={1}>
+          My profile
         </Text>
       </View>
 
       <ScrollView
+        ref={scrollRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom: scrollBottomPadding,
+          paddingBottom: scrollBottomPadding + 48,
           paddingHorizontal: horizontalPad,
         }}
       >
-        <View className="mb-6">
-          <View className="bg-[#1E3A5F] rounded-3xl p-6 border border-blue-900">
-            <View className="flex-row items-center mb-4">
-              <TouchableOpacity className="relative" onPress={handlePickProfilePicture}>
-                {profileImageUrl ? (
+        {activeSection !== 'menu' ? (
+          <TouchableOpacity
+            onPress={leaveProfile}
+            accessibilityRole="button"
+            accessibilityLabel="Back to my profile"
+            className="bg-[#1E3A5F] rounded-2xl px-4 mb-4 border border-blue-900 flex-row items-center"
+            style={{ minHeight: 56 }}
+          >
+            <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.4} />
+            <Text className="text-white text-lg ml-3" style={{ fontFamily: 'Poppins_700Bold' }}>
+              Back to my profile
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <View className="mb-6">
+            <View className="bg-[#1E3A5F] rounded-3xl p-5 border border-blue-900">
+              <TouchableOpacity
+                onPress={handlePickProfilePicture}
+                disabled={uploadProfilePicture.isPending}
+                className="w-[72px] h-[72px] rounded-full bg-blue-600 items-center justify-center mb-3 overflow-hidden"
+              >
+                {profileImageUrl && !profileImageFailed ? (
                   <Image
                     source={{ uri: profileImageUrl }}
-                    className="w-20 h-20 rounded-full border-2 border-blue-600"
+                    style={{ width: 72, height: 72 }}
                     resizeMode="cover"
                     onError={() => setProfileImageFailed(true)}
                   />
                 ) : (
-                  <View className="w-20 h-20 rounded-full border-2 border-blue-600 bg-[#0A1628] items-center justify-center">
-                    <Text
-                      className="text-[10px] text-gray-400 text-center"
-                      style={{ fontFamily: 'Poppins_600SemiBold' }}
-                    >
-                      Upload{"\n"}Logo
-                    </Text>
+                  <Text className="text-white text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    {profileInitials(profileData.fullName)}
+                  </Text>
+                )}
+                {uploadProfilePicture.isPending ? (
+                  <View className="absolute inset-0 bg-black/50 items-center justify-center">
+                    <ActivityIndicator color="#FFFFFF" />
+                  </View>
+                ) : (
+                  <View className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-1 border-2 border-[#1E3A5F]">
+                    <Edit2 size={12} color="#FFFFFF" strokeWidth={2} />
                   </View>
                 )}
-                <View className="absolute bottom-0 right-0 w-6 h-6 bg-blue-600 rounded-full items-center justify-center border-2 border-[#1E3A5F]">
-                  <Edit2 size={12} color="#FFFFFF" strokeWidth={2} />
-                </View>
               </TouchableOpacity>
-              <View className="ml-4 flex-1">
-                <View className="flex-row items-center mb-1">
-                  <Text className="text-white text-2xl mr-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                    {profileData.fullName}
-                  </Text>
-                  {profileData.verified && (
-                    <CheckCircle size={20} color="#10B981" strokeWidth={2} />
-                  )}
-                </View>
-                <Text className="text-gray-400 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  {profileData.specialty} • {profileData.experience || '—'}
+              <Text className="text-white mb-1" style={{ fontFamily: 'Poppins_700Bold', fontSize: 21 }} numberOfLines={2}>
+                {profileData.fullName}
+              </Text>
+              <View className="flex-row items-center mb-3">
+                <Wrench size={18} color="#CBD5E1" strokeWidth={2.2} />
+                <Text className="text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium', color: '#CBD5E1' }} numberOfLines={2}>
+                  {tradeLine || 'Not set yet'}
                 </Text>
-                <View className="flex-row items-center">
-                  <View className="bg-yellow-600/20 rounded-full px-2 py-1 mr-2">
-                    <Text className="text-yellow-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      ⭐ {profileData.rating?.toFixed(1) || '0'}
+              </View>
+              <View className="flex-row flex-wrap items-center mb-4">
+                <View className="bg-[#0A1628] rounded-full px-3 py-2 mr-2 mb-2 flex-row items-center">
+                  <Text className="text-base" style={{ fontFamily: 'Poppins_600SemiBold', color: '#FBBF24' }}>
+                    ⭐ {Number(profileData.rating || 0).toFixed(1)} from homeowners
+                  </Text>
+                </View>
+                {profileData.verified ? (
+                  <View className="bg-green-600/20 rounded-full px-3 py-2 mb-2 flex-row items-center">
+                    <CheckCircle size={16} color="#4ADE80" strokeWidth={2.4} />
+                    <Text className="text-base ml-1" style={{ fontFamily: 'Poppins_600SemiBold', color: '#4ADE80' }}>
+                      Verified by BMH
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    onPress={handleCopyReviewLink}
-                    className="bg-blue-600/20 border border-blue-500 rounded-full px-2 py-1 mr-2"
-                  >
-                    <Text className="text-blue-300 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                      {reviewLinkCopied ? 'Copied' : 'Copy review link'}
+                ) : null}
+              </View>
+              <View className="flex-row" style={{ gap: 8 }}>
+                {[
+                  { value: String(activeProjectsCount), label: 'Job now' },
+                  { value: String(completedProjectsCount), label: 'Jobs done' },
+                  { value: `₦${Number(profileData.totalEarnings || 0).toLocaleString()}`, label: 'Paid to you' },
+                ].map((box) => (
+                  <View key={box.label} className="flex-1 bg-[#0A1628] rounded-2xl px-2 py-3 items-center" style={{ minHeight: 88 }}>
+                    <Text
+                      className="text-white text-center"
+                      style={{ fontFamily: 'Poppins_700Bold', fontSize: 18 }}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.6}
+                    >
+                      {box.value}
                     </Text>
-                  </TouchableOpacity>
-                  <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {totalProjectsCount} projects
+                    <Text className="text-center mt-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: '#CBD5E1' }}>
+                      {box.label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {!profileData.verified ? (
+              <View className="rounded-3xl p-5 mt-4 border-2" style={{ backgroundColor: '#3B2A10', borderColor: '#F59E0B' }}>
+                <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 14, color: '#FCD34D' }}>
+                  YOU ARE NOT VERIFIED YET
+                </Text>
+                <Text className="text-white text-xl mt-2" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  Get verified to win more jobs
+                </Text>
+                <Text className="text-base mt-2 mb-4" style={{ fontFamily: 'Poppins_400Regular', color: '#FDE68A' }}>
+                  Homeowners trust verified contractors more.
+                </Text>
+                <View className="flex-row items-start mb-3">
+                  {detailsReady ? <CheckCircle size={20} color="#4ADE80" strokeWidth={2.4} /> : <View className="w-5 h-5 rounded border border-amber-200" />}
+                  <Text className="text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium', color: '#FFFFFF' }}>
+                    1. Add your details
                   </Text>
                 </View>
-              </View>
-            </View>
-
-            <View className="flex-row pt-4 border-t border-blue-900">
-              <View className="flex-1 items-center">
-                <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {activeProjectsCount}
-                </Text>
-                <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Active</Text>
-              </View>
-              <View className="w-px bg-blue-900" />
-              <View className="flex-1 items-center">
-                <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  {completedProjectsCount}
-                </Text>
-                <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Completed</Text>
-              </View>
-              <View className="w-px bg-blue-900" />
-              <View className="flex-1 items-center">
-                <Text className="text-white text-xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  ₦{(profileData.totalEarnings / 1000).toFixed(0)}K
-                </Text>
-                <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earnings</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          onPress={() => router.push('/contractor/listings' as any)}
-          className="bg-white rounded-2xl px-4 py-4 mb-4 border border-gray-200"
-        >
-          <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Manage My Listings</Text>
-          <Text className="text-gray-500 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Artisan listings linked to this account.
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => setShowInvite(true)}
-          className="bg-white rounded-2xl px-4 py-4 mb-4 border border-gray-200"
-        >
-          <Text className="text-black text-base" style={{ fontFamily: 'Poppins_700Bold' }}>Invite your client</Text>
-          <Text className="text-gray-500 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-            Send the link a client uses to follow the work.
-          </Text>
-        </TouchableOpacity>
-        <InviteClientSheet visible={showInvite} onClose={() => setShowInvite(false)} />
-
-        <View className="mb-6">
-          <View className="flex-row bg-[#1E3A5F] rounded-2xl p-1 border border-blue-900">
-            {[
-              { key: 'overview' as const, label: 'Overview', icon: User },
-              { key: 'billing' as const, label: 'Billing', icon: CreditCard },
-              { key: 'professional' as const, label: 'Professional', icon: Award },
-              { key: 'settings' as const, label: 'Settings', icon: Settings },
-            ].map((tab) => (
-              <TouchableOpacity
-                key={tab.key}
-                onPress={() => setActiveSection(tab.key)}
-                className={`flex-1 flex-row items-center justify-center py-2 rounded-xl ${activeSection === tab.key ? 'bg-blue-600' : ''}`}
-              >
-                <tab.icon size={16} color={activeSection === tab.key ? '#FFFFFF' : '#6B7280'} strokeWidth={2} />
-                <Text
-                  className={`ml-1 text-xs ${activeSection === tab.key ? 'text-white' : 'text-gray-500'}`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                <View className="flex-row items-start mb-3">
+                  {uploadedDocuments > 0 && uploadedDocuments === requiredVerificationDocs.length ? (
+                    <CheckCircle size={20} color="#4ADE80" strokeWidth={2.4} />
+                  ) : (
+                    <View className="w-5 h-5 rounded border border-amber-200" />
+                  )}
+                  <Text className="text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium', color: '#FFFFFF' }}>
+                    2. Upload your ID and papers ({uploadedDocuments} of {requiredVerificationDocs.length} done)
+                  </Text>
+                </View>
+                <View className="flex-row items-start mb-4">
+                  <Hourglass size={20} color="#FDE68A" strokeWidth={2.2} />
+                  <Text className="text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium', color: '#FFFFFF' }}>
+                    3. BMH checks them
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  onPress={() => openSection('professional')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Get verified"
+                  className="rounded-2xl flex-row items-center justify-center"
+                  style={{ backgroundColor: '#F59E0B', minHeight: 64 }}
                 >
-                  {tab.label}
+                  <Shield size={22} color="#111827" strokeWidth={2.4} />
+                  <Text className="text-lg ml-2" style={{ fontFamily: 'Poppins_700Bold', color: '#111827' }}>
+                    Get verified
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+
+            <View className="flex-row mt-4" style={{ gap: 12 }}>
+              <TouchableOpacity
+                onPress={handleCopyReviewLink}
+                accessibilityRole="button"
+                accessibilityLabel="Share my review link"
+                className="flex-1 bg-[#1E3A5F] rounded-2xl border border-blue-900 items-center justify-center px-3"
+                style={{ minHeight: 112 }}
+              >
+                <Star size={26} color="#FBBF24" strokeWidth={2.2} />
+                <Text className="text-white text-center mt-2" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }} numberOfLines={2}>
+                  {reviewLinkCopied ? 'Copied' : 'Share my review link'}
                 </Text>
               </TouchableOpacity>
-            ))}
+              <TouchableOpacity
+                onPress={() => setShowInvite(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Invite a client"
+                className="flex-1 bg-[#1E3A5F] rounded-2xl border border-blue-900 items-center justify-center px-3"
+                style={{ minHeight: 112 }}
+              >
+                <UserPlus size={26} color="#FFFFFF" strokeWidth={2.2} />
+                <Text className="text-white text-center mt-2" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }}>
+                  Invite a client
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <View className="bg-[#1E3A5F] rounded-3xl border border-blue-900 mt-4 overflow-hidden">
+              {[
+                { key: 'overview' as const, label: 'My details', icon: User, onPress: () => openSection('overview') },
+                { key: 'billing' as const, label: 'Bank / Billing', icon: Banknote, onPress: () => openSection('billing') },
+                { key: 'professional' as const, label: 'My work', icon: Briefcase, onPress: () => openSection('professional') },
+                { key: 'listings' as const, label: 'My listings', icon: Tag, onPress: () => router.push('/contractor/listings' as any) },
+                { key: 'settings' as const, label: 'Settings', icon: Settings, onPress: () => openSection('settings') },
+              ].map((row) => (
+                <TouchableOpacity
+                  key={row.key}
+                  onPress={row.onPress}
+                  accessibilityRole="button"
+                  accessibilityLabel={row.label}
+                  className="flex-row items-center px-4 border-b border-blue-900"
+                  style={{ minHeight: 64 }}
+                >
+                  <View className="w-10 h-10 rounded-full bg-[#0A1628] items-center justify-center">
+                    <row.icon size={20} color="#FFFFFF" strokeWidth={2.2} />
+                  </View>
+                  <Text className="text-white flex-1 ml-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 18 }}>
+                    {row.label}
+                  </Text>
+                  <ChevronRight size={20} color="#CBD5E1" strokeWidth={2.2} />
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                onPress={() => Linking.openURL(GC_WHATSAPP_URL)}
+                accessibilityRole="button"
+                accessibilityLabel="Help on WhatsApp"
+                className="flex-row items-center px-4"
+                style={{ minHeight: 64 }}
+              >
+                <View className="w-10 h-10 rounded-full bg-[#0A1628] items-center justify-center">
+                  <MessageCircle size={20} color="#4ADE80" strokeWidth={2.2} />
+                </View>
+                <Text className="flex-1 ml-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 18, color: '#4ADE80' }}>
+                  Help on WhatsApp
+                </Text>
+                <ChevronRight size={20} color="#4ADE80" strokeWidth={2.2} />
+              </TouchableOpacity>
+            </View>
+
+            <Text className="text-white mt-6 mb-3" style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+              Jobs done ({completedProjectsCount})
+            </Text>
+            {loadingProjects ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : completedProjectsAllTime.length === 0 ? (
+              <Text className="text-base" style={{ fontFamily: 'Poppins_400Regular', color: '#CBD5E1' }}>
+                No finished jobs yet.
+              </Text>
+            ) : (
+              completedProjectsAllTime.map((project: any) => {
+                const photo = existingProjectPhoto(project);
+                const area = jobArea(project);
+                return (
+                  <TouchableOpacity
+                    key={project.id}
+                    onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
+                    accessibilityRole="button"
+                    accessibilityLabel={project?.name || 'Finished job'}
+                    className="bg-[#1E3A5F] rounded-2xl p-3 mb-3 border border-blue-900 flex-row items-center"
+                    style={{ minHeight: 72 }}
+                  >
+                    {photo ? (
+                      <Image source={{ uri: getBackendAssetUrl(photo) }} style={{ width: 56, height: 56, borderRadius: 12 }} />
+                    ) : (
+                      <View className="rounded-xl items-center justify-center" style={{ width: 56, height: 56, backgroundColor: '#334E73' }}>
+                        <Camera size={22} color="#FFFFFF" strokeWidth={2.2} />
+                      </View>
+                    )}
+                    <View className="flex-1 ml-3">
+                      <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 17 }} numberOfLines={1}>
+                        {project?.name || 'Untitled project'}
+                      </Text>
+                      <View className="flex-row items-center mt-1">
+                        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, color: '#CBD5E1' }} numberOfLines={1}>
+                          {area ? `${area} · Done` : 'Done'}
+                        </Text>
+                        <CheckCircle size={16} color="#4ADE80" strokeWidth={2.4} style={{ marginLeft: 6 }} />
+                      </View>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </View>
-        </View>
+        )}
+        <InviteClientSheet visible={showInvite} onClose={() => setShowInvite(false)} />
 
         {activeSection === 'overview' && (
           <View className="mb-6">
@@ -624,10 +823,10 @@ export default function GCProfileScreen() {
               </Text>
               <View className="space-y-3">
                 <View className="flex-row items-center py-3 border-b border-blue-900">
-                  <Mail size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Email</Text>
+                  <Mail size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Email</Text>
                   <Text
-                    className="text-white text-xs mr-2 flex-1"
+                    className="text-white text-sm mr-2 flex-1"
                     style={{ fontFamily: 'Poppins_500Medium' }}
                     numberOfLines={1}
                     ellipsizeMode="tail"
@@ -639,8 +838,8 @@ export default function GCProfileScreen() {
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row items-center py-3 border-b border-blue-900">
-                  <Phone size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Phone</Text>
+                  <Phone size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Phone</Text>
                   <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {profileData.phone || '—'}
                   </Text>
@@ -649,10 +848,10 @@ export default function GCProfileScreen() {
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row items-center py-3">
-                  <MapPin size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 w-20" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
+                  <MapPin size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 w-20" style={{ fontFamily: 'Poppins_400Regular' }}>Location</Text>
                   <Text
-                    className="text-white text-xs leading-4 ml-3 mr-2 flex-1 text-right"
+                    className="text-white text-sm leading-4 ml-3 mr-2 flex-1 text-right"
                     style={{ fontFamily: 'Poppins_500Medium' }}
                     numberOfLines={2}
                     ellipsizeMode="tail"
@@ -684,62 +883,6 @@ export default function GCProfileScreen() {
                 </View>
               </View>
             </View>
-
-            <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mt-4">
-              <View className="flex-row items-center justify-between mb-3">
-                <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>
-                  Completed Projects
-                </Text>
-                <View className="bg-emerald-600/20 rounded-full px-3 py-1">
-                  <Text className="text-emerald-300 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {completedProjectsAllTime.length}
-                  </Text>
-                </View>
-              </View>
-
-              {loadingProjects ? (
-                <View className="py-4 items-center">
-                  <ActivityIndicator size="small" color="#3B82F6" />
-                  <Text className="text-gray-400 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    Loading completed projects...
-                  </Text>
-                </View>
-              ) : completedProjectsAllTime.length === 0 ? (
-                <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  No completed projects yet. Completed jobs will stay here permanently for easy reference.
-                </Text>
-              ) : (
-                completedProjectsAllTime.map((project: any) => (
-                  <TouchableOpacity
-                    key={project.id}
-                    onPress={() => router.push(`/contractor/gc-project-detail?id=${project.id}`)}
-                    className="bg-[#0A1628] rounded-xl p-4 mb-3 border border-blue-900"
-                  >
-                    <View className="flex-row items-start justify-between">
-                      <View className="flex-1 pr-3">
-                        <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          {project?.name || 'Untitled project'}
-                        </Text>
-                        <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                          {project?.homeowner?.fullName || 'Unknown homeowner'}
-                        </Text>
-                      </View>
-                      <View className="bg-emerald-600/20 rounded-full px-2 py-1">
-                        <Text className="text-emerald-300 text-[10px]" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                          Completed
-                        </Text>
-                      </View>
-                    </View>
-                    <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-blue-900">
-                      <Text className="text-gray-500 text-[11px]" style={{ fontFamily: 'Poppins_400Regular' }}>
-                        {project?.updatedAt ? `Updated ${new Date(project.updatedAt).toLocaleDateString()}` : 'Date unavailable'}
-                      </Text>
-                      <ChevronRight size={16} color="#6B7280" strokeWidth={2} />
-                    </View>
-                  </TouchableOpacity>
-                ))
-              )}
-            </View>
           </View>
         )}
 
@@ -765,7 +908,7 @@ export default function GCProfileScreen() {
                 </TouchableOpacity>
               </View>
               {bankAccounts.length === 0 && (
-                <Text className="text-gray-400 text-sm py-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+                <Text className="text-slate-300 text-sm py-4" style={{ fontFamily: 'Poppins_400Regular' }}>
                   No bank accounts added yet. Tap Add to add your bank details for receiving stage payments.
                 </Text>
               )}
@@ -779,7 +922,7 @@ export default function GCProfileScreen() {
                     <Banknote size={20} color="#3B82F6" strokeWidth={2} />
                     <View className="ml-3 flex-1">
                       <Text className="text-white text-base" style={{ fontFamily: 'Poppins_600SemiBold' }}>{account.bankName}</Text>
-                      <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                         {account.maskedAccountNumber} • {account.accountOwnerName}
                       </Text>
                     </View>
@@ -787,7 +930,7 @@ export default function GCProfileScreen() {
                   <View className="flex-row items-center">
                     {account.isDefault && (
                       <View className="bg-green-600/20 rounded-full px-2 py-1 mr-2">
-                        <Text className="text-green-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>Default</Text>
+                        <Text className="text-green-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>Default</Text>
                       </View>
                     )}
                     <TouchableOpacity onPress={() => handleDeletePress(account.id)} className="w-8 h-8 items-center justify-center">
@@ -803,9 +946,9 @@ export default function GCProfileScreen() {
             >
               <View>
                 <Text className="text-white text-base mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>Payment History</Text>
-                <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>View completed payments in Earnings</Text>
+                <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>View completed payments in Earnings</Text>
               </View>
-              <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+              <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
             </TouchableOpacity>
           </View>
         )}
@@ -819,14 +962,14 @@ export default function GCProfileScreen() {
                 </Text>
                 <View className="rounded-full px-3 py-1 bg-gray-700">
                   <Text
-                    className="text-xs text-gray-300"
+                    className="text-sm text-slate-300"
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
                   >
                     Optional
                   </Text>
                 </View>
               </View>
-              <Text className="text-gray-400 text-xs mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
+              <Text className="text-slate-300 text-sm mb-3" style={{ fontFamily: 'Poppins_400Regular' }}>
                 Add proof when you can. A file is received, not checked, until BuildMyHouse reviews it.
               </Text>
               {requiredVerificationDocs.map((doc) => (
@@ -836,13 +979,13 @@ export default function GCProfileScreen() {
                       <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                         {doc.title}
                       </Text>
-                      <Text className="text-gray-400 text-xs mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      <Text className="text-slate-300 text-sm mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
                         {doc.description}
                       </Text>
                     </View>
                     <View className={`rounded-full px-2 py-1 ${doc.status === 'checked' ? 'bg-green-600/20' : 'bg-gray-700'}`}>
                       <Text
-                        className={`text-[10px] ${doc.status === 'checked' ? 'text-green-400' : 'text-gray-300'}`}
+                        className={`text-sm ${doc.status === 'checked' ? 'text-green-400' : 'text-slate-300'}`}
                         style={{ fontFamily: 'Poppins_600SemiBold' }}
                       >
                         {doc.status === 'checked'
@@ -866,7 +1009,7 @@ export default function GCProfileScreen() {
                     disabled={upsertVerificationDocument.isPending}
                     className="mt-3 bg-blue-600/20 border border-blue-600 rounded-xl py-2 items-center"
                   >
-                    <Text className="text-blue-400 text-xs" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    <Text className="text-blue-400 text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                       {doc.uploaded ? 'Replace File' : 'Upload File'}
                     </Text>
                   </TouchableOpacity>
@@ -876,7 +1019,7 @@ export default function GCProfileScreen() {
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Certifications & Licenses</Text>
               {!profileData.verified && (
-                <Text className="text-amber-300 text-xs mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
+                <Text className="text-amber-300 text-sm mb-3" style={{ fontFamily: 'Poppins_500Medium' }}>
                   Verification document uploads are reviewed by admin and will appear here after your account is verified.
                 </Text>
               )}
@@ -886,7 +1029,7 @@ export default function GCProfileScreen() {
                     <Award size={18} color="#3B82F6" strokeWidth={2} />
                     <Text className="text-white text-sm ml-2 flex-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>{cert.name}</Text>
                   </View>
-                  <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
                     {cert.expiryYear ? `Expires: ${cert.expiryYear}` : 'No expiry'}
                   </Text>
                 </View>
@@ -903,8 +1046,8 @@ export default function GCProfileScreen() {
               <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Business Information</Text>
               <View className="space-y-3">
                 <View className="flex-row items-center py-3 border-b border-blue-900">
-                  <Building2 size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>Company Name</Text>
+                  <Building2 size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 flex-1 mr-4" style={{ fontFamily: 'Poppins_400Regular' }}>Company Name</Text>
                   <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {profileData.fullName || '—'}
                   </Text>
@@ -913,8 +1056,8 @@ export default function GCProfileScreen() {
                   </TouchableOpacity>
                 </View>
                 <View className="flex-row items-center py-3 border-b border-blue-900">
-                  <FileText size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Business License</Text>
+                  <FileText size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Business License</Text>
                   <Text
                     className={`${profileData.verified ? 'text-green-400' : 'text-red-400'} text-sm`}
                     style={{ fontFamily: 'Poppins_600SemiBold' }}
@@ -923,8 +1066,8 @@ export default function GCProfileScreen() {
                   </Text>
                 </View>
                 <View className="flex-row items-center py-3">
-                  <Calendar size={18} color="#6B7280" strokeWidth={2} />
-                  <Text className="text-gray-400 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Years of Experience</Text>
+                  <Calendar size={18} color="#CBD5E1" strokeWidth={2} />
+                  <Text className="text-slate-300 text-sm ml-3 flex-1" style={{ fontFamily: 'Poppins_400Regular' }}>Years of Experience</Text>
                   <Text className="text-white text-sm mr-2" style={{ fontFamily: 'Poppins_500Medium' }}>
                     {profileData.experience || '—'}
                   </Text>
@@ -945,35 +1088,35 @@ export default function GCProfileScreen() {
                 <View className="flex-row items-center justify-between py-3 border-b border-blue-900">
                   <View className="flex-1">
                     <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>Enable Notifications</Text>
-                    <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Receive all notifications</Text>
+                    <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Receive all notifications</Text>
                   </View>
                   <Switch value={notificationsEnabled} onValueChange={setNotificationsEnabled} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
                 </View>
                 <View className="flex-row items-center justify-between py-3 border-b border-blue-900">
                   <View className="flex-1">
                     <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>Email Notifications</Text>
-                    <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Receive updates via email</Text>
+                    <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Receive updates via email</Text>
                   </View>
                   <Switch value={emailNotifications} onValueChange={setEmailNotifications} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
                 </View>
                 <View className="flex-row items-center justify-between py-3 border-b border-blue-900">
                   <View className="flex-1">
                     <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>Push Notifications</Text>
-                    <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Receive push notifications</Text>
+                    <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Receive push notifications</Text>
                   </View>
                   <Switch value={pushNotifications} onValueChange={setPushNotifications} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
                 </View>
                 <View className="flex-row items-center justify-between py-3 border-b border-blue-900">
                   <View className="flex-1">
                     <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>Payment Notifications</Text>
-                    <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Get notified about payments</Text>
+                    <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Get notified about payments</Text>
                   </View>
                   <Switch value={paymentNotifications} onValueChange={setPaymentNotifications} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
                 </View>
                 <View className="flex-row items-center justify-between py-3">
                   <View className="flex-1">
                     <Text className="text-white text-sm mb-1" style={{ fontFamily: 'Poppins_500Medium' }}>Project Updates</Text>
-                    <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Get notified about project changes</Text>
+                    <Text className="text-slate-300 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Get notified about project changes</Text>
                   </View>
                   <Switch value={projectNotifications} onValueChange={setProjectNotifications} trackColor={{ false: '#374151', true: '#3B82F6' }} thumbColor="#FFFFFF" />
                 </View>
@@ -986,14 +1129,14 @@ export default function GCProfileScreen() {
                 className="flex-row items-center justify-between py-3 border-b border-blue-900"
               >
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Change Password</Text>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/contractor/privacy-settings')}
                 className="flex-row items-center justify-between py-3"
               >
                 <Text className="text-white text-sm" style={{ fontFamily: 'Poppins_500Medium' }}>Privacy Settings</Text>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
             </View>
             <View className="bg-[#1E3A5F] rounded-2xl p-5 border border-blue-900 mb-4">
@@ -1002,40 +1145,40 @@ export default function GCProfileScreen() {
                 className="flex-row items-center justify-between py-3 border-b border-blue-900"
               >
                 <View className="flex-row items-center">
-                  <FileText size={18} color="#6B7280" strokeWidth={2} />
+                  <FileText size={18} color="#CBD5E1" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Terms & Conditions</Text>
                 </View>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/contractor/help-support')}
                 className="flex-row items-center justify-between py-3 border-b border-blue-900"
               >
                 <View className="flex-row items-center">
-                  <HelpCircle size={18} color="#6B7280" strokeWidth={2} />
+                  <HelpCircle size={18} color="#CBD5E1" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Help & Support</Text>
                 </View>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/contractor/install-app')}
                 className="flex-row items-center justify-between py-3 border-b border-blue-900"
               >
                 <View className="flex-row items-center">
-                  <Smartphone size={18} color="#6B7280" strokeWidth={2} />
+                  <Smartphone size={18} color="#CBD5E1" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>Install App</Text>
                 </View>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => router.push('/contractor/about')}
                 className="flex-row items-center justify-between py-3"
               >
                 <View className="flex-row items-center">
-                  <Shield size={18} color="#6B7280" strokeWidth={2} />
+                  <Shield size={18} color="#CBD5E1" strokeWidth={2} />
                   <Text className="text-white text-sm ml-3" style={{ fontFamily: 'Poppins_500Medium' }}>About</Text>
                 </View>
-                <ChevronRight size={20} color="#6B7280" strokeWidth={2} />
+                <ChevronRight size={20} color="#CBD5E1" strokeWidth={2} />
               </TouchableOpacity>
             </View>
             <TouchableOpacity
@@ -1090,7 +1233,7 @@ export default function GCProfileScreen() {
                 onPress={() => setEditModal(null)}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={saveEdit}
@@ -1112,7 +1255,7 @@ export default function GCProfileScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center p-6">
           <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-blue-900">
             <Text className="text-white text-lg mb-4" style={{ fontFamily: 'Poppins_700Bold' }}>Name Your Certification</Text>
-            <Text className="text-gray-400 text-xs mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-slate-300 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>
               Rename the file before uploading. This name will be displayed in your certifications.
             </Text>
             <TextInput
@@ -1141,7 +1284,7 @@ export default function GCProfileScreen() {
                 }}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveCertification}
@@ -1195,7 +1338,7 @@ export default function GCProfileScreen() {
                 onPress={() => setBankModalVisible(false)}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleSaveBankAccount}
@@ -1217,7 +1360,7 @@ export default function GCProfileScreen() {
         <View className="flex-1 bg-black/50 justify-center items-center p-6">
           <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-sm border border-red-900/50">
             <Text className="text-red-400 text-lg mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>Remove Bank Account</Text>
-            <Text className="text-gray-300 text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-slate-300 text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
               Are you sure you want to remove this bank account? This action cannot be undone. You will need to add it again if you want to receive payments to this account.
             </Text>
             <View className="flex-row gap-3">
@@ -1225,7 +1368,7 @@ export default function GCProfileScreen() {
                 onPress={() => setDeleteConfirmBankId(null)}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleDeleteConfirm}
@@ -1254,7 +1397,7 @@ export default function GCProfileScreen() {
                 Logout
               </Text>
             </View>
-            <Text className="text-gray-300 text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-slate-300 text-sm mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
               Are you sure you want to logout?
             </Text>
             <View className="flex-row gap-3">
@@ -1262,7 +1405,7 @@ export default function GCProfileScreen() {
                 onPress={() => setLogoutModalVisible(false)}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
@@ -1288,7 +1431,7 @@ export default function GCProfileScreen() {
             <Text className="text-white text-lg mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>
               Change Password
             </Text>
-            <Text className="text-gray-400 text-xs mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
+            <Text className="text-slate-300 text-sm mb-4" style={{ fontFamily: 'Poppins_400Regular' }}>
               Use at least 8 characters with uppercase, lowercase, number, and special character.
             </Text>
             <TextInput
@@ -1326,7 +1469,7 @@ export default function GCProfileScreen() {
                 }}
                 className="flex-1 py-3 rounded-xl border border-blue-900 items-center"
               >
-                <Text className="text-gray-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                <Text className="text-slate-300" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Cancel
                 </Text>
               </TouchableOpacity>
