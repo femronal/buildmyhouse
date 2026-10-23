@@ -87,6 +87,10 @@ export interface CreateMaterialData {
   photoUrl?: string;
   deliveryDate?: Date;
   notes?: string;
+  payeeKind?: 'artisan' | 'shop' | 'other';
+  status?: 'planned' | 'invoiced' | 'paid' | 'rejected';
+  paidAt?: string | null;
+  hoPaymentRef?: string | null;
 }
 
 export interface CreateMediaData {

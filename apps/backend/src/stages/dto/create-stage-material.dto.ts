@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsNumber } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsIn, IsDateString } from 'class-validator';
+import { PAYEE_KINDS, LINE_STATUSES } from '../../projects/job-money';
 
 export class CreateStageMaterialDto {
   @IsString()
@@ -34,11 +35,25 @@ export class CreateStageMaterialDto {
   photoUrl?: string;
 
   @IsOptional()
-  deliveryDate?: Date;
+  @IsDateString()
+  deliveryDate?: string;
 
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsIn(PAYEE_KINDS)
+  payeeKind: string;
+
+  @IsOptional()
+  @IsIn(LINE_STATUSES)
+  status?: string;
+
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string | null;
+
+  @IsOptional()
+  @IsString()
+  hoPaymentRef?: string | null;
 }
-
-

@@ -180,11 +180,11 @@ export default function GCDashboardScreen() {
   const displayName = shortName(profileData?.fullName) || 'there';
 
   const paidToYou = useMemo(
-    () => earnings.reduce((sum, item) => sum + (Number(item.earned) || 0), 0),
+    () => earnings.reduce((sum, item) => sum + (Number(item.paidToYou ?? item.earned) || 0), 0),
     [earnings],
   );
-  const waitingForApproval = useMemo(
-    () => earnings.reduce((sum, item) => sum + (Number(item.pending) || 0), 0),
+  const leftOnThisJob = useMemo(
+    () => earnings.reduce((sum, item) => sum + (Number(item.leftOnThisJob ?? item.pending) || 0), 0),
     [earnings],
   );
 
@@ -445,21 +445,21 @@ export default function GCDashboardScreen() {
           <TouchableOpacity
             onPress={() => router.push('/contractor/gc-earnings')}
             accessibilityRole="button"
-            accessibilityLabel="Waiting for approval"
+            accessibilityLabel="Left on this job"
             className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 ml-2 border border-blue-900"
             style={{ minHeight: 112 }}
           >
             <View className="flex-row items-center mb-3">
               <Clock size={18} color="#FBBF24" strokeWidth={2.5} />
               <Text className="text-slate-300 text-base ml-2 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                Waiting for approval
+                Left on this job
               </Text>
             </View>
             {loadingEarnings ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <Text className="text-white text-xl" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold' }}>
-                ₦{waitingForApproval.toLocaleString()}
+                ₦{leftOnThisJob.toLocaleString()}
               </Text>
             )}
           </TouchableOpacity>

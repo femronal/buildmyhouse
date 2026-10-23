@@ -414,6 +414,14 @@ export default function AdminProjectDetailPage() {
         <StatCard label="Current stage" value={project.currentStage || '—'} />
       </div>
 
+      <HomeownerReceiptIds
+        receipts={
+          project.moneySummary?.receipts?.length
+            ? project.moneySummary.receipts
+            : (project.payments || []).filter((payment) => payment.status === 'completed')
+        }
+      />
+
       <div className="w-full bg-gray-200 rounded-full h-2">
         <div className="bg-emerald-500 h-2 rounded-full transition-all" style={{ width: `${Math.min(progressPct, 100)}%` }} />
       </div>
@@ -584,6 +592,40 @@ export default function AdminProjectDetailPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+function HomeownerReceiptIds({
+  receipts,
+}: {
+  receipts: Array<{ id: string; amount?: number; createdAt?: string | null }>;
+}) {
+  const [copied, setCopied] = useState('');
+  return (
+    <section className="bg-white border rounded-xl p-4 space-y-2">
+      <h2 className="text-lg font-semibold">Homeowner receipts</h2>
+      <p className="text-sm text-gray-500">Copy a payment id onto a payout line when you need to trace it.</p>
+      {receipts.length === 0 ? (
+        <p className="text-sm text-gray-500">No completed payments yet.</p>
+      ) : (
+        receipts.map((receipt) => (
+          <div key={receipt.id} className="flex flex-wrap items-center gap-3 text-sm border rounded-lg px-3 py-2">
+            <code className="break-all">{receipt.id}</code>
+            <span>₦{Number(receipt.amount || 0).toLocaleString('en-NG')}</span>
+            <button
+              type="button"
+              className="px-2 py-1 border rounded-lg"
+              onClick={() => {
+                navigator.clipboard?.writeText(receipt.id);
+                setCopied(receipt.id);
+              }}
+            >
+              {copied === receipt.id ? 'Copied' : 'Copy id'}
+            </button>
+          </div>
+        ))
+      )}
+    </section>
   );
 }
 

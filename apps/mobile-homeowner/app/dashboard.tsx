@@ -189,19 +189,15 @@ export default function DashboardScreen() {
     ? `/review-contractor?contractorId=${encodeURIComponent(contractorProfileId)}&projectId=${encodeURIComponent(projectId)}`
     : null;
   
-  // Calculate spent from completed stages' estimatedCost
-  const calculatedSpent = stages
-    .filter((s: any) => s.status === 'completed')
-    .reduce((sum: number, stage: any) => sum + (stage.estimatedCost || 0), 0);
-  
-  // Use calculated spent if available, otherwise fallback to project.spent
-  const spent = calculatedSpent || (project.spent || 0);
-  
-  // Calculate total budget from all stages' estimatedCost
-  const calculatedBudget = stages.reduce((sum: number, stage: any) => sum + (stage.estimatedCost || 0), 0);
-  
-  // Use calculated budget if available, otherwise fallback to project.budget
-  const totalBudget = calculatedBudget > 0 ? calculatedBudget : (project.budget || 0);
+  const moneySummary = (project as any).moneySummary as
+    | {
+        hasHomeownerReceipts?: boolean;
+        youSentIn?: number;
+        stillWithBuildMyHouse?: number;
+        sentToContractor?: number;
+        paidToShopsForMaterials?: number;
+      }
+    | undefined;
 
   // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
   const projectType =
@@ -559,70 +555,33 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        {/* Financial Summary */}
         <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
-          <View className="flex-row items-center mb-4">
-            <Text className="text-black text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>₦</Text>
-            <Text 
-              className="text-xl text-black ml-2"
-              style={{ fontFamily: 'Poppins_700Bold' }}
-            >
-              Financial Summary
+          <Text className="text-black mb-4" style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+            Your money on this job
+          </Text>
+          {moneySummary?.hasHomeownerReceipts ? (
+            <>
+              {[
+                ['You sent in', moneySummary.youSentIn],
+                ['Still with BuildMyHouse', moneySummary.stillWithBuildMyHouse],
+                ['Sent to your contractor', moneySummary.sentToContractor],
+                ['Paid to shops for materials', moneySummary.paidToShopsForMaterials],
+              ].map(([label, amount]) => (
+                <View key={String(label)} className="flex-row justify-between mb-3">
+                  <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>
+                    {label}
+                  </Text>
+                  <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}>
+                    ₦{Number(amount || 0).toLocaleString()}
+                  </Text>
+                </View>
+              ))}
+            </>
+          ) : (
+            <Text className="text-gray-700" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>
+              Not enough records yet
             </Text>
-          </View>
-          
-          <View className="flex-row justify-between mb-3">
-            <Text 
-              className="text-gray-500"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Total Budget
-            </Text>
-            <Text 
-              className="text-black"
-              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-            >
-              ₦{totalBudget.toLocaleString()}
-            </Text>
-          </View>
-          
-          <View className="flex-row justify-between mb-3">
-            <Text 
-              className="text-gray-500"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Spent
-            </Text>
-            <Text 
-              className="text-black"
-              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-            >
-              ₦{spent.toLocaleString()}
-            </Text>
-          </View>
-          
-          <View className="flex-row justify-between mb-3">
-            <Text 
-              className="text-gray-500"
-              style={{ fontFamily: 'Poppins_400Regular' }}
-            >
-              Remaining
-            </Text>
-            <Text 
-              className="text-black"
-              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-            >
-              ₦{(totalBudget - spent).toLocaleString()}
-            </Text>
-          </View>
-
-          {/* Progress Bar */}
-          <View className="mt-4 h-3 bg-gray-200 rounded-full overflow-hidden">
-            <View 
-              className="h-full bg-black rounded-full" 
-              style={{ width: `${totalBudget > 0 ? Math.min((spent / totalBudget * 100), 100) : 0}%` }} 
-            />
-          </View>
+          )}
         </View>
 
         {/* Progress Timeline - Stages/Phases */}

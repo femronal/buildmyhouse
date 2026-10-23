@@ -14,6 +14,11 @@ export interface StageTeamMember {
   photoUrl?: string;
   invoiceUrl?: string;
   notes?: string;
+  payStatus?: 'planned' | 'invoiced' | 'paid' | 'rejected';
+  paidAmount?: number | null;
+  paidAt?: string | null;
+  paidBy?: 'bmh' | 'gc' | null;
+  hoPaymentRef?: string | null;
 }
 
 export interface StageMaterial {
@@ -31,6 +36,10 @@ export interface StageMaterial {
   photoUrl?: string;
   deliveryDate?: string;
   notes?: string;
+  payeeKind?: 'artisan' | 'shop' | 'other';
+  status?: 'planned' | 'invoiced' | 'paid' | 'rejected';
+  paidAt?: string | null;
+  hoPaymentRef?: string | null;
 }
 
 export interface StageMedia {
@@ -64,6 +73,11 @@ export type CreateTeamMemberData = {
   notes?: string;
   photoUrl?: string;
   invoiceUrl?: string;
+  payStatus?: 'planned' | 'invoiced' | 'paid' | 'rejected';
+  paidAmount?: number | null;
+  paidAt?: string | null;
+  paidBy?: 'bmh' | 'gc' | null;
+  hoPaymentRef?: string | null;
 };
 
 export type CreateMaterialData = {
@@ -72,11 +86,15 @@ export type CreateMaterialData = {
   quantity: number;
   unit: string;
   unitPrice: number;
-  supplier?: string;
+  supplier?: string | null;
   supplierContact?: string;
-  receiptUrl?: string;
+  receiptUrl?: string | null;
   photoUrl?: string;
   notes?: string;
+  payeeKind?: 'artisan' | 'shop' | 'other';
+  status?: 'planned' | 'invoiced' | 'paid' | 'rejected';
+  paidAt?: string | null;
+  hoPaymentRef?: string | null;
 };
 
 export type CreateMediaData = {
@@ -176,6 +194,11 @@ export type AdminProject = {
   homeowner?: { fullName?: string | null; email?: string | null } | null;
   generalContractor?: { fullName?: string | null; email?: string | null } | null;
   stages?: AdminProjectStage[];
+  payments?: Array<{ id: string; amount: number; status: string; method?: string | null; createdAt?: string }>;
+  moneySummary?: {
+    hasHomeownerReceipts?: boolean;
+    receipts?: Array<{ id: string; amount: number; method?: string | null; createdAt?: string | null }>;
+  };
 };
 
 export type UpdateStageDetailsPayload = {

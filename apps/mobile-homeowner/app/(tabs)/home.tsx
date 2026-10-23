@@ -591,18 +591,20 @@ export default function HomeScreen() {
                                 ₦{budget.toLocaleString()}
                               </Text>
                             </View>
-                            <View>
+                            <View className="flex-1 ml-3">
                               <Text
-                                className="text-white/50 text-xs mb-1"
-                                style={{ fontFamily: 'Poppins_400Regular' }}
+                                className="text-white/50 mb-1"
+                                style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}
                               >
-                                Spent
+                                {project.moneySummary?.hasHomeownerReceipts ? 'Sent to your contractor' : 'Your money on this job'}
                               </Text>
                               <Text
                                 className="text-white"
-                                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
                               >
-                                ₦{(project.spent || 0).toLocaleString()}
+                                {project.moneySummary?.hasHomeownerReceipts
+                                  ? `₦${Number(project.moneySummary.sentToContractor || 0).toLocaleString()}`
+                                  : 'Not enough records yet'}
                               </Text>
                             </View>
                           </View>

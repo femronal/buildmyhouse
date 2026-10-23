@@ -480,6 +480,8 @@ export default function GCStageDetailScreen() {
         notes: data.notes || undefined,
         photoUrl,
         receiptUrl,
+        payeeKind: 'shop',
+        status: 'planned',
       });
     },
     onSuccess: () => {

@@ -20,9 +20,10 @@ export default function GCEarningsScreen() {
   const { horizontalPad, headerPaddingTop, scrollBottomPadding } =
     useResponsivePadding("stack");
 
-  const totalEarned = earnings.reduce((sum, p) => sum + p.earned, 0);
-  const totalBudget = earnings.reduce((sum, p) => sum + p.budget, 0);
-  const totalPending = earnings.reduce((sum, p) => sum + p.pending, 0);
+  const totalEarned = earnings.reduce((sum, p) => sum + Number(p.paidToYou ?? p.earned ?? 0), 0);
+  const totalBudget = earnings.reduce((sum, p) => sum + Number(p.fullJobPrice ?? p.budget ?? 0), 0);
+  const totalLeft = earnings.reduce((sum, p) => sum + Number(p.leftOnThisJob ?? p.pending ?? 0), 0);
+  const totalShops = earnings.reduce((sum, p) => sum + Number(p.paidToShops ?? 0), 0);
   const totalMaterials = earnings.reduce((sum, p) => sum + p.materialsTotal, 0);
   const totalTeam = earnings.reduce((sum, p) => sum + p.teamTotal, 0);
   return (
@@ -71,13 +72,13 @@ export default function GCEarningsScreen() {
             <View className="bg-[#1E3A5F] rounded-2xl p-5 mb-4 border border-blue-900">
               <View className="flex-row justify-between items-start mb-4">
                 <View>
-                  <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Total Earned</Text>
+                  <Text className="text-gray-400" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>Paid to you</Text>
                   <Text className="text-white text-2xl" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalEarned.toLocaleString()}</Text>
                 </View>
                 <View className="bg-green-600/20 rounded-full px-3 py-1 flex-row items-center">
                   <TrendingUp size={14} color="#10B981" strokeWidth={2} />
                   <Text className="text-green-400 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {totalBudget > 0 ? `${((totalEarned / totalBudget) * 100).toFixed(0)}%` : '0%'} of budget
+                    {totalBudget > 0 ? `${((totalEarned / totalBudget) * 100).toFixed(0)}%` : '0%'} of full job price
                   </Text>
                 </View>
               </View>
@@ -85,19 +86,27 @@ export default function GCEarningsScreen() {
                 <View className="h-full bg-blue-600 rounded-full" style={{ width: `${totalBudget > 0 ? Math.min(100, (totalEarned / totalBudget) * 100) : 0}%` }} />
               </View>
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                ₦{totalEarned.toLocaleString()} of ₦{totalBudget.toLocaleString()} total project value
+                Paid to you ₦{totalEarned.toLocaleString()} of full job price ₦{totalBudget.toLocaleString()}
               </Text>
             </View>
 
             <View className="flex-row justify-between gap-3">
               <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 border border-blue-900">
-                <Text className="text-gray-400 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
-                <Text className="text-amber-400 text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalPending.toLocaleString()}</Text>
+                <Text className="text-gray-400 mb-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>Left on this job</Text>
+                <Text className="text-amber-400 text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalLeft.toLocaleString()}</Text>
               </View>
               <View className="flex-1 bg-[#1E3A5F] rounded-2xl p-4 border border-blue-900">
                 <Text className="text-gray-400 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Projects</Text>
                 <Text className="text-white text-lg" style={{ fontFamily: 'Poppins_700Bold' }}>{earnings.length}</Text>
               </View>
+            </View>
+
+            <View className="bg-[#1E3A5F] rounded-2xl p-4 mt-4 border border-blue-900">
+              <Text className="text-gray-400 mb-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>Paid to shops</Text>
+              <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalShops.toLocaleString()}</Text>
+              <Text className="text-gray-400 mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>
+                Shop pays are separate from paid to you.
+              </Text>
             </View>
 
             {(totalMaterials > 0 || totalTeam > 0) && (
@@ -152,18 +161,24 @@ export default function GCEarningsScreen() {
 
                     <View className="flex-row justify-between items-center mb-2">
                       <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Earned</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.earned.toLocaleString()}</Text>
+                        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{Number(project.paidToYou ?? project.earned ?? 0).toLocaleString()}</Text>
                       </View>
                       <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text>
-                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.budget.toLocaleString()}</Text>
+                        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Full job price</Text>
+                        <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{Number(project.fullJobPrice ?? project.budget ?? 0).toLocaleString()}</Text>
                       </View>
                       <View>
-                        <Text className="text-gray-500 text-xs" style={{ fontFamily: 'Poppins_400Regular' }}>Pending</Text>
-                        <Text className="text-amber-400" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{project.pending.toLocaleString()}</Text>
+                        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Left on this job</Text>
+                        <Text className="text-amber-400" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{Number(project.leftOnThisJob ?? project.pending ?? 0).toLocaleString()}</Text>
                       </View>
                     </View>
+                    <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+                      Paid to shops ₦{Number(project.paidToShops ?? 0).toLocaleString()}
+                    </Text>
+                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                      Shop pays are separate from paid to you.
+                    </Text>
 
                     <View className="mb-2">
                       <View className="flex-row justify-between mb-1">
@@ -210,7 +225,7 @@ export default function GCEarningsScreen() {
                                 <CheckCircle size={14} color="#10B981" strokeWidth={2} />
                                 <Text className="text-gray-300 text-sm ml-2" style={{ fontFamily: 'Poppins_400Regular' }}>{s.name}</Text>
                               </View>
-                              <Text className="text-white text-sm" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{s.estimatedCost.toLocaleString()}</Text>
+                              <Text className="text-gray-400 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>Done</Text>
                             </View>
                           ))}
                         </View>

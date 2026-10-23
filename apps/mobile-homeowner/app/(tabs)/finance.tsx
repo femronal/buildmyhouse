@@ -79,7 +79,8 @@ export default function FinanceScreen() {
     (p, i, arr) => arr.findIndex((x) => x.id === p.id) === i
   );
 
-  const totalInvested = allProjects.reduce((sum, p) => sum + (p.spent ?? 0), 0);
+  const projectsWithReceipts = allProjects.filter((p: any) => p.moneySummary?.hasHomeownerReceipts);
+  const totalInvested = projectsWithReceipts.reduce((sum, p: any) => sum + Number(p.moneySummary?.youSentIn || 0), 0);
   const totalBudget = allProjects.reduce((sum, p) => sum + (p.budget ?? 0), 0);
   const activeCount = allProjects.length;
 
@@ -232,13 +233,13 @@ export default function FinanceScreen() {
               style={{ padding: listingChrome.mobileWeb ? 16 : 24 }}
             >
               <Text className="text-black/60 mb-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: listingChrome.mobileWeb ? 12 : 14 }}>
-                Total Invested
+                You sent in
               </Text>
               <Text
                 className="text-black mb-3"
-                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: listingChrome.mobileWeb ? 28 : 36 }}
+                style={{ fontFamily: projectsWithReceipts.length ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular', fontSize: projectsWithReceipts.length ? (listingChrome.mobileWeb ? 28 : 36) : 16 }}
               >
-                ₦{totalInvested.toLocaleString()}
+                {projectsWithReceipts.length ? `₦${totalInvested.toLocaleString()}` : 'Not enough records yet'}
               </Text>
               <View className="flex-row justify-between">
                 <View>
@@ -264,21 +265,30 @@ export default function FinanceScreen() {
                 <Text className="text-white/50 text-center" style={{ fontFamily: 'Poppins_400Regular' }}>No projects yet. Start a project to see your budget breakdown here.</Text>
               </View>
             ) : (
-              allProjects.map((p) => {
-                const budget = p.budget ?? 0;
-                const spent = p.spent ?? 0;
-                const remaining = budget - spent;
-                const percent = budget > 0 ? Math.round((spent / budget) * 100) : 0;
+              allProjects.map((p: any) => {
+                const summary = p.moneySummary;
+                const rows = [
+                  ['You sent in', summary?.youSentIn],
+                  ['Still with BuildMyHouse', summary?.stillWithBuildMyHouse],
+                  ['Sent to your contractor', summary?.sentToContractor],
+                  ['Paid to shops for materials', summary?.paidToShopsForMaterials],
+                ];
                 return (
                   <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">
-                    <Text className="text-lg text-white mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
-                    <View className="flex-row justify-between mb-3">
-                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Budget</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{budget.toLocaleString()}</Text></View>
-                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Spent</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{spent.toLocaleString()}</Text></View>
-                      <View><Text className="text-white/50 text-xs mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>Remaining</Text><Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{remaining.toLocaleString()}</Text></View>
-                    </View>
-                    <View className="h-3 bg-white/15 rounded-full overflow-hidden"><View className="h-full bg-white rounded-full" style={{ width: `${Math.min(percent, 100)}%` }} /></View>
-                    <Text className="text-white/50 text-xs mt-2 text-right" style={{ fontFamily: 'Poppins_400Regular' }}>{percent}% spent</Text>
+                    <Text className="text-lg text-white mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
+                    <Text className="text-white mb-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }}>
+                      Your money on this job
+                    </Text>
+                    {summary?.hasHomeownerReceipts ? (
+                      rows.map(([label, amount]) => (
+                        <View key={String(label)} className="flex-row justify-between mb-2">
+                          <Text className="text-white/80 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>{label}</Text>
+                          <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}>₦{Number(amount || 0).toLocaleString()}</Text>
+                        </View>
+                      ))
+                    ) : (
+                      <Text className="text-white" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>Not enough records yet</Text>
+                    )}
                   </View>
                 );
               })

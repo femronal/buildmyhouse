@@ -25,6 +25,10 @@ import { CreateStageChangeRequestDto } from './dto/create-stage-change-request.d
 import { ReviewStageChangeRequestDto } from './dto/review-stage-change-request.dto';
 import { ListStageChangeRequestsDto } from './dto/list-stage-change-requests.dto';
 import { UpdateStageDetailsDto } from './dto/update-stage-details.dto';
+import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto';
+import { UpdateStageMaterialDto } from '../stages/dto/update-stage-material.dto';
+import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member.dto';
+import { UpdateStageTeamMemberDto } from '../stages/dto/update-stage-team-member.dto';
 import { UpdateProjectScopeDto } from './dto/update-project-scope.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
@@ -234,7 +238,7 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
     @Param('stageId') stageId: string,
     @Request() req: any,
-    @Body() body: any,
+    @Body() body: CreateStageTeamMemberDto,
   ) {
     const userId = req.user.sub;
     const project = await this.projectsService.getProject(projectId);
@@ -246,14 +250,14 @@ export class ProjectsController {
 
   @Get(':projectId/stages/:stageId/team-members')
   @UseGuards(JwtAuthGuard)
-  async getTeamMembers(@Param('stageId') stageId: string) {
-    return this.projectsService.getStageTeamMembers(stageId);
+  async getTeamMembers(@Param('stageId') stageId: string, @Request() req: any) {
+    return this.projectsService.getStageTeamMembers(stageId, req.user?.role === 'admin');
   }
 
   @Patch('stages/team-members/:teamMemberId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async updateTeamMember(@Param('teamMemberId') teamMemberId: string, @Body() body: any) {
+  async updateTeamMember(@Param('teamMemberId') teamMemberId: string, @Body() body: UpdateStageTeamMemberDto) {
     return this.projectsService.updateStageTeamMember(teamMemberId, body);
   }
 
@@ -272,7 +276,7 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
     @Param('stageId') stageId: string,
     @Request() req: any,
-    @Body() body: any,
+    @Body() body: CreateStageMaterialDto,
   ) {
     const userId = req.user.sub;
     const project = await this.projectsService.getProject(projectId);
@@ -284,14 +288,14 @@ export class ProjectsController {
 
   @Get(':projectId/stages/:stageId/materials')
   @UseGuards(JwtAuthGuard)
-  async getMaterials(@Param('stageId') stageId: string) {
-    return this.projectsService.getStageMaterials(stageId);
+  async getMaterials(@Param('stageId') stageId: string, @Request() req: any) {
+    return this.projectsService.getStageMaterials(stageId, req.user?.role === 'admin');
   }
 
   @Patch('stages/materials/:materialId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async updateMaterial(@Param('materialId') materialId: string, @Body() body: any) {
+  async updateMaterial(@Param('materialId') materialId: string, @Body() body: UpdateStageMaterialDto) {
     return this.projectsService.updateStageMaterial(materialId, body);
   }
 
@@ -463,6 +467,13 @@ export class ProjectsController {
       decision: dto.decision,
       adminReviewNote: dto.adminReviewNote,
     });
+  }
+
+  @Get(':id/money-summary')
+  @UseGuards(JwtAuthGuard)
+  async moneySummary(@Param('id') id: string, @Request() req: any) {
+    await this.findOne(id, req);
+    return this.projectsService.getProjectMoneySummary(id);
   }
 
   @Get(':id')

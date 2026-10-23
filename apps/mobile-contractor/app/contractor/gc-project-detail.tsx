@@ -554,27 +554,39 @@ export default function GCProjectDetailScreen() {
 
         <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">
           <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
-            Your money for this job
+            Money for this job
           </Text>
           {jobMoney ? (
-            <View className="flex-row mb-3">
-              <View className="flex-1 bg-[#0A1628] rounded-xl p-3 mr-2" style={{ minHeight: 88 }}>
-                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
-                <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
-                  {naira(jobMoney.earned)}
-                </Text>
+            <>
+              <View className="flex-row mb-3">
+                <View className="flex-1 bg-[#0A1628] rounded-xl p-3 mr-2" style={{ minHeight: 88 }}>
+                  <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
+                  <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                    {naira(jobMoney.paidToYou ?? jobMoney.earned)}
+                  </Text>
+                </View>
+                <View className="flex-1 bg-[#0A1628] rounded-xl p-3 ml-2" style={{ minHeight: 88 }}>
+                  <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Left on this job</Text>
+                  <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                    {naira(jobMoney.leftOnThisJob ?? jobMoney.pending)}
+                  </Text>
+                </View>
               </View>
-              <View className="flex-1 bg-[#0A1628] rounded-xl p-3 ml-2" style={{ minHeight: 88 }}>
-                <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Waiting</Text>
-                <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
-                  {naira(jobMoney.pending)}
-                </Text>
-              </View>
-            </View>
-          ) : null}
-          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
-            Job price {naira(project.budget)}
-          </Text>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+                Full job price {naira(jobMoney.fullJobPrice ?? jobMoney.budget ?? project.budget)}
+              </Text>
+              <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+                Paid to shops {naira(jobMoney.paidToShops)}
+              </Text>
+              <Text className="mt-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+                Shop pays are separate from paid to you.
+              </Text>
+            </>
+          ) : (
+            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+              Full job price {naira(project.budget)}
+            </Text>
+          )}
         </View>
 
         <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">

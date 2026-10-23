@@ -84,6 +84,10 @@ export interface GCEarningsProject {
   budget: number;
   earned: number;
   pending: number;
+  paidToYou?: number;
+  leftOnThisJob?: number;
+  fullJobPrice?: number;
+  paidToShops?: number;
   progress: number;
   currentStage?: string;
   dueDate?: string;
@@ -92,7 +96,7 @@ export interface GCEarningsProject {
   materialsTotal: number;
   teamTotal: number;
   recordedCosts: number;
-  stageBreakdown: Array<{ name: string; estimatedCost: number; status: string }>;
+  stageBreakdown: Array<{ name: string; estimatedCost?: number; status: string }>;
   payments: Array<{ id: string; amount: number; method: string; stageId: string | null; createdAt: string }>;
 }
 

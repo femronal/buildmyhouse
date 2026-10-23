@@ -28,6 +28,61 @@ import {
 } from '@/services/adminProjectService';
 
 type Tab = 'info' | 'materials' | 'team' | 'photos' | 'documents';
+type LineStatus = 'planned' | 'invoiced' | 'paid' | 'rejected';
+type PayeeKind = 'artisan' | 'shop' | 'other';
+
+function nairaAmount(value: number) {
+  return `₦${Number(value || 0).toLocaleString('en-NG')}`;
+}
+
+function teamPaidAmount(member: {
+  paidAmount?: number | null;
+  dailyRate?: number | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}) {
+  if (member.paidAmount != null && Number.isFinite(Number(member.paidAmount))) {
+    return Number(member.paidAmount);
+  }
+  let days = 1;
+  if (member.startDate && member.endDate) {
+    const start = new Date(member.startDate).getTime();
+    const end = new Date(member.endDate).getTime();
+    if (Number.isFinite(start) && Number.isFinite(end)) {
+      days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+    }
+  }
+  return (Number(member.dailyRate) || 0) * days;
+}
+
+function bmhPaidOnStage(
+  materials: AdminProjectStage['materials'],
+  teamMembers: AdminProjectStage['teamMembers'],
+) {
+  const materialPaid = (materials || []).reduce(
+    (sum, row) => (row.status === 'paid' ? sum + Number(row.totalPrice || 0) : sum),
+    0,
+  );
+  const teamPaid = (teamMembers || []).reduce(
+    (sum, row) => (row.payStatus === 'paid' && row.paidBy === 'bmh' ? sum + teamPaidAmount(row) : sum),
+    0,
+  );
+  return materialPaid + teamPaid;
+}
+
+function toDateInput(value?: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function fromDateInput(value: string) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
 
 const STAGE_STATUSES = ['not_started', 'in_progress', 'completed', 'blocked'] as const;
 
@@ -127,6 +182,12 @@ export function AdminStageEditor({ projectId, stageId, project, stage }: Props) 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-800 text-sm rounded-lg px-4 py-3">
           {error}
+        </div>
+      )}
+
+      {bmhPaidOnStage(materials, teamMembers) > Number(stage.estimatedCost || 0) && (
+        <div className="bg-amber-50 border border-amber-300 text-amber-950 text-sm rounded-lg px-4 py-3">
+          BMH paid lines on this stage are {nairaAmount(bmhPaidOnStage(materials, teamMembers))}. The stage price is {nairaAmount(Number(stage.estimatedCost || 0))}. This is a warning only. You can still save.
         </div>
       )}
 
@@ -336,13 +397,38 @@ function MaterialsTab({
     unitPrice: '',
     supplier: '',
     notes: '',
+    payeeKind: '' as '' | PayeeKind,
+    status: 'planned' as LineStatus,
+    paidAt: '',
+    hoPaymentRef: '',
   });
+  const [editing, setEditing] = useState<null | {
+    id: string;
+    payeeKind: '' | PayeeKind;
+    status: LineStatus;
+    paidAt: string;
+    hoPaymentRef: string;
+    supplier: string;
+    receiptUrl: string;
+  }>(null);
   const [uploading, setUploading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
   const [receiptUrl, setReceiptUrl] = useState('');
 
   const reset = () => {
-    setForm({ name: '', brand: '', quantity: '1', unit: 'units', unitPrice: '', supplier: '', notes: '' });
+    setForm({
+      name: '',
+      brand: '',
+      quantity: '1',
+      unit: 'units',
+      unitPrice: '',
+      supplier: '',
+      notes: '',
+      payeeKind: '',
+      status: 'planned',
+      paidAt: '',
+      hoPaymentRef: '',
+    });
     setPhotoUrl('');
     setReceiptUrl('');
   };
@@ -350,6 +436,10 @@ function MaterialsTab({
   const add = async () => {
     if (!form.name.trim()) {
       onError('Material name is required');
+      return;
+    }
+    if (!form.payeeKind) {
+      onError('Choose artisan, shop, or other.');
       return;
     }
     onError('');
@@ -363,6 +453,10 @@ function MaterialsTab({
       notes: form.notes.trim() || undefined,
       photoUrl: photoUrl || undefined,
       receiptUrl: receiptUrl || undefined,
+      payeeKind: form.payeeKind,
+      status: form.status,
+      paidAt: form.status === 'paid' ? fromDateInput(form.paidAt) || new Date().toISOString() : null,
+      hoPaymentRef: form.hoPaymentRef.trim() || null,
     };
     await stageDocumentationService.addMaterial(projectId, stageId, data);
     reset();
@@ -373,6 +467,25 @@ function MaterialsTab({
   const remove = async (id: string) => {
     if (!window.confirm('Delete this material?')) return;
     await stageDocumentationService.deleteMaterial(id);
+    await onChanged();
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (!editing.payeeKind) {
+      onError('Choose artisan, shop, or other.');
+      return;
+    }
+    onError('');
+    await stageDocumentationService.updateMaterial(editing.id, {
+      payeeKind: editing.payeeKind,
+      status: editing.status,
+      paidAt: editing.status === 'paid' ? fromDateInput(editing.paidAt) || new Date().toISOString() : null,
+      hoPaymentRef: editing.hoPaymentRef.trim() || null,
+      supplier: editing.supplier.trim() || null,
+      receiptUrl: editing.receiptUrl.trim() || null,
+    });
+    setEditing(null);
     await onChanged();
   };
 
@@ -413,11 +526,36 @@ function MaterialsTab({
                   {m.quantity} {m.unit} · ₦{m.unitPrice.toLocaleString()} each · Total ₦
                   {m.totalPrice.toLocaleString()}
                 </p>
+                <p className="text-sm text-gray-700 mt-1">
+                  {(m.payeeKind || 'not set')} · {(m.status || 'planned')}
+                  {m.paidAt ? ` · paid ${new Date(m.paidAt).toLocaleString()}` : ''}
+                  {m.hoPaymentRef ? ` · receipt ${m.hoPaymentRef}` : ''}
+                </p>
+                {m.status === 'rejected' && (
+                  <p className="text-xs text-red-700 mt-1">Rejected. Hidden from the contractor and the homeowner.</p>
+                )}
                 {m.supplier && <p className="text-xs text-gray-400 mt-1">Supplier: {m.supplier}</p>}
               </div>
-              <button type="button" onClick={() => remove(m.id)} className="text-red-600 hover:text-red-700">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  type="button"
+                  className="text-sm text-gray-700 underline"
+                  onClick={() => setEditing({
+                    id: m.id,
+                    payeeKind: (m.payeeKind || '') as '' | PayeeKind,
+                    status: (m.status || 'planned') as LineStatus,
+                    paidAt: toDateInput(m.paidAt),
+                    hoPaymentRef: m.hoPaymentRef || '',
+                    supplier: m.supplier || '',
+                    receiptUrl: m.receiptUrl || '',
+                  })}
+                >
+                  Edit pay
+                </button>
+                <button type="button" onClick={() => remove(m.id)} className="text-red-600 hover:text-red-700">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -444,6 +582,28 @@ function MaterialsTab({
             <Field label="Supplier">
               <input className="w-full px-3 py-2 border rounded-lg" value={form.supplier} onChange={(e) => setForm((f) => ({ ...f, supplier: e.target.value }))} />
             </Field>
+            <Field label="Who gets this money">
+              <select className="w-full px-3 py-2 border rounded-lg" value={form.payeeKind} onChange={(e) => setForm((f) => ({ ...f, payeeKind: e.target.value as PayeeKind }))}>
+                <option value="">Choose</option>
+                <option value="artisan">Artisan</option>
+                <option value="shop">Shop</option>
+                <option value="other">Other</option>
+              </select>
+            </Field>
+            <Field label="Status">
+              <select className="w-full px-3 py-2 border rounded-lg" value={form.status} onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as LineStatus }))}>
+                <option value="planned">Planned</option>
+                <option value="invoiced">Invoiced</option>
+                <option value="paid">Paid</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </Field>
+            <Field label="Paid at">
+              <input type="datetime-local" className="w-full px-3 py-2 border rounded-lg" value={form.paidAt} onChange={(e) => setForm((f) => ({ ...f, paidAt: e.target.value }))} />
+            </Field>
+            <Field label="Homeowner payment id">
+              <input className="w-full px-3 py-2 border rounded-lg" value={form.hoPaymentRef} onChange={(e) => setForm((f) => ({ ...f, hoPaymentRef: e.target.value }))} />
+            </Field>
           </div>
           <Field label="Notes">
             <textarea rows={2} className="w-full px-3 py-2 border rounded-lg" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
@@ -453,6 +613,39 @@ function MaterialsTab({
             <UploadButton label="Receipt" uploading={uploading} onFile={(f) => upload(f, setReceiptUrl)} />
           </div>
           <ModalActions onCancel={() => setOpen(false)} onConfirm={add} confirmLabel="Add material" />
+        </Modal>
+      )}
+      {editing && (
+        <Modal title="Edit material pay" onClose={() => setEditing(null)}>
+          <Field label="Who gets this money">
+            <select className="w-full px-3 py-2 border rounded-lg" value={editing.payeeKind} onChange={(e) => setEditing((row) => row && ({ ...row, payeeKind: e.target.value as PayeeKind }))}>
+              <option value="">Choose</option>
+              <option value="artisan">Artisan</option>
+              <option value="shop">Shop</option>
+              <option value="other">Other</option>
+            </select>
+          </Field>
+          <Field label="Status">
+            <select className="w-full px-3 py-2 border rounded-lg" value={editing.status} onChange={(e) => setEditing((row) => row && ({ ...row, status: e.target.value as LineStatus }))}>
+              <option value="planned">Planned</option>
+              <option value="invoiced">Invoiced</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </Field>
+          <Field label="Paid at">
+            <input type="datetime-local" className="w-full px-3 py-2 border rounded-lg" value={editing.paidAt} onChange={(e) => setEditing((row) => row && ({ ...row, paidAt: e.target.value }))} />
+          </Field>
+          <Field label="Homeowner payment id">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.hoPaymentRef} onChange={(e) => setEditing((row) => row && ({ ...row, hoPaymentRef: e.target.value }))} />
+          </Field>
+          <Field label="Supplier">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.supplier} onChange={(e) => setEditing((row) => row && ({ ...row, supplier: e.target.value }))} />
+          </Field>
+          <Field label="Receipt link">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.receiptUrl} onChange={(e) => setEditing((row) => row && ({ ...row, receiptUrl: e.target.value }))} />
+          </Field>
+          <ModalActions onCancel={() => setEditing(null)} onConfirm={saveEdit} confirmLabel="Save pay" />
         </Modal>
       )}
     </div>
@@ -473,14 +666,32 @@ function TeamTab({
   onError: (msg: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', role: '', phone: '', email: '', dailyRate: '', notes: '' });
+  const emptyForm = {
+    name: '',
+    role: '',
+    phone: '',
+    email: '',
+    dailyRate: '',
+    notes: '',
+    payStatus: 'planned' as LineStatus,
+    paidAmount: '',
+    paidAt: '',
+    paidBy: '' as '' | 'bmh' | 'gc',
+    hoPaymentRef: '',
+  };
+  const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState('');
   const [invoiceUrl, setInvoiceUrl] = useState('');
+  const [editing, setEditing] = useState<null | (typeof emptyForm & { id: string })>(null);
 
   const add = async () => {
     if (!form.name.trim() || !form.role.trim()) {
       onError('Name and role are required');
+      return;
+    }
+    if (form.payStatus === 'paid' && !form.paidBy) {
+      onError('When this team line is paid, say who paid: BMH or the contractor.');
       return;
     }
     onError('');
@@ -493,12 +704,35 @@ function TeamTab({
       notes: form.notes.trim() || undefined,
       photoUrl: photoUrl || undefined,
       invoiceUrl: invoiceUrl || undefined,
+      payStatus: form.payStatus,
+      paidAmount: form.paidAmount === '' ? null : Number(form.paidAmount),
+      paidAt: form.payStatus === 'paid' ? fromDateInput(form.paidAt) || new Date().toISOString() : null,
+      paidBy: form.paidBy || null,
+      hoPaymentRef: form.hoPaymentRef.trim() || null,
     };
     await stageDocumentationService.addTeamMember(projectId, stageId, data);
     setOpen(false);
-    setForm({ name: '', role: '', phone: '', email: '', dailyRate: '', notes: '' });
+    setForm(emptyForm);
     setPhotoUrl('');
     setInvoiceUrl('');
+    await onChanged();
+  };
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    if (editing.payStatus === 'paid' && !editing.paidBy) {
+      onError('When this team line is paid, say who paid: BMH or the contractor.');
+      return;
+    }
+    onError('');
+    await stageDocumentationService.updateTeamMember(editing.id, {
+      payStatus: editing.payStatus,
+      paidAmount: editing.paidAmount === '' ? null : Number(editing.paidAmount),
+      paidAt: editing.payStatus === 'paid' ? fromDateInput(editing.paidAt) || new Date().toISOString() : null,
+      paidBy: editing.paidBy || null,
+      hoPaymentRef: editing.hoPaymentRef.trim() || null,
+    });
+    setEditing(null);
     await onChanged();
   };
 
@@ -526,11 +760,43 @@ function TeamTab({
               <div>
                 <p className="font-medium">{m.name}</p>
                 <p className="text-sm text-gray-500">{m.role}</p>
+                <p className="text-sm text-gray-700 mt-1">
+                  {(m.payStatus || 'planned')}
+                  {m.paidBy ? ` · paid by ${m.paidBy}` : ''}
+                  {m.paidAmount != null ? ` · ${nairaAmount(Number(m.paidAmount))}` : ''}
+                  {m.paidAt ? ` · paid ${new Date(m.paidAt).toLocaleString()}` : ''}
+                  {m.hoPaymentRef ? ` · receipt ${m.hoPaymentRef}` : ''}
+                </p>
+                {m.payStatus === 'rejected' && (
+                  <p className="text-xs text-red-700 mt-1">Rejected. Hidden from the contractor and the homeowner.</p>
+                )}
                 {m.phone && <p className="text-xs text-gray-400">{m.phone}</p>}
               </div>
-              <button type="button" onClick={() => remove(m.id)} className="text-red-600">
-                <Trash2 className="w-4 h-4" />
-              </button>
+              <div className="flex flex-col items-end gap-2">
+                <button
+                  type="button"
+                  className="text-sm text-gray-700 underline"
+                  onClick={() => setEditing({
+                    id: m.id,
+                    name: m.name,
+                    role: m.role,
+                    phone: m.phone || '',
+                    email: m.email || '',
+                    dailyRate: m.dailyRate != null ? String(m.dailyRate) : '',
+                    notes: m.notes || '',
+                    payStatus: (m.payStatus || 'planned') as LineStatus,
+                    paidAmount: m.paidAmount != null ? String(m.paidAmount) : '',
+                    paidAt: toDateInput(m.paidAt),
+                    paidBy: (m.paidBy || '') as '' | 'bmh' | 'gc',
+                    hoPaymentRef: m.hoPaymentRef || '',
+                  })}
+                >
+                  Edit pay
+                </button>
+                <button type="button" onClick={() => remove(m.id)} className="text-red-600">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -553,6 +819,30 @@ function TeamTab({
             <Field label="Daily rate (₦)">
               <input type="number" className="w-full px-3 py-2 border rounded-lg" value={form.dailyRate} onChange={(e) => setForm((f) => ({ ...f, dailyRate: e.target.value }))} />
             </Field>
+            <Field label="Pay status">
+              <select className="w-full px-3 py-2 border rounded-lg" value={form.payStatus} onChange={(e) => setForm((f) => ({ ...f, payStatus: e.target.value as LineStatus }))}>
+                <option value="planned">Planned</option>
+                <option value="invoiced">Invoiced</option>
+                <option value="paid">Paid</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </Field>
+            <Field label="Amount paid (₦)">
+              <input type="number" className="w-full px-3 py-2 border rounded-lg" value={form.paidAmount} onChange={(e) => setForm((f) => ({ ...f, paidAmount: e.target.value }))} />
+            </Field>
+            <Field label="Paid at">
+              <input type="datetime-local" className="w-full px-3 py-2 border rounded-lg" value={form.paidAt} onChange={(e) => setForm((f) => ({ ...f, paidAt: e.target.value }))} />
+            </Field>
+            <Field label="Who paid">
+              <select className="w-full px-3 py-2 border rounded-lg" value={form.paidBy} onChange={(e) => setForm((f) => ({ ...f, paidBy: e.target.value as '' | 'bmh' | 'gc' }))}>
+                <option value="">Choose</option>
+                <option value="bmh">BMH</option>
+                <option value="gc">Contractor</option>
+              </select>
+            </Field>
+            <Field label="Homeowner payment id">
+              <input className="w-full px-3 py-2 border rounded-lg" value={form.hoPaymentRef} onChange={(e) => setForm((f) => ({ ...f, hoPaymentRef: e.target.value }))} />
+            </Field>
           </div>
           <Field label="Notes">
             <textarea rows={2} className="w-full px-3 py-2 border rounded-lg" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
@@ -562,6 +852,35 @@ function TeamTab({
             <UploadButton label="Invoice" uploading={uploading} onFile={async (f) => { setUploading(true); try { setInvoiceUrl((await api.uploadFile(f)).url); } finally { setUploading(false); } }} />
           </div>
           <ModalActions onCancel={() => setOpen(false)} onConfirm={add} confirmLabel="Add artisan" />
+        </Modal>
+      )}
+      {editing && (
+        <Modal title="Edit team pay" onClose={() => setEditing(null)}>
+          <Field label="Pay status">
+            <select className="w-full px-3 py-2 border rounded-lg" value={editing.payStatus} onChange={(e) => setEditing((row) => row && ({ ...row, payStatus: e.target.value as LineStatus }))}>
+              <option value="planned">Planned</option>
+              <option value="invoiced">Invoiced</option>
+              <option value="paid">Paid</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </Field>
+          <Field label="Amount paid (₦)">
+            <input type="number" className="w-full px-3 py-2 border rounded-lg" value={editing.paidAmount} onChange={(e) => setEditing((row) => row && ({ ...row, paidAmount: e.target.value }))} />
+          </Field>
+          <Field label="Paid at">
+            <input type="datetime-local" className="w-full px-3 py-2 border rounded-lg" value={editing.paidAt} onChange={(e) => setEditing((row) => row && ({ ...row, paidAt: e.target.value }))} />
+          </Field>
+          <Field label="Who paid">
+            <select className="w-full px-3 py-2 border rounded-lg" value={editing.paidBy} onChange={(e) => setEditing((row) => row && ({ ...row, paidBy: e.target.value as '' | 'bmh' | 'gc' }))}>
+              <option value="">Choose</option>
+              <option value="bmh">BMH</option>
+              <option value="gc">Contractor</option>
+            </select>
+          </Field>
+          <Field label="Homeowner payment id">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.hoPaymentRef} onChange={(e) => setEditing((row) => row && ({ ...row, hoPaymentRef: e.target.value }))} />
+          </Field>
+          <ModalActions onCancel={() => setEditing(null)} onConfirm={saveEdit} confirmLabel="Save pay" />
         </Modal>
       )}
     </div>

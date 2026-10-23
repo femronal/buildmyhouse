@@ -34,6 +34,7 @@ import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
 import { buildInspectionScope, normalizeSubmittedStages, QuoteStageDraft } from './quote-scope';
 import { applyDescribedEvidence } from './stage-evidence';
 import { notifyPlanRequestLate } from './plan-request-notify';
+import { summarizeJobMoney, teamDayCount } from '../projects/job-money';
 import {
   composeLocationLabel,
   isValidStateLga,
@@ -3360,7 +3361,7 @@ export class ContractorsService {
   }
 
   /**
-   * Get earnings summary for GC: projects with budget, earned, materials, team costs, payments
+   * Earnings for a GC. Paid to you is payout lines only. project.spent is not used.
    */
   async getGCEarnings(userId: string) {
     const projects = await this.prisma.project.findMany({
@@ -3382,26 +3383,30 @@ export class ContractorsService {
     });
 
     return projects.map((p: any) => {
+      const money = summarizeJobMoney({
+        budget: p.budget || 0,
+        stages: p.stages || [],
+        payments: p.payments || [],
+      });
       const materialsTotal = (p.stages || []).reduce(
-        (sum: number, s: any) => sum + (s.materials || []).reduce((mSum: number, m: any) => mSum + (m.totalPrice || 0), 0),
+        (sum: number, s: any) =>
+          sum +
+          (s.materials || [])
+            .filter((m: any) => m.status !== 'rejected')
+            .reduce((mSum: number, m: any) => mSum + (m.totalPrice || 0), 0),
         0,
       );
       const teamTotal = (p.stages || []).reduce(
         (sum: number, s: any) =>
           sum +
-          (s.teamMembers || []).reduce((tSum: number, t: any) => {
-            const days =
-              t.startDate && t.endDate
-                ? Math.max(1, Math.ceil((new Date(t.endDate).getTime() - new Date(t.startDate).getTime()) / (1000 * 60 * 60 * 24)))
-                : 1;
-            return tSum + (t.dailyRate || 0) * days;
-          }, 0),
+          (s.teamMembers || [])
+            .filter((t: any) => t.payStatus !== 'rejected')
+            .reduce((tSum: number, t: any) => tSum + (t.dailyRate || 0) * teamDayCount(t.startDate, t.endDate), 0),
         0,
       );
       const completedStages = (p.stages || []).filter((s: any) => s.status === 'completed');
       const stageBreakdown = completedStages.map((s: any) => ({
         name: s.name,
-        estimatedCost: s.estimatedCost || 0,
         status: s.status,
       }));
 
@@ -3409,9 +3414,13 @@ export class ContractorsService {
         id: p.id,
         name: p.name,
         status: p.status,
-        budget: p.budget || 0,
-        earned: p.spent || 0,
-        pending: Math.max(0, (p.budget || 0) - (p.spent || 0)),
+        budget: money.fullJobPrice,
+        earned: money.paidToYou,
+        pending: money.leftOnThisJob,
+        paidToYou: money.paidToYou,
+        leftOnThisJob: money.leftOnThisJob,
+        fullJobPrice: money.fullJobPrice,
+        paidToShops: money.paidToShops,
         progress: p.progress || 0,
         currentStage: p.currentStage,
         dueDate: p.dueDate,

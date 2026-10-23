@@ -7,7 +7,10 @@ import { PaymentsService } from '../payments/services/payments.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member.dto';
+import { UpdateStageTeamMemberDto } from '../stages/dto/update-stage-team-member.dto';
 import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto';
+import { UpdateStageMaterialDto } from '../stages/dto/update-stage-material.dto';
+import { materialPayWrite, summarizeJobMoney, teamPayWrite } from './job-money';
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
 import { ProjectAccessService } from '../project-access/project-access.service';
@@ -1810,6 +1813,9 @@ export class ProjectsService {
     });
     const completedStages = allStages.filter((item) => item.status === 'completed');
     const progress = allStages.length > 0 ? Math.round((completedStages.length / allStages.length) * 100) : 0;
+    // project.spent stays the sum of completed stage prices for older screens.
+    // Paid to you and Left on this job do not read this field. They use payout lines.
+    // Completing a stage does not add a remainder payout line.
     const spent = completedStages.reduce((sum, item) => sum + (item.estimatedCost || 0), 0);
     const inProgressStage = allStages.find((item) => item.status === 'in_progress');
     const currentStage = inProgressStage?.name || (completedStages.length > 0 ? completedStages[completedStages.length - 1].name : null);
@@ -2004,14 +2010,85 @@ export class ProjectsService {
     }
 
     const presented = await this.presentStageEvidence(project);
+    const withMoney = await this.attachMoneySummary(presented);
+    const visible = viewer === 'admin' ? withMoney : this.hideRejectedPayoutLines(withMoney);
     if (project.designId && planRequest) {
       return {
-        ...presented,
+        ...visible,
         planRequestStep: getPlanRequestStep(planRequest, project, viewer),
       };
     }
 
-    return presented;
+    return visible;
+  }
+
+  private hideRejectedPayoutLines(project: any) {
+    if (!project?.stages) return project;
+    return {
+      ...project,
+      stages: project.stages.map((stage: any) => ({
+        ...stage,
+        materials: Array.isArray(stage.materials)
+          ? stage.materials.filter((row: any) => row?.status !== 'rejected')
+          : stage.materials,
+        teamMembers: Array.isArray(stage.teamMembers)
+          ? stage.teamMembers.filter((row: any) => row?.payStatus !== 'rejected')
+          : stage.teamMembers,
+      })),
+    };
+  }
+
+  private async attachMoneySummary(project: any) {
+    if (!project?.id) return project;
+    const payments = await this.prisma.payment.findMany({
+      where: { projectId: project.id, status: 'completed' },
+      select: { id: true, amount: true, status: true, method: true, createdAt: true },
+    });
+    return {
+      ...project,
+      moneySummary: summarizeJobMoney({
+        budget: project.budget,
+        stages: project.stages || [],
+        payments,
+      }),
+    };
+  }
+
+  async getProjectMoneySummary(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: {
+        id: true,
+        budget: true,
+        stages: {
+          select: {
+            materials: { select: { payeeKind: true, status: true, totalPrice: true } },
+            teamMembers: {
+              select: {
+                payStatus: true,
+                paidBy: true,
+                paidAmount: true,
+                dailyRate: true,
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!project) {
+      throw new NotFoundException('Project not found');
+    }
+    const payments = await this.prisma.payment.findMany({
+      where: { projectId, status: 'completed' },
+      select: { id: true, amount: true, status: true, method: true, createdAt: true },
+    });
+    return summarizeJobMoney({
+      budget: project.budget,
+      stages: project.stages || [],
+      payments,
+    });
   }
 
   private matchEvidencePhase(phases: any[], stage: any, index: number) {
@@ -2143,7 +2220,7 @@ export class ProjectsService {
       whereClause.status = status;
     }
 
-    return this.prisma.project.findMany({
+    const projects = await this.prisma.project.findMany({
       where: whereClause,
       include: {
         projectRequests: {
@@ -2202,6 +2279,53 @@ export class ProjectsService {
       },
       orderBy: { updatedAt: 'desc' },
     });
+    return this.attachMoneySummaries(projects);
+  }
+
+  private async attachMoneySummaries(projects: any[]) {
+    if (!projects.length) return projects;
+    const ids = projects.map((project) => project.id);
+    const stages = await this.prisma.stage.findMany({
+      where: { projectId: { in: ids } },
+      select: {
+        projectId: true,
+        materials: { select: { payeeKind: true, status: true, totalPrice: true } },
+        teamMembers: {
+          select: {
+            payStatus: true,
+            paidBy: true,
+            paidAmount: true,
+            dailyRate: true,
+            startDate: true,
+            endDate: true,
+          },
+        },
+      },
+    });
+    const payments = await this.prisma.payment.findMany({
+      where: { projectId: { in: ids }, status: 'completed' },
+      select: { id: true, projectId: true, amount: true, status: true, method: true, createdAt: true },
+    });
+    const stagesByProject = new Map<string, any[]>();
+    for (const stage of stages) {
+      const list = stagesByProject.get(stage.projectId) || [];
+      list.push(stage);
+      stagesByProject.set(stage.projectId, list);
+    }
+    const paymentsByProject = new Map<string, any[]>();
+    for (const payment of payments) {
+      const list = paymentsByProject.get(payment.projectId) || [];
+      list.push(payment);
+      paymentsByProject.set(payment.projectId, list);
+    }
+    return projects.map((project) => ({
+      ...project,
+      moneySummary: summarizeJobMoney({
+        budget: project.budget,
+        stages: stagesByProject.get(project.id) || [],
+        payments: paymentsByProject.get(project.id) || [],
+      }),
+    }));
   }
 
   /**
@@ -2814,10 +2938,12 @@ export class ProjectsService {
       throw new NotFoundException('Stage not found');
     }
 
+    const pay = teamPayWrite(dto, undefined, 'create');
     const created = await this.prisma.stageTeamMember.create({
       data: {
         stageId,
         ...dto,
+        ...pay,
       },
     });
 
@@ -2840,9 +2966,9 @@ export class ProjectsService {
   /**
    * Get team members for a stage
    */
-  async getStageTeamMembers(stageId: string) {
+  async getStageTeamMembers(stageId: string, includeRejected = false) {
     return this.prisma.stageTeamMember.findMany({
-      where: { stageId },
+      where: includeRejected ? { stageId } : { stageId, payStatus: { not: 'rejected' } },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -2850,10 +2976,18 @@ export class ProjectsService {
   /**
    * Update team member
    */
-  async updateStageTeamMember(teamMemberId: string, dto: Partial<CreateStageTeamMemberDto>) {
+  async updateStageTeamMember(teamMemberId: string, dto: UpdateStageTeamMemberDto) {
+    const existing = await this.prisma.stageTeamMember.findUnique({ where: { id: teamMemberId } });
+    if (!existing) {
+      throw new NotFoundException('Team member not found');
+    }
+    const pay = teamPayWrite(dto, existing, 'update');
     return this.prisma.stageTeamMember.update({
       where: { id: teamMemberId },
-      data: dto,
+      data: {
+        ...dto,
+        ...pay,
+      },
     });
   }
 
@@ -2880,12 +3014,15 @@ export class ProjectsService {
     }
 
     const totalPrice = dto.quantity * dto.unitPrice;
+    const pay = materialPayWrite(dto, undefined, 'create');
 
+    // A new material line does not change stage.estimatedCost. Only payout sums change.
     const created = await this.prisma.stageMaterial.create({
       data: {
         stageId,
         ...dto,
         totalPrice,
+        ...pay,
       },
     });
 
@@ -2908,9 +3045,9 @@ export class ProjectsService {
   /**
    * Get materials for a stage
    */
-  async getStageMaterials(stageId: string) {
+  async getStageMaterials(stageId: string, includeRejected = false) {
     return this.prisma.stageMaterial.findMany({
-      where: { stageId },
+      where: includeRejected ? { stageId } : { stageId, status: { not: 'rejected' } },
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -2918,20 +3055,21 @@ export class ProjectsService {
   /**
    * Update material
    */
-  async updateStageMaterial(materialId: string, dto: Partial<CreateStageMaterialDto>) {
-    const updateData: any = { ...dto };
-    
-    // Recalculate totalPrice if quantity or unitPrice changed
-    if (dto.quantity !== undefined || dto.unitPrice !== undefined) {
-      const existing = await this.prisma.stageMaterial.findUnique({
-        where: { id: materialId },
-      });
-      if (existing) {
-        const quantity = dto.quantity ?? existing.quantity;
-        const unitPrice = dto.unitPrice ?? existing.unitPrice;
-        updateData.totalPrice = quantity * unitPrice;
-      }
+  async updateStageMaterial(materialId: string, dto: UpdateStageMaterialDto) {
+    const existing = await this.prisma.stageMaterial.findUnique({
+      where: { id: materialId },
+    });
+    if (!existing) {
+      throw new NotFoundException('Material not found');
     }
+
+    const updateData: any = { ...dto };
+    if (dto.quantity !== undefined || dto.unitPrice !== undefined) {
+      const quantity = dto.quantity ?? existing.quantity;
+      const unitPrice = dto.unitPrice ?? existing.unitPrice;
+      updateData.totalPrice = quantity * unitPrice;
+    }
+    Object.assign(updateData, materialPayWrite(dto, existing, 'update'));
 
     return this.prisma.stageMaterial.update({
       where: { id: materialId },
@@ -3045,7 +3183,7 @@ export class ProjectsService {
               },
             },
             materials: {
-              where: { receiptUrl: { not: null } },
+              where: { receiptUrl: { not: null }, status: { not: 'rejected' } },
               select: {
                 id: true,
                 name: true,
@@ -3054,7 +3192,7 @@ export class ProjectsService {
               },
             },
             teamMembers: {
-              where: { invoiceUrl: { not: null } },
+              where: { invoiceUrl: { not: null }, payStatus: { not: 'rejected' } },
               select: {
                 id: true,
                 name: true,

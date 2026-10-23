@@ -9,6 +9,8 @@ function buildService() {
       findMany: jest.fn(),
       update: jest.fn(),
     },
+    stageMaterial: { create: jest.fn() },
+    stageTeamMember: { create: jest.fn() },
     project: { update: jest.fn() },
     notification: { create: jest.fn().mockResolvedValue({ id: 'n1' }) },
     contractor: { findUnique: jest.fn().mockResolvedValue(null) },
@@ -126,6 +128,8 @@ describe('stage homeowner approval', () => {
       }),
     );
     expect(charge).not.toHaveBeenCalled();
+    expect(prisma.stageMaterial.create).not.toHaveBeenCalled();
+    expect(prisma.stageTeamMember.create).not.toHaveBeenCalled();
   });
 
   it('still charges when a stage starts', async () => {

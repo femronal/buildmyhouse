@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsNumber, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEmail, IsEnum, IsIn, IsDateString } from 'class-validator';
+import { LINE_STATUSES, PAID_BY } from '../../projects/job-money';
 
 export class CreateStageTeamMemberDto {
   @IsString()
@@ -24,10 +25,12 @@ export class CreateStageTeamMemberDto {
   rateType?: string;
 
   @IsOptional()
-  startDate?: Date;
+  @IsDateString()
+  startDate?: string;
 
   @IsOptional()
-  endDate?: Date;
+  @IsDateString()
+  endDate?: string;
 
   @IsOptional()
   @IsString()
@@ -40,6 +43,24 @@ export class CreateStageTeamMemberDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsIn(LINE_STATUSES)
+  payStatus?: string;
+
+  @IsOptional()
+  @IsNumber()
+  paidAmount?: number | null;
+
+  @IsOptional()
+  @IsDateString()
+  paidAt?: string | null;
+
+  @IsOptional()
+  @IsIn(PAID_BY)
+  paidBy?: string | null;
+
+  @IsOptional()
+  @IsString()
+  hoPaymentRef?: string | null;
 }
-
-

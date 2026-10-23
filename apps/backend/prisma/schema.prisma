@@ -1262,10 +1262,15 @@ model StageTeamMember {
   startDate  DateTime?
   endDate    DateTime?
   photoUrl   String?
-  invoiceUrl String?
-  notes      String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  invoiceUrl   String?
+  notes        String?
+  payStatus    String    @default("planned") // planned | invoiced | paid | rejected
+  paidAmount   Float?
+  paidAt       DateTime?
+  paidBy       String? // bmh | gc. Required when payStatus is paid.
+  hoPaymentRef String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
@@ -1287,6 +1292,10 @@ model StageMaterial {
   photoUrl        String?
   deliveryDate    DateTime?
   notes           String?
+  payeeKind       String // artisan | shop | other
+  status          String    @default("planned") // planned | invoiced | paid | rejected
+  paidAt          DateTime?
+  hoPaymentRef    String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
