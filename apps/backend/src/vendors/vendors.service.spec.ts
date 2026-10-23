@@ -92,6 +92,17 @@ describe('VendorsService', () => {
     );
   });
 
+  it('matches a selected LGA against the city and the parent area name', async () => {
+    const prisma = mockPrisma();
+    prisma.vendorProfile.count.mockResolvedValue(0);
+    prisma.vendorProfile.findMany.mockResolvedValue([]);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.searchPublic({ stateKey: 'ng-lagos', lga: 'Lekki', page: 1, limit: 20 });
+    const where = JSON.stringify(prisma.vendorProfile.findMany.mock.calls[0][0].where);
+    expect(where).toContain('Lekki');
+    expect(where).toContain('Eti-Osa');
+  });
+
   it('matches Abuja vendors saved with state label FCT', async () => {
     const prisma = mockPrisma();
     prisma.vendorProfile.count.mockResolvedValue(0);

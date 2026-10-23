@@ -22,7 +22,7 @@ import {
   ArtisanVerificationStatus,
   Prisma,
 } from '@prisma/client';
-import { directoryLocationValues } from '../common/nigeria-directory-location';
+import { directoryAreaValues, directoryLocationValues } from '../common/nigeria-directory-location';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { artisanProblemWhere } from './artisan-search';
@@ -333,6 +333,18 @@ export class ArtisansService implements OnModuleInit {
     return { deleted: true };
   }
 
+  private areaMatch(state: string | undefined, area: string): Prisma.ArtisanListingWhereInput {
+    const names = directoryAreaValues(state, area);
+    return {
+      OR: names.flatMap((name) => [
+        name.trim().length >= 4
+          ? { city: { contains: name, mode: 'insensitive' as const } }
+          : { city: { equals: name, mode: 'insensitive' as const } },
+        { serviceCities: { has: name } },
+      ]),
+    };
+  }
+
   private stateMatch(state: string): Prisma.ArtisanListingWhereInput {
     const places = directoryLocationValues(state);
     return {
@@ -369,7 +381,7 @@ export class ArtisansService implements OnModuleInit {
         dto.service ? { capabilities: { some: { capability: { kind: 'service', key: dto.service, isActive: true } } } } : {},
         dto.problem ? artisanProblemWhere(dto.problem) : {},
         dto.state ? this.stateMatch(dto.state) : {},
-        dto.city ? { OR: [{ city: { equals: dto.city, mode: 'insensitive' } }, { serviceCities: { has: dto.city } }] } : {},
+        dto.city ? this.areaMatch(dto.state, dto.city) : {},
         dto.verifiedOnly ? { verificationStatus: ArtisanVerificationStatus.verified } : {},
         dto.usedByBmh ? { usedByBmh: true } : {},
         dto.claimed ? { claimStatus: ArtisanClaimStatus.claimed } : {},

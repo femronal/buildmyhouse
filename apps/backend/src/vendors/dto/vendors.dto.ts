@@ -97,6 +97,7 @@ export class PublicVendorSearchDto {
   @IsOptional() @IsString() stateKey?: string;
   @IsOptional() @IsString() cityKey?: string;
   @IsOptional() @IsString() localAreaKey?: string;
+  @IsOptional() @IsString() lga?: string;
   @IsOptional() @IsString() deliveryStateKey?: string;
   @IsOptional() @IsBoolean() @Type(() => Boolean) verifiedOnly?: boolean;
   @IsOptional() @IsBoolean() @Type(() => Boolean) retail?: boolean;

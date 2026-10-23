@@ -3,12 +3,14 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectoryBrowse, {
+  retainDirectoryFilters,
   DirectoryActionLink,
   DirectoryPill,
   useDirectoryColumns,
   type DirectoryChip,
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
+import { DirectoryStateLgaFilter } from '@/components/directory/DirectoryStateLgaFilter';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import ManageListingEntry from '@/components/listings/ManageListingEntry';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
@@ -29,6 +31,7 @@ import {
   toggleFilterHref,
   withDirectoryParams,
 } from '@/lib/directory-listing';
+import { directoryStateLabel, directoryStateName, professionalStateParam } from '@/lib/directory-location';
 import {
   fetchProfessionalMeta,
   fetchPublicProfessionals,
@@ -157,6 +160,7 @@ export default function ProfessionalDirectoryPage() {
     : undefined;
   const stateLabel = params.state
     ? (metaQuery.data?.states || []).find((item: { key: string; label: string }) => item.key === params.state)?.label ||
+      directoryStateLabel(params.state) ||
       humanizeKey(params.state)
     : undefined;
   const needLabel = params.need
@@ -200,6 +204,7 @@ export default function ProfessionalDirectoryPage() {
       profession: params.profession,
       need: params.need,
       state: params.state,
+      city: params.lga,
       credentialChecked: readFlag(params.credentialChecked) || undefined,
       usedByBmh: readFlag(params.usedByBmh) || undefined,
       siteVisits: readFlag(params.siteVisits) || undefined,
@@ -251,9 +256,20 @@ export default function ProfessionalDirectoryPage() {
       chip(`profession-${params.profession}`, professionLabel || params.profession, 'profession', params.profession),
     );
   }
-  const stateChips: DirectoryChip[] = states.map((item: { key: string; label: string }) =>
-    chip(`state-${item.key}`, item.label, 'state', item.key),
-  );
+  const stateChips: DirectoryChip[] = states.map((item: { key: string; label: string }) => {
+    const active = directoryStateName(params.state) === directoryStateName(item.key);
+    return {
+      key: `state-${item.key}`,
+      label: item.label,
+      active,
+      href: withDirectoryParams(
+        PATH,
+        params,
+        { state: active ? undefined : item.key, lga: undefined },
+        PROFESSIONAL_QUERY_ORDER,
+      ),
+    };
+  });
   const capabilityChips = [
     chip('credential', 'Credential checked', 'credentialChecked', '1'),
     chip('used', 'Used by BuildMyHouse', 'usedByBmh', '1'),
@@ -270,7 +286,12 @@ export default function ProfessionalDirectoryPage() {
     needChips.unshift(chip(`need-${params.need}`, needLabel || params.need, 'need', params.need));
   }
   if (params.state && !stateChips.some((item) => item.active)) {
-    stateChips.unshift(chip(`state-${params.state}`, stateLabel || params.state, 'state', params.state));
+    stateChips.unshift({
+      key: `state-${params.state}`,
+      label: stateLabel || params.state,
+      active: true,
+      href: withDirectoryParams(PATH, params, { state: undefined, lga: undefined }, PROFESSIONAL_QUERY_ORDER),
+    });
   }
 
   const sections: DirectoryFilterSection[] = [
@@ -281,13 +302,41 @@ export default function ProfessionalDirectoryPage() {
       chips: needChips,
     },
     { id: 'profession', title: 'Profession', chips: professionChips },
-    { id: 'location', title: 'Location', chips: stateChips },
+    {
+      id: 'location',
+      title: '',
+      chips: [],
+      content: (
+        <DirectoryStateLgaFilter
+          stateValue={directoryStateName(params.state)}
+          areaValue={params.lga || 'All'}
+          onState={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(
+                PATH,
+                params,
+                { state: professionalStateParam(value) || undefined, lga: undefined },
+                PROFESSIONAL_QUERY_ORDER,
+              ) as any,
+            );
+          }}
+          onArea={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(PATH, params, { lga: value === 'All' ? undefined : value }, PROFESSIONAL_QUERY_ORDER              ) as any,
+            );
+          }}
+        />
+      ),
+    },
     { id: 'trust', title: 'Trust and capability', chips: capabilityChips },
   ];
   const activeFilterCount = [
     params.profession,
     params.need,
     params.state,
+    params.lga,
     params.credentialChecked,
     params.usedByBmh,
     params.siteVisits,

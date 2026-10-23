@@ -3,12 +3,14 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectoryBrowse, {
+  retainDirectoryFilters,
   DirectoryActionLink,
   DirectoryPill,
   useDirectoryColumns,
   type DirectoryChip,
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
+import { DirectoryStateLgaFilter } from '@/components/directory/DirectoryStateLgaFilter';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
 import { TrustRing } from '@/components/artisans/TrustRing';
@@ -29,6 +31,7 @@ import {
   toggleFilterHref,
   withDirectoryParams,
 } from '@/lib/directory-listing';
+import { directoryStateLabel, directoryStateName } from '@/lib/directory-location';
 import { fetchArtisanMeta, fetchArtisans, type ArtisanCard, type ArtisanProblem } from '@/lib/public-artisans';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
@@ -160,11 +163,11 @@ export default function ArtisanDirectoryPage() {
   const selectedTrade = trades.find((item) => item.key === params.trade);
   const featuredLabel = FEATURED_PROBLEMS.find((label) => problemKey(label) === params.problem);
   const problemLabel = selectedProblem?.label || featuredLabel || (params.problem ? humanizeKey(params.problem) : undefined);
-  const selectedState = FEATURED_STATES.find((item) => item.value === params.state);
+  const stateLabel = directoryStateLabel(params.state);
   const title = artisanDirectoryHeading({
     problemLabel,
     tradeLabel: selectedTrade?.label,
-    stateLabel: selectedState?.label || params.state,
+    stateLabel,
   });
   const summary = artisanDirectorySummary(problemLabel);
 
@@ -202,6 +205,7 @@ export default function ArtisanDirectoryPage() {
       problem: params.problem,
       trade: params.trade,
       state: params.state,
+      city: params.lga,
       verifiedOnly: readFlag(params.verified) || undefined,
       usedByBmh: readFlag(params.usedByBmh) || undefined,
       claimed: readFlag(params.claimed) || undefined,
@@ -247,7 +251,28 @@ export default function ArtisanDirectoryPage() {
   if (params.trade && !tradeChips.some((item) => item.active)) {
     tradeChips.unshift(chip(`trade-${params.trade}`, selectedTrade?.label || params.trade, 'trade', params.trade));
   }
-  const stateChips = FEATURED_STATES.map((item) => chip(`state-${item.value}`, item.label, 'state', item.value));
+  const stateChips = FEATURED_STATES.map((item) => {
+    const active = directoryStateName(params.state) === item.value;
+    return {
+      key: `state-${item.value}`,
+      label: item.label,
+      active,
+      href: withDirectoryParams(
+        PATH,
+        params,
+        { state: active ? undefined : item.value, lga: undefined },
+        ARTISAN_QUERY_ORDER,
+      ),
+    };
+  });
+  if (params.state && !stateChips.some((item) => item.active)) {
+    stateChips.unshift({
+      key: `state-${params.state}`,
+      label: stateLabel || params.state,
+      active: true,
+      href: withDirectoryParams(PATH, params, { state: undefined, lga: undefined }, ARTISAN_QUERY_ORDER),
+    });
+  }
   const trustChips = [
     chip('verified', 'Verified', 'verified', '1'),
     chip('used', 'Used by BuildMyHouse', 'usedByBmh', '1'),
@@ -263,10 +288,32 @@ export default function ArtisanDirectoryPage() {
       chips: problemChips,
     },
     { id: 'trade', title: 'Trade', chips: tradeChips },
-    { id: 'location', title: 'Location', chips: stateChips },
+    {
+      id: 'location',
+      title: '',
+      chips: [],
+      content: (
+        <DirectoryStateLgaFilter
+          stateValue={directoryStateName(params.state)}
+          areaValue={params.lga || 'All'}
+          onState={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(PATH, params, { state: value === 'All' ? undefined : value, lga: undefined }, ARTISAN_QUERY_ORDER              ) as any,
+            );
+          }}
+          onArea={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(PATH, params, { lga: value === 'All' ? undefined : value }, ARTISAN_QUERY_ORDER              ) as any,
+            );
+          }}
+        />
+      ),
+    },
     { id: 'trust', title: 'Listing details', chips: trustChips },
   ];
-  const activeFilterCount = [params.problem, params.trade, params.state, params.verified, params.usedByBmh, params.claimed, params.workshop].filter(Boolean).length;
+  const activeFilterCount = [params.problem, params.trade, params.state, params.lga, params.verified, params.usedByBmh, params.claimed, params.workshop].filter(Boolean).length;
   const artisans = listQuery.data?.data ?? [];
   const total = listQuery.data?.total ?? 0;
   const totalPages = Math.ceil(total / DIRECTORY_PAGE_SIZE);

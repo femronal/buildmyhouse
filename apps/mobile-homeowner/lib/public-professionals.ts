@@ -57,6 +57,7 @@ export type ProfessionalSearchParams = {
   service?: string;
   need?: string;
   state?: string;
+  city?: string;
   credentialChecked?: boolean;
   usedByBmh?: boolean;
   remoteConsultation?: boolean;

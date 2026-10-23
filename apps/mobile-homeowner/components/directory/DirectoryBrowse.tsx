@@ -20,6 +20,13 @@ import type { DirectorySort } from '@/lib/directory-listing';
 export type { DirectoryChip, DirectoryFilterSection };
 
 const INK = LANDING_INK;
+
+let retainFiltersOnNextOpen = false;
+
+/** Keep the filter sheet open across the URL change that applies a state or LGA. */
+export function retainDirectoryFilters() {
+  retainFiltersOnNextOpen = true;
+}
 const MUTED = LANDING_MUTED;
 const LINE = LANDING_BORDER;
 
@@ -170,7 +177,11 @@ export default function DirectoryBrowse({
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wide = width >= 960;
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(() => {
+    const retain = retainFiltersOnNextOpen;
+    retainFiltersOnNextOpen = false;
+    return retain;
+  });
   const [sortOpen, setSortOpen] = useState(false);
   const extraChips = wide ? wideChips : wideChips.filter((chip) => chip.active);
   const seen = new Set(quickChips.map((chip) => chip.key));

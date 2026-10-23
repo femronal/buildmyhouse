@@ -19,7 +19,7 @@ import {
   ProfessionalVerificationStatus,
   Prisma,
 } from '@prisma/client';
-import { directoryLocationValues } from '../common/nigeria-directory-location';
+import { directoryAreaValues, directoryLocationValues } from '../common/nigeria-directory-location';
 import { EmailService } from '../email/email.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { S3UploadService } from '../upload/s3-upload.service';
@@ -283,11 +283,14 @@ export class ProfessionalsService implements OnModuleInit {
       });
     }
     if (query.city) {
+      const names = directoryAreaValues(query.state, query.city);
       and.push({
-        OR: [
-          { city: { contains: query.city, mode: 'insensitive' } },
-          { serviceCities: { has: query.city } },
-        ],
+        OR: names.flatMap((name) => [
+          name.trim().length >= 4
+            ? { city: { contains: name, mode: 'insensitive' as const } }
+            : { city: { equals: name, mode: 'insensitive' as const } },
+          { serviceCities: { has: name } },
+        ]),
       });
     }
     if (query.credentialChecked) {

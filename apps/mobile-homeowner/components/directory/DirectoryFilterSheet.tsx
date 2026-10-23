@@ -21,6 +21,7 @@ export type DirectoryFilterSection = {
   title: string;
   hint?: string;
   chips: DirectoryChip[];
+  content?: ReactNode;
 };
 
 export function DirectoryChipButton({
@@ -107,19 +108,25 @@ export function DirectoryFilterSheet({
           </View>
           <ScrollView style={{ flexShrink: 1, paddingHorizontal: 20 }} keyboardShouldPersistTaps="handled">
             {children}
-            {sections.map((section) => (
-              <View key={section.id} style={{ marginBottom: 16 }}>
-                <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: INK, marginBottom: 4 }}>{section.title}</Text>
+            {sections.map((section) =>
+              !section.content && section.chips.length === 0 ? null : (
+              <View key={section.id} style={{ marginBottom: section.content ? 0 : 16 }}>
+                {section.title ? (
+                  <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 14, color: INK, marginBottom: 4 }}>{section.title}</Text>
+                ) : null}
                 {section.hint ? (
                   <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 12, color: MUTED, marginBottom: 8 }}>{section.hint}</Text>
                 ) : null}
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-                  {section.chips.map((chip) => (
-                    <DirectoryChipButton key={chip.key} chip={chip} />
-                  ))}
-                </View>
+                {section.content || (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                    {section.chips.map((chip) => (
+                      <DirectoryChipButton key={chip.key} chip={chip} />
+                    ))}
+                  </View>
+                )}
               </View>
-            ))}
+              ),
+            )}
           </ScrollView>
           <View style={{ flexDirection: 'row', paddingHorizontal: 20, paddingTop: 8 }}>
             {clearHref ? (

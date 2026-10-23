@@ -3,12 +3,14 @@ import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { Image, Pressable, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import DirectoryBrowse, {
+  retainDirectoryFilters,
   DirectoryActionLink,
   DirectoryPill,
   useDirectoryColumns,
   type DirectoryChip,
   type DirectoryFilterSection,
 } from '@/components/directory/DirectoryBrowse';
+import { DirectoryStateLgaFilter } from '@/components/directory/DirectoryStateLgaFilter';
 import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import ManageListingEntry from '@/components/listings/ManageListingEntry';
 import { SeoContentBackButton, SeoContentShell } from '@/components/seo/SeoContentLayout';
@@ -37,6 +39,7 @@ import {
   type PublicVendorCard,
   type PublicVendorCategory,
 } from '@/lib/public-vendors';
+import { directoryStateLabel, directoryStateName, vendorStateParam } from '@/lib/directory-location';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { usePageOwnedSeo, useWebSeo } from '@/lib/seo';
 
@@ -44,7 +47,11 @@ const PATH = '/vendors';
 
 function placeLabel(stateKey?: string): string | undefined {
   if (!stateKey) return undefined;
-  return VENDOR_STATE_FILTERS.find((item) => item.stateKey === stateKey)?.label || humanizeKey(stateKey.replace(/^ng-/, ''));
+  return (
+    VENDOR_STATE_FILTERS.find((item) => item.stateKey === stateKey)?.label ||
+    directoryStateLabel(stateKey) ||
+    humanizeKey(stateKey.replace(/^ng-/, ''))
+  );
 }
 
 function categoryLabel(category: string | undefined, filters: PublicVendorCategory[]): string | undefined {
@@ -185,6 +192,7 @@ export default function VendorDirectoryPage() {
       familyKey: params.category,
       stateKey: params.state,
       localAreaKey: params.area || undefined,
+      lga: params.lga,
       verifiedOnly: readFlag(params.verified) || undefined,
       wholesale: readFlag(params.wholesale) || undefined,
       delivery: readFlag(params.delivery) || undefined,
@@ -192,7 +200,7 @@ export default function VendorDirectoryPage() {
       page,
       limit: DIRECTORY_PAGE_SIZE,
     }),
-    [page, params.area, params.category, params.delivery, params.q, params.state, params.verified, params.wholesale, sort],
+    [page, params.area, params.category, params.delivery, params.lga, params.q, params.state, params.verified, params.wholesale, sort],
   );
 
   const { data, isLoading, isError, refetch } = useQuery({
@@ -225,7 +233,20 @@ export default function VendorDirectoryPage() {
   const categoryChips = categoryFilters.map((item) =>
     chip(`category-${item.slug}`, item.label, 'category', item.slug),
   );
-  const stateChips = VENDOR_STATE_FILTERS.map((item) => chip(`state-${item.stateKey}`, item.label, 'state', item.stateKey));
+  const stateChips: DirectoryChip[] = VENDOR_STATE_FILTERS.map((item) => {
+    const active = directoryStateName(params.state) === directoryStateName(item.stateKey);
+    return {
+      key: `state-${item.stateKey}`,
+      label: item.label,
+      active,
+      href: withDirectoryParams(
+        PATH,
+        params,
+        { state: active ? undefined : item.stateKey, lga: undefined },
+        VENDOR_QUERY_ORDER,
+      ),
+    };
+  });
   const optionChips = [
     chip('verified', 'Verified only', 'verified', '1'),
     chip('wholesale', 'Wholesale', 'wholesale', '1'),
@@ -235,9 +256,14 @@ export default function VendorDirectoryPage() {
     categoryChips.push(chip(`category-${params.category}`, categoryLabel(params.category, categoryFilters) || params.category, 'category', params.category));
   }
   if (params.state && !stateChips.some((item) => item.active)) {
-    stateChips.push(chip(`state-${params.state}`, placeLabel(params.state) || params.state, 'state', params.state));
+    stateChips.unshift({
+      key: `state-${params.state}`,
+      label: placeLabel(params.state) || params.state,
+      active: true,
+      href: withDirectoryParams(PATH, params, { state: undefined, lga: undefined }, VENDOR_QUERY_ORDER),
+    });
   }
-  const areaChips = VENDOR_AREA_FILTERS.map((item) => chip(`area-${item.areaKey}`, item.label, 'area', item.areaKey));
+  const selectedArea = params.area ? VENDOR_AREA_FILTERS.find((item) => item.areaKey === params.area) : undefined;
   const categoryGroups = Array.from(new Set(categoryFilters.map((item) => item.group).filter((group): group is string => !!group)));
   const ungroupedCategoryChips = categoryChips.filter((item) => !categoryFilters.find((category) => `category-${category.slug}` === item.key)?.group);
   const sections: DirectoryFilterSection[] = [
@@ -247,11 +273,32 @@ export default function VendorDirectoryPage() {
       title: group,
       chips: categoryChips.filter((item) => categoryFilters.find((category) => `category-${category.slug}` === item.key)?.group === group),
     })),
-    { id: 'location', title: 'State', chips: stateChips },
-    { id: 'area', title: 'Lagos area', chips: areaChips },
+    {
+      id: 'location',
+      title: '',
+      chips: [],
+      content: (
+        <DirectoryStateLgaFilter
+          stateValue={directoryStateName(params.state)}
+          areaValue={params.lga || 'All'}
+          onState={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(PATH, params, { state: vendorStateParam(value) || undefined, lga: undefined }, VENDOR_QUERY_ORDER              ) as any,
+            );
+          }}
+          onArea={(value) => {
+            retainDirectoryFilters();
+            router.replace(
+              withDirectoryParams(PATH, params, { lga: value === 'All' ? undefined : value }, VENDOR_QUERY_ORDER              ) as any,
+            );
+          }}
+        />
+      ),
+    },
     { id: 'options', title: 'Listing', chips: optionChips },
   ];
-  const activeFilterCount = [params.category, params.state, params.area, params.verified, params.wholesale, params.delivery].filter(
+  const activeFilterCount = [params.category, params.state, params.lga, params.area, params.verified, params.wholesale, params.delivery].filter(
     Boolean,
   ).length;
   const pageHref = (nextPage: number) =>
@@ -280,7 +327,11 @@ export default function VendorDirectoryPage() {
           onSearchChange={onSearchChange}
           searchPlaceholder="Search cement, plumbing, Dangote, Lagos…"
           quickChips={categoryChips}
-          wideChips={[...stateChips, ...optionChips]}
+          wideChips={[
+            ...stateChips,
+            ...(selectedArea ? [chip(`area-${selectedArea.areaKey}`, selectedArea.label, 'area', selectedArea.areaKey)] : []),
+            ...optionChips,
+          ]}
           sections={sections}
           activeFilterCount={activeFilterCount}
           clearHref={PATH}

@@ -17,7 +17,7 @@ import {
   VendorVerificationStatus,
 } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
-import { directoryLocationValues } from '../common/nigeria-directory-location';
+import { directoryAreaValues, directoryLocationValues } from '../common/nigeria-directory-location';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from '../email/email.service';
 import {
@@ -1419,6 +1419,7 @@ export class VendorsService {
     if (dto.stateKey) and.push(this.stateMatch(dto.stateKey));
     if (dto.cityKey) and.push({ cityKey: dto.cityKey });
     if (dto.localAreaKey) and.push({ localAreaKey: dto.localAreaKey });
+    if (dto.lga?.trim()) and.push(this.areaMatch(dto.stateKey, dto.lga));
     const categorySlug = dto.familyKey || dto.category;
     if (categorySlugs?.length) and.push(this.categoryMatchWhere(categorySlugs[0], categorySlugs));
     else if (categorySlug) and.push(this.categoryMatchWhere(categorySlug));
@@ -1456,6 +1457,29 @@ export class VendorsService {
     }
     if (and.length) where.AND = and;
     return where;
+  }
+
+  private areaMatch(stateKey: string | undefined, area: string): Prisma.VendorProfileWhereInput {
+    const names = directoryAreaValues(stateKey, area);
+    const slugs = names.map((name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    return {
+      OR: [
+        ...names.flatMap((name) => {
+          const city =
+            name.trim().length >= 4
+              ? { contains: name, mode: 'insensitive' as const }
+              : { equals: name, mode: 'insensitive' as const };
+          return [
+            { cityLabel: city },
+            { lgaLabel: city },
+            { localAreaLabel: city },
+            { serviceAreas: { some: { cityLabel: city } } },
+          ];
+        }),
+        { cityKey: { in: slugs } },
+        { serviceAreas: { some: { cityKey: { in: slugs } } } },
+      ],
+    };
   }
 
   private stateMatch(stateKey: string): Prisma.VendorProfileWhereInput {

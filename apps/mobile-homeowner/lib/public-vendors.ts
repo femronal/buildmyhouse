@@ -110,6 +110,7 @@ export type PublicVendorSearchParams = {
   brand?: string;
   stateKey?: string;
   localAreaKey?: string;
+  lga?: string;
   verifiedOnly?: boolean;
   retail?: boolean;
   wholesale?: boolean;
