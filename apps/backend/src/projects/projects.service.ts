@@ -2040,17 +2040,9 @@ export class ProjectsService {
 
   private async attachMoneySummary(project: any) {
     if (!project?.id) return project;
-    const payments = await this.prisma.payment.findMany({
-      where: { projectId: project.id, status: 'completed' },
-      select: { id: true, amount: true, status: true, method: true, createdAt: true },
-    });
     return {
       ...project,
-      moneySummary: summarizeJobMoney({
-        budget: project.budget,
-        stages: project.stages || [],
-        payments,
-      }),
+      moneySummary: await this.getProjectMoneySummary(project.id),
     };
   }
 
@@ -2062,7 +2054,7 @@ export class ProjectsService {
         budget: true,
         stages: {
           select: {
-            materials: { select: { payeeKind: true, status: true, totalPrice: true } },
+            materials: { select: { payeeKind: true, status: true, totalPrice: true, quantity: true, unitPrice: true } },
             teamMembers: {
               select: {
                 payStatus: true,
@@ -2289,7 +2281,7 @@ export class ProjectsService {
       where: { projectId: { in: ids } },
       select: {
         projectId: true,
-        materials: { select: { payeeKind: true, status: true, totalPrice: true } },
+        materials: { select: { payeeKind: true, status: true, totalPrice: true, quantity: true, unitPrice: true } },
         teamMembers: {
           select: {
             payStatus: true,

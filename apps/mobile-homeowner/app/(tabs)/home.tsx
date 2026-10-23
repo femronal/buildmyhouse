@@ -14,6 +14,7 @@ import PaymentModal from '@/components/PaymentModal';
 import NotificationBell from '@/components/NotificationBell';
 import LogoText from '@/components/LogoText';
 import { getBackendAssetUrl } from '@/lib/image';
+import { paidPayoutsFromStages } from '@/lib/job-payouts';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -602,7 +603,7 @@ export default function HomeScreen() {
                                 className="text-white"
                                 style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
                               >
-                                {`₦${Number(project.moneySummary?.sentToContractor || 0).toLocaleString()}`}
+                                {`₦${(Number(project.moneySummary?.sentToContractor || 0) || paidPayoutsFromStages(project.stages).artisan).toLocaleString()}`}
                               </Text>
                             </View>
                           </View>

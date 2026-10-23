@@ -6,6 +6,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useActiveProjects, useMyInvoiceFiles, usePendingProjects, useUserPaymentsStructured } from '@/hooks';
 import { useHomePurchases, useLandPurchases, useRentalPurchases } from '@/hooks/usePropertyPurchases';
 import { getBackendAssetUrl } from '@/lib/image';
+import { paidPayoutsFromStages } from '@/lib/job-payouts';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -267,11 +268,14 @@ export default function FinanceScreen() {
             ) : (
               allProjects.map((p: any) => {
                 const summary = p.moneySummary;
+                const linePayouts = paidPayoutsFromStages(p.stages);
+                const sentToContractor = Number(summary?.sentToContractor || 0) || linePayouts.artisan;
+                const paidToShopsForMaterials = Number(summary?.paidToShopsForMaterials || 0) || linePayouts.shop;
                 const rows = [
                   ['You sent in', summary?.hasHomeownerReceipts ? `₦${Number(summary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
                   ['Still with BuildMyHouse', summary?.hasHomeownerReceipts ? `₦${Number(summary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
-                  ['Sent to your contractor', `₦${Number(summary?.sentToContractor || 0).toLocaleString()}`],
-                  ['Paid to shops for materials', `₦${Number(summary?.paidToShopsForMaterials || 0).toLocaleString()}`],
+                  ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
+                  ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
                 ];
                 return (
                   <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">

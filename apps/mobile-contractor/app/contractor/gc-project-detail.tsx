@@ -25,6 +25,24 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
+function paidPayoutsFromStages(stages?: Array<{ materials?: Array<{ payeeKind?: string | null; status?: string | null; totalPrice?: number | null; quantity?: number | null; unitPrice?: number | null }> }> | null) {
+  let artisan = 0;
+  let shop = 0;
+  for (const stage of stages || []) {
+    for (const line of stage?.materials || []) {
+      if (String(line?.status || '').trim().toLowerCase() !== 'paid') continue;
+      const total = Number(line.totalPrice);
+      const amount = Number.isFinite(total) && total > 0
+        ? total
+        : (Number(line.quantity) || 0) * (Number(line.unitPrice) || 0);
+      const kind = String(line?.payeeKind || '').trim().toLowerCase();
+      if (kind === 'artisan') artisan += amount;
+      else if (kind === 'shop') shop += amount;
+    }
+  }
+  return { artisan, shop };
+}
+
 const formatDate = (dateString?: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
@@ -285,14 +303,18 @@ export default function GCProjectDetailScreen() {
         budget?: number;
       }
     | undefined;
-  const paidToYou = Number(moneySummary?.paidToYou ?? earningsRow?.paidToYou ?? earningsRow?.earned ?? 0);
-  const paidToShops = Number(moneySummary?.paidToShops ?? earningsRow?.paidToShops ?? 0);
+  const linePayouts = paidPayoutsFromStages((project as any).stages);
+  const paidToYou = Number(moneySummary?.paidToYou || 0) || linePayouts.artisan || (moneySummary ? 0 : Number(earningsRow?.paidToYou ?? earningsRow?.earned ?? 0));
+  const paidToShops = Number(moneySummary?.paidToShops || 0) || linePayouts.shop || (moneySummary ? 0 : Number(earningsRow?.paidToShops || 0));
   const fullJobPrice = Number(
     moneySummary?.fullJobPrice ?? earningsRow?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
   );
-  const leftOnThisJob = Number(
-    moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops),
-  );
+  const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0;
+  const leftOnThisJob = summaryHasPayouts
+    ? Number(moneySummary?.leftOnThisJob ?? Math.max(0, fullJobPrice - paidToYou - paidToShops))
+    : linePayouts.artisan || linePayouts.shop
+      ? Math.max(0, fullJobPrice - paidToYou - paidToShops)
+      : Number(moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops));
   const activeIndex = stages.findIndex(
     (stage: any) => stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval',
   );

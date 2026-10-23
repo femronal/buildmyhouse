@@ -12,6 +12,8 @@ type MaterialLine = {
   payeeKind?: string | null;
   status?: string | null;
   totalPrice?: number | null;
+  quantity?: number | null;
+  unitPrice?: number | null;
 };
 
 type TeamLine = {
@@ -73,13 +75,28 @@ export function teamLineAmount(member: TeamLine): number {
   return (Number(member.dailyRate) || 0) * teamDayCount(member.startDate, member.endDate);
 }
 
+function cleanToken(value?: string | null): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+export function materialLineAmount(line: MaterialLine): number {
+  const total = Number(line.totalPrice);
+  if (Number.isFinite(total) && total > 0) return total;
+  const quantity = Number(line.quantity);
+  const unitPrice = Number(line.unitPrice);
+  if (Number.isFinite(quantity) && Number.isFinite(unitPrice) && quantity * unitPrice > 0) {
+    return quantity * unitPrice;
+  }
+  return Number.isFinite(total) ? total : 0;
+}
+
 export function stageBmhPaidAmount(stage: JobMoneyStage): number {
   const materials = (stage.materials || []).reduce((sum, line) => {
-    if (line.status !== 'paid') return sum;
-    return sum + (Number(line.totalPrice) || 0);
+    if (cleanToken(line.status) !== 'paid') return sum;
+    return sum + materialLineAmount(line);
   }, 0);
   const team = (stage.teamMembers || []).reduce((sum, line) => {
-    if (line.payStatus !== 'paid' || line.paidBy !== 'bmh') return sum;
+    if (cleanToken(line.payStatus) !== 'paid' || cleanToken(line.paidBy) !== 'bmh') return sum;
     return sum + teamLineAmount(line);
   }, 0);
   return materials + team;
@@ -96,14 +113,15 @@ export function summarizeJobMoney(input: {
 
   for (const stage of input.stages || []) {
     for (const line of stage.materials || []) {
-      if (line.status !== 'paid') continue;
-      const amount = Number(line.totalPrice) || 0;
-      if (line.payeeKind === 'artisan') artisanPaid += amount;
-      else if (line.payeeKind === 'shop') shopPaid += amount;
-      else if (line.payeeKind === 'other') otherPaid += amount;
+      if (cleanToken(line.status) !== 'paid') continue;
+      const amount = materialLineAmount(line);
+      const kind = cleanToken(line.payeeKind);
+      if (kind === 'artisan') artisanPaid += amount;
+      else if (kind === 'shop') shopPaid += amount;
+      else if (kind === 'other') otherPaid += amount;
     }
     for (const line of stage.teamMembers || []) {
-      if (line.payStatus !== 'paid' || line.paidBy !== 'bmh') continue;
+      if (cleanToken(line.payStatus) !== 'paid' || cleanToken(line.paidBy) !== 'bmh') continue;
       artisanPaid += teamLineAmount(line);
     }
   }

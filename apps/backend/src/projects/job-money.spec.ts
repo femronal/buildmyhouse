@@ -32,6 +32,28 @@ describe('job money payout sums', () => {
     expect(money.hasHomeownerReceipts).toBe(false);
   });
 
+  it('counts a paid artisan and shop line when the saved words differ in case or the total was left at zero', () => {
+    const money = summarizeJobMoney({
+      budget: 336000,
+      stages: [{
+        materials: [
+          { payeeKind: 'Artisan', status: 'Paid', totalPrice: 0, quantity: 1, unitPrice: 15000 },
+          { payeeKind: ' Shop ', status: 'paid', totalPrice: 30000 },
+        ],
+        teamMembers: [],
+      }],
+      payments: [],
+    });
+    expect(money.sentToContractor).toBe(15000);
+    expect(money.paidToShopsForMaterials).toBe(30000);
+    expect(money.paidToYou).toBe(15000);
+    expect(money.paidToShops).toBe(30000);
+    expect(money.fullJobPrice).toBe(336000);
+    expect(money.leftOnThisJob).toBe(291000);
+    expect(money.hasHomeownerReceipts).toBe(false);
+    expect(money.youSentIn).toBe(0);
+  });
+
   it('keeps contractor and shop payouts when homeowner receipts are missing on the live bed job', () => {
     const money = summarizeJobMoney({ budget: 336000, stages: [bedStage], payments: [] });
     expect(money.paidToYou).toBe(15000);

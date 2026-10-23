@@ -12,6 +12,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
+import { paidPayoutsFromStages } from "@/lib/job-payouts";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -198,6 +199,9 @@ export default function DashboardScreen() {
         paidToShopsForMaterials?: number;
       }
     | undefined;
+  const linePayouts = paidPayoutsFromStages(stages);
+  const sentToContractor = Number(moneySummary?.sentToContractor || 0) || linePayouts.artisan;
+  const paidToShopsForMaterials = Number(moneySummary?.paidToShopsForMaterials || 0) || linePayouts.shop;
 
   // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
   const projectType =
@@ -562,8 +566,8 @@ export default function DashboardScreen() {
           {[
             ['You sent in', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
             ['Still with BuildMyHouse', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
-            ['Sent to your contractor', `₦${Number(moneySummary?.sentToContractor || 0).toLocaleString()}`],
-            ['Paid to shops for materials', `₦${Number(moneySummary?.paidToShopsForMaterials || 0).toLocaleString()}`],
+            ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
+            ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
           ].map(([label, value]) => (
             <View key={label} className="flex-row justify-between mb-3">
               <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>
