@@ -50,6 +50,7 @@ export default function EditVendorPage() {
       publicWhatsApp: vendor.publicWhatsApp || '',
       publicEmail: vendor.publicEmail || '',
       quotationEmail: vendor.quotationEmail || '',
+      emailBounced: !!vendor.emailBounced,
       salesContactName: vendor.salesContactName || '',
       representativeName: primary?.name || '',
       representativePhone: primary?.phone || '',

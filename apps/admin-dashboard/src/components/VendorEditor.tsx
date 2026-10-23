@@ -33,6 +33,7 @@ export type VendorEditorValue = {
   publicWhatsApp: string;
   publicEmail: string;
   quotationEmail: string;
+  emailBounced: boolean;
   salesContactName: string;
   representativeName: string;
   representativePhone: string;
@@ -74,6 +75,7 @@ export const emptyVendorEditorValue = (): VendorEditorValue => ({
   publicWhatsApp: '',
   publicEmail: '',
   quotationEmail: '',
+  emailBounced: false,
   salesContactName: '',
   representativeName: '',
   representativePhone: '',
@@ -339,8 +341,39 @@ export function VendorEditor({
         <h2 className="md:col-span-2 text-sm font-semibold uppercase tracking-wide text-gray-500">Contact</h2>
         <Field label="Phone"><input className={inputClass} value={value.publicPhone} onChange={(e) => set({ publicPhone: e.target.value })} /></Field>
         <Field label="WhatsApp"><input className={inputClass} value={value.publicWhatsApp} onChange={(e) => set({ publicWhatsApp: e.target.value })} /></Field>
-        <Field label="Email"><input className={inputClass} value={value.publicEmail} onChange={(e) => set({ publicEmail: e.target.value })} /></Field>
+        <Field label="Email">
+          <input className={inputClass} value={value.publicEmail} onChange={(e) => set({ publicEmail: e.target.value })} />
+          {mode === 'edit' ? (
+            <p className="mt-1 text-xs text-gray-500">Leave blank and save to remove the email from this listing.</p>
+          ) : null}
+        </Field>
         <Field label="Quotation email"><input className={inputClass} value={value.quotationEmail} onChange={(e) => set({ quotationEmail: e.target.value })} /></Field>
+        {mode === 'edit' ? (
+          <label className="md:col-span-2 inline-flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={value.emailBounced}
+              onChange={(e) => {
+                const bounced = e.target.checked;
+                const sameQuote =
+                  !!value.publicEmail.trim() &&
+                  value.quotationEmail.trim().toLowerCase() === value.publicEmail.trim().toLowerCase();
+                set({
+                  emailBounced: bounced,
+                  publicEmail: bounced ? '' : value.publicEmail,
+                  quotationEmail: bounced && sameQuote ? '' : value.quotationEmail,
+                });
+              }}
+            />
+            <span>
+              Email bounced
+              {value.emailBounced ? (
+                <span className="block text-xs text-gray-500">Bounced emails are removed from the listing.</span>
+              ) : null}
+            </span>
+          </label>
+        ) : null}
         <Field label="Sales contact"><input className={inputClass} value={value.salesContactName} onChange={(e) => set({ salesContactName: e.target.value })} /></Field>
         <Field label="Representative"><input className={inputClass} value={value.representativeName} onChange={(e) => set({ representativeName: e.target.value })} /></Field>
         <Field label="Representative phone"><input className={inputClass} value={value.representativePhone} onChange={(e) => set({ representativePhone: e.target.value })} /></Field>
@@ -412,8 +445,9 @@ export function vendorEditorPayload(value: VendorEditorValue, mode: 'create' | '
     products: value.products,
     publicPhone: value.publicPhone.trim() || undefined,
     publicWhatsApp: value.publicWhatsApp.trim() || undefined,
-    publicEmail: value.publicEmail.trim() || undefined,
-    quotationEmail: value.quotationEmail.trim() || undefined,
+    publicEmail: mode === 'edit' ? value.publicEmail.trim() : value.publicEmail.trim() || undefined,
+    quotationEmail: mode === 'edit' ? value.quotationEmail.trim() : value.quotationEmail.trim() || undefined,
+    ...(mode === 'edit' ? { emailBounced: value.emailBounced } : {}),
     salesContactName: value.salesContactName.trim() || undefined,
     representative: value.representativeName.trim()
       ? {

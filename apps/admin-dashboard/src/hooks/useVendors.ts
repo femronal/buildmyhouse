@@ -242,10 +242,17 @@ export function useCreateVendor() {
   });
 }
 
+export type VendorAdminUpdate = {
+  publicEmail?: string | null;
+  quotationEmail?: string | null;
+  emailBounced?: boolean;
+  [key: string]: unknown;
+};
+
 export function useUpdateVendor(id: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: Record<string, unknown>) => api.patch<VendorDetail>(`/admin/vendors/${id}`, body),
+    mutationFn: (body: VendorAdminUpdate) => api.patch<VendorDetail>(`/admin/vendors/${id}`, body),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['admin-vendors'] });
       qc.invalidateQueries({ queryKey: ['admin-vendor', id] });

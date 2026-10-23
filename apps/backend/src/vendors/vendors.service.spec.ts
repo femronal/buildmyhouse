@@ -275,6 +275,172 @@ describe('VendorsService', () => {
     );
   });
 
+  function readyAdminUpdate(prisma: ReturnType<typeof mockPrisma>, profile: Record<string, unknown> = {}) {
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      publicEmail: 'old@example.com',
+      normalizedEmail: 'old@example.com',
+      documents: [],
+      ...profile,
+    });
+    prisma.vendorProfile.update.mockResolvedValue({});
+    prisma.vendorProfile.findUnique.mockResolvedValue({
+      tradingName: 'Acme',
+      description: null,
+      offerings: [],
+      products: [],
+      serviceAreas: [],
+      documents: [],
+      representatives: [],
+      businessTypes: [],
+      paymentMethodsAccepted: [],
+      secondaryFamilyKeys: [],
+      primaryFamilyKey: null,
+      priceListAvailable: false,
+    });
+    prisma.vendorActivity.create.mockResolvedValue({});
+  }
+
+  it('clears publicEmail when admin sends an empty string', async () => {
+    const prisma = mockPrisma();
+    readyAdminUpdate(prisma);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.adminUpdate('v1', 'admin-1', { publicEmail: '' });
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({
+        publicEmail: null,
+        normalizedEmail: null,
+        showPublicEmail: false,
+      }),
+    );
+  });
+
+  it('clears publicEmail when admin sends null', async () => {
+    const prisma = mockPrisma();
+    readyAdminUpdate(prisma);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.adminUpdate('v1', 'admin-1', { publicEmail: null });
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({
+        publicEmail: null,
+        normalizedEmail: null,
+      }),
+    );
+  });
+
+  it('saves a valid public email and leaves it when the field is omitted', async () => {
+    const prisma = mockPrisma();
+    readyAdminUpdate(prisma);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.adminUpdate('v1', 'admin-1', { publicEmail: 'sales@example.com' });
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data).toEqual(
+      expect.objectContaining({
+        publicEmail: 'sales@example.com',
+        normalizedEmail: 'sales@example.com',
+      }),
+    );
+
+    prisma.vendorProfile.update.mockClear();
+    await service.adminUpdate('v1', 'admin-1', { tradingName: 'Acme Tiles' });
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data.publicEmail).toBeUndefined();
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data.normalizedEmail).toBeUndefined();
+  });
+
+  it('writes emailBounced from the admin update', async () => {
+    const prisma = mockPrisma();
+    readyAdminUpdate(prisma);
+    const service = new VendorsService(prisma as any, email as any);
+    await service.adminUpdate('v1', 'admin-1', { emailBounced: true });
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data.emailBounced).toBe(true);
+    expect(prisma.vendorProfile.update.mock.calls[0][0].data.publicEmail).toBeUndefined();
+  });
+
+  it('refuses a claim invite to a bounced listing email and allows a different address', async () => {
+    email.send.mockClear();
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'v1',
+      tradingName: 'J Twelve',
+      publicEmail: 'dead@example.com',
+      emailBounced: true,
+      claimStatus: VendorClaimStatus.unclaimed,
+      procurementRelationship: 'never_contacted',
+      deletedAt: null,
+    });
+    prisma.vendorClaimInvite.create.mockResolvedValue({});
+    prisma.vendorProfile.update.mockResolvedValue({});
+    prisma.vendorActivity.create.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+
+    await expect(service.adminCreateClaimInvite('v1', 'admin-1', {})).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(
+      service.adminCreateClaimInvite('v1', 'admin-1', { email: 'dead@example.com' }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(email.send).not.toHaveBeenCalled();
+
+    await service.adminCreateClaimInvite('v1', 'admin-1', { email: 'ops@example.com' });
+    expect(email.send).toHaveBeenCalledWith(expect.objectContaining({ to: 'ops@example.com' }));
+  });
+
+  it('skips bounced listings in bulk claim invites', async () => {
+    email.send.mockClear();
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst.mockResolvedValue({
+      id: 'bounced',
+      publicEmail: 'dead@example.com',
+      emailBounced: true,
+      deletedAt: null,
+    });
+    const service = new VendorsService(prisma as any, email as any);
+    const result = await service.adminBulk('admin-1', {
+      action: 'send_claim_invites',
+      ids: ['bounced'],
+      confirm: true,
+    });
+    expect(result).toEqual({ sent: [], skipped: ['bounced'] });
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('approves a bounced listing without sending email', async () => {
+    email.send.mockClear();
+    const prisma = mockPrisma();
+    prisma.vendorProfile.findFirst
+      .mockResolvedValueOnce({
+        id: 'v1',
+        listingStatus: VendorListingStatus.submitted,
+        publicEmail: 'dead@example.com',
+        emailBounced: true,
+        tradingName: 'Acme',
+        slug: 'acme',
+        deletedAt: null,
+      })
+      .mockResolvedValueOnce({
+        id: 'v1',
+        listingStatus: VendorListingStatus.listed,
+        verificationStatus: VendorVerificationStatus.unverified,
+        deletedAt: null,
+        offerings: [],
+        serviceAreas: [],
+        representatives: [],
+        verificationChecks: [],
+        documents: [],
+        adminNotes: [],
+        activities: [],
+        claimInvites: [],
+        quoteRequests: [],
+        changeRequests: [],
+      });
+    prisma.vendorProfile.update.mockResolvedValue({});
+    prisma.vendorActivity.create.mockResolvedValue({});
+    const service = new VendorsService(prisma as any, email as any);
+    const result = await service.adminApproveListing('v1', 'admin-1', {});
+    expect(prisma.vendorProfile.update).toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
+    expect(result.listingStatus).toBe(VendorListingStatus.listed);
+  });
+
   it('refuses to mark registration Passed without an RC number and registry status', async () => {
     const prisma = mockPrisma();
     prisma.vendorProfile.findFirst.mockResolvedValue({

@@ -529,6 +529,10 @@ export class VendorsService {
   async adminUpdate(id: string, adminId: string, dto: AdminUpdateVendorDto) {
     const before = await this.requireVendor(id);
     const websiteUrl = dto.websiteUrl === '' ? null : dto.websiteUrl;
+    const clearingEmail = dto.publicEmail === '' || dto.publicEmail === null;
+    const publicEmail = clearingEmail ? null : dto.publicEmail;
+    const clearingQuotationEmail = dto.quotationEmail === '' || dto.quotationEmail === null;
+    const quotationEmail = clearingQuotationEmail ? null : dto.quotationEmail;
     const data: Prisma.VendorProfileUpdateInput = {
       tradingName: dto.tradingName?.trim(),
       legalName: dto.legalName?.trim(),
@@ -538,16 +542,17 @@ export class VendorsService {
       businessTypes: dto.businessTypes,
       publicPhone: dto.publicPhone,
       publicWhatsApp: dto.publicWhatsApp,
-      publicEmail: dto.publicEmail,
+      publicEmail: dto.publicEmail !== undefined ? publicEmail : undefined,
       showPublicPhone: dto.showPublicPhone,
       showPublicWhatsApp: dto.showPublicWhatsApp,
-      showPublicEmail: dto.showPublicEmail,
+      showPublicEmail: clearingEmail ? false : dto.showPublicEmail,
+      emailBounced: dto.emailBounced,
       websiteUrl,
       socialLinks: dto.socialLinks,
       preferredContactMethod: dto.preferredContactMethod,
       salesContactName: dto.salesContactName,
       procurementContactName: dto.procurementContactName,
-      quotationEmail: dto.quotationEmail,
+      quotationEmail: dto.quotationEmail !== undefined ? quotationEmail : undefined,
       businessHours: dto.businessHours,
       afterHoursAvailable: dto.afterHoursAvailable,
       stateKey: dto.stateKey,
@@ -614,7 +619,7 @@ export class VendorsService {
       normalizedPhone: dto.publicPhone !== undefined ? normalizePhone(dto.publicPhone) : undefined,
       normalizedWhatsApp:
         dto.publicWhatsApp !== undefined ? normalizePhone(dto.publicWhatsApp) : undefined,
-      normalizedEmail: dto.publicEmail !== undefined ? normalizeEmail(dto.publicEmail) : undefined,
+      normalizedEmail: dto.publicEmail !== undefined ? normalizeEmail(publicEmail) : undefined,
       websiteDomain: dto.websiteUrl !== undefined ? websiteDomain(websiteUrl) : undefined,
     };
 
@@ -746,7 +751,7 @@ export class VendorsService {
         actorAdminId: adminId,
       },
     });
-    if (profile.publicEmail) {
+    if (this.canEmailListing(profile)) {
       await this.email.send({
         to: profile.publicEmail,
         subject: 'BuildMyHouse needs more information about your vendor profile',
@@ -796,7 +801,7 @@ export class VendorsService {
         actorAdminId: adminId,
       },
     });
-    if (profile.publicEmail) {
+    if (this.canEmailListing(profile)) {
       await this.email.send({
         to: profile.publicEmail,
         subject: 'Your BuildMyHouse vendor listing was approved',
@@ -829,7 +834,7 @@ export class VendorsService {
         actorAdminId: adminId,
       },
     });
-    if (profile.publicEmail) {
+    if (this.canEmailListing(profile)) {
       await this.email.send({
         to: profile.publicEmail,
         subject: 'Update on your BuildMyHouse vendor application',
@@ -861,7 +866,7 @@ export class VendorsService {
         actorAdminId: adminId,
       },
     });
-    if (profile.publicEmail) {
+    if (this.canEmailListing(profile)) {
       await this.email.send({
         to: profile.publicEmail,
         subject: 'Your BuildMyHouse vendor profile was suspended',
@@ -984,7 +989,7 @@ export class VendorsService {
           actorAdminId: adminId,
         },
       });
-      if (profile.publicEmail) {
+      if (this.canEmailListing(profile)) {
         await this.email.send({
           to: profile.publicEmail,
           subject: 'Your BuildMyHouse vendor profile is verified',
@@ -1047,10 +1052,25 @@ export class VendorsService {
     return activity;
   }
 
+  private canEmailListing(profile: {
+    publicEmail?: string | null;
+    emailBounced?: boolean | null;
+  }): profile is { publicEmail: string; emailBounced?: boolean | null } {
+    return !!profile.publicEmail && !profile.emailBounced;
+  }
+
   async adminCreateClaimInvite(id: string, adminId: string, dto: AdminClaimInviteDto) {
     const profile = await this.requireVendor(id);
-    const email = dto.email || profile.publicEmail;
-    if (!email) throw new BadRequestException('Invite email is required');
+    const explicit = dto.email?.trim() || '';
+    const listingEmail = profile.publicEmail?.trim() || '';
+    const sameAsListing = !!explicit && !!listingEmail && explicit.toLowerCase() === listingEmail.toLowerCase();
+    const usingListingEmail = !explicit || sameAsListing;
+    if (usingListingEmail && (!listingEmail || profile.emailBounced)) {
+      throw new BadRequestException(
+        'This listing has no usable email (missing or bounced). Add a different invite email or fix the listing email first.',
+      );
+    }
+    const email = explicit || listingEmail;
 
     const rawToken = randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(rawToken);

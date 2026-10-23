@@ -77,6 +77,22 @@ export default function VendorDetailPage() {
     const digits = primaryPhone.replace(/\D/g, '');
     return `https://wa.me/${digits}`;
   }, [primaryPhone]);
+  const listingEmail = (vendor?.publicEmail || '').trim().toLowerCase();
+  const quotationEmail = (vendor?.quotationEmail || '').trim();
+  const mailtoAddress = vendor?.emailBounced
+    ? quotationEmail && quotationEmail.toLowerCase() !== listingEmail
+      ? quotationEmail
+      : null
+    : quotationEmail || vendor?.publicEmail || null;
+  const typedInvite = inviteEmail.trim().toLowerCase();
+  const inviteOverride = !!typedInvite && typedInvite !== listingEmail;
+  const inviteBlocked = vendor?.emailBounced || !vendor?.publicEmail ? !inviteOverride : !typedInvite;
+  const inviteBlockReason =
+    inviteBlocked && vendor?.emailBounced
+      ? 'This listing email bounced. Type a different invite email, or clear the bounce and save a working email first.'
+      : inviteBlocked && !vendor?.publicEmail
+        ? 'This listing has no email. Type a different invite email first.'
+        : null;
 
   const run = async (label: string, fn: () => Promise<unknown>) => {
     setFeedback(null);
@@ -251,6 +267,39 @@ export default function VendorDetailPage() {
                   <Row label="Phone" value={vendor.publicPhone} />
                   <Row label="WhatsApp" value={vendor.publicWhatsApp} />
                   <Row label="Email" value={vendor.publicEmail} />
+                  {vendor.emailBounced ? (
+                    <span className="inline-flex px-2 py-1 rounded-full bg-red-100 text-red-800 text-xs font-medium">
+                      Email bounced
+                    </span>
+                  ) : null}
+                  <label className="inline-flex items-start gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      className="mt-1"
+                      checked={!!vendor.emailBounced}
+                      disabled={updateVendor.isPending}
+                      onChange={(e) => {
+                        const next = e.target.checked;
+                        const sameQuote =
+                          !!quotationEmail && quotationEmail.toLowerCase() === listingEmail;
+                        run(next ? 'Marked email as bounced' : 'Cleared email bounced', () =>
+                          updateVendor.mutateAsync(
+                            next
+                              ? {
+                                  emailBounced: true,
+                                  publicEmail: '',
+                                  ...(sameQuote ? { quotationEmail: '' } : {}),
+                                }
+                              : { emailBounced: false },
+                          ),
+                        );
+                      }}
+                    />
+                    <span>
+                      Email bounced
+                      <span className="block text-xs text-gray-500">Bounced emails are removed from the listing.</span>
+                    </span>
+                  </label>
                   <Row label="Quotation email" value={vendor.quotationEmail} />
                   <Row label="Sales contact" value={vendor.salesContactName} />
                   <Row
@@ -276,14 +325,14 @@ export default function VendorDetailPage() {
                         <MessageCircle className="w-4 h-4" /> WhatsApp
                       </a>
                     )}
-                    {(vendor.quotationEmail || vendor.publicEmail) && (
+                    {mailtoAddress ? (
                       <a
-                        href={`mailto:${vendor.quotationEmail || vendor.publicEmail}`}
+                        href={`mailto:${mailtoAddress}`}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border text-sm"
                       >
                         <Mail className="w-4 h-4" /> Email
                       </a>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               </Section>
@@ -484,10 +533,11 @@ export default function VendorDetailPage() {
                   placeholder="Vendor email"
                   className="w-full border rounded-lg px-3 py-2 text-sm"
                 />
+                {inviteBlockReason ? <p className="text-sm text-amber-800">{inviteBlockReason}</p> : null}
                 <button
                   type="button"
-                  className="px-3 py-1.5 rounded-lg border text-sm"
-                  disabled={actions.claimInvite.isPending || !inviteEmail.trim()}
+                  className="px-3 py-1.5 rounded-lg border text-sm disabled:opacity-50"
+                  disabled={actions.claimInvite.isPending || inviteBlocked}
                   onClick={async () => {
                     try {
                       const res = await actions.claimInvite.mutateAsync({
