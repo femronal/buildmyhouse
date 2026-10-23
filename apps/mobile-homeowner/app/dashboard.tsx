@@ -559,29 +559,24 @@ export default function DashboardScreen() {
           <Text className="text-black mb-4" style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
             Your money on this job
           </Text>
-          {moneySummary?.hasHomeownerReceipts ? (
-            <>
-              {[
-                ['You sent in', moneySummary.youSentIn],
-                ['Still with BuildMyHouse', moneySummary.stillWithBuildMyHouse],
-                ['Sent to your contractor', moneySummary.sentToContractor],
-                ['Paid to shops for materials', moneySummary.paidToShopsForMaterials],
-              ].map(([label, amount]) => (
-                <View key={String(label)} className="flex-row justify-between mb-3">
-                  <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>
-                    {label}
-                  </Text>
-                  <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}>
-                    ₦{Number(amount || 0).toLocaleString()}
-                  </Text>
-                </View>
-              ))}
-            </>
-          ) : (
-            <Text className="text-gray-700" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>
-              Not enough records yet
-            </Text>
-          )}
+          {[
+            ['You sent in', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
+            ['Still with BuildMyHouse', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
+            ['Sent to your contractor', `₦${Number(moneySummary?.sentToContractor || 0).toLocaleString()}`],
+            ['Paid to shops for materials', `₦${Number(moneySummary?.paidToShopsForMaterials || 0).toLocaleString()}`],
+          ].map(([label, value]) => (
+            <View key={label} className="flex-row justify-between mb-3">
+              <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>
+                {label}
+              </Text>
+              <Text
+                className="text-black"
+                style={{ fontFamily: value.startsWith('₦') ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular', fontSize: 16 }}
+              >
+                {value}
+              </Text>
+            </View>
+          ))}
         </View>
 
         {/* Progress Timeline - Stages/Phases */}

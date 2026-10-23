@@ -268,10 +268,10 @@ export default function FinanceScreen() {
               allProjects.map((p: any) => {
                 const summary = p.moneySummary;
                 const rows = [
-                  ['You sent in', summary?.youSentIn],
-                  ['Still with BuildMyHouse', summary?.stillWithBuildMyHouse],
-                  ['Sent to your contractor', summary?.sentToContractor],
-                  ['Paid to shops for materials', summary?.paidToShopsForMaterials],
+                  ['You sent in', summary?.hasHomeownerReceipts ? `₦${Number(summary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
+                  ['Still with BuildMyHouse', summary?.hasHomeownerReceipts ? `₦${Number(summary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
+                  ['Sent to your contractor', `₦${Number(summary?.sentToContractor || 0).toLocaleString()}`],
+                  ['Paid to shops for materials', `₦${Number(summary?.paidToShopsForMaterials || 0).toLocaleString()}`],
                 ];
                 return (
                   <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">
@@ -279,16 +279,12 @@ export default function FinanceScreen() {
                     <Text className="text-white mb-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }}>
                       Your money on this job
                     </Text>
-                    {summary?.hasHomeownerReceipts ? (
-                      rows.map(([label, amount]) => (
-                        <View key={String(label)} className="flex-row justify-between mb-2">
-                          <Text className="text-white/80 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>{label}</Text>
-                          <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}>₦{Number(amount || 0).toLocaleString()}</Text>
-                        </View>
-                      ))
-                    ) : (
-                      <Text className="text-white" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>Not enough records yet</Text>
-                    )}
+                    {rows.map(([label, value]) => (
+                      <View key={label} className="flex-row justify-between mb-2">
+                        <Text className="text-white/80 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>{label}</Text>
+                        <Text className="text-white" style={{ fontFamily: value.startsWith('₦') ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular', fontSize: 16 }}>{value}</Text>
+                      </View>
+                    ))}
                   </View>
                 );
               })

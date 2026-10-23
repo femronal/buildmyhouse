@@ -596,15 +596,13 @@ export default function HomeScreen() {
                                 className="text-white/50 mb-1"
                                 style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}
                               >
-                                {project.moneySummary?.hasHomeownerReceipts ? 'Sent to your contractor' : 'Your money on this job'}
+                                Sent to your contractor
                               </Text>
                               <Text
                                 className="text-white"
                                 style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
                               >
-                                {project.moneySummary?.hasHomeownerReceipts
-                                  ? `₦${Number(project.moneySummary.sentToContractor || 0).toLocaleString()}`
-                                  : 'Not enough records yet'}
+                                {`₦${Number(project.moneySummary?.sentToContractor || 0).toLocaleString()}`}
                               </Text>
                             </View>
                           </View>

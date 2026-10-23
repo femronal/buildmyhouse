@@ -32,6 +32,18 @@ describe('job money payout sums', () => {
     expect(money.hasHomeownerReceipts).toBe(false);
   });
 
+  it('keeps contractor and shop payouts when homeowner receipts are missing on the live bed job', () => {
+    const money = summarizeJobMoney({ budget: 336000, stages: [bedStage], payments: [] });
+    expect(money.paidToYou).toBe(15000);
+    expect(money.paidToShops).toBe(30000);
+    expect(money.fullJobPrice).toBe(336000);
+    expect(money.leftOnThisJob).toBe(291000);
+    expect(money.sentToContractor).toBe(15000);
+    expect(money.paidToShopsForMaterials).toBe(30000);
+    expect(money.youSentIn).toBe(0);
+    expect(money.hasHomeownerReceipts).toBe(false);
+  });
+
   it('does not add a completed stage price into paid to you', () => {
     const money = summarizeJobMoney({
       budget: 130000,

@@ -273,7 +273,26 @@ export default function GCProjectDetailScreen() {
   })();
   const hasPlan = !!((project as any)?.homeownerFiles?.hasPdf || project?.planPdfUrl);
   const dueLabel = formatDate(project.dueDate);
-  const jobMoney = loadingEarnings ? null : earnings.find((item) => item.id === project.id);
+  const earningsRow = loadingEarnings ? undefined : earnings.find((item) => item.id === project.id);
+  const moneySummary = (project as any).moneySummary as
+    | {
+        paidToYou?: number;
+        leftOnThisJob?: number;
+        fullJobPrice?: number;
+        paidToShops?: number;
+        earned?: number;
+        pending?: number;
+        budget?: number;
+      }
+    | undefined;
+  const paidToYou = Number(moneySummary?.paidToYou ?? earningsRow?.paidToYou ?? earningsRow?.earned ?? 0);
+  const paidToShops = Number(moneySummary?.paidToShops ?? earningsRow?.paidToShops ?? 0);
+  const fullJobPrice = Number(
+    moneySummary?.fullJobPrice ?? earningsRow?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
+  );
+  const leftOnThisJob = Number(
+    moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops),
+  );
   const activeIndex = stages.findIndex(
     (stage: any) => stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval',
   );
@@ -556,37 +575,29 @@ export default function GCProjectDetailScreen() {
           <Text className="text-white text-xl mb-3" style={{ fontFamily: 'Poppins_700Bold' }}>
             Money for this job
           </Text>
-          {jobMoney ? (
-            <>
-              <View className="flex-row mb-3">
-                <View className="flex-1 bg-[#0A1628] rounded-xl p-3 mr-2" style={{ minHeight: 88 }}>
-                  <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
-                  <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
-                    {naira(jobMoney.paidToYou ?? jobMoney.earned)}
-                  </Text>
-                </View>
-                <View className="flex-1 bg-[#0A1628] rounded-xl p-3 ml-2" style={{ minHeight: 88 }}>
-                  <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Left on this job</Text>
-                  <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
-                    {naira(jobMoney.leftOnThisJob ?? jobMoney.pending)}
-                  </Text>
-                </View>
-              </View>
-              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
-                Full job price {naira(jobMoney.fullJobPrice ?? jobMoney.budget ?? project.budget)}
+          <View className="flex-row mb-3">
+            <View className="flex-1 bg-[#0A1628] rounded-xl p-3 mr-2" style={{ minHeight: 88 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Paid to you</Text>
+              <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                {naira(paidToYou)}
               </Text>
-              <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
-                Paid to shops {naira(jobMoney.paidToShops)}
+            </View>
+            <View className="flex-1 bg-[#0A1628] rounded-xl p-3 ml-2" style={{ minHeight: 88 }}>
+              <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Left on this job</Text>
+              <Text className="text-white mt-1" numberOfLines={1} adjustsFontSizeToFit style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
+                {naira(leftOnThisJob)}
               </Text>
-              <Text className="mt-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-                Shop pays are separate from paid to you.
-              </Text>
-            </>
-          ) : (
-            <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-              Full job price {naira(project.budget)}
-            </Text>
-          )}
+            </View>
+          </View>
+          <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+            Full job price {naira(fullJobPrice)}
+          </Text>
+          <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+            Paid to shops {naira(paidToShops)}
+          </Text>
+          <Text className="mt-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
+            Shop pays are separate from paid to you.
+          </Text>
         </View>
 
         <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">
