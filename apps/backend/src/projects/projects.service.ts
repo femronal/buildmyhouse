@@ -20,8 +20,8 @@ import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
 import { getPlanRequestStep } from '../contractors/plan-request-step';
 import { applyDescribedEvidence, reviewForStage, storedEvidence } from '../contractors/stage-evidence';
 import { OpenAIService } from '../openai/openai.service';
-import { confirmPendingReceipt, payableFromRequest, readFundingInvoice } from '../funding/funding-invoice';
-import { canOpenProject, canStartStage, isPaymentModel, netReceived, PaymentModel } from './payment-model';
+import { confirmAllReceipts, confirmPendingReceipt, payableFromRequest, readFundingInvoice } from '../funding/funding-invoice';
+import { canOpenProject, canStartStage, completePaymentTarget, isPaymentModel, netReceived, PaymentModel } from './payment-model';
 import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
@@ -896,7 +896,13 @@ export class ProjectsService {
     return updated;
   }
 
-  async setPaymentModel(params: { projectId: string; actorUserId: string; actorRole: string; paymentModel: string }) {
+  async setPaymentModel(params: {
+    projectId: string;
+    actorUserId: string;
+    actorRole: string;
+    paymentModel: string;
+    paymentComplete?: boolean;
+  }) {
     if (!isPaymentModel(params.paymentModel)) {
       throw new BadRequestException('Choose pay in full or pay stage by stage.');
     }
@@ -914,6 +920,7 @@ export class ProjectsService {
       throw new ForbiddenException('You cannot choose the payment model for this project.');
     }
 
+    const paymentComplete = isAdmin && params.paymentComplete === true;
     const received = netReceived(project.payments);
     const analysis = project.aiAnalysis && typeof project.aiAnalysis === 'object' ? project.aiAnalysis as any : {};
     const published = (project.stages || []).length > 0 || analysis.inspectedScope === true;
@@ -924,7 +931,7 @@ export class ProjectsService {
       if (published) {
         throw new BadRequestException('Stages are already published. Ask BuildMyHouse to change the payment choice.');
       }
-    } else if (received > 0 && project.status === 'active' && params.paymentModel === 'pay_in_full') {
+    } else if (!paymentComplete && received > 0 && project.status === 'active' && params.paymentModel === 'pay_in_full') {
       const totalPayable = this.invoiceTotal({ ...project, projectRequests: [] });
       if (received + 0.5 < totalPayable) {
         throw new BadRequestException('This project is already open, and the confirmed receipts do not cover the full invoice.');
@@ -944,13 +951,69 @@ export class ProjectsService {
     phases.forEach((phase: any, index: number) => {
       if (deposits[index] != null) phase.depositDue = deposits[index];
     });
+    const depositSum = Math.round(deposits.reduce((sum: number, value: number) => sum + value, 0) * 100) / 100;
+    const totalPayable = depositSum > 0 ? depositSum : fees.totalPayable;
+    const target = paymentComplete
+      ? completePaymentTarget({
+          paymentModel: params.paymentModel,
+          totalPayable,
+          stageDeposits: deposits,
+          stageStatuses: stages.map((stage: any) => stage.status),
+        })
+      : 0;
+    const gap = paymentComplete ? Math.max(0, Math.round((target - received) * 100) / 100) : 0;
+    if (paymentComplete && totalPayable <= 0) {
+      throw new BadRequestException('This project has no invoice amount yet.');
+    }
+    const receivedAfter = received + gap;
+    const covered = paymentComplete && canOpenProject({
+      paymentModel: params.paymentModel,
+      totalPayable,
+      stageDeposits: deposits,
+      received: receivedAfter,
+    });
+    const nextStatus = covered && !['completed', 'cancelled', 'active', 'paused'].includes(project.status)
+      ? 'active'
+      : project.status;
+    const now = new Date();
 
     await this.prisma.$transaction(async (tx: any) => {
+      let nextAnalysis: Record<string, unknown> = {
+        ...analysis,
+        ...(phases.length ? { phases } : {}),
+        paymentModel: params.paymentModel,
+      };
+      if (paymentComplete) nextAnalysis = confirmAllReceipts(nextAnalysis, now.toISOString());
+      if (covered && stages.length === 0 && phases.length) {
+        await this.createStagesFromPhasesWithClient(tx, project.id, phases);
+      }
+      if (gap > 0.009) {
+        await tx.payment.create({
+          data: {
+            projectId: project.id,
+            stageId: null,
+            homeownerId: project.homeownerId,
+            amount: gap,
+            status: 'completed',
+            method: 'manual',
+            snapshotProjectName: project.name,
+          },
+        });
+      }
       await tx.project.update({
         where: { id: project.id },
         data: {
           paymentModel: params.paymentModel,
-          ...(phases.length ? { aiAnalysis: { ...analysis, phases, paymentModel: params.paymentModel } } : { aiAnalysis: { ...analysis, paymentModel: params.paymentModel } }),
+          aiAnalysis: nextAnalysis,
+          ...(paymentComplete
+            ? {
+                paymentConfirmationStatus: 'confirmed',
+                paymentConfirmedAt: now,
+                paymentDeclaredAt: project.paymentDeclaredAt ?? now,
+                status: nextStatus,
+                startDate: nextStatus === 'active' ? project.startDate ?? now : project.startDate,
+              }
+            : {}),
         },
       });
       for (let index = 0; index < stages.length; index += 1) {
@@ -960,6 +1023,20 @@ export class ProjectsService {
         });
       }
     });
+
+    if (paymentComplete && (gap > 0.009 || project.paymentConfirmationStatus !== 'confirmed')) {
+      await this.wsService.sendNotificationToUsers(
+        [project.homeownerId, project.generalContractorId].filter(Boolean),
+        {
+          type: 'manual_payment_confirmed',
+          title: 'Payment confirmed',
+          message: params.paymentModel === 'pay_in_full'
+            ? `BuildMyHouse recorded the full payment for "${project.name}".`
+            : `BuildMyHouse recorded the stage payment for "${project.name}".`,
+          data: { projectId: project.id },
+        },
+      );
+    }
 
     return this.prisma.project.findUnique({ where: { id: project.id } });
   }

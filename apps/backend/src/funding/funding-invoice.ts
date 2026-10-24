@@ -89,6 +89,19 @@ export function withFundingInvoice(analysis: unknown, invoice: FundingInvoice): 
   return { ...base, fundingInvoice: invoice };
 }
 
+export function confirmAllReceipts(analysis: unknown, confirmedAt: string): Record<string, unknown> {
+  const invoice = readFundingInvoice(analysis);
+  const base = analysis && typeof analysis === 'object' ? { ...(analysis as Record<string, unknown>) } : {};
+  if (!invoice) return base;
+  const source = invoice.receipts?.length ? invoice.receipts : invoice.receipt ? [invoice.receipt] : [];
+  const list = source.map((item) => ({ ...item, confirmedAt: item.confirmedAt || confirmedAt }));
+  return withFundingInvoice(base, {
+    ...invoice,
+    receipt: list[list.length - 1] || null,
+    receipts: list,
+  });
+}
+
 export function confirmPendingReceipt(analysis: unknown, confirmedAt: string): Record<string, unknown> {
   const invoice = readFundingInvoice(analysis);
   const base = analysis && typeof analysis === 'object' ? { ...(analysis as Record<string, unknown>) } : {};

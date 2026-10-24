@@ -1,5 +1,6 @@
 import {
   activationAmount,
+  confirmAllReceipts,
   parseFundingAccount,
   payableFromRequest,
   paymentReference,
@@ -50,6 +51,19 @@ describe('funding invoice', () => {
     expect((analysis.phases as unknown[]).length).toBe(1);
     expect(activationAmount({ budget: 100000, aiAnalysis: analysis })).toBe(130000);
     expect(activationAmount({ budget: 100000, aiAnalysis: {} })).toBe(100000);
+  });
+
+  it('marks every pending receipt confirmed when an admin completes the payment', () => {
+    const analysis = withFundingInvoice({}, {
+      reference: 'BMH-PAY-AB12CD34',
+      amount: 78000,
+      sentAt: null,
+      account: null,
+      receipt: { fileName: 'receipt.pdf', url: 'https://example.com/receipt.pdf', from: 'owner@example.com', receivedAt: '2026-10-23T00:00:00.000Z' },
+    });
+    const settled = confirmAllReceipts(analysis, '2026-10-24T00:00:00.000Z');
+    expect(readFundingInvoice(settled)?.receipt?.confirmedAt).toBe('2026-10-24T00:00:00.000Z');
+    expect(readFundingInvoice(settled)?.receipts?.every((receipt) => receipt.confirmedAt)).toBe(true);
   });
 });
 

@@ -69,44 +69,59 @@ function TagListEditor({
 function PaymentModelPanel({
   projectId,
   paymentModel,
+  paymentConfirmationStatus,
   onDone,
 }: {
   projectId: string;
   paymentModel?: string | null;
+  paymentConfirmationStatus?: string | null;
   onDone: () => void;
 }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [pendingModel, setPendingModel] = useState<null | 'pay_in_full' | 'pay_by_stage'>(null);
+  const [moneyPaid, setMoneyPaid] = useState(false);
+  const [invoiceSent, setInvoiceSent] = useState(false);
   const save = useMutation({
     mutationFn: (model: 'pay_in_full' | 'pay_by_stage') =>
-      api.patch(`/projects/${projectId}/payment-model`, { paymentModel: model }),
+      api.patch(`/projects/${projectId}/payment-model`, { paymentModel: model, paymentComplete: true }),
     onSuccess: () => {
       setError('');
-      setMessage('Payment choice saved.');
+      setMessage('Payment recorded as complete.');
+      setPendingModel(null);
       onDone();
     },
     onError: (e: Error) => {
       setMessage('');
-      setError(e.message || 'Could not save the payment choice.');
+      setError(e.message || 'Could not record the payment.');
     },
   });
   const choices = [
     ['pay_in_full', 'Pay in full'],
     ['pay_by_stage', 'Pay stage by stage'],
   ] as const;
+  const openConfirm = (model: 'pay_in_full' | 'pay_by_stage') => {
+    setPendingModel(model);
+    setMoneyPaid(false);
+    setInvoiceSent(false);
+    setError('');
+  };
   return (
     <div className="border rounded-xl p-4 space-y-3">
       <div className="font-medium">Payment choice</div>
       <p className="text-sm text-gray-600">
-        Pay in full expects the whole invoice before the project opens. Pay stage by stage expects each stage deposit before that stage starts. The choice locks after the first confirmed receipt.
+        Pay in full records the whole invoice once you confirm the money is in. Pay stage by stage records the deposit for work that has started. A reply to the invoice email remains another way to record a payment.
       </p>
+      {paymentConfirmationStatus === 'confirmed' ? (
+        <p className="text-sm text-emerald-700">Payment is complete.</p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         {choices.map(([value, label]) => (
           <button
             key={value}
             type="button"
             disabled={save.isPending}
-            onClick={() => save.mutate(value)}
+            onClick={() => openConfirm(value)}
             className={`px-3 py-2 text-sm rounded-lg border ${paymentModel === value ? 'bg-gray-900 text-white border-gray-900' : 'bg-white'}`}
           >
             {label}
@@ -114,7 +129,44 @@ function PaymentModelPanel({
         ))}
       </div>
       {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
-      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      {error && !pendingModel ? <p className="text-sm text-red-700">{error}</p> : null}
+      {pendingModel ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg space-y-4" role="dialog" aria-labelledby="payment-complete-title">
+            <h3 id="payment-complete-title" className="text-lg font-semibold">Confirm this payment</h3>
+            <p className="text-sm text-gray-700">
+              Confirm that the money has actually been paid, and that the invoice has been sent. Marking the payment complete records it and replaces a pending invoice.
+            </p>
+            <p className="text-sm text-gray-600">
+              {pendingModel === 'pay_in_full'
+                ? 'Pay in full records the whole invoice as money the homeowner sent in.'
+                : 'Pay stage by stage records the deposit for stages that have already started. If work has not started, it records the first stage deposit.'}
+            </p>
+            <label className="flex items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1" checked={moneyPaid} onChange={(event) => setMoneyPaid(event.target.checked)} />
+              The money has been paid
+            </label>
+            <label className="flex items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1" checked={invoiceSent} onChange={(event) => setInvoiceSent(event.target.checked)} />
+              The invoice has been sent
+            </label>
+            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className="px-4 py-2 border rounded-lg" onClick={() => setPendingModel(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={!moneyPaid || !invoiceSent || save.isPending}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg disabled:opacity-50"
+                onClick={() => save.mutate(pendingModel)}
+              >
+                Payment is complete
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -122,10 +174,12 @@ function PaymentModelPanel({
 function FundingInvoicePanel({
   projectId,
   analysis,
+  paymentConfirmationStatus,
   onDone,
 }: {
   projectId: string;
   analysis: Record<string, any>;
+  paymentConfirmationStatus?: string | null;
   onDone: () => void;
 }) {
   const invoice = analysis.fundingInvoice;
@@ -142,8 +196,16 @@ function FundingInvoicePanel({
   return (
     <div className="rounded-lg border p-3 text-sm space-y-2">
       <div className="font-medium">Funding invoice</div>
-      <p className="text-gray-600">The homeowner pays from the email and replies with the receipt. Confirm payment on the projects list after the receipt arrives.</p>
-      {invoice?.reference ? <div>Reference {invoice.reference}</div> : <div className="text-gray-500">No invoice sent yet.</div>}
+      <p className="text-gray-600">
+        {paymentConfirmationStatus === 'confirmed'
+          ? 'Payment is complete. A reply to the invoice email can still file a receipt. That reply does not add the amount again.'
+          : 'The homeowner can reply to the invoice email with the receipt. Confirm the amount on the projects list to record that payment.'}
+      </p>
+      {invoice?.reference ? <div>Reference {invoice.reference}</div> : paymentConfirmationStatus === 'confirmed' ? (
+        <div className="text-gray-500">No invoice email was sent. The payment is still recorded as complete.</div>
+      ) : (
+        <div className="text-gray-500">No invoice sent yet.</div>
+      )}
       {invoice?.amount ? <div>Total to fund {naira(invoice.amount)}</div> : null}
       {invoice?.account ? (
         <div>{invoice.account.bankName} · {invoice.account.accountNumber} · {invoice.account.accountName}</div>
@@ -416,6 +478,7 @@ export default function AdminProjectDetailPage() {
           <FundingInvoicePanel
             projectId={projectId}
             analysis={analysis}
+            paymentConfirmationStatus={(project as { paymentConfirmationStatus?: string | null }).paymentConfirmationStatus}
             onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
           />
         </div>
@@ -423,6 +486,7 @@ export default function AdminProjectDetailPage() {
       <PaymentModelPanel
         projectId={projectId}
         paymentModel={(project as { paymentModel?: string | null }).paymentModel}
+        paymentConfirmationStatus={(project as { paymentConfirmationStatus?: string | null }).paymentConfirmationStatus}
         onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
       />
       <div className="flex items-start gap-4">

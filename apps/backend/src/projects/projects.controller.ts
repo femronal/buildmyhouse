@@ -616,6 +616,7 @@ export class ProjectsController {
       actorUserId: req.user.sub,
       actorRole: req.user.role,
       paymentModel: dto.paymentModel,
+      paymentComplete: dto.paymentComplete === true,
     });
   }
 

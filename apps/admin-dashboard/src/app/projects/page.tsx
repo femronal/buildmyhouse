@@ -736,10 +736,11 @@ export default function ProjectsPage() {
                   <div>
                     <p className="text-sm font-medium text-gray-900">Manual payment</p>
                     <p className="text-xs text-gray-500 mt-0.5">
-                      Payment status:{' '}
-                      <span className="font-medium text-gray-700">
-                        {project.paymentConfirmationStatus || 'not_declared'}
-                      </span>
+                      {project.paymentConfirmationStatus === 'confirmed'
+                        ? 'Payment is complete.'
+                        : project.paymentConfirmationStatus === 'declared'
+                          ? 'A receipt reply is waiting. Enter the amount on the receipt to record that payment.'
+                          : 'Payment status: not declared'}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">

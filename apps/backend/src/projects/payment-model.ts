@@ -55,6 +55,29 @@ export function canOpenProject(input: {
   return false;
 }
 
+export function completePaymentTarget(input: {
+  paymentModel: PaymentModel;
+  totalPayable: number;
+  stageDeposits: number[];
+  stageStatuses?: Array<string | null | undefined> | null;
+}): number {
+  const invoice = Math.max(0, Math.round((Number(input.totalPayable) || 0) * 100) / 100);
+  if (input.paymentModel === 'pay_in_full') return invoice;
+  const deposits = (input.stageDeposits || []).map((value) => Math.max(0, Number(value) || 0));
+  const statuses = input.stageStatuses || [];
+  let lastCommenced = -1;
+  for (let index = 0; index < Math.max(deposits.length, statuses.length); index += 1) {
+    const status = String(statuses[index] || '').trim().toLowerCase();
+    if (status && status !== 'not_started') lastCommenced = index;
+  }
+  if (lastCommenced < 0) {
+    const first = deposits.find((value) => value > 0) || invoice;
+    return Math.round(first * 100) / 100;
+  }
+  const covered = deposits.slice(0, lastCommenced + 1).reduce((sum, value) => sum + value, 0);
+  return Math.round((covered > 0 ? covered : invoice) * 100) / 100;
+}
+
 export function canStartStage(input: {
   paymentModel: PaymentModel | null;
   stageIndex: number;

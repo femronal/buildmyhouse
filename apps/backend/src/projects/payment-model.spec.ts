@@ -1,4 +1,4 @@
-import { amountStillDue, canOpenProject, canStartStage, netReceived } from './payment-model';
+import { amountStillDue, canOpenProject, canStartStage, completePaymentTarget, netReceived } from './payment-model';
 
 describe('payment model gates', () => {
   it('nets refunds out of money received', () => {
@@ -50,5 +50,29 @@ describe('payment model gates', () => {
       stageDeposits: deposits,
       received: 40000,
     })).toBe(90000);
+  });
+
+  it('records the full invoice when pay in full is marked complete', () => {
+    expect(completePaymentTarget({
+      paymentModel: 'pay_in_full',
+      totalPayable: 78000,
+      stageDeposits: [20000, 58000],
+      stageStatuses: ['completed', 'not_started'],
+    })).toBe(78000);
+  });
+
+  it('records deposits through the latest started stage', () => {
+    expect(completePaymentTarget({
+      paymentModel: 'pay_by_stage',
+      totalPayable: 78000,
+      stageDeposits: [20000, 30000, 28000],
+      stageStatuses: ['completed', 'in_progress', 'not_started'],
+    })).toBe(50000);
+    expect(completePaymentTarget({
+      paymentModel: 'pay_by_stage',
+      totalPayable: 78000,
+      stageDeposits: [20000, 58000],
+      stageStatuses: ['not_started', 'not_started'],
+    })).toBe(20000);
   });
 });

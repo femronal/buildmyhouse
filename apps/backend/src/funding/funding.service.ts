@@ -209,12 +209,14 @@ export class FundingService {
       contentType: file.contentType || 'application/octet-stream',
       originalName: this.safeFileName(file.filename),
     });
+    const now = new Date();
+    const alreadyComplete = project.paymentConfirmationStatus === 'confirmed';
     const nextReceipt = {
       fileName: this.safeFileName(file.filename),
       url: uploaded.url,
       from: String(params.from || '').trim(),
-      receivedAt: new Date().toISOString(),
-      confirmedAt: null,
+      receivedAt: now.toISOString(),
+      confirmedAt: alreadyComplete ? now.toISOString() : null,
     };
     const prior = existing?.receipts?.length
       ? existing.receipts
@@ -229,23 +231,28 @@ export class FundingService {
       receipt: nextReceipt,
       receipts: [...prior, nextReceipt],
     };
-    const now = new Date();
     await this.prisma.project.update({
       where: { id: project.id },
       data: {
         aiAnalysis: withFundingInvoice(project.aiAnalysis, invoice) as any,
-        paymentConfirmationStatus: 'declared',
-        paymentDeclaredAt: project.paymentDeclaredAt ?? now,
-        status: project.status === 'draft' ? 'pending_payment' : project.status,
+        ...(alreadyComplete
+          ? {}
+          : {
+              paymentConfirmationStatus: 'declared',
+              paymentDeclaredAt: project.paymentDeclaredAt ?? now,
+              status: project.status === 'draft' ? 'pending_payment' : project.status,
+            }),
       },
     });
     await this.notifyAdmins(
       'funding_receipt',
       'Payment receipt received',
-      `${project.name}: a receipt arrived for ${reference}. Confirm the amount on the receipt before the project or the next stage can move.`,
+      alreadyComplete
+        ? `${project.name}: a receipt arrived for ${reference}. The payment is already complete, so this receipt is filed and does not change the amount.`
+        : `${project.name}: a receipt arrived for ${reference}. Confirm the amount on the receipt to record that payment.`,
       project.id,
     );
-    return { matched: true, declared: true };
+    return { matched: true, declared: !alreadyComplete };
   }
 
   private invoiceAmount(project: {
