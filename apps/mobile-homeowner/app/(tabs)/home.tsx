@@ -1,8 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Platform, Linking } from "react-native";
 import { User, MapPin, Lock, X, ArrowUpRight } from "phosphor-react-native";
 import AnimatedCtaButton from '@/components/AnimatedCtaButton';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useEffect, useMemo, useState } from "react";
+import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
+import TrustindexReviewsNative from '@/components/reviews/TrustindexReviewsNative';
+import { TRUSTPILOT_REVIEWS_URL, homeownerTrustindexId } from '@/lib/review-widgets';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from '@tanstack/react-query';
 import ListingWelcomeModal from '@/components/listings/ListingWelcomeModal';
@@ -23,6 +26,37 @@ import {
 } from "@/lib/responsive-layout";
 
 const CARD_BG = '#151515';
+
+function ClientReviews() {
+  const widgetId = homeownerTrustindexId();
+  const [status, setStatus] = useState<TrustindexStatus>(widgetId ? 'loading' : 'off');
+  if (!widgetId || status === 'off' || status === 'failed') return null;
+
+  return (
+    <View className="mb-8 w-full max-w-2xl self-center">
+      <Text className="text-2xl text-white mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        What clients say
+      </Text>
+      {Platform.OS === 'web' ? (
+        <TrustindexReviews widgetId={widgetId} onStatusChange={setStatus} />
+      ) : (
+        <TrustindexReviewsNative widgetId={widgetId} onStatusChange={setStatus} />
+      )}
+      {status === 'ready' ? (
+        <TouchableOpacity
+          onPress={() => Linking.openURL(TRUSTPILOT_REVIEWS_URL)}
+          className="mt-4"
+          accessibilityRole="link"
+          accessibilityLabel="Read our reviews on Trustpilot"
+        >
+          <Text className="text-sm text-white underline" style={{ fontFamily: 'Poppins_500Medium' }}>
+            Read our reviews on Trustpilot
+          </Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
 
 const FUND_TRACKER = ['Inspection done', 'Quote agreed', 'Fund project', 'Work starts'] as const;
 
@@ -675,6 +709,8 @@ export default function HomeScreen() {
             </View>
           </>
         )}
+
+        <ClientReviews />
 
         {/* Paused Project Modal */}
         <Modal

@@ -1337,8 +1337,9 @@ form.bmh-web-landmark {
   .bmh-testimonials-right {
     width: 50% !important;
     max-width: 50% !important;
-    flex-shrink: 0 !important;
-    height: 600px !important;
+    flex-shrink: 1 !important;
+    min-width: 0 !important;
+    height: auto !important;
   }
 }
 

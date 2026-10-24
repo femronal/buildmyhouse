@@ -75,14 +75,6 @@ export function buildHomepageJsonLd() {
         addressCountry: 'NG',
       },
       openingHoursSpecification,
-      aggregateRating: {
-        '@type': 'AggregateRating',
-        ratingValue: '4.6',
-        bestRating: '5',
-        worstRating: '1',
-        ratingCount: '12',
-        reviewCount: '12',
-      },
       makesOffer: [
         {
           '@type': 'Offer',

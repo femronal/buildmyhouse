@@ -30,14 +30,6 @@ import GcDashboardMockup from '@/components/landing/GcDashboardMockup';
 import { InstagramLogo, LinkedinLogo, XLogo, YoutubeLogo } from 'phosphor-react-native';
 import GcSeoJsonLd from '@/components/landing/GcSeoJsonLd';
 import { LEGAL_OPERATOR_LINE } from '@buildmyhouse/shared-utils';
-
-function SocialIcon({ id }: { id: string }) {
-  const props = { size: 18, color: '#ffffff', weight: 'fill' as const };
-  if (id === 'instagram') return <InstagramLogo {...props} />;
-  if (id === 'linkedin') return <LinkedinLogo {...props} />;
-  if (id === 'youtube') return <YoutubeLogo {...props} />;
-  return <XLogo {...props} />;
-}
 import {
   GC_AUDIENCE_TABS,
   GC_COMPARISON_ROWS,
@@ -50,7 +42,6 @@ import {
   GC_PRIMARY_CTA,
   GC_PROJECT_CARDS,
   GC_SOCIALS,
-  GC_TESTIMONIALS,
   GC_TRUST_PILLS,
   GC_VERIFICATION_STEPS,
   GC_WORKER_CATEGORIES,
@@ -59,6 +50,16 @@ import {
   HOMEOWNER_APP_URL,
   type GcAudienceTab,
 } from '@/lib/gc-landing-content';
+import { TRUSTPILOT_REVIEWS_URL, contractorTrustindexId } from '@/lib/review-widgets';
+import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
+
+function SocialIcon({ id }: { id: string }) {
+  const props = { size: 18, color: '#ffffff', weight: 'fill' as const };
+  if (id === 'instagram') return <InstagramLogo {...props} />;
+  if (id === 'linkedin') return <LinkedinLogo {...props} />;
+  if (id === 'youtube') return <YoutubeLogo {...props} />;
+  return <XLogo {...props} />;
+}
 
 function WebWordSlider({ words }: { words: readonly string[] }) {
   const innerClass =
@@ -152,6 +153,41 @@ function AudienceTabs({
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function ContractorReviews() {
+  const widgetId = Platform.OS === 'web' ? contractorTrustindexId() : null;
+  const [status, setStatus] = useState<TrustindexStatus>(widgetId ? 'loading' : 'off');
+  if (!widgetId || status === 'off' || status === 'failed') return null;
+
+  return (
+    <View className="py-24 px-6 md:px-12">
+      <View className="max-w-7xl w-full self-center">
+        <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-14 text-center">
+          What clients say
+        </SectionHeading>
+        <TrustindexReviews widgetId={widgetId} onStatusChange={setStatus} />
+        {status === 'ready' ? (
+          <Pressable
+            onPress={() => {
+              if (Platform.OS === 'web' && typeof window !== 'undefined') {
+                window.open(TRUSTPILOT_REVIEWS_URL, '_blank', 'noopener,noreferrer');
+                return;
+              }
+              Linking.openURL(TRUSTPILOT_REVIEWS_URL);
+            }}
+            className="mt-8 self-center"
+            accessibilityRole="link"
+            accessibilityLabel="Read our reviews on Trustpilot"
+          >
+            <Text className="text-sm text-blue-300 underline" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Read our reviews on Trustpilot
+            </Text>
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }
@@ -597,33 +633,7 @@ export default function GcLandingPage() {
           </View>
         </View>
 
-        {/* Testimonials */}
-        <View className="py-24 px-6 md:px-12">
-          <View className="max-w-7xl w-full self-center">
-            <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-14 text-center">
-              Contractors who switched to structured work
-            </SectionHeading>
-            <View className="flex-row flex-wrap gap-6">
-              {GC_TESTIMONIALS.map((item) => (
-                <View
-                  key={item.name}
-                  className="w-full md:w-[31%] rounded-2xl p-8 border border-blue-900/40"
-                  style={{ backgroundColor: GC_SURFACE }}
-                >
-                  <Text className="text-sm text-gray-300 leading-relaxed mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    “{item.quote}”
-                  </Text>
-                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {item.name}
-                  </Text>
-                  <Text className="text-xs text-gray-500 mt-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    {item.detail}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        </View>
+        <ContractorReviews />
 
         {/* Trust pills + homeowner cross-link */}
         <View className="py-16 border-t border-blue-900/30 px-6 md:px-12" style={{ backgroundColor: 'rgba(5,11,20,0.5)' }}>

@@ -205,27 +205,6 @@ export const GC_VERIFICATION_STEPS = [
   },
 ] as const;
 
-export const GC_TESTIMONIALS = [
-  {
-    quote:
-      'Clients stopped arguing about what was agreed because every stage had photos. I spend less time defending myself and more time delivering.',
-    name: 'Verified GC',
-    detail: 'Lagos mainland · Renovation projects',
-  },
-  {
-    quote:
-      'Diaspora clients finally trust the process. They approve milestones when they see evidence — not when I send another voice note.',
-    name: 'Electrical contractor',
-    detail: 'Ikeja · Repairs & upgrades',
-  },
-  {
-    quote:
-      'The briefs are clearer than referrals from neighbors. I know the scope before I visit site, so my quotes are sharper.',
-    name: 'Plumbing specialist',
-    detail: 'Lekki · Tracked repairs',
-  },
-] as const;
-
 export const GC_FAQ_ITEMS = [
   {
     question: 'Who can join BuildMyHouse as a contractor?',

@@ -1,50 +1,44 @@
-import { useCallback } from 'react';
-import { Linking, Pressable, Text, View } from 'react-native';
-import { ArrowSquareOut, Star } from 'phosphor-react-native';
+import { useCallback, type ReactNode } from 'react';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { ArrowSquareOut } from 'phosphor-react-native';
 import { GOOGLE_BUSINESS_REVIEW, TRUSTPILOT_REVIEW } from '@/lib/home-landing-content';
+import { trustpilotBusinessUnitId } from '@/lib/review-widgets';
+import TrustpilotCollector from '@/components/reviews/TrustpilotCollector';
 
-const TRUSTPILOT_GREEN = '#00b67a';
-const GOOGLE_GOLD = '#FBBC04';
-
-function StarRating({ color }: { color: string }) {
-  return (
-    <View className="flex-row items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Star key={index} size={18} color={color} weight="fill" />
-      ))}
-    </View>
-  );
+function openInNewTab(url: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return;
+  }
+  Linking.openURL(url);
 }
 
 type ReviewColumnProps = {
   platformLabel: string;
-  starColor: string;
   title: string;
   description: string;
   buttonLabel: string;
   buttonBgClass: string;
   onPress: () => void;
   accessibilityLabel: string;
+  button?: ReactNode;
 };
 
 function ReviewColumn({
   platformLabel,
-  starColor,
   title,
   description,
   buttonLabel,
   buttonBgClass,
   onPress,
   accessibilityLabel,
+  button,
 }: ReviewColumnProps) {
   return (
     <View className="flex-1 min-w-0">
-      <View className="flex-row items-center gap-3 mb-4">
-        <StarRating color={starColor} />
-        <Text className="text-xs uppercase tracking-widest text-slate-400" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-          {platformLabel}
-        </Text>
-      </View>
+      <Text className="text-xs uppercase tracking-widest text-slate-400 mb-4" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+        {platformLabel}
+      </Text>
 
       <Text className="text-2xl md:text-3xl text-white leading-tight mb-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
         {title}
@@ -54,32 +48,39 @@ function ReviewColumn({
         {description}
       </Text>
 
-      <Pressable
-        onPress={onPress}
-        className={`mt-6 h-11 md:h-12 px-4 md:px-6 rounded-lg self-start max-w-full flex-row items-center gap-2 bmh-glass-btn ${buttonBgClass}`}
-        accessibilityRole="link"
-        accessibilityLabel={accessibilityLabel}
-      >
-        <Text
-          className="text-[11px] md:text-sm text-white shrink"
-          style={{ fontFamily: 'Poppins_600SemiBold' }}
-          numberOfLines={1}
+      {button ?? (
+        <Pressable
+          onPress={onPress}
+          className={`mt-6 h-11 md:h-12 px-4 md:px-6 rounded-lg self-start max-w-full flex-row items-center gap-2 bmh-glass-btn ${buttonBgClass}`}
+          accessibilityRole="link"
+          accessibilityLabel={accessibilityLabel}
         >
-          {buttonLabel}
-        </Text>
-        <ArrowSquareOut size={16} color="#ffffff" weight="bold" />
-      </Pressable>
+          <Text
+            className="text-[11px] md:text-sm text-white shrink"
+            style={{ fontFamily: 'Poppins_600SemiBold' }}
+            numberOfLines={1}
+          >
+            {buttonLabel}
+          </Text>
+          <ArrowSquareOut size={16} color="#ffffff" weight="bold" />
+        </Pressable>
+      )}
     </View>
   );
 }
 
 export default function TrustpilotReviewSection() {
+  const trustpilotWidget = trustpilotBusinessUnitId();
   const openTrustpilotReview = useCallback(() => {
-    Linking.openURL(TRUSTPILOT_REVIEW.evaluateUrl);
+    openInNewTab(TRUSTPILOT_REVIEW.evaluateUrl);
   }, []);
 
   const openGoogleReview = useCallback(() => {
-    Linking.openURL(GOOGLE_BUSINESS_REVIEW.reviewUrl);
+    openInNewTab(GOOGLE_BUSINESS_REVIEW.reviewUrl);
+  }, []);
+
+  const openTrustpilotReviews = useCallback(() => {
+    openInNewTab(TRUSTPILOT_REVIEW.profileUrl);
   }, []);
 
   return (
@@ -89,13 +90,13 @@ export default function TrustpilotReviewSection() {
           <View className="flex-col lg:flex-row gap-10 lg:gap-12">
             <ReviewColumn
               platformLabel="Trustpilot"
-              starColor={TRUSTPILOT_GREEN}
               title="Used BuildMyHouse? Drop us a review"
               description="Your feedback helps other homeowners in Nigeria and abroad choose verified workers with more confidence. It only takes a minute."
               buttonLabel="Review BuildMyHouse on Trustpilot"
               buttonBgClass="bg-[#00b67a]"
               onPress={openTrustpilotReview}
               accessibilityLabel="Leave a review on Trustpilot"
+              button={trustpilotWidget ? <View className="mt-6 self-start"><TrustpilotCollector /></View> : undefined}
             />
 
             <View className="hidden lg:block w-px bg-white/10 self-stretch" />
@@ -104,7 +105,6 @@ export default function TrustpilotReviewSection() {
 
             <ReviewColumn
               platformLabel="Google"
-              starColor={GOOGLE_GOLD}
               title="Had a great experience with us?"
               description="Leave a review on our Google Business profile so local homeowners and diaspora clients can find BuildMyHouse with confidence."
               buttonLabel="Review BuildMyHouse on Google"
@@ -113,6 +113,17 @@ export default function TrustpilotReviewSection() {
               accessibilityLabel="Leave a review on Google"
             />
           </View>
+
+          <Pressable
+            onPress={openTrustpilotReviews}
+            className="mt-8 self-start"
+            accessibilityRole="link"
+            accessibilityLabel="Read our reviews on Trustpilot"
+          >
+            <Text className="text-sm text-white underline" style={{ fontFamily: 'Poppins_500Medium' }}>
+              Read our reviews on Trustpilot
+            </Text>
+          </Pressable>
         </View>
       </View>
     </View>

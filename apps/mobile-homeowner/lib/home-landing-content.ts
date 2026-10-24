@@ -748,30 +748,6 @@ export const LANDING_TESTIMONIALS: LandingTestimonial[] = [
     tag: 'Window repair',
     tagDetail: 'Egbeda',
   },
-  {
-    name: 'Ngozi E.',
-    role: 'Homeowner, Yaba',
-    quote:
-      'I had a leaking ceiling and the last guy took money and disappeared. Here I saw photos at each stage before releasing payment. No drama.',
-    tag: 'Roof leak',
-    tagDetail: 'Yaba',
-  },
-  {
-    name: 'James O.',
-    role: 'Based in Manchester, UK',
-    quote:
-      "My mum's house in Surulere needed a full kitchen redo. I could see daily progress from my phone instead of trusting random voice notes.",
-    tag: 'Diaspora',
-    tagDetail: 'Kitchen renovation',
-  },
-  {
-    name: 'Bisi Adeyemi',
-    role: 'Property manager, Victoria Island',
-    quote:
-      'I manage three flats and cannot be on every site daily. Stage updates and one thread per job beats five different group chats.',
-    tag: 'Property management',
-    tagDetail: 'Victoria Island',
-  },
 ];
 
 export const FOR_CONTRACTOR_URL = 'https://gc.buildmyhouse.app/';

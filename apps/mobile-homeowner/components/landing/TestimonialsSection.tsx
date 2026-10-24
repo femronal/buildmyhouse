@@ -1,4 +1,5 @@
-import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
 import { ArrowRight, Star } from 'phosphor-react-native';
 import {
@@ -7,7 +8,9 @@ import {
   TESTIMONIALS_SECTION,
   type LandingTestimonial,
 } from '@/lib/home-landing-content';
+import { homeownerTrustindexId } from '@/lib/review-widgets';
 import { trackWebEvent } from '@/lib/analytics';
+import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
 
 type TestimonialsSectionProps = {
   onHowItWorksPress?: () => void;
@@ -25,7 +28,7 @@ function StarRating() {
 
 function TestimonialCard({ testimonial }: { testimonial: LandingTestimonial }) {
   return (
-    <View className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 md:p-8 shrink-0">
+    <View className="w-full min-w-0 rounded-3xl border border-white/10 bg-white/[0.04] p-6 md:p-8">
       <Text className="text-lg text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
         {testimonial.name}
       </Text>
@@ -61,7 +64,9 @@ function TestimonialCard({ testimonial }: { testimonial: LandingTestimonial }) {
 }
 
 export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsSectionProps) {
-  const scrollItems = [...LANDING_TESTIMONIALS, ...LANDING_TESTIMONIALS];
+  const widgetId = Platform.OS === 'web' ? homeownerTrustindexId() : null;
+  const [reviewStatus, setReviewStatus] = useState<TrustindexStatus>(widgetId ? 'loading' : 'off');
+  const showFallback = reviewStatus === 'off' || reviewStatus === 'failed';
 
   return (
     <View className="pb-6 pt-4 bg-black">
@@ -154,26 +159,17 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               </View>
             </View>
 
-            <View className="bmh-testimonials-right relative w-full overflow-hidden rounded-3xl h-[420px] md:h-[560px]">
-              {Platform.OS === 'web' ? (
-                <>
-                  <View className="bmh-testimonial-scroll-inner flex-col gap-6">
-                    {scrollItems.map((testimonial, index) => (
-                      <TestimonialCard key={`${testimonial.name}-${index}`} testimonial={testimonial} />
-                    ))}
-                  </View>
-                  <View className="absolute inset-x-0 top-0 h-24 md:h-32 bg-gradient-to-b from-black via-black/90 to-transparent pointer-events-none z-10" />
-                  <View className="absolute inset-x-0 bottom-0 h-24 md:h-32 bg-gradient-to-t from-black via-black/90 to-transparent pointer-events-none z-10" />
-                </>
-              ) : (
-                <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-                  <View className="gap-6">
-                    {LANDING_TESTIMONIALS.map((testimonial) => (
-                      <TestimonialCard key={testimonial.name} testimonial={testimonial} />
-                    ))}
-                  </View>
-                </ScrollView>
-              )}
+            <View className="bmh-testimonials-right relative w-full">
+              {widgetId ? (
+                <TrustindexReviews widgetId={widgetId} onStatusChange={setReviewStatus} />
+              ) : null}
+              {showFallback ? (
+                <View className="gap-6">
+                  {LANDING_TESTIMONIALS.map((testimonial) => (
+                    <TestimonialCard key={testimonial.name} testimonial={testimonial} />
+                  ))}
+                </View>
+              ) : null}
             </View>
           </View>
         </View>
