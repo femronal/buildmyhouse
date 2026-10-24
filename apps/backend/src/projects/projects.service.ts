@@ -21,7 +21,7 @@ import { getPlanRequestStep } from '../contractors/plan-request-step';
 import { applyDescribedEvidence, reviewForStage, storedEvidence } from '../contractors/stage-evidence';
 import { OpenAIService } from '../openai/openai.service';
 import { confirmAllReceipts, confirmPendingReceipt, payableFromRequest, readFundingInvoice } from '../funding/funding-invoice';
-import { canOpenProject, canStartStage, completePaymentTarget, isPaymentModel, netReceived, PaymentModel } from './payment-model';
+import { ADMIN_CHOICE_PAYMENT_ID, RECEIPT_PAYMENT_ID, canOpenProject, canStartStage, completePaymentTarget, isAdminChoicePayment, isPaymentModel, netReceived, PaymentModel } from './payment-model';
 import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
@@ -824,6 +824,7 @@ export class ProjectsService {
           amount,
           status: 'completed',
           method: 'manual',
+          transactionId: RECEIPT_PAYMENT_ID,
           snapshotProjectName: project.name,
         },
       });
@@ -961,11 +962,13 @@ export class ProjectsService {
           stageStatuses: stages.map((stage: any) => stage.status),
         })
       : 0;
-    const gap = paymentComplete ? Math.max(0, Math.round((target - received) * 100) / 100) : 0;
+    const choicePayments = (project.payments || []).filter((payment: any) => isAdminChoicePayment(payment));
+    const otherNet = netReceived((project.payments || []).filter((payment: any) => !isAdminChoicePayment(payment)));
+    const choiceAmount = paymentComplete ? Math.max(0, Math.round((target - otherNet) * 100) / 100) : 0;
     if (paymentComplete && totalPayable <= 0) {
       throw new BadRequestException('This project has no invoice amount yet.');
     }
-    const receivedAfter = received + gap;
+    const receivedAfter = paymentComplete ? Math.round((otherNet + choiceAmount) * 100) / 100 : received;
     const covered = paymentComplete && canOpenProject({
       paymentModel: params.paymentModel,
       totalPayable,
@@ -987,18 +990,39 @@ export class ProjectsService {
       if (covered && stages.length === 0 && phases.length) {
         await this.createStagesFromPhasesWithClient(tx, project.id, phases);
       }
-      if (gap > 0.009) {
-        await tx.payment.create({
-          data: {
-            projectId: project.id,
-            stageId: null,
-            homeownerId: project.homeownerId,
-            amount: gap,
-            status: 'completed',
-            method: 'manual',
-            snapshotProjectName: project.name,
-          },
-        });
+      if (paymentComplete) {
+        const [primary, ...extras] = choicePayments;
+        if (choiceAmount > 0.009) {
+          if (primary) {
+            await tx.payment.update({
+              where: { id: primary.id },
+              data: {
+                amount: choiceAmount,
+                status: 'completed',
+                method: 'manual',
+                transactionId: ADMIN_CHOICE_PAYMENT_ID,
+              },
+            });
+          } else {
+            await tx.payment.create({
+              data: {
+                projectId: project.id,
+                stageId: null,
+                homeownerId: project.homeownerId,
+                amount: choiceAmount,
+                status: 'completed',
+                method: 'manual',
+                transactionId: ADMIN_CHOICE_PAYMENT_ID,
+                snapshotProjectName: project.name,
+              },
+            });
+          }
+        } else if (primary) {
+          await tx.payment.delete({ where: { id: primary.id } });
+        }
+        for (const extra of extras) {
+          await tx.payment.delete({ where: { id: extra.id } });
+        }
       }
       await tx.project.update({
         where: { id: project.id },
@@ -1024,7 +1048,7 @@ export class ProjectsService {
       }
     });
 
-    if (paymentComplete && (gap > 0.009 || project.paymentConfirmationStatus !== 'confirmed')) {
+    if (paymentComplete && (Math.abs(received - receivedAfter) > 0.5 || project.paymentConfirmationStatus !== 'confirmed')) {
       await this.wsService.sendNotificationToUsers(
         [project.homeownerId, project.generalContractorId].filter(Boolean),
         {
@@ -1032,7 +1056,7 @@ export class ProjectsService {
           title: 'Payment confirmed',
           message: params.paymentModel === 'pay_in_full'
             ? `BuildMyHouse recorded the full payment for "${project.name}".`
-            : `BuildMyHouse recorded the stage payment for "${project.name}".`,
+            : `BuildMyHouse recorded the stage advances for "${project.name}".`,
           data: { projectId: project.id },
         },
       );

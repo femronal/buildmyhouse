@@ -158,6 +158,7 @@ export type AdminProjectStage = {
   status: string;
   order: number;
   estimatedCost: number;
+  depositDue?: number | null;
   actualCost?: number | null;
   estimatedDuration: string;
   startDate?: string | null;

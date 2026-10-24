@@ -61,13 +61,19 @@ describe('payment model gates', () => {
     })).toBe(78000);
   });
 
-  it('records deposits through the latest started stage', () => {
+  it('records the started stages plus the next advance, and drops a previous full payment', () => {
+    expect(completePaymentTarget({
+      paymentModel: 'pay_by_stage',
+      totalPayable: 78000,
+      stageDeposits: [20000, 30000, 28000],
+      stageStatuses: ['completed', 'not_started', 'not_started'],
+    })).toBe(50000);
     expect(completePaymentTarget({
       paymentModel: 'pay_by_stage',
       totalPayable: 78000,
       stageDeposits: [20000, 30000, 28000],
       stageStatuses: ['completed', 'in_progress', 'not_started'],
-    })).toBe(50000);
+    })).toBe(78000);
     expect(completePaymentTarget({
       paymentModel: 'pay_by_stage',
       totalPayable: 78000,

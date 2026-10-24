@@ -55,6 +55,28 @@ export function canOpenProject(input: {
   return false;
 }
 
+export const ADMIN_CHOICE_PAYMENT_ID = 'admin-payment-choice';
+export const RECEIPT_PAYMENT_ID = 'receipt-confirm';
+
+export function isAdminChoicePayment(payment: { transactionId?: string | null; method?: string | null }): boolean {
+  const transactionId = String(payment.transactionId || '').trim();
+  if (transactionId === ADMIN_CHOICE_PAYMENT_ID) return true;
+  if (transactionId) return false;
+  return String(payment.method || '').trim().toLowerCase() === 'manual';
+}
+
+export function advanceStageCount(stageStatuses?: Array<string | null | undefined> | null, stageCount = 0): number {
+  const count = Math.max(0, stageCount);
+  if (!count) return 0;
+  let lastCommenced = -1;
+  for (let index = 0; index < count; index += 1) {
+    const status = String(stageStatuses?.[index] || '').trim().toLowerCase();
+    if (status && status !== 'not_started') lastCommenced = index;
+  }
+  if (lastCommenced < 0) return 1;
+  return Math.min(count, lastCommenced + 2);
+}
+
 export function completePaymentTarget(input: {
   paymentModel: PaymentModel;
   totalPayable: number;
@@ -64,17 +86,12 @@ export function completePaymentTarget(input: {
   const invoice = Math.max(0, Math.round((Number(input.totalPayable) || 0) * 100) / 100);
   if (input.paymentModel === 'pay_in_full') return invoice;
   const deposits = (input.stageDeposits || []).map((value) => Math.max(0, Number(value) || 0));
-  const statuses = input.stageStatuses || [];
-  let lastCommenced = -1;
-  for (let index = 0; index < Math.max(deposits.length, statuses.length); index += 1) {
-    const status = String(statuses[index] || '').trim().toLowerCase();
-    if (status && status !== 'not_started') lastCommenced = index;
-  }
-  if (lastCommenced < 0) {
+  const count = advanceStageCount(input.stageStatuses, Math.max(deposits.length, (input.stageStatuses || []).length));
+  if (!count) {
     const first = deposits.find((value) => value > 0) || invoice;
     return Math.round(first * 100) / 100;
   }
-  const covered = deposits.slice(0, lastCommenced + 1).reduce((sum, value) => sum + value, 0);
+  const covered = deposits.slice(0, count).reduce((sum, value) => sum + value, 0);
   return Math.round((covered > 0 ? covered : invoice) * 100) / 100;
 }
 

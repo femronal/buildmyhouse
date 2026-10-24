@@ -66,15 +66,57 @@ function TagListEditor({
   );
 }
 
+type PaymentStage = {
+  name?: string | null;
+  status?: string | null;
+  order?: number | null;
+  estimatedCost?: number | null;
+  depositDue?: number | null;
+};
+
+function stageHasStarted(status?: string | null) {
+  const value = String(status || '').trim().toLowerCase();
+  return value !== '' && value !== 'not_started';
+}
+
+function stageStateLabel(status?: string | null) {
+  const value = String(status || '').trim().toLowerCase();
+  if (value === 'completed') return 'finished';
+  if (value === 'in_progress') return 'under way';
+  if (value === 'pending_homeowner_approval') return 'waiting for approval';
+  if (!value || value === 'not_started') return 'not started yet';
+  return value.replace(/_/g, ' ');
+}
+
+function stagesDueInAdvance(stages: PaymentStage[]) {
+  const ordered = [...stages].sort((left, right) => Number(left.order || 0) - Number(right.order || 0));
+  if (!ordered.length) return [];
+  let lastCommenced = -1;
+  ordered.forEach((stage, index) => {
+    if (stageHasStarted(stage.status)) lastCommenced = index;
+  });
+  const count = lastCommenced < 0 ? 1 : Math.min(ordered.length, lastCommenced + 2);
+  return ordered.slice(0, count);
+}
+
+function stageAdvanceAmount(stage: PaymentStage) {
+  const deposit = Number(stage.depositDue);
+  if (Number.isFinite(deposit) && deposit > 0) return deposit;
+  const price = Number(stage.estimatedCost);
+  return Number.isFinite(price) && price > 0 ? price : 0;
+}
+
 function PaymentModelPanel({
   projectId,
   paymentModel,
   paymentConfirmationStatus,
+  stages,
   onDone,
 }: {
   projectId: string;
   paymentModel?: string | null;
   paymentConfirmationStatus?: string | null;
+  stages: PaymentStage[];
   onDone: () => void;
 }) {
   const [message, setMessage] = useState('');
@@ -85,9 +127,9 @@ function PaymentModelPanel({
   const save = useMutation({
     mutationFn: (model: 'pay_in_full' | 'pay_by_stage') =>
       api.patch(`/projects/${projectId}/payment-model`, { paymentModel: model, paymentComplete: true }),
-    onSuccess: () => {
+    onSuccess: (_data, model) => {
       setError('');
-      setMessage('Payment recorded as complete.');
+      setMessage(model === 'pay_by_stage' ? 'Stage advances recorded.' : 'Full payment recorded.');
       setPendingModel(null);
       onDone();
     },
@@ -100,6 +142,8 @@ function PaymentModelPanel({
     ['pay_in_full', 'Pay in full'],
     ['pay_by_stage', 'Pay stage by stage'],
   ] as const;
+  const dueStages = stagesDueInAdvance(stages);
+  const dueTotal = dueStages.reduce((sum, stage) => sum + stageAdvanceAmount(stage), 0);
   const openConfirm = (model: 'pay_in_full' | 'pay_by_stage') => {
     setPendingModel(model);
     setMoneyPaid(false);
@@ -110,10 +154,10 @@ function PaymentModelPanel({
     <div className="border rounded-xl p-4 space-y-3">
       <div className="font-medium">Payment choice</div>
       <p className="text-sm text-gray-600">
-        Pay in full records the whole invoice once you confirm the money is in. Pay stage by stage records the deposit for work that has started. A reply to the invoice email remains another way to record a payment.
+        Pay in full records the whole invoice. Pay stage by stage records only the stages the homeowner has to pay before the next stage starts. Changing the choice replaces the amount already recorded.
       </p>
       {paymentConfirmationStatus === 'confirmed' ? (
-        <p className="text-sm text-emerald-700">Payment is complete.</p>
+        <p className="text-sm text-emerald-700">Payment is complete for the current choice.</p>
       ) : null}
       <div className="flex flex-wrap gap-2">
         {choices.map(([value, label]) => (
@@ -130,21 +174,22 @@ function PaymentModelPanel({
       </div>
       {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
       {error && !pendingModel ? <p className="text-sm text-red-700">{error}</p> : null}
-      {pendingModel ? (
+      {pendingModel === 'pay_in_full' ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg space-y-4" role="dialog" aria-labelledby="payment-complete-title">
-            <h3 id="payment-complete-title" className="text-lg font-semibold">Confirm this payment</h3>
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg space-y-4" role="dialog" aria-labelledby="full-payment-title">
+            <h3 id="full-payment-title" className="text-lg font-semibold">Confirm pay in full</h3>
             <p className="text-sm text-gray-700">
-              Confirm that the money has actually been paid, and that the invoice has been sent. Marking the payment complete records it and replaces a pending invoice.
+              Pay in full means the homeowner has paid the whole invoice. If this project has started, that full amount is already with BuildMyHouse. You sent in becomes the full project total.
             </p>
-            <p className="text-sm text-gray-600">
-              {pendingModel === 'pay_in_full'
-                ? 'Pay in full records the whole invoice as money the homeowner sent in.'
-                : 'Pay stage by stage records the deposit for stages that have already started. If work has not started, it records the first stage deposit.'}
-            </p>
+            <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 space-y-2">
+              <p className="font-medium text-gray-900">Check this before you approve</p>
+              <p>The whole invoice has arrived, not the price of one stage.</p>
+              <p>The invoice was sent to the homeowner.</p>
+              <p>A stage-by-stage amount saved earlier will be replaced by this full total.</p>
+            </div>
             <label className="flex items-start gap-2 text-sm text-gray-800">
               <input type="checkbox" className="mt-1" checked={moneyPaid} onChange={(event) => setMoneyPaid(event.target.checked)} />
-              The money has been paid
+              The full invoice has been paid
             </label>
             <label className="flex items-start gap-2 text-sm text-gray-800">
               <input type="checkbox" className="mt-1" checked={invoiceSent} onChange={(event) => setInvoiceSent(event.target.checked)} />
@@ -152,16 +197,62 @@ function PaymentModelPanel({
             </label>
             {error ? <p className="text-sm text-red-700">{error}</p> : null}
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" className="px-4 py-2 border rounded-lg" onClick={() => setPendingModel(null)}>
-                Cancel
-              </button>
+              <button type="button" className="px-4 py-2 border rounded-lg" onClick={() => setPendingModel(null)}>Cancel</button>
               <button
                 type="button"
                 disabled={!moneyPaid || !invoiceSent || save.isPending}
                 className="px-4 py-2 bg-gray-900 text-white rounded-lg disabled:opacity-50"
-                onClick={() => save.mutate(pendingModel)}
+                onClick={() => save.mutate('pay_in_full')}
               >
-                Payment is complete
+                Record the full payment
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {pendingModel === 'pay_by_stage' ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-lg space-y-4 max-h-[90vh] overflow-y-auto" role="dialog" aria-labelledby="stage-payment-title">
+            <h3 id="stage-payment-title" className="text-lg font-semibold">Confirm pay stage by stage</h3>
+            <p className="text-sm text-gray-700">
+              The homeowner sends each stage to BuildMyHouse before that stage starts. You sent in shows those advances only. It does not stay at the full project price.
+            </p>
+            <div className="rounded-lg bg-gray-50 p-3 text-sm text-gray-700 space-y-2">
+              <p className="font-medium text-gray-900">Stages included in You sent in</p>
+              {dueStages.length ? dueStages.map((stage, index) => (
+                <p key={`${stage.name || 'stage'}-${index}`}>
+                  {index + 1}. {stage.name || `Stage ${index + 1}`} · {stageStateLabel(stage.status)} · {naira(stageAdvanceAmount(stage))}
+                </p>
+              )) : <p>No stages are published yet. The first stage deposit will be recorded.</p>}
+              {dueTotal > 0 ? <p className="font-medium text-gray-900">Amount to record: {naira(dueTotal)}</p> : null}
+              <p>A finished or current stage is included, and so is the next stage, because its fee has to arrive before that stage can start. Later stages stay out until their turn.</p>
+              <p>Each figure is the stage price plus its share of the fees when that share is already saved.</p>
+              <p>A full-payment figure saved earlier is replaced by this amount.</p>
+            </div>
+            <div className="text-sm text-gray-700 space-y-2">
+              <p className="font-medium text-gray-900">Check this before you approve</p>
+              <p>Every stage listed above was paid in advance.</p>
+              <p>The invoice for those stages was sent.</p>
+              <p>You are not approving the rest of the project.</p>
+            </div>
+            <label className="flex items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1" checked={moneyPaid} onChange={(event) => setMoneyPaid(event.target.checked)} />
+              These stage advances have been paid
+            </label>
+            <label className="flex items-start gap-2 text-sm text-gray-800">
+              <input type="checkbox" className="mt-1" checked={invoiceSent} onChange={(event) => setInvoiceSent(event.target.checked)} />
+              The invoice for these stages has been sent
+            </label>
+            {error ? <p className="text-sm text-red-700">{error}</p> : null}
+            <div className="flex justify-end gap-2 pt-2">
+              <button type="button" className="px-4 py-2 border rounded-lg" onClick={() => setPendingModel(null)}>Cancel</button>
+              <button
+                type="button"
+                disabled={!moneyPaid || !invoiceSent || save.isPending}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg disabled:opacity-50"
+                onClick={() => save.mutate('pay_by_stage')}
+              >
+                Record these stage payments
               </button>
             </div>
           </div>
@@ -487,6 +578,7 @@ export default function AdminProjectDetailPage() {
         projectId={projectId}
         paymentModel={(project as { paymentModel?: string | null }).paymentModel}
         paymentConfirmationStatus={(project as { paymentConfirmationStatus?: string | null }).paymentConfirmationStatus}
+        stages={stages}
         onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
       />
       <div className="flex items-start gap-4">
