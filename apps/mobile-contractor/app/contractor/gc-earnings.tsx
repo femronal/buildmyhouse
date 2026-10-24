@@ -80,7 +80,7 @@ export default function GCEarningsScreen() {
                 <View className="bg-green-600/20 rounded-full px-3 py-1 flex-row items-center">
                   <TrendingUp size={14} color="#10B981" strokeWidth={2} />
                   <Text className="text-green-400 text-xs ml-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {totalBudget > 0 ? `${((totalEarned / totalBudget) * 100).toFixed(0)}%` : '0%'} of full job price
+                    {totalBudget > 0 ? `${((totalEarned / totalBudget) * 100).toFixed(0)}%` : '0%'} of money sent so far
                   </Text>
                 </View>
               </View>
@@ -88,7 +88,7 @@ export default function GCEarningsScreen() {
                 <View className="h-full bg-blue-600 rounded-full" style={{ width: `${totalBudget > 0 ? Math.min(100, (totalEarned / totalBudget) * 100) : 0}%` }} />
               </View>
               <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Paid to you ₦{totalEarned.toLocaleString()} of full job price ₦{totalBudget.toLocaleString()}
+                Paid to you ₦{totalEarned.toLocaleString()} of money sent so far ₦{totalBudget.toLocaleString()}
               </Text>
             </View>
 
@@ -167,7 +167,7 @@ export default function GCEarningsScreen() {
                         <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{Number(project.paidToYou ?? project.earned ?? 0).toLocaleString()}</Text>
                       </View>
                       <View>
-                        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Full job price</Text>
+                        <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>Money sent so far</Text>
                         <Text className="text-white" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{Number(project.fullJobPrice ?? project.budget ?? 0).toLocaleString()}</Text>
                       </View>
                       <View>

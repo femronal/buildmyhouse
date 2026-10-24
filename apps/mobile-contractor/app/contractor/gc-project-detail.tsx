@@ -639,7 +639,7 @@ export default function GCProjectDetailScreen() {
             </View>
           </View>
           <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
-            Full job price {naira(fullJobPrice)}
+            Money sent so far {naira(fullJobPrice)}
           </Text>
           <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
             Paid to shops {naira(paidToShops)}
