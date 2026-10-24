@@ -24,6 +24,7 @@ import { useGCEarnings } from "@/hooks/useGC";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { contractorProfit, paymentChoiceLabel } from "@/lib/job-profit";
 
 function paidPayoutsFromStages(stages?: Array<{
   materials?: Array<{ payeeKind?: string | null; status?: string | null; totalPrice?: number | null; quantity?: number | null; unitPrice?: number | null }>;
@@ -322,6 +323,14 @@ export default function GCProjectDetailScreen() {
     moneySummary?.fullJobPrice ?? earningsRow?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
   );
   const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0 || Number(moneySummary?.paidToTeamMembers || 0) > 0;
+  const paymentModel = (project as { paymentModel?: string | null }).paymentModel;
+  const profit = contractorProfit({
+    paymentModel,
+    fullJobPrice,
+    stages,
+    paidToShops,
+    paidToTeam,
+  });
   const leftOnThisJob = summaryHasPayouts
     ? Number(moneySummary?.leftOnThisJob ?? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam))
     : linePayouts.artisan || linePayouts.shop || linePayouts.team
@@ -632,9 +641,14 @@ export default function GCProjectDetailScreen() {
           <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
             Paid to team members {naira(paidToTeam)}
           </Text>
-          <Text className="mt-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-            Shop pays are separate from paid to you.
-          </Text>
+          <View className="flex-row items-end justify-between mt-3">
+            <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#4ADE80' }}>
+              Profit {naira(profit)}
+            </Text>
+            <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: '#CBD5E1', textAlign: 'right', flexShrink: 1, marginLeft: 12 }}>
+              {paymentChoiceLabel(paymentModel)}
+            </Text>
+          </View>
         </View>
 
         <View className="bg-[#1E3A5F] rounded-2xl p-4 mb-6 border border-blue-900">

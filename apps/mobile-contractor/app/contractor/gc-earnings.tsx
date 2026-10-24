@@ -4,6 +4,7 @@ import { TrendingUp, ChevronLeft, ChevronRight, Package, Users, Receipt, CheckCi
 import { useState } from "react";
 import { useGCEarnings } from "@/hooks/useGC";
 import { useResponsivePadding } from "@/lib/responsive-layout";
+import { paymentChoiceLabel } from "@/lib/job-profit";
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return 'N/A';
@@ -24,6 +25,7 @@ export default function GCEarningsScreen() {
   const totalBudget = earnings.reduce((sum, p) => sum + Number(p.fullJobPrice ?? p.budget ?? 0), 0);
   const totalLeft = earnings.reduce((sum, p) => sum + Number(p.leftOnThisJob ?? p.pending ?? 0), 0);
   const totalShops = earnings.reduce((sum, p) => sum + Number(p.paidToShops ?? 0), 0);
+  const totalProfit = earnings.reduce((sum, p) => sum + Number(p.profit ?? 0), 0);
   const totalMaterials = earnings.reduce((sum, p) => sum + p.materialsTotal, 0);
   const totalTeam = earnings.reduce((sum, p) => sum + p.teamTotal, 0);
   return (
@@ -104,8 +106,8 @@ export default function GCEarningsScreen() {
             <View className="bg-[#1E3A5F] rounded-2xl p-4 mt-4 border border-blue-900">
               <Text className="text-gray-400 mb-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>Paid to shops</Text>
               <Text className="text-white text-lg" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>₦{totalShops.toLocaleString()}</Text>
-              <Text className="text-gray-400 mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16 }}>
-                Shop pays are separate from paid to you.
+              <Text className="mt-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#4ADE80' }}>
+                Profit ₦{totalProfit.toLocaleString()}
               </Text>
             </View>
 
@@ -179,9 +181,14 @@ export default function GCEarningsScreen() {
                     <Text className="mt-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
                       Paid to team members ₦{Number(project.paidToTeamMembers ?? 0).toLocaleString()}
                     </Text>
-                    <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-                      Shop pays and team pays are separate from paid to you.
-                    </Text>
+                    <View className="flex-row items-end justify-between mt-2">
+                      <Text style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16, color: '#4ADE80' }}>
+                        Profit ₦{Number(project.profit ?? 0).toLocaleString()}
+                      </Text>
+                      <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: '#CBD5E1', textAlign: 'right', flexShrink: 1, marginLeft: 12 }}>
+                        {paymentChoiceLabel(project.paymentModel)}
+                      </Text>
+                    </View>
 
                     <View className="mb-2">
                       <View className="flex-row justify-between mb-1">

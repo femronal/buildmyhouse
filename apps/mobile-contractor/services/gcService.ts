@@ -89,6 +89,8 @@ export interface GCEarningsProject {
   fullJobPrice?: number;
   paidToShops?: number;
   paidToTeamMembers?: number;
+  paymentModel?: 'pay_in_full' | 'pay_by_stage' | null;
+  profit?: number;
   progress: number;
   currentStage?: string;
   dueDate?: string;

@@ -3432,10 +3432,21 @@ export class ContractorsService {
         status: s.status,
       }));
 
+      const fundedPrice = p.paymentModel === 'pay_by_stage'
+        ? (p.stages || []).reduce((sum: number, stage: any) => {
+            const status = String(stage?.status || '').trim().toLowerCase();
+            if (!status || status === 'not_started') return sum;
+            return sum + (Number(stage?.estimatedCost) || 0);
+          }, 0)
+        : money.fullJobPrice;
+      const profit = Math.max(0, Math.round((fundedPrice - money.paidToShops - money.paidToTeamMembers) * 100) / 100);
+
       return {
         id: p.id,
         name: p.name,
         status: p.status,
+        paymentModel: p.paymentModel || null,
+        profit,
         budget: money.fullJobPrice,
         earned: money.paidToYou,
         pending: money.leftOnThisJob,

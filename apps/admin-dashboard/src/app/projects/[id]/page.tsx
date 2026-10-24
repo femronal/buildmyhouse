@@ -95,7 +95,7 @@ function stagesDueInAdvance(stages: PaymentStage[]) {
   ordered.forEach((stage, index) => {
     if (stageHasStarted(stage.status)) lastCommenced = index;
   });
-  const count = lastCommenced < 0 ? 1 : Math.min(ordered.length, lastCommenced + 2);
+  const count = lastCommenced < 0 ? 1 : Math.min(ordered.length, lastCommenced + 1);
   return ordered.slice(0, count);
 }
 
@@ -154,7 +154,7 @@ function PaymentModelPanel({
     <div className="border rounded-xl p-4 space-y-3">
       <div className="font-medium">Payment choice</div>
       <p className="text-sm text-gray-600">
-        Pay in full records the whole invoice. Pay stage by stage records only the stages the homeowner has to pay before the next stage starts. Changing the choice replaces the amount already recorded.
+        Pay in full records the whole invoice. Pay stage by stage records only stages that have started. A stage that has not started stays out. Changing the choice replaces the amount already recorded.
       </p>
       {paymentConfirmationStatus === 'confirmed' ? (
         <p className="text-sm text-emerald-700">Payment is complete for the current choice.</p>
@@ -225,7 +225,7 @@ function PaymentModelPanel({
                 </p>
               )) : <p>No stages are published yet. The first stage deposit will be recorded.</p>}
               {dueTotal > 0 ? <p className="font-medium text-gray-900">Amount to record: {naira(dueTotal)}</p> : null}
-              <p>A finished or current stage is included, and so is the next stage, because its fee has to arrive before that stage can start. Later stages stay out until their turn.</p>
+              <p>A stage is included only after it has started. The next stage stays out until work on it begins.</p>
               <p>Each figure is the stage price plus its share of the fees when that share is already saved.</p>
               <p>A full-payment figure saved earlier is replaced by this amount.</p>
             </div>

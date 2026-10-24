@@ -74,7 +74,7 @@ export function advanceStageCount(stageStatuses?: Array<string | null | undefine
     if (status && status !== 'not_started') lastCommenced = index;
   }
   if (lastCommenced < 0) return 1;
-  return Math.min(count, lastCommenced + 2);
+  return Math.min(count, lastCommenced + 1);
 }
 
 export function completePaymentTarget(input: {
