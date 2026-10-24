@@ -8,6 +8,12 @@ type PayoutLine = {
 
 type PayoutStage = {
   materials?: PayoutLine[] | null;
+  teamMembers?: Array<{
+    payStatus?: string | null;
+    paidBy?: string | null;
+    paidAmount?: number | null;
+    dailyRate?: number | null;
+  }> | null;
 };
 
 function lineAmount(line: PayoutLine): number {
@@ -21,10 +27,10 @@ function lineAmount(line: PayoutLine): number {
   return 0;
 }
 
-/** Paid artisan and shop totals from the stage lines already on the project. */
-export function paidPayoutsFromStages(stages?: PayoutStage[] | null): { artisan: number; shop: number } {
+export function paidPayoutsFromStages(stages?: PayoutStage[] | null): { artisan: number; shop: number; team: number } {
   let artisan = 0;
   let shop = 0;
+  let team = 0;
   for (const stage of stages || []) {
     for (const line of stage?.materials || []) {
       if (String(line?.status || '').trim().toLowerCase() !== 'paid') continue;
@@ -33,6 +39,12 @@ export function paidPayoutsFromStages(stages?: PayoutStage[] | null): { artisan:
       if (kind === 'artisan') artisan += amount;
       else if (kind === 'shop') shop += amount;
     }
+    for (const member of stage?.teamMembers || []) {
+      if (String(member?.payStatus || '').trim().toLowerCase() !== 'paid') continue;
+      if (String(member?.paidBy || '').trim().toLowerCase() !== 'bmh') continue;
+      const paid = Number(member.paidAmount);
+      team += Number.isFinite(paid) && paid > 0 ? paid : Number(member.dailyRate) || 0;
+    }
   }
-  return { artisan, shop };
+  return { artisan, shop, team };
 }

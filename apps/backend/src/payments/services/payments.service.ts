@@ -179,7 +179,7 @@ export class PaymentsService {
     // Validate project exists (and belongs to user when possible)
     const project = await this.prisma.project.findUnique({
       where: { id: dto.projectId },
-      select: { id: true, homeownerId: true, name: true },
+      select: { id: true, homeownerId: true, name: true, paymentModel: true },
     });
     if (!project) {
       throw new NotFoundException('Project not found');
@@ -189,8 +189,9 @@ export class PaymentsService {
       throw new BadRequestException('You do not have access to this project');
     }
 
-    // For activation payments (no stageId), ensure we don't create duplicates
-    if (!dto.stageId) {
+    // A project without a payment model still has one activation payment.
+    // Pay in full and pay stage by stage can take several transfers.
+    if (!dto.stageId && !project.paymentModel) {
       const existingActivation = await this.prisma.payment.findFirst({
         where: {
           projectId: dto.projectId,
@@ -405,11 +406,6 @@ export class PaymentsService {
    * Called when admin confirms manual payment.
    */
   async createManualActivationPayment(projectId: string, amount: number) {
-    const existing = await this.prisma.payment.findFirst({
-      where: { projectId, stageId: null, status: 'completed' },
-    });
-    if (existing) return existing;
-
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       select: { name: true, homeownerId: true },

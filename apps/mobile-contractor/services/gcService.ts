@@ -88,6 +88,7 @@ export interface GCEarningsProject {
   leftOnThisJob?: number;
   fullJobPrice?: number;
   paidToShops?: number;
+  paidToTeamMembers?: number;
   progress: number;
   currentStage?: string;
   dueDate?: string;

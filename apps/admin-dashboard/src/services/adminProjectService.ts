@@ -78,6 +78,7 @@ export type CreateTeamMemberData = {
   paidAt?: string | null;
   paidBy?: 'bmh' | 'gc' | null;
   hoPaymentRef?: string | null;
+  payoutOverrideNote?: string;
 };
 
 export type CreateMaterialData = {
@@ -95,6 +96,7 @@ export type CreateMaterialData = {
   status?: 'planned' | 'invoiced' | 'paid' | 'rejected';
   paidAt?: string | null;
   hoPaymentRef?: string | null;
+  payoutOverrideNote?: string;
 };
 
 export type CreateMediaData = {

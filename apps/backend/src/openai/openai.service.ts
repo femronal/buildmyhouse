@@ -983,6 +983,7 @@ export class OpenAIService {
     quoteText: string;
     signedTotal: number;
     phaseNames: string[];
+    paymentModel?: 'pay_in_full' | 'pay_by_stage';
   }): Promise<{ lumpSum: boolean; stages: Array<{ name: string; doneWhen: string; weight: number; evidence: string[] }> } | null> {
     if (!this.hasApiKey || !params.quoteText.trim()) return null;
     try {
@@ -997,8 +998,10 @@ export class OpenAIService {
             content: [
               'You turn a contractor quote into payment stages for a home project in Nigeria.',
               'The signed total is fixed. Do not change it.',
+              params.paymentModel === 'pay_in_full'
+                ? 'The homeowner pays once, before work starts. Put material purchases in the earliest stages so they can be bought before later work.'
+                : 'The homeowner pays before each stage starts. End every stage at something the homeowner can see on site. Keep the materials for a stage inside that stage.',
               'If the quote is one price, set lumpSum true and propose 3 to 5 stages.',
-              'Put material purchases in an early stage.',
               'Weights must be positive and should sum to 1.',
               'Each doneWhen is one plain sentence describing what the homeowner can see when the stage is finished.',
               'Each evidence list has 4 to 6 short checks taken from this quote: a material, quantity, location, test, or finished result the homeowner must confirm before that stage is paid.',
@@ -1011,6 +1014,7 @@ export class OpenAIService {
             role: 'user',
             content: [
               `Signed total in naira: ${params.signedTotal}`,
+              `Payment choice: ${params.paymentModel === 'pay_in_full' ? 'pay the full invoice before work starts' : 'pay each stage before that stage starts'}`,
               `Plan stages already on the project: ${params.phaseNames.join(', ') || 'none'}`,
               'Quote text:',
               params.quoteText.slice(0, 12000),

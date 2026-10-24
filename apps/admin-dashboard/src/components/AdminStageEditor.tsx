@@ -401,6 +401,7 @@ function MaterialsTab({
     status: 'planned' as LineStatus,
     paidAt: '',
     hoPaymentRef: '',
+    payoutOverrideNote: '',
   });
   const [editing, setEditing] = useState<null | {
     id: string;
@@ -408,6 +409,7 @@ function MaterialsTab({
     status: LineStatus;
     paidAt: string;
     hoPaymentRef: string;
+    payoutOverrideNote: string;
     supplier: string;
     receiptUrl: string;
   }>(null);
@@ -428,6 +430,7 @@ function MaterialsTab({
       status: 'planned',
       paidAt: '',
       hoPaymentRef: '',
+      payoutOverrideNote: '',
     });
     setPhotoUrl('');
     setReceiptUrl('');
@@ -457,6 +460,7 @@ function MaterialsTab({
       status: form.status,
       paidAt: form.status === 'paid' ? fromDateInput(form.paidAt) || new Date().toISOString() : null,
       hoPaymentRef: form.hoPaymentRef.trim() || null,
+      payoutOverrideNote: form.payoutOverrideNote.trim() || undefined,
     };
     await stageDocumentationService.addMaterial(projectId, stageId, data);
     reset();
@@ -482,6 +486,7 @@ function MaterialsTab({
       status: editing.status,
       paidAt: editing.status === 'paid' ? fromDateInput(editing.paidAt) || new Date().toISOString() : null,
       hoPaymentRef: editing.hoPaymentRef.trim() || null,
+      payoutOverrideNote: editing.payoutOverrideNote.trim() || undefined,
       supplier: editing.supplier.trim() || null,
       receiptUrl: editing.receiptUrl.trim() || null,
     });
@@ -546,6 +551,7 @@ function MaterialsTab({
                     status: (m.status || 'planned') as LineStatus,
                     paidAt: toDateInput(m.paidAt),
                     hoPaymentRef: m.hoPaymentRef || '',
+                    payoutOverrideNote: '',
                     supplier: m.supplier || '',
                     receiptUrl: m.receiptUrl || '',
                   })}
@@ -604,6 +610,9 @@ function MaterialsTab({
             <Field label="Homeowner payment id">
               <input className="w-full px-3 py-2 border rounded-lg" value={form.hoPaymentRef} onChange={(e) => setForm((f) => ({ ...f, hoPaymentRef: e.target.value }))} />
             </Field>
+            <Field label="Override note">
+              <input className="w-full px-3 py-2 border rounded-lg" value={form.payoutOverrideNote} onChange={(e) => setForm((f) => ({ ...f, payoutOverrideNote: e.target.value }))} placeholder="Only if this payout is more than the money still with BuildMyHouse" />
+            </Field>
           </div>
           <Field label="Notes">
             <textarea rows={2} className="w-full px-3 py-2 border rounded-lg" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
@@ -638,6 +647,9 @@ function MaterialsTab({
           </Field>
           <Field label="Homeowner payment id">
             <input className="w-full px-3 py-2 border rounded-lg" value={editing.hoPaymentRef} onChange={(e) => setEditing((row) => row && ({ ...row, hoPaymentRef: e.target.value }))} />
+          </Field>
+          <Field label="Override note">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.payoutOverrideNote} onChange={(e) => setEditing((row) => row && ({ ...row, payoutOverrideNote: e.target.value }))} placeholder="Only if this payout is more than the money still with BuildMyHouse" />
           </Field>
           <Field label="Supplier">
             <input className="w-full px-3 py-2 border rounded-lg" value={editing.supplier} onChange={(e) => setEditing((row) => row && ({ ...row, supplier: e.target.value }))} />
@@ -678,6 +690,7 @@ function TeamTab({
     paidAt: '',
     paidBy: '' as '' | 'bmh' | 'gc',
     hoPaymentRef: '',
+    payoutOverrideNote: '',
   };
   const [form, setForm] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
@@ -709,6 +722,7 @@ function TeamTab({
       paidAt: form.payStatus === 'paid' ? fromDateInput(form.paidAt) || new Date().toISOString() : null,
       paidBy: form.paidBy || null,
       hoPaymentRef: form.hoPaymentRef.trim() || null,
+      payoutOverrideNote: form.payoutOverrideNote.trim() || undefined,
     };
     await stageDocumentationService.addTeamMember(projectId, stageId, data);
     setOpen(false);
@@ -731,6 +745,7 @@ function TeamTab({
       paidAt: editing.payStatus === 'paid' ? fromDateInput(editing.paidAt) || new Date().toISOString() : null,
       paidBy: editing.paidBy || null,
       hoPaymentRef: editing.hoPaymentRef.trim() || null,
+      payoutOverrideNote: editing.payoutOverrideNote.trim() || undefined,
     });
     setEditing(null);
     await onChanged();
@@ -789,6 +804,7 @@ function TeamTab({
                     paidAt: toDateInput(m.paidAt),
                     paidBy: (m.paidBy || '') as '' | 'bmh' | 'gc',
                     hoPaymentRef: m.hoPaymentRef || '',
+                    payoutOverrideNote: '',
                   })}
                 >
                   Edit pay
@@ -843,6 +859,9 @@ function TeamTab({
             <Field label="Homeowner payment id">
               <input className="w-full px-3 py-2 border rounded-lg" value={form.hoPaymentRef} onChange={(e) => setForm((f) => ({ ...f, hoPaymentRef: e.target.value }))} />
             </Field>
+            <Field label="Override note">
+              <input className="w-full px-3 py-2 border rounded-lg" value={form.payoutOverrideNote} onChange={(e) => setForm((f) => ({ ...f, payoutOverrideNote: e.target.value }))} placeholder="Only if this payout is more than the money still with BuildMyHouse" />
+            </Field>
           </div>
           <Field label="Notes">
             <textarea rows={2} className="w-full px-3 py-2 border rounded-lg" value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} />
@@ -879,6 +898,9 @@ function TeamTab({
           </Field>
           <Field label="Homeowner payment id">
             <input className="w-full px-3 py-2 border rounded-lg" value={editing.hoPaymentRef} onChange={(e) => setEditing((row) => row && ({ ...row, hoPaymentRef: e.target.value }))} />
+          </Field>
+          <Field label="Override note">
+            <input className="w-full px-3 py-2 border rounded-lg" value={editing.payoutOverrideNote} onChange={(e) => setEditing((row) => row && ({ ...row, payoutOverrideNote: e.target.value }))} placeholder="Only if this payout is more than the money still with BuildMyHouse" />
           </Field>
           <ModalActions onCancel={() => setEditing(null)} onConfirm={saveEdit} confirmLabel="Save pay" />
         </Modal>

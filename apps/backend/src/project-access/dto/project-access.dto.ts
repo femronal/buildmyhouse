@@ -3,6 +3,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -56,6 +57,9 @@ export class CreateManagedProjectDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @IsIn(['pay_in_full', 'pay_by_stage'])
+  paymentModel: 'pay_in_full' | 'pay_by_stage';
 
   @IsNumber()
   @Min(0)

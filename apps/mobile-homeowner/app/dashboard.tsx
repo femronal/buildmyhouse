@@ -197,11 +197,13 @@ export default function DashboardScreen() {
         stillWithBuildMyHouse?: number;
         sentToContractor?: number;
         paidToShopsForMaterials?: number;
+        paidToTeamMembers?: number;
       }
     | undefined;
   const linePayouts = paidPayoutsFromStages(stages);
   const sentToContractor = Number(moneySummary?.sentToContractor || 0) || linePayouts.artisan;
   const paidToShopsForMaterials = Number(moneySummary?.paidToShopsForMaterials || 0) || linePayouts.shop;
+  const paidToTeamMembers = Number(moneySummary?.paidToTeamMembers || 0) || linePayouts.team;
 
   // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
   const projectType =
@@ -568,6 +570,7 @@ export default function DashboardScreen() {
             ['Still with BuildMyHouse', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
             ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
             ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
+            ['Paid to team members', `₦${paidToTeamMembers.toLocaleString()}`],
           ].map(([label, value]) => (
             <View key={label} className="flex-row justify-between mb-3">
               <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>

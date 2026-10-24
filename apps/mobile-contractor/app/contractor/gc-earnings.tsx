@@ -176,8 +176,11 @@ export default function GCEarningsScreen() {
                     <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
                       Paid to shops ₦{Number(project.paidToShops ?? 0).toLocaleString()}
                     </Text>
+                    <Text className="mt-1" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+                      Paid to team members ₦{Number(project.paidToTeamMembers ?? 0).toLocaleString()}
+                    </Text>
                     <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-                      Shop pays are separate from paid to you.
+                      Shop pays and team pays are separate from paid to you.
                     </Text>
 
                     <View className="mb-2">

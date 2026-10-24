@@ -15,6 +15,7 @@ import {
   referenceFromText,
   withFundingInvoice,
 } from './funding-invoice';
+import { amountStillDue, isPaymentModel, netReceived } from '../projects/payment-model';
 
 const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
 
@@ -81,6 +82,8 @@ export class FundingService {
           take: 1,
           select: { gcNotes: true, totalQuoteAmount: true },
         },
+        stages: { orderBy: { order: 'asc' }, select: { depositDue: true, estimatedCost: true, order: true } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } }, select: { amount: true, status: true } },
       },
     });
     if (!project) return { sent: false, reason: 'missing_project' };
@@ -90,7 +93,8 @@ export class FundingService {
       return { sent: true, skipped: true, reference: existing.reference };
     }
 
-    const amount = payableFromRequest(project.projectRequests[0]);
+    const quoted = payableFromRequest(project.projectRequests[0]);
+    const amount = this.invoiceAmount(project, quoted);
     const account = await this.getAccount();
     const reference = existing?.reference || paymentReference(project.id);
     const email = String(project.homeowner?.email || '').trim();
@@ -184,9 +188,6 @@ export class FundingService {
       },
     });
     if (!project) return { matched: false };
-    if (project.paymentConfirmationStatus === 'confirmed') {
-      return { matched: true, declared: false };
-    }
 
     const existing = readFundingInvoice(project.aiAnalysis);
     const file = params.attachments.find((item) => this.isReceipt(item)) || null;
@@ -202,27 +203,31 @@ export class FundingService {
       return { matched: true, declared: project.paymentConfirmationStatus === 'declared' };
     }
 
-    if (existing?.receipt) {
-      return { matched: true, declared: project.paymentConfirmationStatus === 'declared' };
-    }
-
     const uploaded = await this.uploads.uploadBuffer({
       buffer: file.content,
       folder: 'files/payment-receipts',
       contentType: file.contentType || 'application/octet-stream',
       originalName: this.safeFileName(file.filename),
     });
+    const nextReceipt = {
+      fileName: this.safeFileName(file.filename),
+      url: uploaded.url,
+      from: String(params.from || '').trim(),
+      receivedAt: new Date().toISOString(),
+      confirmedAt: null,
+    };
+    const prior = existing?.receipts?.length
+      ? existing.receipts
+      : existing?.receipt
+        ? [existing.receipt]
+        : [];
     const invoice: FundingInvoice = {
       reference,
       amount: existing?.amount || 0,
       sentAt: existing?.sentAt || null,
       account: existing?.account || null,
-      receipt: {
-        fileName: this.safeFileName(file.filename),
-        url: uploaded.url,
-        from: String(params.from || '').trim(),
-        receivedAt: new Date().toISOString(),
-      },
+      receipt: nextReceipt,
+      receipts: [...prior, nextReceipt],
     };
     const now = new Date();
     await this.prisma.project.update({
@@ -237,10 +242,37 @@ export class FundingService {
     await this.notifyAdmins(
       'funding_receipt',
       'Payment receipt received',
-      `${project.name}: a receipt arrived for ${reference}. Confirm the payment to open the project.`,
+      `${project.name}: a receipt arrived for ${reference}. Confirm the amount on the receipt before the project or the next stage can move.`,
       project.id,
     );
     return { matched: true, declared: true };
+  }
+
+  private invoiceAmount(project: {
+    paymentModel?: string | null;
+    budget?: number | null;
+    aiAnalysis?: unknown;
+    stages?: Array<{ depositDue?: number | null; estimatedCost?: number | null }>;
+    payments?: Array<{ amount?: number | null; status?: string | null }>;
+  }, quoted: number): number {
+    const model = project.paymentModel;
+    if (!isPaymentModel(model)) return quoted;
+    const phaseDeposits = Array.isArray((project.aiAnalysis as { phases?: Array<{ depositDue?: number }> } | null)?.phases)
+      ? ((project.aiAnalysis as { phases: Array<{ depositDue?: number }> }).phases || []).map((phase) => Number(phase.depositDue) || 0)
+      : [];
+    const stageDeposits = (project.stages || []).some((stage) => Number(stage.depositDue) > 0)
+      ? (project.stages || []).map((stage) => Number(stage.depositDue) || 0)
+      : phaseDeposits;
+    const invoice = quoted > 0
+      ? quoted
+      : stageDeposits.reduce((sum, value) => sum + value, 0);
+    const due = amountStillDue({
+      paymentModel: model,
+      totalPayable: invoice,
+      stageDeposits,
+      received: netReceived(project.payments),
+    });
+    return due > 0 ? due : 0;
   }
 
   private replyAddress(): string {

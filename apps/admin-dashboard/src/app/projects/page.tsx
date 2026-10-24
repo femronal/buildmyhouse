@@ -246,9 +246,10 @@ export default function ProjectsPage() {
     },
   });
 
+  const [confirmAmounts, setConfirmAmounts] = useState<Record<string, string>>({});
   const confirmManualPaymentMutation = useMutation({
-    mutationFn: async (projectId: string) => {
-      return api.patch(`/projects/${projectId}/payment/confirm`, {});
+    mutationFn: async (params: { projectId: string; amount: number }) => {
+      return api.patch(`/projects/${params.projectId}/payment/confirm`, { amount: params.amount });
     },
     onSuccess: async () => {
       await invalidateProjectQueries();
@@ -753,20 +754,37 @@ export default function ProjectsPage() {
                       {project.externalPaymentLink ? 'Update payment link' : 'Request manual payment'}
                     </button>
                     {showConfirm && (
-                      <button
-                        disabled={confirmManualPaymentMutation.isPending}
-                        className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg disabled:opacity-50"
-                        onClick={async () => {
-                          setActionError('');
-                          try {
-                            await confirmManualPaymentMutation.mutateAsync(project.id);
-                          } catch (e: any) {
-                            setActionError(e?.message || 'Failed to confirm payment');
-                          }
-                        }}
-                      >
-                        Confirm payment
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          type="number"
+                          min="1"
+                          step="0.01"
+                          inputMode="decimal"
+                          placeholder="Amount received"
+                          value={confirmAmounts[project.id] || ''}
+                          onChange={(event) => setConfirmAmounts((current) => ({ ...current, [project.id]: event.target.value }))}
+                          className="w-36 px-3 py-2 text-sm border rounded-lg"
+                        />
+                        <button
+                          disabled={confirmManualPaymentMutation.isPending}
+                          className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg disabled:opacity-50"
+                          onClick={async () => {
+                            setActionError('');
+                            const amount = Number(confirmAmounts[project.id]);
+                            if (!Number.isFinite(amount) || amount <= 0) {
+                              setActionError('Enter the amount on the receipt.');
+                              return;
+                            }
+                            try {
+                              await confirmManualPaymentMutation.mutateAsync({ projectId: project.id, amount });
+                            } catch (e: any) {
+                              setActionError(e?.message || 'Failed to confirm payment');
+                            }
+                          }}
+                        >
+                          Confirm payment
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>

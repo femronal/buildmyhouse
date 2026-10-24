@@ -14,6 +14,7 @@ export type FundingReceipt = {
   url: string;
   from: string;
   receivedAt: string;
+  confirmedAt?: string | null;
 };
 
 export type FundingInvoice = {
@@ -22,6 +23,7 @@ export type FundingInvoice = {
   sentAt: string | null;
   account: FundingAccount | null;
   receipt: FundingReceipt | null;
+  receipts?: FundingReceipt[];
 };
 
 export function paymentReference(projectId: string): string {
@@ -44,6 +46,21 @@ export function parseFundingAccount(value: unknown): FundingAccount | null {
   return { bankName, accountNumber, accountName };
 }
 
+function readReceipt(value: unknown): FundingReceipt | null {
+  if (!value || typeof value !== 'object') return null;
+  const receiptRow = value as Record<string, unknown>;
+  const url = String(receiptRow.url || '').trim();
+  const fileName = String(receiptRow.fileName || '').trim();
+  if (!url || !fileName) return null;
+  return {
+    fileName,
+    url,
+    from: String(receiptRow.from || '').trim(),
+    receivedAt: String(receiptRow.receivedAt || ''),
+    confirmedAt: receiptRow.confirmedAt ? String(receiptRow.confirmedAt) : null,
+  };
+}
+
 export function readFundingInvoice(analysis: unknown): FundingInvoice | null {
   if (!analysis || typeof analysis !== 'object') return null;
   const raw = (analysis as Record<string, unknown>).fundingInvoice;
@@ -53,33 +70,38 @@ export function readFundingInvoice(analysis: unknown): FundingInvoice | null {
   if (!reference) return null;
   const amount = Number(row.amount);
   const account = parseFundingAccount(row.account);
-  const receiptRaw = row.receipt;
-  let receipt: FundingReceipt | null = null;
-  if (receiptRaw && typeof receiptRaw === 'object') {
-    const receiptRow = receiptRaw as Record<string, unknown>;
-    const url = String(receiptRow.url || '').trim();
-    const fileName = String(receiptRow.fileName || '').trim();
-    if (url && fileName) {
-      receipt = {
-        fileName,
-        url,
-        from: String(receiptRow.from || '').trim(),
-        receivedAt: String(receiptRow.receivedAt || ''),
-      };
-    }
-  }
+  const receipt = readReceipt(row.receipt);
+  const receipts = Array.isArray(row.receipts)
+    ? row.receipts.map((item) => readReceipt(item)).filter((item): item is FundingReceipt => !!item)
+    : [];
   return {
     reference,
     amount: Number.isFinite(amount) ? amount : 0,
     sentAt: row.sentAt ? String(row.sentAt) : null,
     account,
     receipt,
+    receipts,
   };
 }
 
 export function withFundingInvoice(analysis: unknown, invoice: FundingInvoice): Record<string, unknown> {
   const base = analysis && typeof analysis === 'object' ? { ...(analysis as Record<string, unknown>) } : {};
   return { ...base, fundingInvoice: invoice };
+}
+
+export function confirmPendingReceipt(analysis: unknown, confirmedAt: string): Record<string, unknown> {
+  const invoice = readFundingInvoice(analysis);
+  const base = analysis && typeof analysis === 'object' ? { ...(analysis as Record<string, unknown>) } : {};
+  if (!invoice) return base;
+  const list = invoice.receipts?.length ? [...invoice.receipts] : invoice.receipt ? [{ ...invoice.receipt }] : [];
+  const index = list.findIndex((item) => !item.confirmedAt);
+  if (index >= 0) list[index] = { ...list[index], confirmedAt };
+  const pending = list.find((item) => !item.confirmedAt) || null;
+  return withFundingInvoice(base, {
+    ...invoice,
+    receipt: pending || list[list.length - 1] || null,
+    receipts: list,
+  });
 }
 
 export function payableFromRequest(request: {

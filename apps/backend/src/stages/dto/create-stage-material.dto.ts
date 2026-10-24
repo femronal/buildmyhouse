@@ -56,4 +56,8 @@ export class CreateStageMaterialDto {
   @IsOptional()
   @IsString()
   hoPaymentRef?: string | null;
+
+  @IsOptional()
+  @IsString()
+  payoutOverrideNote?: string;
 }

@@ -25,9 +25,13 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 
-function paidPayoutsFromStages(stages?: Array<{ materials?: Array<{ payeeKind?: string | null; status?: string | null; totalPrice?: number | null; quantity?: number | null; unitPrice?: number | null }> }> | null) {
+function paidPayoutsFromStages(stages?: Array<{
+  materials?: Array<{ payeeKind?: string | null; status?: string | null; totalPrice?: number | null; quantity?: number | null; unitPrice?: number | null }>;
+  teamMembers?: Array<{ payStatus?: string | null; paidBy?: string | null; paidAmount?: number | null; dailyRate?: number | null }>;
+}> | null) {
   let artisan = 0;
   let shop = 0;
+  let team = 0;
   for (const stage of stages || []) {
     for (const line of stage?.materials || []) {
       if (String(line?.status || '').trim().toLowerCase() !== 'paid') continue;
@@ -39,8 +43,14 @@ function paidPayoutsFromStages(stages?: Array<{ materials?: Array<{ payeeKind?: 
       if (kind === 'artisan') artisan += amount;
       else if (kind === 'shop') shop += amount;
     }
+    for (const member of stage?.teamMembers || []) {
+      if (String(member?.payStatus || '').trim().toLowerCase() !== 'paid') continue;
+      if (String(member?.paidBy || '').trim().toLowerCase() !== 'bmh') continue;
+      const paid = Number(member.paidAmount);
+      team += Number.isFinite(paid) && paid > 0 ? paid : Number(member.dailyRate) || 0;
+    }
   }
-  return { artisan, shop };
+  return { artisan, shop, team };
 }
 
 const formatDate = (dateString?: string) => {
@@ -298,6 +308,7 @@ export default function GCProjectDetailScreen() {
         leftOnThisJob?: number;
         fullJobPrice?: number;
         paidToShops?: number;
+        paidToTeamMembers?: number;
         earned?: number;
         pending?: number;
         budget?: number;
@@ -306,15 +317,16 @@ export default function GCProjectDetailScreen() {
   const linePayouts = paidPayoutsFromStages((project as any).stages);
   const paidToYou = Number(moneySummary?.paidToYou || 0) || linePayouts.artisan || (moneySummary ? 0 : Number(earningsRow?.paidToYou ?? earningsRow?.earned ?? 0));
   const paidToShops = Number(moneySummary?.paidToShops || 0) || linePayouts.shop || (moneySummary ? 0 : Number(earningsRow?.paidToShops || 0));
+  const paidToTeam = Number(moneySummary?.paidToTeamMembers || 0) || linePayouts.team || (moneySummary ? 0 : Number(earningsRow?.paidToTeamMembers || 0));
   const fullJobPrice = Number(
     moneySummary?.fullJobPrice ?? earningsRow?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
   );
-  const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0;
+  const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0 || Number(moneySummary?.paidToTeamMembers || 0) > 0;
   const leftOnThisJob = summaryHasPayouts
-    ? Number(moneySummary?.leftOnThisJob ?? Math.max(0, fullJobPrice - paidToYou - paidToShops))
-    : linePayouts.artisan || linePayouts.shop
-      ? Math.max(0, fullJobPrice - paidToYou - paidToShops)
-      : Number(moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops));
+    ? Number(moneySummary?.leftOnThisJob ?? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam))
+    : linePayouts.artisan || linePayouts.shop || linePayouts.team
+      ? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam)
+      : Number(moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam));
   const activeIndex = stages.findIndex(
     (stage: any) => stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval',
   );
@@ -616,6 +628,9 @@ export default function GCProjectDetailScreen() {
           </Text>
           <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
             Paid to shops {naira(paidToShops)}
+          </Text>
+          <Text className="mt-2" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16, color: '#CBD5E1' }}>
+            Paid to team members {naira(paidToTeam)}
           </Text>
           <Text className="mt-1" style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
             Shop pays are separate from paid to you.

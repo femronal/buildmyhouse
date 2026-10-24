@@ -4,6 +4,7 @@ describe('inspection quote scope', () => {
   it('turns a lump sum into stages that add up to the signed total', () => {
     const scope = buildInspectionScope({
       signedTotal: 100000,
+      paymentModel: 'pay_by_stage',
       quoteText: 'Washing machine repair\nTotal ₦100,000',
       cataloguePhases: [
         { name: 'Inspection', description: 'The fault is written down.', estimatedCost: 7000, estimatedDuration: '1 hour' },
@@ -27,6 +28,7 @@ describe('inspection quote scope', () => {
   it('keeps the checks the quote analysis attached to each stage', () => {
     const scope = buildInspectionScope({
       signedTotal: 100000,
+      paymentModel: 'pay_by_stage',
       quoteText: 'One price for the whole repair',
       suggestion: {
         lumpSum: true,
@@ -46,6 +48,7 @@ describe('inspection quote scope', () => {
     expect(lines).toHaveLength(2);
     const scope = buildInspectionScope({
       signedTotal: 100000,
+      paymentModel: 'pay_in_full',
       quoteText: 'Foundation ₦40,000\nBlockwork ₦60,000',
       fileReadable: true,
     });
@@ -56,7 +59,7 @@ describe('inspection quote scope', () => {
 
   it('does not treat the catalogue design as something to edit', () => {
     const catalogue = [{ name: 'Published plan', estimatedCost: 50000 }];
-    buildInspectionScope({ signedTotal: 80000, cataloguePhases: catalogue });
+    buildInspectionScope({ signedTotal: 80000, paymentModel: 'pay_by_stage', cataloguePhases: catalogue });
     expect(catalogue[0].estimatedCost).toBe(50000);
   });
 
@@ -67,6 +70,30 @@ describe('inspection quote scope', () => {
         { name: 'Finish', doneWhen: 'Work is photographed.', amount: 10000, duration: '1 day' },
       ]),
     ).toThrow(/75%/);
+  });
+
+  it('lets a full payment put most of the quote into the materials stage', () => {
+    const stages = normalizeSubmittedStages(100000, [
+      { name: 'Materials and mobilisation', doneWhen: 'Materials for the whole job are on site.', amount: 90000, duration: '1 day' },
+      { name: 'Finish', doneWhen: 'The homeowner has seen the finished work.', amount: 10000, duration: '1 day' },
+    ], 'pay_in_full');
+    expect(stages[0].amount).toBe(90000);
+  });
+
+  it('adds each stage deposit so the deposits match the invoice', () => {
+    const scope = buildInspectionScope({
+      signedTotal: 100000,
+      paymentModel: 'pay_by_stage',
+      quoteText: 'Foundation ₦40,000\nBlockwork ₦60,000',
+      fileReadable: true,
+    });
+    const deposits = scope.stages.reduce((sum, stage) => sum + Number(stage.deposit || 0), 0);
+    expect(Math.round(deposits * 100) / 100).toBe(scope.totalPayable);
+    expect(Number(scope.stages[0].deposit)).toBeGreaterThan(scope.stages[0].amount);
+  });
+
+  it('does not publish stages when the payment choice is missing', () => {
+    expect(() => buildInspectionScope({ signedTotal: 80000 })).toThrow(/pay in full or pay stage by stage/);
   });
 
   it('rejects stages that do not add up to the signed quote', () => {

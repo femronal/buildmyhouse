@@ -10,7 +10,7 @@ import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member
 import { UpdateStageTeamMemberDto } from '../stages/dto/update-stage-team-member.dto';
 import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto';
 import { UpdateStageMaterialDto } from '../stages/dto/update-stage-material.dto';
-import { materialPayWrite, summarizeJobMoney, teamPayWrite } from './job-money';
+import { materialPayWrite, materialLineAmount, summarizeJobMoney, teamLineAmount, teamPayWrite } from './job-money';
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
 import { ProjectAccessService } from '../project-access/project-access.service';
@@ -20,7 +20,9 @@ import { adminReferrerUpdate } from '../referrals/admin-referrer-update';
 import { getPlanRequestStep } from '../contractors/plan-request-step';
 import { applyDescribedEvidence, reviewForStage, storedEvidence } from '../contractors/stage-evidence';
 import { OpenAIService } from '../openai/openai.service';
-import { activationAmount } from '../funding/funding-invoice';
+import { confirmPendingReceipt, payableFromRequest, readFundingInvoice } from '../funding/funding-invoice';
+import { canOpenProject, canStartStage, isPaymentModel, netReceived, PaymentModel } from './payment-model';
+import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 
 @Injectable()
@@ -123,6 +125,7 @@ export class ProjectsService {
       const phaseName = phase.name || phase.phase_name || phase.phaseName || `Phase ${index + 1}`;
       const estimatedDuration = phase.estimatedDuration || phase.time_period || phase.timePeriod || '2 weeks';
       const estimatedCost = phase.estimatedCost || phase.estimated_cost || 0;
+      const depositDue = phase.depositDue ?? phase.deposit ?? null;
 
       return {
         projectId,
@@ -130,6 +133,7 @@ export class ProjectsService {
         status: 'not_started',
         order: index + 1,
         estimatedCost: typeof estimatedCost === 'number' ? estimatedCost : parseFloat(estimatedCost) || 0,
+        depositDue: depositDue == null || depositDue === '' ? null : Number(depositDue) || 0,
         estimatedDuration: typeof estimatedDuration === 'string' ? estimatedDuration : String(estimatedDuration),
       };
     });
@@ -152,6 +156,9 @@ export class ProjectsService {
     }
 
     const project: any = stage.project;
+    if (isPaymentModel(project?.paymentModel)) {
+      return;
+    }
     const projectType = project?.projectType as string | null;
     if (projectType !== 'renovation' && projectType !== 'interior_design') {
       return; // Only auto-charge for renovation/interior flows.
@@ -434,6 +441,27 @@ export class ProjectsService {
       // Idempotent: if already active, do nothing.
       if ((project as any).status === 'active') {
         return project;
+      }
+
+      const model = (project as any).paymentModel as PaymentModel | null;
+      if (isPaymentModel(model)) {
+        const payments = await tx.payment.findMany({
+          where: { projectId: params.projectId, status: { in: ['completed', 'refunded'] } },
+          select: { amount: true, status: true },
+        });
+        const open = canOpenProject({
+          paymentModel: model,
+          totalPayable: this.invoiceTotal(project),
+          stageDeposits: this.stageDepositsOf(project),
+          received: netReceived(payments),
+        });
+        if (!open) {
+          throw new BadRequestException(
+            model === 'pay_in_full'
+              ? 'This project is paid in full. Confirm the full invoice before it opens.'
+              : 'Confirm the first stage deposit before this project opens.',
+          );
+        }
       }
 
       // Unlock tracking by creating stages from aiAnalysis phases if needed.
@@ -755,55 +783,80 @@ export class ProjectsService {
     return updated;
   }
 
-  async confirmManualPayment(params: { projectId: string }) {
+  async confirmManualPayment(params: { projectId: string; amount: number }) {
+    const amount = Number(params.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Enter the amount on the receipt.');
+    }
+
     const updated = await this.prisma.$transaction(async (tx: any) => {
       const project = await tx.project.findUnique({
         where: { id: params.projectId },
-        include: { stages: true },
+        include: {
+          stages: { orderBy: { order: 'asc' } },
+          payments: { where: { status: { in: ['completed', 'refunded'] } } },
+          projectRequests: {
+            where: { stageId: null },
+            orderBy: { updatedAt: 'desc' },
+            take: 1,
+            select: { gcNotes: true, totalQuoteAmount: true },
+          },
+        },
       });
       if (!project) {
         throw new NotFoundException('Project not found');
       }
 
-      if ((project as any).paymentConfirmationStatus === 'confirmed') {
-        return project;
+      const model = project.paymentModel as PaymentModel | null;
+      if (!isPaymentModel(model)) {
+        throw new BadRequestException('Choose pay in full or pay stage by stage before confirming a payment.');
       }
-      if ((project as any).paymentConfirmationStatus !== 'declared') {
+      if (project.paymentConfirmationStatus !== 'declared') {
         throw new BadRequestException('Payment has not been declared by the homeowner yet');
       }
 
       const now = new Date();
-      const isActivating = (project as any).status !== 'active';
-
-      const next = await tx.project.update({
-        where: { id: params.projectId },
+      await tx.payment.create({
         data: {
-          paymentConfirmedAt: now,
-          paymentConfirmationStatus: 'confirmed',
-          status: 'active',
+          projectId: params.projectId,
+          stageId: null,
+          homeownerId: project.homeownerId,
+          amount,
+          status: 'completed',
+          method: 'manual',
+          snapshotProjectName: project.name,
         },
       });
 
-      // On first activation, create stages from phases if they don't exist (unlock tracking).
-      if (isActivating && (!project.stages || project.stages.length === 0)) {
-        const aiAnalysis = (project as any).aiAnalysis as any;
-        if (aiAnalysis && aiAnalysis.phases && Array.isArray(aiAnalysis.phases)) {
+      const received = netReceived([...(project.payments || []), { status: 'completed', amount }]);
+      const totalPayable = this.invoiceTotal(project);
+      const stageDeposits = this.stageDepositsOf(project);
+      const open = canOpenProject({ paymentModel: model, totalPayable, stageDeposits, received });
+      const alreadyActive = project.status === 'active';
+      const nextActive = alreadyActive || open;
+
+      if (nextActive && (!project.stages || project.stages.length === 0)) {
+        const aiAnalysis = project.aiAnalysis as any;
+        if (aiAnalysis && Array.isArray(aiAnalysis.phases)) {
           await this.createStagesFromPhasesWithClient(tx, params.projectId, aiAnalysis.phases);
         }
       }
 
-      return next;
-    });
+      const aiAnalysis = confirmPendingReceipt(project.aiAnalysis, now.toISOString());
+      const invoice = readFundingInvoice(aiAnalysis);
+      const stillPending = (invoice?.receipts || []).some((receipt) => !receipt.confirmedAt);
 
-    // Record one activation payment when admin confirms (idempotent)
-    const project = await this.prisma.project.findUnique({
-      where: { id: params.projectId },
-      select: { budget: true, aiAnalysis: true },
+      return tx.project.update({
+        where: { id: params.projectId },
+        data: {
+          paymentConfirmedAt: now,
+          paymentConfirmationStatus: stillPending ? 'declared' : nextActive ? 'confirmed' : 'not_declared',
+          status: nextActive ? 'active' : project.status === 'draft' ? 'pending_payment' : project.status,
+          startDate: nextActive ? project.startDate ?? now : project.startDate,
+          aiAnalysis,
+        },
+      });
     });
-    const amount = activationAmount(project);
-    if (amount > 0) {
-      await this.paymentsService.createManualActivationPayment(params.projectId, amount);
-    }
 
     this.wsService.emitProjectUpdate(params.projectId, {
       type: 'status_change',
@@ -826,18 +879,158 @@ export class ProjectsService {
     });
 
     if (projectWithUsers) {
+      const opened = (updated as any).status === 'active';
       await this.wsService.sendNotificationToUsers(
         [projectWithUsers.homeownerId, projectWithUsers.generalContractorId].filter(Boolean),
         {
           type: 'manual_payment_confirmed',
           title: 'Payment confirmed',
-          message: `Admin confirmed payment for project "${projectWithUsers.name}".`,
+          message: opened
+            ? `BuildMyHouse confirmed a payment for "${projectWithUsers.name}".`
+            : `BuildMyHouse confirmed part of the payment for "${projectWithUsers.name}". The rest still has to arrive before work opens.`,
           data: { projectId: projectWithUsers.id },
         },
       );
     }
 
     return updated;
+  }
+
+  async setPaymentModel(params: { projectId: string; actorUserId: string; actorRole: string; paymentModel: string }) {
+    if (!isPaymentModel(params.paymentModel)) {
+      throw new BadRequestException('Choose pay in full or pay stage by stage.');
+    }
+    const project = await this.prisma.project.findUnique({
+      where: { id: params.projectId },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } } },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    const isAdmin = params.actorRole === 'admin';
+    const isHomeowner = params.actorRole === 'homeowner' && project.homeownerId === params.actorUserId;
+    if (!isAdmin && !isHomeowner) {
+      throw new ForbiddenException('You cannot choose the payment model for this project.');
+    }
+
+    const received = netReceived(project.payments);
+    const analysis = project.aiAnalysis && typeof project.aiAnalysis === 'object' ? project.aiAnalysis as any : {};
+    const published = (project.stages || []).length > 0 || analysis.inspectedScope === true;
+    if (!isAdmin) {
+      if (received > 0) {
+        throw new BadRequestException('The payment choice is locked after the first confirmed receipt.');
+      }
+      if (published) {
+        throw new BadRequestException('Stages are already published. Ask BuildMyHouse to change the payment choice.');
+      }
+    } else if (received > 0 && project.status === 'active' && params.paymentModel === 'pay_in_full') {
+      const totalPayable = this.invoiceTotal({ ...project, projectRequests: [] });
+      if (received + 0.5 < totalPayable) {
+        throw new BadRequestException('This project is already open, and the confirmed receipts do not cover the full invoice.');
+      }
+    }
+
+    const stages = project.stages || [];
+    const phases = Array.isArray(analysis.phases) ? analysis.phases.map((phase: any) => ({ ...phase })) : [];
+    const stageAmounts = stages.map((stage: any) => Number(stage.estimatedCost) || 0);
+    const phaseAmounts = phases.map((phase: any) => Number(phase.estimatedCost) || 0);
+    const sourceAmounts = stageAmounts.length ? stageAmounts : phaseAmounts;
+    const contractorAmount = sourceAmounts.reduce((sum: number, value: number) => sum + value, 0) || Number(project.budget) || 0;
+    const fees = feesOnContractorAmount(contractorAmount);
+    const deposits = sourceAmounts.length
+      ? stageDepositAmounts(sourceAmounts, fees.contractorAmount, fees.totalPayable)
+      : [];
+    phases.forEach((phase: any, index: number) => {
+      if (deposits[index] != null) phase.depositDue = deposits[index];
+    });
+
+    await this.prisma.$transaction(async (tx: any) => {
+      await tx.project.update({
+        where: { id: project.id },
+        data: {
+          paymentModel: params.paymentModel,
+          ...(phases.length ? { aiAnalysis: { ...analysis, phases, paymentModel: params.paymentModel } } : { aiAnalysis: { ...analysis, paymentModel: params.paymentModel } }),
+        },
+      });
+      for (let index = 0; index < stages.length; index += 1) {
+        await tx.stage.update({
+          where: { id: stages[index].id },
+          data: { depositDue: deposits[index] },
+        });
+      }
+    });
+
+    return this.prisma.project.findUnique({ where: { id: project.id } });
+  }
+
+  private invoiceTotal(project: any): number {
+    const request = Array.isArray(project?.projectRequests) ? project.projectRequests[0] : null;
+    const fromQuote = payableFromRequest(request);
+    if (fromQuote > 0) return fromQuote;
+    const stageSum = (project?.stages || []).reduce((sum: number, stage: any) => sum + (Number(stage.depositDue) || 0), 0);
+    if (stageSum > 0) return Math.round(stageSum * 100) / 100;
+    const phases = project?.aiAnalysis?.phases;
+    if (Array.isArray(phases)) {
+      const phaseSum = phases.reduce((sum: number, phase: any) => sum + (Number(phase.depositDue) || 0), 0);
+      if (phaseSum > 0) return Math.round(phaseSum * 100) / 100;
+    }
+    const fromBudget = depositForIncrease(Number(project?.budget) || 0);
+    return fromBudget > 0 ? fromBudget : Number(project?.budget) || 0;
+  }
+
+  private stageDepositsOf(project: any): number[] {
+    const stages = [...(project?.stages || [])].sort((left: any, right: any) => Number(left.order || 0) - Number(right.order || 0));
+    if (stages.some((stage) => Number(stage.depositDue) > 0)) {
+      return stages.map((stage) => Number(stage.depositDue) || 0);
+    }
+    const phases = project?.aiAnalysis?.phases;
+    if (Array.isArray(phases) && phases.some((phase) => Number(phase?.depositDue) > 0)) {
+      return phases.map((phase) => Number(phase.depositDue) || 0);
+    }
+    return stages.map((stage) => Number(stage.estimatedCost) || 0);
+  }
+
+  private async assertStageCanStart(stage: any) {
+    const project = stage?.project;
+    const model = project?.paymentModel as PaymentModel | null;
+    if (!isPaymentModel(model)) return;
+    const stages = await this.prisma.stage.findMany({
+      where: { projectId: stage.projectId },
+      orderBy: { order: 'asc' },
+    });
+    const payments = await this.prisma.payment.findMany({
+      where: { projectId: stage.projectId, status: { in: ['completed', 'refunded'] } },
+      select: { amount: true, status: true },
+    });
+    const requests = await this.prisma.projectRequest.findMany({
+      where: { projectId: stage.projectId, stageId: null },
+      orderBy: { updatedAt: 'desc' },
+      take: 1,
+      select: { gcNotes: true, totalQuoteAmount: true },
+    });
+    const loaded = { ...project, stages, projectRequests: requests };
+    const allowed = canStartStage({
+      paymentModel: model,
+      stageIndex: Math.max(0, stages.findIndex((item: any) => item.id === stage.id)),
+      totalPayable: this.invoiceTotal(loaded),
+      stageDeposits: this.stageDepositsOf(loaded),
+      received: netReceived(payments),
+    });
+    if (allowed) return;
+    throw new BadRequestException(
+      model === 'pay_in_full'
+        ? 'This project is paid in full. The full invoice has to be confirmed before a stage can start.'
+        : 'This stage cannot start until the homeowner has deposited the money for it.',
+    );
+  }
+
+  private async assertAddedPayout(projectId: string, added: number, note?: string) {
+    if (!(added > 0.009)) return;
+    const summary = await this.getProjectMoneySummary(projectId);
+    if (summary.stillWithBuildMyHouse + 0.5 >= added) return;
+    if (String(note || '').trim().length >= 3) return;
+    throw new BadRequestException('This payout is more than the money still with BuildMyHouse. Confirm the homeowner receipt first, or add an override note.');
   }
 
   async createStageDispute(params: {
@@ -1180,10 +1373,10 @@ export class ProjectsService {
       where: { id: params.requestId },
       include: {
         project: {
-          select: { id: true, name: true, budget: true, dueDate: true, homeownerId: true, generalContractorId: true },
+          select: { id: true, name: true, budget: true, dueDate: true, homeownerId: true, generalContractorId: true, paymentModel: true, aiAnalysis: true },
         },
         stage: {
-          select: { id: true, name: true, estimatedCost: true, estimatedDuration: true },
+          select: { id: true, name: true, estimatedCost: true, estimatedDuration: true, depositDue: true, order: true },
         },
       },
     });
@@ -1203,8 +1396,26 @@ export class ProjectsService {
         const nextProjectData: any = {};
 
         if (existing.requestTypes.includes('additional_funding') && Number(existing.additionalAmount || 0) > 0) {
-          nextStageData.estimatedCost = Number(existing.stage.estimatedCost || 0) + Number(existing.additionalAmount || 0);
-          nextProjectData.budget = Number(existing.project.budget || 0) + Number(existing.additionalAmount || 0);
+          const increase = Number(existing.additionalAmount || 0);
+          nextStageData.estimatedCost = Number(existing.stage.estimatedCost || 0) + increase;
+          nextProjectData.budget = Number(existing.project.budget || 0) + increase;
+          if (isPaymentModel(existing.project.paymentModel)) {
+            const extraDeposit = depositForIncrease(increase);
+            nextStageData.depositDue = Number(existing.stage.depositDue ?? existing.stage.estimatedCost ?? 0) + extraDeposit;
+            const analysis = existing.project.aiAnalysis && typeof existing.project.aiAnalysis === 'object'
+              ? { ...(existing.project.aiAnalysis as any) }
+              : null;
+            if (analysis && Array.isArray(analysis.phases)) {
+              const phases = analysis.phases.map((phase: any) => ({ ...phase }));
+              const index = phases.findIndex((phase: any) => String(phase?.name || '').trim().toLowerCase() === String(existing.stage.name || '').trim().toLowerCase());
+              const phaseIndex = index >= 0 ? index : Math.max(0, Number(existing.stage.order || 1) - 1);
+              if (phases[phaseIndex]) {
+                phases[phaseIndex].estimatedCost = nextStageData.estimatedCost;
+                phases[phaseIndex].depositDue = nextStageData.depositDue;
+                nextProjectData.aiAnalysis = { ...analysis, phases };
+              }
+            }
+          }
         }
 
         if (existing.requestTypes.includes('additional_timing') && Number(existing.additionalDurationDays || 0) > 0) {
@@ -1389,6 +1600,7 @@ export class ProjectsService {
     // Automatic stage funding (renovation/interior) on stage commencement.
     // Run before updating the stage so a failed charge doesn't start the stage.
     if (status === 'in_progress' && stage.status !== 'in_progress') {
+      await this.assertStageCanStart(stage);
       await this.handleAutomaticStageChargeAndPayout({ stageId, projectId });
     }
 
@@ -2073,7 +2285,7 @@ export class ProjectsService {
       throw new NotFoundException('Project not found');
     }
     const payments = await this.prisma.payment.findMany({
-      where: { projectId, status: 'completed' },
+      where: { projectId, status: { in: ['completed', 'refunded'] } },
       select: { id: true, amount: true, status: true, method: true, createdAt: true },
     });
     return summarizeJobMoney({
@@ -2295,7 +2507,7 @@ export class ProjectsService {
       },
     });
     const payments = await this.prisma.payment.findMany({
-      where: { projectId: { in: ids }, status: 'completed' },
+      where: { projectId: { in: ids }, status: { in: ['completed', 'refunded'] } },
       select: { id: true, projectId: true, amount: true, status: true, method: true, createdAt: true },
     });
     const stagesByProject = new Map<string, any[]>();
@@ -2920,7 +3132,7 @@ export class ProjectsService {
   /**
    * Add team member to a stage
    */
-  async addStageTeamMember(stageId: string, dto: CreateStageTeamMemberDto) {
+  async addStageTeamMember(stageId: string, dto: CreateStageTeamMemberDto, actorRole?: string) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
       include: { project: { select: { id: true, name: true, homeownerId: true } } },
@@ -2930,11 +3142,19 @@ export class ProjectsService {
       throw new NotFoundException('Stage not found');
     }
 
+    const { payoutOverrideNote, ...fields } = dto;
     const pay = teamPayWrite(dto, undefined, 'create');
+    if (pay.payStatus === 'paid' && pay.paidBy === 'bmh') {
+      await this.assertAddedPayout(
+        stage.projectId,
+        teamLineAmount({ ...fields, ...pay }),
+        actorRole === 'admin' ? payoutOverrideNote : undefined,
+      );
+    }
     const created = await this.prisma.stageTeamMember.create({
       data: {
         stageId,
-        ...dto,
+        ...fields,
         ...pay,
       },
     });
@@ -2968,16 +3188,24 @@ export class ProjectsService {
   /**
    * Update team member
    */
-  async updateStageTeamMember(teamMemberId: string, dto: UpdateStageTeamMemberDto) {
-    const existing = await this.prisma.stageTeamMember.findUnique({ where: { id: teamMemberId } });
+  async updateStageTeamMember(teamMemberId: string, dto: UpdateStageTeamMemberDto, actorRole?: string) {
+    const existing = await this.prisma.stageTeamMember.findUnique({
+      where: { id: teamMemberId },
+      include: { stage: { select: { projectId: true } } },
+    });
     if (!existing) {
       throw new NotFoundException('Team member not found');
     }
+    const { payoutOverrideNote, ...fields } = dto;
     const pay = teamPayWrite(dto, existing, 'update');
+    const next = { ...existing, ...fields, ...pay };
+    const previous = String(existing.payStatus) === 'paid' && String(existing.paidBy) === 'bmh' ? teamLineAmount(existing) : 0;
+    const upcoming = String(next.payStatus) === 'paid' && String(next.paidBy) === 'bmh' ? teamLineAmount(next) : 0;
+    await this.assertAddedPayout(existing.stage.projectId, upcoming - previous, actorRole === 'admin' ? payoutOverrideNote : undefined);
     return this.prisma.stageTeamMember.update({
       where: { id: teamMemberId },
       data: {
-        ...dto,
+        ...fields,
         ...pay,
       },
     });
@@ -2995,7 +3223,7 @@ export class ProjectsService {
   /**
    * Add material to a stage
    */
-  async addStageMaterial(stageId: string, dto: CreateStageMaterialDto) {
+  async addStageMaterial(stageId: string, dto: CreateStageMaterialDto, actorRole?: string) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
       include: { project: { select: { id: true, name: true, homeownerId: true } } },
@@ -3005,14 +3233,21 @@ export class ProjectsService {
       throw new NotFoundException('Stage not found');
     }
 
+    const { payoutOverrideNote, ...fields } = dto;
     const totalPrice = dto.quantity * dto.unitPrice;
     const pay = materialPayWrite(dto, undefined, 'create');
+    if (pay.status === 'paid') {
+      await this.assertAddedPayout(
+        stage.projectId,
+        materialLineAmount({ ...fields, totalPrice, ...pay }),
+        actorRole === 'admin' ? payoutOverrideNote : undefined,
+      );
+    }
 
-    // A new material line does not change stage.estimatedCost. Only payout sums change.
     const created = await this.prisma.stageMaterial.create({
       data: {
         stageId,
-        ...dto,
+        ...fields,
         totalPrice,
         ...pay,
       },
@@ -3047,21 +3282,28 @@ export class ProjectsService {
   /**
    * Update material
    */
-  async updateStageMaterial(materialId: string, dto: UpdateStageMaterialDto) {
+  async updateStageMaterial(materialId: string, dto: UpdateStageMaterialDto, actorRole?: string) {
     const existing = await this.prisma.stageMaterial.findUnique({
       where: { id: materialId },
+      include: { stage: { select: { projectId: true } } },
     });
     if (!existing) {
       throw new NotFoundException('Material not found');
     }
 
-    const updateData: any = { ...dto };
+    const { payoutOverrideNote, ...fields } = dto;
+    const updateData: any = { ...fields };
     if (dto.quantity !== undefined || dto.unitPrice !== undefined) {
       const quantity = dto.quantity ?? existing.quantity;
       const unitPrice = dto.unitPrice ?? existing.unitPrice;
       updateData.totalPrice = quantity * unitPrice;
     }
     Object.assign(updateData, materialPayWrite(dto, existing, 'update'));
+    const previous = String(existing.status) === 'paid' ? materialLineAmount(existing) : 0;
+    const upcoming = String(updateData.status ?? existing.status) === 'paid'
+      ? materialLineAmount({ ...existing, ...updateData })
+      : 0;
+    await this.assertAddedPayout(existing.stage.projectId, upcoming - previous, actorRole === 'admin' ? payoutOverrideNote : undefined);
 
     return this.prisma.stageMaterial.update({
       where: { id: materialId },

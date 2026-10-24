@@ -271,11 +271,13 @@ export default function FinanceScreen() {
                 const linePayouts = paidPayoutsFromStages(p.stages);
                 const sentToContractor = Number(summary?.sentToContractor || 0) || linePayouts.artisan;
                 const paidToShopsForMaterials = Number(summary?.paidToShopsForMaterials || 0) || linePayouts.shop;
+                const paidToTeamMembers = Number(summary?.paidToTeamMembers || 0) || linePayouts.team;
                 const rows = [
                   ['You sent in', summary?.hasHomeownerReceipts ? `₦${Number(summary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
                   ['Still with BuildMyHouse', summary?.hasHomeownerReceipts ? `₦${Number(summary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
                   ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
                   ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
+                  ['Paid to team members', `₦${paidToTeamMembers.toLocaleString()}`],
                 ];
                 return (
                   <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">

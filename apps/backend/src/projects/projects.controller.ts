@@ -18,6 +18,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { UpdateProjectReviewDto } from './dto/update-project-review.dto';
 import { SetExternalPaymentLinkDto } from './dto/set-external-payment-link.dto';
 import { ConfirmManualPaymentDto } from './dto/confirm-manual-payment.dto';
+import { SetPaymentModelDto } from './dto/set-payment-model.dto';
 import { SetProjectRiskLevelDto } from './dto/set-project-risk-level.dto';
 import { CreateStageDisputeDto } from './dto/create-stage-dispute.dto';
 import { UpdateDisputeStatusDto } from './dto/update-dispute-status.dto';
@@ -245,7 +246,7 @@ export class ProjectsController {
     if (project.generalContractorId !== userId && req.user.role !== 'admin') {
       throw new ForbiddenException('You do not have permission to add team members');
     }
-    return this.projectsService.addStageTeamMember(stageId, body);
+    return this.projectsService.addStageTeamMember(stageId, body, req.user.role);
   }
 
   @Get(':projectId/stages/:stageId/team-members')
@@ -257,8 +258,8 @@ export class ProjectsController {
   @Patch('stages/team-members/:teamMemberId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async updateTeamMember(@Param('teamMemberId') teamMemberId: string, @Body() body: UpdateStageTeamMemberDto) {
-    return this.projectsService.updateStageTeamMember(teamMemberId, body);
+  async updateTeamMember(@Param('teamMemberId') teamMemberId: string, @Request() req: any, @Body() body: UpdateStageTeamMemberDto) {
+    return this.projectsService.updateStageTeamMember(teamMemberId, body, req.user.role);
   }
 
   @Delete('stages/team-members/:teamMemberId')
@@ -283,7 +284,7 @@ export class ProjectsController {
     if (project.generalContractorId !== userId && req.user.role !== 'admin') {
       throw new ForbiddenException('You do not have permission to add materials');
     }
-    return this.projectsService.addStageMaterial(stageId, body);
+    return this.projectsService.addStageMaterial(stageId, body, req.user.role);
   }
 
   @Get(':projectId/stages/:stageId/materials')
@@ -295,8 +296,8 @@ export class ProjectsController {
   @Patch('stages/materials/:materialId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async updateMaterial(@Param('materialId') materialId: string, @Body() body: UpdateStageMaterialDto) {
-    return this.projectsService.updateStageMaterial(materialId, body);
+  async updateMaterial(@Param('materialId') materialId: string, @Request() req: any, @Body() body: UpdateStageMaterialDto) {
+    return this.projectsService.updateStageMaterial(materialId, body, req.user.role);
   }
 
   @Delete('stages/materials/:materialId')
@@ -597,9 +598,25 @@ export class ProjectsController {
   @Roles('admin')
   confirmManualPayment(
     @Param('id') id: string,
-    @Body() _dto: ConfirmManualPaymentDto,
+    @Body() dto: ConfirmManualPaymentDto,
   ) {
-    return this.projectsService.confirmManualPayment({ projectId: id });
+    return this.projectsService.confirmManualPayment({ projectId: id, amount: dto.amount });
+  }
+
+  @Patch(':id/payment-model')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('homeowner', 'admin')
+  setPaymentModel(
+    @Param('id') id: string,
+    @Request() req: any,
+    @Body() dto: SetPaymentModelDto,
+  ) {
+    return this.projectsService.setPaymentModel({
+      projectId: id,
+      actorUserId: req.user.sub,
+      actorRole: req.user.role,
+      paymentModel: dto.paymentModel,
+    });
   }
 
   @Patch(':id/scope')

@@ -31,7 +31,7 @@ import {
   ContractorMatcherService,
 } from './contractor-matcher.service';
 import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
-import { buildInspectionScope, normalizeSubmittedStages, QuoteStageDraft } from './quote-scope';
+import { buildInspectionScope, homeownerScopeNotice, normalizeSubmittedStages, QuoteStageDraft, stageDepositAmounts } from './quote-scope';
 import { applyDescribedEvidence } from './stage-evidence';
 import { notifyPlanRequestLate } from './plan-request-notify';
 import { summarizeJobMoney, teamDayCount } from '../projects/job-money';
@@ -1312,6 +1312,7 @@ export class ContractorsService {
       if (!isGc || current.step !== 4 || current.actor !== 'gc') {
         throw new BadRequestException('You cannot prepare a quote at this step');
       }
+      this.requirePaymentModel(request.project);
       const draft = await this.draftInspectionScope(request, body);
       await this.prisma.projectRequest.update({
         where: { id: requestId },
@@ -1325,6 +1326,7 @@ export class ContractorsService {
         throw new BadRequestException('You cannot upload a quote at this step');
       }
       const signedTotal = Number(body.quoteTotal);
+      const paymentModel = this.requirePaymentModel(request.project);
       let stages: QuoteStageDraft[];
       try {
         let incoming = Array.isArray(body.stages) ? body.stages : [];
@@ -1339,7 +1341,7 @@ export class ContractorsService {
         } catch {
           incoming = Array.isArray(body.stages) ? body.stages : [];
         }
-        stages = normalizeSubmittedStages(signedTotal, incoming);
+        stages = normalizeSubmittedStages(signedTotal, incoming, paymentModel);
       } catch (error) {
         throw new BadRequestException(error instanceof Error ? error.message : 'Check the stages and try again');
       }
@@ -1354,12 +1356,19 @@ export class ContractorsService {
       }
       const quoteFileUrl = String(body.quoteFileUrl || '').trim();
       const breakdown = this.calculateBmhQuoteBreakdown(signedTotal);
+      const deposits = stageDepositAmounts(
+        stages.map((stage) => stage.amount),
+        breakdown.baseBudgetAmount,
+        breakdown.totalQuoteAmount,
+      );
+      stages = stages.map((stage, index) => ({ ...stage, deposit: deposits[index] }));
       const scope = {
         kind: 'plan_quote',
         signedTotal,
         lumpSum: body.lumpSum !== false,
         fileReadable: body.fileReadable !== false,
-        notice: "Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection.",
+        paymentModel,
+        notice: homeownerScopeNotice(paymentModel),
         quoteFileUrl,
         stages,
         contractorAmount: breakdown.baseBudgetAmount,
@@ -1396,6 +1405,7 @@ export class ContractorsService {
             ...existingAnalysis,
             estimatedBudget: signedTotal,
             inspectedScope: true,
+            paymentModel,
             quoteFileUrl: quoteFileUrl || null,
             phases: stages.map((stage) => ({
               name: stage.name,
@@ -1403,6 +1413,7 @@ export class ContractorsService {
               doneWhen: stage.doneWhen,
               estimatedDuration: stage.duration,
               estimatedCost: stage.amount,
+              depositDue: stage.deposit,
               evidenceToReview: stage.evidence || [],
             })),
           },
@@ -1545,6 +1556,7 @@ export class ContractorsService {
       if (!isGc || current.step !== 6 || current.actor !== 'gc') {
         throw new BadRequestException('You cannot accept this job yet');
       }
+      this.requirePaymentModel(request.project);
       if (request.bmhCheckResult !== 'fair') {
         throw new BadRequestException('BuildMyHouse has not marked this quote fair');
       }
@@ -1588,6 +1600,13 @@ export class ContractorsService {
     return this.prisma.projectRequest.findUnique({ where: { id: requestId } });
   }
 
+  private requirePaymentModel(project: { paymentModel?: string | null }) {
+    if (project?.paymentModel !== 'pay_in_full' && project?.paymentModel !== 'pay_by_stage') {
+      throw new BadRequestException('The homeowner has not chosen pay in full or pay stage by stage.');
+    }
+    return project.paymentModel;
+  }
+
   private cataloguePhases(project: any) {
     const analysis = project?.aiAnalysis;
     const phases = analysis && typeof analysis === 'object' ? analysis.phases : null;
@@ -1619,12 +1638,14 @@ export class ContractorsService {
     if (!quoteFileUrl) throw new BadRequestException('Upload the quote the homeowner signed.');
     const quoteText = await this.readQuoteText(quoteFileUrl);
     const phases = this.cataloguePhases(request.project);
+    const paymentModel = this.requirePaymentModel(request.project);
     let suggestion = null;
     if (quoteText) {
       suggestion = await this.openAIService.suggestInspectionStages({
         quoteText,
         signedTotal,
         phaseNames: phases.map((phase: any) => String(phase?.name || '')).filter(Boolean),
+        paymentModel,
       });
     }
     let scope = buildInspectionScope({
@@ -1633,6 +1654,7 @@ export class ContractorsService {
       cataloguePhases: phases,
       suggestion,
       fileReadable: quoteText.length > 0,
+      paymentModel,
     });
     if (quoteText && scope.stages.some((stage) => (stage.evidence || []).length < 2)) {
       const described = await this.openAIService.describeStageEvidence({
@@ -3376,7 +3398,7 @@ export class ContractorsService {
           },
         },
         payments: {
-          where: { status: 'completed' },
+          where: { status: { in: ['completed', 'refunded'] } },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -3421,6 +3443,7 @@ export class ContractorsService {
         leftOnThisJob: money.leftOnThisJob,
         fullJobPrice: money.fullJobPrice,
         paidToShops: money.paidToShops,
+        paidToTeamMembers: money.paidToTeamMembers,
         progress: p.progress || 0,
         currentStage: p.currentStage,
         dueDate: p.dueDate,

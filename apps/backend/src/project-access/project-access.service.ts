@@ -17,6 +17,7 @@ import {
   DEFAULT_PROJECT_TEMPLATES,
 } from './project-access.constants';
 import { CreateManagedProjectDto, ManagedProjectPhaseDto } from './dto/project-access.dto';
+import { feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 
 type ScopeStage = {
   name: string;
@@ -392,6 +393,9 @@ export class ProjectAccessService implements OnModuleInit {
   }
 
   async createManagedProject(dto: CreateManagedProjectDto) {
+    if (dto.paymentModel !== 'pay_in_full' && dto.paymentModel !== 'pay_by_stage') {
+      throw new BadRequestException('Choose pay in full or pay stage by stage before the stages are published.');
+    }
     const { projectType, phases } = await this.resolveProjectScope(dto);
     if (!phases.length) {
       throw new BadRequestException('Project scope must include at least one construction phase.');
@@ -433,9 +437,21 @@ export class ProjectAccessService implements OnModuleInit {
         ? dto.budget
         : phases.reduce((sum, phase) => sum + Number(phase.estimatedCost || 0), 0);
 
+    const contractorAmount = phases.reduce((sum, phase) => sum + Number(phase.estimatedCost || 0), 0) || budgetTotal;
+    const fees = feesOnContractorAmount(contractorAmount);
+    const deposits = stageDepositAmounts(
+      phases.map((phase) => Number(phase.estimatedCost || 0)),
+      fees.contractorAmount,
+      fees.totalPayable,
+    );
+    const pricedPhases = phases.map((phase, index) => ({
+      ...phase,
+      depositDue: deposits[index],
+    }));
+
     const aiAnalysis = this.buildManagedProjectAnalysis(
       { ...dto, budget: budgetTotal },
-      phases,
+      pricedPhases,
     );
 
     const project = await this.prisma.project.create({
@@ -450,23 +466,25 @@ export class ProjectAccessService implements OnModuleInit {
         homeownerId: homeowner.id,
         generalContractorId: gcUserId,
         projectType,
-        status: 'active',
+        paymentModel: dto.paymentModel,
+        status: 'pending_payment',
         managedByAdmin: true,
-        aiAnalysis,
+        aiAnalysis: { ...aiAnalysis, paymentModel: dto.paymentModel },
         aiProcessedAt: new Date(),
-        startDate: dto.startDate ? new Date(dto.startDate) : new Date(),
-        currentStage: phases[0]?.name || null,
+        startDate: null,
+        currentStage: null,
         ...(dto.referrerId
           ? { referrerId: dto.referrerId, referralSource: 'admin', referredAt: new Date() }
           : {}),
         stages: {
-          create: phases.map((phase, index) => ({
+          create: pricedPhases.map((phase, index) => ({
             name: phase.name,
             order: index + 1,
             estimatedCost: Number(phase.estimatedCost || 0),
+            depositDue: Number(phase.depositDue || 0),
             estimatedDuration: phase.estimatedDuration || '1 week',
-            status: index === 0 ? 'in_progress' : 'not_started',
-            startDate: index === 0 ? new Date() : null,
+            status: 'not_started',
+            startDate: null,
           })),
         },
       },

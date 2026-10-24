@@ -66,6 +66,59 @@ function TagListEditor({
   );
 }
 
+function PaymentModelPanel({
+  projectId,
+  paymentModel,
+  onDone,
+}: {
+  projectId: string;
+  paymentModel?: string | null;
+  onDone: () => void;
+}) {
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const save = useMutation({
+    mutationFn: (model: 'pay_in_full' | 'pay_by_stage') =>
+      api.patch(`/projects/${projectId}/payment-model`, { paymentModel: model }),
+    onSuccess: () => {
+      setError('');
+      setMessage('Payment choice saved.');
+      onDone();
+    },
+    onError: (e: Error) => {
+      setMessage('');
+      setError(e.message || 'Could not save the payment choice.');
+    },
+  });
+  const choices = [
+    ['pay_in_full', 'Pay in full'],
+    ['pay_by_stage', 'Pay stage by stage'],
+  ] as const;
+  return (
+    <div className="border rounded-xl p-4 space-y-3">
+      <div className="font-medium">Payment choice</div>
+      <p className="text-sm text-gray-600">
+        Pay in full expects the whole invoice before the project opens. Pay stage by stage expects each stage deposit before that stage starts. The choice locks after the first confirmed receipt.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {choices.map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            disabled={save.isPending}
+            onClick={() => save.mutate(value)}
+            className={`px-3 py-2 text-sm rounded-lg border ${paymentModel === value ? 'bg-gray-900 text-white border-gray-900' : 'bg-white'}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
+    </div>
+  );
+}
+
 function FundingInvoicePanel({
   projectId,
   analysis,
@@ -367,6 +420,11 @@ export default function AdminProjectDetailPage() {
           />
         </div>
       ) : null}
+      <PaymentModelPanel
+        projectId={projectId}
+        paymentModel={(project as { paymentModel?: string | null }).paymentModel}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
+      />
       <div className="flex items-start gap-4">
         <Link href="/projects" className="mt-1 p-2 border rounded-lg hover:bg-gray-50" aria-label="Back">
           <ArrowLeft className="w-4 h-4" />

@@ -605,6 +605,18 @@ export default function HomeScreen() {
                               >
                                 {`₦${(Number(project.moneySummary?.sentToContractor || 0) || paidPayoutsFromStages(project.stages).artisan).toLocaleString()}`}
                               </Text>
+                              <Text
+                                className="text-white/50 mt-2 mb-1"
+                                style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}
+                              >
+                                Paid to team members
+                              </Text>
+                              <Text
+                                className="text-white"
+                                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
+                              >
+                                {`₦${(Number(project.moneySummary?.paidToTeamMembers || 0) || paidPayoutsFromStages(project.stages).team).toLocaleString()}`}
+                              </Text>
                             </View>
                           </View>
                         </>

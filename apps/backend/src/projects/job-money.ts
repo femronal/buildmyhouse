@@ -49,6 +49,7 @@ export type JobMoneySummary = {
   youSentIn: number;
   sentToContractor: number;
   paidToShopsForMaterials: number;
+  paidToTeamMembers: number;
   stillWithBuildMyHouse: number;
   hasHomeownerReceipts: boolean;
   receipts: Array<{ id: string; amount: number; method: string | null; createdAt: Date | string | null }>;
@@ -110,6 +111,7 @@ export function summarizeJobMoney(input: {
   let artisanPaid = 0;
   let shopPaid = 0;
   let otherPaid = 0;
+  let teamPaid = 0;
 
   for (const stage of input.stages || []) {
     for (const line of stage.materials || []) {
@@ -122,14 +124,19 @@ export function summarizeJobMoney(input: {
     }
     for (const line of stage.teamMembers || []) {
       if (cleanToken(line.payStatus) !== 'paid' || cleanToken(line.paidBy) !== 'bmh') continue;
-      artisanPaid += teamLineAmount(line);
+      teamPaid += teamLineAmount(line);
     }
   }
 
   const fullJobPrice = Number(input.budget) || 0;
-  const moneyMoved = artisanPaid + shopPaid + otherPaid;
-  const completed = (input.payments || []).filter((payment) => payment.status === 'completed');
-  const youSentIn = completed.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
+  const moneyMoved = artisanPaid + shopPaid + otherPaid + teamPaid;
+  const completed = (input.payments || []).filter((payment) => cleanToken(payment.status) === 'completed');
+  const refunded = (input.payments || []).filter((payment) => cleanToken(payment.status) === 'refunded');
+  const youSentIn = Math.max(
+    0,
+    completed.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0)
+      - refunded.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0),
+  );
 
   return {
     fullJobPrice,
@@ -141,8 +148,9 @@ export function summarizeJobMoney(input: {
     youSentIn,
     sentToContractor: artisanPaid,
     paidToShopsForMaterials: shopPaid,
-    stillWithBuildMyHouse: Math.max(0, youSentIn - artisanPaid - shopPaid - otherPaid),
-    hasHomeownerReceipts: completed.length > 0,
+    paidToTeamMembers: teamPaid,
+    stillWithBuildMyHouse: Math.max(0, youSentIn - artisanPaid - shopPaid - teamPaid - otherPaid),
+    hasHomeownerReceipts: completed.length > 0 || refunded.length > 0,
     receipts: completed.map((payment) => ({
       id: String(payment.id || ''),
       amount: Number(payment.amount) || 0,

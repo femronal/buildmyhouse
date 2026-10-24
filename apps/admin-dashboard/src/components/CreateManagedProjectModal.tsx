@@ -41,6 +41,7 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
   const [contacts, setContacts] = useState(emptyContacts);
   const [error, setError] = useState('');
   const [referrerId, setReferrerId] = useState('');
+  const [paymentModel, setPaymentModel] = useState<'pay_in_full' | 'pay_by_stage' | ''>('');
   const referrers = useReferralList({});
   const [createdLinks, setCreatedLinks] = useState<CreateManagedProjectResponse['links'] | null>(null);
 
@@ -50,12 +51,20 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
     setContacts(emptyContacts);
     setError('');
     setReferrerId('');
+    setPaymentModel('');
     setCreatedLinks(null);
   }, [open]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const payload = { ...buildManagedProjectPayload(scope, contacts), referrerId: referrerId || undefined };
+      if (!paymentModel) {
+        throw new Error('Choose pay in full or pay stage by stage.');
+      }
+      const payload = {
+        ...buildManagedProjectPayload(scope, contacts),
+        referrerId: referrerId || undefined,
+        paymentModel,
+      };
       return api.post<CreateManagedProjectResponse>(
         '/project-access/admin/managed-projects',
         payload,
@@ -151,6 +160,18 @@ export function CreateManagedProjectModal({ open, onClose, onCreated }: Props) {
           ) : (
             <>
               <ManagedProjectScopeFields scope={scope} onChange={setScope} />
+              <label className="block text-sm">
+                <span className="font-medium text-gray-700">Payment choice</span>
+                <select
+                  className="mt-1 w-full border rounded-lg px-3 py-2"
+                  value={paymentModel}
+                  onChange={(event) => setPaymentModel(event.target.value as 'pay_in_full' | 'pay_by_stage' | '')}
+                >
+                  <option value="">Choose how the homeowner pays</option>
+                  <option value="pay_in_full">Pay in full before the project opens</option>
+                  <option value="pay_by_stage">Pay each stage before that stage starts</option>
+                </select>
+              </label>
 
               <div className="border-t pt-5 space-y-4">
                 <h4 className="text-sm font-semibold text-gray-900">Homeowner contact</h4>

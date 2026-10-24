@@ -79,6 +79,17 @@ export default function RequestStatusScreen() {
     }
   };
 
+  const chooseModel = async (paymentModel: 'pay_in_full' | 'pay_by_stage') => {
+    if (!projectId || project?.paymentModel === paymentModel) return;
+    setBusy(true);
+    try {
+      await api.patch(`/projects/${projectId}/payment-model`, { paymentModel });
+      await queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'plan-request'] });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (!projectId || projectQuery.isLoading) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
@@ -184,6 +195,41 @@ export default function RequestStatusScreen() {
           </Pressable>
         </View>
       ) : null}
+      {!declined && !quote ? (
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14 }}>
+          <Text style={{ fontFamily: 'Poppins_600SemiBold', marginBottom: 8 }}>How will you pay for this project?</Text>
+          <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 12, lineHeight: 22 }}>
+            Choose this before the quote is turned into stages. Pay in full sends the whole invoice before work starts, so materials for later stages can be bought once that payment is confirmed. Pay stage by stage sends each stage before that stage starts.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {([
+              ['pay_in_full', 'Pay in full'],
+              ['pay_by_stage', 'Pay stage by stage'],
+            ] as const).map(([value, label]) => {
+              const selected = project?.paymentModel === value;
+              return (
+                <Pressable
+                  key={value}
+                  disabled={busy}
+                  onPress={() => chooseModel(value)}
+                  style={{
+                    backgroundColor: selected ? '#111' : '#fff',
+                    borderWidth: 1,
+                    borderColor: '#111',
+                    borderRadius: 999,
+                    paddingHorizontal: 14,
+                    paddingVertical: 10,
+                    marginRight: 8,
+                    marginBottom: 8,
+                  }}
+                >
+                  <Text style={{ color: selected ? '#fff' : '#111', fontFamily: 'Poppins_600SemiBold' }}>{label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
       {quote && step?.step === 4 ? (
         <View style={{ marginTop: 12, borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16, padding: 14 }}>
           {Array.isArray(quote.stages) ? (
@@ -191,10 +237,20 @@ export default function RequestStatusScreen() {
               <Text style={{ fontFamily: 'Poppins_600SemiBold', marginBottom: 8 }}>
                 Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection.
               </Text>
+              <Text style={{ fontFamily: 'Poppins_400Regular', marginBottom: 8 }}>
+                {project?.paymentModel === 'pay_in_full'
+                  ? 'You pay the full invoice before work starts.'
+                  : 'You pay each stage before that stage starts.'}
+              </Text>
               {quote.stages.map((stage: any) => (
                 <View key={`${stage.name}-${stage.amount}`} style={{ marginBottom: 10 }}>
                   <Text style={{ fontFamily: 'Poppins_600SemiBold' }}>{stage.name}</Text>
                   <Text style={{ fontFamily: 'Poppins_400Regular' }}>₦{Number(stage.amount || 0).toLocaleString('en-NG')}</Text>
+                  {stage.deposit ? (
+                    <Text style={{ fontFamily: 'Poppins_400Regular', color: '#374151' }}>
+                      Deposit before this stage ₦{Number(stage.deposit || 0).toLocaleString('en-NG')}
+                    </Text>
+                  ) : null}
                   {stage.doneWhen ? <Text style={{ fontFamily: 'Poppins_400Regular', color: '#374151' }}>Done when: {stage.doneWhen}</Text> : null}
                 </View>
               ))}

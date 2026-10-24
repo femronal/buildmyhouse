@@ -7,11 +7,14 @@ export type CataloguePhase = {
   estimatedCost?: number;
 };
 
+export type PaymentModelChoice = 'pay_in_full' | 'pay_by_stage';
+
 export type QuoteStageDraft = {
   name: string;
   doneWhen: string;
   amount: number;
   duration: string;
+  deposit?: number;
   evidence?: string[];
 };
 
@@ -19,6 +22,7 @@ export type QuoteScopeDraft = {
   signedTotal: number;
   lumpSum: boolean;
   fileReadable: boolean;
+  paymentModel: PaymentModelChoice;
   notice: string;
   stages: QuoteStageDraft[];
   contractorAmount: number;
@@ -39,10 +43,27 @@ const CONTINGENCY_RATE = 0.2;
 const GENERATED_MAX_SHARE = 0.6;
 const SUBMIT_MAX_SHARE = 0.75;
 
-const LUMP_NOTICE =
-  'Your quote is not staged. Based on the lump sum and project details, BuildMyHouse formatted it like this so the homeowner can track it, and you are paid stage by stage.';
-const STAGED_NOTICE =
-  "Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection. Check each stage. You are paid stage by stage.";
+function paymentSentence(model: PaymentModelChoice, audience: 'contractor' | 'homeowner'): string {
+  if (model === 'pay_in_full') {
+    return audience === 'homeowner'
+      ? 'You pay the full invoice before work starts.'
+      : 'The homeowner pays the full invoice before work starts, so materials for later stages can be bought once that payment is confirmed.';
+  }
+  return audience === 'homeowner'
+    ? 'You pay each stage before that stage starts.'
+    : 'The homeowner pays for a stage before that stage starts, and each stage ends when there is something they can see.';
+}
+
+export function homeownerScopeNotice(model: PaymentModelChoice): string {
+  return `Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection. ${paymentSentence(model, 'homeowner')}`;
+}
+
+function contractorNotice(model: PaymentModelChoice, lumpSum: boolean): string {
+  if (!lumpSum) {
+    return `Based on BuildMyHouse's policies and systems, this is the project's new scope after inspection. Check each stage. ${paymentSentence(model, 'contractor')}`;
+  }
+  return `Your quote is not staged. Based on the lump sum and project details, BuildMyHouse formatted it like this so the homeowner can track it. ${paymentSentence(model, 'contractor')}`;
+}
 const UNREADABLE_NOTE =
   ' The file could not be read, so this uses the signed total and the plan the homeowner selected.';
 
@@ -122,7 +143,33 @@ export function parsePricedLines(quoteText?: string): Array<{ name: string; amou
   return priced;
 }
 
-function catalogueStages(phases: CataloguePhase[] | undefined, total: number): QuoteStageDraft[] {
+export function stageDepositAmounts(stageAmounts: number[], contractorAmount: number, totalPayable: number): number[] {
+  const prices = stageAmounts.map((amount) => toKobo(amount));
+  if (!prices.length) return [];
+  const contractorKobo = toKobo(contractorAmount);
+  const invoiceKobo = toKobo(totalPayable);
+  const fees = invoiceKobo - contractorKobo;
+  if (fees === 0 || contractorKobo <= 0) {
+    const next = [...prices];
+    next[next.length - 1] += invoiceKobo - sum(next);
+    return next.map(fromKobo);
+  }
+  const shares = prices.map((amount) => Math.round((fees * amount) / contractorKobo));
+  shares[shares.length - 1] += fees - sum(shares);
+  return prices.map((amount, index) => fromKobo(amount + shares[index]));
+}
+
+export function feesOnContractorAmount(amount: number) {
+  return feesFor(toKobo(amount));
+}
+
+export function depositForIncrease(increase: number): number {
+  const amount = Number(increase);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  return feesFor(toKobo(amount)).totalPayable;
+}
+
+function catalogueStages(phases: CataloguePhase[] | undefined, total: number, model: PaymentModelChoice): QuoteStageDraft[] {
   const usable = (phases || [])
     .map((phase) => ({
       name: cleanText(phase?.name, ''),
@@ -132,7 +179,8 @@ function catalogueStages(phases: CataloguePhase[] | undefined, total: number): Q
     }))
     .filter((phase) => phase.name);
   if (usable.length >= 2) {
-    const amounts = allocate(toKobo(total), usable.map((phase) => phase.weight), GENERATED_MAX_SHARE);
+    const maxShare = model === 'pay_in_full' ? 1 : GENERATED_MAX_SHARE;
+    const amounts = allocate(toKobo(total), usable.map((phase) => phase.weight), maxShare);
     return usable.map((phase, index) => ({
       name: phase.name,
       doneWhen: phase.doneWhen || `This stage is done when ${phase.name.toLowerCase()} is finished and photographed.`,
@@ -142,11 +190,28 @@ function catalogueStages(phases: CataloguePhase[] | undefined, total: number): Q
     }));
   }
   const workName = usable[0]?.name || 'Main work';
+  if (model === 'pay_by_stage') {
+    const amounts = allocate(toKobo(total), [0.7, 0.3], GENERATED_MAX_SHARE);
+    return [
+      {
+        name: workName,
+        doneWhen: usable[0]?.doneWhen || `This stage is done when ${workName.toLowerCase()} is in place and the homeowner can see it.`,
+        amount: fromKobo(amounts[0]),
+        duration: usable[0]?.duration || 'As agreed',
+      },
+      {
+        name: 'Testing and handover',
+        doneWhen: 'The homeowner has seen the finished work.',
+        amount: fromKobo(amounts[1]),
+        duration: 'As agreed',
+      },
+    ];
+  }
   const amounts = allocate(toKobo(total), [0.4, 0.4, 0.2], GENERATED_MAX_SHARE);
   return [
     {
       name: 'Materials and mobilisation',
-      doneWhen: 'The agreed materials for this stage are on site.',
+      doneWhen: 'The agreed materials for later work are bought and on site.',
       amount: fromKobo(amounts[0]),
       duration: 'As agreed',
     },
@@ -184,11 +249,16 @@ export function buildInspectionScope(input: {
   cataloguePhases?: CataloguePhase[];
   suggestion?: StageSuggestion | null;
   fileReadable?: boolean;
+  paymentModel?: PaymentModelChoice | null;
 }): QuoteScopeDraft {
   const signedTotal = Number(input.signedTotal);
   if (!Number.isFinite(signedTotal) || signedTotal <= 0) {
     throw new Error('Signed quote total is required');
   }
+  if (input.paymentModel !== 'pay_in_full' && input.paymentModel !== 'pay_by_stage') {
+    throw new Error('Choose pay in full or pay stage by stage before the stages are published.');
+  }
+  const paymentModel = input.paymentModel;
   const fileReadable = input.fileReadable !== false;
   const priced = parsePricedLines(input.quoteText);
   const pricedKobo = priced.map((line) => toKobo(line.amount));
@@ -220,7 +290,8 @@ export function buildInspectionScope(input: {
       .filter((stage) => stage.name)
       .slice(0, 8);
     if (suggested.length >= 2) {
-      const amounts = allocate(target, suggested.map((stage) => stage.weight), GENERATED_MAX_SHARE);
+      const maxShare = paymentModel === 'pay_in_full' ? 1 : GENERATED_MAX_SHARE;
+      const amounts = allocate(target, suggested.map((stage) => stage.weight), maxShare);
       stages = suggested.map((stage, index) => ({
         name: stage.name,
         doneWhen: stage.doneWhen || `This stage is done when ${stage.name.toLowerCase()} is finished and photographed.`,
@@ -230,24 +301,36 @@ export function buildInspectionScope(input: {
       }));
       lumpSum = input.suggestion.lumpSum !== false;
     } else {
-      stages = catalogueStages(input.cataloguePhases, signedTotal);
+      stages = catalogueStages(input.cataloguePhases, signedTotal, paymentModel);
     }
   } else {
-    stages = catalogueStages(input.cataloguePhases, signedTotal);
+    stages = catalogueStages(input.cataloguePhases, signedTotal, paymentModel);
   }
 
-  const notice = `${lumpSum ? LUMP_NOTICE : STAGED_NOTICE}${fileReadable ? '' : UNREADABLE_NOTE}`;
+  const fees = feesFor(target);
+  const deposits = stageDepositAmounts(
+    stages.map((stage) => stage.amount),
+    fees.contractorAmount,
+    fees.totalPayable,
+  );
+  stages = stages.map((stage, index) => ({ ...stage, deposit: deposits[index] }));
+  const notice = `${contractorNotice(paymentModel, lumpSum)}${fileReadable ? '' : UNREADABLE_NOTE}`;
   return {
     signedTotal: fromKobo(target),
     lumpSum,
     fileReadable,
+    paymentModel,
     notice,
     stages,
-    ...feesFor(target),
+    ...fees,
   };
 }
 
-export function normalizeSubmittedStages(signedTotal: number, stages: QuoteStageDraft[]): QuoteStageDraft[] {
+export function normalizeSubmittedStages(
+  signedTotal: number,
+  stages: QuoteStageDraft[],
+  paymentModel?: PaymentModelChoice | null,
+): QuoteStageDraft[] {
   const target = toKobo(signedTotal);
   if (!Number.isFinite(signedTotal) || target <= 0) {
     throw new Error('Enter the signed quote total.');
@@ -274,9 +357,11 @@ export function normalizeSubmittedStages(signedTotal: number, stages: QuoteStage
     const last = normalized[normalized.length - 1];
     last.amount = fromKobo(toKobo(last.amount) + (target - total));
   }
-  const tooLarge = normalized.find((stage) => toKobo(stage.amount) > Math.round(target * SUBMIT_MAX_SHARE));
-  if (tooLarge) {
-    throw new Error(`“${tooLarge.name}” is more than 75% of the quote. Split it so you are paid as each part is done.`);
+  if (paymentModel !== 'pay_in_full') {
+    const tooLarge = normalized.find((stage) => toKobo(stage.amount) > Math.round(target * SUBMIT_MAX_SHARE));
+    if (tooLarge) {
+      throw new Error(`“${tooLarge.name}” is more than 75% of the quote. Split it so each stage ends when the homeowner can see the work.`);
+    }
   }
   return normalized.map(({ name, doneWhen, amount, duration, evidence }) => ({ name, doneWhen, amount, duration, evidence }));
 }

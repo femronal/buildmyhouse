@@ -29,6 +29,11 @@ enum PaymentConfirmationStatus {
   rejected
 }
 
+enum ProjectPaymentModel {
+  pay_in_full
+  pay_by_stage
+}
+
 enum ProjectRiskLevel {
   low
   medium
@@ -482,6 +487,8 @@ model Project {
   paymentDeclaredAt         DateTime?
   paymentConfirmedAt        DateTime?
   paymentConfirmationStatus PaymentConfirmationStatus @default(not_declared)
+  /// pay_in_full | pay_by_stage. Empty until the homeowner or an admin chooses.
+  paymentModel              ProjectPaymentModel?
   budget                    Float
   spent                     Float                     @default(0)
   progress                  Int                       @default(0)
@@ -537,6 +544,8 @@ model Stage {
   status            String    @default("not_started") // 'not_started' | 'in_progress' | 'pending_homeowner_approval' | 'completed' | 'blocked'
   order             Int
   estimatedCost     Float
+  /// Homeowner deposit for this stage: contractor price plus its share of the fees.
+  depositDue        Float?
   actualCost        Float?
   estimatedDuration String
   startDate         DateTime?
