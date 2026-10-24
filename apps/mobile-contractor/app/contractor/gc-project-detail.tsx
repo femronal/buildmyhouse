@@ -24,7 +24,7 @@ import { useGCEarnings } from "@/hooks/useGC";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
-import { contractorProfit, paymentChoiceLabel } from "@/lib/job-profit";
+import { contractorProfit, fundedJobPrice, paymentChoiceLabel } from "@/lib/job-profit";
 
 function paidPayoutsFromStages(stages?: Array<{
   materials?: Array<{ payeeKind?: string | null; status?: string | null; totalPrice?: number | null; quantity?: number | null; unitPrice?: number | null }>;
@@ -310,6 +310,7 @@ export default function GCProjectDetailScreen() {
         fullJobPrice?: number;
         paidToShops?: number;
         paidToTeamMembers?: number;
+        moneyMoved?: number;
         earned?: number;
         pending?: number;
         budget?: number;
@@ -319,23 +320,28 @@ export default function GCProjectDetailScreen() {
   const paidToYou = Number(moneySummary?.paidToYou || 0) || linePayouts.artisan || (moneySummary ? 0 : Number(earningsRow?.paidToYou ?? earningsRow?.earned ?? 0));
   const paidToShops = Number(moneySummary?.paidToShops || 0) || linePayouts.shop || (moneySummary ? 0 : Number(earningsRow?.paidToShops || 0));
   const paidToTeam = Number(moneySummary?.paidToTeamMembers || 0) || linePayouts.team || (moneySummary ? 0 : Number(earningsRow?.paidToTeamMembers || 0));
-  const fullJobPrice = Number(
-    moneySummary?.fullJobPrice ?? earningsRow?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
-  );
-  const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0 || Number(moneySummary?.paidToTeamMembers || 0) > 0;
   const paymentModel = (project as { paymentModel?: string | null }).paymentModel;
+  const contractPrice = Number(
+    moneySummary?.fullJobPrice ?? earningsRow?.budget ?? project.budget ?? 0,
+  );
+  const fullJobPrice = fundedJobPrice({ paymentModel, fullJobPrice: contractPrice, stages });
+  const summaryHasPayouts = Number(moneySummary?.paidToYou || 0) > 0 || Number(moneySummary?.paidToShops || 0) > 0 || Number(moneySummary?.paidToTeamMembers || 0) > 0;
   const profit = contractorProfit({
     paymentModel,
-    fullJobPrice,
+    fullJobPrice: contractPrice,
     stages,
     paidToShops,
     paidToTeam,
   });
-  const leftOnThisJob = summaryHasPayouts
-    ? Number(moneySummary?.leftOnThisJob ?? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam))
-    : linePayouts.artisan || linePayouts.shop || linePayouts.team
-      ? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam)
-      : Number(moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? Math.max(0, fullJobPrice - paidToYou - paidToShops - paidToTeam));
+  const moneyMoved = Number(moneySummary?.moneyMoved ?? (paidToYou + paidToShops + paidToTeam));
+  const stageLeft = Math.max(0, Math.round((fullJobPrice - moneyMoved) * 100) / 100);
+  const leftOnThisJob = paymentModel === 'pay_by_stage'
+    ? stageLeft
+    : summaryHasPayouts
+      ? Number(moneySummary?.leftOnThisJob ?? stageLeft)
+      : linePayouts.artisan || linePayouts.shop || linePayouts.team
+        ? stageLeft
+        : Number(moneySummary?.leftOnThisJob ?? earningsRow?.leftOnThisJob ?? earningsRow?.pending ?? stageLeft);
   const activeIndex = stages.findIndex(
     (stage: any) => stage.status === 'in_progress' || stage.status === 'pending_homeowner_approval',
   );

@@ -163,6 +163,21 @@ export function summarizeJobMoney(input: {
   };
 }
 
+export function fundedContractorPrice(input: {
+  paymentModel?: string | null;
+  budget?: number | null;
+  stages?: Array<{ status?: string | null; estimatedCost?: number | null }> | null;
+}): number {
+  const full = Number(input.budget) || 0;
+  if (input.paymentModel !== 'pay_by_stage') return Math.round(full * 100) / 100;
+  const started = (input.stages || []).reduce((sum, stage) => {
+    const status = String(stage?.status || '').trim().toLowerCase();
+    if (!status || status === 'not_started') return sum;
+    return sum + (Number(stage?.estimatedCost) || 0);
+  }, 0);
+  return Math.round(started * 100) / 100;
+}
+
 function assertStatus(status: string) {
   if (!LINE_STATUSES.includes(status as LineStatus)) {
     throw new BadRequestException('Status must be planned, invoiced, paid, or rejected.');

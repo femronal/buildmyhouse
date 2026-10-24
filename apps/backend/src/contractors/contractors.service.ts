@@ -34,7 +34,7 @@ import { getPlanRequestStep, PlanStepViewer } from './plan-request-step';
 import { buildInspectionScope, homeownerScopeNotice, normalizeSubmittedStages, QuoteStageDraft, stageDepositAmounts } from './quote-scope';
 import { applyDescribedEvidence } from './stage-evidence';
 import { notifyPlanRequestLate } from './plan-request-notify';
-import { summarizeJobMoney, teamDayCount } from '../projects/job-money';
+import { summarizeJobMoney, teamDayCount, fundedContractorPrice } from '../projects/job-money';
 import {
   composeLocationLabel,
   isValidStateLga,
@@ -3432,14 +3432,13 @@ export class ContractorsService {
         status: s.status,
       }));
 
-      const fundedPrice = p.paymentModel === 'pay_by_stage'
-        ? (p.stages || []).reduce((sum: number, stage: any) => {
-            const status = String(stage?.status || '').trim().toLowerCase();
-            if (!status || status === 'not_started') return sum;
-            return sum + (Number(stage?.estimatedCost) || 0);
-          }, 0)
-        : money.fullJobPrice;
+      const fundedPrice = fundedContractorPrice({
+        paymentModel: p.paymentModel,
+        budget: money.fullJobPrice,
+        stages: p.stages || [],
+      });
       const profit = Math.max(0, Math.round((fundedPrice - money.paidToShops - money.paidToTeamMembers) * 100) / 100);
+      const fundedLeft = Math.max(0, Math.round((fundedPrice - money.moneyMoved) * 100) / 100);
 
       return {
         id: p.id,
@@ -3449,10 +3448,10 @@ export class ContractorsService {
         profit,
         budget: money.fullJobPrice,
         earned: money.paidToYou,
-        pending: money.leftOnThisJob,
+        pending: fundedLeft,
         paidToYou: money.paidToYou,
-        leftOnThisJob: money.leftOnThisJob,
-        fullJobPrice: money.fullJobPrice,
+        leftOnThisJob: fundedLeft,
+        fullJobPrice: fundedPrice,
         paidToShops: money.paidToShops,
         paidToTeamMembers: money.paidToTeamMembers,
         progress: p.progress || 0,

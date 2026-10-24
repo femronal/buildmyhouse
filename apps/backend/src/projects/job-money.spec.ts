@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import {
+  fundedContractorPrice,
   materialPayWrite,
   stageBmhPaidAmount,
   summarizeJobMoney,
@@ -205,5 +206,18 @@ describe('job money payout sums', () => {
     expect(gc.paidAt).toBeInstanceOf(Date);
     const cleared = teamPayWrite({ payStatus: 'planned' }, { payStatus: 'paid', paidBy: 'gc', paidAt: new Date() }, 'update');
     expect(cleared.paidAt).toBeNull();
+  });
+
+  it('sums only stages that have started for a stage by stage job', () => {
+    const stages = [
+      { status: 'completed', estimatedCost: 10500, materials: [{ payeeKind: 'shop', status: 'paid', totalPrice: 3000 }], teamMembers: [] },
+      { status: 'in_progress', estimatedCost: 4500, materials: [], teamMembers: [] },
+      { status: 'not_started', estimatedCost: 7500, materials: [], teamMembers: [] },
+    ];
+    expect(fundedContractorPrice({ paymentModel: 'pay_by_stage', budget: 60000, stages })).toBe(15000);
+    expect(fundedContractorPrice({ paymentModel: 'pay_in_full', budget: 60000, stages })).toBe(60000);
+    const money = summarizeJobMoney({ budget: 60000, stages, payments: [] });
+    expect(money.paidToShops).toBe(3000);
+    expect(Math.max(0, 15000 - money.moneyMoved)).toBe(12000);
   });
 });

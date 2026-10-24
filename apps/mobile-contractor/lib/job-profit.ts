@@ -14,6 +14,23 @@ export function paymentChoiceLabel(model?: string | null) {
   return 'Payment choice not set';
 }
 
+export function startedStagePrice(stages?: StagePrice[] | null) {
+  return (stages || []).reduce((sum, stage) => {
+    if (!started(stage?.status)) return sum;
+    return sum + (Number(stage?.estimatedCost) || 0);
+  }, 0);
+}
+
+export function fundedJobPrice(input: {
+  paymentModel?: string | null;
+  fullJobPrice?: number | null;
+  stages?: StagePrice[] | null;
+}) {
+  const full = Number(input.fullJobPrice) || 0;
+  if (input.paymentModel !== 'pay_by_stage') return Math.round(full * 100) / 100;
+  return Math.round(startedStagePrice(input.stages) * 100) / 100;
+}
+
 export function contractorProfit(input: {
   paymentModel?: string | null;
   fullJobPrice?: number | null;
@@ -23,11 +40,5 @@ export function contractorProfit(input: {
 }) {
   const shops = Number(input.paidToShops) || 0;
   const team = Number(input.paidToTeam) || 0;
-  const full = Number(input.fullJobPrice) || 0;
-  const stagePrice = (input.stages || []).reduce((sum, stage) => {
-    if (!started(stage?.status)) return sum;
-    return sum + (Number(stage?.estimatedCost) || 0);
-  }, 0);
-  const base = input.paymentModel === 'pay_by_stage' ? stagePrice : full;
-  return Math.max(0, Math.round((base - shops - team) * 100) / 100);
+  return Math.max(0, Math.round((fundedJobPrice(input) - shops - team) * 100) / 100);
 }
