@@ -347,10 +347,8 @@ export const TOOLS_SECTION = {
 } as const;
 
 export const TESTIMONIALS_SECTION = {
-  kicker: 'Real property work. Real evidence.',
-  heading: "Don't take our word for it. See how the work was handled.",
-  supporting:
-    'For repairs, renovations, and builds in Nigeria, whether you are on site or monitoring from abroad. Verified workers, staged updates, and evidence before you pay.',
+  heading:
+    "Don't take our word for it. See what other project owners who have used BuildMyHouse have said.",
 } as const;
 
 export const FOOTER_CLOSE = {
@@ -715,13 +713,6 @@ export const FAQ_ITEMS = [
     answer:
       'Contractors and artisans can apply through the contractor onboarding flow, complete verification steps, and become eligible for structured project opportunities. We do not promise guaranteed leads.',
   },
-] as const;
-
-/** Process-focused proof points. Avoid inventing user/project counts. */
-export const LANDING_TESTIMONIAL_STATS = [
-  { value: 'Scope', label: 'Cleared before work starts' },
-  { value: 'Evidence', label: 'Attached to each stage' },
-  { value: 'Abroad', label: 'Built for remote owners' },
 ] as const;
 
 export const FOR_CONTRACTOR_URL = 'https://gc.buildmyhouse.app/';

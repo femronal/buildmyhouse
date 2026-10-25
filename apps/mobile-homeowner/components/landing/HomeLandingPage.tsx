@@ -723,7 +723,7 @@ export default function HomeLandingPage() {
           </View>
         </View>
 
-        <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
+        <TestimonialsSection />
 
         {/* Godfather offer + bonuses + scarcity */}
         <View
