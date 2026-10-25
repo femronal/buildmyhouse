@@ -1,72 +1,17 @@
-import { useState } from 'react';
 import { Platform, Pressable, Text, View } from 'react-native';
 import { Link } from 'expo-router';
-import { ArrowRight, Star } from 'phosphor-react-native';
-import {
-  LANDING_TESTIMONIALS,
-  LANDING_TESTIMONIAL_STATS,
-  TESTIMONIALS_SECTION,
-  type LandingTestimonial,
-} from '@/lib/home-landing-content';
+import { ArrowRight } from 'phosphor-react-native';
+import { LANDING_TESTIMONIAL_STATS, TESTIMONIALS_SECTION } from '@/lib/home-landing-content';
 import { homeownerTrustindexId } from '@/lib/review-widgets';
 import { trackWebEvent } from '@/lib/analytics';
-import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
+import TrustindexReviews from '@/components/reviews/TrustindexReviews';
 
 type TestimonialsSectionProps = {
   onHowItWorksPress?: () => void;
 };
 
-function StarRating() {
-  return (
-    <View className="flex-row items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, index) => (
-        <Star key={index} size={14} color="#ffffff" weight="fill" />
-      ))}
-    </View>
-  );
-}
-
-function TestimonialCard({ testimonial }: { testimonial: LandingTestimonial }) {
-  return (
-    <View className="w-full min-w-0 rounded-3xl border border-white/10 bg-white/[0.04] p-6 md:p-8">
-      <Text className="text-lg text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-        {testimonial.name}
-      </Text>
-      <Text className="text-xs text-slate-400 mt-0.5" style={{ fontFamily: 'Poppins_400Regular' }}>
-        {testimonial.role}
-      </Text>
-
-      <View className="h-px bg-white/10 my-4" />
-
-      <View className="flex-row items-center gap-2 mb-3">
-        <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-          5.0
-        </Text>
-        <StarRating />
-      </View>
-
-      <Text className="text-sm md:text-base text-slate-300 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-        &ldquo;{testimonial.quote}&rdquo;
-      </Text>
-
-      <View className="flex-row flex-wrap items-center gap-2 mt-4">
-        <View className="rounded-full px-2.5 py-1 border border-white/15 bg-white/5">
-          <Text className="text-xs text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-            {testimonial.tag}
-          </Text>
-        </View>
-        <Text className="text-xs text-slate-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-          {testimonial.tagDetail}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsSectionProps) {
-  const widgetId = Platform.OS === 'web' ? homeownerTrustindexId() : null;
-  const [reviewStatus, setReviewStatus] = useState<TrustindexStatus>(widgetId ? 'loading' : 'off');
-  const showFallback = reviewStatus === 'off' || reviewStatus === 'failed';
+  const widgetId = homeownerTrustindexId();
 
   return (
     <View className="pb-6 pt-4 bg-black">
@@ -159,17 +104,8 @@ export default function TestimonialsSection({ onHowItWorksPress }: TestimonialsS
               </View>
             </View>
 
-            <View className="bmh-testimonials-right relative w-full">
-              {widgetId ? (
-                <TrustindexReviews widgetId={widgetId} onStatusChange={setReviewStatus} />
-              ) : null}
-              {showFallback ? (
-                <View className="gap-6">
-                  {LANDING_TESTIMONIALS.map((testimonial) => (
-                    <TestimonialCard key={testimonial.name} testimonial={testimonial} />
-                  ))}
-                </View>
-              ) : null}
+            <View className="bmh-testimonials-right relative w-full min-w-0">
+              <TrustindexReviews widgetId={widgetId} />
             </View>
           </View>
         </View>

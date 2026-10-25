@@ -717,38 +717,12 @@ export const FAQ_ITEMS = [
   },
 ] as const;
 
-export type LandingTestimonial = {
-  name: string;
-  role: string;
-  quote: string;
-  tag: string;
-  tagDetail: string;
-};
-
 /** Process-focused proof points. Avoid inventing user/project counts. */
 export const LANDING_TESTIMONIAL_STATS = [
   { value: 'Scope', label: 'Cleared before work starts' },
   { value: 'Evidence', label: 'Attached to each stage' },
   { value: 'Abroad', label: 'Built for remote owners' },
 ] as const;
-
-export const LANDING_TESTIMONIALS: LandingTestimonial[] = [
-  {
-    name: 'Adedamola Mulikah',
-    role: 'Homeowner, Agege, Lagos',
-    quote:
-      'Thank you very much, Build my home for providing one of the best experience with an artisan I have had so far. The regular updates, transparency, meeting timelines can only be professionalism. I am truly glad.',
-    tag: 'Washing machine setup',
-    tagDetail: 'Agege',
-  },
-  {
-    name: 'Aminat Otaru',
-    role: 'Homeowner, Egbeda, Lagos',
-    quote: 'Professional artisans. Transparent and easy to use! Amazing service.',
-    tag: 'Window repair',
-    tagDetail: 'Egbeda',
-  },
-];
 
 export const FOR_CONTRACTOR_URL = 'https://gc.buildmyhouse.app/';
 

@@ -36,6 +36,12 @@ function sendHeight(){
 }
 window.addEventListener('load', sendHeight);
 if (window.ResizeObserver) new ResizeObserver(sendHeight).observe(document.body);
+var nudges = 0;
+var nudgeTimer = setInterval(function(){
+  window.dispatchEvent(new Event('mousemove'));
+  nudges += 1;
+  if (nudges >= 8 || document.querySelector('.ti-widget')) clearInterval(nudgeTimer);
+}, 400);
 var ticks = 0;
 var timer = setInterval(function(){
   sendHeight();

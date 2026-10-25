@@ -1,3 +1,6 @@
+/** Public Trustindex widget. The id is the part after loader.js? in the embed code. */
+export const TRUSTINDEX_WIDGET_ID = '17e626a84365332f60662d4eea6';
+
 /** Public review widget ids. Invalid values are treated as unset so nothing is injected. */
 export function readReviewWidgetId(value?: string | null): string | null {
   const id = String(value || '').trim();
@@ -5,7 +8,7 @@ export function readReviewWidgetId(value?: string | null): string | null {
 }
 
 export function homeownerTrustindexId(): string | null {
-  return readReviewWidgetId(process.env.EXPO_PUBLIC_TRUSTINDEX_WIDGET_ID);
+  return readReviewWidgetId(process.env.EXPO_PUBLIC_TRUSTINDEX_WIDGET_ID) || TRUSTINDEX_WIDGET_ID;
 }
 
 export function trustpilotBusinessUnitId(): string | null {
