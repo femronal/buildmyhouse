@@ -16,9 +16,10 @@ export default function GcSeoJsonLd() {
         url: WEB_URL,
         logo: `${WEB_URL}/engineer-at-buildmyhouse.png`,
         sameAs: [
-          'https://www.instagram.com/buildmyhousetech/',
+          'https://www.instagram.com/buildmyhousetechnologies/',
           'https://linkedin.com/company/buildmyhouse',
-          'https://www.youtube.com/@BuildMyHouse',
+          'https://www.youtube.com/@BuildMyHouseTech',
+          'https://x.com/buildmyhousetm',
         ],
       },
       {

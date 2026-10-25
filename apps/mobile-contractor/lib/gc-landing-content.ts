@@ -295,10 +295,10 @@ export const GC_CONTACT = {
 } as const;
 
 export const GC_SOCIALS = [
-  { id: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/buildmyhousetech/' },
+  { id: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/buildmyhousetechnologies/' },
   { id: 'linkedin', label: 'LinkedIn', href: 'https://linkedin.com/company/buildmyhouse' },
-  { id: 'youtube', label: 'YouTube', href: 'https://www.youtube.com/@BuildMyHouse' },
-  { id: 'x', label: 'X', href: 'https://x.com/buildmyhouseapp' },
+  { id: 'youtube', label: 'YouTube', href: 'https://www.youtube.com/@BuildMyHouseTech' },
+  { id: 'x', label: 'X', href: 'https://x.com/buildmyhousetm' },
 ] as const;
 
 export const GC_OG_IMAGE = `${webBase()}/engineer-at-buildmyhouse.png`;

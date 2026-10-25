@@ -56,7 +56,7 @@ export function buildHomepageJsonLd() {
         addressRegion: 'Lagos',
         addressCountry: 'NG',
       },
-      sameAs: BUILDMYHOUSE_SOCIALS.map((social) => social.href),
+      sameAs: BUILDMYHOUSE_SOCIALS.map((social) => social.href).filter(Boolean),
     },
     {
       '@type': 'LocalBusiness',

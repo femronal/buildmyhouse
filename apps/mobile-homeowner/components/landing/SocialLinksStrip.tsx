@@ -13,8 +13,11 @@ export default function SocialLinksStrip() {
           {BUILDMYHOUSE_SOCIALS.map((social) => (
             <Pressable
               key={social.id}
-              onPress={() => Linking.openURL(social.href)}
-              accessibilityRole="link"
+              onPress={() => {
+                if (social.href) Linking.openURL(social.href);
+              }}
+              disabled={!social.href}
+              accessibilityRole={social.href ? 'link' : 'image'}
               accessibilityLabel={social.label}
               className="w-11 h-11 rounded-full border border-slate-200 bg-white items-center justify-center"
             >

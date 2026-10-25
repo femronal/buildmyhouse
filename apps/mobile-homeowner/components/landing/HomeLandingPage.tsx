@@ -1104,8 +1104,11 @@ export default function HomeLandingPage() {
                     {BUILDMYHOUSE_SOCIALS.map((social) => (
                       <Pressable
                         key={social.id}
-                        onPress={() => Linking.openURL(social.href)}
-                        accessibilityRole="link"
+                        onPress={() => {
+                          if (social.href) Linking.openURL(social.href);
+                        }}
+                        disabled={!social.href}
+                        accessibilityRole={social.href ? 'link' : 'image'}
                         accessibilityLabel={social.label}
                         className="w-12 h-12 rounded-full bg-white items-center justify-center bmh-glass-btn bmh-glass-btn-light"
                       >

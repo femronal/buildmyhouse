@@ -728,12 +728,12 @@ export const BUILDMYHOUSE_SOCIALS = [
   {
     id: 'x',
     label: 'X',
-    href: 'https://x.com/buildmyhouseapp',
+    href: 'https://x.com/buildmyhousetm',
   },
   {
     id: 'instagram',
     label: 'Instagram',
-    href: 'https://www.instagram.com/buildmyhousetech/',
+    href: 'https://www.instagram.com/buildmyhousetechnologies/',
   },
   {
     id: 'linkedin',
@@ -743,12 +743,12 @@ export const BUILDMYHOUSE_SOCIALS = [
   {
     id: 'youtube',
     label: 'YouTube',
-    href: 'https://www.youtube.com/@BuildMyHouse',
+    href: 'https://www.youtube.com/@BuildMyHouseTech',
   },
   {
     id: 'medium',
     label: 'Medium',
-    href: 'https://medium.com/@buildmyhouse',
+    href: '',
   },
 ] as const;
 
