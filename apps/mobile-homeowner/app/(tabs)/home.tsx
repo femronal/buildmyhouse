@@ -18,6 +18,7 @@ import NotificationBell from '@/components/NotificationBell';
 import LogoText from '@/components/LogoText';
 import { getBackendAssetUrl } from '@/lib/image';
 import { paidPayoutsFromStages } from '@/lib/job-payouts';
+import MoneyBreakdownCard from '@/components/money/MoneyBreakdownCard';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -598,48 +599,35 @@ export default function HomeScreen() {
                             </View>
                           </View>
 
-                          {/* Budget Info for Active Projects */}
-                          <View className="flex-row justify-between border-t border-white/10 mt-3 pt-3.5">
-                            <View>
-                              <Text
-                                className="text-white/50 text-xs mb-1"
-                                style={{ fontFamily: 'Poppins_400Regular' }}
-                              >
-                                Budget
-                              </Text>
-                              <Text
-                                className="text-white"
-                                style={{ fontFamily: 'JetBrainsMono_500Medium' }}
-                              >
-                                ₦{budget.toLocaleString()}
-                              </Text>
-                            </View>
-                            <View className="flex-1 ml-3">
-                              <Text
-                                className="text-white/50 mb-1"
-                                style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}
-                              >
-                                Sent to your contractor
-                              </Text>
-                              <Text
-                                className="text-white"
-                                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
-                              >
-                                {`₦${(Number(project.moneySummary?.sentToContractor || 0) || paidPayoutsFromStages(project.stages).artisan).toLocaleString()}`}
-                              </Text>
-                              <Text
-                                className="text-white/50 mt-2 mb-1"
-                                style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}
-                              >
-                                Paid to team members
-                              </Text>
-                              <Text
-                                className="text-white"
-                                style={{ fontFamily: 'JetBrainsMono_500Medium', fontSize: 16 }}
-                              >
-                                {`₦${(Number(project.moneySummary?.paidToTeamMembers || 0) || paidPayoutsFromStages(project.stages).team).toLocaleString()}`}
-                              </Text>
-                            </View>
+                          <View className="border-t border-white/10 mt-3 pt-3.5">
+                            <Text
+                              className="text-white/50 text-xs mb-1"
+                              style={{ fontFamily: 'Poppins_400Regular' }}
+                            >
+                              Budget
+                            </Text>
+                            <Text
+                              className="text-white mb-3"
+                              style={{ fontFamily: 'JetBrainsMono_500Medium' }}
+                            >
+                              ₦{budget.toLocaleString()}
+                            </Text>
+                            <MoneyBreakdownCard
+                              summary={{
+                                hasHomeownerReceipts: project.moneySummary?.hasHomeownerReceipts,
+                                youSentIn: project.moneySummary?.youSentIn,
+                                stillWithBuildMyHouse: project.moneySummary?.stillWithBuildMyHouse,
+                                sentToContractor:
+                                  Number(project.moneySummary?.sentToContractor || 0) ||
+                                  paidPayoutsFromStages(project.stages).artisan,
+                                paidToShopsForMaterials:
+                                  Number(project.moneySummary?.paidToShopsForMaterials || 0) ||
+                                  paidPayoutsFromStages(project.stages).shop,
+                                paidToTeamMembers:
+                                  Number(project.moneySummary?.paidToTeamMembers || 0) ||
+                                  paidPayoutsFromStages(project.stages).team,
+                              }}
+                            />
                           </View>
                         </>
                       ) : step.key === 'fund' && project.designId ? (

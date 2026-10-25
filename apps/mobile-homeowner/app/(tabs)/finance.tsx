@@ -7,6 +7,7 @@ import { useActiveProjects, useMyInvoiceFiles, usePendingProjects, useUserPaymen
 import { useHomePurchases, useLandPurchases, useRentalPurchases } from '@/hooks/usePropertyPurchases';
 import { getBackendAssetUrl } from '@/lib/image';
 import { paidPayoutsFromStages } from '@/lib/job-payouts';
+import MoneyBreakdownCard from '@/components/money/MoneyBreakdownCard';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   getFloatingTabBarMetrics,
@@ -272,25 +273,19 @@ export default function FinanceScreen() {
                 const sentToContractor = Number(summary?.sentToContractor || 0) || linePayouts.artisan;
                 const paidToShopsForMaterials = Number(summary?.paidToShopsForMaterials || 0) || linePayouts.shop;
                 const paidToTeamMembers = Number(summary?.paidToTeamMembers || 0) || linePayouts.team;
-                const rows = [
-                  ['You sent in', summary?.hasHomeownerReceipts ? `₦${Number(summary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
-                  ['Still with BuildMyHouse', summary?.hasHomeownerReceipts ? `₦${Number(summary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
-                  ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
-                  ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
-                  ['Paid to team members', `₦${paidToTeamMembers.toLocaleString()}`],
-                ];
                 return (
-                  <View key={p.id} className="bg-white/5 rounded-3xl p-5 mb-4 border border-white/10">
-                    <Text className="text-lg text-white mb-1" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
-                    <Text className="text-white mb-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 16 }}>
-                      Your money on this job
-                    </Text>
-                    {rows.map(([label, value]) => (
-                      <View key={label} className="flex-row justify-between mb-2">
-                        <Text className="text-white/80 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>{label}</Text>
-                        <Text className="text-white" style={{ fontFamily: value.startsWith('₦') ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular', fontSize: 16 }}>{value}</Text>
-                      </View>
-                    ))}
+                  <View key={p.id} className="mb-4">
+                    <Text className="text-lg text-white mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>
+                    <MoneyBreakdownCard
+                      summary={{
+                        hasHomeownerReceipts: summary?.hasHomeownerReceipts,
+                        youSentIn: summary?.youSentIn,
+                        stillWithBuildMyHouse: summary?.stillWithBuildMyHouse,
+                        sentToContractor,
+                        paidToShopsForMaterials,
+                        paidToTeamMembers,
+                      }}
+                    />
                   </View>
                 );
               })

@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
 import { paidPayoutsFromStages } from "@/lib/job-payouts";
+import MoneyBreakdownCard from "@/components/money/MoneyBreakdownCard";
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -561,29 +562,17 @@ export default function DashboardScreen() {
           </View>
         )}
 
-        <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-6 mb-6 border border-gray-200">
-          <Text className="text-black mb-4" style={{ fontFamily: 'Poppins_700Bold', fontSize: 20 }}>
-            Your money on this job
-          </Text>
-          {[
-            ['You sent in', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.youSentIn || 0).toLocaleString()}` : 'Not enough records yet'],
-            ['Still with BuildMyHouse', moneySummary?.hasHomeownerReceipts ? `₦${Number(moneySummary.stillWithBuildMyHouse || 0).toLocaleString()}` : 'Not enough records yet'],
-            ['Sent to your contractor', `₦${sentToContractor.toLocaleString()}`],
-            ['Paid to shops for materials', `₦${paidToShopsForMaterials.toLocaleString()}`],
-            ['Paid to team members', `₦${paidToTeamMembers.toLocaleString()}`],
-          ].map(([label, value]) => (
-            <View key={label} className="flex-row justify-between mb-3">
-              <Text className="text-gray-600 flex-1 mr-3" style={{ fontFamily: 'Poppins_500Medium', fontSize: 16 }}>
-                {label}
-              </Text>
-              <Text
-                className="text-black"
-                style={{ fontFamily: value.startsWith('₦') ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular', fontSize: 16 }}
-              >
-                {value}
-              </Text>
-            </View>
-          ))}
+        <View className="mb-6">
+          <MoneyBreakdownCard
+            summary={{
+              hasHomeownerReceipts: moneySummary?.hasHomeownerReceipts,
+              youSentIn: moneySummary?.youSentIn,
+              stillWithBuildMyHouse: moneySummary?.stillWithBuildMyHouse,
+              sentToContractor,
+              paidToShopsForMaterials,
+              paidToTeamMembers,
+            }}
+          />
         </View>
 
         {/* Progress Timeline - Stages/Phases */}
