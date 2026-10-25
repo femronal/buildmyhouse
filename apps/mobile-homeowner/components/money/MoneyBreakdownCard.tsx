@@ -9,9 +9,11 @@ import {
 
 type MoneyBreakdownCardProps = {
   summary?: MoneySummaryInput | null;
+  /** Tighter type and padding for the landing-page phone, where the card is about 290px wide. */
+  compact?: boolean;
 };
 
-export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps) {
+export default function MoneyBreakdownCard({ summary, compact = false }: MoneyBreakdownCardProps) {
   const breakdown = buildMoneyBreakdown(summary);
   const barSegments = breakdown.segments.filter((segment) => segment.widthPct > 0);
 
@@ -24,23 +26,23 @@ export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps)
           borderRadius: 16,
           borderWidth: 1,
           borderColor: '#E6E6E6',
-          padding: 20,
+          padding: compact ? 14 : 20,
           width: '100%',
           maxWidth: 900,
           alignSelf: 'center',
         },
       ]}
     >
-      <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#111111' }}>
+      <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: compact ? 16 : 18, color: '#111111' }}>
         Your money on this job
       </Text>
-      <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, color: '#6B7280', marginTop: 16 }}>
+      <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: compact ? 12 : 14, color: '#6B7280', marginTop: compact ? 10 : 16 }}>
         You sent in
       </Text>
       <Text
         style={{
           fontFamily: breakdown.hasReceipts ? 'JetBrainsMono_500Medium' : 'Poppins_400Regular',
-          fontSize: breakdown.hasReceipts ? 34 : 16,
+          fontSize: breakdown.hasReceipts ? (compact ? 28 : 34) : 16,
           color: '#111111',
           marginTop: 4,
         }}
@@ -49,12 +51,12 @@ export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps)
       </Text>
 
       {breakdown.showBar ? (
-        <View style={{ marginTop: 16 }}>
+        <View style={{ marginTop: compact ? 12 : 16 }}>
           <View
             accessibilityRole="image"
             accessibilityLabel={buildMoneyBarLabel(breakdown)}
             style={{
-              height: 18,
+              height: compact ? 14 : 18,
               borderRadius: 999,
               backgroundColor: '#EEEEEE',
               overflow: 'hidden',
@@ -107,25 +109,26 @@ export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps)
               style={{
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 12,
+                paddingVertical: compact ? 8 : 12,
                 borderTopWidth: 1,
                 borderTopColor: '#EEEEEE',
               }}
             >
               <View
                 style={{
-                  width: 10,
-                  height: 10,
+                  width: compact ? 8 : 10,
+                  height: compact ? 8 : 10,
                   borderRadius: 5,
                   backgroundColor: segment.color,
-                  marginRight: 10,
+                  marginRight: compact ? 8 : 10,
                 }}
               />
-              <View style={{ flex: 1, marginRight: 12 }}>
+              <View style={{ flex: 1, marginRight: compact ? 8 : 12, minWidth: 0 }}>
                 <Text
                   style={{
                     fontFamily: 'Poppins_400Regular',
-                    fontSize: 15,
+                    fontSize: compact ? 13 : 15,
+                    lineHeight: compact ? 17 : undefined,
                     color: '#111111',
                   }}
                 >
@@ -133,12 +136,13 @@ export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps)
                 </Text>
               </View>
               <Text
+                numberOfLines={compact ? 1 : undefined}
                 style={{
-                  flexShrink: 1,
+                  flexShrink: compact ? 0 : 1,
                   textAlign: 'right',
-                  maxWidth: '46%',
+                  maxWidth: compact ? undefined : '46%',
                   fontFamily: unknownStill ? 'Poppins_400Regular' : 'JetBrainsMono_500Medium',
-                  fontSize: 15,
+                  fontSize: compact ? 13 : 15,
                   color: muted ? '#B0B0B0' : '#111111',
                 }}
               >
@@ -147,11 +151,11 @@ export default function MoneyBreakdownCard({ summary }: MoneyBreakdownCardProps)
               {segment.pct != null ? (
                 <Text
                   style={{
-                    width: 44,
-                    marginLeft: 10,
+                    width: compact ? 34 : 44,
+                    marginLeft: compact ? 6 : 10,
                     textAlign: 'right',
                     fontFamily: 'Poppins_400Regular',
-                    fontSize: 14,
+                    fontSize: compact ? 12 : 14,
                     color: '#9A9A9A',
                   }}
                 >

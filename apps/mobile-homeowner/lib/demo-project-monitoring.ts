@@ -285,6 +285,32 @@ export function getDemoCurrentStageForDashboard(): DemoStage {
   return inProgress ?? projectMonitoringDemoData.stages[0];
 }
 
+/**
+ * Money already sent on the Daddy Obinna demo.
+ * A completed stage has been paid to the contractor.
+ * A stage in progress has been sent in and is still with BuildMyHouse.
+ * Stages that have not started are left out.
+ * Material and team prices on a stage are quotes on that screen. They are not payouts.
+ */
+export function getDemoProjectMoneySummary() {
+  const sentToContractor = projectMonitoringDemoData.stages
+    .filter((stage) => stage.uiStatus === 'completed')
+    .reduce((sum, stage) => sum + stage.estimatedCost, 0);
+  const stillWithBuildMyHouse = projectMonitoringDemoData.stages
+    .filter((stage) => stage.uiStatus === 'in_progress')
+    .reduce((sum, stage) => sum + stage.estimatedCost, 0);
+  const youSentIn = sentToContractor + stillWithBuildMyHouse;
+
+  return {
+    hasHomeownerReceipts: youSentIn > 0,
+    youSentIn,
+    stillWithBuildMyHouse,
+    sentToContractor,
+    paidToShopsForMaterials: 0,
+    paidToTeamMembers: 0,
+  };
+}
+
 /** SEO / marketing preview components (separate from the interactive phone demo). */
 export type StageTrackerItem = {
   stage: string;

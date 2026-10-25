@@ -40,10 +40,12 @@ import {
 import {
   type DemoStage,
   getDemoCurrentStageForDashboard,
+  getDemoProjectMoneySummary,
   getDemoStageById,
   projectMonitoringDemoData,
 } from '@/lib/demo-project-monitoring';
 import { cardShadowStyle } from '@/lib/card-styles';
+import MoneyBreakdownCard from '@/components/money/MoneyBreakdownCard';
 
 export type DemoRoute =
   | { name: 'home' }
@@ -442,8 +444,7 @@ export default function ProjectMonitoringDemoPhone({
     const p = projectMonitoringDemoData.project;
     const stages = projectMonitoringDemoData.stages;
     const progress = p.progressPercent;
-    const remaining = p.totalBudget - p.spent;
-    const spentRatio = p.totalBudget > 0 ? Math.min((p.spent / p.totalBudget) * 100, 100) : 0;
+    const moneySummary = getDemoProjectMoneySummary();
 
     return (
       <View style={{ flex: 1, minHeight: 0 }}>
@@ -563,42 +564,8 @@ export default function ProjectMonitoringDemoPhone({
             </View>
           </View>
 
-          <View style={cardShadowStyle} className="bg-gray-50 rounded-2xl p-5 mb-5 border border-gray-200">
-            <View className="flex-row items-center mb-4">
-              <Text className="text-black text-2xl" style={{ fontFamily: 'Poppins_700Bold' }}>
-                ₦
-              </Text>
-              <Text className="text-xl text-black ml-2" style={{ fontFamily: 'Poppins_700Bold' }}>
-                Financial Summary
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-3">
-              <Text className="text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Total Budget
-              </Text>
-              <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ₦{p.totalBudget.toLocaleString()}
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-3">
-              <Text className="text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Spent
-              </Text>
-              <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ₦{p.spent.toLocaleString()}
-              </Text>
-            </View>
-            <View className="flex-row justify-between mb-3">
-              <Text className="text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                Remaining
-              </Text>
-              <Text className="text-black" style={{ fontFamily: 'JetBrainsMono_500Medium' }}>
-                ₦{remaining.toLocaleString()}
-              </Text>
-            </View>
-            <View className="mt-2 h-3 bg-gray-200 rounded-full overflow-hidden">
-              <View className="h-full bg-black rounded-full" style={{ width: `${spentRatio}%` }} />
-            </View>
+          <View className="mb-5">
+            <MoneyBreakdownCard compact summary={moneySummary} />
           </View>
 
           <View className="mb-4">
