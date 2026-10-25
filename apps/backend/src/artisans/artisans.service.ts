@@ -494,38 +494,54 @@ export class ArtisansService implements OnModuleInit {
     if (!['general_contractor', 'admin', 'homeowner'].includes(user.role)) {
       throw new ForbiddenException('Sign in with the account that should manage this listing.');
     }
-    const invite = await this.findInvite(rawToken);
+    const invite = await this.findClaimInvite(rawToken);
+    if (invite.revokedAt) throw new BadRequestException('This claim link has been revoked.');
     const listing = await this.prisma.artisanListing.findUnique({ where: { id: invite.artisanListingId } });
     if (!listing) throw new NotFoundException('Artisan listing not found');
     if (listing.linkedUserId && listing.linkedUserId !== userId) {
       throw new ConflictException('This listing has already been claimed');
     }
-    const contractor =
-      user.role === 'general_contractor' || user.role === 'admin'
-        ? await this.ensureContractor(user.id, user.fullName, user.profileSetupCompleted)
-        : null;
+    if (invite.usedAt && listing.linkedUserId !== userId) {
+      throw new ConflictException('This claim link has already been used.');
+    }
+    if (!invite.usedAt && invite.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException('This claim link has expired.');
+    }
+    const promoteHomeowner = user.role === 'homeowner';
     const recruitment = this.advanceRecruitment(listing.recruitmentStatus, ArtisanRecruitmentStatus.claimed);
-    await this.prisma.$transaction([
-      this.prisma.artisanClaimInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } }),
-      this.prisma.artisanListing.update({
+    await this.prisma.$transaction(async (tx) => {
+      const contractor = await this.ensureContractor(
+        user.id,
+        user.fullName,
+        promoteHomeowner ? true : user.profileSetupCompleted,
+        tx,
+      );
+      if (!invite.usedAt) {
+        await tx.artisanClaimInvite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
+      }
+      await tx.artisanListing.update({
         where: { id: listing.id },
         data: {
           linkedUserId: userId,
-          linkedContractorId: contractor?.id,
+          linkedContractorId: contractor.id,
           claimedAt: listing.claimedAt || new Date(),
           claimStatus: ArtisanClaimStatus.claimed,
           recruitmentStatus: recruitment,
         },
-      }),
-      this.prisma.user.update({
+      });
+      await tx.user.update({
         where: { id: userId },
-        data: { artisanClaimAccess: user.role === 'general_contractor' || user.role === 'admin' },
-      }),
-    ]);
+        data: {
+          artisanClaimAccess: true,
+          ...(promoteHomeowner ? { role: 'general_contractor', profileSetupCompleted: true } : {}),
+        },
+      });
+    });
     const updated = await this.reload(listing.id);
     return {
       listing: this.toManaged(updated),
       introPending: true,
+      redirectTo: 'contractor' as const,
     };
   }
 
@@ -1173,20 +1189,39 @@ export class ArtisansService implements OnModuleInit {
 
   private async acceptApprovedRequest(listingId: string, userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || (user.role !== 'general_contractor' && user.role !== 'admin')) {
+    if (!user || !['general_contractor', 'admin', 'homeowner'].includes(user.role)) {
       throw new BadRequestException('The requester needs a contractor account before the listing can be linked.');
     }
-    const contractor = await this.ensureContractor(user.id, user.fullName, user.profileSetupCompleted);
-    await this.prisma.artisanListing.update({
-      where: { id: listingId },
-      data: {
-        linkedUserId: userId,
-        linkedContractorId: contractor.id,
-        claimedAt: new Date(),
-        claimStatus: ArtisanClaimStatus.claimed,
-      },
+    const listing = await this.prisma.artisanListing.findUnique({ where: { id: listingId } });
+    if (!listing) throw new NotFoundException('Artisan listing not found');
+    if (listing.linkedUserId && listing.linkedUserId !== userId) {
+      throw new ConflictException('This listing has already been claimed');
+    }
+    const promoteHomeowner = user.role === 'homeowner';
+    await this.prisma.$transaction(async (tx) => {
+      const contractor = await this.ensureContractor(
+        user.id,
+        user.fullName,
+        promoteHomeowner ? true : user.profileSetupCompleted,
+        tx,
+      );
+      await tx.artisanListing.update({
+        where: { id: listingId },
+        data: {
+          linkedUserId: userId,
+          linkedContractorId: contractor.id,
+          claimedAt: listing.claimedAt || new Date(),
+          claimStatus: ArtisanClaimStatus.claimed,
+        },
+      });
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          artisanClaimAccess: true,
+          ...(promoteHomeowner ? { role: 'general_contractor', profileSetupCompleted: true } : {}),
+        },
+      });
     });
-    await this.prisma.user.update({ where: { id: userId }, data: { artisanClaimAccess: true } });
     return this.adminGet(listingId);
   }
 
@@ -1375,10 +1410,15 @@ export class ArtisansService implements OnModuleInit {
     };
   }
 
-  private async ensureContractor(userId: string, fullName: string, profileSetupCompleted: boolean) {
-    const existing = await this.prisma.contractor.findUnique({ where: { userId } });
+  private async ensureContractor(
+    userId: string,
+    fullName: string,
+    profileSetupCompleted: boolean,
+    db: { contractor: Prisma.TransactionClient['contractor'] } = this.prisma,
+  ) {
+    const existing = await db.contractor.findUnique({ where: { userId } });
     if (!existing) {
-      return this.prisma.contractor.create({
+      return db.contractor.create({
         data: {
           userId,
           name: fullName || 'Artisan',
@@ -1386,6 +1426,7 @@ export class ArtisansService implements OnModuleInit {
           specialtyCategory: 'artisan',
           type: 'general_contractor',
           platformKind: 'artisan',
+          verified: false,
           hiringFee: 0,
           rating: 0,
           projects: 0,
@@ -1401,14 +1442,19 @@ export class ArtisansService implements OnModuleInit {
           ? 'both'
           : 'artisan';
     if (platformKind !== existing.platformKind) {
-      return this.prisma.contractor.update({ where: { id: existing.id }, data: { platformKind } });
+      return db.contractor.update({ where: { id: existing.id }, data: { platformKind } });
     }
     return existing;
   }
 
-  private async findInvite(rawToken: string) {
+  private async findClaimInvite(rawToken: string) {
     const invite = await this.prisma.artisanClaimInvite.findUnique({ where: { tokenHash: hashToken(rawToken) } });
     if (!invite) throw new NotFoundException('This claim link is invalid.');
+    return invite;
+  }
+
+  private async findInvite(rawToken: string) {
+    const invite = await this.findClaimInvite(rawToken);
     if (invite.usedAt) throw new ConflictException('This claim link has already been used.');
     if (invite.revokedAt) throw new BadRequestException('This claim link has been revoked.');
     if (invite.expiresAt.getTime() < Date.now()) throw new BadRequestException('This claim link has expired.');
