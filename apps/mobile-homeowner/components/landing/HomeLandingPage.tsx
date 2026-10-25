@@ -26,7 +26,6 @@ import LandingServiceSearchBar from '@/components/landing/LandingServiceSearchBa
 import AgentToolsSection from '@/components/landing/AgentToolsSection';
 import PlatformGallerySection from '@/components/landing/PlatformGallerySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
-import TrustpilotReviewSection from '@/components/landing/TrustpilotReviewSection';
 import RotatingKeyword from '@/components/landing/RotatingKeyword';
 import WebLandmark from '@/components/seo/WebLandmark';
 import { useLandingServiceLinks } from '@/hooks/useLandingServiceLinks';
@@ -725,8 +724,6 @@ export default function HomeLandingPage() {
         </View>
 
         <TestimonialsSection onHowItWorksPress={() => navPress('#how-it-works')} />
-
-        <TrustpilotReviewSection />
 
         {/* Godfather offer + bonuses + scarcity */}
         <View

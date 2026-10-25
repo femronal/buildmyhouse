@@ -1,5 +1,6 @@
 import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
+import { GC_BG } from '@/lib/gc-landing-content';
 import { readReviewWidgetId } from '@/lib/review-widgets';
 
 export type TrustindexStatus = 'loading' | 'ready' | 'failed' | 'off';
@@ -125,10 +126,10 @@ export default function TrustindexReviews({ widgetId, onStatusChange }: Trustind
   if (Platform.OS !== 'web' || !id || hidden) return null;
 
   return (
-    <View style={{ width: '100%', maxWidth: 1200, alignSelf: 'center' }}>
+    <View style={{ width: '100%', maxWidth: 1200, alignSelf: 'center', backgroundColor: GC_BG }}>
       {createElement('div', {
         ref: setContainerNode,
-        style: { width: '100%', backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden' },
+        style: { width: '100%', backgroundColor: GC_BG },
       })}
     </View>
   );

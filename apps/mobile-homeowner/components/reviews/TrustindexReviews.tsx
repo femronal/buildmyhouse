@@ -128,7 +128,7 @@ export default function TrustindexReviews({ widgetId, onStatusChange }: Trustind
     <View style={{ width: '100%', maxWidth: 1200, alignSelf: 'center' }}>
       {createElement('div', {
         ref: setContainerNode,
-        style: { width: '100%', backgroundColor: '#ffffff', borderRadius: 16, overflow: 'hidden' },
+        style: { width: '100%' },
       })}
     </View>
   );

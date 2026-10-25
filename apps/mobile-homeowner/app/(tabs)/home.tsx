@@ -1,11 +1,11 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Platform, Linking } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, useWindowDimensions, ActivityIndicator, Platform } from "react-native";
 import { User, MapPin, Lock, X, ArrowUpRight } from "phosphor-react-native";
 import AnimatedCtaButton from '@/components/AnimatedCtaButton';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
 import { useEffect, useMemo, useState } from "react";
 import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
 import TrustindexReviewsNative from '@/components/reviews/TrustindexReviewsNative';
-import { TRUSTPILOT_REVIEWS_URL, homeownerTrustindexId } from '@/lib/review-widgets';
+import { homeownerTrustindexId } from '@/lib/review-widgets';
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from '@tanstack/react-query';
 import ListingWelcomeModal from '@/components/listings/ListingWelcomeModal';
@@ -42,18 +42,6 @@ function ClientReviews() {
       ) : (
         <TrustindexReviewsNative widgetId={widgetId} onStatusChange={setStatus} />
       )}
-      {status === 'ready' ? (
-        <TouchableOpacity
-          onPress={() => Linking.openURL(TRUSTPILOT_REVIEWS_URL)}
-          className="mt-4"
-          accessibilityRole="link"
-          accessibilityLabel="Read our reviews on Trustpilot"
-        >
-          <Text className="text-sm text-white underline" style={{ fontFamily: 'Poppins_500Medium' }}>
-            Read our reviews on Trustpilot
-          </Text>
-        </TouchableOpacity>
-      ) : null}
     </View>
   );
 }

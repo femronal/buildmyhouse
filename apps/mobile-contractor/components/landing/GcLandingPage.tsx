@@ -50,7 +50,7 @@ import {
   HOMEOWNER_APP_URL,
   type GcAudienceTab,
 } from '@/lib/gc-landing-content';
-import { TRUSTPILOT_REVIEWS_URL, contractorTrustindexId } from '@/lib/review-widgets';
+import { contractorTrustindexId } from '@/lib/review-widgets';
 import TrustindexReviews, { type TrustindexStatus } from '@/components/reviews/TrustindexReviews';
 
 function SocialIcon({ id }: { id: string }) {
@@ -163,30 +163,12 @@ function ContractorReviews() {
   if (!widgetId || status === 'off' || status === 'failed') return null;
 
   return (
-    <View className="py-24 px-6 md:px-12">
+    <View className="py-24 px-6 md:px-12" style={{ backgroundColor: GC_BG }}>
       <View className="max-w-7xl w-full self-center">
         <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-white mb-14 text-center">
           What clients say
         </SectionHeading>
         <TrustindexReviews widgetId={widgetId} onStatusChange={setStatus} />
-        {status === 'ready' ? (
-          <Pressable
-            onPress={() => {
-              if (Platform.OS === 'web' && typeof window !== 'undefined') {
-                window.open(TRUSTPILOT_REVIEWS_URL, '_blank', 'noopener,noreferrer');
-                return;
-              }
-              Linking.openURL(TRUSTPILOT_REVIEWS_URL);
-            }}
-            className="mt-8 self-center"
-            accessibilityRole="link"
-            accessibilityLabel="Read our reviews on Trustpilot"
-          >
-            <Text className="text-sm text-blue-300 underline" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Read our reviews on Trustpilot
-            </Text>
-          </Pressable>
-        ) : null}
       </View>
     </View>
   );

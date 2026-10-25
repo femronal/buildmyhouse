@@ -18,7 +18,7 @@ function widgetHtml(widgetId: string) {
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>html,body{margin:0;padding:0;background:#ffffff;}</style>
+<style>html,body{margin:0;padding:0;background:#050505;color:#ffffff;}</style>
 </head>
 <body>
 <div id="trustindex">
@@ -92,7 +92,7 @@ export default function TrustindexReviewsNative({ widgetId, onStatusChange }: Tr
     <View style={{ height: shown ? height : 1, overflow: 'hidden', width: '100%' }}>
       <WebView
         source={{ html, baseUrl: 'https://buildmyhouse.app' }}
-        style={{ height: Math.max(height, 480), backgroundColor: '#ffffff', opacity: shown ? 1 : 0 }}
+        style={{ height: Math.max(height, 480), backgroundColor: '#050505', opacity: shown ? 1 : 0 }}
         scrollEnabled={false}
         originWhitelist={['*']}
         setSupportMultipleWindows={false}
