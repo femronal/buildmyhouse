@@ -314,6 +314,67 @@ function FundingInvoicePanel({
   );
 }
 
+function StageFundingPanel({
+  projectId,
+  stageStart,
+  paymentModel,
+  onDone,
+}: {
+  projectId: string;
+  stageStart?: {
+    stageId: string;
+    stageName: string;
+    amountDue: number;
+    funded: boolean;
+    requestedAt?: string | null;
+    homeownerReadyAt?: string | null;
+  } | null;
+  paymentModel?: string | null;
+  onDone: () => void;
+}) {
+  const [receiptIn, setReceiptIn] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const save = useMutation({
+    mutationFn: () => api.post(`/projects/${projectId}/stages/${stageStart?.stageId}/confirm-funding`, {}),
+    onSuccess: () => {
+      setError('');
+      setMessage('This stage is funded. The contractor can start it.');
+      setReceiptIn(false);
+      onDone();
+    },
+    onError: (reason: Error) => {
+      setMessage('');
+      setError(reason.message || 'Could not confirm this stage.');
+    },
+  });
+  if (paymentModel !== 'pay_by_stage' || !stageStart || stageStart.funded) return null;
+  return (
+    <div className="border rounded-xl p-4 space-y-3 bg-amber-50">
+      <div className="font-medium">Stage waiting on funding</div>
+      <p className="text-sm text-gray-700">
+        {stageStart.stageName} is the next step. The homeowner needs to send {naira(stageStart.amountDue)} to the payment account and email the receipt.
+        {stageStart.requestedAt ? ' The contractor has asked to start.' : ''}
+        {stageStart.homeownerReadyAt ? ' The homeowner is ready to fund it.' : ''} Confirming here records that amount and tells the contractor they can start.
+      </p>
+      <label className="flex items-start gap-2 text-sm">
+        <input type="checkbox" checked={receiptIn} onChange={(event) => setReceiptIn(event.target.checked)} />
+        <span>The money for this stage has arrived and the receipt is on file.</span>
+      </label>
+      <button
+        type="button"
+        disabled={!receiptIn || save.isPending}
+        onClick={() => save.mutate()}
+        className="px-3 py-2 text-sm rounded-lg bg-gray-900 text-white disabled:opacity-50"
+      >
+        {save.isPending ? 'Confirming' : 'Confirm this stage is funded'}
+      </button>
+      {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+    </div>
+  );
+}
+
 function naira(value: unknown) {
   const amount = Number(value);
   if (!Number.isFinite(amount)) return '—';
@@ -574,6 +635,21 @@ export default function AdminProjectDetailPage() {
           />
         </div>
       ) : null}
+      <StageFundingPanel
+        projectId={projectId}
+        stageStart={(project as {
+          stageStart?: {
+            stageId: string;
+            stageName: string;
+            amountDue: number;
+            funded: boolean;
+            requestedAt?: string | null;
+            homeownerReadyAt?: string | null;
+          } | null;
+        }).stageStart}
+        paymentModel={(project as { paymentModel?: string | null }).paymentModel}
+        onDone={() => queryClient.invalidateQueries({ queryKey: ['admin-project', projectId] })}
+      />
       <PaymentModelPanel
         projectId={projectId}
         paymentModel={(project as { paymentModel?: string | null }).paymentModel}

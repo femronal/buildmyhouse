@@ -2,12 +2,13 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Mod
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ChatCircle, Calendar, CaretRight, ArrowLeft, House, CheckCircle, Clock, Lock, MapPin, HardHat, Bed, Bathtub, ArrowsOut, Confetti, ArrowSquareOut, CreditCard, X } from "phosphor-react-native";
 import { useProject } from "@/hooks/useProject";
+import { projectService } from "@/services/projectService";
 import { useProjectAnalysis } from "@/hooks/usePlan";
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from "react";
 import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
@@ -35,7 +36,19 @@ export default function DashboardScreen() {
   }, [width, insets.top]);
   const projectId = params.projectId as string;
 
+  const queryClient = useQueryClient();
+  const [fundingMessage, setFundingMessage] = useState<string | null>(null);
   const { data: project, isLoading: projectLoading, error: projectError } = useProject(projectId || '');
+  const fundStage = useMutation({
+    mutationFn: (stageId: string) => projectService.requestStageStart(projectId, stageId),
+    onSuccess: async (result) => {
+      setFundingMessage(result?.message || null);
+      await queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+    },
+    onError: (error: Error) => {
+      setFundingMessage(error?.message || 'This step could not be opened.');
+    },
+  });
   const { data: analysisData } = useProjectAnalysis(projectId || null);
   const { data: currentUser } = useCurrentUser();
   // Get GC info for chat
@@ -186,6 +199,21 @@ export default function DashboardScreen() {
   const totalStages = stages.length || phases.length;
   const progress = totalStages > 0 ? Math.round((completedStages / totalStages) * 100) : project.progress || 0;
   const isProjectComplete = totalStages > 0 && completedStages === totalStages;
+  const stageStart = (project as {
+    stageStart?: {
+      stageId: string;
+      stageName: string;
+      amountDue: number;
+      funded: boolean;
+      requestedAt: string | null;
+      homeownerReadyAt: string | null;
+    } | null;
+    paymentModel?: string | null;
+  }).stageStart;
+  const showStageFunding = Boolean(
+    stageStart && !stageStart.funded && (project as { paymentModel?: string | null }).paymentModel === 'pay_by_stage',
+  );
+  const stageAmountLabel = `₦${Math.round(Number(stageStart?.amountDue || 0)).toLocaleString('en-US')}`;
   const contractorProfileId = (project as any)?.generalContractor?.contractorProfile?.id as string | undefined;
   const reviewDeepLink = contractorProfileId
     ? `/review-contractor?contractorId=${encodeURIComponent(contractorProfileId)}&projectId=${encodeURIComponent(projectId)}`
@@ -574,6 +602,45 @@ export default function DashboardScreen() {
             }}
           />
         </View>
+
+        {showStageFunding && stageStart ? (
+          <View style={cardShadowStyle} className="bg-white rounded-2xl p-5 mb-6 border border-gray-200">
+            <Text style={{ fontFamily: 'Poppins_700Bold', fontSize: 18, color: '#111111' }}>
+              {stageStart.stageName}
+            </Text>
+            <Text className="mt-2" style={{ fontFamily: 'Poppins_400Regular', fontSize: 15, lineHeight: 22, color: '#374151' }}>
+              {stageStart.requestedAt
+                ? 'Your contractor wants to start this stage. '
+                : 'This is the next step. '}
+              Send {stageAmountLabel} for this stage to the payment account, then email the receipt. BuildMyHouse opens the stage after the payment is confirmed.
+            </Text>
+            {stageStart.homeownerReadyAt ? (
+              <Text className="mt-3" style={{ fontFamily: 'Poppins_600SemiBold', fontSize: 15, lineHeight: 22, color: '#111111' }}>
+                Waiting for BuildMyHouse to confirm the payment.
+              </Text>
+            ) : (
+              <TouchableOpacity
+                onPress={() => fundStage.mutate(stageStart.stageId)}
+                disabled={fundStage.isPending}
+                accessibilityRole="button"
+                className="bg-black rounded-full py-4 mt-4 items-center"
+              >
+                {fundStage.isPending ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text className="text-white" style={{ fontFamily: 'Poppins_700Bold' }}>
+                    Start this step
+                  </Text>
+                )}
+              </TouchableOpacity>
+            )}
+            {fundingMessage ? (
+              <Text className="mt-3" style={{ fontFamily: 'Poppins_400Regular', fontSize: 14, lineHeight: 20, color: '#374151' }}>
+                {fundingMessage}
+              </Text>
+            ) : null}
+          </View>
+        ) : null}
 
         {/* Progress Timeline - Stages/Phases */}
         <View className="mb-6">

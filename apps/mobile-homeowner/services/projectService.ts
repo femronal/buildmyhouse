@@ -145,6 +145,10 @@ export const projectService = {
   /**
    * Approve payment for a stage (update stage status to in_progress)
    */
+  requestStageStart: async (projectId: string, stageId: string): Promise<{ outcome: string; message: string }> => {
+    return api.post(`/projects/${projectId}/stages/${stageId}/request-start`, {});
+  },
+
   approveStage: async (projectId: string, stageId: string) => {
     const response = await api.post(`/projects/${projectId}/stages/${stageId}/approve`, {});
     return response.data;

@@ -11,7 +11,7 @@ function buildService() {
     },
     stageMaterial: { create: jest.fn() },
     stageTeamMember: { create: jest.fn() },
-    project: { update: jest.fn() },
+    project: { update: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) },
     notification: { create: jest.fn().mockResolvedValue({ id: 'n1' }) },
     contractor: { findUnique: jest.fn().mockResolvedValue(null) },
     $transaction: jest.fn(async (ops: any[]) => Promise.all(ops)),

@@ -16,7 +16,7 @@ function getNotificationLink(item: NotificationItem): string | null {
   if (!data) return null;
   if (data.disputeId || (data.projectId && item.type?.includes('dispute')))
     return '/disputes';
-  if ((item.type === 'plan_quote_check' || item.type === 'funding_receipt' || item.type === 'funding_invoice') && data.projectId) {
+  if ((item.type === 'plan_quote_check' || item.type === 'funding_receipt' || item.type === 'funding_invoice' || item.type === 'stage_funding_requested' || item.type === 'stage_funding_ready') && data.projectId) {
     return `/projects/${data.projectId}`;
   }
   if (data.projectId) return '/projects';

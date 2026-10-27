@@ -15,7 +15,8 @@ import {
   ThumbsUp,
 } from "lucide-react-native";
 import { useState } from "react";
-import { useProject, useUpdateStageStatus } from "@/hooks/useProjects";
+import { useProject } from "@/hooks/useProjects";
+import { projectService } from "@/services/projectService";
 import { useQuery } from '@tanstack/react-query';
 import { chatService } from "@/services/chatService";
 import { useConversationUnreadCount } from "@/hooks/useChat";
@@ -77,10 +78,11 @@ export default function GCProjectDetailScreen() {
   const { id } = useLocalSearchParams();
   const projectId = id as string;
   const [stepsExpanded, setStepsExpanded] = useState(false);
+  const [startPending, setStartPending] = useState(false);
+  const [startNotice, setStartNotice] = useState<string | null>(null);
 
   const { data: project, isLoading: projectLoading, error: projectError, refetch } = useProject(projectId || null);
   const { data: earnings = [], isLoading: loadingEarnings } = useGCEarnings();
-  const updateStageStatusMutation = useUpdateStageStatus();
   const { data: currentUser } = useCurrentUser();
   
   // Get homeowner info for chat
@@ -157,17 +159,20 @@ export default function GCProjectDetailScreen() {
   };
 
   const handleStartStage = async (stageId: string) => {
-    if (!id || !project) return;
+    if (!id || !project || startPending) return;
 
+    setStartPending(true);
+    setStartNotice(null);
     try {
-      await updateStageStatusMutation.mutateAsync({
-        projectId: id as string,
-        stageId,
-        status: 'in_progress',
-      });
-      refetch(); // Refetch to update UI
+      const result = await projectService.requestStageStart(id as string, stageId);
+      if (result?.outcome !== 'started') {
+        setStartNotice(result?.message || 'Waiting on homeowner to fund the stage.');
+      }
+      await refetch();
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Failed to start stage. Please try again.');
+      setStartNotice(error?.message || 'This step could not start. Please try again.');
+    } finally {
+      setStartPending(false);
     }
   };
 
@@ -349,6 +354,27 @@ export default function GCProjectDetailScreen() {
     ? activeIndex
     : stages.findIndex((stage: any, index: number) => stage.status === 'not_started' && canStartStage(index, stages));
   const currentStage = focusIndex >= 0 ? stages[focusIndex] : null;
+  const stageStart = (project as { stageStart?: { stageId?: string; funded?: boolean; requestedAt?: string | null; amountDue?: number } | null }).stageStart;
+  const waitingOnFunding = Boolean(
+    currentStage
+    && currentStage.status === 'not_started'
+    && stageStart?.stageId === currentStage.id
+    && stageStart.requestedAt
+    && !stageStart.funded,
+  );
+  const waitingOnFullPayment = Boolean(
+    currentStage
+    && currentStage.status === 'not_started'
+    && stageStart?.stageId === currentStage.id
+    && !stageStart.funded
+    && paymentModel === 'pay_in_full',
+  );
+  const blockedUntilFunding = waitingOnFunding || waitingOnFullPayment;
+  const startMessage = waitingOnFunding
+    ? 'Waiting on homeowner to fund the stage.'
+    : waitingOnFullPayment
+      ? 'Waiting on the full payment to be confirmed.'
+      : startNotice;
   const allDone = stages.length > 0 && stages.every((stage: any) => stage.status === 'completed');
   const doneStages = stages.filter((stage: any) => stage.status === 'completed');
   const lockedStages = focusIndex >= 0 ? stages.slice(focusIndex + 1) : [];
@@ -468,17 +494,31 @@ export default function GCProjectDetailScreen() {
                 ? 'Waiting for the homeowner to check your work.'
                 : currentStage.status === 'in_progress'
                   ? 'When you finish, take photos so the homeowner can see.'
-                  : 'Start this step when you are ready.'}
+                  : waitingOnFunding
+                    ? 'Waiting on homeowner to fund the stage.'
+                    : waitingOnFullPayment
+                      ? 'Waiting on the full payment to be confirmed.'
+                      : 'Start this step when you are ready.'}
             </Text>
-            {currentStage.status === 'not_started' ? (
+            {currentStage.status === 'not_started' && blockedUntilFunding ? (
+              <View
+                className="rounded-2xl px-4 items-center justify-center"
+                style={{ minHeight: 64, backgroundColor: '#334E73' }}
+              >
+                <Text className="text-white text-base text-center" style={{ fontFamily: 'Poppins_700Bold' }}>
+                  {startMessage}
+                </Text>
+              </View>
+            ) : null}
+            {currentStage.status === 'not_started' && !blockedUntilFunding ? (
               <TouchableOpacity
                 onPress={() => handleStartStage(currentStage.id)}
-                disabled={updateStageStatusMutation.isPending}
+                disabled={startPending}
                 accessibilityRole="button"
                 className="bg-blue-600 rounded-2xl px-4 flex-row items-center justify-center"
-                style={{ minHeight: 64, opacity: updateStageStatusMutation.isPending ? 0.7 : 1 }}
+                style={{ minHeight: 64, opacity: startPending ? 0.7 : 1 }}
               >
-                {updateStageStatusMutation.isPending ? (
+                {startPending ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <>
@@ -489,6 +529,11 @@ export default function GCProjectDetailScreen() {
                   </>
                 )}
               </TouchableOpacity>
+            ) : null}
+            {startMessage && !blockedUntilFunding ? (
+              <Text className="mt-3 text-center" style={{ fontFamily: 'Poppins_500Medium', fontSize: 15, lineHeight: 22, color: '#FDE68A' }}>
+                {startMessage}
+              </Text>
             ) : null}
             {currentStage.status === 'in_progress' ? (
               <>
@@ -573,7 +618,17 @@ export default function GCProjectDetailScreen() {
                     {focusIndex + 1}. {currentStage.name}
                   </Text>
                   <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: '#CBD5E1' }}>
-                    {currentStage.status === 'pending_homeowner_approval' ? 'Waiting for homeowner' : 'Doing now'} · {naira(currentStage.estimatedCost)}
+                    {currentStage.status === 'pending_homeowner_approval'
+                      ? 'Waiting for homeowner'
+                      : currentStage.status === 'in_progress'
+                        ? 'Doing now'
+                        : waitingOnFunding
+                          ? 'Waiting on funding'
+                          : waitingOnFullPayment
+                            ? 'Waiting on full payment'
+                            : stageStart?.funded
+                              ? 'Ready to start'
+                              : 'Not started'} · {naira(currentStage.estimatedCost)}
                   </Text>
                 </View>
               </View>

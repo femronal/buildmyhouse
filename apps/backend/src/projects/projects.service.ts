@@ -21,6 +21,14 @@ import { getPlanRequestStep } from '../contractors/plan-request-step';
 import { applyDescribedEvidence, reviewForStage, storedEvidence } from '../contractors/stage-evidence';
 import { OpenAIService } from '../openai/openai.service';
 import { confirmAllReceipts, confirmPendingReceipt, payableFromRequest, readFundingInvoice } from '../funding/funding-invoice';
+import { FundingService } from '../funding/funding.service';
+import {
+  buildStageStart,
+  formatStageNaira,
+  nextStageToStart,
+  readStageStartRequests,
+  withStageStartRequest,
+} from './stage-start';
 import { ADMIN_CHOICE_PAYMENT_ID, RECEIPT_PAYMENT_ID, canOpenProject, canStartStage, completePaymentTarget, isAdminChoicePayment, isPaymentModel, netReceived, PaymentModel } from './payment-model';
 import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
@@ -60,6 +68,7 @@ export class ProjectsService {
     private readonly emailService: EmailService,
     @Optional() private readonly referrals?: ReferralsService,
     @Optional() private readonly openai?: OpenAIService,
+    @Optional() private readonly funding?: FundingService,
   ) {}
 
   private async referralCreateFields(homeownerId: string, code?: string | null, source?: string | null) {
@@ -894,6 +903,7 @@ export class ProjectsService {
       );
     }
 
+    await this.notifyIfStageJustFunded(params.projectId);
     return updated;
   }
 
@@ -1062,6 +1072,7 @@ export class ProjectsService {
       );
     }
 
+    if (paymentComplete) await this.notifyIfStageJustFunded(project.id);
     return this.prisma.project.findUnique({ where: { id: project.id } });
   }
 
@@ -1124,6 +1135,267 @@ export class ProjectsService {
         ? 'This project is paid in full. The full invoice has to be confirmed before a stage can start.'
         : 'This stage cannot start until the homeowner has deposited the money for it.',
     );
+  }
+
+  private stageStartContext(project: any) {
+    const deposits = this.stageDepositsOf(project);
+    const totalPayable = this.invoiceTotal(project);
+    const received = netReceived(project.payments);
+    const requests = readStageStartRequests(project.aiAnalysis);
+    return {
+      deposits,
+      totalPayable,
+      received,
+      requests,
+      stageStart: buildStageStart({
+        paymentModel: project.paymentModel,
+        stages: project.stages || [],
+        deposits,
+        totalPayable,
+        received,
+        requests,
+      }),
+    };
+  }
+
+  private async attachStageStart(project: any) {
+    if (!project?.id) return project;
+    const payments = await this.prisma.payment.findMany({
+      where: { projectId: project.id, status: { in: ['completed', 'refunded'] } },
+      select: { status: true, amount: true },
+    });
+    const planRequest = (project.projectRequests || []).find((item: any) => !item.stageId) || null;
+    return {
+      ...project,
+      stageStart: this.stageStartContext({
+        ...project,
+        payments,
+        projectRequests: planRequest ? [planRequest] : [],
+      }).stageStart,
+    };
+  }
+
+  private async saveStageStartRequest(project: any, stageId: string, patch: { requestedAt?: string | null; homeownerReadyAt?: string | null; fundedNotifiedAt?: string | null }) {
+    await this.prisma.project.update({
+      where: { id: project.id },
+      data: { aiAnalysis: withStageStartRequest(project.aiAnalysis, stageId, patch) },
+    });
+  }
+
+  private async sendStageInvoice(projectId: string) {
+    if (!this.funding) return;
+    try {
+      await this.funding.sendProjectInvoice(projectId, { resend: true });
+    } catch (error) {
+      this.logger.warn(`Stage invoice was not sent for ${projectId}: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  private async notifyIfStageJustFunded(projectId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } } },
+        projectRequests: {
+          where: { stageId: null },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+          select: { gcNotes: true, totalQuoteAmount: true },
+        },
+      },
+    });
+    if (!project?.generalContractorId || project.paymentModel !== 'pay_by_stage') return;
+    const context = this.stageStartContext(project);
+    const stageStart = context.stageStart;
+    if (!stageStart?.funded) return;
+    const request = context.requests[stageStart.stageId] || {};
+    if (stageStart.stageIndex === 0 && !request.requestedAt) return;
+    if (request.fundedNotifiedAt) return;
+    await this.wsService.sendNotification(project.generalContractorId, {
+      type: 'stage_funded',
+      title: 'Stage funded',
+      message: `The homeowner funded ${stageStart.stageName} on "${project.name}". You can start this step.`,
+      data: {
+        projectId,
+        ctaLabel: 'Start this step',
+      },
+    });
+    await this.saveStageStartRequest(project, stageStart.stageId, { fundedNotifiedAt: new Date().toISOString() });
+  }
+
+  async requestStageStart(projectId: string, stageId: string, actor: { userId: string; role: string }) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } } },
+        projectRequests: {
+          where: { stageId: null },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+          select: { gcNotes: true, totalQuoteAmount: true },
+        },
+        homeowner: { select: { id: true, fullName: true } },
+        generalContractor: { select: { id: true, fullName: true } },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    const isHomeowner = actor.role === 'homeowner' && project.homeownerId === actor.userId;
+    const isContractor = actor.role === 'general_contractor' && project.generalContractorId === actor.userId;
+    if (!isHomeowner && !isContractor) {
+      throw new ForbiddenException('You cannot start a step on this project.');
+    }
+    if (project.status === 'paused') {
+      throw new ForbiddenException('Project is paused for admin inspection');
+    }
+
+    const next = nextStageToStart(project.stages || []);
+    if (!next || next.stage.id !== stageId) {
+      throw new BadRequestException('This step is not ready to start.');
+    }
+
+    const context = this.stageStartContext(project);
+    const stageStart = context.stageStart;
+    if (!stageStart) throw new BadRequestException('This step is not ready to start.');
+    const amountLabel = formatStageNaira(stageStart.amountDue);
+    const stageName = stageStart.stageName;
+
+    if (stageStart.funded && isContractor) {
+      const started = await this.updateStageStatus(projectId, stageId, 'in_progress', actor.role);
+      return { outcome: 'started' as const, message: 'This step has started.', stage: started, stageStart: null };
+    }
+    if (stageStart.funded) {
+      return {
+        outcome: 'ready_for_contractor' as const,
+        message: 'This stage is funded. Your contractor can start it.',
+        stageStart,
+      };
+    }
+    if (project.paymentModel !== 'pay_by_stage') {
+      return {
+        outcome: 'waiting_for_funding' as const,
+        message: 'Waiting on the full payment to be confirmed.',
+        stageStart,
+      };
+    }
+
+    const current = context.requests[stageId] || {};
+    const now = new Date().toISOString();
+    const firstContractorAsk = isContractor && !current.requestedAt;
+    const firstHomeownerAsk = isHomeowner && !current.homeownerReadyAt;
+    if (firstContractorAsk || firstHomeownerAsk) {
+      await this.saveStageStartRequest(project, stageId, {
+        ...(firstContractorAsk ? { requestedAt: now } : {}),
+        ...(firstHomeownerAsk ? { homeownerReadyAt: now } : {}),
+      });
+    }
+
+    const gcFirst = String(project.generalContractor?.fullName || 'Your contractor').trim().split(/\s+/)[0] || 'Your contractor';
+    if (firstContractorAsk && project.homeownerId) {
+      await this.wsService.sendNotification(project.homeownerId, {
+        type: 'stage_funding_requested',
+        title: 'Fund the next stage',
+        message: `${gcFirst} wants to start ${stageName} on "${project.name}". Send ${amountLabel} for this stage to the payment account, then email the receipt.`,
+        data: { projectId, stageId, ctaLabel: 'Open project' },
+      });
+      const adminProjectUrl = `${String(this.configService.get<string>('ADMIN_APP_URL') || 'https://admin.buildmyhouse.app').replace(/\/+$/, '')}/projects/${projectId}`;
+      await this.wsService.sendNotificationToRole('admin', {
+        type: 'stage_funding_requested',
+        title: 'Stage waiting on funding',
+        message: `${gcFirst} wants to start ${stageName} on "${project.name}". The homeowner still needs to send ${amountLabel} and email the receipt.`,
+        data: { projectId, stageId, ctaUrl: adminProjectUrl, ctaLabel: 'Open project' },
+      });
+      await this.sendStageInvoice(projectId);
+    }
+    if (firstHomeownerAsk) {
+      const adminProjectUrl = `${String(this.configService.get<string>('ADMIN_APP_URL') || 'https://admin.buildmyhouse.app').replace(/\/+$/, '')}/projects/${projectId}`;
+      await this.wsService.sendNotificationToRole('admin', {
+        type: 'stage_funding_ready',
+        title: 'Homeowner is ready to fund a stage',
+        message: `The homeowner is ready to fund ${stageName} on "${project.name}" (${amountLabel}). Confirm the payment, then the contractor can start.`,
+        data: { projectId, stageId, ctaUrl: adminProjectUrl, ctaLabel: 'Open project' },
+      });
+      if (!current.requestedAt) await this.sendStageInvoice(projectId);
+    }
+
+    const saved = {
+      ...stageStart,
+      requestedAt: firstContractorAsk ? now : stageStart.requestedAt,
+      homeownerReadyAt: firstHomeownerAsk ? now : stageStart.homeownerReadyAt,
+    };
+    if (isContractor) {
+      return {
+        outcome: 'waiting_for_funding' as const,
+        message: 'Waiting on homeowner to fund the stage.',
+        stageStart: saved,
+      };
+    }
+    return {
+      outcome: 'waiting_for_confirmation' as const,
+      message: `Send ${amountLabel} for ${stageName} to the payment account, then email the receipt. BuildMyHouse opens the stage after the payment is confirmed.`,
+      stageStart: saved,
+    };
+  }
+
+  async confirmStageFunding(projectId: string, stageId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } } },
+        projectRequests: {
+          where: { stageId: null },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+          select: { gcNotes: true, totalQuoteAmount: true },
+        },
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+    if (project.paymentModel !== 'pay_by_stage') {
+      throw new BadRequestException('This project is not paid stage by stage.');
+    }
+    const next = nextStageToStart(project.stages || []);
+    if (!next || next.stage.id !== stageId) {
+      throw new BadRequestException('This step is not the one waiting to be funded.');
+    }
+    const context = this.stageStartContext(project);
+    const due = context.stageStart?.amountDue || 0;
+    const transactionId = `stage-fund-${stageId}`;
+    if (!context.stageStart?.funded && due > 0) {
+      const already = (project.payments || []).some((payment: any) => payment.transactionId === transactionId && payment.status === 'completed');
+      if (!already) {
+        await this.prisma.payment.create({
+          data: {
+            projectId,
+            stageId,
+            homeownerId: project.homeownerId,
+            amount: due,
+            status: 'completed',
+            method: 'manual',
+            transactionId,
+            snapshotProjectName: project.name,
+            snapshotStageName: next.stage.name,
+          },
+        });
+      }
+    }
+    await this.notifyIfStageJustFunded(projectId);
+    const fresh = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        stages: { orderBy: { order: 'asc' } },
+        payments: { where: { status: { in: ['completed', 'refunded'] } } },
+        projectRequests: {
+          where: { stageId: null },
+          orderBy: { updatedAt: 'desc' },
+          take: 1,
+          select: { gcNotes: true, totalQuoteAmount: true },
+        },
+      },
+    });
+    return { stageStart: fresh ? this.stageStartContext(fresh).stageStart : null };
   }
 
   private async assertAddedPayout(projectId: string, added: number, note?: string) {
@@ -2065,6 +2337,7 @@ export class ProjectsService {
         data: { projectId: params.projectId, stageId: stage.id },
       });
     }
+    await this.notifyIfStageJustFunded(params.projectId);
     return updatedStage;
   }
 
@@ -2324,7 +2597,7 @@ export class ProjectsService {
 
     const presented = await this.presentStageEvidence(project);
     const withMoney = await this.attachMoneySummary(presented);
-    const visible = viewer === 'admin' ? withMoney : this.hideRejectedPayoutLines(withMoney);
+    const visible = await this.attachStageStart(viewer === 'admin' ? withMoney : this.hideRejectedPayoutLines(withMoney));
     if (project.designId && planRequest) {
       return {
         ...visible,

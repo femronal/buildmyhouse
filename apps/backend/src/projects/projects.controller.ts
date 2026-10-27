@@ -168,6 +168,30 @@ export class ProjectsController {
     throw new ForbiddenException('You do not have permission to update stages for this project');
   }
 
+  @Post(':projectId/stages/:stageId/request-start')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('general_contractor', 'homeowner')
+  requestStageStart(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+  ) {
+    return this.projectsService.requestStageStart(projectId, stageId, {
+      userId: req.user.sub,
+      role: req.user.role,
+    });
+  }
+
+  @Post(':projectId/stages/:stageId/confirm-funding')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  confirmStageFunding(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+  ) {
+    return this.projectsService.confirmStageFunding(projectId, stageId);
+  }
+
   @Post(':projectId/stages/:stageId/submit-for-approval')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor')

@@ -123,6 +123,10 @@ export const projectService = {
     }
   },
 
+  requestStageStart: async (projectId: string, stageId: string): Promise<{ outcome: string; message: string }> => {
+    return api.post(`/projects/${projectId}/stages/${stageId}/request-start`, {});
+  },
+
   updateStageStatus: async (projectId: string, stageId: string, status: 'not_started' | 'in_progress' | 'completed' | 'blocked') => {
     try {
       const response = await api.patch(`/projects/${projectId}/stages/${stageId}`, { status });
