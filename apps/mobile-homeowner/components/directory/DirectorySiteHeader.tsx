@@ -34,9 +34,9 @@ function lockupUri(): string | undefined {
   }
 }
 
-function BrandLockup() {
+function BrandLockup({ width = LOCKUP_WIDTH }: { width?: number }) {
   const [uri, setUri] = useState<string | undefined>(() => lockupUri());
-  const height = Math.round(LOCKUP_WIDTH * (LOGO_INK.height / LOGO_INK.width));
+  const height = Math.round(width * (LOGO_INK.height / LOGO_INK.width));
 
   useEffect(() => {
     if (uri) return;
@@ -61,10 +61,10 @@ function BrandLockup() {
     return createElement('img', {
       src: uri,
       alt: 'BuildMyHouse',
-      width: LOCKUP_WIDTH,
+      width,
       height,
       style: {
-        width: LOCKUP_WIDTH,
+        width,
         height,
         objectFit: 'cover',
         objectPosition: 'center',
@@ -78,7 +78,7 @@ function BrandLockup() {
       source={{ uri }}
       accessibilityLabel="BuildMyHouse"
       resizeMode="cover"
-      style={{ width: LOCKUP_WIDTH, height }}
+      style={{ width, height }}
     />
   );
 }
@@ -100,7 +100,7 @@ export default function DirectorySiteHeader({
         <View className="flex-row items-center gap-6 flex-1 min-w-0">
           <Link href={'/' as any} asChild>
             <Pressable accessibilityRole="link" accessibilityLabel="BuildMyHouse home">
-              <BrandLockup />
+              <BrandLockup width={compact ? 120 : LOCKUP_WIDTH} />
             </Pressable>
           </Link>
           {showNav ? (
@@ -124,28 +124,39 @@ export default function DirectorySiteHeader({
           ) : null}
         </View>
         <View className="flex-row items-center gap-4">
-          <Link href={'/email-login' as any} asChild>
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel="Log in"
-              className={compact ? 'bg-black px-4 py-2 rounded-lg' : ''}
-            >
-              <Text
-                className={compact ? 'text-sm text-white' : 'text-sm text-slate-500'}
-                style={{ fontFamily: 'Poppins_500Medium' }}
-              >
-                Log in
-              </Text>
-            </Pressable>
-          </Link>
-          {onStartFlow ? null : (
-            <Link href={'/start' as any} asChild>
-              <Pressable className="hidden md:flex bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
-                <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Start a Project
-                </Text>
-              </Pressable>
-            </Link>
+          {compact ? (
+            onStartFlow ? null : (
+              <Link href={'/start' as any} asChild>
+                <Pressable
+                  accessibilityRole="link"
+                  accessibilityLabel="Start a project"
+                  className="bg-black px-3 py-2 rounded-lg"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    Start a project
+                  </Text>
+                </Pressable>
+              </Link>
+            )
+          ) : (
+            <>
+              <Link href={'/email-login' as any} asChild>
+                <Pressable accessibilityRole="link" accessibilityLabel="Log in">
+                  <Text className="text-sm text-slate-500" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    Log in
+                  </Text>
+                </Pressable>
+              </Link>
+              {onStartFlow ? null : (
+                <Link href={'/start' as any} asChild>
+                  <Pressable className="bg-black px-4 py-2 rounded-lg" accessibilityRole="link">
+                    <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                      Start a Project
+                    </Text>
+                  </Pressable>
+                </Link>
+              )}
+            </>
           )}
         </View>
       </View>
