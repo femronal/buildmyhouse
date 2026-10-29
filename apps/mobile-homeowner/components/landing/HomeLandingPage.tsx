@@ -9,10 +9,12 @@ import {
   CheckCircle,
   ClipboardText,
   Hammer,
+  HardHat,
   Lifebuoy,
   MapPin,
   Phone,
   ShieldCheck,
+  Wrench,
   XCircle,
 } from 'phosphor-react-native';
 import LogoText from '@/components/LogoText';
@@ -154,6 +156,18 @@ function HeroHeadlineBlock({ audience }: { audience: AudienceTab['key'] }) {
   );
 }
 
+const AUDIENCE_TAB_ICONS = {
+  diaspora: Airplane,
+  'need-worker': Wrench,
+  'get-hired': HardHat,
+} as const;
+
+const AUDIENCE_TAB_CAPTIONS: Record<AudienceTab['key'], string> = {
+  diaspora: 'From abroad',
+  'need-worker': 'Need work',
+  'get-hired': 'Get hired',
+};
+
 function AudienceTabBar({
   audience,
   onSelect,
@@ -163,69 +177,79 @@ function AudienceTabBar({
   onSelect: (key: AudienceTab['key']) => void;
   isDesktop: boolean;
 }) {
-  const mobileLabels: Record<AudienceTab['key'], string> = {
-    diaspora: 'From abroad',
-    'need-worker': 'Need work done',
-    'get-hired': 'Get hired',
-  };
+  const iconSize = isDesktop ? 22 : 20;
+  const circle = isDesktop ? 44 : 40;
 
-  const renderTab = (tab: AudienceTab, compact?: boolean) => {
-    const active = tab.key === audience;
-    return (
-      <Pressable
-        key={tab.key}
-        onPress={() => onSelect(tab.key)}
-        className={`px-3 py-1.5 rounded-md ${active ? 'bg-black' : ''}`}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: active }}
-      >
-        <Text
-          className={`text-xs text-center ${active ? 'text-white' : 'text-slate-500'}`}
-          style={{ fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_500Medium' }}
-        >
-          {compact ? mobileLabels[tab.key] : tab.label}
-        </Text>
-      </Pressable>
-    );
-  };
-
-  if (isDesktop) {
-    return (
-      <View
-        className="flex-row items-center gap-1 p-1 bg-slate-50 rounded-lg border border-slate-100 self-start"
-        style={{ alignSelf: 'flex-start' }}
-      >
-        {AUDIENCE_TABS.map((tab) => renderTab(tab))}
-      </View>
-    );
-  }
-
-  return (
+  const bar = (
     <View
-      className="bmh-audience-tabs-wrap w-full"
+      accessibilityRole="tablist"
       style={{
-        width: '100%',
-        padding: 4,
-        backgroundColor: '#f8fafc',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#f1f5f9',
-        alignSelf: 'stretch',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        alignSelf: isDesktop ? 'flex-start' : 'stretch',
+        width: isDesktop ? undefined : '100%',
+        backgroundColor: '#111111',
+        borderRadius: 999,
+        paddingVertical: 8,
+        paddingHorizontal: 6,
       }}
     >
-      <View
-        style={{
-          width: '100%',
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          alignItems: 'center',
-          columnGap: 4,
-          rowGap: 4,
-        }}
-      >
-        {AUDIENCE_TABS.map((tab) => renderTab(tab, true))}
-      </View>
+      {AUDIENCE_TABS.map((tab) => {
+        const active = tab.key === audience;
+        const Icon = AUDIENCE_TAB_ICONS[tab.key];
+        const color = active ? '#FFFFFF' : '#A3A3A3';
+        return (
+          <Pressable
+            key={tab.key}
+            onPress={() => onSelect(tab.key)}
+            accessibilityRole="tab"
+            accessibilityLabel={tab.label}
+            accessibilityState={{ selected: active }}
+            style={{
+              flex: isDesktop ? undefined : 1,
+              width: isDesktop ? 116 : undefined,
+              minWidth: 0,
+              alignItems: 'center',
+              paddingVertical: 2,
+              paddingHorizontal: 4,
+            }}
+          >
+            <View
+              style={{
+                width: circle,
+                height: circle,
+                borderRadius: circle / 2,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: active ? '#2C2C2C' : 'transparent',
+              }}
+            >
+              <Icon size={iconSize} color={color} weight="regular" />
+            </View>
+            <Text
+              numberOfLines={2}
+              style={{
+                marginTop: 2,
+                fontFamily: active ? 'Poppins_600SemiBold' : 'Poppins_500Medium',
+                fontSize: isDesktop ? 11 : 10,
+                lineHeight: isDesktop ? 14 : 13,
+                color,
+                textAlign: 'center',
+              }}
+            >
+              {AUDIENCE_TAB_CAPTIONS[tab.key]}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
+  if (isDesktop) return bar;
+
+  return (
+    <View className="bmh-audience-tabs-wrap w-full" style={{ width: '100%', alignSelf: 'stretch' }}>
+      {bar}
     </View>
   );
 }
@@ -398,7 +422,7 @@ export default function HomeLandingPage() {
         {/* Hero */}
         <View className="pt-12 pb-16 md:pt-20 md:pb-24 overflow-hidden">
           <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="mb-6 md:mb-8">
+            <View className="mb-6 md:mb-8" style={{ width: '100%', alignSelf: 'stretch' }}>
               <AudienceTabBar audience={audience} onSelect={selectAudience} isDesktop={isDesktop} />
             </View>
 
