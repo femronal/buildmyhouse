@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import { api } from '@/lib/api';
-import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { prepareImageForUpload } from '@/lib/image-upload';
+import { friendlyUploadError, mimeFromExtension } from '@/lib/upload-rules';
 
 type PickedImage = {
   uri: string;
@@ -12,13 +13,9 @@ type PickedImage = {
 };
 
 export async function uploadListingImage(asset: PickedImage): Promise<string> {
-  const prepared = await ensureImageWithinUploadLimit(asset);
-  if (prepared.exceedsLimit) {
-    throw new Error('Image too large. Please choose an image below 50MB.');
-  }
-  const file = prepared.asset;
+  const file = await prepareImageForUpload(asset);
   const name = file.fileName || file.name || asset.fileName || asset.name || `listing-${Date.now()}.jpg`;
-  const type = file.mimeType || asset.mimeType || 'image/jpeg';
+  const type = mimeFromExtension(name) || file.mimeType || asset.mimeType || 'image/jpeg';
   const formData = new FormData();
   if (Platform.OS === 'web') {
     const response = await fetch(file.uri);
@@ -31,8 +28,12 @@ export async function uploadListingImage(asset: PickedImage): Promise<string> {
       type,
     } as any);
   }
-  const uploadRes = await api.post('/upload/image', formData);
-  const url = String(uploadRes?.url || '').trim();
-  if (!url) throw new Error('Upload succeeded but no image URL was returned.');
-  return url;
+  try {
+    const uploadRes = await api.post('/upload/image', formData);
+    const url = String(uploadRes?.url || '').trim();
+    if (!url) throw new Error('Upload succeeded but no image URL was returned.');
+    return url;
+  } catch (error) {
+    throw new Error(friendlyUploadError(error));
+  }
 }

@@ -10,6 +10,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 import { uploadListingImage } from '@/lib/listing-image-upload';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import {
@@ -180,7 +181,8 @@ export default function ProfessionalManagePage() {
         }
       }
       const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
@@ -194,7 +196,7 @@ export default function ProfessionalManagePage() {
       hydrate(updated);
       setNotice(field === 'photoUrl' ? 'Profile picture updated.' : 'Logo updated.');
     } catch (e: any) {
-      setError(e?.message || 'Unable to upload this image.');
+      setError(friendlyUploadError(e));
     } finally {
       setSaving(false);
     }
@@ -206,7 +208,7 @@ export default function ProfessionalManagePage() {
     setNotice('');
     try {
       const picked = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: ['application/pdf', 'image/*', 'image/heic', 'image/heif'],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -241,7 +243,7 @@ export default function ProfessionalManagePage() {
       hydrate(refreshed);
       setNotice('Document uploaded for BuildMyHouse review. It stays private.');
     } catch (e: any) {
-      setError(e?.message || 'Unable to upload this document.');
+      setError(friendlyUploadError(e));
     } finally {
       setSaving(false);
     }

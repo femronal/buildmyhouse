@@ -7,7 +7,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { GOOGLE_MAPS_CONFIG } from '@/config/maps';
 import { reverseGeocode, AddressDetails } from '@/services/addressService';
-import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { prepareImageForUpload } from '@/lib/image-upload';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { useRecommendedGCs, useSendGCRequests, useCheckGCAcceptance, useActivateProject, useSaveProjectForLater, useDesign, useCreateProjectFromDesign } from '@/hooks';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useProjectAnalysis } from '@/hooks/usePlan';
@@ -447,11 +448,7 @@ export default function HouseSummaryScreen() {
   }, []);
 
   const uploadRequestImage = useCallback(async (asset: any) => {
-    const prepared = await ensureImageWithinUploadLimit(asset);
-    if (prepared.exceedsLimit) {
-      throw new Error('One of the selected images is still too large after optimization.');
-    }
-    const preparedAsset = prepared.asset;
+    const preparedAsset = await prepareImageForUpload(asset);
     const formData = new FormData();
     const { fileName, mimeType } = normalizeImageAssetMeta(preparedAsset, 'design-request-photo');
     if (Platform.OS === 'web') {
@@ -563,12 +560,14 @@ export default function HouseSummaryScreen() {
       const result =
         source === 'camera'
           ? await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ['images'],
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
               allowsEditing: false,
               quality: 0.9,
             })
           : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ['images'],
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
               allowsEditing: false,
               quality: 0.9,
               allowsMultipleSelection: true,
@@ -577,8 +576,8 @@ export default function HouseSummaryScreen() {
             });
       if (result.canceled || !result.assets?.length) return;
       setRequestPhotos((prev) => [...prev, ...result.assets].slice(0, MAX_MODAL_PHOTOS));
-    } catch {
-      Alert.alert('Error', 'Failed to select photos.');
+    } catch (error) {
+      Alert.alert('Upload error', friendlyUploadError(error));
     }
   }, [requestPhotos.length]);
 

@@ -21,6 +21,7 @@ import { getBackendAssetUrl } from "@/lib/image";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { uploadFile } from "@/utils/fileUpload";
 import { api } from "@/lib/api";
+import { friendlyUploadError } from "@/lib/upload-rules";
 import { StateLgaPicker } from "@/components/location/StateLgaPicker";
 import { composeLocationLabel, parseLocationToStateLga } from "@/lib/nigeria-lgas";
 
@@ -352,7 +353,7 @@ export default function OnboardingScreen() {
         setError("Allow photo access to add a logo.");
         return;
       }
-      const result = await ImagePicker.launchImageLibraryAsync({ quality: 0.85 });
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible });
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
@@ -364,7 +365,7 @@ export default function OnboardingScreen() {
       });
       setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add that photo.");
+      setError(friendlyUploadError(err));
     } finally {
       setBusy(false);
     }
@@ -372,7 +373,7 @@ export default function OnboardingScreen() {
 
   const uploadProof = async (documentType: string) => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: ["application/pdf", "image/*"] });
+      const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: ["application/pdf", "image/*", "image/heic", "image/heif"] });
       if (result.canceled) return;
       const file = result.assets?.[0];
       if (!file?.uri) return;
@@ -386,7 +387,7 @@ export default function OnboardingScreen() {
       await queryClient.invalidateQueries({ queryKey: ["gc-profile"] });
       setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add that file.");
+      setError(friendlyUploadError(err));
     } finally {
       setBusy(false);
     }

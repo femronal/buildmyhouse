@@ -1258,7 +1258,7 @@ export default function VerificationPage() {
                     {isUploadingPlanImage ? 'Uploading photo…' : 'Add or replace plan photos'}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
                       multiple
                       className="hidden"
                       disabled={isUploadingPlanImage}

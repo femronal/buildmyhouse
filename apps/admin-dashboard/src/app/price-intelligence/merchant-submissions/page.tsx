@@ -263,7 +263,7 @@ export default function MerchantSubmissionsPage() {
             {uploading ? 'Uploading…' : 'Upload WhatsApp / price-list image'}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
               className="hidden"
               onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
             />

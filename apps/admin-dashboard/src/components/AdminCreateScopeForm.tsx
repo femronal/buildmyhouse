@@ -293,7 +293,7 @@ export function AdminCreateScopeForm({
             {uploading ? 'Uploading…' : 'Add photo'}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
               className="hidden"
               disabled={uploading}
               onChange={(e) => {

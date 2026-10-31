@@ -9,7 +9,9 @@ import { useProject } from "@/hooks/useProject";
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
-import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { prepareImageForUpload } from '@/lib/image-upload';
+import { friendlyUploadError } from '@/lib/upload-rules';
+import { StoredImage } from '@/components/StoredImage';
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -60,6 +62,8 @@ export default function ChatScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   
   const [newMessage, setNewMessage] = useState("");
+  const [uploadNotice, setUploadNotice] = useState("");
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   
   // Fetch project to get GC info
   const { data: project, isLoading: projectLoading } = useProject(projectId || '');
@@ -170,7 +174,9 @@ export default function ChatScreen() {
   };
 
   const handlePickPhoto = async () => {
-    if (!conversation?.id) return;
+    if (!conversation?.id || uploadingPhoto) return;
+    setUploadNotice('');
+    setUploadingPhoto(true);
     try {
       if (Platform.OS !== 'web') {
         const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -181,30 +187,25 @@ export default function ChatScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 0.8,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
       if (result.canceled || !result.assets?.length) return;
 
-      const asset = result.assets[0];
-      const prepared = await ensureImageWithinUploadLimit(asset);
-      if (prepared.exceedsLimit) {
-        Alert.alert('Image too large', 'Please choose an image below 50MB.');
-        return;
-      }
-      if (prepared.wasCompressed) {
-        Alert.alert('Large image optimized', 'Your image was automatically compressed for upload.');
-      }
-
-      const { fileName, mimeType } = normalizeImageAssetMeta(prepared.asset, 'chat-image');
-      await uploadImageAttachment(prepared.asset.uri, fileName, mimeType);
+      const asset = await prepareImageForUpload(result.assets[0]);
+      const { fileName, mimeType } = normalizeImageAssetMeta(asset, 'chat-image');
+      await uploadImageAttachment(asset.uri, fileName, mimeType);
 
       refetchMessages();
       queryClient.invalidateQueries({ queryKey: ['messages', conversation.id] });
     } catch (error: any) {
-      Alert.alert('Upload failed', error?.message || 'Could not send image.');
+      const message = friendlyUploadError(error);
+      setUploadNotice(message);
+      Alert.alert('Upload failed', message);
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -229,11 +230,7 @@ export default function ChatScreen() {
         
         {msg.type === "image" && (
           <View className="max-w-[80%]">
-            <Image
-              source={{ uri: getBackendAssetUrl(msg.content) }}
-              className="w-64 h-48 rounded-2xl"
-              resizeMode="cover"
-            />
+            <StoredImage uri={getBackendAssetUrl(msg.content)} className="w-64 h-48 rounded-2xl" />
           </View>
         )}
         
@@ -393,9 +390,16 @@ export default function ChatScreen() {
 
       {/* Input Area */}
       <View className="px-6 py-4 border-t border-gray-100 bg-white">
+        {uploadNotice ? (
+          <Text className="text-red-600 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>{uploadNotice}</Text>
+        ) : null}
+        {uploadingPhoto ? (
+          <Text className="text-gray-500 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Uploading...</Text>
+        ) : null}
         <View className="flex-row items-center">
           <TouchableOpacity
             onPress={handlePickPhoto}
+            disabled={uploadingPhoto}
             className="w-10 h-10 bg-gray-100 rounded-full items-center justify-center mr-2"
           >
             <Paperclip size={20} color="#000000" strokeWidth={2} />

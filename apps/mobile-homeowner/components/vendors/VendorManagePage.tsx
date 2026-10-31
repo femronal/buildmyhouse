@@ -20,6 +20,7 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { getBackendAssetUrl } from '@/lib/image';
 import { uploadListingImage } from '@/lib/listing-image-upload';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { requireAuthToContinue } from '@/lib/require-auth-to-continue';
 import { useWebSeo } from '@/lib/seo';
 import { fetchPublicVendorCategories, VENDOR_STATE_FILTERS, type PublicVendorCategory } from '@/lib/public-vendors';
@@ -375,7 +376,8 @@ export default function VendorManagePage() {
         }
       }
       const picked = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
         allowsEditing: documentType === 'storefront_photo',
         aspect: documentType === 'storefront_photo' ? [16, 9] : undefined,
         quality: 0.85,
@@ -397,7 +399,7 @@ export default function VendorManagePage() {
       hydrate(refreshed);
       setNotice(documentType === 'storefront_photo' ? 'Storefront photo added.' : 'Photo added.');
     } catch (e: any) {
-      setError(e?.message || 'Unable to upload this photo.');
+      setError(friendlyUploadError(e));
     } finally {
       setUploading(false);
     }
@@ -410,7 +412,7 @@ export default function VendorManagePage() {
     setNotice(null);
     try {
       const picked = await DocumentPicker.getDocumentAsync({
-        type: ['image/*'],
+        type: ['image/*', 'image/heic', 'image/heif', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff'],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -440,7 +442,7 @@ export default function VendorManagePage() {
       hydrate(updated);
       setNotice('Logo updated on your public profile.');
     } catch (e: any) {
-      setError(e?.message || 'Unable to upload logo.');
+      setError(friendlyUploadError(e));
     } finally {
       setUploading(false);
     }
@@ -453,7 +455,7 @@ export default function VendorManagePage() {
     setNotice(null);
     try {
       const picked = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'image/*'],
+        type: ['application/pdf', 'image/*', 'image/heic', 'image/heif'],
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -490,7 +492,7 @@ export default function VendorManagePage() {
       hydrate(refreshed);
       setNotice('Document uploaded for review.');
     } catch (e: any) {
-      setError(e?.message || 'Unable to upload document.');
+      setError(friendlyUploadError(e));
     } finally {
       setUploading(false);
     }

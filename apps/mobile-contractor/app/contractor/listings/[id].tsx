@@ -4,6 +4,8 @@ import { useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { api } from '@/lib/api';
 import { Platform } from 'react-native';
+import { prepareImageForUpload } from '@/lib/image-upload';
+import { friendlyUploadError, mimeFromExtension } from '@/lib/upload-rules';
 
 export default function ManageArtisanListingScreen() {
   const params = useLocalSearchParams<{ id?: string }>();
@@ -47,20 +49,26 @@ export default function ManageArtisanListingScreen() {
   };
 
   const upload = async (mediaType: 'logo' | 'workshop_cover' | 'work_gallery') => {
-    const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.85 });
-    if (picked.canceled || !picked.assets?.[0]) return;
-    const asset = picked.assets[0];
-    const form = new FormData();
-    if (Platform.OS === 'web') {
-      const blob = await (await fetch(asset.uri)).blob();
-      form.append('file', blob, asset.fileName || 'photo.jpg');
-    } else {
-      form.append('file', { uri: asset.uri, name: asset.fileName || 'photo.jpg', type: asset.mimeType || 'image/jpeg' } as any);
+    try {
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible });
+      if (picked.canceled || !picked.assets?.[0]) return;
+      const asset = await prepareImageForUpload(picked.assets[0]);
+      const name = asset.fileName || 'photo.jpg';
+      const type = mimeFromExtension(name) || asset.mimeType || 'image/jpeg';
+      const form = new FormData();
+      if (Platform.OS === 'web') {
+        const blob = asset.file || await (await fetch(asset.uri)).blob();
+        form.append('file', blob, name);
+      } else {
+        form.append('file', { uri: asset.uri, name, type } as any);
+      }
+      const uploaded = await api.post('/upload/image', form);
+      const updated = await api.post(`/artisans/my-listings/${id}/media`, { mediaType, fileRef: uploaded.url });
+      setListing(updated);
+      setNotice('Photo added. The trust score uses the stored listing, not a typed number.');
+    } catch (error) {
+      setNotice(friendlyUploadError(error));
     }
-    const uploaded = await api.post('/upload/image', form);
-    const updated = await api.post(`/artisans/my-listings/${id}/media`, { mediaType, fileRef: uploaded.url });
-    setListing(updated);
-    setNotice('Photo added. The trust score uses the stored listing, not a typed number.');
   };
 
   if (!listing) return <View style={{ padding: 24 }}><Text>Loading listing…</Text></View>;

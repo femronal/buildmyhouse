@@ -1,3 +1,5 @@
+import { assertUploadAllowed, classifyLocalFile, friendlyUploadError } from './upload-rules';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Token management
@@ -152,20 +154,28 @@ export const api = {
     file: File,
     options?: { endpoint?: '/upload/image' | '/upload/file' | '/upload/document' },
   ): Promise<{ url: string }> => {
+    const requested = options?.endpoint || '/upload/image';
+    const kind = classifyLocalFile(file.name, file.type);
+    const endpoint = kind === 'video' || kind === 'document' ? '/upload/file' : requested;
+    assertUploadAllowed(file, endpoint);
     const formData = new FormData();
     formData.append('file', file);
-    const endpoint = options?.endpoint || '/upload/image';
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      method: 'POST',
-      headers: getHeadersForFormData(),
-      body: formData,
-    });
+    let response: Response;
+    try {
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: 'POST',
+        headers: getHeadersForFormData(),
+        body: formData,
+      });
+    } catch (error) {
+      throw new Error(friendlyUploadError(error));
+    }
     if (response.status === 401) {
       return handleUnauthorized(response);
     }
     if (!response.ok) {
       const message = await getErrorMessage(response, `Upload failed: ${response.statusText}`);
-      throw new Error(message);
+      throw new Error(friendlyUploadError(new Error(message)));
     }
     const result = await response.json();
     const rawUrl = String(result.url || '').trim();

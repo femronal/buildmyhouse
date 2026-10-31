@@ -60,7 +60,7 @@ function ImageField({
           Upload
           <input
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
             className="hidden"
             onChange={async (e) => {
               const file = e.target.files?.[0];

@@ -19,6 +19,7 @@ import { getScreenHorizontalPadding } from '@/lib/responsive-layout';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useUpdateCurrentUser } from '@/hooks/useUpdateCurrentUser';
 import { useUploadProfilePicture } from '@/hooks/useUploadProfilePicture';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { getBackendAssetUrl } from '@/lib/image';
 import { needsHomeownerIntroOnboarding } from '@/lib/onboarding';
 import { navigateAfterOnboarding, getPostAuthReturnPath } from '@/lib/post-auth-navigation';
@@ -148,7 +149,8 @@ export default function HomeownerOnboardingIntroScreen() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
@@ -167,7 +169,7 @@ export default function HomeownerOnboardingIntroScreen() {
       });
       Alert.alert('Uploaded', 'Profile photo uploaded successfully.');
     } catch (error: any) {
-      Alert.alert('Upload failed', error?.message || 'Please try again.');
+      Alert.alert('Upload failed', friendlyUploadError(error));
     }
   };
 

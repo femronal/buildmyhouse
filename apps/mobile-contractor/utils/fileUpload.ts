@@ -1,6 +1,12 @@
 import { Platform } from 'react-native';
-import { api } from '@/lib/api';
-import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { prepareImageForUpload } from '@/lib/image-upload';
+import {
+  MAX_VIDEO_BYTES,
+  VIDEO_TOO_LARGE,
+  classifyLocalFile,
+  friendlyUploadError,
+  mimeFromExtension,
+} from '@/lib/upload-rules';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -10,6 +16,7 @@ const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
 type UploadFileOptions = {
   fileName?: string;
   mimeType?: string;
+  fileSize?: number;
 };
 
 function inferExtensionFromMime(mimeType?: string): string {
@@ -47,19 +54,22 @@ export async function uploadFile(
     let uploadUri = uri;
     let uploadFileName = options.fileName;
     let uploadMimeType = options.mimeType;
-    if (type === 'image') {
-      const prepared = await ensureImageWithinUploadLimit({
+    const hintedKind = classifyLocalFile(options.fileName, options.mimeType);
+    if (hintedKind === 'video' && options.fileSize && options.fileSize > MAX_VIDEO_BYTES) {
+      throw new Error(VIDEO_TOO_LARGE);
+    }
+    if (type === 'image' && hintedKind !== 'video') {
+      const prepared = await prepareImageForUpload({
         uri,
         fileName: options.fileName,
         mimeType: options.mimeType,
         name: options.fileName,
+        fileSize: options.fileSize,
+        size: options.fileSize,
       });
-      if (prepared.exceedsLimit) {
-        throw new Error('Image too large. Please choose an image below 50MB.');
-      }
-      uploadUri = prepared.asset.uri || uri;
-      uploadFileName = prepared.asset.fileName || options.fileName;
-      uploadMimeType = prepared.asset.mimeType || options.mimeType;
+      uploadUri = prepared.uri || uri;
+      uploadFileName = prepared.fileName || options.fileName;
+      uploadMimeType = prepared.mimeType || options.mimeType;
     }
 
     const formData = new FormData();
@@ -75,28 +85,11 @@ export async function uploadFile(
     filename = filename.replace(/[^a-zA-Z0-9._ -]/g, '_');
     
     // Determine MIME type from extension
-    const match = /\.(\w+)$/.exec(filename);
-    let mimeType = uploadMimeType || 'application/octet-stream';
-    
-    if (!uploadMimeType && match) {
-      const ext = match[1].toLowerCase();
-      if (ext === 'png') mimeType = 'image/png';
-      else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
-      else if (ext === 'webp') mimeType = 'image/webp';
-      else if (ext === 'heic') mimeType = 'image/heic';
-      else if (ext === 'heif') mimeType = 'image/heif';
-      else if (ext === 'dng') mimeType = 'image/x-adobe-dng';
-      else if (ext === 'tif' || ext === 'tiff') mimeType = 'image/tiff';
-      else if (ext === 'bmp') mimeType = 'image/bmp';
-      else if (ext === 'avif') mimeType = 'image/avif';
-      else if (ext === 'jxl') mimeType = 'image/jxl';
-      else if (ext === 'pdf') mimeType = 'application/pdf';
-      else if (ext === 'doc') mimeType = 'application/msword';
-      else if (ext === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-      else if (ext === 'mp4') mimeType = 'video/mp4';
-      else if (ext === 'mov') mimeType = 'video/quicktime';
-      else if (ext === 'mp3') mimeType = 'audio/mpeg';
-    }
+    const fromExtension = mimeFromExtension(filename);
+    const genericMime = !uploadMimeType
+      || uploadMimeType === 'application/octet-stream'
+      || uploadMimeType === 'binary/octet-stream';
+    let mimeType = genericMime ? (fromExtension || uploadMimeType || 'application/octet-stream') : uploadMimeType;
 
     if (!/\.[A-Za-z0-9]+$/.test(filename)) {
       const inferredExt = inferExtensionFromMime(mimeType);
@@ -128,8 +121,7 @@ export async function uploadFile(
         
         formData.append('file', file);
       } catch (error) {
-        console.error('❌ [fileUpload] Failed to process file for web:', error);
-        throw error;
+        throw new Error(friendlyUploadError(error));
       }
     } else {
       // Native platform - use React Native FormData format
@@ -151,8 +143,11 @@ export async function uploadFile(
     // Make upload request to a generic upload endpoint.
     // Some older deployments still expose /upload/document for non-image uploads,
     // so we try modern endpoint first, then fallback.
+    const kind = classifyLocalFile(filename, mimeType);
     const uploadPathCandidates =
-      type === 'image' ? ['/upload/image'] : ['/upload/file', '/upload/document'];
+      type === 'image' && kind !== 'video'
+        ? ['/upload/image']
+        : ['/upload/file', '/upload/document'];
     let response: Response | null = null;
     let lastError: any = null;
     for (const uploadPath of uploadPathCandidates) {
@@ -180,16 +175,8 @@ export async function uploadFile(
         const text = await response.text();
         errorData = { message: text || 'Upload failed' };
       }
-      console.error('❌ [fileUpload] Upload error:', errorData);
-      const apiMessage = String(errorData?.message || '').toLowerCase();
-      if (
-        response.status === 413 ||
-        apiMessage.includes('file too large') ||
-        apiMessage.includes('payload too large')
-      ) {
-        throw new Error('File too large. Please choose a smaller file and try again.');
-      }
-      throw new Error(errorData.message || `Failed to upload file: HTTP ${response.status}`);
+      const apiMessage = Array.isArray(errorData?.message) ? errorData.message.join(' ') : errorData?.message;
+      throw new Error(friendlyUploadError(new Error(apiMessage || `HTTP ${response.status}`)));
     }
     
     const result = await response.json();
@@ -202,8 +189,7 @@ export async function uploadFile(
     }
     return fileUrl;
   } catch (error: any) {
-    console.error('❌ [fileUpload] Error uploading file:', error);
-    throw error;
+    throw new Error(friendlyUploadError(error));
   }
 }
 

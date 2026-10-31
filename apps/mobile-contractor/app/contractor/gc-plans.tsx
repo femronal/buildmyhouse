@@ -10,6 +10,7 @@ import { useAppAlert } from "../../components/AppAlertProvider";
 import { useGCProfile } from '@/hooks/useGCProfile';
 import { useResponsivePadding } from '@/lib/responsive-layout';
 import { uploadFile } from '@/utils/fileUpload';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AboutPlansBox } from '@/components/gc-plans/AboutPlansBox';
 import { DraftPlanRow, PlanCard } from '@/components/gc-plans/PlanCard';
@@ -442,10 +443,10 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       }
       
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
         allowsMultipleSelection: Platform.OS === 'ios', // iOS supports multiple selection
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
 
       // Handle both new API (assets array) and old API (uri directly)
@@ -472,7 +473,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       }
     } catch (error: any) {
       console.error('❌ [GC Plans] Error picking images:', error);
-      showAlert('Error', error.message || 'Failed to pick images. Please try again.');
+      showAlert('Upload error', friendlyUploadError(error));
     }
   };
 
@@ -652,7 +653,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
       );
     } catch (error: any) {
       console.error('❌ [GC Plans] Error uploading design:', error);
-      showAlert('Upload Failed', error.message || 'Failed to upload design. Please try again.');
+      showAlert('Upload error', friendlyUploadError(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -1164,7 +1165,7 @@ function UploadForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: 
                 id="file-input-gc-plans"
                 ref={fileInputRef as any}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
                 multiple
                 style={{
                   display: 'none',
@@ -1456,10 +1457,10 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         quality: 0.8,
         allowsMultipleSelection: Platform.OS === 'ios',
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
 
       if (!result.canceled) {
@@ -1484,7 +1485,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
       }
     } catch (error: any) {
       console.error('❌ [Edit Form] Error picking images:', error);
-      showAlert('Error', error.message || 'Failed to pick images. Please try again.');
+      showAlert('Upload error', friendlyUploadError(error));
     }
   };
 
@@ -1588,7 +1589,7 @@ function EditForm({ design, onSuccess, onCancel }: { design: any; onSuccess: () 
                 <input
                   id="file-input-edit-gc-plan"
                   type="file"
-                  accept="image/*"
+                  accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
                   multiple
                   style={{ display: 'none' }}
                   onChange={(e: any) => {

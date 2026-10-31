@@ -14,7 +14,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
 import { cardShadowStyle } from "@/lib/card-styles";
 import { contractorName, isDeclinedProject, jobStep } from "@/lib/job-step";
-import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
+import { prepareImageForUpload } from "@/lib/image-upload";
+import { friendlyUploadError } from "@/lib/upload-rules";
 
 type MenuItem = {
   icon: any;
@@ -149,37 +150,29 @@ export default function ProfileScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
 
       if (result.canceled) return;
       const asset = result.assets?.[0];
       if (!asset?.uri) return;
 
-      const prepared = await ensureImageWithinUploadLimit(asset);
-      if (prepared.exceedsLimit) {
-        Alert.alert('Image too large', 'Please choose an image below 50MB.');
-        return;
-      }
-      if (prepared.wasCompressed) {
-        Alert.alert('Large image optimized', 'Your profile image was automatically compressed for upload.');
-      }
-
-      const { fileName, mimeType } = normalizeImageAssetMeta(prepared.asset, 'profile');
+      const preparedAsset = await prepareImageForUpload(asset);
+      const { fileName, mimeType } = normalizeImageAssetMeta(preparedAsset, 'profile');
 
       await uploadProfilePicture.mutateAsync({
-        uri: prepared.asset.uri,
+        uri: preparedAsset.uri,
         name: fileName,
         type: mimeType,
       });
 
       Alert.alert('Updated', 'Your profile picture has been updated.');
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message || 'Please try again.');
+      Alert.alert('Upload failed', friendlyUploadError(e));
     }
   };
   

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Platform } from 'react-native';
-import { ensureImageWithinUploadLimit } from '@/lib/image-upload';
+import { prepareImageForUpload } from '@/lib/image-upload';
 
 type CurrentUser = {
   id: string;
@@ -34,19 +34,16 @@ export function useUploadProfilePicture() {
     mutationFn: async (file: UploadProfilePictureInput) => {
       let preparedFile = file;
       if ((file?.type || '').startsWith('image/')) {
-        const prepared = await ensureImageWithinUploadLimit({
+        const prepared = await prepareImageForUpload({
           uri: file.uri,
           fileName: file.name,
           mimeType: file.type,
           name: file.name,
         });
-        if (prepared.exceedsLimit) {
-          throw new Error('Image too large. Please choose an image below 50MB.');
-        }
         preparedFile = {
-          uri: prepared.asset.uri,
-          name: prepared.asset.fileName || file.name,
-          type: prepared.asset.mimeType || file.type,
+          uri: prepared.uri,
+          name: prepared.fileName || file.name,
+          type: prepared.mimeType || file.type,
         };
       }
 

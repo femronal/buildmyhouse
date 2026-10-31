@@ -33,7 +33,7 @@ export function OpportunityPhotoFields({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
         multiple
         className="hidden"
         onChange={onAddImages}

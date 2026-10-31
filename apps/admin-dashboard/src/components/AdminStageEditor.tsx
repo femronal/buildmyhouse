@@ -15,6 +15,7 @@ import {
   Users,
 } from 'lucide-react';
 import { api } from '@/lib/api';
+import { IMAGE_ACCEPT, MEDIA_ACCEPT, VIDEO_ACCEPT, friendlyUploadError } from '@/lib/upload-rules';
 import { getBackendAssetUrl } from '@/lib/image';
 import {
   adminProjectService,
@@ -500,7 +501,7 @@ function MaterialsTab({
       const { url } = await api.uploadFile(file);
       setter(url);
     } catch (e: any) {
-      onError(e?.message || 'Upload failed');
+      onError(friendlyUploadError(e));
     } finally {
       setUploading(false);
     }
@@ -619,7 +620,7 @@ function MaterialsTab({
           </Field>
           <div className="flex flex-wrap gap-3">
             <UploadButton label="Photo" uploading={uploading} onFile={(f) => upload(f, setPhotoUrl)} />
-            <UploadButton label="Receipt" uploading={uploading} onFile={(f) => upload(f, setReceiptUrl)} />
+            <UploadButton label="Receipt" accept={MEDIA_ACCEPT} uploading={uploading} onFile={(f) => upload(f, setReceiptUrl)} />
           </div>
           <ModalActions onCancel={() => setOpen(false)} onConfirm={add} confirmLabel="Add material" />
         </Modal>
@@ -868,7 +869,7 @@ function TeamTab({
           </Field>
           <div className="flex flex-wrap gap-3">
             <UploadButton label="Photo" uploading={uploading} onFile={async (f) => { setUploading(true); try { setPhotoUrl((await api.uploadFile(f)).url); } finally { setUploading(false); } }} />
-            <UploadButton label="Invoice" uploading={uploading} onFile={async (f) => { setUploading(true); try { setInvoiceUrl((await api.uploadFile(f)).url); } finally { setUploading(false); } }} />
+            <UploadButton label="Invoice" accept={MEDIA_ACCEPT} uploading={uploading} onFile={async (f) => { setUploading(true); try { setInvoiceUrl((await api.uploadFile(f)).url); } finally { setUploading(false); } }} />
           </div>
           <ModalActions onCancel={() => setOpen(false)} onConfirm={add} confirmLabel="Add artisan" />
         </Modal>
@@ -935,7 +936,7 @@ function PhotosTab({
       setCaption('');
       await onChanged();
     } catch (e: any) {
-      onError(e?.message || 'Upload failed');
+      onError(friendlyUploadError(e));
     } finally {
       setUploading(false);
     }
@@ -954,6 +955,7 @@ function PhotosTab({
           <input className="w-full px-3 py-2 border rounded-lg" value={caption} onChange={(e) => setCaption(e.target.value)} />
         </Field>
         <UploadButton label={uploading ? 'Uploading…' : 'Upload photo'} uploading={uploading} onFile={(f) => upload(f, 'photo')} />
+        <UploadButton label="Upload video" accept={VIDEO_ACCEPT} uploading={uploading} onFile={(f) => upload(f, 'video')} />
       </div>
       {(media || []).length === 0 ? (
         <EmptyState message="No photos uploaded yet." />
@@ -1072,13 +1074,14 @@ function DocumentsTab({
           </Field>
           <UploadButton
             label={fileUrl ? 'File uploaded' : 'Upload file'}
+            accept={MEDIA_ACCEPT}
             uploading={uploading}
             onFile={async (f) => {
               setUploading(true);
               try {
                 setFileUrl((await api.uploadFile(f)).url);
               } catch (e: any) {
-                onError(e?.message || 'Upload failed');
+                onError(friendlyUploadError(e));
               } finally {
                 setUploading(false);
               }
@@ -1148,25 +1151,42 @@ function UploadButton({
   label,
   uploading,
   onFile,
+  accept = IMAGE_ACCEPT,
 }: {
   label: string;
   uploading: boolean;
-  onFile: (file: File) => void;
+  onFile: (file: File) => Promise<void> | void;
+  accept?: string;
 }) {
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
   return (
-    <label className="inline-flex items-center gap-2 px-3 py-2 text-sm border rounded-lg cursor-pointer hover:bg-gray-50">
-      <Upload className="w-4 h-4" />
-      {label}
-      <input
-        type="file"
-        className="hidden"
-        disabled={uploading}
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) onFile(file);
-          e.target.value = '';
-        }}
-      />
-    </label>
+    <div>
+      <label className="inline-flex items-center gap-2 px-3 py-2 text-sm border rounded-lg cursor-pointer hover:bg-gray-50">
+        <Upload className="w-4 h-4" />
+        {busy || uploading ? 'Uploading...' : label}
+        <input
+          type="file"
+          accept={accept}
+          className="hidden"
+          disabled={uploading || busy}
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = '';
+            if (!file) return;
+            setBusy(true);
+            setError('');
+            try {
+              await onFile(file);
+            } catch (uploadError) {
+              setError(friendlyUploadError(uploadError));
+            } finally {
+              setBusy(false);
+            }
+          }}
+        />
+      </label>
+      {error ? <p className="mt-1 text-xs text-red-600">{error}</p> : null}
+    </div>
   );
 }

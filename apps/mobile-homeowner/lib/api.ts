@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth';
+import { friendlyUploadError } from './upload-rules';
 
 export const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -47,11 +48,12 @@ export const api = {
     });
 
     if (!response.ok) {
-      if (response.status === 413) {
-        throw new Error('Selected file is too large. Please choose a smaller image or reduce image quality and try again.');
+      const error = await response.json().catch(() => ({ message: '' }));
+      const raw = Array.isArray(error?.message) ? error.message.join(' ') : error?.message;
+      if (isFormData || response.status === 413) {
+        throw new Error(friendlyUploadError(new Error(raw || `HTTP ${response.status}`)));
       }
-      const error = await response.json().catch(() => ({ message: 'Request failed' }));
-      throw new Error(error.message || `Failed to create resource: ${response.status} ${response.statusText}`);
+      throw new Error(raw || `Failed to create resource: ${response.status} ${response.statusText}`);
     }
 
     return response.json();

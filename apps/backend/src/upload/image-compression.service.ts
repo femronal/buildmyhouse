@@ -43,6 +43,8 @@ export type PreparedPublicPhoto = {
   extension: '.webp';
 };
 
+const HEIC_BRANDS = new Set(['ftypheic', 'ftypheix', 'ftypmif1', 'ftyphevc']);
+
 @Injectable()
 export class ImageCompressionService {
   isPrivateFolder(folder: string): boolean {
@@ -70,7 +72,56 @@ export class ImageCompressionService {
     }
     if (buffer.toString('ascii', 0, 3) === 'GIF') return { compressible: false, kind: 'gif' };
     if (buffer.toString('ascii', 0, 4) === '%PDF') return { compressible: false, kind: 'pdf' };
+    if (buffer.toString('ascii', 0, 2) === 'BM') return { compressible: true, kind: 'bmp' };
+    if (
+      (buffer.toString('ascii', 0, 2) === 'II' && buffer[2] === 0x2a && buffer[3] === 0x00)
+      || (buffer.toString('ascii', 0, 2) === 'MM' && buffer[2] === 0x00 && buffer[3] === 0x2a)
+    ) {
+      return { compressible: true, kind: 'tiff' };
+    }
+    if (HEIC_BRANDS.has(buffer.toString('ascii', 4, 12))) return { compressible: true, kind: 'heic' };
     return { compressible: false, kind: null };
+  }
+
+  isHeic(file: { mimetype?: string; originalname?: string; buffer?: Buffer }): boolean {
+    const mime = (file.mimetype || '').toLowerCase();
+    const ext = extname(file.originalname || '').toLowerCase();
+    if (mime.includes('heic') || mime.includes('heif') || ext === '.heic' || ext === '.heif') return true;
+    return this.sniffImage(file.buffer).kind === 'heic';
+  }
+
+  /**
+   * HEIC and HEIF become JPEG so Android and Chrome can open them.
+   * Other files are returned unchanged.
+   */
+  async convertHeicToJpeg(file: {
+    buffer: Buffer;
+    contentType?: string;
+    originalName?: string;
+  }): Promise<{ buffer: Buffer; contentType: string; originalName?: string; converted: boolean }> {
+    if (!this.isHeic({ mimetype: file.contentType, originalname: file.originalName, buffer: file.buffer })) {
+      return {
+        buffer: file.buffer,
+        contentType: file.contentType || 'application/octet-stream',
+        originalName: file.originalName,
+        converted: false,
+      };
+    }
+    // heic-convert is CommonJS and has no type declarations.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const convert = require('heic-convert') as (options: {
+      buffer: Buffer;
+      format: 'JPEG';
+      quality: number;
+    }) => Promise<ArrayBuffer>;
+    const output = await convert({ buffer: file.buffer, format: 'JPEG', quality: 0.9 });
+    const baseName = (file.originalName || 'photo').replace(/\.[^/.]+$/, '') || 'photo';
+    return {
+      buffer: Buffer.from(output),
+      contentType: 'image/jpeg',
+      originalName: `${baseName}.jpg`,
+      converted: true,
+    };
   }
 
   /**

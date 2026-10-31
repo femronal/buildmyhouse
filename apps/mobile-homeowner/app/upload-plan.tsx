@@ -9,14 +9,15 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { api } from '@/lib/api';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { getScreenHorizontalPadding } from "@/lib/responsive-layout";
-import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
+import { prepareImageForUpload } from "@/lib/image-upload";
+import { IMAGE_TOO_LARGE, friendlyUploadError } from "@/lib/upload-rules";
 import { ReferralCodeField } from "@/components/ReferralCodeField";
 
 type ProjectType = 'repair' | 'upgrades' | 'renovation' | 'full_builds';
 
 const MAX_PLAN_PHOTOS = 5;
-const MAX_IMAGE_UPLOAD_BYTES = 50 * 1024 * 1024;
-const MAX_IMAGE_UPLOAD_MB = 50;
+const MAX_IMAGE_UPLOAD_BYTES = 25 * 1024 * 1024;
+const MAX_IMAGE_UPLOAD_MB = 25;
 const IMAGE_EXTENSIONS = new Set([
   'jpg', 'jpeg', 'jpe', 'png', 'webp', 'gif', 'heic', 'heif', 'dng', 'tif', 'tiff', 'bmp', 'avif', 'jfif', 'jxl',
 ]);
@@ -204,33 +205,23 @@ export default function UploadPlanScreen() {
         }
 
         const processedAssets: any[] = [];
-        let autoCompressedCount = 0;
         let rejectedCount = 0;
         for (const asset of imageAssets) {
-          const prepared = await ensureImageWithinUploadLimit(asset);
-          if (prepared.exceedsLimit) {
+          try {
+            processedAssets.push(await prepareImageForUpload(asset));
+          } catch {
             rejectedCount += 1;
-            continue;
           }
-          processedAssets.push(prepared.asset);
-          if (prepared.wasCompressed) autoCompressedCount += 1;
         }
 
         if (rejectedCount > 0) {
           setPlanPhotoSizeMessage(
-            `Some images are still above ${MAX_IMAGE_UPLOAD_MB}MB after auto-compression. Please choose smaller photos.`,
+            IMAGE_TOO_LARGE,
           );
         }
-        if (autoCompressedCount > 0) {
-          Alert.alert(
-            'Large image optimized',
-            `${autoCompressedCount} image${autoCompressedCount > 1 ? 's were' : ' was'} automatically compressed for upload.`,
-          );
-        }
-
         const nextAssets = processedAssets.slice(0, remainingSlots);
         if (!nextAssets.length) {
-          Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each.`);
+          Alert.alert('Image too large', IMAGE_TOO_LARGE);
           return;
         }
         setSelectedPlanPhotos((prev) => {
@@ -272,12 +263,13 @@ export default function UploadPlanScreen() {
       const result =
         source === 'camera'
           ? await ImagePicker.launchCameraAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ['images'],
               allowsEditing: false,
               quality: 0.9,
+              preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
             })
           : await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: ImagePicker.MediaTypeOptions.Images,
+              mediaTypes: ['images'],
               allowsEditing: false,
               quality: 0.85,
               allowsMultipleSelection: true,
@@ -288,34 +280,24 @@ export default function UploadPlanScreen() {
       if (result.canceled || !result.assets?.length) return;
 
       const processedAssets: any[] = [];
-      let autoCompressedCount = 0;
       let rejectedCount = 0;
 
       for (const asset of result.assets) {
-        const prepared = await ensureImageWithinUploadLimit(asset);
-        if (prepared.exceedsLimit) {
+        try {
+          processedAssets.push(await prepareImageForUpload(asset));
+        } catch {
           rejectedCount += 1;
-          continue;
         }
-        processedAssets.push(prepared.asset);
-        if (prepared.wasCompressed) autoCompressedCount += 1;
       }
 
       if (rejectedCount > 0) {
         setPlanPhotoSizeMessage(
-          `Some images are still above ${MAX_IMAGE_UPLOAD_MB}MB after auto-compression. Please choose smaller photos.`,
+          IMAGE_TOO_LARGE,
         );
       }
-      if (autoCompressedCount > 0) {
-        Alert.alert(
-          'Large image optimized',
-          `${autoCompressedCount} image${autoCompressedCount > 1 ? 's were' : ' was'} automatically compressed for upload.`,
-        );
-      }
-
       const nextAssets = processedAssets.slice(0, remainingSlots);
       if (!nextAssets.length) {
-        Alert.alert('Image too large', `Please select image files below ${MAX_IMAGE_UPLOAD_MB}MB each, or lower camera quality.`);
+        Alert.alert('Image too large', IMAGE_TOO_LARGE);
         return;
       }
       setSelectedPlanPhotos((prev) => {
@@ -340,11 +322,7 @@ export default function UploadPlanScreen() {
   };
 
   const uploadPlanImage = async (asset: any): Promise<string> => {
-    const prepared = await ensureImageWithinUploadLimit(asset);
-    if (prepared.exceedsLimit) {
-      throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
-    }
-    const preparedAsset = prepared.asset;
+    const preparedAsset = await prepareImageForUpload(asset);
 
     const formData = new FormData();
     const { fileName, mimeType } = normalizeImageAssetMeta(preparedAsset, 'project-image');
@@ -353,7 +331,7 @@ export default function UploadPlanScreen() {
       const res = await fetch(preparedAsset.uri);
       const blob = await res.blob();
       if (blob.size > MAX_IMAGE_UPLOAD_BYTES) {
-        throw new Error(`Image too large. Please upload files below ${MAX_IMAGE_UPLOAD_MB}MB.`);
+        throw new Error(IMAGE_TOO_LARGE);
       }
       const file = new File([blob], fileName, { type: mimeType || blob.type || 'image/jpeg' });
       formData.append('file', file);
@@ -540,15 +518,13 @@ export default function UploadPlanScreen() {
         },
       });
     } catch (error: any) {
-      console.error('❌ Upload error:', error);
       if (progressInterval) clearInterval(progressInterval);
-      Alert.alert(
-        'Upload Failed',
-        error?.message || 'There was an error uploading your project. Please try again.'
-      );
+      const uploadMessage = friendlyUploadError(error);
+      setPlanPhotoSizeMessage(uploadMessage);
+      Alert.alert('Upload Failed', uploadMessage);
       const message = String(error?.message || '').toLowerCase();
       if (message.includes('large') || message.includes('413') || message.includes('payload')) {
-        setPlanPhotoSizeMessage(`Some selected images are still above ${MAX_IMAGE_UPLOAD_MB}MB. Please choose smaller photos.`);
+        setPlanPhotoSizeMessage(IMAGE_TOO_LARGE);
       }
       setIsProcessing(false);
       setUploadProgress(0);

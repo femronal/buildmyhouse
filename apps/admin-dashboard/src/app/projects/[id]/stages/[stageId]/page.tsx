@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminStageEditor } from '@/components/AdminStageEditor';
 import { adminProjectService } from '@/services/adminProjectService';
 import { api } from '@/lib/api';
+import { MEDIA_ACCEPT, friendlyUploadError } from '@/lib/upload-rules';
 
 export default function AdminStageDetailPage() {
   const params = useParams();
@@ -24,6 +25,7 @@ export default function AdminStageDetailPage() {
   const [evidenceUrl, setEvidenceUrl] = useState('');
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
+  const [uploadingEvidence, setUploadingEvidence] = useState(false);
   const project = projectQuery.data;
   const stage = project?.stages?.find((s) => s.id === stageId);
   const approveMutation = useMutation({
@@ -89,15 +91,25 @@ export default function AdminStageDetailPage() {
           />
           <input
             type="file"
-            accept="image/*"
+            accept={MEDIA_ACCEPT}
+            disabled={uploadingEvidence}
             onChange={async (event) => {
               const file = event.target.files?.[0];
               if (!file) return;
-              const uploaded = await api.uploadFile(file);
-              setEvidenceUrl(uploaded.url);
+              setUploadingEvidence(true);
+              setError('');
+              try {
+                const uploaded = await api.uploadFile(file);
+                setEvidenceUrl(uploaded.url);
+              } catch (uploadError) {
+                setError(friendlyUploadError(uploadError));
+              } finally {
+                setUploadingEvidence(false);
+              }
             }}
             className="text-sm"
           />
+          {uploadingEvidence ? <p className="text-sm text-gray-500">Uploading...</p> : null}
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           {confirming ? (
             <div className="space-y-2">

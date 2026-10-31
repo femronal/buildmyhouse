@@ -220,7 +220,7 @@ export default function ArticleEditorPage() {
       const result = await api.uploadFile(file);
       setForm((prev) => ({ ...prev, coverImageUrl: result.url }));
     } catch (error: any) {
-      setFormError(error?.message || 'Failed to upload cover image');
+      setFormError(error?.message || 'Upload failed. Please try again.');
     } finally {
       setUploadingCover(false);
     }
@@ -314,7 +314,7 @@ export default function ArticleEditorPage() {
               <label className="px-3 py-2 rounded-full border border-gray-300 text-sm cursor-pointer inline-flex items-center gap-2 hover:bg-gray-50">
                 <UploadCloud className="w-4 h-4" />
                 {uploadingCover ? 'Uploading...' : 'Upload cover image'}
-                <input type="file" accept="image/*" className="hidden" onChange={onUploadCover} />
+                <input type="file" accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff" className="hidden" onChange={onUploadCover} />
               </label>
               {form.coverImageUrl ? (
                 <a

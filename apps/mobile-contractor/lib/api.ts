@@ -1,4 +1,5 @@
 import { getAuthToken } from './auth';
+import { friendlyUploadError } from './upload-rules';
 
 const API_BASE_URL =
   process.env.EXPO_PUBLIC_API_URL ||
@@ -60,7 +61,12 @@ export const api = {
           errorData = { message: text || 'Request failed' };
         }
         
-        const error = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+        const rawMessage = Array.isArray(errorData.message) ? errorData.message.join(' ') : errorData.message;
+        const error = new Error(
+          isFormData
+            ? friendlyUploadError(new Error(rawMessage || `HTTP ${response.status}`))
+            : (rawMessage || `HTTP ${response.status}: ${response.statusText}`),
+        );
         (error as any).status = response.status;
         (error as any).data = errorData;
         throw error;

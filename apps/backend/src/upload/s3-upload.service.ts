@@ -1,4 +1,4 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -19,6 +19,7 @@ const PUBLIC_IMAGE_CACHE = 'public, max-age=31536000, immutable';
 
 @Injectable()
 export class S3UploadService {
+  private readonly logger = new Logger(S3UploadService.name);
   private readonly bucket: string;
   private readonly region: string;
   private readonly publicBaseUrl: string | null;
@@ -55,7 +56,22 @@ export class S3UploadService {
     }
 
     const safeFolder = params.folder.replace(/^\/+|\/+$/g, '');
-    const prepared = await this.preparePublicImage(params, safeFolder);
+    let prepared: Awaited<ReturnType<S3UploadService['preparePublicImage']>>;
+    try {
+      prepared = await this.preparePublicImage(params, safeFolder);
+    } catch (error) {
+      const extension = extname(params.originalName || '').toLowerCase() || 'none';
+      this.logger.warn(
+        `Image prepare failed for .${extension.replace(/^\./, '')} ${params.contentType || 'unknown'}: ${error instanceof Error ? error.message : error}`,
+      );
+      prepared = {
+        buffer: params.buffer,
+        contentType: params.contentType,
+        originalName: params.originalName,
+        thumbnail: null,
+        cacheable: false,
+      };
+    }
     const extension = extname(prepared.originalName || '').toLowerCase();
     const filename = `${Date.now()}-${randomUUID()}${extension || ''}`;
     const thumbnailFilename = prepared.thumbnail
@@ -147,25 +163,37 @@ export class S3UploadService {
     thumbnail: Buffer | null;
     cacheable: boolean;
   }> {
-    const compressible =
-      !this.imageCompressionService.isPrivateFolder(folder) &&
-      this.imageCompressionService.isCompressibleImage({
-        mimetype: params.contentType,
-        originalname: params.originalName,
-        buffer: params.buffer,
-      });
+    const viewable = await this.imageCompressionService.convertHeicToJpeg({
+      buffer: params.buffer,
+      contentType: params.contentType,
+      originalName: params.originalName,
+    });
+    if (this.imageCompressionService.isPrivateFolder(folder)) {
+      return {
+        buffer: viewable.buffer,
+        contentType: viewable.contentType,
+        originalName: viewable.originalName,
+        thumbnail: null,
+        cacheable: false,
+      };
+    }
+    const compressible = this.imageCompressionService.isCompressibleImage({
+      mimetype: viewable.contentType,
+      originalname: viewable.originalName,
+      buffer: viewable.buffer,
+    });
     if (!compressible) {
       return {
-        buffer: params.buffer,
-        contentType: params.contentType,
-        originalName: params.originalName,
+        buffer: viewable.buffer,
+        contentType: viewable.contentType,
+        originalName: viewable.originalName,
         thumbnail: null,
         cacheable: false,
       };
     }
 
-    const prepared = await this.imageCompressionService.preparePublicPhoto(params.buffer);
-    const baseName = (params.originalName || 'photo').replace(/\.[^/.]+$/, '') || 'photo';
+    const prepared = await this.imageCompressionService.preparePublicPhoto(viewable.buffer);
+    const baseName = (viewable.originalName || 'photo').replace(/\.[^/.]+$/, '') || 'photo';
     return {
       buffer: prepared.full,
       contentType: prepared.contentType,

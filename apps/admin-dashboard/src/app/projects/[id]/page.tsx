@@ -9,6 +9,7 @@ import { ProjectAccessLinksPanel } from '@/components/ProjectAccessLinksPanel';
 import { ReferrerSelect } from '@/components/growth/ReferrerSelect';
 import { adminProjectService } from '@/services/adminProjectService';
 import { api } from '@/lib/api';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { getBackendAssetUrl } from '@/lib/image';
 
 const stageStatusStyles: Record<string, string> = {
@@ -575,11 +576,15 @@ export default function AdminProjectDetailPage() {
 
   const uploadProjectImage = async (file: File) => {
     setError('');
-    const { url } = await api.uploadFile(file);
-    setScopeForm({
-      ...effectiveScope,
-      projectImageUrls: [...effectiveScope.projectImageUrls, url],
-    });
+    try {
+      const { url } = await api.uploadFile(file);
+      setScopeForm({
+        ...effectiveScope,
+        projectImageUrls: [...effectiveScope.projectImageUrls, url],
+      });
+    } catch (uploadError) {
+      setError(friendlyUploadError(uploadError));
+    }
   };
 
   if (projectQuery.isLoading) {
@@ -827,7 +832,7 @@ export default function AdminProjectDetailPage() {
             Add photo
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.jpg,.jpeg,.png,.webp,.gif,.bmp,.tif,.tiff"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];

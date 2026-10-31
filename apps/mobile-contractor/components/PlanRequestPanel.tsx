@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { api } from '@/lib/api';
 import { uploadFile } from '@/utils/fileUpload';
+import { friendlyUploadError } from '@/lib/upload-rules';
 import { REQUEST_STEP_COPY } from '@/lib/request-step-copy';
 
 export function PlanRequestPanel({
@@ -111,17 +112,25 @@ export function PlanRequestPanel({
         <View className="mt-3">
           <Pressable
             onPress={async () => {
-              const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsMultipleSelection: true, selectionLimit: 4 });
-              if (picked.canceled) return;
-              const urls: string[] = [];
-              for (const asset of picked.assets || []) {
-                urls.push(await uploadFile(asset.uri, 'image', { fileName: asset.fileName, mimeType: asset.mimeType }));
+              try {
+                const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: true, selectionLimit: 4, preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible });
+                if (picked.canceled) return;
+                setBusy(true);
+                setError('');
+                const urls: string[] = [];
+                for (const asset of picked.assets || []) {
+                  urls.push(await uploadFile(asset.uri, 'image', { fileName: asset.fileName || undefined, mimeType: asset.mimeType || undefined, fileSize: asset.fileSize || undefined }));
+                }
+                setPhotos(urls);
+              } catch (error) {
+                setError(friendlyUploadError(error));
+              } finally {
+                setBusy(false);
               }
-              setPhotos(urls);
             }}
             className="border border-blue-400 rounded-full py-3 items-center mb-2"
           >
-            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{photos.length ? `${photos.length} photos` : 'Add site photos'}</Text>
+            <Text className="text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>{busy ? 'Uploading...' : photos.length ? `${photos.length} photos` : 'Add site photos'}</Text>
           </Pressable>
           <View className="flex-row mb-2">
             {photos.slice(0, 2).map((url) => <Image key={url} source={{ uri: url }} style={{ width: 64, height: 64, borderRadius: 8, marginRight: 8 }} />)}
@@ -152,7 +161,7 @@ export function PlanRequestPanel({
                 setError('Enter the signed quote total.');
                 return;
               }
-              const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: ['application/pdf', 'image/*'] });
+              const picked = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true, type: ['application/pdf', 'image/*', 'image/heic', 'image/heif'] });
               if (picked.canceled) return;
               const file = picked.assets?.[0];
               if (!file) return;
@@ -169,7 +178,7 @@ export function PlanRequestPanel({
                 loadQuoteDraft(updated?.gcNotes);
                 onChanged();
               } catch (err) {
-                setError(err instanceof Error ? err.message : 'Could not read this quote');
+                setError(friendlyUploadError(err));
               } finally {
                 setBusy(false);
               }

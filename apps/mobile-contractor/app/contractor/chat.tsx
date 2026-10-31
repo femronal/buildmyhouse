@@ -26,7 +26,8 @@ import { useUserConversations } from "@/hooks/useChat";
 import { getBackendAssetUrl } from "@/lib/image";
 import { api } from "@/lib/api";
 import { useResponsivePadding } from "@/lib/responsive-layout";
-import { ensureImageWithinUploadLimit } from "@/lib/image-upload";
+import { prepareImageForUpload } from "@/lib/image-upload";
+import { friendlyUploadError } from "@/lib/upload-rules";
 
 function getExtensionFromName(name?: string | null) {
   if (!name) return '';
@@ -62,6 +63,7 @@ export default function ContractorChatScreen() {
   const queryClient = useQueryClient();
   
   const [newMessage, setNewMessage] = useState("");
+  const [uploadNotice, setUploadNotice] = useState("");
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Get or create conversation
@@ -150,7 +152,9 @@ export default function ContractorChatScreen() {
       queryClient.invalidateQueries({ queryKey: ['messages', conversation?.id] });
     },
     onError: (error: any) => {
-      Alert.alert('Upload failed', error?.message || 'Failed to send image');
+      const message = friendlyUploadError(error);
+      setUploadNotice(message);
+      Alert.alert('Upload failed', message);
     },
   });
 
@@ -164,29 +168,22 @@ export default function ContractorChatScreen() {
         }
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: false,
         quality: 0.8,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
       if (result.canceled || !result.assets?.length) return;
-      const prepared = await ensureImageWithinUploadLimit(result.assets[0]);
-      if (prepared.exceedsLimit) {
-        Alert.alert('Image too large', 'Please choose an image below 50MB.');
-        return;
-      }
-      if (prepared.wasCompressed) {
-        Alert.alert('Large image optimized', 'Your image was automatically compressed for upload.');
-      }
-
-      const asset = prepared.asset;
+      const asset = await prepareImageForUpload(result.assets[0]);
       sendImageMutation.mutate({
         uri: asset.uri,
         fileName: asset.fileName,
         mimeType: asset.mimeType,
       });
     } catch (error: any) {
-      Alert.alert('Upload failed', error?.message || 'Could not pick image');
+      const message = friendlyUploadError(error);
+      setUploadNotice(message);
+      Alert.alert('Upload failed', message);
     }
   };
 
@@ -473,7 +470,13 @@ export default function ContractorChatScreen() {
           className="pb-8 pt-4 bg-[#0A1628] border-t border-blue-900"
           style={{ paddingHorizontal: horizontalPad, paddingBottom: Math.max(insets.bottom, 24) }}
         >
-          <View className="flex-row items-center">
+          {uploadNotice ? (
+          <Text className="text-red-400 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>{uploadNotice}</Text>
+        ) : null}
+        {sendImageMutation.isPending ? (
+          <Text className="text-gray-300 text-sm mb-2" style={{ fontFamily: 'Poppins_400Regular' }}>Uploading...</Text>
+        ) : null}
+        <View className="flex-row items-center">
             <TouchableOpacity
               onPress={handlePickPhoto}
               disabled={sendImageMutation.isPending}

@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking, useWindowDimensions } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine, MessageCircle } from "lucide-react-native";
 import { useState } from "react";
@@ -9,6 +9,8 @@ import { projectService } from '@/services/projectService';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { uploadFile } from '@/utils/fileUpload';
+import { StoredImage } from '@/components/StoredImage';
+import { IMAGE_ACCEPT, VIDEO_ACCEPT, VIDEO_TOO_LARGE, MAX_VIDEO_BYTES, friendlyUploadError } from '@/lib/upload-rules';
 import { useResponsivePadding } from '@/lib/responsive-layout';
 import { useAppAlert } from '../../components/AppAlertProvider';
 
@@ -235,16 +237,15 @@ export default function GCStageDetailScreen() {
         input.type = 'file';
         // Set accept based on type and current fileForm type
         if (type === 'file') {
-          // For file uploads, check the current fileForm type
           if (fileForm.type === 'document') {
             input.accept = '.pdf,application/pdf';
           } else if (fileForm.type === 'video') {
-            input.accept = 'video/*';
+            input.accept = VIDEO_ACCEPT;
           } else {
-            input.accept = 'image/*';
+            input.accept = IMAGE_ACCEPT;
           }
         } else {
-          input.accept = type === 'receipt' || type === 'invoice' ? 'application/pdf,image/*' : 'image/*';
+          input.accept = type === 'receipt' || type === 'invoice' ? `.pdf,application/pdf,${IMAGE_ACCEPT}` : IMAGE_ACCEPT;
         }
         input.multiple = false; // Only allow single file selection
         input.onchange = (e: any) => {
@@ -291,17 +292,22 @@ export default function GCStageDetailScreen() {
         return;
       }
 
+      const pickingVideo = type === 'file' && fileForm.type === 'video';
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: type === 'file' 
-          ? ImagePicker.MediaTypeOptions.All 
-          : ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: pickingVideo ? ['videos'] : type === 'file' ? ['images', 'videos'] : ['images'],
         quality: 0.8,
         allowsMultipleSelection: false,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
+        videoMaxDuration: pickingVideo ? 180 : undefined,
+        videoQuality: pickingVideo ? ImagePicker.UIImagePickerControllerQualityType.Medium : undefined,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
+        if (pickingVideo && asset.fileSize && asset.fileSize > MAX_VIDEO_BYTES) {
+          showAlert('Upload error', VIDEO_TOO_LARGE);
+          return;
+        }
         const uri = asset.uri;
         const fileName = asset.fileName || asset.uri.split('/').pop() || `file-${Date.now()}`;
 
@@ -333,8 +339,7 @@ export default function GCStageDetailScreen() {
         }
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert('Error', 'Failed to pick image');
+      showAlert('Upload error', friendlyUploadError(error));
     }
   };
 
@@ -378,8 +383,7 @@ export default function GCStageDetailScreen() {
           }
         }
       } catch (error: any) {
-        console.error('❌ Error uploading files:', error);
-        throw new Error(`Failed to upload files: ${error.message}`);
+        throw new Error(friendlyUploadError(error));
       }
       
       // Now save the team member with uploaded URLs
@@ -461,8 +465,7 @@ export default function GCStageDetailScreen() {
           }
         }
       } catch (error: any) {
-        console.error('❌ Error uploading files:', error);
-        throw new Error(`Failed to upload files: ${error.message}`);
+        throw new Error(friendlyUploadError(error));
       }
       
       const quantity = parseFloat(data.quantity) || 0;
@@ -509,7 +512,7 @@ export default function GCStageDetailScreen() {
       showAlert('Material added', 'The material was saved.');
     },
     onError: (error: any) => {
-      const message = error?.message || 'The material was not saved. Check the connection and try again.';
+      const message = friendlyUploadError(error);
       setMaterialSubmitError(message);
       showAlert('Could not add this material', message);
     },
@@ -564,8 +567,7 @@ export default function GCStageDetailScreen() {
           throw new Error('No file selected');
         }
       } catch (error: any) {
-        console.error('❌ Error uploading file:', error);
-        throw new Error(`Failed to upload file: ${error.message}`);
+        throw new Error(friendlyUploadError(error));
       }
       
       // Save as document if PDF, otherwise save as media
@@ -604,7 +606,7 @@ export default function GCStageDetailScreen() {
         setShowFileTooLargeModal(true);
         return;
       }
-      Alert.alert('Error', error?.message || 'Failed to upload file');
+      showAlert('Upload error', friendlyUploadError(error));
     },
   });
 
@@ -664,8 +666,8 @@ export default function GCStageDetailScreen() {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: bucket === 'documentEvidence'
-          ? ['application/pdf', 'image/*']
-          : ['video/*', 'audio/*'],
+          ? ['application/pdf', 'image/*', 'image/heic', 'image/heif']
+          : ['video/*', 'video/mp4', 'video/quicktime', 'video/3gpp', 'video/webm', 'video/x-matroska', 'video/x-msvideo'],
         copyToCacheDirectory: true,
       });
       if (result.canceled) return;
@@ -684,7 +686,7 @@ export default function GCStageDetailScreen() {
         ],
       }));
     } catch (error: any) {
-      Alert.alert('Upload error', error?.message || 'Failed to select evidence file');
+      showAlert('Upload error', friendlyUploadError(error));
     }
   };
 
@@ -1035,11 +1037,7 @@ export default function GCStageDetailScreen() {
                 <View key={material.id || index} className="bg-[#1E3A5F] rounded-xl mb-4 overflow-hidden border border-blue-900 relative">
                   <View className="flex-row p-4">
                     {material.photoUrl ? (
-                      <Image
-                        source={{ uri: material.photoUrl }}
-                        className="w-24 h-24 bg-gray-700 rounded-xl"
-                        resizeMode="cover"
-                      />
+                      <StoredImage uri={material.photoUrl} className="w-24 h-24 bg-gray-700 rounded-xl" />
                     ) : (
                       <View className="w-24 h-24 bg-gray-700 rounded-xl items-center justify-center">
                         <Package size={32} color="#6B7280" strokeWidth={2} />
@@ -1129,11 +1127,7 @@ export default function GCStageDetailScreen() {
                 <View key={member.id || index} className="bg-[#1E3A5F] rounded-xl mb-4 overflow-hidden border border-blue-900 relative">
                   <View className="flex-row p-4">
                     {member.photoUrl ? (
-                      <Image
-                        source={{ uri: member.photoUrl }}
-                        className="w-20 h-20 rounded-xl bg-gray-700"
-                        resizeMode="cover"
-                      />
+                      <StoredImage uri={member.photoUrl} className="w-20 h-20 rounded-xl bg-gray-700" />
                     ) : (
                       <View className="w-20 h-20 bg-gray-700 rounded-xl items-center justify-center">
                         <Users size={32} color="#6B7280" strokeWidth={2} />
@@ -1662,7 +1656,7 @@ export default function GCStageDetailScreen() {
                 className="bg-[#0A1628] rounded-xl p-6 mb-4 items-center border border-blue-900"
               >
                 {teamForm.photoUri ? (
-                  <Image source={{ uri: teamForm.photoUri }} className="w-24 h-24 rounded-xl" resizeMode="cover" />
+                  <StoredImage uri={teamForm.photoUri} className="w-24 h-24 rounded-xl" />
                 ) : (
                   <>
                     <Camera size={32} color="#6B7280" strokeWidth={2} />
@@ -1815,7 +1809,7 @@ export default function GCStageDetailScreen() {
                 className="bg-blue-600 rounded-full py-4 mb-4"
               >
                 {addTeamMemberMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>Uploading...</Text>
                 ) : (
                   <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Add Team Member
@@ -1873,7 +1867,7 @@ export default function GCStageDetailScreen() {
               >
                 {materialForm.photoUri ? (
                   <View className="items-center">
-                    <Image source={{ uri: materialForm.photoUri }} className="w-24 h-24 rounded-xl mb-2" resizeMode="cover" />
+                    <StoredImage uri={materialForm.photoUri} className="w-24 h-24 rounded-xl mb-2" />
                     {materialForm.photoName && (
                       <Text className="text-gray-400 text-xs" style={{ fontFamily: 'Poppins_400Regular' }} numberOfLines={1}>
                         {materialForm.photoName}
@@ -2060,7 +2054,7 @@ export default function GCStageDetailScreen() {
                 className="bg-blue-600 rounded-full py-4 mb-4"
               >
                 {addMaterialMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>Uploading...</Text>
                 ) : (
                   <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Add Material
@@ -2164,7 +2158,7 @@ export default function GCStageDetailScreen() {
                 {fileForm.fileUri ? (
                   <View className="items-center">
                     {fileForm.type === 'photo' ? (
-                      <Image source={{ uri: fileForm.fileUri }} className="w-24 h-24 rounded-xl mb-2" resizeMode="cover" />
+                      <StoredImage uri={fileForm.fileUri} className="w-24 h-24 rounded-xl mb-2" />
                     ) : fileForm.type === 'video' ? (
                       <View className="w-24 h-24 rounded-xl mb-2 bg-blue-600 items-center justify-center">
                         <Video size={32} color="#FFFFFF" strokeWidth={2} />
@@ -2220,7 +2214,7 @@ export default function GCStageDetailScreen() {
                 className="bg-blue-600 rounded-full py-4 mb-4"
               >
                 {addMediaMutation.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                  <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>Uploading...</Text>
                 ) : (
                   <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                     Upload File

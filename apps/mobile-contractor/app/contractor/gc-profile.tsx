@@ -21,6 +21,8 @@ import { useMyProjects } from "@/hooks/useProjects";
 import { useBankAccounts, useBankAccount, useCreateBankAccount, useUpdateBankAccount, useDeleteBankAccount } from "@/hooks/useBankAccounts";
 import { getBackendAssetUrl } from "@/lib/image";
 import { uploadFile } from "@/utils/fileUpload";
+import { friendlyUploadError } from "@/lib/upload-rules";
+import { useAppAlert } from "../../components/AppAlertProvider";
 import { useResponsivePadding } from "@/lib/responsive-layout";
 import { StateLgaPicker } from "@/components/location/StateLgaPicker";
 import { composeLocationLabel, parseLocationToStateLga } from "@/lib/nigeria-lgas";
@@ -83,6 +85,7 @@ function normalizeImageAssetMeta(asset: any, fallbackBase: string) {
 }
 
 export default function GCProfileScreen() {
+  const { showAlert } = useAppAlert();
   const router = useRouter();
   const navigation = useNavigation();
   const params = useLocalSearchParams<{ openLogoUpload?: string }>();
@@ -154,11 +157,11 @@ export default function GCProfileScreen() {
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.85,
-        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+        preferredAssetRepresentationMode: ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Compatible,
       });
       if (result.canceled) return;
       const asset = result.assets?.[0];
@@ -167,7 +170,7 @@ export default function GCProfileScreen() {
       await uploadProfilePicture.mutateAsync({ uri: asset.uri, name: fileName, type: mimeType });
       Alert.alert('Updated', 'Your profile picture has been updated.');
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message || 'Please try again.');
+      showAlert('Upload failed', friendlyUploadError(e));
     }
   }, [uploadProfilePicture]);
 
@@ -285,14 +288,14 @@ export default function GCProfileScreen() {
       setCertForm({ name: '', expiryYear: '' });
       Alert.alert('Added', 'Your certification has been added.');
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message || 'Please try again.');
+      showAlert('Upload failed', friendlyUploadError(e));
     }
   };
 
   const handleUploadVerificationDocument = async (documentType: string, documentTitle: string) => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*'],
+        type: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'image/*', 'image/heic', 'image/heif'],
         copyToCacheDirectory: true,
       });
       if (result.canceled) return;
@@ -309,7 +312,7 @@ export default function GCProfileScreen() {
       });
       Alert.alert('Uploaded', `${documentTitle} uploaded successfully.`);
     } catch (e: any) {
-      Alert.alert('Upload failed', e?.message || 'Please try again.');
+      showAlert('Upload failed', friendlyUploadError(e));
     }
   };
 
