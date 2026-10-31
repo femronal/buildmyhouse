@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -27,6 +27,8 @@ import {
   ProfessionalType,
   ProfessionalVerificationStatus,
 } from '@prisma/client';
+
+const blankToNull = ({ value }: { value: unknown }) => (typeof value === 'string' ? value.trim() || null : value);
 
 export class PublicProfessionalSearchDto {
   @IsOptional() @IsString() @MaxLength(160) q?: string;
@@ -109,10 +111,10 @@ export class AdminProfessionalWriteDto {
   @IsOptional() @IsString() primaryProfessionId?: string;
   @IsOptional() @IsString() @MaxLength(4000) bio?: string;
   @IsOptional() @IsInt() @Min(0) @Max(80) yearsExperience?: number;
-  @IsOptional() @IsString() @MaxLength(40) phone?: string;
-  @IsOptional() @IsEmail() email?: string;
-  @IsOptional() @IsString() @MaxLength(40) whatsapp?: string;
-  @IsOptional() @IsString() @MaxLength(240) website?: string;
+  @Transform(blankToNull) @IsOptional() @IsString() @MaxLength(40) phone?: string | null;
+  @Transform(blankToNull) @IsOptional() @IsEmail() email?: string | null;
+  @Transform(blankToNull) @IsOptional() @IsString() @MaxLength(40) whatsapp?: string | null;
+  @Transform(blankToNull) @IsOptional() @IsString() @MaxLength(240) website?: string | null;
   @IsOptional() @IsString() @MaxLength(240) address?: string;
   @IsOptional() @IsString() @MaxLength(80) city?: string;
   @IsOptional() @IsString() @MaxLength(80) state?: string;

@@ -587,6 +587,7 @@ export class ProfessionalsService implements OnModuleInit {
   }
 
   async adminCreate(adminId: string, dto: AdminCreateProfessionalDto) {
+    this.assertHasPhoneOrEmail(dto.phone, dto.email);
     if (dto.usedByBmh && !dto.usedByBmhNote) {
       throw new BadRequestException('Historical Used by BMH requires an internal note.');
     }
@@ -601,10 +602,10 @@ export class ProfessionalsService implements OnModuleInit {
         primaryProfessionId: dto.primaryProfessionId,
         bio: dto.bio,
         yearsExperience: dto.yearsExperience,
-        phone: dto.phone,
-        email: normalizeEmail(dto.email) ?? dto.email,
-        whatsapp: dto.whatsapp,
-        website: dto.website,
+        phone: dto.phone?.trim() || null,
+        email: normalizeEmail(dto.email),
+        whatsapp: dto.whatsapp?.trim() || null,
+        website: dto.website?.trim() || null,
         address: dto.address,
         city: dto.city,
         state: dto.state,
@@ -648,6 +649,9 @@ export class ProfessionalsService implements OnModuleInit {
   async adminUpdate(id: string, dto: AdminProfessionalWriteDto) {
     const existing = await this.prisma.professionalListing.findUnique({ where: { id } });
     if (!existing) throw new NotFoundException('Professional not found');
+    const nextPhone = dto.phone !== undefined ? dto.phone : existing.phone;
+    const nextEmail = dto.email !== undefined ? dto.email : existing.email;
+    this.assertHasPhoneOrEmail(nextPhone, nextEmail);
     if (dto.usedByBmh && !existing.usedByBmh && !dto.usedByBmhNote && !existing.usedByBmhNote) {
       throw new BadRequestException('Marking Used by BMH without a completed engagement requires an internal note.');
     }
@@ -1248,7 +1252,7 @@ export class ProfessionalsService implements OnModuleInit {
           claimedByUserId: userId,
           linkedUserId: userId,
           claimedAt: listing.claimedAt || new Date(),
-          claimEmail: invite.email,
+          claimEmail: invite.email || user.email || null,
         },
       });
       await this.grantClaimedProfessionalContractorAccess(tx, user, listing);
@@ -1321,7 +1325,7 @@ export class ProfessionalsService implements OnModuleInit {
         phone: dto.phone,
         whatsapp: dto.whatsapp,
         website: dto.website,
-        email: dto.email !== undefined ? normalizeEmail(dto.email) ?? dto.email : undefined,
+        email: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
         address: dto.address,
         serviceStates: dto.serviceStates,
         serviceCities: dto.serviceCities,
@@ -1417,6 +1421,14 @@ export class ProfessionalsService implements OnModuleInit {
     return this.adminGet(document.professionalListingId);
   }
 
+  private assertHasPhoneOrEmail(phone?: string | null, email?: string | null) {
+    const hasPhone = Boolean(phone && String(phone).trim());
+    const hasEmail = Boolean(email && String(email).trim());
+    if (!hasPhone && !hasEmail) {
+      throw new BadRequestException('Add a phone number or an email address.');
+    }
+  }
+
   private writeData(dto: AdminProfessionalWriteDto): Prisma.ProfessionalListingUncheckedUpdateInput {
     return {
       displayName: dto.displayName?.trim(),
@@ -1424,10 +1436,10 @@ export class ProfessionalsService implements OnModuleInit {
       primaryProfessionId: dto.primaryProfessionId,
       bio: dto.bio,
       yearsExperience: dto.yearsExperience,
-      phone: dto.phone,
-      email: normalizeEmail(dto.email) ?? dto.email,
-      whatsapp: dto.whatsapp,
-      website: dto.website,
+      phone: dto.phone !== undefined ? dto.phone?.trim() || null : undefined,
+      email: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
+      whatsapp: dto.whatsapp !== undefined ? dto.whatsapp?.trim() || null : undefined,
+      website: dto.website !== undefined ? dto.website?.trim() || null : undefined,
       address: dto.address,
       city: dto.city,
       state: dto.state,
@@ -1452,10 +1464,10 @@ export class ProfessionalsService implements OnModuleInit {
       usedByBmhSince: dto.usedByBmhSince ? new Date(dto.usedByBmhSince) : undefined,
       usedByBmhNote: dto.usedByBmhNote,
       slug: dto.slug,
-      normalizedName: normalizeDisplayName(dto.displayName),
-      normalizedPhone: normalizePhone(dto.phone),
-      normalizedEmail: normalizeEmail(dto.email),
-      websiteDomain: websiteDomain(dto.website),
+      normalizedName: dto.displayName !== undefined ? normalizeDisplayName(dto.displayName) : undefined,
+      normalizedPhone: dto.phone !== undefined ? normalizePhone(dto.phone) : undefined,
+      normalizedEmail: dto.email !== undefined ? normalizeEmail(dto.email) : undefined,
+      websiteDomain: dto.website !== undefined ? websiteDomain(dto.website) : undefined,
     };
   }
 

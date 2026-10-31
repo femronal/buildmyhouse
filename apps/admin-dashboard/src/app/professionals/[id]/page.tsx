@@ -206,12 +206,16 @@ function Overview({
 }
 
 function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<typeof useUpdateProfessional>; meta: any }) {
+  const [contactError, setContactError] = useState('');
   const [form, setForm] = useState({
     displayName: data.displayName,
     bio: data.bio || '',
     city: data.city || '',
     state: data.state || '',
     address: data.address || '',
+    phone: data.phone || '',
+    email: data.email || '',
+    whatsapp: data.whatsapp || '',
     publicPhone: !!data.publicPhone,
     publicEmail: !!data.publicEmail,
     publicWhatsapp: !!data.publicWhatsapp,
@@ -226,7 +230,17 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
   });
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
-    update.mutate(form);
+    if (!form.phone.trim() && !form.email.trim()) {
+      setContactError('Add a phone number or an email address.');
+      return;
+    }
+    setContactError('');
+    update.mutate({
+      ...form,
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      whatsapp: form.whatsapp.trim() || null,
+    });
   };
   return (
     <form onSubmit={onSubmit} className="bg-white rounded-xl shadow p-5 space-y-4">
@@ -235,6 +249,9 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
       <div className="grid md:grid-cols-2 gap-3">
         <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="City" />
         <input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="State" />
+        <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="Phone" />
+        <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="Email (optional if phone is given)" />
+        <input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} className="border rounded-lg px-3 py-2" placeholder="WhatsApp" />
       </div>
       <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="w-full border rounded-lg px-3 py-2" placeholder="Street address (optional)" />
       {['publicPhone', 'publicEmail', 'publicWhatsapp', 'publicWebsite', 'siteVisits', 'remoteConsultation', 'canIssueSignedReport'].map((key) => (
@@ -247,6 +264,8 @@ function PublicProfile({ data, update, meta }: { data: any; update: ReturnType<t
       <IdChips label="Services" items={meta?.services || []} selected={form.serviceIds} onChange={(serviceIds) => setForm({ ...form, serviceIds })} />
       <IdChips label="Deliverables" items={meta?.deliverables || []} selected={form.deliverableIds} onChange={(deliverableIds) => setForm({ ...form, deliverableIds })} />
       <IdChips label="Stages" items={meta?.projectStages || []} selected={form.projectStageIds} onChange={(projectStageIds) => setForm({ ...form, projectStageIds })} />
+      {contactError ? <p className="text-sm text-red-600">{contactError}</p> : null}
+      {update.error ? <p className="text-sm text-red-600">{(update.error as Error).message}</p> : null}
       <button className="px-4 py-2 rounded-lg bg-blue-600 text-white">Save public profile</button>
     </form>
   );
@@ -479,6 +498,7 @@ function ClaimInviteForm({
         className="px-3 py-1.5 rounded-lg border text-sm"
         disabled={actions.claimInvite.isPending || !inviteEmail.trim()}
         onClick={async () => {
+          if (!inviteEmail.trim()) return;
           try {
             const res = await actions.claimInvite.mutateAsync({ email: inviteEmail.trim() });
             setInviteUrl(res.claimUrl);
@@ -494,6 +514,9 @@ function ClaimInviteForm({
       >
         Send claim invite
       </button>
+      {!inviteEmail.trim() ? (
+        <p className="text-sm text-gray-500">No email on this listing. Use Copy claim link above and send it by WhatsApp or SMS.</p>
+      ) : null}
       {inviteUrl ? (
         <div className="space-y-2">
           <input readOnly value={inviteUrl} className="w-full border rounded-lg px-3 py-2 text-xs" onFocus={(e) => e.currentTarget.select()} />
@@ -562,8 +585,11 @@ function Inbox({
               {invite.status === 'pending' || invite.status === 'expired' ? (
                 <button
                   type="button"
-                  className="px-2 py-1 border rounded"
+                  className="px-2 py-1 border rounded disabled:opacity-50"
+                  disabled={!invite.email}
+                  title={invite.email ? undefined : 'No email on this invite. Copy the claim link instead.'}
                   onClick={async () => {
+                    if (!invite.email) return;
                     const res = await actions.resendClaimInvite.mutateAsync(invite.id);
                     if (res?.claimUrl) await navigator.clipboard.writeText(res.claimUrl);
                     onDone();

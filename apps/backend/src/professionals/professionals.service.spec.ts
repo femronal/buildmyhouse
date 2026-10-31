@@ -5,6 +5,7 @@ import {
   ProfessionalReviewStatus,
   ProfessionalVerificationStatus,
 } from '@prisma/client';
+import { toPublicProfessionalProfile } from './professional-helpers';
 import { ProfessionalsService } from './professionals.service';
 
 function mockPrisma(overrides: Record<string, any> = {}) {
@@ -216,6 +217,7 @@ describe('ProfessionalsService', () => {
     const created = await service.adminCreate('admin-1', {
       displayName: 'Adewale',
       primaryProfessionId: 'profession_structural_engineer',
+      phone: '08030000000',
     });
     expect(created.linkedUserId).toBeNull();
     expect(prisma.professionalListing.create).toHaveBeenCalled();
@@ -317,12 +319,179 @@ describe('ProfessionalsService', () => {
     const prisma = mockPrisma();
     prisma.professionalListing.findUnique.mockResolvedValue({
       id: 'p1',
+      phone: '08030000000',
+      email: null,
       usedByBmh: false,
       usedByBmhNote: null,
       listedAt: null,
       archivedAt: null,
     });
     const service = new ProfessionalsService(prisma);
-    await expect(service.adminUpdate('p1', { usedByBmh: true })).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.adminUpdate('p1', { usedByBmh: true })).rejects.toThrow(/internal note/);
+  });
+
+  it('creates a phone-only listing and does not send a claim invite', async () => {
+    const prisma = mockPrisma();
+    const email = { send: jest.fn() };
+    prisma.professionalClaimInvite = { create: jest.fn() };
+    prisma.professionCatalog.findUnique.mockResolvedValue({ id: 'profession_surveyor', key: 'surveyor' });
+    prisma.professionalListing.findMany.mockResolvedValue([]);
+    prisma.professionalListing.findFirst.mockResolvedValue(null);
+    prisma.professionalListing.create.mockImplementation(async ({ data }: any) => ({ id: 'p9', ...data }));
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      ...listedRow,
+      id: 'p9',
+      phone: '08000000000',
+      email: null,
+      procurement: {},
+      engagements: [],
+      claims: [],
+      claimInvites: [],
+      applications: [],
+      enquiries: [],
+      documents: [],
+    });
+    const service = new ProfessionalsService(prisma, email as any);
+
+    await service.adminCreate('admin-1', {
+      displayName: 'Global Survey Owo',
+      primaryProfessionId: 'profession_surveyor',
+      phone: '08000000000',
+    });
+
+    expect(prisma.professionalListing.create.mock.calls[0][0].data.email).toBeNull();
+    expect(prisma.professionalListing.create.mock.calls[0][0].data.phone).toBe('08000000000');
+    expect(email.send).not.toHaveBeenCalled();
+    expect(prisma.professionalClaimInvite.create).not.toHaveBeenCalled();
+  });
+
+  it('creates an email-only listing', async () => {
+    const prisma = mockPrisma();
+    prisma.professionCatalog.findUnique.mockResolvedValue({ id: 'profession_surveyor', key: 'surveyor' });
+    prisma.professionalListing.findMany.mockResolvedValue([]);
+    prisma.professionalListing.findFirst.mockResolvedValue(null);
+    prisma.professionalListing.create.mockImplementation(async ({ data }: any) => ({ id: 'p9', ...data }));
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      ...listedRow,
+      id: 'p9',
+      phone: null,
+      email: 'ada@example.com',
+      procurement: {},
+      engagements: [],
+      claims: [],
+      claimInvites: [],
+      applications: [],
+      enquiries: [],
+      documents: [],
+    });
+    const service = new ProfessionalsService(prisma);
+
+    await service.adminCreate('admin-1', {
+      displayName: 'Ada Survey',
+      primaryProfessionId: 'profession_surveyor',
+      email: 'Ada@Example.com',
+    });
+
+    expect(prisma.professionalListing.create.mock.calls[0][0].data.phone).toBeNull();
+    expect(prisma.professionalListing.create.mock.calls[0][0].data.email).toBe('ada@example.com');
+  });
+
+  it('rejects a listing with neither phone nor email and creates nothing', async () => {
+    const prisma = mockPrisma();
+    const service = new ProfessionalsService(prisma);
+    await expect(
+      service.adminCreate('admin-1', {
+        displayName: 'No Contact',
+        primaryProfessionId: 'profession_surveyor',
+      }),
+    ).rejects.toThrow('Add a phone number or an email address.');
+    expect(prisma.professionalListing.create).not.toHaveBeenCalled();
+  });
+
+  it('lets an admin clear the email when a phone remains', async () => {
+    const prisma = mockPrisma();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      ...listedRow,
+      phone: '08030000000',
+      email: 'ada@example.com',
+      listedAt: new Date(),
+      archivedAt: null,
+      procurement: {},
+      engagements: [],
+      claims: [],
+      claimInvites: [],
+      applications: [],
+      enquiries: [],
+      documents: [],
+    });
+    const service = new ProfessionalsService(prisma);
+    await service.adminUpdate('p1', { email: null });
+    expect(prisma.professionalListing.update.mock.calls[0][0].data.email).toBeNull();
+  });
+
+  it('rejects clearing the phone when the listing has no email', async () => {
+    const prisma = mockPrisma();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      ...listedRow,
+      phone: '08030000000',
+      email: null,
+    });
+    const service = new ProfessionalsService(prisma);
+    await expect(service.adminUpdate('p1', { phone: null })).rejects.toThrow(
+      'Add a phone number or an email address.',
+    );
+    expect(prisma.professionalListing.update).not.toHaveBeenCalled();
+  });
+
+  it('does not wipe contact keys when an update only sends a bio', async () => {
+    const prisma = mockPrisma();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      ...listedRow,
+      phone: '08030000000',
+      email: 'ada@example.com',
+      listedAt: new Date(),
+      archivedAt: null,
+      procurement: {},
+      engagements: [],
+      claims: [],
+      claimInvites: [],
+      applications: [],
+      enquiries: [],
+      documents: [],
+    });
+    const service = new ProfessionalsService(prisma);
+    await service.adminUpdate('p1', { bio: 'A survey practice in Owo.' });
+    const data = prisma.professionalListing.update.mock.calls[0][0].data;
+    expect(data.normalizedPhone).toBeUndefined();
+    expect(data.normalizedEmail).toBeUndefined();
+    expect(data.normalizedName).toBeUndefined();
+    expect(data.websiteDomain).toBeUndefined();
+  });
+
+  it('does not publish a blank public email or phone', () => {
+    const profile = toPublicProfessionalProfile({
+      ...listedRow,
+      publicEmail: true,
+      publicPhone: true,
+      publicWhatsapp: true,
+      publicWebsite: true,
+      email: '',
+      phone: '',
+      whatsapp: '',
+      website: '',
+      photoUrl: null,
+      logoUrl: null,
+      address: null,
+      serviceCities: [],
+      specialties: [],
+      services: [],
+      deliverables: [],
+      projectStages: [],
+      credentials: [],
+    } as any);
+    expect(profile.contact.email).toBeNull();
+    expect(profile.publicEmail).toBeNull();
+    expect(profile.contact.phone).toBeNull();
+    expect(profile.publicPhone).toBeNull();
   });
 });

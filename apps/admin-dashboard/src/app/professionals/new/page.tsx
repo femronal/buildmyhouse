@@ -15,6 +15,7 @@ export default function NewProfessionalPage() {
   const router = useRouter();
   const meta = useProfessionalMeta();
   const create = useCreateProfessional();
+  const [contactError, setContactError] = useState('');
   const [credential, setCredential] = useState<CredentialDraft>(EMPTY_CREDENTIAL_DRAFT);
   const [form, setForm] = useState({
     displayName: '',
@@ -60,8 +61,17 @@ export default function NewProfessionalPage() {
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    if (!form.phone.trim() && !form.email.trim()) {
+      setContactError('Add a phone number or an email address.');
+      return;
+    }
+    setContactError('');
     const created = await create.mutateAsync({
       ...form,
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      whatsapp: form.whatsapp.trim() || undefined,
+      website: form.website.trim() || undefined,
       address: form.address.trim() || undefined,
       yearsExperience: form.yearsExperience ? Number(form.yearsExperience) : undefined,
       usedByBmhNote: form.usedByBmh ? form.usedByBmhNote : undefined,
@@ -128,10 +138,12 @@ export default function NewProfessionalPage() {
           <ChipGroup label="States served" items={(meta.data?.states || []).map((s: any) => ({ id: s.label, label: s.label }))} selected={form.serviceStates} onToggle={(id) => toggle('serviceStates', id)} />
           <div className="grid md:grid-cols-2 gap-3">
             <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone (private unless marked public later)" className="border rounded-lg px-3 py-2" />
-            <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="border rounded-lg px-3 py-2" />
+            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email (optional if phone is given)" className="border rounded-lg px-3 py-2" />
             <input value={form.whatsapp} onChange={(e) => setForm({ ...form, whatsapp: e.target.value })} placeholder="WhatsApp" className="border rounded-lg px-3 py-2" />
             <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="Website" className="border rounded-lg px-3 py-2" />
           </div>
+          <p className="text-sm text-gray-500">Phone or email is required. No claim invite is sent from this form.</p>
+          {contactError ? <p className="text-sm text-red-600">{contactError}</p> : null}
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.siteVisits} onChange={(e) => setForm({ ...form, siteVisits: e.target.checked })} /> Site visits</label>
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.remoteConsultation} onChange={(e) => setForm({ ...form, remoteConsultation: e.target.checked })} /> Remote consultation</label>
           <label className="flex gap-2 text-sm"><input type="checkbox" checked={form.canIssueSignedReport} onChange={(e) => setForm({ ...form, canIssueSignedReport: e.target.checked })} /> Can issue signed reports</label>

@@ -12,6 +12,7 @@ function serviceWith(overrides: Record<string, any> = {}) {
     professionalClaimInvite: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
       update: jest.fn(),
     },
     professionalCredential: {
@@ -285,5 +286,111 @@ describe('professional claim invites', () => {
     expect(created.reviewStatus).toBe('pending');
     expect(created).not.toHaveProperty('fileRef');
     expect(prisma.professionalDocument.create.mock.calls[0][0].data.isPublic).toBe(false);
+  });
+
+  it('does not create or send a claim invite when the listing has no email', async () => {
+    const { prisma, email, service } = serviceWith();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      id: 'p1',
+      displayName: 'Phone Only',
+      email: null,
+      phone: '08000000000',
+    });
+    await expect(service.adminCreateClaimInvite('p1', 'admin', {} as any)).rejects.toThrow('Invite email is required');
+    expect(prisma.professionalClaimInvite.create).not.toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('does not email a claim link when the listing has no email', async () => {
+    const { prisma, email, service } = serviceWith();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      id: 'p1',
+      displayName: 'Phone Only',
+      email: null,
+      claimEmail: null,
+    });
+    await expect(service.emailClaimLink('p1', 'admin')).rejects.toThrow(
+      'This listing has no email address. Copy the claim link and send it yourself.',
+    );
+    expect(prisma.professionalClaimInvite.create).not.toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('returns a copyable claim link for a phone-only listing and does not send email', async () => {
+    const { prisma, email, service } = serviceWith();
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      id: 'p1',
+      displayName: 'Phone Only',
+      email: null,
+      phone: '08000000000',
+      claimedByUserId: null,
+      linkedUserId: null,
+    });
+    prisma.professionalClaimInvite.create.mockResolvedValue({
+      id: 'inv1',
+      rawToken: 'copy-token',
+      expiresAt: new Date(Date.now() + 86400000),
+      emailedAt: null,
+    });
+    const result = await service.ensureClaimLink('p1', 'admin');
+    expect(result.claimUrl).toBe('https://buildmyhouse.app/professionals/claim/copy-token');
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('does not resend a claim invite that has no email', async () => {
+    const { prisma, email, service } = serviceWith();
+    prisma.professionalClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      email: null,
+      professionalListingId: 'p1',
+    });
+    await expect(service.resendClaimInvite('inv1', 'admin')).rejects.toThrow('Invite email is required');
+    expect(prisma.professionalClaimInvite.create).not.toHaveBeenCalled();
+    expect(email.send).not.toHaveBeenCalled();
+  });
+
+  it('saves the signed-in user email when a claim invite has none', async () => {
+    const { prisma, service } = serviceWith();
+    const raw = 'phone-claim';
+    const tokenHash = require('crypto').createHash('sha256').update(raw).digest('hex');
+    prisma.professionalClaimInvite.findUnique.mockResolvedValue({
+      id: 'inv1',
+      professionalListingId: 'p1',
+      tokenHash,
+      email: null,
+      expiresAt: new Date(Date.now() + 86400000),
+      usedAt: null,
+      revokedAt: null,
+    });
+    prisma.user.findUnique.mockResolvedValue({
+      id: 'user1',
+      role: 'homeowner',
+      fullName: 'Owner',
+      email: 'owner@example.com',
+    });
+    prisma.professionalListing.findUnique.mockResolvedValue({
+      id: 'p1',
+      displayName: 'Phone Only',
+      claimedByUserId: null,
+      linkedUserId: null,
+      claimedAt: null,
+      city: null,
+      state: null,
+      yearsExperience: null,
+    });
+    prisma.professionalListing.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      id: 'p1',
+      slug: 'phone-only',
+      displayName: 'Phone Only',
+      credentials: [],
+      services: [],
+      documents: [],
+      serviceStates: [],
+      serviceCities: [],
+    });
+
+    await service.acceptClaim(raw, 'user1');
+
+    expect(prisma.professionalListing.update.mock.calls[0][0].data.claimEmail).toBe('owner@example.com');
   });
 });

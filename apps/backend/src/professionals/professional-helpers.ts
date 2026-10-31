@@ -359,16 +359,16 @@ export function toPublicProfessionalProfile(listing: ListingWithPublicRelations)
   return {
     ...card,
     bio: listing.bio,
-    website: listing.publicWebsite ? listing.website : null,
-    publicPhone: listing.publicPhone ? listing.phone : null,
-    publicEmail: listing.publicEmail ? listing.email : null,
-    publicWhatsapp: listing.publicWhatsapp ? listing.whatsapp : null,
+    website: listing.publicWebsite && listing.website ? listing.website : null,
+    publicPhone: listing.publicPhone && listing.phone ? listing.phone : null,
+    publicEmail: listing.publicEmail && listing.email ? listing.email : null,
+    publicWhatsapp: listing.publicWhatsapp && listing.whatsapp ? listing.whatsapp : null,
     lastUpdatedAt: listing.updatedAt.toISOString(),
     contact: {
-      phone: listing.publicPhone ? listing.phone : null,
-      email: listing.publicEmail ? listing.email : null,
-      whatsapp: listing.publicWhatsapp ? listing.whatsapp : null,
-      website: listing.publicWebsite ? listing.website : null,
+      phone: listing.publicPhone && listing.phone ? listing.phone : null,
+      email: listing.publicEmail && listing.email ? listing.email : null,
+      whatsapp: listing.publicWhatsapp && listing.whatsapp ? listing.whatsapp : null,
+      website: listing.publicWebsite && listing.website ? listing.website : null,
     },
   };
 }
