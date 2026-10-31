@@ -14,6 +14,7 @@ export type GCProfile = {
   experienceYears?: number | null;
   experience?: string | null;
   rating: number;
+  reviews?: number;
   reviewLink?: string | null;
   totalProjects: number;
   activeProjects: number;

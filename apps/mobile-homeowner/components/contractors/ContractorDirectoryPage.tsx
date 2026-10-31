@@ -18,6 +18,7 @@ import {
 } from '@/lib/public-contractors';
 import { buildSeoJsonLd } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
+import { formatContractorRating } from '@buildmyhouse/shared-utils';
 
 type ContractorDirectoryPageProps = {
   specialty?: ContractorDirectorySpecialtySlug;
@@ -56,8 +57,11 @@ function ContractorCard({
         </Text>
       ) : null}
       <Text className="text-xs" style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED }}>
-        {rating != null ? `${rating.toFixed(1)} rating` : 'Rating pending'} · {reviewCount} review
-        {reviewCount === 1 ? '' : 's'}
+        {formatContractorRating(rating, reviewCount).isNew
+          ? 'New'
+          : rating == null
+            ? 'Rating pending'
+            : `${formatContractorRating(rating, reviewCount).label} rating · ${formatContractorRating(rating, reviewCount).reviewsLabel}`}
       </Text>
     </View>
   );

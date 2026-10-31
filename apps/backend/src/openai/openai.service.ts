@@ -52,6 +52,7 @@ export interface RerankContractorInput {
   location?: string | null;
   rating?: number | null;
   reviews?: number | null;
+  isNew?: boolean;
   projects?: number | null;
   experienceYears?: number | null;
   verified?: boolean | null;
@@ -536,6 +537,7 @@ export class OpenAIService {
       location: candidate.location || '',
       rating: Number(candidate.rating || 0),
       reviews: Number(candidate.reviews || 0),
+      isNew: Number(candidate.reviews || 0) === 0,
       projects: Number(candidate.projects || 0),
       experienceYears: Number(candidate.experienceYears || 0),
       verified: !!candidate.verified,
@@ -562,6 +564,7 @@ export class OpenAIService {
               'You rank verified contractors for a Nigerian property project.',
               'Prioritize relevance to project scope, location practicality, reliability, and realistic execution confidence.',
               'Never invent contractor IDs. Choose only from provided candidates.',
+              'isNew true means no reviews yet; treat rating as unknown, not low or high.',
               'Return strict JSON only.',
             ].join(' '),
           },

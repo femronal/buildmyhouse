@@ -296,5 +296,124 @@ describe('ContractorsService.recommendGCs', () => {
     expect(openAIService.rerankContractorMatches).toHaveBeenCalled();
     expect(matches[0].id).toBe('contractor-2');
   });
+
+  it('does not change rating or projects when an admin verifies a new GC', async () => {
+    const { service } = buildService();
+    const prisma = (service as any).prisma;
+    prisma.contractor.findUnique = jest.fn().mockResolvedValue({
+      id: 'c1',
+      userId: 'u1',
+      type: 'general_contractor',
+      reviews: 0,
+      projects: 2,
+      rating: 0,
+      specialty: 'General Contractor',
+      specialtyTags: [],
+      specialtyCategory: 'general_contractor',
+    });
+    prisma.contractor.update = jest.fn().mockResolvedValue({});
+    prisma.user = {
+      findUnique: jest.fn().mockResolvedValue({ id: 'u1', verified: true }),
+      update: jest.fn().mockResolvedValue({}),
+    };
+    jest.spyOn(service as any, 'getVerificationDocumentStatus').mockResolvedValue({
+      hasUploadedAllRequiredDocuments: true,
+      missingRequiredDocuments: [],
+    });
+
+    await service.adminSetGCVerification('u1', true);
+
+    const data = prisma.contractor.update.mock.calls[0][0].data;
+    expect(data.verified).toBe(true);
+    expect(data.rating).toBeUndefined();
+    expect(data.projects).toBeUndefined();
+  });
+
+  it('returns a zero rating and zero project count from the GC profile', async () => {
+    const { service } = buildService();
+    const prisma = (service as any).prisma;
+    prisma.user = {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 'u1',
+        fullName: 'Ada',
+        email: 'ada@example.com',
+        phone: null,
+        pictureUrl: null,
+        verified: false,
+        profileSetupCompleted: false,
+      }),
+    };
+    prisma.contractor.findUnique = jest.fn().mockResolvedValue({
+      id: 'c1',
+      rating: 0,
+      reviews: 0,
+      projects: 0,
+      specialty: 'General Contractor',
+      specialtyTags: [],
+      specialtyCategory: 'general_contractor',
+    });
+    jest.spyOn(service as any, 'getGCEarnings').mockResolvedValue([]);
+    jest.spyOn(service as any, 'getCertificationsForUser').mockResolvedValue([]);
+    jest.spyOn(service as any, 'getVerificationDocumentStatus').mockResolvedValue({
+      requiredDocuments: [],
+      uploadedDocuments: [],
+      uploadedRequiredCount: 0,
+      totalRequiredCount: 0,
+      missingRequiredDocuments: [],
+      hasUploadedAllRequiredDocuments: false,
+    });
+
+    const profile = await service.getGCProfile('u1');
+    expect(profile.rating).toBe(0);
+    expect(profile.reviews).toBe(0);
+    expect(profile.totalProjects).toBe(0);
+  });
+
+  it('ranks a new contractor at the prior, below a contractor with real reviews', () => {
+    const { service } = buildService();
+    const project = { projectType: 'renovation', city: '', state: '', name: 'Kitchen', aiAnalysis: {} };
+    const ranked = (service as any).capabilitySafeFallbackRecommendGCs(
+      project,
+      [
+        {
+          id: 'new-five',
+          rating: 5,
+          reviews: 0,
+          projects: 0,
+          verified: true,
+          specialtyCategory: 'general_contractor',
+          location: '',
+          specialtyTags: [],
+          user: { verified: true, role: 'general_contractor' },
+        },
+        {
+          id: 'proven',
+          rating: 4.9,
+          reviews: 10,
+          projects: 0,
+          verified: true,
+          specialtyCategory: 'general_contractor',
+          location: '',
+          specialtyTags: [],
+          user: { verified: true, role: 'general_contractor' },
+        },
+        {
+          id: 'new-zero',
+          rating: 0,
+          reviews: 0,
+          projects: 0,
+          verified: true,
+          specialtyCategory: 'general_contractor',
+          location: '',
+          specialtyTags: [],
+          user: { verified: true, role: 'general_contractor' },
+        },
+      ],
+      5,
+    );
+    const score = (id: string) => ranked.find((row: any) => row.id === id).matchScore;
+    expect(score('proven')).toBeGreaterThan(score('new-five'));
+    expect(score('new-five')).toBe(score('new-zero'));
+  });
 });
 

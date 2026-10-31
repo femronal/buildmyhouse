@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { effectiveRatingForRanking } from '../marketplace/constants/contractor-rating-policy';
 
 type ProjectTag = 'repair' | 'upgrades' | 'renovation' | 'full_builds' | 'unknown';
 type GCSpecialtyCategory = 'repairer' | 'upgrader' | 'renovator' | 'general_contractor';
@@ -575,7 +576,7 @@ export class ContractorMatcherService {
   }
 
   private scoreQuality(candidate: ContractorMatcherCandidateInput): number {
-    const rating = Math.max(0, Math.min(5, Number(candidate.rating || 0)));
+    const rating = Math.max(0, Math.min(5, effectiveRatingForRanking(candidate.rating, candidate.reviews)));
     const reviews = Math.max(0, Number(candidate.reviews || 0));
     const projects = Math.max(0, Number(candidate.projects || 0));
     const disputes = candidate.disputeStats || {
@@ -657,7 +658,7 @@ export class ContractorMatcherService {
       const locationTarget = projectCity || projectState;
       reasons.push(`Works in or near ${locationTarget}`);
     }
-    if (breakdown.qualityReliability >= 16 && rating >= 4.5) {
+    if (breakdown.qualityReliability >= 16 && reviews > 0 && rating >= 4.5) {
       reasons.push(`High quality signal (${rating.toFixed(1)} rating across ${reviews} review${reviews === 1 ? '' : 's'})`);
     }
     if (breakdown.commercialFit >= 10 && responseRate >= 0.65) {
@@ -808,8 +809,8 @@ export class ContractorMatcherService {
       const projectsA = Number(a.projects || 0);
       const projectsB = Number(b.projects || 0);
       if (projectsB !== projectsA) return projectsB - projectsA;
-      const ratingA = Number(a.rating || 0);
-      const ratingB = Number(b.rating || 0);
+      const ratingA = effectiveRatingForRanking(a.rating, a.reviews);
+      const ratingB = effectiveRatingForRanking(b.rating, b.reviews);
       if (ratingB !== ratingA) return ratingB - ratingA;
       return String(a.id).localeCompare(String(b.id));
     });

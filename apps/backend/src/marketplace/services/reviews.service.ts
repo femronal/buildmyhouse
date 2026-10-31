@@ -5,6 +5,7 @@ import {
   getContractorReviewReasonOptions,
   normalizeContractorSpecialtyCategory,
 } from '../constants/contractor-review-reasons';
+import { bayesianContractorRating, isFinishedBmhJob } from '../constants/contractor-rating-policy';
 
 @Injectable()
 export class ReviewsService {
@@ -154,6 +155,9 @@ export class ReviewsService {
     } else if (contractorId) {
       const normalizedProjectId = String(projectId || '').trim() || null;
       const normalizedComment = String(comment || '').trim() || null;
+      if (!normalizedProjectId) {
+        throw new BadRequestException('A finished project is required to review a contractor');
+      }
       const validated = await this.validateContractorReviewReasons({
         contractorId,
         rating,
@@ -161,64 +165,62 @@ export class ReviewsService {
         otherReason,
       });
 
-      if (normalizedProjectId) {
-        const project = await this.prisma.project.findUnique({
-          where: { id: normalizedProjectId },
-          select: { id: true, homeownerId: true, generalContractorId: true, progress: true, status: true },
-        });
-        if (!project) {
-          throw new NotFoundException('Project not found');
-        }
-        if (project.homeownerId !== userId) {
-          throw new BadRequestException('Only the homeowner of this project can submit this review');
-        }
-        if (project.generalContractorId !== validated.contractor.userId) {
-          throw new BadRequestException('Selected contractor is not assigned to this project');
-        }
-        const isComplete = Number(project.progress || 0) >= 100 || project.status === 'completed';
-        if (!isComplete) {
-          throw new BadRequestException('Project must be fully complete before submitting a GC review');
-        }
+      const project = await this.prisma.project.findUnique({
+        where: { id: normalizedProjectId },
+        select: { id: true, homeownerId: true, generalContractorId: true, progress: true, status: true },
+      });
+      if (!project) {
+        throw new NotFoundException('Project not found');
+      }
+      if (project.homeownerId !== userId) {
+        throw new BadRequestException('Only the homeowner of this project can submit this review');
+      }
+      if (project.generalContractorId !== validated.contractor.userId) {
+        throw new BadRequestException('Selected contractor is not assigned to this project');
+      }
+      if (!isFinishedBmhJob(project)) {
+        throw new BadRequestException('Project must be fully complete before submitting a GC review');
       }
 
       const existing = await this.prisma.review.findFirst({
-        where: normalizedProjectId
-          ? {
-              userId,
-              contractorId,
-              projectId: normalizedProjectId,
-            }
-          : {
-              userId,
-              contractorId,
-              projectId: null,
-            },
-      });
-
-      if (existing) {
-        throw new BadRequestException('You have already reviewed this contractor for this context');
-      }
-
-      // Create review
-      const review = await this.prisma.review.create({
-        data: {
+        where: {
           userId,
           contractorId,
           projectId: normalizedProjectId,
-          rating,
-          comment: normalizedComment || validated.otherReason,
-          reasons: validated.reasons,
-          otherReason: validated.otherReason,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              fullName: true,
-            },
-          },
         },
       });
+
+      if (existing) {
+        throw new BadRequestException('You have already reviewed this contractor for this project');
+      }
+
+      let review;
+      try {
+        review = await this.prisma.review.create({
+          data: {
+            userId,
+            contractorId,
+            projectId: normalizedProjectId,
+            rating,
+            comment: normalizedComment || validated.otherReason,
+            reasons: validated.reasons,
+            otherReason: validated.otherReason,
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+              },
+            },
+          },
+        });
+      } catch (error) {
+        if ((error as { code?: string })?.code === 'P2002') {
+          throw new BadRequestException('You have already reviewed this contractor for this project');
+        }
+        throw error;
+      }
 
       // Update contractor rating
       await this.updateContractorRating(contractorId);
@@ -457,26 +459,17 @@ export class ReviewsService {
       await this.prisma.contractor.update({
         where: { id: contractorId },
         data: {
-          rating: 5.0,
+          rating: 0,
           reviews: 0,
         },
       });
       return;
     }
 
-    // Confidence-weighted (Bayesian) average similar to supply platforms:
-    // protects against unstable scores from very few ratings while still reacting over time.
-    const priorMean = 4.7;
-    const priorWeight = 8;
-    const totalRatings = reviews.reduce((sum, r) => sum + r.rating, 0);
-    const weightedAverage =
-      (totalRatings + priorMean * priorWeight) / (reviews.length + priorWeight);
-    const bounded = Math.max(1, Math.min(5, weightedAverage));
-
     await this.prisma.contractor.update({
       where: { id: contractorId },
       data: {
-        rating: Math.round(bounded * 10) / 10, // Round to 1 decimal
+        rating: bayesianContractorRating(reviews.map((review) => review.rating)),
         reviews: reviews.length,
       },
     });

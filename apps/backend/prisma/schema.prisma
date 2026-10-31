@@ -722,9 +722,9 @@ model Contractor {
   /// Canonical LGA / area council label within stateLabel.
   lgaLabel                        String?
   experienceYears                 Int? // Years of experience (e.g. 15)
-  rating                          Float    @default(5.0)
+  rating                          Float    @default(0)
   reviews                         Int      @default(0)
-  projects                        Int      @default(10)
+  projects                        Int      @default(0)
   verified                        Boolean  @default(false)
   imageUrl                        String?
   hiringFee                       Float

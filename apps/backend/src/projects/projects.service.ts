@@ -40,6 +40,24 @@ export class ProjectsService {
   private readonly logger = new Logger(ProjectsService.name);
   private readonly evidenceInflight = new Map<string, Promise<any>>();
 
+  async recountContractorProjects(generalContractorUserId: string) {
+    const userId = String(generalContractorUserId || '').trim();
+    if (!userId) return;
+    const count = await this.prisma.project.count({
+      where: {
+        generalContractorId: userId,
+        OR: [
+          { status: 'completed' },
+          { progress: { gte: 100 }, status: { not: 'cancelled' } },
+        ],
+      },
+    });
+    await this.prisma.contractor.updateMany({
+      where: { userId },
+      data: { projects: count },
+    });
+  }
+
   private getHomeownerAppUrl(): string {
     return String(
       this.configService.get<string>('HOMEOWNER_APP_URL') || 'https://buildmyhouse.app',
@@ -323,6 +341,16 @@ export class ProjectsService {
       where: { id: projectId },
       data: { status },
     });
+
+    if (project.generalContractorId) {
+      try {
+        await this.recountContractorProjects(project.generalContractorId);
+      } catch (error) {
+        this.logger.error(
+          `contractor project count failed userId=${project.generalContractorId} message=${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      }
+    }
 
     // Emit real-time update to all clients watching this project
     this.wsService.emitProjectUpdate(projectId, {
@@ -2409,6 +2437,15 @@ export class ProjectsService {
       where: { id: projectId },
       data: { progress, currentStage, spent },
     });
+    if (stage.project?.generalContractorId) {
+      try {
+        await this.recountContractorProjects(stage.project.generalContractorId);
+      } catch (error) {
+        this.logger.error(
+          `contractor project count failed userId=${stage.project.generalContractorId} message=${error instanceof Error ? error.message : 'unknown'}`,
+        );
+      }
+    }
     const isProjectNowComplete = allStages.length > 0 && completedStages.length === allStages.length;
     if (isProjectNowComplete && !params.wasProjectComplete && stage.project?.homeownerId) {
       try {

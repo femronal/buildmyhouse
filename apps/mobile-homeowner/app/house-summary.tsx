@@ -22,6 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RequestPendingNextSteps from '@/components/RequestPendingNextSteps';
 import PlanDetailView from '@/components/plan-detail/PlanDetailView';
 import { ReferralCodeField } from '@/components/ReferralCodeField';
+import { formatContractorRating } from '@buildmyhouse/shared-utils';
 
 // Conditionally import GooglePlacesAutocomplete only on native platforms
 let GooglePlacesAutocomplete: any = null;
@@ -328,9 +329,9 @@ export default function HouseSummaryScreen() {
       description: contractorProfile?.description || null,
       location: contractorProfile?.location || 'Lagos, Nigeria',
       verified: contractorProfile?.verified || false,
-      rating: contractorProfile?.rating || 4.8,
-      reviews: contractorProfile?.reviews || 24,
-      projects: contractorProfile?.projects || 15,
+      rating: contractorProfile?.rating ?? 0,
+      reviews: contractorProfile?.reviews ?? 0,
+      projects: contractorProfile?.projects ?? 0,
       matchScore: 98, // High match since they created the design
       email: designData.createdBy.email,
       avatarUrl,
@@ -1255,13 +1256,21 @@ export default function HouseSummaryScreen() {
               </View>
 
               <View className="flex-row items-center mb-3">
-                <Star size={16} color="#000" strokeWidth={2} fill="#000" />
-                <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {designGC.rating.toFixed(1)}
-                </Text>
-                <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  ({designGC.reviews} reviews) • {designGC.projects} projects
-                </Text>
+                {formatContractorRating(designGC.rating, designGC.reviews).isNew ? (
+                  <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    New
+                  </Text>
+                ) : (
+                  <>
+                    <Star size={16} color="#000" strokeWidth={2} fill="#000" />
+                    <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {formatContractorRating(designGC.rating, designGC.reviews).label}
+                    </Text>
+                    <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      ({formatContractorRating(designGC.rating, designGC.reviews).reviewsLabel}) • {designGC.projects} projects
+                    </Text>
+                  </>
+                )}
               </View>
 
               <View className="mt-3 pt-3 border-t border-blue-200">
@@ -1328,17 +1337,23 @@ export default function HouseSummaryScreen() {
                 </View>
               </View>
 
-              {(acceptedGC?.rating || acceptedGC?.reviews || acceptedGC?.projects) && (
-                <View className="flex-row items-center mb-3">
-                  <Star size={16} color="#000" strokeWidth={2} fill="#000" />
-                  <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {acceptedGC?.rating?.toFixed(1) || 'N/A'}
+              <View className="flex-row items-center mb-3">
+                {formatContractorRating(acceptedGC?.rating, acceptedGC?.reviews).isNew ? (
+                  <Text className="text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                    New
                   </Text>
-                  <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
-                    ({acceptedGC?.reviews || 0} reviews) • {acceptedGC?.projects || 0} projects
-                  </Text>
-                </View>
-              )}
+                ) : (
+                  <>
+                    <Star size={16} color="#000" strokeWidth={2} fill="#000" />
+                    <Text className="ml-1 text-black" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      {formatContractorRating(acceptedGC?.rating, acceptedGC?.reviews).label}
+                    </Text>
+                    <Text className="ml-1 text-gray-500" style={{ fontFamily: 'Poppins_400Regular' }}>
+                      ({formatContractorRating(acceptedGC?.rating, acceptedGC?.reviews).reviewsLabel}) • {acceptedGC?.projects || 0} projects
+                    </Text>
+                  </>
+                )}
+              </View>
 
               <View className="mt-3 pt-3 border-t border-green-200">
                 <Text className="text-green-800 text-sm mb-1" style={{ fontFamily: 'Poppins_600SemiBold' }}>
@@ -1492,19 +1507,30 @@ export default function HouseSummaryScreen() {
               </View>
 
               <View className="flex-row items-center mb-3">
-                <Star size={16} color={isSelected ? '#fff' : '#000'} strokeWidth={2} fill={isSelected ? '#fff' : '#000'} />
-                <Text 
-                  className={`ml-1 ${isSelected ? 'text-white' : 'text-black'}`}
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
-                >
-                  {gc.rating}
-                </Text>
-                <Text 
-                  className={`ml-1 ${isSelected ? 'text-white/70' : 'text-gray-500'}`}
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  ({gc.reviews} reviews) • {gc.projects} projects
-                </Text>
+                {formatContractorRating(gc.rating, gc.reviews).isNew ? (
+                  <Text
+                    className={isSelected ? 'text-white' : 'text-black'}
+                    style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  >
+                    New
+                  </Text>
+                ) : (
+                  <>
+                    <Star size={16} color={isSelected ? '#fff' : '#000'} strokeWidth={2} fill={isSelected ? '#fff' : '#000'} />
+                    <Text
+                      className={`ml-1 ${isSelected ? 'text-white' : 'text-black'}`}
+                      style={{ fontFamily: 'Poppins_600SemiBold' }}
+                    >
+                      {formatContractorRating(gc.rating, gc.reviews).label}
+                    </Text>
+                    <Text
+                      className={`ml-1 ${isSelected ? 'text-white/70' : 'text-gray-500'}`}
+                      style={{ fontFamily: 'Poppins_400Regular' }}
+                    >
+                      ({formatContractorRating(gc.rating, gc.reviews).reviewsLabel}) • {gc.projects} projects
+                    </Text>
+                  </>
+                )}
               </View>
 
               <View className="pt-3 border-t border-white/20">
@@ -1513,7 +1539,7 @@ export default function HouseSummaryScreen() {
                     Experience
                   </Text>
                   <Text className={`${isSelected ? 'text-white' : 'text-black'}`} style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {gc.projects}+ projects
+                    {gc.projects ? `${gc.projects} completed jobs` : 'No completed jobs yet'}
                   </Text>
                 </View>
                 <View className="pr-2">

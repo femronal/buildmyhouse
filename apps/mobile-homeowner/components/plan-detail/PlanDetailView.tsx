@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { formatContractorRating } from '@buildmyhouse/shared-utils';
 import {
   Modal,
   Platform,
@@ -179,8 +180,7 @@ export default function PlanDetailView({
   const profile = design?.createdBy?.contractorProfile;
   const contractorName = `${profile?.name || design?.createdBy?.fullName || ''}`.trim();
   const contractorPhoto = getBackendAssetUrl(profile?.imageUrl || design?.createdBy?.pictureUrl || undefined);
-  const reviews = positiveNumber(profile?.reviews);
-  const rating = positiveNumber(profile?.rating);
+  const contractorRating = formatContractorRating(profile?.rating, profile?.reviews);
   const visiblePhases = stagesOpen ? phases : phases.slice(0, 5);
   const visibleIncluded = includedOpen ? included : included.slice(0, 6);
 
@@ -463,7 +463,7 @@ export default function PlanDetailView({
                   </Text>
                 ) : null}
                 <Text style={{ fontFamily: 'Poppins_500Medium', fontSize: 14, color: '#111111', marginTop: 4 }}>
-                  {reviews && rating ? `${rating.toFixed(1)} (${reviews} ${reviews === 1 ? 'review' : 'reviews'})` : 'New'}
+                  {contractorRating.isNew ? 'New' : `${contractorRating.label} (${contractorRating.reviewsLabel})`}
                 </Text>
               </View>
             </View>

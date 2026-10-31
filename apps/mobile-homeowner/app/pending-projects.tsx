@@ -2,6 +2,7 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Ale
 import { useRouter } from "expo-router";
 import { ArrowLeft, Home, Trash2, Bed, Bath, Maximize, HardHat, Star, MapPin, Clock, X, ExternalLink, CreditCard, CheckCircle2 } from "lucide-react-native";
 import { useState } from "react";
+import { formatContractorRating } from '@buildmyhouse/shared-utils';
 import { usePendingProjects, useDeletePendingProject, useDeclareManualPayment , useActivateProject } from '@/hooks';
 import { useCreatePaymentIntent } from '@/hooks/usePayment';
 import PaymentModal from '@/components/PaymentModal';
@@ -328,14 +329,18 @@ export default function PendingProjectsScreen() {
                         >
                           {gc.name || gc.fullName || 'General Contractor'}
                         </Text>
-                        {gc.rating && (
+                        {formatContractorRating(gc.rating, gc.reviews).isNew ? (
+                          <Text className="text-black text-sm" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                            New
+                          </Text>
+                        ) : (
                           <View className="flex-row items-center">
                             <Star size={14} color="#000000" strokeWidth={2} fill="#000000" />
-                            <Text 
+                            <Text
                               className="text-black ml-1 text-sm"
                               style={{ fontFamily: 'Poppins_600SemiBold' }}
                             >
-                              {gc.rating}
+                              {formatContractorRating(gc.rating, gc.reviews).label}
                             </Text>
                           </View>
                         )}

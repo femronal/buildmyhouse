@@ -5,6 +5,7 @@ import { Award, Check, Copy, ShieldCheck, ShieldX, X } from 'lucide-react';
 import { useGCProfile } from '@/hooks/useGCProfile';
 import { getBackendAssetUrl } from '@/lib/image';
 import { useSetUserVerified } from '@/hooks/useUsers';
+import { formatContractorRating } from '@/lib/contractor-rating';
 
 type Props = {
   userId: string | null;
@@ -125,7 +126,11 @@ export function ContractorViewModal({ userId, onClose }: Props) {
                     label="Rating"
                     value={
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span>{profile.rating ? `⭐ ${profile.rating.toFixed(1)}` : '—'}</span>
+                        <span>
+                          {formatContractorRating(profile.rating, profile.reviews).isNew
+                            ? 'New'
+                            : `⭐ ${formatContractorRating(profile.rating, profile.reviews).label}`}
+                        </span>
                         {profile.reviewLink && (
                           <button
                             type="button"
@@ -162,7 +167,7 @@ export function ContractorViewModal({ userId, onClose }: Props) {
               <div className="space-y-4 pt-4 border-t">
                 <h5 className="text-sm font-semibold text-gray-700">Activity</h5>
                 <div className="grid gap-3">
-                  <InfoRow label="Total projects" value={String(profile.totalProjects)} />
+                  <InfoRow label="Total projects" value={String(profile.totalProjects ?? 0)} />
                   <InfoRow label="Active projects" value={String(profile.activeProjects)} />
                   <InfoRow label="Completed projects" value={String(profile.completedProjects)} />
                   <InfoRow label="Total earnings" value={profile.totalEarnings ? `₦${profile.totalEarnings.toLocaleString()}` : '—'} />

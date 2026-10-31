@@ -617,7 +617,9 @@ export default function GCProfileScreen() {
               <View className="flex-row flex-wrap items-center mb-4">
                 <View className="bg-[#0A1628] rounded-full px-3 py-2 mr-2 mb-2 flex-row items-center">
                   <Text className="text-base" style={{ fontFamily: 'Poppins_600SemiBold', color: '#FBBF24' }}>
-                    ⭐ {Number(profileData.rating || 0).toFixed(1)} from homeowners
+                    {Number(profileData.reviews || 0) === 0
+                      ? 'New on BuildMyHouse, no reviews yet'
+                      : `⭐ ${Number(profileData.rating || 0).toFixed(1)} from homeowners`}
                   </Text>
                 </View>
                 {profileData.verified ? (

@@ -11,6 +11,7 @@ export type ContractorListItem = {
   location?: string | null;
   experienceYears?: number | null;
   rating: number;
+  reviews?: number;
   reviewLink?: string | null;
   projects: number;
   verified: boolean;

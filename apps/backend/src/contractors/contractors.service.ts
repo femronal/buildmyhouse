@@ -16,6 +16,7 @@ import { FundingService } from '../funding/funding.service';
 import { FUND_INVOICE_LINE } from '../funding/funding-invoice';
 import PDFDocument = require('pdfkit');
 import { OpenAIService, RerankContractorInput } from '../openai/openai.service';
+import { effectiveRatingForRanking } from '../marketplace/constants/contractor-rating-policy';
 import {
   GC_VERIFICATION_REQUIRED_DOCUMENTS,
   GCVerificationDocumentType,
@@ -639,7 +640,7 @@ export class ContractorsService {
       const location = this.normalizeText(contractor?.location || '');
       if (city && location.includes(city)) score += 18;
       if (state && location.includes(state)) score += 10;
-      score += Math.min(12, Number(contractor?.rating || 0) * 2);
+      score += Math.min(12, effectiveRatingForRanking(contractor?.rating, contractor?.reviews) * 2);
       score += Math.min(8, Math.log10(Number(contractor?.reviews || 0) + 1) * 4);
       score += Math.min(8, Math.log10(Number(contractor?.projects || 0) + 1) * 4);
       return {
@@ -662,6 +663,7 @@ export class ContractorsService {
       location: candidate.location || null,
       rating: candidate.rating ?? null,
       reviews: candidate.reviews ?? null,
+      isNew: Number(candidate.reviews || 0) === 0,
       projects: candidate.projects ?? null,
       experienceYears: candidate.experienceYears ?? null,
       verified: candidate.verified ?? candidate.user?.verified ?? null,
@@ -2574,9 +2576,10 @@ export class ContractorsService {
       experience: contractor?.experienceYears
         ? `${contractor.experienceYears} years`
         : null,
-      rating: contractor?.rating ?? 5.0,
+      rating: contractor?.rating ?? 0,
+      reviews: contractor?.reviews ?? 0,
       reviewLink: this.buildContractorReviewLink(contractor?.id),
-      totalProjects: Math.max(10, contractor?.projects ?? earnings.length ?? 10),
+      totalProjects: contractor?.projects ?? 0,
       activeProjects: activeProjects.length,
       completedProjects: completedProjects.length,
       totalEarnings,
@@ -2627,7 +2630,7 @@ export class ContractorsService {
         fallback: contractor.specialty || 'General Contractor',
       }),
       specialtyCategory: (contractor.specialtyCategory as GCSpecialtyCategory | null) || null,
-      rating: contractor.rating ?? 5,
+      rating: contractor.rating ?? 0,
       reviews: contractor.reviews ?? 0,
       reviewLink: this.buildContractorReviewLink(contractor.id),
     };
@@ -2884,6 +2887,7 @@ export class ContractorsService {
       location: c.location,
       experienceYears: c.experienceYears,
       rating: c.rating,
+      reviews: c.reviews,
       reviewLink: this.buildContractorReviewLink(c.id),
       projects: c.projects,
       verified: c.user?.verified ?? c.verified,
@@ -3049,8 +3053,6 @@ export class ContractorsService {
               }),
             }
           : {}),
-        rating: contractor.reviews > 0 ? contractor.rating : 5.0,
-        projects: Math.max(10, contractor.projects || 0),
       },
     });
     await this.prisma.user.update({

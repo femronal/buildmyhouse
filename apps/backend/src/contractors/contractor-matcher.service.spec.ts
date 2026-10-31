@@ -487,5 +487,42 @@ describe('ContractorMatcherService', () => {
     expect(result.matches).toHaveLength(0);
     expect(result.diagnostics.filteredCounts.specialtyMismatch).toBe(1);
   });
+
+  it('scores a new contractor the same whether the stored rating is 5 or 0', () => {
+    const matcher = new ContractorMatcherService();
+    const storedFive = (matcher as any).scoreQuality({
+      id: 'a',
+      userId: 'u',
+      rating: 5,
+      reviews: 0,
+      projects: 0,
+    });
+    const storedZero = (matcher as any).scoreQuality({
+      id: 'b',
+      userId: 'u',
+      rating: 0,
+      reviews: 0,
+      projects: 0,
+    });
+    expect(storedFive).toBe(storedZero);
+  });
+
+  it('does not call a new contractor a high quality signal', () => {
+    const matcher = new ContractorMatcherService();
+    const reasons = (matcher as any).buildReasons(
+      {
+        rating: 5,
+        reviews: 0,
+        specialtyCategory: 'general_contractor',
+        requestStats: { responseRate: 0 },
+        certificationCount: 0,
+      },
+      'renovation',
+      { capabilityFit: 0, geoFit: 0, qualityReliability: 20, commercialFit: 0 },
+      '',
+      '',
+    );
+    expect(reasons.join(' ')).not.toContain('High quality signal');
+  });
 });
 

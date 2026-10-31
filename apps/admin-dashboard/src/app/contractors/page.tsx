@@ -74,7 +74,7 @@ export default function ContractorsPage() {
 
       if (locationQuery && !location.toLowerCase().includes(locationQuery)) return false;
 
-      if (activityFilter === 'high_quality' && Number(c.rating || 0) < 4.5) return false;
+      if (activityFilter === 'high_quality' && (Number(c.reviews || 0) <= 0 || Number(c.rating || 0) < 4.5)) return false;
       if (activityFilter === 'high_volume' && Number(c.projects || 0) < 20) return false;
       if (activityFilter === 'newer' && Number(c.experienceYears || 0) > 3) return false;
 
