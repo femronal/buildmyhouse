@@ -1,7 +1,7 @@
 import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
 import { GC_BG } from '@/lib/gc-landing-content';
-import { readReviewWidgetId } from '@/lib/review-widgets';
+import { installTrustindexContentCacheBust, readReviewWidgetId, trustindexLoaderSrc } from '@/lib/review-widgets';
 
 export type TrustindexStatus = 'loading' | 'ready' | 'failed' | 'off';
 
@@ -17,7 +17,8 @@ function painted(container: HTMLElement) {
 }
 
 function rejected(container: HTMLElement) {
-  return /widget not found/i.test(container.textContent || '');
+  const text = container.textContent || '';
+  return /widget not found/i.test(text) || /trial period has expired/i.test(text);
 }
 
 function pageScroller(node: HTMLElement) {
@@ -101,10 +102,11 @@ export default function TrustindexReviews({ widgetId, onStatusChange }: Trustind
       else window.clearInterval(nudge);
     }, LOAD_TIMEOUT_MS);
 
+    installTrustindexContentCacheBust();
     const script = document.createElement('script');
     script.async = true;
     script.defer = true;
-    script.src = `https://cdn.trustindex.io/loader.js?${id}`;
+    script.src = trustindexLoaderSrc(id);
     script.setAttribute('data-bmh-trustindex', '1');
     script.onerror = () => finish('failed');
     script.onload = () => {

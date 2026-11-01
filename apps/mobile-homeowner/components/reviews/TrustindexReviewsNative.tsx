@@ -22,12 +22,25 @@ function widgetHtml(widgetId: string) {
 </head>
 <body>
 <div id="trustindex">
+<script>
+(function(){
+  var version = '20261101';
+  var original = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+    var raw = String(url || '');
+    if (raw.indexOf('cdn.trustindex.io/widgets/') !== -1 && raw.indexOf('content.html') !== -1 && raw.indexOf('bmh=') === -1) {
+      raw += (raw.indexOf('?') === -1 ? '?' : '&') + 'bmh=' + version;
+    }
+    return original.call(this, method, raw, async, user, password);
+  };
+})();
+</script>
 <script defer async src="https://cdn.trustindex.io/loader.js?${widgetId}"></script>
 </div>
 <script>
 function sendHeight(){
   var text = document.body.innerText || '';
-  if (/widget not found/i.test(text)) {
+  if (/widget not found/i.test(text) || /trial period has expired/i.test(text)) {
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('failed');
     return;
   }
