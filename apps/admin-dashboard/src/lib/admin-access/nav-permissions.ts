@@ -9,6 +9,8 @@ export const NAV_PERMISSION_MAP: Record<string, string> = {
   '/projects': 'projects.view',
   '/verification': 'verification.view',
   '/disputes': 'disputes.view',
+  '/listing-reviews': 'disputes.view',
+  '/scam-reports': 'disputes.view',
   '/opportunities': 'opportunities.view',
   '/tools': 'tools.view',
   '/articles': 'content.view',

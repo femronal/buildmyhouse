@@ -20,6 +20,7 @@ import {
   VendorQuoteRequestDto,
   VendorSensitiveChangeDto,
 } from './dto/vendors.dto';
+import { ListingFeedbackService, withPublicNotice } from '../listing-feedback/listing-feedback.service';
 import { VendorsService } from './vendors.service';
 import { VendorCategoriesService } from './vendor-categories.service';
 
@@ -28,6 +29,7 @@ export class VendorsPublicController {
   constructor(
     private readonly vendors: VendorsService,
     private readonly categories: VendorCategoriesService,
+    private readonly feedback: ListingFeedbackService,
   ) {}
 
   @Get()
@@ -106,8 +108,10 @@ export class VendorsPublicController {
   }
 
   @Get(':slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.vendors.getPublicBySlug(slug);
+  async getBySlug(@Param('slug') slug: string) {
+    const profile = await this.vendors.getPublicBySlug(slug);
+    const bmhNotice = await this.feedback.publicNotice('vendor', slug).catch(() => null);
+    return withPublicNotice(profile, bmhNotice);
   }
 
   @Post(':slug/quote-requests')

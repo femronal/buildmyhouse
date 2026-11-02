@@ -5,7 +5,13 @@ import DirectorySiteHeader from '@/components/directory/DirectorySiteHeader';
 import { SeoContentColumn, SeoContentShell } from '@/components/seo/SeoContentLayout';
 import { SeoHeading } from '@/components/seo/SeoHeading';
 import { LANDING_BORDER, LANDING_INK, LANDING_MUTED } from '@/lib/home-landing-content';
+import ListingNotice from '@/components/listing-feedback/ListingNotice';
+import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
+import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
+import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
+import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
 import { fetchArtisan } from '@/lib/public-artisans';
+import { buildCanonical } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
 import { TrustRing } from './TrustRing';
 
@@ -15,12 +21,22 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
   const title = artisan
     ? `${artisan.displayName} — ${artisan.trade?.label || 'Artisan'} in ${artisan.city || artisan.state || 'Nigeria'} | BuildMyHouse`
     : 'Artisan | BuildMyHouse';
+  const place = [artisan?.city, artisan?.state].filter(Boolean).join(', ');
+  const publicReviews = usePublicListingReviews('artisan', slug, 1, slug !== '__missing__');
+  const reviewMarkup = buildListingReviewJsonLd({
+    type: 'LocalBusiness',
+    name: artisan?.displayName || '',
+    url: buildCanonical(`/artisans/${slug}`),
+    summary: publicReviews.data?.summary,
+    reviews: publicReviews.data?.reviews,
+  });
+
   useWebSeo({
     title,
     description: artisan?.bio || 'Artisan and repair technician listing on BuildMyHouse.',
     canonicalPath: `/artisans/${slug}`,
+    jsonLd: reviewMarkup || undefined,
   });
-  const place = [artisan?.city, artisan?.state].filter(Boolean).join(', ');
 
   return (
     <SeoContentShell>
@@ -79,6 +95,9 @@ export default function ArtisanProfilePage({ slug }: { slug: string }) {
             <Text style={{ fontFamily: 'Poppins_400Regular', color: LANDING_MUTED, marginTop: 16, marginBottom: 32 }}>
               A low trust score does not hide this listing. Listing is not verification.
             </Text>
+            <ListingNotice profile={artisan} />
+            <ListingReviewsSection kind="artisan" slug={slug} />
+            <ReportScamButton kind="artisan" slug={slug} />
           </>
         ) : null}
       </SeoContentColumn>

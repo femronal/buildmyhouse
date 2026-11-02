@@ -20,8 +20,11 @@ import {
   UserCog,
   Waypoints,
   BadgeCheck,
+  MessageSquare,
+  ShieldAlert,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
+import { useFeedbackQueueCounts } from '@/hooks/useListingReviews';
 import { useMyPermissions } from '@/hooks/useMyPermissions';
 import { NAV_PERMISSION_MAP } from '@/lib/admin-access/nav-permissions';
 
@@ -32,6 +35,8 @@ const menuItems = [
   { href: '/vendors', label: 'Vendors', icon: Store },
   { href: '/artisans', label: 'Artisans', icon: Wrench },
   { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
+  { href: '/listing-reviews', label: 'Listing reviews', icon: MessageSquare },
+  { href: '/scam-reports', label: 'Scam reports', icon: ShieldAlert },
   { href: '/projects', label: 'Projects', icon: Building2 },
   { href: '/verification', label: 'Verification', icon: CheckCircle2 },
   { href: '/disputes', label: 'Disputes', icon: Scale },
@@ -62,6 +67,12 @@ type SidebarProps = {
 export default function Sidebar({ isMobile = false, onNavigate, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { isSuperAdmin, permissions, hasPermission } = useMyPermissions();
+  const counts = useFeedbackQueueCounts();
+  const badgeFor = (href: string) => {
+    if (href === '/listing-reviews') return counts.data?.pendingReviews || 0;
+    if (href === '/scam-reports') return counts.data?.newReports || 0;
+    return 0;
+  };
 
   const visibleItems = menuItems.filter((item) => {
     if (isSuperAdmin || permissions?.includes('*')) return true;
@@ -111,6 +122,7 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
               item.href !== '/vendors' &&
               pathname.startsWith(`${item.href}/`));
           const Icon = item.icon;
+          const badge = badgeFor(item.href);
           return (
             <Link
               key={item.href}
@@ -124,6 +136,9 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
             >
               <Icon className="w-2.5 h-2.5 shrink-0" />
               <span className="text-[10px] font-medium leading-tight">{item.label}</span>
+              {badge > 0 ? (
+                <span className="ml-auto rounded-full bg-red-600 px-1 text-[8px] leading-tight text-white">{badge}</span>
+              ) : null}
             </Link>
           );
         })}

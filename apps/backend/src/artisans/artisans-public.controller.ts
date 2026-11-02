@@ -2,12 +2,16 @@ import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nest
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
+import { ListingFeedbackService, withPublicNotice } from '../listing-feedback/listing-feedback.service';
 import { ArtisansService } from './artisans.service';
 import { ArtisanApplicationDto, ArtisanClaimRequestDto, PublicArtisanSearchDto } from './dto/artisans.dto';
 
 @Controller('artisans')
 export class ArtisansPublicController {
-  constructor(private readonly artisans: ArtisansService) {}
+  constructor(
+    private readonly artisans: ArtisansService,
+    private readonly feedback: ListingFeedbackService,
+  ) {}
 
   @Get()
   search(@Query() query: PublicArtisanSearchDto) {
@@ -46,7 +50,9 @@ export class ArtisansPublicController {
   }
 
   @Get(':slug')
-  getOne(@Param('slug') slug: string) {
-    return this.artisans.getPublic(slug);
+  async getOne(@Param('slug') slug: string) {
+    const profile = await this.artisans.getPublic(slug);
+    const bmhNotice = await this.feedback.publicNotice('artisan', slug).catch(() => null);
+    return withPublicNotice(profile, bmhNotice);
   }
 }

@@ -14,7 +14,12 @@ import {
   submitProfessionalEnquiry,
   type PublicProfessionalProfile,
 } from '@/lib/public-professionals';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
+import ListingNotice from '@/components/listing-feedback/ListingNotice';
+import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
+import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
+import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
+import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
+import { buildCanonical, buildSeoJsonLd } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
 
 function formatCheckedOn(value?: string | null) {
@@ -126,6 +131,14 @@ export default function ProfessionalProfilePage({ slug }: { slug: string }) {
   const seoTitle = professional
     ? `${professional.displayName} — ${professional.profession?.label || 'Professional'} in ${professional.state || 'Nigeria'}`
     : 'Professional';
+  const publicReviews = usePublicListingReviews('professional', slug);
+  const reviewMarkup = buildListingReviewJsonLd({
+    type: 'ProfessionalService',
+    name: professional?.displayName || '',
+    url: buildCanonical(`/professionals/${slug}`),
+    summary: publicReviews.data?.summary,
+    reviews: publicReviews.data?.reviews,
+  });
 
   useWebSeo({
     title: `${seoTitle} | BuildMyHouse`,
@@ -133,17 +146,20 @@ export default function ProfessionalProfilePage({ slug }: { slug: string }) {
     canonicalPath: `/professionals/${slug}`,
     robots: professional ? 'index,follow' : 'noindex,follow',
     jsonLd: professional
-      ? buildSeoJsonLd({
-          path: `/professionals/${slug}`,
-          title: seoTitle,
-          description: professional.bio || seoTitle,
-          schemaType: 'Service',
-          breadcrumbs: [
-            { name: 'Home', path: '/' },
-            { name: 'Professionals', path: '/professionals' },
-            { name: professional.displayName, path: `/professionals/${slug}` },
-          ],
-        })
+      ? [
+          ...buildSeoJsonLd({
+            path: `/professionals/${slug}`,
+            title: seoTitle,
+            description: professional.bio || seoTitle,
+            schemaType: 'Service',
+            breadcrumbs: [
+              { name: 'Home', path: '/' },
+              { name: 'Professionals', path: '/professionals' },
+              { name: professional.displayName, path: `/professionals/${slug}` },
+            ],
+          }),
+          ...(reviewMarkup ? [reviewMarkup] : []),
+        ]
       : undefined,
   });
 
@@ -288,6 +304,13 @@ export default function ProfessionalProfilePage({ slug }: { slug: string }) {
                   ) : null}
                 </View>
               </View>
+            </View>
+          ) : null}
+          {professional ? (
+            <View>
+              <ListingNotice profile={professional} />
+              <ListingReviewsSection kind="professional" slug={slug} />
+              <ReportScamButton kind="professional" slug={slug} />
             </View>
           ) : null}
         </View>

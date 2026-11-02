@@ -29,6 +29,7 @@ import { ProjectAccessModule } from './project-access/project-access.module';
 import { PriceIntelligenceModule } from './price-intelligence/price-intelligence.module';
 import { HrModule } from './hr/hr.module';
 import { AdminAccessModule } from './admin-access/admin-access.module';
+import { ListingFeedbackModule } from './listing-feedback/listing-feedback.module';
 import { VendorsModule } from './vendors/vendors.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
@@ -76,6 +77,7 @@ import { FundingModule } from './funding/funding.module';
     PriceIntelligenceModule,
     HrModule,
     AdminAccessModule,
+    ListingFeedbackModule,
     VendorsModule,
     WaitlistModule,
     ProfessionalsModule,

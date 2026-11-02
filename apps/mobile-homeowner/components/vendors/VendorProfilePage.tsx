@@ -14,7 +14,12 @@ import {
   vendorWhatsAppHref,
   type PublicVendorProfile,
 } from '@/lib/public-vendors';
-import { buildSeoJsonLd } from '@/lib/seo-schema';
+import ListingNotice from '@/components/listing-feedback/ListingNotice';
+import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
+import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
+import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
+import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
+import { buildCanonical, buildSeoJsonLd } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
 
 type Props = { slug: string };
@@ -368,23 +373,35 @@ export default function VendorProfilePage({ slug }: Props) {
     ? vendor.description.slice(0, 155)
     : 'Building-material vendor profile on BuildMyHouse.';
 
+  const publicReviews = usePublicListingReviews('vendor', slug);
+  const reviewMarkup = buildListingReviewJsonLd({
+    type: 'LocalBusiness',
+    name: vendor?.tradingName || '',
+    url: buildCanonical(`/vendors/${slug}`),
+    summary: publicReviews.data?.summary,
+    reviews: publicReviews.data?.reviews,
+  });
+
   useWebSeo({
     title: vendor ? `${vendor.tradingName} | BuildMyHouse Vendors` : 'Vendor | BuildMyHouse',
     description,
     canonicalPath: `/vendors/${slug}`,
     robots: vendor ? 'index,follow' : 'noindex,follow',
     jsonLd: vendor
-      ? buildSeoJsonLd({
-          path: `/vendors/${slug}`,
-          title: vendor.tradingName,
-          description,
-          schemaType: 'Service',
-          breadcrumbs: [
-            { name: 'Home', path: '/' },
-            { name: 'Vendors', path: '/vendors' },
-            { name: vendor.tradingName, path: `/vendors/${slug}` },
-          ],
-        })
+      ? [
+          ...buildSeoJsonLd({
+            path: `/vendors/${slug}`,
+            title: vendor.tradingName,
+            description,
+            schemaType: 'Service',
+            breadcrumbs: [
+              { name: 'Home', path: '/' },
+              { name: 'Vendors', path: '/vendors' },
+              { name: vendor.tradingName, path: `/vendors/${slug}` },
+            ],
+          }),
+          ...(reviewMarkup ? [reviewMarkup] : []),
+        ]
       : undefined,
   });
 
@@ -738,6 +755,13 @@ export default function VendorProfilePage({ slug }: Props) {
           <SeoContentBackButton fallbackHref="/vendors" />
         </View>
         {body}
+        {vendor ? (
+          <View style={{ paddingHorizontal: 16, maxWidth: 1120, width: '100%', alignSelf: 'center' }}>
+            <ListingNotice profile={vendor} />
+            <ListingReviewsSection kind="vendor" slug={slug} />
+            <ReportScamButton kind="vendor" slug={slug} />
+          </View>
+        ) : null}
       </ScrollView>
       {compact && vendor ? (
         <View

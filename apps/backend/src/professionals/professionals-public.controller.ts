@@ -11,13 +11,17 @@ import {
   ProfessionalOwnerCredentialDto,
   PublicProfessionalSearchDto,
 } from './dto/professionals.dto';
+import { ListingFeedbackService, withPublicNotice } from '../listing-feedback/listing-feedback.service';
 import { ProfessionalsService } from './professionals.service';
 
 const CLAIM_ROLES = ['vendor', 'homeowner', 'general_contractor', 'admin'] as const;
 
 @Controller('professionals')
 export class ProfessionalsPublicController {
-  constructor(private readonly professionals: ProfessionalsService) {}
+  constructor(
+    private readonly professionals: ProfessionalsService,
+    private readonly feedback: ListingFeedbackService,
+  ) {}
 
   @Get()
   search(@Query() query: PublicProfessionalSearchDto) {
@@ -99,8 +103,10 @@ export class ProfessionalsPublicController {
   }
 
   @Get(':slug')
-  getBySlug(@Param('slug') slug: string) {
-    return this.professionals.getPublicBySlug(slug);
+  async getBySlug(@Param('slug') slug: string) {
+    const profile = await this.professionals.getPublicBySlug(slug);
+    const bmhNotice = await this.feedback.publicNotice('professional', slug).catch(() => null);
+    return withPublicNotice(profile, bmhNotice);
   }
 
   @Post(':slug/enquiries')
