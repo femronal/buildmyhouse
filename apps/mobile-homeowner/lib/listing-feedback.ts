@@ -33,8 +33,21 @@ export function listingReviewStatusLabel(status?: string | null) {
   return 'Pending review by BMH';
 }
 
+export const SCAM_REPORT_MIN_CHARS = 50;
+
+export function scamReportSubmitBlock(input: { consent: boolean; whatHappened: string; phone: string }) {
+  const story = input.whatHappened.trim();
+  if (story.length < SCAM_REPORT_MIN_CHARS) {
+    if (!story.length) return 'Write at least 50 characters about what happened.';
+    return `${story.length} of ${SCAM_REPORT_MIN_CHARS} characters. Add a few more words about what happened.`;
+  }
+  if (!input.phone.trim()) return 'Add a phone number so BMH can contact you about this report.';
+  if (input.consent !== true) return 'Please agree that BMH can contact you about this report.';
+  return null;
+}
+
 export function canSubmitScamReport(input: { consent: boolean; whatHappened: string; phone: string }) {
-  return input.consent === true && input.whatHappened.trim().length >= 50 && input.phone.trim().length > 0;
+  return scamReportSubmitBlock(input) === null;
 }
 
 export function buildListingReviewJsonLd(input: {

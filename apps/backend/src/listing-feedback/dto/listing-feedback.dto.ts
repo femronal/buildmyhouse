@@ -66,6 +66,7 @@ export class ScamReportBodyDto {
   whatHappened!: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   amountNaira?: number;

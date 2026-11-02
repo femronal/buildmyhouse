@@ -4,6 +4,7 @@ import {
   buildListingReviewJsonLd,
   canSubmitScamReport,
   listingReviewSummaryLine,
+  scamReportSubmitBlock,
 } from './listing-feedback.ts';
 
 const reviews = [
@@ -62,4 +63,16 @@ test('a scam report cannot be submitted without consent', () => {
   };
   assert.equal(canSubmitScamReport({ ...ready, consent: false }), false);
   assert.equal(canSubmitScamReport({ ...ready, consent: true }), true);
+});
+
+test('a short scam story stays blocked and says how many characters are still needed', () => {
+  const story = 'I sent him money online and he never returned it.';
+  assert.equal(story.length, 49);
+  const input = { consent: true, whatHappened: story, phone: '+234567891015' };
+  assert.equal(canSubmitScamReport(input), false);
+  assert.equal(
+    scamReportSubmitBlock(input),
+    '49 of 50 characters. Add a few more words about what happened.',
+  );
+  assert.equal(canSubmitScamReport({ ...input, whatHappened: `${story} Again.` }), true);
 });
