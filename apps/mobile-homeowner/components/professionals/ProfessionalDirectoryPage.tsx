@@ -20,7 +20,7 @@ import {
   DIRECTORY_PAGE_SIZE,
   PROFESSIONAL_DIRECTORY_SUMMARY,
   PROFESSIONAL_QUERY_ORDER,
-  directoryCanonical,
+  directoryListingSeo,
   humanizeKey,
   initialsFromName,
   normalizeSearchParams,
@@ -167,15 +167,15 @@ export default function ProfessionalDirectoryPage() {
     ? needs.find((item: { key: string; label: string }) => item.key === params.need)?.label || humanizeKey(params.need)
     : undefined;
   const title = professionalDirectoryHeading({ professionLabel, stateLabel, needLabel });
-  const canonicalPath = directoryCanonical(PATH, params, ['profession', 'need', 'state']);
+  const listingSeo = directoryListingSeo(PATH, params);
 
   useWebSeo({
     title: `${title} | BuildMyHouse`,
     description: PROFESSIONAL_DIRECTORY_SUMMARY,
-    canonicalPath,
-    robots: 'index,follow',
+    canonicalPath: listingSeo.canonicalPath,
+    robots: listingSeo.robots,
     jsonLd: buildSeoJsonLd({
-      path: canonicalPath,
+      path: listingSeo.canonicalPath,
       title,
       description: PROFESSIONAL_DIRECTORY_SUMMARY,
       schemaType: 'Service',

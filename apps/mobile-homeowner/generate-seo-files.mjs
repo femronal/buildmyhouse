@@ -58,12 +58,12 @@ async function loadCmsSnapshot() {
 const INTERNAL_LINK_REWRITES = {
   '/start-repair': { href: '/start/repair' },
   '/articles/benefits-of-regular-gutter-cleaning': {
-    href: '/services/roof-repair-nigeria',
-    label: 'Roof repair in Nigeria',
+    href: '/services/gutter-maintenance-nigeria',
+    label: 'Gutter maintenance in Nigeria',
   },
   '/articles/understanding-gutter-maintenance': {
-    href: '/services/lagos/roof-repair',
-    label: 'Roof repair in Lagos',
+    href: '/services/gutter-maintenance-nigeria',
+    label: 'Gutter maintenance in Nigeria',
   },
   '/articles/how-to-build-in-nigeria-from-abroad-without-getting-burnt': {
     href: '/articles/diaspora-guide-build-in-nigeria-from-abroad',
@@ -197,7 +197,9 @@ const cmsServiceRoutes = cmsSnapshot.servicePages
   .filter((routePath) => routePath.startsWith('/services/'));
 const finalRoutes = Array.from(
   new Set([...indexableRoutes, ...cmsRoutes, ...topicRoutes, ...articlePageRoutes, ...topicPageRoutes, ...cmsServiceRoutes]),
-).sort();
+)
+  .filter((route) => !route.includes('?'))
+  .sort();
 
 const lastModByRoute = new Map();
 for (const item of cmsSnapshot.articles) {

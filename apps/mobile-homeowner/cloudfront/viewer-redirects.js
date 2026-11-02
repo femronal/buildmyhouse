@@ -24,6 +24,15 @@ function isCompressibleAsset(uri) {
   );
 }
 
+function hasQueryString(request) {
+  var qs = request.querystring;
+  if (!qs) return false;
+  for (var key in qs) {
+    if (Object.prototype.hasOwnProperty.call(qs, key)) return true;
+  }
+  return false;
+}
+
 function handler(event) {
   var request = event.request;
   var uri = request.uri || '/';
@@ -50,6 +59,9 @@ function handler(event) {
     '/book-repair': '/start/repair',
     '/book-repair.md': '/start.md',
     '/start-repair': '/start/repair',
+    '/articles/understanding-gutter-maintenance': '/services/gutter-maintenance-nigeria',
+    '/articles/benefits-of-regular-gutter-cleaning': '/services/gutter-maintenance-nigeria',
+    '/services/german-flooring-installation-nigeria': '/renovation/nigeria',
   };
 
   var target = redirects[uri];
@@ -67,6 +79,20 @@ function handler(event) {
         'cache-control': { value: 'public, max-age=86400' },
       },
     };
+  }
+
+  // Filtered directory URLs (/professionals?profession=…) share one static shell.
+  // inject-static-seo.mjs writes <route>/query.html with noindex,follow and a
+  // canonical pointing at the bare path. Unfiltered listings stay indexable.
+  // /contractors/lagos filters by path, not query string, so it is not here.
+  var filteredListingHtml = {
+    '/professionals': '/professionals/query.html',
+    '/vendors': '/vendors/query.html',
+    '/artisans': '/artisans/query.html',
+  };
+  if (hasQueryString(request) && filteredListingHtml[uri]) {
+    request.uri = filteredListingHtml[uri];
+    return request;
   }
 
   // Leave root and real file assets alone (.js, .css, .png, .xml, etc.)

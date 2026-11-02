@@ -19,6 +19,12 @@ const REDIRECTS = {
   '/story': '/blog/what-tracking-your-food-taught-me-about-building-in-nigeria',
   '/book-repair': '/start/repair',
   '/start-repair': '/start/repair',
+  // Retired gutter articles. The live gutter service page is in the sitemap.
+  '/articles/understanding-gutter-maintenance': '/services/gutter-maintenance-nigeria',
+  '/articles/benefits-of-regular-gutter-cleaning': '/services/gutter-maintenance-nigeria',
+  // No flooring service URL is published. /services is 404.
+  // /renovation/nigeria is the live page with a Tiling and flooring section.
+  '/services/german-flooring-installation-nigeria': '/renovation/nigeria',
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
@@ -474,6 +480,33 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
+}
+
+/**
+ * Query-string variants of these listings are not separate routes. CloudFront
+ * rewrites any query on the bare path to <route>/query.html. That file carries
+ * noindex,follow and a canonical to the bare URL. The unfiltered HTML stays
+ * indexable. /contractors/lagos is filtered by path, so it is not included.
+ */
+const FILTERED_DIRECTORY_ROUTES = ['/professionals', '/vendors', '/artisans'];
+
+function writeFilteredDirectoryHtml(route) {
+  const sources = candidateHtmlPaths(route);
+  if (!sources.length) {
+    console.warn(`[seo] No HTML to copy for filtered directory ${route}`);
+    return false;
+  }
+  const canonicalUrl = `${WEB_URL}${route}`;
+  let html = fs.readFileSync(sources[0], 'utf8');
+  html = html.replace(/<meta\s+[^>]*name=["']robots["'][^>]*>/gi, '');
+  html = html.replace(/<link\s+[^>]*rel=["']canonical["'][^>]*>/gi, '');
+  html = upsertMeta(html, 'name', 'robots', 'noindex,follow');
+  html = upsertLink(html, 'canonical', canonicalUrl);
+  html = upsertMeta(html, 'property', 'og:url', canonicalUrl);
+  const outPath = path.join(distDir, route.slice(1), 'query.html');
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  fs.writeFileSync(outPath, html, 'utf8');
+  return true;
 }
 
 function writeRedirectHtml(route, targetRoute) {
@@ -1261,6 +1294,11 @@ for (const [legacyRoute, targetRoute] of Object.entries(REDIRECTS)) {
   writeRedirectHtml(legacyRoute, targetRoute);
 }
 
+let filteredDirectories = 0;
+for (const route of FILTERED_DIRECTORY_ROUTES) {
+  if (writeFilteredDirectoryHtml(route)) filteredDirectories += 1;
+}
+
 writeNotFoundHtml();
 
 const publicDir = path.resolve(process.cwd(), 'public');
@@ -1293,6 +1331,12 @@ if (fs.existsSync(sitemapPath)) {
   const homepageText = visibleBodyText(fs.readFileSync(indexHtmlPath, 'utf8'));
   const problems = [];
   const noindexInSitemap = [];
+  const filteredInSitemap = locs.filter((loc) => loc.includes('?'));
+  if (filteredInSitemap.length) {
+    console.error('[seo] Filtered URLs are in the sitemap and must be removed:');
+    for (const loc of filteredInSitemap) console.error(`  - ${loc}`);
+    process.exit(1);
+  }
   for (const loc of locs) {
     const route = routeFromSitemapLoc(loc);
     if (!route || route === '/') continue;
@@ -1333,5 +1377,5 @@ if (fs.existsSync(sitemapPath)) {
 }
 
 console.log(
-  `[seo] Static SEO injection complete (${patched} patched, ${ensured} ensured, ${Object.keys(cmsSeoPages).length} CMS SEO pages, ${redirected + Object.keys(REDIRECTS).length} redirects).`,
+  `[seo] Static SEO injection complete (${patched} patched, ${ensured} ensured, ${Object.keys(cmsSeoPages).length} CMS SEO pages, ${redirected + Object.keys(REDIRECTS).length} redirects, ${filteredDirectories} filtered directory shells).`,
 );

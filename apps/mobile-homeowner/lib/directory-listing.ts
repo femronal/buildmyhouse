@@ -126,6 +126,28 @@ export function directoryCanonical(
   return directoryHref(path, params, keys);
 }
 
+export type DirectoryRobots = 'index,follow' | 'noindex,follow';
+
+/**
+ * Any query string on a directory listing is a filtered URL.
+ * Those pages can render an empty result and were flagged as soft 404s.
+ * Keep the canonical on the bare path and ask crawlers not to index the filter.
+ */
+export function directoryListingSeo(
+  path: string,
+  params: Record<string, string | undefined>,
+  search?: string,
+): { canonicalPath: string; robots: DirectoryRobots } {
+  const locationSearch =
+    search !== undefined ? search : typeof window !== 'undefined' && window.location ? window.location.search : '';
+  const hasParam = Object.values(params).some((value) => typeof value === 'string' && value.trim().length > 0);
+  const hasSearch = locationSearch.length > 1;
+  if (hasParam || hasSearch) {
+    return { canonicalPath: path, robots: 'noindex,follow' };
+  }
+  return { canonicalPath: path, robots: 'index,follow' };
+}
+
 export function toggleFilterHref(
   path: string,
   current: Record<string, string | undefined>,
