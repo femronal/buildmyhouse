@@ -20,7 +20,7 @@ import {
   DIRECTORY_PAGE_SIZE,
   VENDOR_DIRECTORY_SUMMARY,
   VENDOR_QUERY_ORDER,
-  directoryCanonical,
+  directoryListingSeo,
   humanizeKey,
   initialsFromName,
   normalizeSearchParams,
@@ -153,10 +153,10 @@ export default function VendorDirectoryPage() {
     categoryLabel: categoryLabel(params.category, categoryFilters),
     stateLabel: placeLabel(params.state),
   });
-  const canonicalPath = directoryCanonical(PATH, params, ['category', 'state']);
+  const listingSeo = directoryListingSeo(PATH, params);
 
   const jsonLd = buildSeoJsonLd({
-    path: canonicalPath,
+    path: listingSeo.canonicalPath,
     title,
     description: VENDOR_DIRECTORY_SUMMARY,
     schemaType: 'Service',
@@ -181,8 +181,8 @@ export default function VendorDirectoryPage() {
   useWebSeo({
     title: `${title} | BuildMyHouse`,
     description: VENDOR_DIRECTORY_SUMMARY,
-    canonicalPath,
-    robots: 'index,follow',
+    canonicalPath: listingSeo.canonicalPath,
+    robots: listingSeo.robots,
     jsonLd,
   });
 

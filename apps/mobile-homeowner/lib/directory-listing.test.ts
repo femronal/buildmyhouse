@@ -1,5 +1,6 @@
 import {
   directoryCanonical,
+  directoryListingSeo,
   formatResultCount,
   headingAvoidsVerifiedLead,
   humanizeKey,
@@ -58,7 +59,7 @@ describe('directory listing query helpers', () => {
     );
   });
 
-  it('keeps canonicals on category, profession, state, and need', () => {
+  it('builds allowlisted filter URLs', () => {
     expect(
       directoryCanonical(
         '/vendors',
@@ -73,6 +74,32 @@ describe('directory listing query helpers', () => {
         'state',
       ]),
     ).toBe('/professionals?profession=architect&need=i-need-a-boq');
+  });
+
+  it('noindexes filtered directory URLs and points canonical at the bare path', () => {
+    expect(
+      directoryListingSeo(
+        '/professionals',
+        { profession: 'architect', need: 'survey-my-land', state: 'oyo', type: 'firm' },
+        '',
+      ),
+    ).toEqual({ canonicalPath: '/professionals', robots: 'noindex,follow' });
+    expect(directoryListingSeo('/vendors', { category: 'cement' }, '')).toEqual({
+      canonicalPath: '/vendors',
+      robots: 'noindex,follow',
+    });
+    expect(directoryListingSeo('/artisans', {}, '?trade=plumber')).toEqual({
+      canonicalPath: '/artisans',
+      robots: 'noindex,follow',
+    });
+    expect(directoryListingSeo('/professionals', {}, '')).toEqual({
+      canonicalPath: '/professionals',
+      robots: 'index,follow',
+    });
+    expect(directoryListingSeo('/professionals', { profession: '  ' }, '?')).toEqual({
+      canonicalPath: '/professionals',
+      robots: 'index,follow',
+    });
   });
 });
 

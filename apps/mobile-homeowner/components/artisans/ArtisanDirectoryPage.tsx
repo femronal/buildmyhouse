@@ -21,7 +21,7 @@ import {
   DIRECTORY_PAGE_SIZE,
   artisanDirectoryHeading,
   artisanDirectorySummary,
-  directoryCanonical,
+  directoryListingSeo,
   humanizeKey,
   initialsFromName,
   normalizeSearchParams,
@@ -171,13 +171,15 @@ export default function ArtisanDirectoryPage() {
   });
   const summary = artisanDirectorySummary(problemLabel);
 
+  const listingSeo = directoryListingSeo(PATH, params);
+
   useWebSeo({
     title: `${title} | BuildMyHouse`,
     description: summary,
-    canonicalPath: directoryCanonical(PATH, params, ['problem', 'trade', 'state']),
-    robots: 'index,follow',
+    canonicalPath: listingSeo.canonicalPath,
+    robots: listingSeo.robots,
     jsonLd: buildSeoJsonLd({
-      path: directoryCanonical(PATH, params, ['problem', 'trade', 'state']),
+      path: listingSeo.canonicalPath,
       title,
       description: summary,
       schemaType: 'Service',
