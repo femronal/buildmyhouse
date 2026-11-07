@@ -38,6 +38,7 @@ ENV HOSTNAME="0.0.0.0"
 
 COPY --from=builder /app/apps/partner-portal/.next/standalone ./
 COPY --from=builder /app/apps/partner-portal/.next/static ./apps/partner-portal/.next/static
+COPY --from=builder /app/apps/partner-portal/public ./apps/partner-portal/public
 
 RUN echo '#!/bin/sh' > /start.sh && \
     echo 'export HOSTNAME=0.0.0.0' >> /start.sh && \

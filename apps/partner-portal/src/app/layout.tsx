@@ -8,9 +8,30 @@ const poppins = Poppins({
   variable: '--font-poppins',
 });
 
+const description =
+  'BuildMyHouse helps people in Nigeria and abroad organise a build, renovation, or repair, and pay in stages. Partners introduce those homeowners and earn when their projects are completed.';
+
 export const metadata = {
+  metadataBase: new URL('https://partner.buildmyhouse.app'),
   title: 'BuildMyHouse Partner Network',
-  description: 'Introduce homeowners. Earn from the projects they complete.',
+  description,
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-touch-icon.png',
+  },
+  openGraph: {
+    title: 'BuildMyHouse Partner Network',
+    description,
+    url: 'https://partner.buildmyhouse.app',
+    siteName: 'BuildMyHouse',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'BuildMyHouse' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'BuildMyHouse Partner Network',
+    description,
+    images: ['/og.png'],
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

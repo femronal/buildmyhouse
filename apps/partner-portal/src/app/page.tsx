@@ -1,7 +1,10 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { api } from '@/lib/api';
+
+const LandingArt = dynamic(() => import('@/components/LandingArt'), { ssr: false });
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');
@@ -10,12 +13,22 @@ export default function SignInPage() {
   const [applied, setApplied] = useState('');
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4 py-10">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">BuildMyHouse Partner Network</p>
+    <main className="mx-auto grid min-h-screen max-w-5xl items-center gap-8 px-4 py-10 lg:grid-cols-[1.1fr_0.9fr]">
+      <div>
+      <img src="/logo.png" alt="BuildMyHouse" className="h-24 w-auto" />
+      <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-gray-500">BuildMyHouse Partner Network</p>
       <h1 className="mt-2 text-3xl font-bold text-gray-900">Introduce homeowners. Earn from the projects they complete.</h1>
-      <p className="mt-3 text-sm leading-6 text-gray-600">
-        BuildMyHouse helps people in Nigeria and abroad organise building, renovation and repairs. Founding affiliates earn from qualifying completed projects, including future projects from the homeowners they bring.
-      </p>
+      <div className="mt-3 space-y-3 text-sm leading-6 text-gray-600">
+        <p>
+          BuildMyHouse is where someone organises a build, renovation, or repair in Nigeria, including when they are funding the work from abroad. They can check what the work should cost, agree the stages, and release money when each stage is ready.
+        </p>
+        <p>
+          You introduce those homeowners. When a project from your introduction is completed, you earn from it, and you keep that homeowner for the projects they start later. Share the approved tools, pictures, and videos. BuildMyHouse keeps the plans, payments, and project record.
+        </p>
+      </div>
+      <div className="mt-6 lg:hidden">
+        <LandingArt />
+      </div>
 
       <form
         className="mt-8 rounded-xl border border-gray-200 bg-white p-4"
@@ -76,6 +89,10 @@ export default function SignInPage() {
         </button>
         {applied ? <p className="mt-3 text-sm text-gray-700">{applied}</p> : null}
       </form>
+      </div>
+      <div className="hidden lg:block">
+        <LandingArt />
+      </div>
     </main>
   );
 }
