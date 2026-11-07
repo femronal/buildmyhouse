@@ -291,3 +291,55 @@ export class UpdatePartnerSettingsDto {
   @IsBoolean()
   notifyEarnings?: boolean;
 }
+
+export class SaveLibraryItemDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsIn(['post', 'video', 'image'])
+  kind!: 'post' | 'video' | 'image';
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  title!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(240)
+  audience!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(600)
+  problem!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(600)
+  promise!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(1000)
+  caption!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  assetUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  destinationPath?: string;
+
+  @IsBoolean()
+  publish!: boolean;
+}
+
+export class LibraryStatusDto {
+  @IsIn(['draft', 'approved'])
+  status!: 'draft' | 'approved';
+}

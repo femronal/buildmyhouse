@@ -24,6 +24,7 @@ function getNotificationLink(item: NotificationItem): string | null {
   if (data.houseForSaleId || item.type === 'house_viewing_request') return '/opportunities?tab=houses';
   if (data.landForSaleId || item.type === 'land_viewing_request') return '/opportunities?tab=land';
   if (item.type === 'manual_payment_declared') return '/projects';
+  if (item.type === 'affiliate_application' && data.referrerId) return `/growth/referrals/${data.referrerId}`;
   return null;
 }
 

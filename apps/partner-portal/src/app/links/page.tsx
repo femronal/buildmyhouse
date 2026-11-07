@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { api } from '@/lib/api';
 
-type LinkRow = { slug?: string; title?: string; link: string; destinationPath?: string };
+type LinkRow = { slug?: string; title?: string; link: string | null; destinationPath?: string };
 
 export default function LinksPage() {
   const [start, setStart] = useState('');
@@ -38,11 +38,11 @@ export default function LinksPage() {
             {start && copied === start ? 'Copied' : 'Copy link'}
           </button>
         </article>
-        {campaigns.map((campaign) => (
+        {campaigns.filter((campaign) => campaign.link).map((campaign) => (
           <article key={campaign.slug || campaign.link} className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
             <h2 className="text-sm font-semibold">{campaign.title}</h2>
             <p className="mt-2 break-all text-sm text-gray-700">{campaign.link}</p>
-            <button type="button" className="mt-3 rounded-lg border px-3 py-2 text-sm" onClick={() => copy(campaign.link)}>
+            <button type="button" className="mt-3 rounded-lg border px-3 py-2 text-sm" onClick={() => copy(campaign.link || '')}>
               {copied === campaign.link ? 'Copied' : 'Copy link'}
             </button>
           </article>

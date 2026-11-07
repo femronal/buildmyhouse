@@ -1,4 +1,4 @@
-import { PartnerProgramService } from './partner-program.service';
+import { campaignShare, PartnerProgramService } from './partner-program.service';
 
 function service(prisma: any) {
   return new PartnerProgramService(prisma, { send: async () => true } as any, { generatePartnerToken: async () => 'jwt' } as any, {
@@ -150,5 +150,110 @@ describe('PartnerProgramService commissions', () => {
     expect(result.action).toBe('skip');
     expect(String((result as { reasons?: string[] }).reasons?.join(' '))).toMatch(/not published/i);
     expect(prisma.partnerCommission.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('PartnerProgramService applications', () => {
+  function applyPrisma(existing: { id: string } | null) {
+    return {
+      referrer: {
+        findFirst: jest.fn(async () => existing),
+        findUnique: jest.fn(async () => null),
+        create: jest.fn(async ({ data }: { data: Record<string, unknown> }) => ({ id: 'ref-1', ...data })),
+      },
+    };
+  }
+
+  it('emails and notifies once for a new application', async () => {
+    const email = { send: jest.fn(async () => true) };
+    const ws = { sendNotificationToRole: jest.fn(async () => ({ count: 1 })) };
+    const config = {
+      get: (key: string) => {
+        if (key === 'ADMIN_NOTIFY_EMAIL') return 'ops@buildmyhouse.app';
+        if (key === 'ADMIN_DASHBOARD_URL') return 'https://admin.buildmyhouse.app';
+        return '';
+      },
+    };
+    const prisma = applyPrisma(null);
+    const program = new PartnerProgramService(prisma as any, email as any, {} as any, config as any, ws as any);
+    await expect(program.apply({
+      name: 'Ada Organiser',
+      email: 'Ada@Example.com',
+      phone: '08030000000',
+      audience: 'London newsletter',
+    })).resolves.toEqual({ ok: true });
+    expect(email.send).toHaveBeenCalledTimes(1);
+    expect(email.send).toHaveBeenCalledWith(expect.objectContaining({
+      to: 'ops@buildmyhouse.app',
+      text: expect.stringContaining('https://admin.buildmyhouse.app/growth/referrals/ref-1'),
+    }));
+    expect(ws.sendNotificationToRole).toHaveBeenCalledWith('admin', expect.objectContaining({
+      type: 'affiliate_application',
+      data: { referrerId: 'ref-1' },
+    }));
+  });
+
+  it('does not email a repeat application', async () => {
+    const email = { send: jest.fn() };
+    const ws = { sendNotificationToRole: jest.fn() };
+    const prisma = applyPrisma({ id: 'existing' });
+    const program = new PartnerProgramService(prisma as any, email as any, {} as any, { get: () => '' } as any, ws as any);
+    await program.apply({ name: 'Ada', email: 'ada@example.com' });
+    expect(email.send).not.toHaveBeenCalled();
+    expect(ws.sendNotificationToRole).not.toHaveBeenCalled();
+    expect(prisma.referrer.create).not.toHaveBeenCalled();
+  });
+
+  it('still accepts the application when notice delivery fails', async () => {
+    const email = { send: jest.fn(async () => { throw new Error('mailbox down'); }) };
+    const ws = { sendNotificationToRole: jest.fn(async () => { throw new Error('socket down'); }) };
+    const program = new PartnerProgramService(
+      applyPrisma(null) as any,
+      email as any,
+      {} as any,
+      { get: () => 'ops@buildmyhouse.app' } as any,
+      ws as any,
+    );
+    await expect(program.apply({ name: 'Ada', email: 'ada@example.com' })).resolves.toEqual({ ok: true });
+  });
+});
+
+describe('Partner library links', () => {
+  it('does not put a referral code on a Google Drive file', () => {
+    const shared = campaignShare('CODE1', 'https://buildmyhouse.app', {
+      slug: 'site-video',
+      destinationPath: '',
+      assetUrl: 'https://drive.google.com/file/d/abc/view',
+    });
+    expect(shared.link).toBeNull();
+    expect(shared.assetUrl).toBe('https://drive.google.com/file/d/abc/view');
+    expect(shared.tracksIntroduction).toBe(false);
+  });
+
+  it('tracks the BuildMyHouse page and leaves the Drive link unchanged', () => {
+    const shared = campaignShare('CODE1', 'https://buildmyhouse.app', {
+      slug: 'site-video',
+      destinationPath: '/start',
+      assetUrl: 'https://drive.google.com/file/d/abc/view',
+    });
+    expect(shared.link).toContain('ref=CODE1');
+    expect(shared.assetUrl).toBe('https://drive.google.com/file/d/abc/view');
+    expect(shared.assetUrl).not.toContain('ref=');
+  });
+
+  it('rejects a file that is not on Google Drive', async () => {
+    const prisma = { marketingCampaign: { create: jest.fn(), findUnique: jest.fn() } };
+    const program = new PartnerProgramService(prisma as any, { send: async () => true } as any, {} as any, { get: () => '' } as any);
+    await expect(program.saveLibraryItem({
+      kind: 'video',
+      title: 'Walkthrough',
+      audience: 'Owners abroad',
+      problem: 'People want a video, not only a tool.',
+      promise: 'See the house before you send money.',
+      caption: 'Watch the walkthrough.',
+      assetUrl: 'https://buildmyhouse-prod.s3.amazonaws.com/video.mp4',
+      publish: true,
+    })).rejects.toThrow(/Google Drive/);
+    expect(prisma.marketingCampaign.create).not.toHaveBeenCalled();
   });
 });

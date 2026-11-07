@@ -46,17 +46,21 @@ export default function OverviewPage() {
           <section className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
             <h2 className="text-sm font-semibold">What to promote next</h2>
             <p className="mt-2 text-sm text-gray-800">{data.nextCampaign.caption}</p>
-            <p className="mt-2 break-all text-xs text-gray-500">{data.nextCampaign.link}</p>
-            <button
-              type="button"
-              className="mt-3 rounded-lg bg-black px-3 py-2 text-sm text-white"
-              onClick={async () => {
-                await navigator.clipboard.writeText(data.nextCampaign?.link || '');
-                setCopied(true);
-              }}
-            >
-              {copied ? 'Copied' : 'Copy link'}
-            </button>
+            {data.nextCampaign.link ? (
+              <>
+                <p className="mt-2 break-all text-xs text-gray-500">{data.nextCampaign.link}</p>
+                <button
+                  type="button"
+                  className="mt-3 rounded-lg bg-black px-3 py-2 text-sm text-white"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(data.nextCampaign?.link || '');
+                    setCopied(true);
+                  }}
+                >
+                  {copied ? 'Copied' : 'Copy link'}
+                </button>
+              </>
+            ) : null}
           </section>
         ) : null}
       </main>

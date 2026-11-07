@@ -73,6 +73,27 @@ export function usePartnerAttribution() {
   });
 }
 
+export type PartnerLibraryItem = {
+  id: string;
+  slug: string;
+  title: string;
+  audience: string;
+  problem: string;
+  promise: string;
+  caption: string;
+  kind: 'tool' | 'post' | 'video' | 'image';
+  assetUrl: string | null;
+  destinationPath: string;
+  status: 'draft' | 'approved';
+};
+
+export function usePartnerLibrary() {
+  return useQuery({
+    queryKey: ['admin-partner-library'],
+    queryFn: () => api.get<PartnerLibraryItem[]>('/admin/referrals/library'),
+  });
+}
+
 export function usePartnerPerformance() {
   return useQuery({
     queryKey: ['admin-partner-performance'],

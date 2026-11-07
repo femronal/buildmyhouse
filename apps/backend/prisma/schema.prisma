@@ -4424,6 +4424,13 @@ enum MarketingCampaignStatus {
   approved
 }
 
+enum MarketingCampaignKind {
+  tool
+  post
+  video
+  image
+}
+
 model Referrer {
   id               String       @id @default(uuid())
   type             ReferrerType @default(referrer)
@@ -4647,6 +4654,8 @@ model MarketingCampaign {
   destinationPath String
   caption         String                  @db.Text
   disclosure      String                  @db.Text
+  kind            MarketingCampaignKind   @default(tool)
+  assetUrl        String?
   status          MarketingCampaignStatus @default(approved)
   sortOrder       Int                     @default(0)
   createdAt       DateTime                @default(now())

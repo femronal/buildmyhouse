@@ -9,6 +9,7 @@ const LINKS = [
   { href: '/growth/referrals/attribution', label: 'Attribution' },
   { href: '/growth/referrals/commissions', label: 'Commissions' },
   { href: '/growth/referrals/performance', label: 'Performance' },
+  { href: '/growth/referrals/library', label: 'Library' },
 ];
 
 export default function PartnerProgramNav() {
@@ -16,7 +17,7 @@ export default function PartnerProgramNav() {
   return (
     <nav className="mb-4 flex gap-2 overflow-x-auto pb-1" aria-label="Partner program">
       {LINKS.map((link) => {
-        const sections = ['/rules', '/attribution', '/commissions', '/performance'];
+        const sections = ['/rules', '/attribution', '/commissions', '/performance', '/library'];
         const active =
           link.href === '/growth/referrals'
             ? pathname === link.href ||

@@ -3,7 +3,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { PermissionsGuard } from '../hr/permissions/permissions.guard';
 import { RequirePermissions } from '../hr/permissions/require-permissions.decorator';
-import { AttachReferrerDto, CommissionDecisionDto, CreateReferrerDto, PublishReferralRuleDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { AttachReferrerDto, CommissionDecisionDto, CreateReferrerDto, LibraryStatusDto, PublishReferralRuleDto, SaveLibraryItemDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
 import { PartnerProgramService } from './partner-program.service';
 import { ReferralsService } from './referrals.service';
 
@@ -98,6 +98,24 @@ export class ReferralsAdminController {
   @RequirePermissions('referrals.view')
   campaigns() {
     return this.partners.campaigns();
+  }
+
+  @Get('library')
+  @RequirePermissions('referrals.view')
+  library() {
+    return this.partners.library();
+  }
+
+  @Post('library')
+  @RequirePermissions('referrals.edit')
+  saveLibrary(@Body() body: SaveLibraryItemDto) {
+    return this.partners.saveLibraryItem(body);
+  }
+
+  @Patch('library/:campaignId')
+  @RequirePermissions('referrals.edit')
+  setLibraryStatus(@Param('campaignId') campaignId: string, @Body() body: LibraryStatusDto) {
+    return this.partners.setLibraryStatus(campaignId, body.status);
   }
 
   @Get(':id')

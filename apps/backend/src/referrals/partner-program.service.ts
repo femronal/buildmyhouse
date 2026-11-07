@@ -1,10 +1,11 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import { EmailService } from '../email/email.service';
 import { JwtAuthService } from '../auth/jwt-auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { WebSocketService } from '../websocket/websocket.service';
 import {
   CONTROLLING_FEE_RATE,
   DEFAULT_AFFILIATE_RATE_BPS,
@@ -68,6 +69,7 @@ export class PartnerProgramService {
     private readonly email: EmailService,
     private readonly jwt: JwtAuthService,
     private readonly config: ConfigService,
+    @Optional() private readonly ws?: WebSocketService,
   ) {}
 
   async ensureDefaults() {
@@ -116,6 +118,7 @@ export class PartnerProgramService {
         update: {},
         create: {
           ...campaign,
+          kind: 'tool',
           disclosure: DISCLOSURE,
           status: 'approved',
           updatedAt: now,
@@ -311,7 +314,7 @@ export class PartnerProgramService {
     });
     if (existing) return { ok: true };
     const code = await this.uniqueCode();
-    await this.prisma.referrer.create({
+    const created = await this.prisma.referrer.create({
       data: {
         type: 'affiliate',
         name: input.name.trim(),
@@ -324,6 +327,7 @@ export class PartnerProgramService {
         appliedAt: new Date(),
       },
     });
+    await this.notifyNewApplication(created);
     return { ok: true };
   }
 
@@ -671,7 +675,63 @@ export class PartnerProgramService {
     await this.ensureDefaults();
     return this.prisma.marketingCampaign.findMany({
       where: { status: 'approved' },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  async library() {
+    await this.ensureDefaults();
+    return this.prisma.marketingCampaign.findMany({
+      orderBy: [{ createdAt: 'desc' }],
+    });
+  }
+
+  async saveLibraryItem(input: {
+    id?: string;
+    kind: 'post' | 'video' | 'image';
+    title: string;
+    audience: string;
+    problem: string;
+    promise: string;
+    caption: string;
+    assetUrl?: string;
+    destinationPath?: string;
+    publish: boolean;
+  }) {
+    const assetUrl = publicDriveUrl(input.assetUrl, input.kind !== 'post');
+    const destinationPath = buildmyhousePath(input.destinationPath);
+    const data = {
+      title: input.title.trim(),
+      audience: input.audience.trim(),
+      problem: input.problem.trim(),
+      promise: input.promise.trim(),
+      caption: input.caption.trim(),
+      disclosure: DISCLOSURE,
+      kind: input.kind,
+      assetUrl,
+      destinationPath,
+      status: input.publish ? 'approved' as const : 'draft' as const,
+      sortOrder: 0,
+      updatedAt: new Date(),
+    };
+    if (input.id) {
+      const existing = await this.prisma.marketingCampaign.findUnique({ where: { id: input.id } });
+      if (!existing) throw new NotFoundException('Library item not found');
+      if (existing.kind === 'tool') throw new BadRequestException('The tool campaigns stay as they are.');
+      return this.prisma.marketingCampaign.update({ where: { id: input.id }, data });
+    }
+    const slug = await this.uniqueCampaignSlug(input.title);
+    return this.prisma.marketingCampaign.create({ data: { ...data, slug } });
+  }
+
+  async setLibraryStatus(id: string, status: 'draft' | 'approved') {
+    const existing = await this.prisma.marketingCampaign.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException('Library item not found');
+    if (existing.kind === 'tool') throw new BadRequestException('The tool campaigns stay as they are.');
+    if (status === 'approved') publicDriveUrl(existing.assetUrl, existing.kind !== 'post');
+    return this.prisma.marketingCampaign.update({
+      where: { id },
+      data: { status, updatedAt: new Date() },
     });
   }
 
@@ -702,7 +762,8 @@ export class PartnerProgramService {
     const live = commissions.filter((row) => row.status !== 'reversed');
     const sum = (statuses: string[]) =>
       live.filter((row) => statuses.includes(row.status)).reduce((total, row) => total + row.amount, 0);
-    const next = campaigns[0];
+    const next = campaigns.find((campaign) => String(campaign.destinationPath || '').trim()) || campaigns[0];
+    const shared = next ? campaignShare(referrer.code, this.homeownerWeb(), next) : null;
     return {
       name: referrer.name,
       code: referrer.code,
@@ -717,7 +778,7 @@ export class PartnerProgramService {
       lockedHomeowners: locked,
       completedProjects: live.length,
       nextCampaign: next
-        ? { title: next.title, caption: next.caption, link: this.trackedLink(referrer.code, next.destinationPath, next.slug) }
+        ? { title: next.title, caption: next.caption, link: shared?.link || shared?.assetUrl || '' }
         : null,
     };
   }
@@ -729,7 +790,7 @@ export class PartnerProgramService {
       start: this.trackedLink(referrer.code, '/start'),
       campaigns: campaigns.map((campaign) => ({
         ...campaign,
-        link: this.trackedLink(referrer.code, campaign.destinationPath, campaign.slug),
+        ...campaignShare(referrer.code, this.homeownerWeb(), campaign),
       })),
     };
   }
@@ -959,11 +1020,63 @@ export class PartnerProgramService {
     return referrer;
   }
 
+  private async notifyNewApplication(referrer: { id: string; name: string; email: string | null; phone: string | null; audience: string | null }) {
+    const name = referrer.name.replace(/[\r\n]+/g, ' ').slice(0, 120);
+    const queue = `${this.adminWeb()}/growth/referrals/${referrer.id}`;
+    try {
+      await this.ws?.sendNotificationToRole('admin', {
+        type: 'affiliate_application',
+        title: 'New affiliate application',
+        message: `${name} applied to the partner network.`,
+        data: { referrerId: referrer.id },
+      });
+    } catch (error) {
+      this.logger.warn(`Affiliate application notice failed: ${error instanceof Error ? error.message : error}`);
+    }
+    const text = [
+      `Name: ${name}`,
+      `Email: ${referrer.email || 'Not stated'}`,
+      `Phone: ${referrer.phone || 'Not stated'}`,
+      `Who they can reach: ${referrer.audience || 'Not stated'}`,
+      `Review: ${queue}`,
+    ].join('\n');
+    try {
+      await this.email.send({
+        to: this.adminInbox(),
+        subject: `New affiliate application: ${name}`,
+        text,
+        html: `<p>${escapeHtml(text).replace(/\n/g, '<br>')}</p>`,
+      });
+    } catch (error) {
+      this.logger.warn(`Affiliate application email failed: ${error instanceof Error ? error.message : error}`);
+    }
+  }
+
+  private async uniqueCampaignSlug(title: string) {
+    const base = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 48) || 'post';
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const slug = attempt === 0 ? base : `${base}-${attempt + 1}`;
+      const existing = await this.prisma.marketingCampaign.findUnique({ where: { slug }, select: { id: true } });
+      if (!existing) return slug;
+    }
+    throw new BadRequestException('Could not save that title. Try a different one.');
+  }
+
   private trackedLink(code: string, path: string, slug?: string | null) {
-    const base = `${this.homeownerWeb()}${path.startsWith('/') ? path : `/${path}`}`;
-    const params = new URLSearchParams({ ref: code });
-    if (slug) params.set('utm_campaign', slug);
-    return `${base}?${params.toString()}`;
+    return campaignShare(code, this.homeownerWeb(), { slug: slug || '', destinationPath: path }).link || '';
+  }
+
+  private adminInbox() {
+    const raw =
+      this.config.get<string>('ADMIN_NOTIFY_EMAIL') ||
+      this.config.get<string>('ADMIN_DASHBOARD_ALLOWED_EMAILS') ||
+      this.config.get<string>('ADMIN_ALLOWED_EMAILS') ||
+      'admin@buildmyhouse.com';
+    return String(raw).split(',').map((part) => part.trim()).find(Boolean) || 'admin@buildmyhouse.com';
+  }
+
+  private adminWeb() {
+    return String(this.config.get<string>('ADMIN_DASHBOARD_URL') || this.config.get<string>('ADMIN_APP_URL') || 'https://admin.buildmyhouse.app').replace(/\/+$/, '');
   }
 
   private homeownerWeb() {
@@ -1033,6 +1146,59 @@ function clampDays(value: number) {
     throw new BadRequestException('The click window must be between 1 and 365 days.');
   }
   return days;
+}
+
+export function campaignShare(
+  code: string,
+  homeownerWeb: string,
+  campaign: { slug?: string | null; destinationPath?: string | null; assetUrl?: string | null },
+) {
+  const sitePath = String(campaign.destinationPath || '').trim();
+  const assetUrl = String(campaign.assetUrl || '').trim() || null;
+  if (!sitePath) return { link: null as string | null, assetUrl, tracksIntroduction: false };
+  const base = `${homeownerWeb.replace(/\/+$/, '')}${sitePath.startsWith('/') ? sitePath : `/${sitePath}`}`;
+  const params = new URLSearchParams({ ref: code });
+  if (campaign.slug) params.set('utm_campaign', campaign.slug);
+  return { link: `${base}?${params.toString()}`, assetUrl, tracksIntroduction: true };
+}
+
+export function publicDriveUrl(value: string | null | undefined, required: boolean) {
+  const raw = String(value || '').trim();
+  if (!raw) {
+    if (required) throw new BadRequestException('Add a public Google Drive link. The file stays on Drive.');
+    return null;
+  }
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new BadRequestException('Use a public Google Drive link.');
+  }
+  const host = url.hostname.toLowerCase();
+  if (url.protocol !== 'https:' || (host !== 'drive.google.com' && host !== 'docs.google.com')) {
+    throw new BadRequestException('Videos and images must be a public Google Drive link. They are not stored on BuildMyHouse.');
+  }
+  return url.toString().slice(0, 500);
+}
+
+function buildmyhousePath(value?: string | null) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) {
+    let url: URL;
+    try {
+      url = new URL(raw);
+    } catch {
+      throw new BadRequestException('The tracked page must be a BuildMyHouse page, such as /start.');
+    }
+    const host = url.hostname.toLowerCase();
+    if (host !== 'buildmyhouse.app' && host !== 'www.buildmyhouse.app' && !host.endsWith('.buildmyhouse.app')) {
+      throw new BadRequestException('The tracked page must be a BuildMyHouse page, such as /start.');
+    }
+    return (url.pathname || '/').split('?')[0].slice(0, 300);
+  }
+  if (!raw.startsWith('/')) throw new BadRequestException('The tracked page must start with /, such as /start.');
+  return raw.split('?')[0].slice(0, 300);
 }
 
 function escapeHtml(value: string) {
