@@ -23,10 +23,12 @@ export class JwtAuthGuard implements CanActivate {
 
       // Attach user payload to request for use in controllers / session guards
       request.user = {
-        sub: payload.sub, // userId
+        sub: payload.sub, // userId, or referrer id when kind is partner
         email: payload.email,
         role: payload.role,
         aav: payload.aav,
+        kind: payload.kind,
+        referrerId: payload.referrerId,
       };
 
       return true;

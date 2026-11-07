@@ -38,6 +38,48 @@ export function useReferral(id: string) {
   });
 }
 
+export function usePartnerRules() {
+  return useQuery({
+    queryKey: ['admin-partner-rules'],
+    queryFn: () => api.get<{
+      rules: Array<Record<string, unknown>>;
+      example: {
+        contractorAmount: number;
+        contingencyAmount: number;
+        controllingFeeAmount: number;
+        commission: number;
+        bmhRetainedControllingFee: number;
+        rateBps: number;
+      };
+    }>('/admin/referrals/rules'),
+  });
+}
+
+export function usePartnerCommissions() {
+  return useQuery({
+    queryKey: ['admin-partner-commissions'],
+    queryFn: () => api.get<import('@/lib/referrals').CommissionRow[]>('/admin/referrals/commissions'),
+  });
+}
+
+export function usePartnerAttribution() {
+  return useQuery({
+    queryKey: ['admin-partner-attribution'],
+    queryFn: () => api.get<{
+      locks: Array<Record<string, any>>;
+      clicks: Array<Record<string, any>>;
+      conflicts: Array<Record<string, any>>;
+    }>('/admin/referrals/attribution'),
+  });
+}
+
+export function usePartnerPerformance() {
+  return useQuery({
+    queryKey: ['admin-partner-performance'],
+    queryFn: () => api.get<Record<string, number>>('/admin/referrals/performance'),
+  });
+}
+
 export function useReferralMutations() {
   const client = useQueryClient();
   const refresh = async () => {

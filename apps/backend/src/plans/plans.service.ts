@@ -135,6 +135,7 @@ export class PlansService {
                 homeownerId,
                 uploadPlanDto.referralCode,
                 uploadPlanDto.referralSource,
+                uploadPlanDto.anonymousId,
               )
             : {}),
           planPdfUrl,

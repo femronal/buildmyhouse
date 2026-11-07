@@ -95,6 +95,8 @@ export default function EmailLoginScreen() {
       }
 
       await storeAuthToken(data.token);
+      const { lockReferralAttribution } = await import('@/lib/referral-code');
+      await lockReferralAttribution();
       await queryClient.invalidateQueries({ queryKey: ['currentUser'] });
       if (accessToken && data.redirectPath) {
         router.replace(data.redirectPath as any);

@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
+import { anonymousReferralId, getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
 
 export interface RecommendedGC {
   id: string;
@@ -264,6 +264,7 @@ export const projectService = {
         ...data,
         referralCode,
         referralSource: data.referralSource || (typed ? 'code_entered' : referralCode ? 'link' : undefined),
+        anonymousId: anonymousReferralId() || undefined,
       });
       return response.data || response;
     } catch (error: any) {

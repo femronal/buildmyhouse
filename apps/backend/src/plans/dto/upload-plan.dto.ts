@@ -101,6 +101,11 @@ export class UploadPlanDto {
   @IsOptional()
   @IsIn(['link', 'code_entered'])
   referralSource?: 'link' | 'code_entered';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  anonymousId?: string;
 }
 
 

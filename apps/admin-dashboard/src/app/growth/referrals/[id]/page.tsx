@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useReferral, useReferralMutations, useReferralSettings } from '@/hooks/useReferrals';
-import { formatLagosDate } from '@/lib/referrals';
+import { commissionStatusLabel, formatLagosDate, naira } from '@/lib/referrals';
 
 export default function ReferralDetailPage() {
   const params = useParams<{ id: string }>();
@@ -18,6 +18,18 @@ export default function ReferralDetailPage() {
   const [attachKind, setAttachKind] = useState<'project' | 'artisan_listing' | 'professional_listing' | 'vendor'>('artisan_listing');
   const [search, setSearch] = useState('');
   const [matches, setMatches] = useState<{ id: string; label: string }[]>([]);
+  const [notice, setNotice] = useState('');
+
+  const partnerAction = async (action: 'approve' | 'suspend' | 'login-link') => {
+    setNotice('');
+    try {
+      const result = await api.post<{ devLink?: string }>(`/admin/referrals/${params.id}/${action}`, {});
+      setNotice(result?.devLink ? `Sign-in link: ${result.devLink}` : 'Saved.');
+      await query.refetch();
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : 'Could not update.');
+    }
+  };
 
   if (query.isLoading) return <div className="p-8 text-sm text-gray-500">Loading…</div>;
   if (!row) return <div className="p-8 text-sm text-gray-500">Referrer not found.</div>;
@@ -42,6 +54,7 @@ export default function ReferralDetailPage() {
           <h1 className="text-2xl font-bold text-gray-900">{row.name}</h1>
           <span className="mt-2 inline-flex rounded-full border border-gray-200 px-2 py-0.5 text-[10px] uppercase tracking-wide">
             {row.type}
+            {row.applicationStatus && row.applicationStatus !== 'none' ? ` · ${row.applicationStatus}` : ''}
           </span>
           <p className="mt-3 font-mono text-sm">{row.code}</p>
           <CopyLine label="Share link" value={row.shareUrl} />
@@ -50,7 +63,16 @@ export default function ReferralDetailPage() {
           </p>
           {row.notes ? <p className="mt-2 max-w-2xl text-sm text-gray-700">{row.notes}</p> : null}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="rounded-lg bg-black px-3 py-2 text-sm text-white" onClick={() => partnerAction('approve')}>
+            Approve affiliate
+          </button>
+          <button type="button" className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" onClick={() => partnerAction('login-link')}>
+            Send sign-in link
+          </button>
+          <button type="button" className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" onClick={() => partnerAction('suspend')}>
+            Suspend
+          </button>
           <button type="button" className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm" onClick={() => setEditing(true)}>
             Edit
           </button>
@@ -63,6 +85,28 @@ export default function ReferralDetailPage() {
           </button>
         </div>
       </header>
+      {notice ? <p className="mt-3 max-w-3xl break-all text-sm text-gray-700">{notice}</p> : null}
+      {row.partner?.agreement ? (
+        <p className="mt-2 text-sm text-gray-600">
+          Agreement {row.partner.agreement.agreementVersion} · {row.partner.agreement.rateBps / 100}% of the contractor amount
+          {row.partner.agreement.acceptedAt ? ` · accepted ${formatLagosDate(row.partner.agreement.acceptedAt)}` : ' · not accepted yet'}
+        </p>
+      ) : null}
+      {row.partner?.payout?.accountName ? (
+        <p className="mt-1 text-sm text-gray-600">
+          Payout {row.partner.payout.accountName} · {row.partner.payout.bankName} · {row.partner.payout.accountNumber}
+        </p>
+      ) : null}
+      {row.partner?.commissions?.length ? (
+        <ul className="mt-3 space-y-1 text-sm text-gray-700">
+          {row.partner.commissions.map((commission: { id: string; amount: number; status: string; paymentReference?: string | null }) => (
+            <li key={commission.id}>
+              {naira(commission.amount)} · {commissionStatusLabel(commission.status)}
+              {commission.paymentReference ? ` · ${commission.paymentReference}` : ''}
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <section className="mt-6 grid grid-cols-2 gap-4 rounded-xl border border-gray-200 bg-white p-4 md:grid-cols-4">
         <Metric label="Listings brought in" value={row.listingsCount} />

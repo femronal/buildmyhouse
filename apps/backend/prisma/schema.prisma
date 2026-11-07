@@ -289,6 +289,9 @@ model User {
   paymentMethods               PaymentMethod[]
   referrerProfile              Referrer?               @relation("ReferrerUser")
   referrersCreated             Referrer[]              @relation("ReferrerCreatedByAdmin")
+  customerAttribution          CustomerAttribution?    @relation("AttributedHomeowner")
+  commissionsAsHomeowner       PartnerCommission[]     @relation("CommissionHomeowner")
+  commissionsApproved          PartnerCommission[]     @relation("CommissionApprovedBy")
   createdDesigns               Design[]                @relation("DesignCreatedBy")
   reviewedDesigns              Design[]                @relation("DesignReviewedByAdmin")
   contractorProjectRequests    ProjectRequest[]        @relation("ProjectRequestContractor")
@@ -533,6 +536,7 @@ model Project {
   vendorActivities         VendorActivity[]
   professionalEngagements  ProfessionalEngagement[]
   listingReviews           ListingReview[]
+  partnerCommission        PartnerCommission?
 
   @@index([needsExtraMonitoring])
   @@index([referrerId])
@@ -4384,6 +4388,42 @@ enum ReferrerType {
   affiliate
 }
 
+enum PartnerApplicationStatus {
+  none
+  applied
+  approved
+  suspended
+}
+
+enum ReferralRuleProgram {
+  affiliate
+  referrer
+}
+
+enum ReferralRuleStatus {
+  draft
+  published
+  retired
+}
+
+enum PartnerAgreementStatus {
+  active
+  ended
+}
+
+enum CommissionStatus {
+  awaiting_checks
+  needs_review
+  approved
+  paid
+  reversed
+}
+
+enum MarketingCampaignStatus {
+  draft
+  approved
+}
+
 model Referrer {
   id               String       @id @default(uuid())
   type             ReferrerType @default(referrer)
@@ -4397,6 +4437,11 @@ model Referrer {
   userId           String?      @unique
   notes            String?      @db.Text
   createdByAdminId String?
+  applicationStatus PartnerApplicationStatus @default(none)
+  appliedAt        DateTime?
+  approvedAt       DateTime?
+  /// Who this affiliate says they can reach. Not a claim we publish for them.
+  audience         String?
   archivedAt       DateTime?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -4408,8 +4453,15 @@ model Referrer {
   professionalListings ProfessionalListing[]
   startRequests        StartRequest[]
   vendorProfiles       VendorProfile[]
+  agreements           PartnerAgreement[]
+  clicks               ReferralClick[]
+  attributions         CustomerAttribution[]
+  commissions          PartnerCommission[]
+  payoutProfile        PartnerPayoutProfile?
+  loginTokens          PartnerLoginToken[]
 
   @@index([type, archivedAt])
+  @@index([applicationStatus])
   @@map("referrers")
 }
 
@@ -4426,6 +4478,181 @@ model ReferralProgramSettings {
   updatedAt               DateTime @updatedAt
 
   @@map("referral_program_settings")
+}
+
+model ReferralProgramRule {
+  id                  String              @id @default(uuid())
+  program             ReferralRuleProgram
+  version             Int
+  status              ReferralRuleStatus  @default(draft)
+  /// Basis points of the contractor amount. 250 = 2.5%. Empty when the reward is unpublished.
+  rateBps             Int?
+  /// contractor_amount
+  rateBase            String              @default("contractor_amount")
+  /// controlling_fee | unpublished
+  fundingSource       String              @default("controlling_fee")
+  contingencyExcluded Boolean             @default(true)
+  clickWindowDays     Int                 @default(30)
+  /// first_touch | latest_code
+  attributionRule     String              @default("first_touch")
+  lifetime            Boolean             @default(false)
+  /// percent | fixed | unpublished
+  rewardKind          String              @default("percent")
+  fixedRewardNaira    Float?
+  publishedAt         DateTime?
+  publishedById       String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  agreements  PartnerAgreement[]
+  commissions PartnerCommission[]
+
+  @@unique([program, version])
+  @@index([program, status])
+  @@map("referral_program_rules")
+}
+
+model PartnerAgreement {
+  id               String                 @id @default(uuid())
+  referrerId       String
+  ruleId           String?
+  rateBps          Int
+  lifetime         Boolean                @default(true)
+  status           PartnerAgreementStatus @default(active)
+  agreementVersion String                 @default("founding-affiliates-2026-11")
+  acceptedAt       DateTime?
+  effectiveFrom    DateTime               @default(now())
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+
+  referrer    Referrer             @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  rule        ReferralProgramRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  commissions PartnerCommission[]
+
+  @@index([referrerId, status])
+  @@map("partner_agreements")
+}
+
+model ReferralClick {
+  id           String   @id @default(uuid())
+  referrerId   String
+  code         String
+  landingPath  String
+  campaignSlug String?
+  anonymousId  String?
+  clickedAt    DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  referrer      Referrer              @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  attributions  CustomerAttribution[]
+
+  @@index([referrerId, clickedAt])
+  @@index([anonymousId, clickedAt])
+  @@index([code, expiresAt])
+  @@map("referral_clicks")
+}
+
+model CustomerAttribution {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  referrerId   String
+  /// link | code_entered | admin
+  source       String
+  clickId      String?
+  campaignSlug String?
+  lockedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  user     User           @relation("AttributedHomeowner", fields: [userId], references: [id], onDelete: Cascade)
+  referrer Referrer       @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  click    ReferralClick? @relation(fields: [clickId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId])
+  @@map("customer_attributions")
+}
+
+model PartnerCommission {
+  id                       String           @id @default(uuid())
+  referrerId               String
+  homeownerId              String
+  projectId                String           @unique
+  agreementId              String?
+  ruleId                   String?
+  eligibleContractorAmount Float
+  controllingFeeAmount     Float
+  contingencyAmount        Float
+  rateBps                  Int
+  amount                   Float
+  status                   CommissionStatus @default(awaiting_checks)
+  reviewReasons            String?          @db.Text
+  calculatedAt             DateTime         @default(now())
+  approvedAt               DateTime?
+  approvedById             String?
+  paidAt                   DateTime?
+  paymentReference         String?
+  reversedAt               DateTime?
+  reversalReason           String?          @db.Text
+  createdAt                DateTime         @default(now())
+  updatedAt                DateTime         @updatedAt
+
+  referrer   Referrer             @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+  homeowner  User                 @relation("CommissionHomeowner", fields: [homeownerId], references: [id], onDelete: Cascade)
+  project    Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  agreement  PartnerAgreement?    @relation(fields: [agreementId], references: [id], onDelete: SetNull)
+  rule       ReferralProgramRule? @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+  approvedBy User?                @relation("CommissionApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([referrerId, status])
+  @@index([status, calculatedAt])
+  @@map("partner_commissions")
+}
+
+model PartnerPayoutProfile {
+  referrerId      String   @id
+  accountName     String?
+  bankName        String?
+  accountNumber   String?
+  currency        String   @default("NGN")
+  taxId           String?
+  notifyEarnings  Boolean  @default(true)
+  updatedAt       DateTime @updatedAt
+
+  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@map("partner_payout_profiles")
+}
+
+model PartnerLoginToken {
+  id         String    @id @default(uuid())
+  referrerId String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  usedAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("partner_login_tokens")
+}
+
+model MarketingCampaign {
+  id              String                  @id @default(uuid())
+  slug            String                  @unique
+  title           String
+  audience        String
+  problem         String                  @db.Text
+  promise         String                  @db.Text
+  destinationPath String
+  caption         String                  @db.Text
+  disclosure      String                  @db.Text
+  status          MarketingCampaignStatus @default(approved)
+  sortOrder       Int                     @default(0)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@map("marketing_campaigns")
 }
 
 model StartRequest {

@@ -16,7 +16,7 @@ export class StartRequestsService {
     const answers = parseObject(dto.answersJson, 'answersJson');
     const utm = dto.utmJson ? parseObject(dto.utmJson, 'utmJson') : undefined;
 
-    const referrerId = await this.referrals.referralIdForLead(dto.referralCode);
+    const referrerId = await this.referrals.referralIdForLead(dto.referralCode, dto.referralSource, dto.anonymousId);
 
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const reference = formatStartReference(dto.path, randomStartSerial());

@@ -69,6 +69,7 @@ export class ProjectsController {
       successCriteria?: string;
       referralCode?: string;
       referralSource?: 'link' | 'code_entered';
+      anonymousId?: string;
     },
   ) {
     const userId = req.user.sub;
@@ -91,6 +92,7 @@ export class ProjectsController {
       body.successCriteria,
       body.referralCode,
       body.referralSource,
+      body.anonymousId,
     );
   }
 

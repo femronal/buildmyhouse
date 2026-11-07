@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+import PartnerProgramNav from '@/components/growth/PartnerProgramNav';
 import { useReferralList, useReferralMutations, useReferralSettings, useReferralSummary } from '@/hooks/useReferrals';
 import { api } from '@/lib/api';
 import { formatLagosDate, type ReferralProgramSettings, type ReferrerListItem } from '@/lib/referrals';
@@ -45,6 +46,8 @@ export default function ReferralsPage() {
           Add referrer
         </button>
       </header>
+
+      <PartnerProgramNav />
 
       <ReferralRules />
 
@@ -127,6 +130,9 @@ export default function ReferralsPage() {
                     <span className="ml-2 rounded-full border border-gray-200 px-2 py-0.5 text-[10px] uppercase tracking-wide text-gray-600">
                       {row.type}
                     </span>
+                    {row.applicationStatus && row.applicationStatus !== 'none' ? (
+                      <span className="ml-2 text-[10px] uppercase tracking-wide text-gray-500">{row.applicationStatus}</span>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3">
                     <CopyCode code={row.code} />
@@ -234,8 +240,10 @@ function ReferralRules() {
           </span>
         </label>
         <label className="text-sm text-gray-800 md:col-span-2">
-          <span className="font-medium">Payout rules</span>
-          <span className="mt-1 block text-xs text-gray-500">Write the rule you want followed. This page records it. It does not send money.</span>
+          <span className="font-medium">Payout notes</span>
+          <span className="mt-1 block text-xs text-gray-500">
+            Notes only. Commissions are calculated from the published program rules, not from this box. Nothing here sends money.
+          </span>
           <textarea
             className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2"
             rows={3}

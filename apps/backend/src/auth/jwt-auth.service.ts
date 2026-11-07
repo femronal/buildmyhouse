@@ -3,11 +3,14 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 export interface JWTPayload {
-  sub: string; // userId
+  sub: string; // userId, or referrer id for a partner session
   email: string;
   role: string;
   /** Admin access version — session revoked when it diverges from User.adminAccessVersion */
   aav?: number;
+  /** Set on affiliate portal sessions. These tokens are not homeowner or admin sessions. */
+  kind?: 'partner';
+  referrerId?: string;
   iat?: number;
   exp?: number;
 }
@@ -64,6 +67,27 @@ export class JwtAuthService {
     return this.jwtService.signAsync(payload, {
       secret,
       expiresIn,
+    });
+  }
+
+  /**
+   * Affiliate portal session. `sub` is the referrer id, not a homeowner or admin user id.
+   */
+  async generatePartnerToken(referrerId: string, email: string): Promise<string> {
+    const secret = this.configService.get<string>('JWT_SECRET');
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    const payload: JWTPayload = {
+      sub: referrerId,
+      email,
+      role: 'partner',
+      kind: 'partner',
+      referrerId,
+    };
+    return this.jwtService.signAsync(payload, {
+      secret,
+      expiresIn: '30d',
     });
   }
 

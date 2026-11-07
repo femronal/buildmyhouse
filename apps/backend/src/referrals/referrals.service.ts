@@ -1,7 +1,8 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { Prisma, ReferrerType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { AttachReferrerDto, CreateReferrerDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { PartnerProgramService } from './partner-program.service';
 import { assertCustomReferralCode, normalizeReferralCode, randomReferralCode } from './referral-code';
 
 const LIST_CAP = 200;
@@ -23,7 +24,10 @@ type MetricRow = {
 export class ReferralsService {
   private readonly logger = new Logger(ReferralsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @Optional() private readonly partners?: PartnerProgramService,
+  ) {}
 
   async getSettings() {
     const existing = await this.prisma.referralProgramSettings.findUnique({ where: { id: SETTINGS_ID } });
@@ -92,6 +96,7 @@ export class ReferralsService {
       whatsapp: row.whatsapp,
       email: row.email,
       userId: row.userId,
+      applicationStatus: row.applicationStatus,
       createdAt: row.createdAt,
       archivedAt: row.archivedAt,
       ...(metrics.get(row.id) || emptyMetrics()),
@@ -244,6 +249,7 @@ export class ReferralsService {
         createdAt: project.createdAt,
       })),
       startRequests: leads,
+      partner: this.partners ? await this.partners.adminSnapshot(id) : null,
     };
   }
 
@@ -299,6 +305,12 @@ export class ReferralsService {
     if (dto.targetType === 'project') {
       const project = await this.prisma.project.findUnique({ where: { id: dto.targetId } });
       if (!project) throw new NotFoundException('Project not found');
+      if (referrerId && this.partners) {
+        const referrer = await this.prisma.referrer.findUnique({ where: { id: referrerId }, select: { code: true } });
+        if (referrer) {
+          await this.partners.lockHomeowner({ userId: project.homeownerId, code: referrer.code, source: 'admin' });
+        }
+      }
       return this.prisma.project.update({
         where: { id: dto.targetId },
         data: referrerId
@@ -419,7 +431,25 @@ export class ReferralsService {
     return { id: row.id, userId: row.userId };
   }
 
-  async referralFieldsForNewProject(homeownerId: string, code?: string | null, source?: string | null) {
+  async evaluateProjectCommission(projectId: string) {
+    if (!this.partners) return { action: 'skip' as const, reasons: ['Partner program is not available.'] };
+    return this.partners.evaluateProjectCommission(projectId);
+  }
+
+  async referralFieldsForNewProject(
+    homeownerId: string,
+    code?: string | null,
+    source?: string | null,
+    anonymousId?: string | null,
+  ) {
+    if (this.partners) {
+      try {
+        return await this.partners.referralFieldsForNewProject(homeownerId, code, source, anonymousId);
+      } catch (error) {
+        this.logger.error(`referral attach skipped message=${error instanceof Error ? error.message : 'unknown'}`);
+        return {};
+      }
+    }
     try {
       const resolved = await this.resolveActiveReferrer(code);
       if (!resolved) return {};
@@ -435,7 +465,15 @@ export class ReferralsService {
     }
   }
 
-  async referralIdForLead(code?: string | null) {
+  async referralIdForLead(code?: string | null, source?: string | null, anonymousId?: string | null) {
+    if (this.partners) {
+      try {
+        return await this.partners.referralIdForLead(code, source, anonymousId);
+      } catch (error) {
+        this.logger.error(`lead referral skipped message=${error instanceof Error ? error.message : 'unknown'}`);
+        return null;
+      }
+    }
     try {
       const resolved = await this.resolveActiveReferrer(code);
       return resolved?.id || null;

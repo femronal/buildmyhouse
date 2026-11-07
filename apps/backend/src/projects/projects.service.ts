@@ -89,9 +89,25 @@ export class ProjectsService {
     @Optional() private readonly funding?: FundingService,
   ) {}
 
-  private async referralCreateFields(homeownerId: string, code?: string | null, source?: string | null) {
+  private async referralCreateFields(
+    homeownerId: string,
+    code?: string | null,
+    source?: string | null,
+    anonymousId?: string | null,
+  ) {
     if (!this.referrals) return {};
-    return this.referrals.referralFieldsForNewProject(homeownerId, code, source);
+    return this.referrals.referralFieldsForNewProject(homeownerId, code, source, anonymousId);
+  }
+
+  private async evaluatePartnerCommission(projectId: string) {
+    if (!this.referrals) return;
+    try {
+      await this.referrals.evaluateProjectCommission(projectId);
+    } catch (error) {
+      this.logger.error(
+        `partner commission skipped projectId=${projectId} message=${error instanceof Error ? error.message : 'unknown'}`,
+      );
+    }
   }
 
   private extractDurationDays(durationText?: string | null): number | null {
@@ -1101,6 +1117,7 @@ export class ProjectsService {
     }
 
     if (paymentComplete) await this.notifyIfStageJustFunded(project.id);
+    if (paymentComplete) await this.evaluatePartnerCommission(project.id);
     return this.prisma.project.findUnique({ where: { id: project.id } });
   }
 
@@ -2333,6 +2350,7 @@ export class ProjectsService {
       previousProgress,
       wasProjectComplete,
     });
+    if (isLastStage) await this.evaluatePartnerCommission(params.projectId);
 
     const homeownerFirst = String(stage.project.homeowner?.fullName || 'The homeowner').trim().split(' ')[0];
     const approvalMessage = `${homeownerFirst} approved ${stage.name}`;
@@ -2965,6 +2983,7 @@ export class ProjectsService {
     successCriteria?: string,
     referralCode?: string,
     referralSource?: string,
+    anonymousId?: string,
   ) {
     // Get design with creator info
     const design = await this.prisma.design.findUnique({
@@ -3032,7 +3051,7 @@ export class ProjectsService {
         spent: 0,
         needsExtraMonitoring: design.createdBy?.contractorProfile?.verified !== true,
         monitoringReason: design.createdBy?.contractorProfile?.verified !== true ? 'unverified_gc' : null,
-        ...(await this.referralCreateFields(homeownerId, referralCode, referralSource)),
+        ...(await this.referralCreateFields(homeownerId, referralCode, referralSource, anonymousId)),
         planPdfUrl: normalizedPdfUrl,
         planFileName: normalizedPdfName,
         aiAnalysis: {
@@ -3253,6 +3272,7 @@ export class ProjectsService {
           homeownerId,
           createProjectDto.referralCode,
           createProjectDto.referralSource,
+          createProjectDto.anonymousId,
         )),
       },
       include: {

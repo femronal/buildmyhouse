@@ -1,5 +1,5 @@
 import { api } from '@/lib/api';
-import { getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
+import { anonymousReferralId, getReferralCode, typedReferralCodeValue } from '@/lib/referral-code';
 
 export interface UploadPlanData {
   name: string;
@@ -101,6 +101,8 @@ export const planService = {
     if (referralCode) {
       formData.append('referralCode', referralCode);
       formData.append('referralSource', planData.referralSource || (typed ? 'code_entered' : 'link'));
+      const anonymousId = anonymousReferralId();
+      if (anonymousId) formData.append('anonymousId', anonymousId);
     }
 
     // For FormData, don't set Content-Type header - browser will set it automatically with boundary
