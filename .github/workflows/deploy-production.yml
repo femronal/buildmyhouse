@@ -436,10 +436,100 @@ jobs:
           curl -sf --connect-timeout 10 https://admin.buildmyhouse.app/health || curl -sf --connect-timeout 10 http://admin.buildmyhouse.app/health || echo "⚠️ Health check skipped (service may still be starting)"
           echo "✅ Deploy step complete"
 
+  deploy-partner:
+    name: Deploy Partner Portal
+    runs-on: ubuntu-latest
+    needs: [pre-deployment-checks]
+    environment:
+      name: production
+      url: https://partner.buildmyhouse.app
+    env:
+      AWS_REGION: eu-north-1
+      ECR_REGISTRY: 399095821429.dkr.ecr.eu-north-1.amazonaws.com
+      ECR_REPO: buildmyhouse-partner
+      ECS_CLUSTER: buildmyhouse-prod
+      ECS_SERVICE: partner-service
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Set API URL for build
+        id: api-url
+        run: |
+          API_URL="${{ secrets.PRODUCTION_API_URL }}"
+          API_URL="${API_URL:-https://api.buildmyhouse.app}"
+          API_URL="${API_URL%/}"
+          if [[ "$API_URL" != */api ]]; then
+            API_URL="$API_URL/api"
+          fi
+          echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push Docker image
+        run: |
+          docker build --platform linux/amd64 \
+            -t $ECR_REGISTRY/$ECR_REPO:${{ github.sha }} \
+            -t $ECR_REGISTRY/$ECR_REPO:latest \
+            -f apps/partner-portal/Dockerfile \
+            --build-arg NEXT_PUBLIC_API_URL=${{ steps.api-url.outputs.api_url }} \
+            .
+          docker push $ECR_REGISTRY/$ECR_REPO:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPO:latest
+
+      - name: Register ECS task definition (partner)
+        id: partner-taskdef
+        run: |
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://infrastructure/ecs/partner-task-definition.json \
+            --region "$AWS_REGION" \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
+          echo "Registered $TASK_DEF_ARN"
+          echo "arn=$TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --task-definition "${{ steps.partner-taskdef.outputs.arn }}" \
+            --force-new-deployment \
+            --region $AWS_REGION
+
+      - name: Health check
+        continue-on-error: true
+        run: |
+          echo "Waiting 90s for ECS rollout, then checking health..."
+          sleep 90
+          curl -sf --connect-timeout 10 https://partner.buildmyhouse.app/health || echo "Health check skipped (service may still be starting)"
+          echo "Deploy step complete"
+
   notify:
     name: Notify Deployment Status
     runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-homeowner, deploy-contractor, deploy-admin-dashboard]
+    needs: [deploy-backend, deploy-homeowner, deploy-contractor, deploy-admin-dashboard, deploy-partner]
     if: always()
     steps:
       - name: Notify on success
