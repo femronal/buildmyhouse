@@ -17,14 +17,10 @@ export default function SignInPage() {
       <div>
       <img src="/logo.png" alt="BuildMyHouse" className="h-24 w-auto" />
       <p className="mt-6 text-xs font-semibold uppercase tracking-wide text-gray-500">BuildMyHouse Partner Network</p>
-      <h1 className="mt-2 text-3xl font-bold text-gray-900">Introduce homeowners. Earn from the projects they complete.</h1>
+      <h1 className="mt-2 text-3xl font-bold text-gray-900">Know someone building, renovating, or repairing a property in Nigeria?</h1>
       <div className="mt-3 space-y-3 text-sm leading-6 text-gray-600">
-        <p>
-          BuildMyHouse is where someone organises a build, renovation, or repair in Nigeria, including when they are funding the work from abroad. They can check what the work should cost, agree the stages, and release money when each stage is ready.
-        </p>
-        <p>
-          You introduce those homeowners. When a project from your introduction is completed, you earn from it, and you keep that homeowner for the projects they start later. Share the approved tools, pictures, and videos. BuildMyHouse keeps the plans, payments, and project record.
-        </p>
+        <p>Introduce them to BuildMyHouse. We manage the project, track progress, and handle payments.</p>
+        <p>You earn when their projects are completed — including future projects from the same homeowner.</p>
       </div>
       <div className="mt-6 lg:hidden">
         <LandingArt />

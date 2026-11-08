@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 const description =
-  'BuildMyHouse helps people in Nigeria and abroad organise a build, renovation, or repair, and pay in stages. Partners introduce those homeowners and earn when their projects are completed.';
+  'Introduce them to BuildMyHouse. We manage the project, track progress, and handle payments. You earn when their projects are completed, including future projects from the same homeowner.';
 
 export const metadata = {
   metadataBase: new URL('https://partner.buildmyhouse.app'),
