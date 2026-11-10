@@ -46,6 +46,14 @@ export interface StageMedia {
   caption?: string;
   order: number;
   createdAt: string;
+  source?: string;
+  capturedAt?: string | null;
+  distanceFromSiteMeters?: number | null;
+  provenance?: {
+    label: string;
+    duplicateLabel: string | null;
+    tone: 'ok' | 'warn' | 'neutral';
+  };
 }
 
 export interface StageDocument {
@@ -99,6 +107,14 @@ export interface CreateMediaData {
   thumbnailUrl?: string;
   caption?: string;
   order?: number;
+  captureMethod?: 'camera' | 'gallery';
+  capturedAt?: string;
+  captureLat?: number;
+  captureLng?: number;
+  accuracyMeters?: number;
+  sha256?: string;
+  originalSha256?: string;
+  fingerprintToken?: string;
 }
 
 export interface CreateDocumentData {

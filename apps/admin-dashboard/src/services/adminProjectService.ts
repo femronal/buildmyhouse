@@ -50,6 +50,29 @@ export interface StageMedia {
   thumbnailUrl?: string;
   caption?: string;
   order: number;
+  createdAt?: string;
+  source?: string | null;
+  capturedAt?: string | null;
+  captureLat?: number | null;
+  captureLng?: number | null;
+  accuracyMeters?: number | null;
+  distanceFromSiteMeters?: number | null;
+  sha256?: string | null;
+  originalSha256?: string | null;
+  uploadedByUserId?: string | null;
+  uploadedBy?: { id: string; fullName?: string | null; role?: string | null } | null;
+  duplicateOf?: {
+    id: string;
+    stageId: string;
+    stageName: string;
+    projectId: string;
+    projectName: string;
+  } | null;
+  provenance?: {
+    label: string;
+    duplicateLabel: string | null;
+    tone: 'ok' | 'warn' | 'neutral';
+  };
 }
 
 export interface StageDocument {
@@ -105,6 +128,9 @@ export type CreateMediaData = {
   thumbnailUrl?: string;
   caption?: string;
   order?: number;
+  sha256?: string;
+  originalSha256?: string;
+  fingerprintToken?: string;
 };
 
 export type CreateDocumentData = {

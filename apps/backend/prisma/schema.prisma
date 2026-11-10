@@ -358,6 +358,7 @@ model User {
   adminAccessAuditTargetEntries   AdminAccessAuditLog[]         @relation("AdminAccessAuditTarget")
   listingReviews                  ListingReview[]
   scamReports                     ScamReport[]
+  uploadedStageMedia              StageMedia[]                 @relation("StageMediaUploader")
 
   @@map("users")
 }
@@ -1320,6 +1321,14 @@ model StageMaterial {
   @@map("stage_materials")
 }
 
+enum StageMediaSource {
+  camera
+  gallery
+  admin_upload
+  whatsapp
+  unknown
+}
+
 model StageMedia {
   id           String   @id @default(uuid())
   stageId      String
@@ -1330,8 +1339,24 @@ model StageMedia {
   order        Int      @default(0)
   createdAt    DateTime @default(now())
 
-  stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  uploadedByUserId       String?
+  capturedAt             DateTime?
+  captureLat             Float?
+  captureLng             Float?
+  accuracyMeters         Float?
+  distanceFromSiteMeters Float?
+  source                 StageMediaSource @default(unknown)
+  sha256                 String?
+  originalSha256         String?
+  duplicateOfMediaId     String?
 
+  stage       Stage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  uploadedBy  User?        @relation("StageMediaUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  duplicateOf StageMedia?  @relation("StageMediaDuplicate", fields: [duplicateOfMediaId], references: [id], onDelete: SetNull)
+  duplicates  StageMedia[] @relation("StageMediaDuplicate")
+
+  @@index([sha256])
+  @@index([originalSha256])
   @@map("stage_media")
 }
 

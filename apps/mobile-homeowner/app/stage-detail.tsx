@@ -38,6 +38,12 @@ const getChangeStatusClasses = (status: string) => {
 const countLabel = (count: number, singular: string, plural: string) =>
   `${count} ${count === 1 ? singular : plural}`;
 
+const provenanceToneColor = (tone?: string) => {
+  if (tone === 'ok') return '#000000';
+  if (tone === 'warn') return '#B45309';
+  return '#6B7280';
+};
+
 const reviewForStage = (stage: any) => {
   const name = String(stage?.name || '').trim() || 'this stage';
   const objective = String(stage?.doneWhen || '').replace(/\s+/g, ' ').trim()
@@ -182,6 +188,16 @@ export default function StageDetailScreen() {
       date: d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'Recent'
     })),
   ];
+  const checkedPhotos = media.filter((item: any) => (
+    item?.type === 'photo'
+    && item?.provenance
+    && item.provenance.label !== 'Uploaded before photo checks'
+  ));
+  const photosOnSite = checkedPhotos.filter((item: any) => item.provenance.tone === 'ok').length;
+  const photosToReview = checkedPhotos.filter((item: any) => item.provenance.tone === 'warn').length;
+  const photoCheckSummary = checkedPhotos.length > 0
+    ? `Photo checks: ${photosOnSite} taken on site, ${photosToReview} ${photosToReview === 1 ? 'needs' : 'need'} a look.`
+    : '';
 
   const disputeReasonOptions = [
     ...(materials.length > 0
@@ -512,6 +528,11 @@ export default function StageDetailScreen() {
                 <Text className="text-gray-400 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
                   {countLabel(media.filter((item: any) => item.type === 'photo').length, 'photo', 'photos')}, {countLabel(media.filter((item: any) => item.type === 'video').length, 'video', 'videos')}, {countLabel(teamMembers.length, 'team member', 'team members')}, {countLabel(materials.length, 'material', 'materials')}, {countLabel(documents.length, 'file', 'files')}.
                 </Text>
+                {photoCheckSummary ? (
+                  <Text className="text-gray-500 text-xs mt-2" style={{ fontFamily: 'Poppins_400Regular', lineHeight: 18 }}>
+                    {photoCheckSummary}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
           </View>
@@ -781,6 +802,16 @@ export default function StageDetailScreen() {
                     >
                       {file.date}
                     </Text>
+                    {file.isMedia && file.provenance?.label ? (
+                      <Text style={{ color: provenanceToneColor(file.provenance.tone), fontFamily: 'Poppins_400Regular', fontSize: 12 }}>
+                        {file.provenance.label}
+                      </Text>
+                    ) : null}
+                    {file.isMedia && file.provenance?.duplicateLabel ? (
+                      <Text style={{ color: '#B45309', fontFamily: 'Poppins_400Regular', fontSize: 12 }}>
+                        {file.provenance.duplicateLabel}
+                      </Text>
+                    ) : null}
                   </View>
                   {/* Download button */}
                   <TouchableOpacity

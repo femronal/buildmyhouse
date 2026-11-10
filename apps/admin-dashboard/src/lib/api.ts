@@ -153,7 +153,12 @@ export const api = {
   uploadFile: async (
     file: File,
     options?: { endpoint?: '/upload/image' | '/upload/file' | '/upload/document' },
-  ): Promise<{ url: string }> => {
+  ): Promise<{
+    url: string;
+    sha256: string | null;
+    originalSha256: string | null;
+    fingerprintToken: string | null;
+  }> => {
     const requested = options?.endpoint || '/upload/image';
     const kind = classifyLocalFile(file.name, file.type);
     const endpoint = kind === 'video' || kind === 'document' ? '/upload/file' : requested;
@@ -189,7 +194,12 @@ export const api = {
         : rawUrl.startsWith('/')
           ? rawUrl
           : `/${rawUrl}`;
-    return { url };
+    return {
+      url,
+      sha256: typeof result.sha256 === 'string' && result.sha256 ? result.sha256 : null,
+      originalSha256: typeof result.originalSha256 === 'string' && result.originalSha256 ? result.originalSha256 : null,
+      fingerprintToken: typeof result.fingerprintToken === 'string' && result.fingerprintToken ? result.fingerprintToken : null,
+    };
   },
 
   delete: async <T>(endpoint: string): Promise<T> => {

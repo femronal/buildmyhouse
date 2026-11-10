@@ -17,6 +17,14 @@ type UploadFileOptions = {
   fileName?: string;
   mimeType?: string;
   fileSize?: number;
+  originalSha256?: string | null;
+};
+
+export type UploadReceipt = {
+  url: string;
+  sha256: string | null;
+  originalSha256: string | null;
+  fingerprintToken: string | null;
 };
 
 function inferExtensionFromMime(mimeType?: string): string {
@@ -50,6 +58,15 @@ export async function uploadFile(
   type: 'image' | 'document' | 'media' = 'image',
   options: UploadFileOptions = {},
 ): Promise<string> {
+  const receipt = await uploadFileWithReceipt(uri, type, options);
+  return receipt.url;
+}
+
+export async function uploadFileWithReceipt(
+  uri: string,
+  type: 'image' | 'document' | 'media' = 'image',
+  options: UploadFileOptions = {},
+): Promise<UploadReceipt> {
   try {
     let uploadUri = uri;
     let uploadFileName = options.fileName;
@@ -131,6 +148,10 @@ export async function uploadFile(
         name: filename,
       } as any);
     }
+
+    if (options.originalSha256) {
+      formData.append('originalSha256', options.originalSha256);
+    }
     
     // Get auth token for headers
     const { getAuthToken } = await import('@/lib/auth');
@@ -187,7 +208,12 @@ export async function uploadFile(
     if (!fileUrl.startsWith('http')) {
       fileUrl = `${BACKEND_ORIGIN}${fileUrl}`;
     }
-    return fileUrl;
+    return {
+      url: fileUrl,
+      sha256: typeof result.sha256 === 'string' && result.sha256 ? result.sha256 : null,
+      originalSha256: typeof result.originalSha256 === 'string' && result.originalSha256 ? result.originalSha256 : null,
+      fingerprintToken: typeof result.fingerprintToken === 'string' && result.fingerprintToken ? result.fingerprintToken : null,
+    };
   } catch (error: any) {
     throw new Error(friendlyUploadError(error));
   }

@@ -1,10 +1,12 @@
 import {
   BadRequestException,
+  Body,
   Catch,
   Controller,
   HttpException,
   PayloadTooLargeException,
   Post,
+  Request,
   UploadedFile,
   UseFilters,
   UseGuards,
@@ -12,9 +14,11 @@ import {
   type ArgumentsHost,
   type ExceptionFilter,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { MulterError } from 'multer';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import * as stageMediaProvenance from '../stages/stage-media-provenance';
 import { S3UploadService } from './s3-upload.service';
 import {
   FILE_TOO_LARGE_MESSAGE,
@@ -57,7 +61,23 @@ class UploadExceptionFilter implements ExceptionFilter {
 @UseGuards(JwtAuthGuard)
 @UseFilters(UploadExceptionFilter)
 export class UploadController {
-  constructor(private readonly s3UploadService: S3UploadService) {}
+  constructor(
+    private readonly s3UploadService: S3UploadService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  private fingerprintFields(userId: string, url: string, sha256: string, originalSha256Raw?: string) {
+    const original = typeof originalSha256Raw === 'string' ? originalSha256Raw.trim().toLowerCase() : '';
+    const originalSha256 = stageMediaProvenance.isSha256Hex(original) ? original : null;
+    const secret = this.configService.get<string>('JWT_SECRET') || '';
+    const fingerprintToken = stageMediaProvenance.signFingerprint(secret, {
+      userId,
+      url,
+      sha256,
+      originalSha256: originalSha256 || '',
+    });
+    return { sha256, originalSha256, fingerprintToken };
+  }
 
   @Post('image')
   @UseInterceptors(
@@ -71,8 +91,13 @@ export class UploadController {
       limits: { fileSize: MAX_IMAGE_BYTES },
     }),
   )
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: { user?: { sub?: string } },
+    @Body('originalSha256') originalSha256Raw?: string,
+  ) {
     if (!file) throw new BadRequestException('No file uploaded');
+    const sha256 = stageMediaProvenance.sha256OfBuffer(file.buffer);
     const contentType = storedContentType(file);
     const uploaded = await this.s3UploadService.uploadBuffer({
       buffer: file.buffer,
@@ -87,6 +112,7 @@ export class UploadController {
       filename: uploaded.filename,
       size: file.size,
       mimetype: contentType,
+      ...this.fingerprintFields(req?.user?.sub || '', uploaded.url, sha256, originalSha256Raw),
     };
   }
 
@@ -102,7 +128,11 @@ export class UploadController {
       limits: { fileSize: MAX_VIDEO_BYTES },
     }),
   )
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req: { user?: { sub?: string } },
+    @Body('originalSha256') originalSha256Raw?: string,
+  ) {
     if (!file) throw new BadRequestException('No file uploaded');
     const kind = classifyUpload(file);
     if (kind === 'image' && file.size > MAX_IMAGE_BYTES) {
@@ -114,6 +144,7 @@ export class UploadController {
     if (kind === 'video' && file.size > MAX_VIDEO_BYTES) {
       throw new PayloadTooLargeException('This video is too large (max 100MB). Please trim it or record a shorter clip.');
     }
+    const sha256 = stageMediaProvenance.sha256OfBuffer(file.buffer);
     const contentType = storedContentType(file);
     const uploaded = await this.s3UploadService.uploadBuffer({
       buffer: file.buffer,
@@ -127,6 +158,7 @@ export class UploadController {
       filename: uploaded.filename,
       size: file.size,
       mimetype: contentType,
+      ...this.fingerprintFields(req?.user?.sub || '', uploaded.url, sha256, originalSha256Raw),
     };
   }
 }

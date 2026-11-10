@@ -28,6 +28,8 @@ import { ListStageChangeRequestsDto } from './dto/list-stage-change-requests.dto
 import { UpdateStageDetailsDto } from './dto/update-stage-details.dto';
 import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto';
 import { UpdateStageMaterialDto } from '../stages/dto/update-stage-material.dto';
+import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
+import { UpdateStageMediaDto } from '../stages/dto/update-stage-media.dto';
 import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member.dto';
 import { UpdateStageTeamMemberDto } from '../stages/dto/update-stage-team-member.dto';
 import { UpdateProjectScopeDto } from './dto/update-project-scope.dto';
@@ -341,34 +343,42 @@ export class ProjectsController {
     @Param('projectId') projectId: string,
     @Param('stageId') stageId: string,
     @Request() req: any,
-    @Body() body: any,
+    @Body() body: CreateStageMediaDto,
   ) {
     const userId = req.user.sub;
     const project = await this.projectsService.getProject(projectId);
     if (project.generalContractorId !== userId && req.user.role !== 'admin') {
       throw new ForbiddenException('You do not have permission to add media');
     }
-    return this.projectsService.addStageMedia(stageId, body);
+    return this.projectsService.addStageMedia(stageId, body, { userId, role: req.user.role }, projectId);
   }
 
   @Get(':projectId/stages/:stageId/media')
   @UseGuards(JwtAuthGuard)
-  async getMedia(@Param('stageId') stageId: string) {
-    return this.projectsService.getStageMedia(stageId);
+  async getMedia(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+  ) {
+    return this.projectsService.getStageMedia(projectId, stageId, { userId: req.user.sub, role: req.user.role });
   }
 
   @Patch('stages/media/:mediaId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async updateMedia(@Param('mediaId') mediaId: string, @Body() body: any) {
-    return this.projectsService.updateStageMedia(mediaId, body);
+  async updateMedia(
+    @Param('mediaId') mediaId: string,
+    @Request() req: any,
+    @Body() body: UpdateStageMediaDto,
+  ) {
+    return this.projectsService.updateStageMedia(mediaId, body, { userId: req.user.sub, role: req.user.role });
   }
 
   @Delete('stages/media/:mediaId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('general_contractor', 'admin')
-  async deleteMedia(@Param('mediaId') mediaId: string) {
-    return this.projectsService.deleteStageMedia(mediaId);
+  async deleteMedia(@Param('mediaId') mediaId: string, @Request() req: any) {
+    return this.projectsService.deleteStageMedia(mediaId, { userId: req.user.sub, role: req.user.role });
   }
 
   // Documents

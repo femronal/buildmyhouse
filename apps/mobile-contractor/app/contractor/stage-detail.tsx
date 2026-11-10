@@ -1,14 +1,15 @@
 import { View, Text, ScrollView, TouchableOpacity, Modal, TextInput, Alert, ActivityIndicator, Platform, Linking, useWindowDimensions } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, Package, Users, FileText, CheckCircle, File, Video, Image as ImageIcon, Music, Home, Plus, Camera, X, Phone, Upload, Download, Trash2, Check, PenLine, MessageCircle } from "lucide-react-native";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject, useUpdateStageStatus } from '@/hooks/useProjects';
 import { stageDocumentationService } from '@/services/stageDocumentationService';
 import { projectService } from '@/services/projectService';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import { uploadFile } from '@/utils/fileUpload';
+import { uploadFile, uploadFileWithReceipt } from '@/utils/fileUpload';
+import { sha256OfFile, startLocationRequest, type CaptureMethod } from '@/lib/capture-provenance';
 import { StoredImage } from '@/components/StoredImage';
 import { IMAGE_ACCEPT, VIDEO_ACCEPT, VIDEO_TOO_LARGE, MAX_VIDEO_BYTES, friendlyUploadError } from '@/lib/upload-rules';
 import { useResponsivePadding } from '@/lib/responsive-layout';
@@ -130,13 +131,27 @@ export default function GCStageDetailScreen() {
     fileFile: null as File | null,
     fileName: '' as string,
     fileMimeType: '' as string,
+    captureMethod: null as CaptureMethod | null,
+    capturedAt: null as string | null,
+  });
+  const locationRequestRef = useRef<Promise<{ lat: number; lng: number; accuracyMeters: number } | null> | null>(null);
+  const pendingCaptureRef = useRef<{ captureMethod: CaptureMethod | null; capturedAt: string | null }>({
+    captureMethod: null,
+    capturedAt: null,
   });
 
   // Rename modal state
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameType, setRenameType] = useState<'photo' | 'invoice' | 'receipt' | 'file' | null>(null);
   const [renameValue, setRenameValue] = useState('');
-  const [pendingFileData, setPendingFileData] = useState<{ uri: string; fileName: string; file?: File; mimeType?: string } | null>(null);
+  const [pendingFileData, setPendingFileData] = useState<{
+    uri: string;
+    fileName: string;
+    file?: File;
+    mimeType?: string;
+    captureMethod?: CaptureMethod | null;
+    capturedAt?: string | null;
+  } | null>(null);
   const [stageChangeForm, setStageChangeForm] = useState({
     requestTypes: [] as ('additional_funding' | 'additional_timing' | 'change_of_site')[],
     additionalAmount: '',
@@ -228,6 +243,22 @@ export default function GCStageDetailScreen() {
     }, 1500);
   };
 
+  const takePickedCapture = () => {
+    const staged = pendingCaptureRef.current;
+    pendingCaptureRef.current = { captureMethod: null, capturedAt: null };
+    if (fileForm.type === 'video') return { captureMethod: 'gallery' as CaptureMethod, capturedAt: null as string | null };
+    if (fileForm.type === 'photo') return staged;
+    return { captureMethod: null, capturedAt: null };
+  };
+
+  const clearRename = () => {
+    locationRequestRef.current = null;
+    setShowRenameModal(false);
+    setPendingFileData(null);
+    setRenameType(null);
+    setRenameValue('');
+  };
+
   // Image picker handlers
   const pickImage = async (type: 'photo' | 'invoice' | 'receipt' | 'file') => {
     try {
@@ -256,7 +287,15 @@ export default function GCStageDetailScreen() {
 
             // Only "Files" should be renameable. Team/Material uploads are named by the form fields.
             if (type === 'file') {
-              setPendingFileData({ uri, fileName, file, mimeType: file.type });
+              const capture = takePickedCapture();
+              setPendingFileData({
+                uri,
+                fileName,
+                file,
+                mimeType: file.type,
+                captureMethod: capture.captureMethod,
+                capturedAt: capture.capturedAt,
+              });
               setRenameType(type);
               setRenameValue(fileName);
               setShowRenameModal(true);
@@ -313,7 +352,14 @@ export default function GCStageDetailScreen() {
 
         // Only "Files" should be renameable. Team/Material uploads are named by the form fields.
         if (type === 'file') {
-          setPendingFileData({ uri, fileName, mimeType: asset.mimeType || undefined });
+          const capture = takePickedCapture();
+          setPendingFileData({
+            uri,
+            fileName,
+            mimeType: asset.mimeType || undefined,
+            captureMethod: capture.captureMethod,
+            capturedAt: capture.capturedAt,
+          });
           setRenameType(type);
           setRenameValue(fileName);
           setShowRenameModal(true);
@@ -338,6 +384,71 @@ export default function GCStageDetailScreen() {
           return;
         }
       }
+    } catch (error) {
+      showAlert('Upload error', friendlyUploadError(error));
+    }
+  };
+
+  const chooseFromGallery = () => {
+    locationRequestRef.current = null;
+    pendingCaptureRef.current = { captureMethod: 'gallery', capturedAt: null };
+    pickImage('file');
+  };
+
+  const takePhotoNow = async () => {
+    pendingCaptureRef.current = { captureMethod: null, capturedAt: null };
+    if (Platform.OS === 'web') {
+      locationRequestRef.current = startLocationRequest();
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = IMAGE_ACCEPT;
+      input.setAttribute('capture', 'environment');
+      input.multiple = false;
+      input.onchange = (event: any) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        const capturedAt = new Date().toISOString();
+        const fresh = typeof file.lastModified === 'number' && Date.now() - file.lastModified <= 5 * 60 * 1000;
+        if (!fresh) locationRequestRef.current = null;
+        const uri = URL.createObjectURL(file);
+        setPendingFileData({
+          uri,
+          fileName: file.name,
+          file,
+          mimeType: file.type,
+          captureMethod: fresh ? 'camera' : 'gallery',
+          capturedAt,
+        });
+        setRenameType('file');
+        setRenameValue(file.name);
+        setShowRenameModal(true);
+      };
+      input.click();
+      return;
+    }
+
+    locationRequestRef.current = null;
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (permission.status !== 'granted') {
+        Alert.alert('Permission needed', 'We need camera permission to take a photo');
+        return;
+      }
+      const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
+      if (result.canceled || !result.assets?.length) return;
+      const asset = result.assets[0];
+      const uri = asset.uri;
+      const fileName = asset.fileName || uri.split('/').pop() || `photo-${Date.now()}`;
+      setPendingFileData({
+        uri,
+        fileName,
+        mimeType: asset.mimeType || undefined,
+        captureMethod: 'camera',
+        capturedAt: new Date().toISOString(),
+      });
+      setRenameType('file');
+      setRenameValue(fileName);
+      setShowRenameModal(true);
     } catch (error) {
       showAlert('Upload error', friendlyUploadError(error));
     }
@@ -521,56 +632,69 @@ export default function GCStageDetailScreen() {
   // Add media/document mutation
   const addMediaMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Upload file first
       let fileUrl: string = '';
-      
+      let receipt: {
+        url: string;
+        sha256?: string | null;
+        originalSha256?: string | null;
+        fingerprintToken?: string | null;
+      } | null = null;
+
       try {
-        if (data.fileUri) {
-          if (data.type === 'document') {
-            const uploadType = 'document'; // Use 'document' type for PDFs/documents
-            if (Platform.OS === 'web' && data.fileFile) {
-              const fileUri = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.readAsDataURL(data.fileFile);
-              });
-              fileUrl = await uploadFile(fileUri, uploadType, {
-                fileName: data.fileName || data.fileFile?.name,
-                mimeType: data.fileMimeType || data.fileFile?.type,
-              });
-            } else {
-              fileUrl = await uploadFile(data.fileUri, uploadType, {
-                fileName: data.fileName,
-                mimeType: data.fileMimeType || data.fileFile?.type,
-              });
-            }
+        if (!data.fileUri) throw new Error('No file selected');
+        if (data.type === 'document') {
+          const uploadType = 'document';
+          if (Platform.OS === 'web' && data.fileFile) {
+            const fileUri = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(data.fileFile);
+            });
+            fileUrl = await uploadFile(fileUri, uploadType, {
+              fileName: data.fileName || data.fileFile?.name,
+              mimeType: data.fileMimeType || data.fileFile?.type,
+            });
           } else {
-            const uploadType = data.type === 'video' ? 'media' : 'image';
-            if (Platform.OS === 'web' && data.fileFile) {
-              const fileUri = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result as string);
-                reader.readAsDataURL(data.fileFile);
-              });
-              fileUrl = await uploadFile(fileUri, uploadType, {
-                fileName: data.fileName || data.fileFile?.name,
-                mimeType: data.fileMimeType || data.fileFile?.type,
-              });
-            } else {
-              fileUrl = await uploadFile(data.fileUri, uploadType, {
-                fileName: data.fileName,
-                mimeType: data.fileMimeType || data.fileFile?.type,
-              });
-            }
+            fileUrl = await uploadFile(data.fileUri, uploadType, {
+              fileName: data.fileName,
+              mimeType: data.fileMimeType || data.fileFile?.type,
+            });
           }
         } else {
-          throw new Error('No file selected');
+          const originalSha256 = data.fileFile ? await sha256OfFile(data.fileFile) : null;
+          const uploadType = data.type === 'video' ? 'media' : 'image';
+          const uploadOptions = {
+            fileName: data.fileName || data.fileFile?.name,
+            mimeType: data.fileMimeType || data.fileFile?.type,
+            originalSha256,
+          };
+          if (Platform.OS === 'web' && data.fileFile) {
+            const fileUri = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.readAsDataURL(data.fileFile);
+            });
+            receipt = await uploadFileWithReceipt(fileUri, uploadType, uploadOptions);
+          } else {
+            receipt = await uploadFileWithReceipt(data.fileUri, uploadType, uploadOptions);
+          }
+          fileUrl = receipt.url;
         }
       } catch (error: any) {
         throw new Error(friendlyUploadError(error));
       }
-      
-      // Save as document if PDF, otherwise save as media
+
+      let loc: { lat: number; lng: number; accuracyMeters: number } | null = null;
+      if (data.type !== 'document') {
+        const pendingLocation = locationRequestRef.current;
+        locationRequestRef.current = null;
+        try {
+          loc = pendingLocation ? await pendingLocation : null;
+        } catch {
+          loc = null;
+        }
+      }
+
       if (data.type === 'document') {
         return stageDocumentationService.addDocument(projectId as string, stageId as string, {
           type: 'other',
@@ -579,18 +703,26 @@ export default function GCStageDetailScreen() {
           category: 'general',
           notes: data.caption || undefined,
         });
-      } else {
-        return stageDocumentationService.addMedia(projectId as string, stageId as string, {
-          type: data.type,
-          url: fileUrl,
-          caption: data.caption || data.fileName || undefined,
-        });
       }
+
+      const captureMethod = data.type === 'video' ? 'gallery' : data.captureMethod || undefined;
+      return stageDocumentationService.addMedia(projectId as string, stageId as string, {
+        type: data.type,
+        url: fileUrl,
+        caption: data.caption || data.fileName || undefined,
+        ...(captureMethod ? { captureMethod } : {}),
+        ...(data.capturedAt ? { capturedAt: data.capturedAt } : {}),
+        ...(loc ? { captureLat: loc.lat, captureLng: loc.lng, accuracyMeters: loc.accuracyMeters } : {}),
+        ...(receipt?.sha256 ? { sha256: receipt.sha256 } : {}),
+        ...(receipt?.originalSha256 ? { originalSha256: receipt.originalSha256 } : {}),
+        ...(receipt?.fingerprintToken ? { fingerprintToken: receipt.fingerprintToken } : {}),
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });
       refetchProject();
       setShowFileModal(false);
+      locationRequestRef.current = null;
       setFileForm({
         type: 'photo',
         caption: '',
@@ -598,6 +730,8 @@ export default function GCStageDetailScreen() {
         fileFile: null,
         fileName: '',
         fileMimeType: '',
+        captureMethod: null,
+        capturedAt: null,
       });
       Alert.alert('Success', 'File uploaded successfully');
     },
@@ -2151,6 +2285,27 @@ export default function GCStageDetailScreen() {
               </View>
 
               {/* File Upload */}
+              {fileForm.type === 'photo' && !fileForm.fileUri ? (
+                <View className="mb-4">
+                  <TouchableOpacity onPress={takePhotoNow} className="bg-blue-600 rounded-full py-4 mb-3">
+                    <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      Take photo now
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={chooseFromGallery}
+                    className="rounded-full py-4 border border-blue-400"
+                  >
+                    <Text className="text-white text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                      Choose from gallery
+                    </Text>
+                  </TouchableOpacity>
+                  <Text className="text-gray-400 text-xs text-center mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                    Photos taken now are checked against the site location.
+                  </Text>
+                </View>
+              ) : null}
+              {fileForm.type === 'photo' && !fileForm.fileUri ? null : (
               <TouchableOpacity
                 onPress={() => pickImage('file')}
                 className="bg-[#0A1628] rounded-xl p-6 mb-4 items-center border border-blue-900"
@@ -2174,7 +2329,18 @@ export default function GCStageDetailScreen() {
                       </Text>
                     )}
                     <TouchableOpacity
-                      onPress={() => setFileForm(prev => ({ ...prev, fileUri: null, fileFile: null, fileName: '', fileMimeType: '' }))}
+                      onPress={() => {
+                        locationRequestRef.current = null;
+                        setFileForm(prev => ({
+                          ...prev,
+                          fileUri: null,
+                          fileFile: null,
+                          fileName: '',
+                          fileMimeType: '',
+                          captureMethod: null,
+                          capturedAt: null,
+                        }));
+                      }}
                       className="mt-2"
                     >
                       <Text className="text-red-400 text-xs" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -2191,6 +2357,7 @@ export default function GCStageDetailScreen() {
                   </>
                 )}
               </TouchableOpacity>
+              )}
 
               {/* Caption */}
               <Text className="text-gray-400 mb-2" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -2240,12 +2407,7 @@ export default function GCStageDetailScreen() {
         visible={showRenameModal}
         animationType="fade"
         transparent={true}
-        onRequestClose={() => {
-          setShowRenameModal(false);
-          setPendingFileData(null);
-          setRenameType(null);
-          setRenameValue('');
-        }}
+        onRequestClose={clearRename}
       >
         <View className="flex-1 bg-black/50 justify-center items-center px-6">
           <View className="bg-[#1E3A5F] rounded-2xl p-6 w-full max-w-md border border-blue-900">
@@ -2269,12 +2431,7 @@ export default function GCStageDetailScreen() {
             
             <View className="flex-row gap-3">
               <TouchableOpacity
-                onPress={() => {
-                  setShowRenameModal(false);
-                  setPendingFileData(null);
-                  setRenameType(null);
-                  setRenameValue('');
-                }}
+                onPress={clearRename}
                 className="flex-1 bg-[#0A1628] rounded-xl py-3 border border-blue-900"
               >
                 <Text className="text-gray-400 text-center" style={{ fontFamily: 'Poppins_500Medium' }}>
@@ -2314,7 +2471,9 @@ export default function GCStageDetailScreen() {
                         fileUri: pendingFileData.uri, 
                         fileFile: pendingFileData.file || null,
                         fileName: finalName,
-                        fileMimeType: pendingFileData.mimeType || '' 
+                        fileMimeType: pendingFileData.mimeType || '',
+                        captureMethod: pendingFileData.captureMethod ?? null,
+                        capturedAt: pendingFileData.capturedAt ?? null,
                       }));
                     }
                   }

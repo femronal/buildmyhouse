@@ -12,6 +12,18 @@ import { CreateStageMaterialDto } from '../stages/dto/create-stage-material.dto'
 import { UpdateStageMaterialDto } from '../stages/dto/update-stage-material.dto';
 import { materialPayWrite, materialLineAmount, summarizeJobMoney, teamLineAmount, teamPayWrite } from './job-money';
 import { CreateStageMediaDto } from '../stages/dto/create-stage-media.dto';
+import { UpdateStageMediaDto } from '../stages/dto/update-stage-media.dto';
+import {
+  distanceFromSite,
+  findDuplicateMedia,
+  isSha256Hex,
+  normalizeCaptureLocation,
+  normalizeCapturedAt,
+  provenanceLabels,
+  resolveSource,
+  verifyFingerprint,
+  type MediaViewer,
+} from '../stages/stage-media-provenance';
 import { CreateStageDocumentDto } from '../stages/dto/create-stage-document.dto';
 import { ProjectAccessService } from '../project-access/project-access.service';
 import { EmailService } from '../email/email.service';
@@ -32,6 +44,26 @@ import {
 import { ADMIN_CHOICE_PAYMENT_ID, RECEIPT_PAYMENT_ID, canOpenProject, canStartStage, completePaymentTarget, isAdminChoicePayment, isPaymentModel, netReceived, PaymentModel } from './payment-model';
 import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
+
+const stageMediaQuery = {
+  orderBy: [{ order: 'asc' as const }, { createdAt: 'asc' as const }],
+  include: {
+    uploadedBy: { select: { id: true, fullName: true, role: true } },
+    duplicateOf: {
+      select: {
+        id: true,
+        stageId: true,
+        stage: {
+          select: {
+            name: true,
+            projectId: true,
+            project: { select: { name: true } },
+          },
+        },
+      },
+    },
+  },
+};
 
 @Injectable()
 export class ProjectsService {
@@ -2620,9 +2652,7 @@ export class ProjectsService {
             approvedBy: { select: { id: true, fullName: true } },
             teamMembers: true,
             materials: true,
-            media: {
-              orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-            },
+            media: stageMediaQuery,
             documents: true,
             changeRequests: {
               orderBy: { createdAt: 'desc' },
@@ -2653,14 +2683,59 @@ export class ProjectsService {
     const presented = await this.presentStageEvidence(project);
     const withMoney = await this.attachMoneySummary(presented);
     const visible = await this.attachStageStart(viewer === 'admin' ? withMoney : this.hideRejectedPayoutLines(withMoney));
+    const withProvenance = this.attachMediaProvenance(visible, viewer);
     if (project.designId && planRequest) {
       return {
-        ...visible,
+        ...withProvenance,
         planRequestStep: getPlanRequestStep(planRequest, project, viewer),
       };
     }
 
-    return visible;
+    return withProvenance;
+  }
+
+  private attachMediaProvenance(project: any, viewer: MediaViewer) {
+    if (!project?.stages) return project;
+    return {
+      ...project,
+      stages: project.stages.map((stage: any) => ({
+        ...stage,
+        media: Array.isArray(stage.media)
+          ? stage.media.map((row: any) => this.shapeStageMedia(row, viewer, project.id))
+          : stage.media,
+      })),
+    };
+  }
+
+  private shapeStageMedia(row: any, viewer: MediaViewer, projectId?: string) {
+    const provenance = provenanceLabels({ ...row, projectId: row?.projectId || projectId }, viewer);
+    if (viewer === 'admin') {
+      const duplicate = row?.duplicateOf;
+      return {
+        ...row,
+        provenance,
+        duplicateOf: duplicate
+          ? {
+              id: duplicate.id,
+              stageId: duplicate.stageId,
+              stageName: duplicate.stage?.name || duplicate.stageName || '',
+              projectId: duplicate.stage?.projectId || duplicate.projectId || '',
+              projectName: duplicate.stage?.project?.name || duplicate.projectName || '',
+            }
+          : null,
+      };
+    }
+    const safe = { ...(row || {}), provenance };
+    delete safe.captureLat;
+    delete safe.captureLng;
+    delete safe.accuracyMeters;
+    delete safe.sha256;
+    delete safe.originalSha256;
+    delete safe.duplicateOfMediaId;
+    delete safe.duplicateOf;
+    delete safe.uploadedBy;
+    delete safe.uploadedByUserId;
+    return safe;
   }
 
   private hideRejectedPayoutLines(project: any) {
@@ -3754,21 +3829,78 @@ export class ProjectsService {
   /**
    * Add media (photo/video) to a stage
    */
-  async addStageMedia(stageId: string, dto: CreateStageMediaDto) {
+  async addStageMedia(
+    stageId: string,
+    dto: CreateStageMediaDto,
+    actor: { userId: string; role: string },
+    projectId: string,
+  ) {
     const stage = await this.prisma.stage.findUnique({
       where: { id: stageId },
-      include: { project: { select: { id: true, name: true, homeownerId: true } } },
+      include: {
+        project: { select: { id: true, name: true, homeownerId: true, latitude: true, longitude: true } },
+      },
     });
 
-    if (!stage) {
+    if (!stage || stage.projectId !== projectId) {
       throw new NotFoundException('Stage not found');
+    }
+
+    const source = resolveSource({ role: actor.role, captureMethod: dto.captureMethod });
+    const capturedAt = normalizeCapturedAt(dto.capturedAt, new Date());
+    let location = normalizeCaptureLocation({
+      lat: dto.captureLat,
+      lng: dto.captureLng,
+      accuracyMeters: dto.accuracyMeters,
+    });
+    let distanceFromSiteMeters = distanceFromSite(location, stage.project);
+    if (source === 'gallery') {
+      location = { lat: null, lng: null, accuracyMeters: null };
+      distanceFromSiteMeters = null;
+    }
+
+    const secret = this.configService.get<string>('JWT_SECRET') || '';
+    const sha256Input = typeof dto.sha256 === 'string' ? dto.sha256.trim().toLowerCase() : '';
+    const originalInput = typeof dto.originalSha256 === 'string' ? dto.originalSha256.trim().toLowerCase() : '';
+    const originalForToken = isSha256Hex(originalInput) ? originalInput : '';
+    const fingerprintOk = isSha256Hex(sha256Input) && verifyFingerprint(
+      secret,
+      { userId: actor.userId, url: dto.url, sha256: sha256Input, originalSha256: originalForToken },
+      dto.fingerprintToken,
+    );
+    const sha256 = fingerprintOk ? sha256Input : null;
+    const originalSha256 = fingerprintOk ? (originalForToken || null) : null;
+    if (!fingerprintOk) {
+      this.logger.warn(`Stage media fingerprint was not accepted for ${dto.url}`);
+    }
+
+    const duplicateOfMediaId = await findDuplicateMedia(this.prisma, { sha256, originalSha256 });
+    let duplicateOf = null;
+    if (duplicateOfMediaId && typeof this.prisma.stageMedia.findUnique === 'function') {
+      duplicateOf = await this.prisma.stageMedia.findUnique({
+        where: { id: duplicateOfMediaId },
+        select: stageMediaQuery.include.duplicateOf.select,
+      });
     }
 
     const created = await this.prisma.stageMedia.create({
       data: {
         stageId,
-        ...dto,
+        type: dto.type,
+        url: dto.url,
+        thumbnailUrl: dto.thumbnailUrl,
+        caption: dto.caption,
         order: dto.order ?? 0,
+        uploadedByUserId: actor.userId,
+        source,
+        capturedAt,
+        captureLat: location.lat,
+        captureLng: location.lng,
+        accuracyMeters: location.accuracyMeters,
+        distanceFromSiteMeters,
+        sha256,
+        originalSha256,
+        duplicateOfMediaId,
       },
     });
 
@@ -3786,33 +3918,69 @@ export class ProjectsService {
       });
     }
 
-    return created;
+    const viewer: MediaViewer = actor.role === 'admin' ? 'admin' : 'gc';
+    return this.shapeStageMedia({ ...created, duplicateOf }, viewer, projectId);
   }
 
   /**
    * Get media for a stage
    */
-  async getStageMedia(stageId: string) {
-    return this.prisma.stageMedia.findMany({
-      where: { stageId },
-      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
+  async getStageMedia(projectId: string, stageId: string, actor: { userId: string; role: string }) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: stageId },
+      include: {
+        project: { select: { id: true, homeownerId: true, generalContractorId: true, status: true } },
+        media: stageMediaQuery,
+      },
     });
+    if (!stage || stage.projectId !== projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+    if (actor.role !== 'admin') {
+      if (stage.project?.status === 'paused') {
+        throw new ForbiddenException('Project is paused for admin inspection');
+      }
+      if (stage.project?.homeownerId !== actor.userId && stage.project?.generalContractorId !== actor.userId) {
+        throw new ForbiddenException('You do not have permission to view this project');
+      }
+    }
+    const viewer: MediaViewer = actor.role === 'admin' ? 'admin' : actor.role === 'general_contractor' ? 'gc' : 'homeowner';
+    return (stage.media || []).map((row: any) => this.shapeStageMedia(row, viewer, projectId));
+  }
+
+  private async loadMediaForEdit(mediaId: string, actor: { userId: string; role: string }) {
+    const media = await this.prisma.stageMedia.findUnique({
+      where: { id: mediaId },
+      include: {
+        stage: { select: { project: { select: { generalContractorId: true } } } },
+      },
+    });
+    if (!media) throw new NotFoundException('Media not found');
+    if (actor.role !== 'admin' && media.stage?.project?.generalContractorId !== actor.userId) {
+      throw new ForbiddenException('You do not have permission to change this photo');
+    }
+    return media;
   }
 
   /**
    * Update media
    */
-  async updateStageMedia(mediaId: string, dto: Partial<CreateStageMediaDto>) {
+  async updateStageMedia(mediaId: string, dto: UpdateStageMediaDto, actor: { userId: string; role: string }) {
+    await this.loadMediaForEdit(mediaId, actor);
+    const data: { caption?: string; order?: number } = {};
+    if (dto.caption !== undefined) data.caption = dto.caption;
+    if (dto.order !== undefined) data.order = dto.order;
     return this.prisma.stageMedia.update({
       where: { id: mediaId },
-      data: dto,
+      data,
     });
   }
 
   /**
    * Delete media
    */
-  async deleteStageMedia(mediaId: string) {
+  async deleteStageMedia(mediaId: string, actor: { userId: string; role: string }) {
+    await this.loadMediaForEdit(mediaId, actor);
     return this.prisma.stageMedia.delete({
       where: { id: mediaId },
     });

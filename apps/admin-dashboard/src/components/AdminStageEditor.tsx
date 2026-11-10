@@ -910,6 +910,29 @@ function TeamTab({
   );
 }
 
+function recordedText(value: unknown) {
+  if (value == null || value === '') return 'not recorded';
+  return String(value);
+}
+
+function recordedTime(value?: string | null) {
+  if (!value) return 'not recorded';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'not recorded';
+  return date.toLocaleString();
+}
+
+function recordedHash(value?: string | null) {
+  if (!value) return 'not recorded';
+  return value.slice(0, 12);
+}
+
+function provenancePillStyle(tone?: string) {
+  if (tone === 'ok') return { color: '#166534', background: '#DCFCE7' };
+  if (tone === 'warn') return { color: '#B45309', background: '#FEF3C7' };
+  return { color: '#4B5563', background: '#F3F4F6' };
+}
+
 function PhotosTab({
   projectId,
   stageId,
@@ -925,13 +948,22 @@ function PhotosTab({
 }) {
   const [uploading, setUploading] = useState(false);
   const [caption, setCaption] = useState('');
+  const [detailsOpen, setDetailsOpen] = useState<Record<string, boolean>>({});
 
   const upload = async (file: File, type: 'photo' | 'video') => {
     setUploading(true);
     onError('');
     try {
-      const { url } = await api.uploadFile(file);
-      const data: CreateMediaData = { type, url, caption: caption.trim() || undefined, order: (media?.length || 0) };
+      const uploaded = await api.uploadFile(file);
+      const data: CreateMediaData = {
+        type,
+        url: uploaded.url,
+        caption: caption.trim() || undefined,
+        order: (media?.length || 0),
+        ...(uploaded.sha256 ? { sha256: uploaded.sha256 } : {}),
+        ...(uploaded.originalSha256 ? { originalSha256: uploaded.originalSha256 } : {}),
+        ...(uploaded.fingerprintToken ? { fingerprintToken: uploaded.fingerprintToken } : {}),
+      };
       await stageDocumentationService.addMedia(projectId, stageId, data);
       setCaption('');
       await onChanged();
@@ -971,11 +1003,47 @@ function PhotosTab({
                 ) : (
                   <div className="h-40 bg-gray-100 flex items-center justify-center text-sm text-gray-500">{m.type}</div>
                 )}
-                <div className="p-3 flex justify-between items-start gap-2">
-                  <p className="text-xs text-gray-600 truncate">{m.caption || 'No caption'}</p>
-                  <button type="button" onClick={() => remove(m.id)} className="text-red-600 shrink-0">
-                    <Trash2 className="w-4 h-4" />
+                <div className="p-3 space-y-2">
+                  <div className="flex justify-between items-start gap-2">
+                    <p className="text-xs text-gray-600 truncate">{m.caption || 'No caption'}</p>
+                    <button type="button" onClick={() => remove(m.id)} className="text-red-600 shrink-0">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                  {m.provenance?.label ? (
+                    <span className="inline-block text-xs px-2 py-0.5 rounded-full" style={provenancePillStyle(m.provenance.tone)}>
+                      {m.provenance.label}
+                    </span>
+                  ) : null}
+                  {m.provenance?.duplicateLabel ? (
+                    m.duplicateOf?.projectId && m.duplicateOf.projectId !== projectId ? (
+                      <Link href={`/projects/${m.duplicateOf.projectId}/stages/${m.duplicateOf.stageId}`} className="block text-xs" style={{ color: '#B45309' }}>
+                        {m.provenance.duplicateLabel}
+                      </Link>
+                    ) : (
+                      <p className="text-xs" style={{ color: '#B45309' }}>{m.provenance.duplicateLabel}</p>
+                    )
+                  ) : null}
+                  <button
+                    type="button"
+                    className="text-xs text-gray-500 underline"
+                    onClick={() => setDetailsOpen((open) => ({ ...open, [m.id]: !open[m.id] }))}
+                  >
+                    {detailsOpen[m.id] ? 'Hide details' : 'Details'}
                   </button>
+                  {detailsOpen[m.id] ? (
+                    <dl className="text-xs text-gray-600 space-y-1">
+                      <div>Uploader: {m.uploadedBy ? `${m.uploadedBy.fullName || 'not recorded'} (${recordedText(m.uploadedBy.role)})` : 'not recorded'}</div>
+                      <div>Source: {recordedText(m.source)}</div>
+                      <div>Taken at: {recordedTime(m.capturedAt)}</div>
+                      <div>Received at: {recordedTime(m.createdAt)}</div>
+                      <div>Location: {m.captureLat == null || m.captureLng == null ? 'not recorded' : `${m.captureLat}, ${m.captureLng}`}</div>
+                      <div>Accuracy: {m.accuracyMeters == null ? 'not recorded' : `${m.accuracyMeters} m`}</div>
+                      <div>Distance from site: {m.distanceFromSiteMeters == null ? 'not recorded' : `${m.distanceFromSiteMeters} m`}</div>
+                      <div>sha256: {recordedHash(m.sha256)}</div>
+                      <div>originalSha256: {recordedHash(m.originalSha256)}</div>
+                    </dl>
+                  ) : null}
                 </div>
               </div>
             );
