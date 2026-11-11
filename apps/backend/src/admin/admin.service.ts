@@ -6,39 +6,31 @@ import { PlanFileHealthService } from './plan-file-health.service';
 import { EmailService } from '../email/email.service';
 import type { EmailHealthReport } from '../email/email.service';
 import { AdminEmailAudience, SendBulkEmailDto } from './dto/send-bulk-email.dto';
+import { buildDashboard, type RecentActivityItem } from './dashboard-build';
+import { lagosWeekContaining } from './lagos-week';
 import * as bcrypt from 'bcryptjs';
 
-const STALLED_DAYS = 7;
-const RECENT_ACTIVITY_LIMIT = 10;
+export type { RecentActivityItem };
 
-export type DashboardStats = {
-  totalUsers: number;
-  verifiedPercent: number;
-  activeBuilds: number;
-  atRiskCount: number;
-  paymentsThisMonth: number;
-  paymentsSuccessPercent: number;
-  openDisputes: number;
-  urgentDisputes: number;
-};
-
-export type CriticalAlert = {
-  type: 'stalled_project' | 'failed_payments' | 'gcs_pending_verification' | 'missing_plan_files';
-  title: string;
-  detail: string;
-  tone: 'amber' | 'red' | 'blue';
-  link?: string;
-  data?: Record<string, unknown>;
-};
-
-export type RecentActivityItem = {
-  type: string;
-  label: string;
-  detail: string;
-  createdAt: string;
-  link?: string;
-  data?: Record<string, unknown>;
-};
+const ACTIVITY_TYPES = new Set([
+  'stage_media_added',
+  'stage_pending_approval',
+  'stage_approved',
+  'stage_approved_on_behalf',
+  'stage_change_request_submitted',
+  'manual_payment_declared',
+  'manual_payment_confirmed',
+  'stage_funded',
+  'stage_funding_requested',
+  'new_dispute',
+  'dispute_status_update',
+  'payment_failed',
+  'new_user_signup',
+  'gc_accepted',
+  'project_completed',
+  'scam_report',
+  'listing_review',
+]);
 
 export type FullAdminAccessAccount = {
   id: string;
@@ -83,13 +75,140 @@ export class AdminService {
   ) {}
 
   async getDashboard(adminUserId: string) {
-    const [stats, criticalAlerts, recentActivity] = await Promise.all([
-      this.getStats(),
-      this.getCriticalAlerts(),
+    const now = new Date();
+    const week = lagosWeekContaining(now);
+    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const paidInWeek = { gte: week.start, lte: week.end };
+
+    const [
+      projects,
+      weekPayments,
+      weekMaterials,
+      weekTeam,
+      failedPayments,
+      missingPlanFiles,
+      unverifiedGcs,
+      scamReports,
+      listingReviews,
+      gcPlans,
+      vendorClaims,
+      professionalClaims,
+      artisanClaims,
+      activity,
+    ] = await Promise.all([
+      this.prisma.project.findMany({
+        where: { archivedAt: null },
+        select: {
+          id: true,
+          name: true,
+          status: true,
+          archivedAt: true,
+          updatedAt: true,
+          budget: true,
+          riskLevel: true,
+          needsExtraMonitoring: true,
+          generalContractorId: true,
+          paymentConfirmationStatus: true,
+          paymentDeclaredAt: true,
+          homeowner: { select: { fullName: true } },
+          generalContractor: { select: { fullName: true } },
+          stages: {
+            orderBy: { order: 'asc' },
+            select: {
+              id: true,
+              name: true,
+              status: true,
+              order: true,
+              updatedAt: true,
+              submittedForApprovalAt: true,
+              approvalReminderCount: true,
+              estimatedCost: true,
+              materials: {
+                select: { status: true, payeeKind: true, totalPrice: true, quantity: true, unitPrice: true, updatedAt: true },
+              },
+              teamMembers: {
+                select: {
+                  payStatus: true,
+                  paidBy: true,
+                  paidAmount: true,
+                  dailyRate: true,
+                  startDate: true,
+                  endDate: true,
+                  updatedAt: true,
+                },
+              },
+              media: {
+                select: { id: true, createdAt: true, duplicateOfMediaId: true, distanceFromSiteMeters: true, source: true },
+              },
+            },
+          },
+          payments: { select: { id: true, amount: true, status: true, method: true, createdAt: true } },
+          disputes: {
+            where: { status: { in: ['open', 'in_review'] } },
+            select: { id: true, status: true, createdAt: true, stageId: true, reasons: true },
+          },
+          stageChangeRequests: {
+            where: { status: 'pending' },
+            select: {
+              id: true,
+              status: true,
+              additionalAmount: true,
+              additionalDurationDays: true,
+              createdAt: true,
+              stageId: true,
+              stage: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.payment.findMany({
+        where: { status: 'completed', createdAt: paidInWeek },
+        select: { amount: true, status: true, createdAt: true },
+      }),
+      this.prisma.stageMaterial.findMany({
+        where: { status: 'paid', paidAt: paidInWeek },
+        select: { payeeKind: true, status: true, totalPrice: true, quantity: true, unitPrice: true, paidAt: true },
+      }),
+      this.prisma.stageTeamMember.findMany({
+        where: { payStatus: 'paid', paidAt: paidInWeek },
+        select: { payStatus: true, paidBy: true, paidAmount: true, dailyRate: true, startDate: true, endDate: true, paidAt: true },
+      }),
+      this.prisma.payment.findMany({
+        where: { status: 'failed', createdAt: { gte: dayAgo } },
+        select: { createdAt: true },
+      }),
+      this.planFileHealthService.scanMissingPlanFiles(120),
+      this.contractorsService.adminListUnverifiedGCs(),
+      this.prisma.scamReport.count({ where: { status: 'new' } }),
+      this.prisma.listingReview.count({ where: { status: 'pending' } }),
+      this.prisma.design.count({ where: { adminApprovalStatus: 'pending' } }),
+      this.prisma.vendorProfile.count({ where: { claimStatus: 'claim_pending_admin' } }),
+      this.prisma.professionalClaimRequest.count({ where: { status: 'pending' } }),
+      this.prisma.artisanClaimRequest.count({ where: { status: 'pending' } }),
       this.getRecentActivity(adminUserId),
     ]);
 
-    return { stats, criticalAlerts, recentActivity };
+    const gcsReady = (unverifiedGcs || []).filter((gc: { hasUploadedAllVerificationDocuments?: boolean }) => gc.hasUploadedAllVerificationDocuments).length;
+
+    return buildDashboard({
+      now,
+      projects,
+      weekPayments,
+      weekMaterials,
+      weekTeam,
+      failedPayments,
+      missingPlanFiles,
+      gcsReady,
+      trustCounts: {
+        scamReports,
+        listingReviews,
+        gcPlans,
+        vendorClaims,
+        professionalClaims,
+        artisanClaims,
+      },
+      activity,
+    });
   }
 
   async getContractorReviewInsights(): Promise<ContractorReviewInsights> {
@@ -344,157 +463,28 @@ export class AdminService {
     return this.getFullAdminAccessAccounts();
   }
 
-  private async getStats(): Promise<DashboardStats> {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const [
-      userCounts,
-      verifiedCount,
-      projects,
-      paymentsThisMonth,
-      disputes,
-    ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { verified: true } }),
-      this.prisma.project.findMany({
-        where: { status: 'active', archivedAt: null },
-        select: { id: true, riskLevel: true },
-      }),
-      this.prisma.payment.findMany({
-        where: { createdAt: { gte: startOfMonth } },
-        select: { status: true, amount: true },
-      }),
-      this.prisma.projectStageDispute.findMany({
-        where: { status: { in: ['open', 'in_review'] } },
-        select: { reasons: true },
-      }),
-    ]);
-
-    const activeBuilds = projects.length;
-    const atRiskCount = projects.filter((p) => (p as any).riskLevel === 'high').length;
-
-    const completedPayments = paymentsThisMonth.filter((p: any) => p.status === 'completed');
-    const totalPaymentsAmount = completedPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
-    const paymentsSuccessPercent =
-      paymentsThisMonth.length > 0
-        ? Math.round((completedPayments.length / paymentsThisMonth.length) * 100)
-        : 100;
-
-    const openDisputes = disputes.length;
-    const urgentDisputes = disputes.filter((d: any) => (d.reasons as string[])?.includes('payment_mismatch')).length;
-
-    const verifiedPercent = userCounts > 0 ? Math.round((verifiedCount / userCounts) * 100) : 0;
-
-    return {
-      totalUsers: userCounts,
-      verifiedPercent,
-      activeBuilds,
-      atRiskCount,
-      paymentsThisMonth: Math.round(totalPaymentsAmount * 100) / 100,
-      paymentsSuccessPercent,
-      openDisputes,
-      urgentDisputes,
-    };
-  }
-
-  private async getCriticalAlerts(): Promise<CriticalAlert[]> {
-    const alerts: CriticalAlert[] = [];
-    const now = new Date();
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const stalledThreshold = new Date(now.getTime() - STALLED_DAYS * 24 * 60 * 60 * 1000);
-
-    // 1. Stalled projects: active projects with no stage update in STALLED_DAYS
-    const activeProjects = await this.prisma.project.findMany({
-      where: { status: 'active', archivedAt: null },
-      include: {
-        generalContractor: { select: { id: true, fullName: true } },
-        stages: { orderBy: { updatedAt: 'desc' }, take: 1, select: { updatedAt: true } },
-      },
-    });
-
-    for (const p of activeProjects) {
-      const lastStageUpdate = (p as any).stages?.[0]?.updatedAt;
-      const lastUpdate = lastStageUpdate ?? p.updatedAt;
-      if (lastUpdate < stalledThreshold) {
-        const gcName = (p as any).generalContractor?.fullName ?? 'No GC assigned';
-        const daysStalled = Math.floor((now.getTime() - new Date(lastUpdate).getTime()) / (24 * 60 * 60 * 1000));
-        alerts.push({
-          type: 'stalled_project',
-          title: `Project "${p.name}" flagged for stalled progress`,
-          detail: `No updates for ${daysStalled} days • GC: ${gcName}`,
-          tone: 'amber',
-          link: '/projects',
-          data: { projectId: p.id },
-        });
-      }
-    }
-
-    // 2. Failed payments in last 24h
-    const failedPayments = await this.prisma.payment.count({
-      where: {
-        status: 'failed',
-        createdAt: { gte: oneDayAgo },
-      },
-    });
-    if (failedPayments > 0) {
-      alerts.push({
-        type: 'failed_payments',
-        title: `${failedPayments} payment attempt${failedPayments !== 1 ? 's' : ''} failed in the last 24h`,
-        detail: 'Check Stripe webhook status and retry queue',
-        tone: 'red',
-        link: '/projects',
-      });
-    }
-
-    // 3. GCs pending verification
-    const unverifiedGCs = await this.contractorsService.adminListUnverifiedGCs();
-    const gcsWithDocs = unverifiedGCs.filter((g: any) => g.hasUploadedAllVerificationDocuments);
-    if (gcsWithDocs.length > 0) {
-      alerts.push({
-        type: 'gcs_pending_verification',
-        title: `${gcsWithDocs.length} GC${gcsWithDocs.length !== 1 ? 's' : ''} pending verification`,
-        detail: 'Licenses uploaded • awaiting admin review',
-        tone: 'blue',
-        link: '/verification',
-      });
-    }
-
-    // 4. Missing project plan files (detect before GC/homeowner download failures)
-    const missingPlanFiles = await this.planFileHealthService.scanMissingPlanFiles(120);
-    if (missingPlanFiles.length > 0) {
-      alerts.push({
-        type: 'missing_plan_files',
-        title: `${missingPlanFiles.length} project plan file${missingPlanFiles.length !== 1 ? 's are' : ' is'} missing`,
-        detail: 'Some project plans cannot be downloaded. Audit projects and request re-upload where needed.',
-        tone: 'red',
-        link: '/projects',
-        data: { projectIds: missingPlanFiles.slice(0, 20).map((item) => item.projectId) },
-      });
-    }
-
-    return alerts;
-  }
-
   private async getRecentActivity(adminUserId: string): Promise<RecentActivityItem[]> {
     const { items } = await this.notificationsService.getMyNotifications(adminUserId);
-    return items.slice(0, RECENT_ACTIVITY_LIMIT).map((n: any) => ({
-      type: n.type,
-      label: n.title,
-      detail: n.message,
-      createdAt: n.createdAt,
-      link: this.getActivityLink(n),
-      data: n.data,
-    }));
+    return (items || [])
+      .filter((item) => ACTIVITY_TYPES.has(String(item.type)))
+      .slice(0, 5)
+      .map((item) => ({
+        id: String(item.id || `${item.type}:${item.createdAt}`),
+        type: item.type,
+        label: item.title,
+        detail: item.message,
+        createdAt: item.createdAt instanceof Date ? item.createdAt.toISOString() : String(item.createdAt),
+        link: this.getActivityLink(item),
+        data: item.data as Record<string, unknown> | undefined,
+      }));
   }
 
-  private getActivityLink(notification: any): string | undefined {
-    const data = notification.data as Record<string, unknown> | null;
+  private getActivityLink(notification: { type?: string; data?: unknown }): string | undefined {
+    const data = (notification.data || null) as Record<string, unknown> | null;
+    if (data?.stageId && data?.projectId) return `/projects/${data.projectId}/stages/${data.stageId}`;
+    if (data?.projectId) return `/projects/${data.projectId}`;
     if (!data) return undefined;
-    if (data.disputeId || (data.projectId && String(notification.type).includes('dispute'))) return '/disputes';
-    if (data.projectId) return '/projects';
     if (data.interestId || data.rentalListingId) return '/rentals';
-    if (notification.type === 'manual_payment_declared') return '/projects';
     if (notification.type === 'new_user_signup') return '/users';
     return undefined;
   }

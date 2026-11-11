@@ -21,7 +21,7 @@ test.describe('Navigation', () => {
   });
 
   test('should navigate to projects page', async ({ page }) => {
-    await page.getByRole('link', { name: /Projects/i }).click();
+    await page.locator('aside').getByRole('link', { name: 'Projects', exact: true }).click();
     await expect(page).toHaveURL(/\/projects/);
     await expect(page.getByText(/Project Monitoring/i)).toBeVisible();
   });
@@ -66,15 +66,28 @@ test.describe('Navigation', () => {
   });
 
   test('should highlight active menu item', async ({ page }) => {
-    // Dashboard should be active by default
-    const dashboardLink = page.getByRole('link', { name: /Dashboard/i });
-    await expect(dashboardLink).toHaveClass(/bg-blue-600/);
+    const todayLink = page.locator('aside').getByRole('link', { name: 'Today', exact: true });
+    await expect(todayLink).toHaveClass(/bg-gray-950/);
 
-    // Navigate to homeowners
-    await page.getByRole('link', { name: /Homeowners/i }).click();
-    const homeownersLink = page.getByRole('link', { name: /Homeowners/i });
-    await expect(homeownersLink).toHaveClass(/bg-blue-600/);
-    await expect(dashboardLink).not.toHaveClass(/bg-blue-600/);
+    await page.locator('aside').getByRole('link', { name: 'Homeowners', exact: true }).click();
+    const homeownersLink = page.locator('aside').getByRole('link', { name: 'Homeowners', exact: true });
+    await expect(homeownersLink).toHaveClass(/bg-gray-950/);
+    await expect(todayLink).not.toHaveClass(/bg-gray-950/);
+  });
+
+  test('sidebar shows group headings Today, Jobs, Money, Trust, Directory, Growth, Company', async ({ page }) => {
+    const aside = page.locator('aside');
+    for (const heading of ['Today', 'Jobs', 'Money', 'Trust', 'Directory', 'Growth', 'Company']) {
+      await expect(aside.getByText(heading, { exact: true }).first()).toBeVisible();
+    }
+  });
+
+  test('mobile More sheet shows the same groups', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.getByRole('button', { name: 'More' }).click();
+    for (const heading of ['Jobs', 'Money', 'Trust', 'Directory', 'Growth', 'Company']) {
+      await expect(page.getByText(heading, { exact: true }).first()).toBeVisible();
+    }
   });
 
   test('should logout and redirect to login', async ({ page }) => {

@@ -1,6 +1,7 @@
 /** Sidebar route → required permission. Super admin / '*' bypasses. */
 export const NAV_PERMISSION_MAP: Record<string, string> = {
   '/dashboard': 'dashboard.view',
+  '/reports': 'dashboard.view',
   '/homeowners': 'homeowners.view',
   '/contractors': 'contractors.view',
   '/vendors': 'vendors.view',

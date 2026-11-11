@@ -34,7 +34,7 @@ test.describe('Authentication', () => {
 
     // Should redirect to dashboard
     await expect(page).toHaveURL(/\/dashboard/, { timeout: 10000 });
-    await expect(page.getByText(/Dashboard Overview/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   });
 
   test('should require email and password', async ({ page }) => {

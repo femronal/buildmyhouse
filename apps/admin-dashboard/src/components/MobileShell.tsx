@@ -5,32 +5,27 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   BadgeCheck,
-  Briefcase,
   Building2,
-  FileText,
   HardHat,
   House,
   LayoutDashboard,
   LogOut,
-  Mail,
-  MessageSquare,
   MoreHorizontal,
   Scale,
-  Shield,
-  ShieldAlert,
   Store,
-  UserCog,
   Users,
-  Waypoints,
   Wrench,
   X,
 } from 'lucide-react';
 import { logout } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
 import { useDisputes } from '@/hooks/useDisputes';
+import { useAdminDashboard } from '@/hooks/useAdminDashboard';
+import { NAV_GROUPS } from '@/lib/nav-groups';
 
 const titles: Array<{ prefix: string; title: string }> = [
-  { prefix: '/dashboard', title: 'Home' },
+  { prefix: '/dashboard', title: 'Today' },
+  { prefix: '/reports', title: 'Weekly report' },
   { prefix: '/projects', title: 'Projects' },
   { prefix: '/disputes', title: 'Disputes' },
   { prefix: '/vendors', title: 'Vendors' },
@@ -58,44 +53,7 @@ const directoryLinks = [
   { href: '/homeowners', label: 'Homeowners', icon: Users },
 ];
 
-const moreGroups = [
-  {
-    label: 'People',
-    items: [
-      { href: '/homeowners', label: 'Homeowners', icon: Users },
-      { href: '/contractors', label: 'Contractors', icon: HardHat },
-      { href: '/verification', label: 'Verification', icon: Shield },
-    ],
-  },
-  {
-    label: 'Suppliers',
-    items: [
-      { href: '/vendors', label: 'Vendors', icon: Store },
-      { href: '/vendors?categories=1', label: 'Categories', icon: Store },
-      { href: '/artisans', label: 'Artisans', icon: Wrench },
-      { href: '/professionals', label: 'Professionals', icon: BadgeCheck },
-      { href: '/listing-reviews', label: 'Listing reviews', icon: MessageSquare },
-      { href: '/scam-reports', label: 'Scam reports', icon: ShieldAlert },
-    ],
-  },
-  {
-    label: 'Content & outreach',
-    items: [
-      { href: '/articles', label: 'Content', icon: FileText },
-      { href: '/emails', label: 'Emails', icon: Mail },
-      { href: '/growth', label: 'Growth', icon: Waypoints },
-    ],
-  },
-  {
-    label: 'Company',
-    items: [
-      { href: '/people', label: 'People & HR', icon: UserCog },
-      { href: '/tools', label: 'Tools', icon: Wrench },
-      { href: '/opportunities', label: 'Opportunities', icon: Briefcase },
-      { href: '/admin-access', label: 'Admin access', icon: Shield },
-    ],
-  },
-];
+const moreGroups = NAV_GROUPS.filter((group) => group.label !== 'Today');
 
 function pageTitle(pathname: string) {
   const match = titles.find((item) => pathname === item.prefix || pathname.startsWith(`${item.prefix}/`));
@@ -106,17 +64,19 @@ export default function MobileShell() {
   const pathname = usePathname();
   const [sheet, setSheet] = useState<'directory' | 'more' | null>(null);
   const { disputes } = useDisputes('open');
-  const openDisputes = disputes.length;
+  const dashboard = useAdminDashboard();
+  const openDisputes = dashboard.data?.strip.openDisputes.count ?? disputes.length;
+  const todayCount = dashboard.isError ? 0 : dashboard.data?.strip.needsYou.total || 0;
   const title = pageTitle(pathname);
   const directoryActive = directoryLinks.some((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
 
   const tabs = useMemo(
     () => [
-      { href: '/dashboard', label: 'Home', icon: House, active: pathname === '/dashboard' || pathname === '/' },
-      { href: '/projects', label: 'Projects', icon: Building2, active: pathname.startsWith('/projects') },
+      { href: '/dashboard', label: 'Today', icon: House, active: pathname === '/dashboard' || pathname === '/', badge: todayCount },
+      { href: '/projects', label: 'Jobs', icon: Building2, active: pathname.startsWith('/projects') },
       { href: '/disputes', label: 'Disputes', icon: Scale, active: pathname.startsWith('/disputes'), badge: openDisputes },
     ],
-    [openDisputes, pathname],
+    [openDisputes, pathname, todayCount],
   );
 
   return (
@@ -142,7 +102,7 @@ export default function MobileShell() {
               <span className={tab.active ? 'font-semibold text-gray-950' : 'text-gray-500'}>{tab.label}</span>
               {tab.active ? <span className="absolute bottom-1 h-1 w-1 rounded-full bg-[#16A34A]" /> : null}
               {tab.badge ? (
-                <span className="absolute right-3 top-1 min-w-4 rounded-full bg-gray-950 px-1 text-center text-[10px] leading-4 text-white">
+                <span className={`absolute right-3 top-1 min-w-4 rounded-full px-1 text-center text-[10px] leading-4 text-white ${tab.href === '/dashboard' || tab.href === '/disputes' ? 'bg-red-600' : 'bg-gray-950'}`}>
                   {tab.badge > 9 ? '9+' : tab.badge}
                 </span>
               ) : null}
