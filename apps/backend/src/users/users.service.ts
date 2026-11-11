@@ -194,7 +194,10 @@ export class UsersService {
     if (user.role === 'general_contractor') {
       await this.prisma.contractor.updateMany({
         where: { userId: id },
-        data: { verified },
+        data: {
+          verified,
+          ...(!verified ? { verifiedAt: null } : !user.verified ? { verifiedAt: new Date() } : {}),
+        },
       });
     }
 

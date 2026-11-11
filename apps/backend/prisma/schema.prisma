@@ -359,6 +359,7 @@ model User {
   listingReviews                  ListingReview[]
   scamReports                     ScamReport[]
   uploadedStageMedia              StageMedia[]                 @relation("StageMediaUploader")
+  paymentsConfirmed               Payment[]                    @relation("PaymentConfirmedBy")
 
   @@map("users")
 }
@@ -654,11 +655,14 @@ model Payment {
   // Snapshot when paid (preserved when project deleted)
   snapshotProjectName String?
   snapshotStageName   String?
+  confirmedById       String?
 
   // Relations
-  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
-  stage   Stage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  project     Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  stage       Stage?   @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  confirmedBy User?    @relation("PaymentConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
 
+  @@index([confirmedById])
   @@map("payments")
 }
 
@@ -733,7 +737,8 @@ model Contractor {
   rating                          Float    @default(0)
   reviews                         Int      @default(0)
   projects                        Int      @default(0)
-  verified                        Boolean  @default(false)
+  verified                        Boolean   @default(false)
+  verifiedAt                      DateTime?
   imageUrl                        String?
   hiringFee                       Float
   type                            String // 'general_contractor' | 'subcontractor'
@@ -1282,6 +1287,7 @@ model StageTeamMember {
   invoiceUrl   String?
   notes        String?
   payStatus    String    @default("planned") // planned | invoiced | paid | rejected
+  invoicedAt   DateTime?
   paidAmount   Float?
   paidAt       DateTime?
   paidBy       String? // bmh | gc. Required when payStatus is paid.
@@ -1311,6 +1317,7 @@ model StageMaterial {
   notes           String?
   payeeKind       String // artisan | shop | other
   status          String    @default("planned") // planned | invoiced | paid | rejected
+  invoicedAt      DateTime?
   paidAt          DateTime?
   hoPaymentRef    String?
   createdAt       DateTime  @default(now())
@@ -5148,4 +5155,33 @@ model ScamReport {
   @@index([status, createdAt])
   @@index([listingKind, listingId])
   @@map("scam_reports")
+}
+
+model WeeklyReportSend {
+  id             String    @id @default(uuid())
+  weekStart      DateTime  @unique
+  status         String    @default("sending")
+  recipientCount Int       @default(0)
+  sentCount      Int       @default(0)
+  failedCount    Int       @default(0)
+  createdAt      DateTime  @default(now())
+  finishedAt     DateTime?
+
+  recipients WeeklyReportRecipient[]
+
+  @@map("weekly_report_sends")
+}
+
+model WeeklyReportRecipient {
+  id        String   @id @default(uuid())
+  sendId    String
+  userId    String
+  email     String
+  status    String   @default("sending")
+  createdAt DateTime @default(now())
+
+  send WeeklyReportSend @relation(fields: [sendId], references: [id], onDelete: Cascade)
+
+  @@unique([sendId, userId])
+  @@map("weekly_report_recipients")
 }

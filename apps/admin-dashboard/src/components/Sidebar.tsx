@@ -63,7 +63,7 @@ export default function Sidebar({ isMobile = false, onNavigate, onClose }: Sideb
   })).filter((group) => group.items.length > 0);
 
   return (
-    <aside className={`flex w-56 flex-col bg-gray-900 px-3 py-4 text-white ${isMobile ? 'min-h-full' : 'h-full min-h-screen'}`}>
+    <aside className={`no-print flex w-56 flex-col bg-gray-900 px-3 py-4 text-white ${isMobile ? 'min-h-full' : 'h-full min-h-screen'}`}>
       <div className="mb-4 flex items-start justify-between gap-2">
         <div>
           <h1 className="font-poppins text-base font-bold leading-tight">BuildMyHouse</h1>

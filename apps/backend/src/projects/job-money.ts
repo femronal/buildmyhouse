@@ -213,6 +213,7 @@ export function materialPayWrite(
     status?: string;
     paidAt?: Date | null;
     hoPaymentRef?: string | null;
+    invoicedAt?: Date | null;
   } = {};
 
   if (mode === 'create') {
@@ -225,6 +226,7 @@ export function materialPayWrite(
     data.payeeKind = kind;
     data.status = status;
     data.paidAt = status === 'paid' ? parseDate(dto.paidAt) || new Date() : null;
+    data.invoicedAt = status === 'invoiced' ? new Date() : null;
     if (dto.hoPaymentRef !== undefined) data.hoPaymentRef = cleanRef(dto.hoPaymentRef);
     return data;
   }
@@ -242,6 +244,8 @@ export function materialPayWrite(
     assertStatus(status);
     data.status = status;
     data.paidAt = status === 'paid' ? parseDate(dto.paidAt) || (existing?.paidAt ? new Date(existing.paidAt) : new Date()) : null;
+    if (status === 'invoiced' && existing?.status !== 'invoiced') data.invoicedAt = new Date();
+    else if (status === 'planned' || status === 'rejected') data.invoicedAt = null;
   } else if (dto.paidAt !== undefined && existing?.status === 'paid') {
     data.paidAt = parseDate(dto.paidAt) || new Date();
   }
@@ -267,6 +271,7 @@ export function teamPayWrite(
     paidAt?: Date | null;
     paidBy?: string | null;
     hoPaymentRef?: string | null;
+    invoicedAt?: Date | null;
   } = {};
 
   const nextStatus = dto.payStatus !== undefined
@@ -278,6 +283,13 @@ export function teamPayWrite(
   if (dto.payStatus !== undefined || mode === 'create') {
     assertStatus(nextStatus);
     data.payStatus = nextStatus;
+    if (mode === 'create') {
+      data.invoicedAt = nextStatus === 'invoiced' ? new Date() : null;
+    } else if (nextStatus === 'invoiced' && existing?.payStatus !== 'invoiced') {
+      data.invoicedAt = new Date();
+    } else if (nextStatus === 'planned' || nextStatus === 'rejected') {
+      data.invoicedAt = null;
+    }
   }
 
   const paidByInput = dto.paidBy !== undefined ? String(dto.paidBy || '').trim() : undefined;

@@ -24,7 +24,7 @@ test.describe('Dashboard', () => {
     await page.locator('main').getByRole('link', { name: 'Weekly report' }).click();
     await expect(page).toHaveURL(/\/reports\/weekly/);
     await expect(page.getByRole('heading', { name: 'Weekly report' })).toBeVisible();
-    await expect(page.getByText('The weekly report is being built. It will cover Monday to Sunday, Lagos time.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download PDF' })).toBeVisible();
   });
 
   test('weekly report button is visible at 390px wide', async ({ page }) => {

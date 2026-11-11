@@ -208,3 +208,37 @@ body {
   border-color: #171717;
 }
 
+.print-only {
+  display: none;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  body,
+  .admin-content {
+    background: #fff !important;
+    width: 100% !important;
+  }
+
+  .report-section {
+    break-inside: avoid;
+    box-shadow: none !important;
+  }
+
+  table thead {
+    display: table-header-group;
+  }
+
+  @page {
+    size: A4;
+    margin: 14mm;
+  }
+}
+

@@ -220,4 +220,40 @@ describe('job money payout sums', () => {
     expect(money.paidToShops).toBe(3000);
     expect(Math.max(0, 15000 - money.moneyMoved)).toBe(12000);
   });
+
+  it('stamps invoicedAt when a material line is created invoiced and when it moves to invoiced', () => {
+    const created = materialPayWrite({ payeeKind: 'shop', status: 'invoiced' }, undefined, 'create');
+    expect(created.invoicedAt).toBeInstanceOf(Date);
+    const moved = materialPayWrite({ status: 'invoiced' }, { status: 'planned' }, 'update');
+    expect(moved.invoicedAt).toBeInstanceOf(Date);
+  });
+
+  it('does not change invoicedAt when an invoiced material line is saved again', () => {
+    const again = materialPayWrite({ status: 'invoiced' }, { status: 'invoiced' }, 'update');
+    expect(again.invoicedAt).toBeUndefined();
+  });
+
+  it('clears invoicedAt when a material line goes back to planned and keeps it when the line is paid', () => {
+    const cleared = materialPayWrite({ status: 'planned' }, { status: 'invoiced' }, 'update');
+    expect(cleared.invoicedAt).toBeNull();
+    const paid = materialPayWrite({ status: 'paid', payeeKind: 'shop' }, { status: 'invoiced' }, 'update');
+    expect(paid.invoicedAt).toBeUndefined();
+    expect(paid.paidAt).toBeInstanceOf(Date);
+    expect(paid.status).toBe('paid');
+  });
+
+  it('stamps invoicedAt on team lines with the same rules', () => {
+    const created = teamPayWrite({ payStatus: 'invoiced' }, undefined, 'create');
+    expect(created.invoicedAt).toBeInstanceOf(Date);
+    const moved = teamPayWrite({ payStatus: 'invoiced' }, { payStatus: 'planned' }, 'update');
+    expect(moved.invoicedAt).toBeInstanceOf(Date);
+    const again = teamPayWrite({ payStatus: 'invoiced' }, { payStatus: 'invoiced' }, 'update');
+    expect(again.invoicedAt).toBeUndefined();
+    const cleared = teamPayWrite({ payStatus: 'planned' }, { payStatus: 'invoiced' }, 'update');
+    expect(cleared.invoicedAt).toBeNull();
+    const paid = teamPayWrite({ payStatus: 'paid', paidBy: 'bmh', paidAmount: 1000 }, { payStatus: 'invoiced' }, 'update');
+    expect(paid.invoicedAt).toBeUndefined();
+    expect(paid.paidAt).toBeInstanceOf(Date);
+    expect(paid.paidBy).toBe('bmh');
+  });
 });

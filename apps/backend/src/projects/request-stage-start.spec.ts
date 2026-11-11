@@ -89,7 +89,7 @@ describe('requestStageStart', () => {
       .mockResolvedValueOnce(fundedProject)
       .mockResolvedValue(fundedProject);
 
-    const result = await service.confirmStageFunding('p1', 's3');
+    const result = await service.confirmStageFunding('p1', 's3', 'admin-1');
 
     expect(prisma.payment.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -98,6 +98,7 @@ describe('requestStageStart', () => {
         method: 'manual',
         transactionId: 'stage-fund-s3',
         stageId: 's3',
+        confirmedById: 'admin-1',
       }),
     });
     expect(wsService.sendNotification).toHaveBeenCalledWith(

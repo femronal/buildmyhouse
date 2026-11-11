@@ -192,8 +192,9 @@ export class ProjectsController {
   confirmStageFunding(
     @Param('projectId') projectId: string,
     @Param('stageId') stageId: string,
+    @Request() req: any,
   ) {
-    return this.projectsService.confirmStageFunding(projectId, stageId);
+    return this.projectsService.confirmStageFunding(projectId, stageId, req.user.sub);
   }
 
   @Post(':projectId/stages/:stageId/submit-for-approval')
@@ -635,8 +636,9 @@ export class ProjectsController {
   confirmManualPayment(
     @Param('id') id: string,
     @Body() dto: ConfirmManualPaymentDto,
+    @Request() req: any,
   ) {
-    return this.projectsService.confirmManualPayment({ projectId: id, amount: dto.amount });
+    return this.projectsService.confirmManualPayment({ projectId: id, amount: dto.amount, actorUserId: req.user.sub });
   }
 
   @Patch(':id/payment-model')

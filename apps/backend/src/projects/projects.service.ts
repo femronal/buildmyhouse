@@ -868,7 +868,7 @@ export class ProjectsService {
     return updated;
   }
 
-  async confirmManualPayment(params: { projectId: string; amount: number }) {
+  async confirmManualPayment(params: { projectId: string; amount: number; actorUserId: string }) {
     const amount = Number(params.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('Enter the amount on the receipt.');
@@ -911,6 +911,7 @@ export class ProjectsService {
           method: 'manual',
           transactionId: RECEIPT_PAYMENT_ID,
           snapshotProjectName: project.name,
+          confirmedById: params.actorUserId,
         },
       });
 
@@ -1087,6 +1088,7 @@ export class ProjectsService {
                 status: 'completed',
                 method: 'manual',
                 transactionId: ADMIN_CHOICE_PAYMENT_ID,
+                confirmedById: params.actorRole === 'admin' ? params.actorUserId : null,
               },
             });
           } else {
@@ -1100,6 +1102,7 @@ export class ProjectsService {
                 method: 'manual',
                 transactionId: ADMIN_CHOICE_PAYMENT_ID,
                 snapshotProjectName: project.name,
+                confirmedById: params.actorRole === 'admin' ? params.actorUserId : null,
               },
             });
           }
@@ -1415,7 +1418,7 @@ export class ProjectsService {
     };
   }
 
-  async confirmStageFunding(projectId: string, stageId: string) {
+  async confirmStageFunding(projectId: string, stageId: string, actorUserId: string) {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
@@ -1452,6 +1455,7 @@ export class ProjectsService {
             status: 'completed',
             method: 'manual',
             transactionId,
+            confirmedById: actorUserId,
             snapshotProjectName: project.name,
             snapshotStageName: next.stage.name,
           },

@@ -81,7 +81,7 @@ export default function MobileShell() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 grid h-16 grid-cols-[120px_minmax(0,1fr)_auto] items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden">
+      <header className="no-print sticky top-0 z-30 grid h-16 grid-cols-[120px_minmax(0,1fr)_auto] items-center gap-2 border-b border-gray-200 bg-white px-3 md:hidden">
         <img
           src="/logo.png"
           alt="BuildMyHouse"
@@ -93,7 +93,7 @@ export default function MobileShell() {
         <NotificationBell />
       </header>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
+      <nav className="no-print fixed inset-x-0 bottom-0 z-40 grid h-16 grid-cols-5 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -121,7 +121,7 @@ export default function MobileShell() {
       </nav>
 
       {sheet ? (
-        <div className="fixed inset-0 z-50 md:hidden">
+        <div className="no-print fixed inset-0 z-50 md:hidden">
           <button type="button" className="absolute inset-0 bg-black/40" aria-label="Close" onClick={() => setSheet(null)} />
           <div className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white px-4 pb-8 pt-3">
             <div className="mb-3 flex items-center justify-between">

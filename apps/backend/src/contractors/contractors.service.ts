@@ -3043,6 +3043,7 @@ export class ContractorsService {
       where: { id: contractor.id },
       data: {
         verified,
+        ...(isVerificationTransition ? { verifiedAt: new Date() } : !verified ? { verifiedAt: null } : {}),
         ...(shouldUpdateSpecialty
           ? {
               specialtyCategory,

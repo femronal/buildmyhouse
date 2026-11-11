@@ -45,6 +45,19 @@ export function lagosWeekFromIso(iso: string): LagosWeek {
   return weekFromLagosMonday(year, month - 1, day);
 }
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+export function lagosDateLabel(date: Date): string {
+  const shifted = new Date(date.getTime() + LAGOS_OFFSET_MS);
+  return `${shifted.getUTCDate()} ${MONTHS[shifted.getUTCMonth()]} ${shifted.getUTCFullYear()}`;
+}
+
+export function lagosShortLabel(iso: string, withYear = false): string {
+  const [year, month, day] = iso.split('-').map(Number);
+  const text = `${day} ${MONTHS[(month || 1) - 1]}`;
+  return withYear ? `${text} ${year}` : text;
+}
+
 export function addIsoDays(iso: string, days: number): string {
   const [year, month, day] = iso.split('-').map(Number);
   const date = new Date(Date.UTC(year, month - 1, day + days));

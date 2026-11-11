@@ -612,7 +612,7 @@ Reply to this email with your payment receipt. BuildMyHouse confirms the payment
     );
   }
 
-  private getAdminAppUrl(): string {
+  public getAdminAppUrl(): string {
     return this.normalizeAppUrl(
       this.config.get<string>('ADMIN_DASHBOARD_URL') || 'https://admin.buildmyhouse.app',
     );

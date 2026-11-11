@@ -8,6 +8,10 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { PlanFileHealthService } from './plan-file-health.service';
 import { PlanFileHealthScheduler } from './plan-file-health.scheduler';
 import { UploadModule } from '../upload/upload.module';
+import { AdminAccessModule } from '../admin-access/admin-access.module';
+import { ReportsController } from './reports.controller';
+import { WeeklyReportService } from './weekly-report.service';
+import { WeeklyReportScheduler } from './weekly-report.scheduler';
 
 @Module({
   imports: [
@@ -16,8 +20,9 @@ import { UploadModule } from '../upload/upload.module';
     ContractorsModule,
     NotificationsModule,
     UploadModule,
+    AdminAccessModule,
   ],
-  controllers: [AdminController],
-  providers: [AdminService, PlanFileHealthService, PlanFileHealthScheduler],
+  controllers: [AdminController, ReportsController],
+  providers: [AdminService, PlanFileHealthService, PlanFileHealthScheduler, WeeklyReportService, WeeklyReportScheduler],
 })
 export class AdminModule {}
