@@ -6,7 +6,7 @@ export default function RepairPricingRoute() {
   const canonicalPath = '/pricing/repairs';
   const title = 'Repair Pricing Guide Nigeria | BuildMyHouse';
   const description =
-    'Parseable repair pricing ranges in Nigeria (NGN). Plumbing, electrical, roof leaks, drainage, windows. BuildMyHouse platform service fee is free for now.';
+    'Parseable repair pricing ranges in Nigeria (NGN). Plumbing, electrical, roof leaks, drainage, windows.';
 
   useWebSeo({
     title,

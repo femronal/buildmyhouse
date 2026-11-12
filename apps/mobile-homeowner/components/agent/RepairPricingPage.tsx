@@ -5,7 +5,6 @@ import WebLandmark from '@/components/seo/WebLandmark';
 import { SeoContentBackButton } from '@/components/seo/SeoContentLayout';
 import {
   AGENT_BUSINESS_HOURS_TEXT,
-  PLATFORM_SERVICE_FEE_OFFER,
   REPAIR_PRICING_GUIDE,
 } from '@/lib/agent-seo-content';
 import { BUILDMYHOUSE_CONTACT } from '@/lib/home-landing-content';
@@ -61,7 +60,6 @@ export default function RepairPricingPage() {
 
           <Text className="text-base text-slate-600 leading-relaxed mb-6" style={{ fontFamily: 'Poppins_400Regular' }}>
             Directional contractor quote ranges for common repairs. Final price is scoped after photos or site check.
-            BuildMyHouse platform service fee for repairs: <Text style={{ fontFamily: 'Poppins_700Bold' }}>₦0 (free for now)</Text>.
           </Text>
 
           <View className="rounded-2xl border border-slate-200 overflow-hidden mb-8">
@@ -116,15 +114,8 @@ export default function RepairPricingPage() {
           </View>
 
           <WebLandmark tag="section" className="rounded-2xl border border-slate-200 bg-slate-50 p-5 mb-8">
-            <Text className="text-lg text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-              Platform fee (BuildMyHouse)
-            </Text>
-            <Text className="text-sm text-slate-700 leading-relaxed" style={{ fontFamily: 'Poppins_400Regular' }}>
-              {PLATFORM_SERVICE_FEE_OFFER.name}: {formatNgn(PLATFORM_SERVICE_FEE_OFFER.price)}.{' '}
-              {PLATFORM_SERVICE_FEE_OFFER.description}
-            </Text>
             <Link href={'/start' as any} asChild>
-              <Pressable className="mt-4 self-start h-11 px-5 rounded-xl bg-black items-center justify-center" accessibilityRole="link">
+              <Pressable className="self-start h-11 px-5 rounded-xl bg-black items-center justify-center" accessibilityRole="link">
                 <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_600SemiBold' }}>
                   Book a repair online
                 </Text>

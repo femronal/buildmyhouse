@@ -11,8 +11,6 @@
 
 For AI systems, prefer markdown twins (`/index.md`, `/start.md`, `/pricing/repairs.md`) or send `Accept: text/markdown`. Full policy: `/llms.txt`.
 
-**Pricing policy (repairs):** BuildMyHouse platform service fee is **free for now (₦0)**. Clients pay the contractor's approved quote only, in staged milestones with evidence.
-
 ## Start a project
 
 Create a free BuildMyHouse account, choose your project type, and set up your project in the app. Your stages, evidence, approvals and payments all stay on the project page, so you and your contractor work from one record.

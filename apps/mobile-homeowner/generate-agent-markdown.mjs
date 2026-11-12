@@ -16,7 +16,7 @@ const formatNgn = (n) => `₦${n.toLocaleString('en-NG')}`;
 
 const pricingTable = REPAIR_PRICING.map(
   (row) =>
-    `- **${row.service}**: ${formatNgn(row.low)} – ${formatNgn(row.high)} (${row.unit}); BuildMyHouse platform fee: ₦0`,
+    `- **${row.service}**: ${formatNgn(row.low)} – ${formatNgn(row.high)} (${row.unit})`,
 ).join('\n');
 
 const pages = {
@@ -35,7 +35,6 @@ const pages = {
 
 - **Set up your project in the app**: ${WEB_URL}/login (create an account, then choose your project type)
 - **Quick request form**: ${WEB_URL}/start
-- Platform service fee for repairs: **₦0 (free for now)** - client pays the contractor's approved quote only
 
 ## Pricing (directional, Lagos)
 
@@ -83,8 +82,6 @@ A step-by-step repair brief. The job starts when a contractor inspects it in the
 **URL:** ${WEB_URL}/start/repair
 
 Tell us what needs fixing, where the property is, and when a visit works. This is an intake brief, not a price. A contractor inspects the property, then you agree the quote in the app.
-
-Platform service fee for repairs: **₦0 (free for now)**.
 `,
 
   'start/upgrade.md': `# Start an upgrade or renovation | BuildMyHouse
@@ -119,10 +116,6 @@ Tell us which space you want furnished or redesigned, where it is, and a rough b
 Directional contractor quote ranges in Lagos, Nigeria (NGN).
 
 **URL:** ${WEB_URL}/pricing/repairs
-
-## BuildMyHouse platform fee
-
-**₦0 (free for now)** for all repair coordination. Client pays verified contractor quote only.
 
 ## Contractor quote ranges
 

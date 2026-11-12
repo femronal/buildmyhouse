@@ -4,10 +4,6 @@ Directional contractor quote ranges in Lagos, Nigeria (NGN).
 
 **URL:** https://buildmyhouse.app/pricing/repairs
 
-## BuildMyHouse platform fee
-
-**₦0 (free for now)** for all repair coordination. Client pays verified contractor quote only.
-
 ## Contractor quote ranges
 
 | Service | Range (NGN) | Unit |

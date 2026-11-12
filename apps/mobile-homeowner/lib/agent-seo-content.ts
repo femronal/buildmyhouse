@@ -13,7 +13,7 @@ export const BUILDMYHOUSE_OPENING_HOURS = [
   },
 ] as const;
 
-/** Directional contractor quote ranges (NGN). BuildMyHouse service fee is currently free. */
+/** Directional contractor quote ranges (NGN). */
 export const REPAIR_PRICING_GUIDE = [
   {
     service: 'Plumbing repair',
@@ -58,11 +58,9 @@ export const REPAIR_PRICING_GUIDE = [
 ] as const;
 
 export const PLATFORM_SERVICE_FEE_OFFER = {
-  name: 'BuildMyHouse repair coordination — service fee waived',
-  price: 0,
-  priceCurrency: 'NGN',
+  name: 'BuildMyHouse repair coordination',
   description:
-    'BuildMyHouse service fee for repair services is free for now. Homeowners pay the verified contractor quote only, in staged milestones with evidence.',
+    "Homeowners pay the contractor's approved quote in staged milestones with evidence.",
   url: 'https://buildmyhouse.app/start/repair',
 } as const;
 

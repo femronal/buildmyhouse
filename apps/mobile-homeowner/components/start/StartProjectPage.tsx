@@ -52,7 +52,6 @@ import {
   DIAL_CODES,
   HUB,
   READY_MADE_PLANS_HREF,
-  REPAIR_FEE_LINE,
   START_PATHS,
   START_REASSURANCE,
   NOTE_MIN_LENGTH,
@@ -441,13 +440,11 @@ function Heading({
   title,
   helper,
   intro,
-  fee,
   wide,
 }: {
   title: string;
   helper?: string;
   intro?: string;
-  fee?: boolean;
   wide: boolean;
 }) {
   return (
@@ -474,11 +471,6 @@ function Heading({
       {helper ? (
         <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 16, color: MUTED, marginTop: intro ? 8 : 12, lineHeight: 24 }}>
           {helper}
-        </Text>
-      ) : null}
-      {fee ? (
-        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: MUTED, marginTop: 10 }}>
-          {REPAIR_FEE_LINE}
         </Text>
       ) : null}
     </View>
@@ -526,7 +518,6 @@ function ChoiceStep({
         title={step.question}
         helper={step.helper}
         intro={showIntro ? path.intro : undefined}
-        fee={path.id === 'repair' && showIntro}
         wide={wide}
       />
       <View style={{ marginTop: 24 }}>
@@ -897,9 +888,6 @@ function Review({
   return (
     <View>
       <Heading title="Check your request" helper={START_REASSURANCE} wide={false} />
-      {path.id === 'repair' ? (
-        <Text style={{ fontFamily: 'Poppins_400Regular', fontSize: 13, color: MUTED, marginTop: 8 }}>{REPAIR_FEE_LINE}</Text>
-      ) : null}
       <View style={{ marginTop: 24, borderWidth: 1, borderColor: LINE, borderRadius: 16, overflow: 'hidden' }}>
         {rows.map((row, index) => (
           <View

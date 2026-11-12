@@ -1,6 +1,5 @@
 import { parsePhoneNumberFromString, type CountryCode } from 'libphonenumber-js';
 
-export const REPAIR_FEE_LINE = 'Platform service fee: ₦0 for repairs (free for now).';
 export const READY_MADE_PLANS_HREF = '/design-library';
 export const NOTE_MIN_LENGTH = 5;
 export const START_REASSURANCE =

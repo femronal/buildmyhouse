@@ -13,15 +13,14 @@
 
 - **Set up your project in the app**: https://buildmyhouse.app/login (create an account, then choose your project type)
 - **Quick request form**: https://buildmyhouse.app/start
-- Platform service fee for repairs: **₦0 (free for now)** - client pays the contractor's approved quote only
 
 ## Pricing (directional, Lagos)
 
-- **Plumbing repair**: ₦15,000 – ₦120,000 (per job); BuildMyHouse platform fee: ₦0
-- **Electrical repair**: ₦20,000 – ₦150,000 (per job); BuildMyHouse platform fee: ₦0
-- **Roof leak repair**: ₦50,000 – ₦350,000 (per job); BuildMyHouse platform fee: ₦0
-- **Drainage repair**: ₦25,000 – ₦180,000 (per job); BuildMyHouse platform fee: ₦0
-- **Window repair**: ₦20,000 – ₦120,000 (per job); BuildMyHouse platform fee: ₦0
+- **Plumbing repair**: ₦15,000 – ₦120,000 (per job)
+- **Electrical repair**: ₦20,000 – ₦150,000 (per job)
+- **Roof leak repair**: ₦50,000 – ₦350,000 (per job)
+- **Drainage repair**: ₦25,000 – ₦180,000 (per job)
+- **Window repair**: ₦20,000 – ₦120,000 (per job)
 
 Full guide: https://buildmyhouse.app/pricing/repairs
 

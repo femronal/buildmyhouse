@@ -47,7 +47,7 @@ export default function BookRepairPage() {
       `Phone: ${phone}`,
       `Property location: ${area}`,
       details.trim() ? `Details: ${details.trim()}` : null,
-      'BuildMyHouse repair booking (platform service fee currently free).',
+      'BuildMyHouse repair booking.',
     ]
       .filter(Boolean)
       .join('\n');
@@ -290,7 +290,7 @@ export default function BookRepairPage() {
 
           <View className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 mb-8">
             <Text className="text-sm text-emerald-900" style={{ fontFamily: 'Poppins_500Medium' }}>
-              Platform service fee: <Text style={{ fontFamily: 'Poppins_700Bold' }}>₦0 (free for now)</Text>. You pay the verified contractor quote only, in staged milestones with evidence.
+              You pay the contractor's approved quote in staged milestones with evidence.
             </Text>
           </View>
 

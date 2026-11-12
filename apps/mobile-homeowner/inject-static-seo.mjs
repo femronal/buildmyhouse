@@ -150,7 +150,7 @@ const SEO_PAGES = {
   '/pricing/repairs': {
     title: 'Repair Pricing Guide Lagos | BuildMyHouse',
     description:
-      'Directional repair pricing in Lagos (NGN). BuildMyHouse platform service fee is free for now; client pays verified contractor quote only.',
+      'Directional repair pricing in Lagos (NGN). Clients pay the contractor\'s approved quote in staged milestones with evidence.',
   },
   '/services/lagos/plumbing-repair': {
     title: 'Burst Pipe & Blocked Drain Repair in Lagos | Verified Plumbers | BuildMyHouse',

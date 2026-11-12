@@ -79,8 +79,6 @@ export function buildHomepageJsonLd() {
         {
           '@type': 'Offer',
           name: PLATFORM_SERVICE_FEE_OFFER.name,
-          price: PLATFORM_SERVICE_FEE_OFFER.price,
-          priceCurrency: PLATFORM_SERVICE_FEE_OFFER.priceCurrency,
           description: PLATFORM_SERVICE_FEE_OFFER.description,
           url: PLATFORM_SERVICE_FEE_OFFER.url,
           availability: 'https://schema.org/InStock',
@@ -109,8 +107,6 @@ export function buildHomepageJsonLd() {
       offers: {
         '@type': 'Offer',
         name: PLATFORM_SERVICE_FEE_OFFER.name,
-        price: 0,
-        priceCurrency: 'NGN',
         url: `${WEB_URL}/start/repair`,
         description: PLATFORM_SERVICE_FEE_OFFER.description,
       },
