@@ -1,12 +1,19 @@
 # BuildMyHouse
 
-> Find verified repairers, renovators, and contractors in Lagos, Nigeria. Manage repairs with clearer scope, photo evidence, and staged payments.
+> BuildMyHouse is a project management software-enabled platform for building and renovating homes in Nigeria, used most by Nigerians who live abroad. It sits between the homeowner, the agreed scope, the contractor, each stage of work, the evidence for that stage, the homeowner's approval and the money. A contractor is paid for a stage only after they upload photo and video evidence and the homeowner approves that stage in the app.
+
+## What sets BuildMyHouse apart
+
+- **A large, reviewed directory.** Over 2,600 contractor, professional, vendor and artisan listings across Nigeria. Homeowners leave reviews on listings and can report suspected scams, and the BuildMyHouse team reads every report. A listing is not the same as a BuildMyHouse check; each listing shows its own status.
+- **Stage-by-stage approval with evidence.** Every project is split into stages. Each stage has its own photos, videos, receipts and an approve or query step for the homeowner before the next payment moves.
+- **A real example.** In June 2026, BuildMyHouse coordinated a plumbing repair in Mowe, Ogun State. A physical inspection came before the final scope. The contractor was paid ₦30,000 for the approved first part of the work. The final ₦25,000 was paid only after the completion photos and material evidence were reviewed and the homeowner replied "Satisfied".
+- **Real reviews.** Customer reviews come from Google and are shown on the homepage.
 
 ## Online booking
 
-- **Start a project**: https://buildmyhouse.app/start
-- One question per page. The only required typing is a name and a WhatsApp number.
-- Platform service fee for repairs: **₦0 (free for now)** — client pays verified contractor quote only
+- **Set up your project in the app**: https://buildmyhouse.app/login (create an account, then choose your project type)
+- **Quick request form**: https://buildmyhouse.app/start
+- Platform service fee for repairs: **₦0 (free for now)** - client pays the contractor's approved quote only
 
 ## Pricing (directional, Lagos)
 
@@ -34,4 +41,4 @@ Full guide: https://buildmyhouse.app/pricing/repairs
 - https://buildmyhouse.app/services/plumbing-repair-nigeria
 - https://buildmyhouse.app/services/electrical-repair-nigeria
 - https://buildmyhouse.app/services/roof-leak-repair-nigeria
-- https://buildmyhouse.app/start — step-by-step project request that ends on WhatsApp
+- https://buildmyhouse.app/start - quick project request form
