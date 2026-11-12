@@ -142,6 +142,7 @@ export type PublicVendorCard = {
   yearEstablished: number | null;
   yearsInBusiness: number | null;
   profileCompleteness: number;
+  updatedAt: string | null;
 };
 
 export type PublicVendorProfile = PublicVendorCard & {
@@ -322,6 +323,7 @@ export function toPublicVendorCard(profile: ProfileWithRelations): PublicVendorC
     yearEstablished: profile.yearEstablished,
     yearsInBusiness: yearsInBusiness(profile.yearEstablished),
     profileCompleteness: profile.profileCompleteness,
+    updatedAt: profile.updatedAt ? profile.updatedAt.toISOString() : null,
   };
 }
 

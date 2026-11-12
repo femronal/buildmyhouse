@@ -9,9 +9,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  ArtisanListingStatus,
   ListingKind,
   ListingReviewStatus,
+  ProfessionalListingStatus,
   ScamReportStatus,
+  VendorListingStatus,
   type ListingReview,
   type ScamReport,
 } from '@prisma/client';
@@ -83,6 +86,31 @@ export class ListingFeedbackService {
       reviews: rows.map(toPublicReview),
       summary,
       page: Math.max(1, page),
+    };
+  }
+
+  /** Approved reviews for every public listing of one kind. Pending and hidden listings are omitted. */
+  async approvedReviewsBySlug(kindRaw: string) {
+    const kind = parseListingKind(kindRaw);
+    const rows = await this.prisma.listingReview.findMany({
+      where: { listingKind: kind, status: ListingReviewStatus.approved },
+      include: { user: { select: { fullName: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    const slugs = await this.publicSlugs(kind, [...new Set(rows.map((row) => row.listingId))]);
+    const grouped = new Map<string, typeof rows>();
+    for (const row of rows) {
+      if (!slugs.has(row.listingId)) continue;
+      const list = grouped.get(row.listingId) || [];
+      list.push(row);
+      grouped.set(row.listingId, list);
+    }
+    return {
+      data: [...grouped.entries()].map(([id, reviews]) => ({
+        slug: slugs.get(id) as string,
+        summary: summaryFrom(reviews.map((review) => review.rating)),
+        reviews: reviews.slice(0, PUBLIC_PAGE).map(toPublicReview),
+      })),
     };
   }
 
@@ -427,6 +455,33 @@ export class ListingFeedbackService {
       throw new BadRequestException('Upload evidence through BuildMyHouse. Outside links are not accepted.');
     }
     return clean;
+  }
+
+  private async publicSlugs(kind: ListingKind, ids: string[]) {
+    const map = new Map<string, string>();
+    if (!ids.length) return map;
+    if (kind === ListingKind.artisan) {
+      const rows = await this.prisma.artisanListing.findMany({
+        where: { id: { in: ids }, listingStatus: ArtisanListingStatus.listed, archivedAt: null },
+        select: { id: true, slug: true },
+      });
+      for (const row of rows) map.set(row.id, row.slug);
+      return map;
+    }
+    if (kind === ListingKind.vendor) {
+      const rows = await this.prisma.vendorProfile.findMany({
+        where: { id: { in: ids }, listingStatus: VendorListingStatus.listed, deletedAt: null },
+        select: { id: true, slug: true },
+      });
+      for (const row of rows) map.set(row.id, row.slug);
+      return map;
+    }
+    const rows = await this.prisma.professionalListing.findMany({
+      where: { id: { in: ids }, listingStatus: ProfessionalListingStatus.listed, archivedAt: null },
+      select: { id: true, slug: true },
+    });
+    for (const row of rows) map.set(row.id, row.slug);
+    return map;
   }
 
   private async requireReview(id: string) {

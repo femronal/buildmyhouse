@@ -18,8 +18,7 @@ import ListingNotice from '@/components/listing-feedback/ListingNotice';
 import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
 import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
 import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
-import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
-import { buildCanonical, buildSeoJsonLd } from '@/lib/seo-schema';
+import { listingHead } from '@/lib/listing-public-seo.mjs';
 import { useWebSeo } from '@/lib/seo';
 
 type Props = { slug: string };
@@ -369,40 +368,27 @@ export default function VendorProfilePage({ slug }: Props) {
 
   const notFound = isError && String((error as Error)?.message) === 'VENDOR_NOT_FOUND';
   const title = vendor ? vendor.tradingName : 'Vendor profile';
-  const description = vendor?.description
-    ? vendor.description.slice(0, 155)
-    : 'Building-material vendor profile on BuildMyHouse.';
 
   const publicReviews = usePublicListingReviews('vendor', slug);
-  const reviewMarkup = buildListingReviewJsonLd({
-    type: 'LocalBusiness',
-    name: vendor?.tradingName || '',
-    url: buildCanonical(`/vendors/${slug}`),
-    summary: publicReviews.data?.summary,
-    reviews: publicReviews.data?.reviews,
-  });
+  const listingSeo = vendor
+    ? listingHead({
+        segment: 'vendors',
+        name: vendor.tradingName,
+        slug,
+        trade: vendor.primaryCategoryLabel,
+        city: vendor.cityLabel,
+        state: vendor.stateLabel,
+        businessTypes: vendor.businessTypes,
+        reviews: publicReviews.data,
+      })
+    : null;
 
   useWebSeo({
-    title: vendor ? `${vendor.tradingName} | BuildMyHouse Vendors` : 'Vendor | BuildMyHouse',
-    description,
+    title: listingSeo?.title || 'Vendor | BuildMyHouse',
+    description: listingSeo?.description || 'Building material vendor on BuildMyHouse.',
     canonicalPath: `/vendors/${slug}`,
     robots: vendor ? 'index,follow' : 'noindex,follow',
-    jsonLd: vendor
-      ? [
-          ...buildSeoJsonLd({
-            path: `/vendors/${slug}`,
-            title: vendor.tradingName,
-            description,
-            schemaType: 'Service',
-            breadcrumbs: [
-              { name: 'Home', path: '/' },
-              { name: 'Vendors', path: '/vendors' },
-              { name: vendor.tradingName, path: `/vendors/${slug}` },
-            ],
-          }),
-          ...(reviewMarkup ? [reviewMarkup] : []),
-        ]
-      : undefined,
+    jsonLd: listingSeo?.jsonLd,
   });
 
   const whatsappHref = vendorWhatsAppHref(vendor?.publicWhatsApp || vendor?.publicPhone);

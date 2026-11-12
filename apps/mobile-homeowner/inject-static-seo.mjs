@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { canonicalRouteWithoutPlaceholder, hasRoutePlaceholder } from './lib/listing-public-seo.mjs';
 
 const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL || 'https://buildmyhouse.app').replace(/\/+$/, '');
 const distDir = path.resolve(process.cwd(), 'dist');
@@ -823,25 +824,32 @@ function patchHtmlForRoute(html, route, dynamicSeoPages = SEO_PAGES) {
   }
 
   const pageMeta = dynamicSeoPages[route];
-  const canonicalRoute = pageMeta?.canonicalPath || route;
+  const placeholder = hasRoutePlaceholder(route);
+  const canonicalRoute = placeholder
+    ? canonicalRouteWithoutPlaceholder(route)
+    : pageMeta?.canonicalPath || route;
   const canonicalUrl =
     canonicalRoute === '/' ? `${WEB_URL}/` : `${WEB_URL}${canonicalRoute}`;
   const followUpStart = route.startsWith('/start/') && !startIndexable[route];
-  const robots =
-    pageMeta?.robots ||
-    (NOINDEX_FOLLOW_ROUTES.has(route)
-      ? 'noindex,follow'
-      : followUpStart
+  const robots = placeholder
+    ? 'noindex,follow'
+    : pageMeta?.robots ||
+      (NOINDEX_FOLLOW_ROUTES.has(route)
         ? 'noindex,follow'
-        : isPrivateRoute(route)
-          ? 'noindex,nofollow'
-          : 'index,follow');
+        : followUpStart
+          ? 'noindex,follow'
+          : isPrivateRoute(route)
+            ? 'noindex,nofollow'
+            : 'index,follow');
   const hubMeta = articlesHubMeta(route);
-  const title = (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || hubMeta?.title || 'BuildMyHouse Technologies';
-  const description =
-    pageMeta?.description ||
-    hubMeta?.description ||
-    'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.';
+  const title = placeholder
+    ? 'BuildMyHouse'
+    : (followUpStart && followUpDocumentTitle(route)) || pageMeta?.title || hubMeta?.title || 'BuildMyHouse Technologies';
+  const description = placeholder
+    ? 'BuildMyHouse'
+    : pageMeta?.description ||
+      hubMeta?.description ||
+      'BuildMyHouse Technologies helps homeowners in Nigeria and abroad plan construction, renovation, and interior projects with verified workflows and stage visibility.';
   const image =
     pageMeta?.image ||
     `${WEB_URL}/engineer-at-buildmyhouse.png`;

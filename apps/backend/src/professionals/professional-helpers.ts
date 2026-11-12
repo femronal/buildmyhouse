@@ -300,6 +300,7 @@ export type PublicProfessionalCard = {
   usedByBmh: boolean;
   completenessScore: number;
   trust: PublicTrust;
+  updatedAt: string | null;
 };
 
 export type PublicProfessionalProfile = PublicProfessionalCard & {
@@ -351,6 +352,7 @@ export function toPublicProfessionalCard(listing: ListingWithPublicRelations): P
     usedByBmh: listing.usedByBmh,
     completenessScore: listing.completenessScore,
     trust: toPublicTrust(listing),
+    updatedAt: listing.updatedAt ? listing.updatedAt.toISOString() : null,
   };
 }
 

@@ -146,6 +146,7 @@ export function toPublicArtisanCard(listing: ArtisanPublicSource) {
     problems: artisanProblemCaps(listing).slice(0, 4).map((item) => item.label),
     trustScore: listing.trustScore,
     trustExplanation: ARTISAN_TRUST_EXPLANATION,
+    updatedAt: listing.updatedAt ? listing.updatedAt.toISOString() : null,
     listingStatus: 'listed' as const,
     claimStatus: listing.claimStatus,
     verificationStatus: listing.verificationStatus,

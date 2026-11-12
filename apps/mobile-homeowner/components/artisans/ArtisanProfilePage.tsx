@@ -9,33 +9,34 @@ import ListingNotice from '@/components/listing-feedback/ListingNotice';
 import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
 import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
 import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
-import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
+import { listingHead } from '@/lib/listing-public-seo.mjs';
 import { fetchArtisan } from '@/lib/public-artisans';
-import { buildCanonical } from '@/lib/seo-schema';
 import { useWebSeo } from '@/lib/seo';
 import { TrustRing } from './TrustRing';
 
 export default function ArtisanProfilePage({ slug }: { slug: string }) {
   const query = useQuery({ queryKey: ['artisan', slug], queryFn: () => fetchArtisan(slug), enabled: slug !== '__missing__' });
   const artisan = query.data;
-  const title = artisan
-    ? `${artisan.displayName} — ${artisan.trade?.label || 'Artisan'} in ${artisan.city || artisan.state || 'Nigeria'} | BuildMyHouse`
-    : 'Artisan | BuildMyHouse';
   const place = [artisan?.city, artisan?.state].filter(Boolean).join(', ');
   const publicReviews = usePublicListingReviews('artisan', slug, 1, slug !== '__missing__');
-  const reviewMarkup = buildListingReviewJsonLd({
-    type: 'LocalBusiness',
-    name: artisan?.displayName || '',
-    url: buildCanonical(`/artisans/${slug}`),
-    summary: publicReviews.data?.summary,
-    reviews: publicReviews.data?.reviews,
-  });
+  const listingSeo = artisan
+    ? listingHead({
+        segment: 'artisans',
+        name: artisan.businessName || artisan.displayName,
+        slug,
+        trade: artisan.trade?.label,
+        city: artisan.city,
+        state: artisan.state,
+        services: Array.isArray(artisan.services) ? artisan.services : [],
+        reviews: publicReviews.data,
+      })
+    : null;
 
   useWebSeo({
-    title,
-    description: artisan?.bio || 'Artisan and repair technician listing on BuildMyHouse.',
-    canonicalPath: `/artisans/${slug}`,
-    jsonLd: reviewMarkup || undefined,
+    title: listingSeo?.title || 'Artisan | BuildMyHouse',
+    description: listingSeo?.description || 'Artisan listing on BuildMyHouse.',
+    canonicalPath: slug && slug !== '__missing__' ? `/artisans/${slug}` : '/artisans',
+    jsonLd: listingSeo?.jsonLd,
   });
 
   return (

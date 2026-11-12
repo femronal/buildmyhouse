@@ -153,7 +153,7 @@ jobs:
   deploy-homeowner:
     name: Deploy Homeowner Web App
     runs-on: ubuntu-latest
-    needs: [pre-deployment-checks]
+    needs: [pre-deployment-checks, deploy-backend]
     continue-on-error: true
     environment:
       name: production

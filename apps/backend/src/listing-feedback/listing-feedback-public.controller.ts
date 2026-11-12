@@ -8,6 +8,11 @@ import { ListingFeedbackService } from './listing-feedback.service';
 export class ListingFeedbackPublicController {
   constructor(private readonly feedback: ListingFeedbackService) {}
 
+  @Get('approved-reviews')
+  approvedReviews(@Query('kind') kind = '') {
+    return this.feedback.approvedReviewsBySlug(kind);
+  }
+
   @Get(':kind/:slug/reviews')
   reviews(@Param('kind') kind: string, @Param('slug') slug: string, @Query() query: ListingPageQueryDto) {
     return this.feedback.listPublicReviews(kind, slug, query.page || 1);

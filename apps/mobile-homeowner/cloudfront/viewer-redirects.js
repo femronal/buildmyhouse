@@ -172,26 +172,6 @@ function handler(event) {
     }
   }
 
-  // Professional public profiles: /professionals/<slug> → professionals/[slug].html
-  var professionalsPrefix = '/professionals/';
-  if (uri.indexOf(professionalsPrefix) === 0) {
-    var professionalSegment = uri.slice(professionalsPrefix.length);
-    var reservedProfessionalRoutes = {
-      apply: true,
-      manage: true,
-      claim: true,
-    };
-    if (
-      professionalSegment &&
-      professionalSegment.indexOf('/') === -1 &&
-      professionalSegment !== '[slug]' &&
-      !reservedProfessionalRoutes[professionalSegment]
-    ) {
-      request.uri = professionalsPrefix + '[slug].html';
-      return request;
-    }
-  }
-
   // Artisan claim invites: /artisans/claim/<token> → claim/[token].html
   var artisanClaimPrefix = '/artisans/claim/';
   if (uri.indexOf(artisanClaimPrefix) === 0) {
@@ -206,46 +186,9 @@ function handler(event) {
     }
   }
 
-  // Artisan public profiles: /artisans/<slug> → artisans/[slug].html
-  // New listings use this shell, so they do not need a rebuild.
-  var artisansPrefix = '/artisans/';
-  if (uri.indexOf(artisansPrefix) === 0) {
-    var artisanSegment = uri.slice(artisansPrefix.length);
-    var reservedArtisanRoutes = {
-      apply: true,
-      claim: true,
-    };
-    if (
-      artisanSegment &&
-      artisanSegment.indexOf('/') === -1 &&
-      artisanSegment !== '[slug]' &&
-      !reservedArtisanRoutes[artisanSegment]
-    ) {
-      request.uri = artisansPrefix + '[slug].html';
-      return request;
-    }
-  }
-
-  // Vendor public profiles: /vendors/<slug> → vendors/[slug].html
-  // Keep static vendor routes (apply/manage/claim) on their own .html objects.
-  var vendorsPrefix = '/vendors/';
-  if (uri.indexOf(vendorsPrefix) === 0) {
-    var vendorSegment = uri.slice(vendorsPrefix.length);
-    var reservedVendorRoutes = {
-      apply: true,
-      manage: true,
-      claim: true,
-    };
-    if (
-      vendorSegment &&
-      vendorSegment.indexOf('/') === -1 &&
-      vendorSegment !== '[slug]' &&
-      !reservedVendorRoutes[vendorSegment]
-    ) {
-      request.uri = vendorsPrefix + '[slug].html';
-      return request;
-    }
-  }
+  // Public listing pages are real files (/artisans/<slug>.html and the same
+  // for vendors and professionals). Do not send those URLs to the [slug] shell.
+  // A daily rebuild publishes listings added after the last deploy.
 
   // Extensionless app route → S3 .html object with route-specific SEO tags
   request.uri = uri + '.html';

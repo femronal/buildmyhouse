@@ -220,6 +220,36 @@ describe('ListingFeedbackService', () => {
     expect(JSON.stringify(listed)).not.toContain('@example.com');
   });
 
+  it('groups approved reviews by public slug and skips hidden listings', async () => {
+    professionals.push({
+      id: 'pro-hidden',
+      slug: 'hidden-firm',
+      displayName: 'Hidden Firm',
+      listingStatus: 'hidden',
+      archivedAt: null,
+    });
+    await service.submitReview('professional', 'ada-law', actor, reviewBody(5));
+    await service.approveReview(listingReviews[0].id, 'admin-1');
+    listingReviews.push({
+      id: 'hidden-review',
+      listingKind: ListingKind.professional,
+      listingId: 'pro-hidden',
+      userId: 'second',
+      rating: 1,
+      title: null,
+      comment: COMMENT,
+      status: ListingReviewStatus.approved,
+      verifiedBmhJob: true,
+      createdAt: new Date(),
+    });
+    const pendingOnly = await service.approvedReviewsBySlug('vendor');
+    expect(pendingOnly.data).toEqual([]);
+    const index = await service.approvedReviewsBySlug('professional');
+    expect(index.data.map((row) => row.slug)).toEqual(['ada-law']);
+    expect(index.data[0].summary).toEqual({ average: 5, count: 1 });
+    expect(JSON.stringify(index)).not.toContain('@example.com');
+  });
+
   it('returns an empty summary when nothing is approved', async () => {
     const listed = await service.listPublicReviews('vendor', 'acme-blocks');
     expect(listed.summary).toEqual({ average: null, count: 0 });

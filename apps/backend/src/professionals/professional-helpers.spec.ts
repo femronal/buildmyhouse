@@ -149,6 +149,7 @@ describe('professional-helpers', () => {
 
     const card = toPublicProfessionalCard(listing);
     const profile = toPublicProfessionalProfile(listing);
+    expect(card.updatedAt).toBe('2026-09-14T00:00:00.000Z');
     expect(card.trust.credentialLabel).toBe('COREN credential checked');
     expect(card.trust.usedByBmhLabel).toBe('Used by BuildMyHouse');
     expect(card.trust.claimedLabel).toBeNull();

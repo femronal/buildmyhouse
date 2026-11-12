@@ -18,8 +18,7 @@ import ListingNotice from '@/components/listing-feedback/ListingNotice';
 import ListingReviewsSection from '@/components/listing-feedback/ListingReviewsSection';
 import ReportScamButton from '@/components/listing-feedback/ReportScamButton';
 import { usePublicListingReviews } from '@/components/listing-feedback/usePublicListingReviews';
-import { buildListingReviewJsonLd } from '@/lib/listing-feedback';
-import { buildCanonical, buildSeoJsonLd } from '@/lib/seo-schema';
+import { listingHead } from '@/lib/listing-public-seo.mjs';
 import { useWebSeo } from '@/lib/seo';
 
 function formatCheckedOn(value?: string | null) {
@@ -128,39 +127,26 @@ export default function ProfessionalProfilePage({ slug }: { slug: string }) {
   const [error, setError] = useState('');
   const [tab, setTab] = useState<TabId>('about');
 
-  const seoTitle = professional
-    ? `${professional.displayName} — ${professional.profession?.label || 'Professional'} in ${professional.state || 'Nigeria'}`
-    : 'Professional';
   const publicReviews = usePublicListingReviews('professional', slug);
-  const reviewMarkup = buildListingReviewJsonLd({
-    type: 'ProfessionalService',
-    name: professional?.displayName || '',
-    url: buildCanonical(`/professionals/${slug}`),
-    summary: publicReviews.data?.summary,
-    reviews: publicReviews.data?.reviews,
-  });
+  const listingSeo = professional
+    ? listingHead({
+        segment: 'professionals',
+        name: professional.displayName,
+        slug,
+        trade: professional.profession?.label,
+        city: professional.city,
+        state: professional.state,
+        services: (professional.services || []).map((item) => item.label),
+        reviews: publicReviews.data,
+      })
+    : null;
 
   useWebSeo({
-    title: `${seoTitle} | BuildMyHouse`,
-    description: professional?.bio || 'Construction professional on BuildMyHouse.',
+    title: listingSeo?.title || 'Professional | BuildMyHouse',
+    description: listingSeo?.description || 'Construction professional on BuildMyHouse.',
     canonicalPath: `/professionals/${slug}`,
     robots: professional ? 'index,follow' : 'noindex,follow',
-    jsonLd: professional
-      ? [
-          ...buildSeoJsonLd({
-            path: `/professionals/${slug}`,
-            title: seoTitle,
-            description: professional.bio || seoTitle,
-            schemaType: 'Service',
-            breadcrumbs: [
-              { name: 'Home', path: '/' },
-              { name: 'Professionals', path: '/professionals' },
-              { name: professional.displayName, path: `/professionals/${slug}` },
-            ],
-          }),
-          ...(reviewMarkup ? [reviewMarkup] : []),
-        ]
-      : undefined,
+    jsonLd: listingSeo?.jsonLd,
   });
 
   const tabs = useMemo(() => {

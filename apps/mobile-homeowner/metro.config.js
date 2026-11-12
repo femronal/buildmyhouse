@@ -22,7 +22,7 @@ config.transformer = {
 config.resolver = {
   ...resolver,
   assetExts: resolver.assetExts.filter((ext) => ext !== "svg"),
-  sourceExts: [...resolver.sourceExts, "svg"],
+  sourceExts: [...resolver.sourceExts, "svg", "mjs"],
   resolveRequest: (context, moduleName, platform) => {
     if (platform === "web" && moduleName === "react-native-maps") {
       return { type: "empty" };

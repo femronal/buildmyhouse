@@ -138,6 +138,7 @@ describe('vendor-helpers', () => {
     expect(card.isBuildMyHouseVerified).toBe(false);
     expect(card.brands).toContain('Dangote');
     expect(card.categories).toContain('cement');
+    expect(card.updatedAt).toBe('2026-01-01T00:00:00.000Z');
 
     const publicProfile = toPublicVendorProfile(profile);
     expect(publicProfile.publicEmail).toBeNull();
