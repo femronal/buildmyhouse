@@ -44,6 +44,8 @@ import {
 import { ADMIN_CHOICE_PAYMENT_ID, RECEIPT_PAYMENT_ID, canOpenProject, canStartStage, completePaymentTarget, isAdminChoicePayment, isPaymentModel, netReceived, PaymentModel } from './payment-model';
 import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from '../contractors/quote-scope';
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
+import { attentionReasons, hasConfirmedMoney, isDormant, lastActivityAt } from '../admin/dashboard-rules';
+import { paymentReference } from '../funding/funding-invoice';
 
 const stageMediaQuery = {
   orderBy: [{ order: 'asc' as const }, { createdAt: 'asc' as const }],
@@ -3622,14 +3624,43 @@ export class ProjectsService {
         },
         stages: {
           orderBy: { order: 'asc' },
+          include: {
+            media: {
+              select: { id: true, createdAt: true, duplicateOfMediaId: true, distanceFromSiteMeters: true, source: true },
+            },
+          },
+        },
+        payments: { select: { id: true, amount: true, status: true, method: true, createdAt: true } },
+        disputes: {
+          where: { status: { in: ['open', 'in_review'] } },
+          select: { id: true, status: true, createdAt: true, stageId: true, reasons: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
+    const now = new Date();
     return projects.map((project: any) => {
       const planRequest = project.projectRequests?.[0];
+      const rest = { ...project };
+      delete rest.payments;
+      delete rest.disputes;
+      const stages = Array.isArray(project.stages)
+        ? project.stages.map((stage: any) => {
+            const stageRest = { ...stage };
+            delete stageRest.media;
+            return stageRest;
+          })
+        : project.stages;
       return {
-        ...project,
+        ...rest,
+        stages,
+        attention: {
+          reasons: attentionReasons(project, now),
+          dormant: isDormant(project, now),
+          hasConfirmedMoney: hasConfirmedMoney(project),
+          lastActivityAt: lastActivityAt(project).toISOString(),
+        },
+        paymentRef: paymentReference(project.id),
         planRequestStep: project.designId && planRequest
           ? getPlanRequestStep(planRequest, project, 'admin')
           : null,

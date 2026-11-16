@@ -1,200 +1,83 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Archive, ArchiveRestore, Building2, ExternalLink, Filter, Plus, Search, ShieldAlert, Trash2 } from 'lucide-react';
+import { AlertTriangle, Archive, Plus, ShieldAlert } from 'lucide-react';
 import { api } from '@/lib/api';
-import { getBackendAssetUrl } from '@/lib/image';
 import { CreateManagedProjectModal } from '@/components/CreateManagedProjectModal';
-import { ProjectAccessLinksPanel } from '@/components/ProjectAccessLinksPanel';
+import { InvoiceBankAccountModal } from '@/components/projects/InvoiceBankAccountModal';
+import { ProjectBulkBar } from '@/components/projects/ProjectBulkBar';
+import { ProjectDrawer } from '@/components/projects/ProjectDrawer';
+import { ProjectFilterBar } from '@/components/projects/ProjectFilterBar';
+import { ProjectStatusTabs } from '@/components/projects/ProjectStatusTabs';
+import { ProjectsTable } from '@/components/projects/ProjectsTable';
+import {
+  TAB_ORDER,
+  cycleRisk,
+  downloadTextFile,
+  inTab,
+  projectMatches,
+  sortProjects,
+  toCsv,
+  toProjectView,
+  type ProjectFilters,
+  type ProjectTab,
+} from '@/components/projects/project-list-rules';
+import type { ApiProject, ProjectView } from '@/components/projects/types';
 
-type StageView = {
-  id: string;
-  name: string;
-  status: string;
-  order: number;
-  estimatedCost?: number | null;
-  actualCost?: number | null;
-  estimatedDuration?: string | null;
-  startDate?: string | null;
-  completionDate?: string | null;
-  submittedForApprovalAt?: string | null;
-};
-
-type ApiProject = {
-  id: string;
-  name: string;
-  address: string;
-  status: string;
-  riskLevel?: 'low' | 'medium' | 'high';
-  progress: number;
-  budget: number;
-  spent: number;
-  updatedAt?: string;
-  currentStage?: string | null;
-  projectType?: string | null;
-  externalPaymentLink?: string | null;
-  paymentConfirmationStatus?: 'not_declared' | 'declared' | 'confirmed' | 'rejected' | string;
-  archivedAt?: string | null;
-  managedByAdmin?: boolean;
-  needsExtraMonitoring?: boolean;
-  createdAt?: string;
-  homeowner?: { fullName?: string | null; email?: string | null } | null;
-  generalContractor?: {
-    fullName?: string | null;
-    email?: string | null;
-    contractorProfile?: { verified?: boolean; name?: string | null } | null;
-  } | null;
-  projectRequests?: {
-    contractor?: {
-      fullName?: string | null;
-      contractorProfile?: { verified?: boolean; name?: string | null } | null;
-    } | null;
-  }[] | null;
-  stages?: StageView[] | null;
-  aiAnalysis?: {
-    fundingInvoice?: {
-      reference?: string;
-      receipt?: { url?: string; fileName?: string } | null;
-    } | null;
-  } | null;
-};
-
-type ProjectView = {
-  id: string;
-  name: string;
-  address: string;
-  homeowner: string;
-  homeownerEmail?: string | null;
-  gc: string;
-  gcEmail?: string | null;
-  status: string;
-  risk: 'low' | 'medium' | 'high';
-  progress: number;
-  budget: number;
-  spent: number;
-  lastUpdate: string;
-  nextMilestone: string;
-  projectType?: string | null;
-  externalPaymentLink?: string | null;
-  paymentConfirmationStatus?: string | null;
-  archivedAt?: string | null;
-  managedByAdmin?: boolean;
-  stages?: StageView[] | null;
-  planRequestStep?: { step?: number; state?: string; label?: string } | null;
-  fundingReference?: string | null;
-  fundingReceiptUrl?: string | null;
-};
-
-function formatUpdatedAt(updatedAt?: string) {
-  if (!updatedAt) return '—';
-  const d = new Date(updatedAt);
-  if (Number.isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+function readTab(value: string | null): ProjectTab {
+  return TAB_ORDER.includes(value as ProjectTab) ? (value as ProjectTab) : 'needs_attention';
 }
 
-function formatDateShort(value?: string | null) {
-  if (!value) return null;
-  const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString();
-}
+function ProjectsPage() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams();
+  const tab = readTab(search.get('tab'));
+  const sortBy = search.get('sort') || 'needs_first';
+  const filters = useMemo<ProjectFilters>(() => ({
+    q: search.get('q') || '',
+    risk: search.get('risk') || '',
+    gc: search.get('gc') || '',
+    pay: search.get('pay') || '',
+    show: search.get('show') || '',
+  }), [search]);
+  const openProjectId = search.get('project');
+  const drawerSection = search.get('section') === 'stages' || search.get('section') === 'tracking' ? search.get('section') as 'stages' | 'tracking' : null;
 
-function computeNextMilestone(project: ApiProject) {
-  if (project.currentStage) return project.currentStage;
-  const stages = project.stages || [];
-  const next = [...stages]
-    .sort((a, b) => a.order - b.order)
-    .find((s) => s.status !== 'completed');
-  return next?.name || '—';
-}
-
-function computeDisplayStatus(project: ApiProject): string {
-  if (project.status === 'completed' || Number(project.progress || 0) >= 100) {
-    return 'completed';
-  }
-  return project.status;
-}
-
-function computeRisk(project: ApiProject): ProjectView['risk'] {
-  if (project.riskLevel === 'low' || project.riskLevel === 'medium' || project.riskLevel === 'high') {
-    return project.riskLevel;
-  }
-  if (project.paymentConfirmationStatus === 'declared' || project.status === 'pending_payment') return 'high';
-  if (project.status === 'paused') return 'medium';
-  return 'low';
-}
-
-function cycleRisk(current: ProjectView['risk']): ProjectView['risk'] {
-  if (current === 'low') return 'medium';
-  if (current === 'medium') return 'high';
-  return 'low';
-}
-
-export default function ProjectsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [riskFilter, setRiskFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('updated');
   const [paymentLinkProjectId, setPaymentLinkProjectId] = useState<string | null>(null);
   const [paymentLinkValue, setPaymentLinkValue] = useState('');
-  const [timelineProjectId, setTimelineProjectId] = useState<string | null>(null);
   const [activateProjectTarget, setActivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [deactivateProjectTarget, setDeactivateProjectTarget] = useState<{ id: string; name: string } | null>(null);
   const [deleteProjectTarget, setDeleteProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState('');
   const [archiveProjectTarget, setArchiveProjectTarget] = useState<{ id: string; name: string } | null>(null);
+  const [archiveManyIds, setArchiveManyIds] = useState<string[] | null>(null);
   const [bulkArchiveTarget, setBulkArchiveTarget] = useState(false);
   const [pausedProjectName, setPausedProjectName] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string>('');
+  const [actionError, setActionError] = useState('');
   const [createManagedOpen, setCreateManagedOpen] = useState(false);
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [accountNotice, setAccountNotice] = useState('');
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [confirmAmounts, setConfirmAmounts] = useState<Record<string, string>>({});
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const queryClient = useQueryClient();
 
+  function setParams(updates: Record<string, string | null>) {
+    const next = new URLSearchParams(search.toString());
+    for (const [key, value] of Object.entries(updates)) {
+      if (!value) next.delete(key);
+      else next.set(key, value);
+    }
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
   const projectsQuery = useQuery({
-    queryKey: ['admin-projects', statusFilter],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (statusFilter === 'extra_monitoring') {
-        params.set('needsExtraMonitoring', 'true');
-      } else if (statusFilter === 'waiting_approval') {
-        params.set('waitingForApproval', 'true');
-      } else if (statusFilter === 'archived') {
-        params.set('status', 'archived');
-      } else if (statusFilter !== 'all') {
-        params.set('status', statusFilter);
-      }
-      const suffix = params.toString() ? `?${params.toString()}` : '';
-      const res = await api.get<ApiProject[]>(`/projects${suffix}`);
-      return res;
-    },
+    queryKey: ['admin-projects', 'all'],
+    queryFn: () => api.get<ApiProject[]>('/projects?includeArchived=true'),
     retry: 1,
-  });
-
-  const accountQuery = useQuery({
-    queryKey: ['funding-account'],
-    queryFn: () => api.get<{ account: { bankName: string; accountNumber: string; accountName: string } | null }>('/funding/account'),
-  });
-
-  useEffect(() => {
-    const account = accountQuery.data?.account;
-    if (!account) return;
-    setBankName((value) => value || account.bankName);
-    setAccountNumber((value) => value || account.accountNumber);
-    setAccountName((value) => value || account.accountName);
-  }, [accountQuery.data]);
-
-  const saveAccountMutation = useMutation({
-    mutationFn: () => api.patch('/funding/account', { bankName, accountNumber, accountName }),
-    onSuccess: async () => {
-      setAccountNotice('Saved. New invoices use this account.');
-      await queryClient.invalidateQueries({ queryKey: ['funding-account'] });
-    },
-    onError: (error: Error) => setAccountNotice(error.message || 'Could not save the account'),
   });
 
   const invalidateProjectQueries = async () => {
@@ -204,34 +87,26 @@ export default function ProjectsPage() {
     ]);
   };
 
-  const projects: ProjectView[] = useMemo(() => {
-    if (!projectsQuery.data) return [];
-    return projectsQuery.data.map((p) => ({
-      id: p.id,
-      name: p.name,
-      address: p.address,
-      homeowner: p.homeowner?.fullName || '—',
-      homeownerEmail: p.homeowner?.email ?? null,
-      gc: p.generalContractor?.fullName || '—',
-      planRequestStep: (p as ApiProject & { planRequestStep?: ProjectView['planRequestStep'] }).planRequestStep,
-      gcEmail: p.generalContractor?.email ?? null,
-      status: computeDisplayStatus(p),
-      risk: computeRisk(p),
-      progress: p.progress ?? 0,
-      budget: p.budget ?? 0,
-      spent: p.spent ?? 0,
-      lastUpdate: formatUpdatedAt(p.updatedAt),
-      nextMilestone: computeNextMilestone(p),
-      projectType: p.projectType ?? null,
-      externalPaymentLink: p.externalPaymentLink ?? null,
-      paymentConfirmationStatus: p.paymentConfirmationStatus ?? null,
-      archivedAt: p.archivedAt ?? null,
-      managedByAdmin: p.managedByAdmin ?? false,
-      stages: p.stages ?? null,
-      fundingReference: p.aiAnalysis?.fundingInvoice?.reference ?? null,
-      fundingReceiptUrl: p.aiAnalysis?.fundingInvoice?.receipt?.url ?? null,
-    }));
-  }, [projectsQuery.data]);
+  const projects = useMemo(() => (projectsQuery.data || []).map((project) => toProjectView(project)), [projectsQuery.data]);
+  const gcNames = useMemo(
+    () => Array.from(new Set(projects.map((project) => project.gc).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+    [projects],
+  );
+  const counts = useMemo(() => {
+    const result = {} as Record<ProjectTab, number>;
+    for (const key of TAB_ORDER) result[key] = projects.filter((project) => inTab(project, key)).length;
+    return result;
+  }, [projects]);
+  const visible = useMemo(
+    () => sortProjects(projects.filter((project) => inTab(project, tab) && projectMatches(project, filters)), sortBy),
+    [projects, tab, filters, sortBy],
+  );
+  const selectedVisible = visible.filter((project) => selectedIds.includes(project.id));
+  const openProject = projects.find((project) => project.id === openProjectId) || null;
+
+  useEffect(() => {
+    if (!deleteProjectTarget) setDeleteConfirmName('');
+  }, [deleteProjectTarget]);
 
   const setExternalPaymentLinkMutation = useMutation({
     mutationFn: async (params: { projectId: string; externalPaymentLink: string }) => {
@@ -246,7 +121,6 @@ export default function ProjectsPage() {
     },
   });
 
-  const [confirmAmounts, setConfirmAmounts] = useState<Record<string, string>>({});
   const confirmManualPaymentMutation = useMutation({
     mutationFn: async (params: { projectId: string; amount: number }) => {
       return api.patch(`/projects/${params.projectId}/payment/confirm`, { amount: params.amount });
@@ -257,9 +131,7 @@ export default function ProjectsPage() {
   });
 
   const activateProjectMutation = useMutation({
-    mutationFn: async (projectId: string) => {
-      return api.patch(`/projects/${projectId}/activate`, {});
-    },
+    mutationFn: async (projectId: string) => api.patch(`/projects/${projectId}/activate`, {}),
     onSuccess: async () => {
       await invalidateProjectQueries();
       setActivateProjectTarget(null);
@@ -267,12 +139,10 @@ export default function ProjectsPage() {
   });
 
   const deactivateProjectMutation = useMutation({
-    mutationFn: async (projectId: string) => {
-      return api.patch(`/projects/${projectId}/deactivate`, {});
-    },
+    mutationFn: async (projectId: string) => api.patch(`/projects/${projectId}/deactivate`, {}),
     onSuccess: async (_data, projectId) => {
       await invalidateProjectQueries();
-      const project = projects.find((p) => p.id === projectId);
+      const project = projects.find((item) => item.id === projectId);
       setPausedProjectName(project?.name || 'This project');
       setDeactivateProjectTarget(null);
     },
@@ -303,8 +173,7 @@ export default function ProjectsPage() {
   });
 
   const archiveStaleTestsMutation = useMutation({
-    mutationFn: async () =>
-      api.post<{ archivedCount: number; projectIds: string[] }>('/projects/admin/archive-stale-tests', {}),
+    mutationFn: async () => api.post<{ archivedCount: number; projectIds: string[] }>('/projects/admin/archive-stale-tests', {}),
     onSuccess: async () => {
       await invalidateProjectQueries();
       setBulkArchiveTarget(false);
@@ -312,680 +181,220 @@ export default function ProjectsPage() {
   });
 
   const deleteProjectMutation = useMutation({
-    mutationFn: async (projectId: string) => {
-      return api.delete(`/projects/${projectId}`);
-    },
+    mutationFn: async (projectId: string) => api.delete(`/projects/${projectId}`),
     onSuccess: async () => {
       await invalidateProjectQueries();
       setDeleteProjectTarget(null);
+      if (openProjectId) setParams({ project: null, section: null });
     },
   });
 
-  const filteredProjects = useMemo(() => {
-    const filtered = projects.filter((project) => {
-      const matchesSearch =
-        !searchQuery ||
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.homeowner.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-      const matchesRisk = riskFilter === 'all' || project.risk === riskFilter;
-      return matchesSearch && matchesStatus && matchesRisk;
-    });
+  function openDrawer(project: ProjectView, section?: 'stages' | 'tracking') {
+    setParams({ project: project.id, section: section || null });
+  }
 
-    return [...filtered].sort((a, b) => {
-      if (sortBy === 'progress') return b.progress - a.progress;
-      if (sortBy === 'budget') return b.budget - a.budget;
-      return 0;
-    });
-  }, [projects, riskFilter, searchQuery, sortBy, statusFilter]);
+  async function changeRisk(project: ProjectView) {
+    setActionError('');
+    try {
+      await setRiskLevelMutation.mutateAsync({ projectId: project.id, riskLevel: cycleRisk(project.risk) });
+    } catch (error: any) {
+      setActionError(error?.message || 'Failed to update risk level');
+    }
+  }
 
-  const statusStyles: Record<string, string> = {
-    draft: 'bg-gray-100 text-gray-700',
-    active: 'bg-emerald-100 text-emerald-700',
-    pending_admin_review: 'bg-indigo-100 text-indigo-700',
-    pending_payment: 'bg-amber-100 text-amber-700',
-    paused: 'bg-amber-100 text-amber-700',
-    completed: 'bg-blue-100 text-blue-700',
-    cancelled: 'bg-red-100 text-red-700',
-    archived: 'bg-slate-200 text-slate-700',
-  };
+  async function confirmPayment(project: ProjectView) {
+    setActionError('');
+    const amount = Number(confirmAmounts[project.id]);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setActionError('Enter the amount on the receipt.');
+      return;
+    }
+    try {
+      await confirmManualPaymentMutation.mutateAsync({ projectId: project.id, amount });
+    } catch (error: any) {
+      setActionError(error?.message || 'Failed to confirm payment');
+    }
+  }
 
-  const riskStyles: Record<string, string> = {
-    low: 'bg-green-50 text-green-700',
-    medium: 'bg-amber-50 text-amber-700',
-    high: 'bg-red-50 text-red-700',
-  };
-
-  const selectedTimelineProject = useMemo(() => {
-    if (!timelineProjectId) return null;
-    return projects.find((p) => p.id === timelineProjectId) || null;
-  }, [projects, timelineProjectId]);
-
-  const selectedStages = useMemo(() => {
-    const stages = selectedTimelineProject?.stages || [];
-    return [...stages].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [selectedTimelineProject]);
-
-  const stageStatusStyles: Record<string, string> = {
-    not_started: 'bg-gray-100 text-gray-700',
-    in_progress: 'bg-blue-100 text-blue-700',
-    completed: 'bg-emerald-100 text-emerald-700',
-    blocked: 'bg-red-100 text-red-700',
-  };
+  const needsAttentionCount = counts.needs_attention || 0;
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 bg-gray-50 p-4 md:p-8">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold font-poppins">Project Monitoring</h1>
-          <p className="text-gray-500 mt-1">Track project health, milestones, and budget usage</p>
+          <h1 className="text-2xl font-semibold text-gray-950 md:text-3xl">Project Monitoring</h1>
+          <p className="mt-1 hidden text-sm text-gray-500 md:block">Every job in one list. Start with the ones that need you.</p>
+          <p className="mt-1 text-sm text-gray-500 md:hidden">{needsAttentionCount} need you</p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <button type="button" className="hidden text-sm text-gray-950 underline md:inline" onClick={() => setAccountOpen(true)}>Invoice bank account</button>
           <button
             type="button"
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm inline-flex items-center gap-2 hover:bg-indigo-700"
-            onClick={() => setCreateManagedOpen(true)}
+            className="hidden min-h-11 rounded-lg border border-gray-300 bg-white px-4 text-sm md:inline-flex md:items-center"
+            onClick={() => downloadTextFile('bmh-projects.csv', toCsv(visible))}
           >
-            <Plus className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button type="button" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-gray-950 px-4 text-sm font-medium text-white md:hidden" onClick={() => setCreateManagedOpen(true)}>
+            <Plus className="h-4 w-4" />
+            New
+          </button>
+          <button type="button" className="hidden min-h-11 items-center gap-2 rounded-lg bg-gray-950 px-4 text-sm font-medium text-white md:inline-flex" onClick={() => setCreateManagedOpen(true)}>
+            <Plus className="h-4 w-4" />
             Create managed project
           </button>
-          <button
-            type="button"
-            className="px-4 py-2 rounded-lg border border-amber-300 text-amber-800 text-sm inline-flex items-center gap-2 hover:bg-amber-50 disabled:opacity-50"
-            disabled={archiveStaleTestsMutation.isPending}
-            onClick={() => setBulkArchiveTarget(true)}
-          >
-            <Archive className="w-4 h-4" />
-            Archive stale tests
-          </button>
-          <button className="px-4 py-2 rounded-lg bg-gray-900 text-white text-sm">Export project report</button>
         </div>
       </div>
 
-      {actionError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-          {actionError}
-        </div>
-      )}
-
-      {projectsQuery.isError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-          Failed to load projects from the database. Please make sure the backend is running and you’re logged in as an
-          admin, then refresh.
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search by project or homeowner..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="all">All Status</option>
-              <option value="draft">Draft</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-              <option value="archived">Archived</option>
-              <option value="extra_monitoring">Extra monitoring</option>
-              <option value="waiting_approval">Waiting for homeowner approval</option>
-            </select>
-          </div>
-
-          <select
-            value={riskFilter}
-            onChange={(e) => setRiskFilter(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="all">All Risk Levels</option>
-            <option value="low">Low Risk</option>
-            <option value="medium">Medium Risk</option>
-            <option value="high">High Risk</option>
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="updated">Sort by Latest</option>
-            <option value="progress">Sort by Progress</option>
-            <option value="budget">Sort by Budget</option>
-          </select>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow p-4 space-y-3">
-        <div>
-          <p className="text-sm font-medium text-gray-900">Payment account for invoices</p>
-          <p className="text-xs text-gray-500 mt-1">
-            This is the account on today’s invoice. Change it when the bank changes. An invoice already sent keeps the account it was sent with until you resend it.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Bank name" value={bankName} onChange={(e) => setBankName(e.target.value)} />
-          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} />
-          <input className="px-3 py-2 border rounded-lg text-sm" placeholder="Account name" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg disabled:opacity-50"
-            disabled={saveAccountMutation.isPending}
-            onClick={() => {
-              setAccountNotice('');
-              saveAccountMutation.mutate();
-            }}
-          >
-            Save account
-          </button>
-          {accountNotice ? <p className="text-sm text-gray-600">{accountNotice}</p> : null}
-        </div>
-      </div>
-
-      {statusFilter === 'extra_monitoring' ? (
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Contractor</th>
-                <th className="px-4 py-3">Verification</th>
-                <th className="px-4 py-3">Created</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(projectsQuery.data || []).map((project) => {
-                const requestGc = project.projectRequests?.[0]?.contractor;
-                const gcName =
-                  project.generalContractor?.contractorProfile?.name ||
-                  project.generalContractor?.fullName ||
-                  requestGc?.contractorProfile?.name ||
-                  requestGc?.fullName ||
-                  'Unknown';
-                const verified =
-                  project.generalContractor?.contractorProfile?.verified ??
-                  requestGc?.contractorProfile?.verified ??
-                  false;
-                return (
-                  <tr key={project.id} className="border-b last:border-0">
-                    <td className="px-4 py-3">
-                      <Link href={`/projects/${project.id}`} className="font-medium text-gray-900 hover:underline">
-                        {project.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">{gcName}</td>
-                    <td className="px-4 py-3">{verified ? 'Verified' : 'Not verified yet'}</td>
-                    <td className="px-4 py-3">
-                      {project.createdAt
-                        ? new Date(project.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                        : ''}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!projectsQuery.isLoading && (projectsQuery.data || []).length === 0 ? (
-            <p className="p-6 text-sm text-gray-500">No projects need extra monitoring.</p>
-          ) : null}
+      {actionError ? <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{actionError}</div> : null}
+      {projectsQuery.isError ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Failed to load projects from the database. Please make sure the backend is running and you are logged in as an admin, then refresh.
         </div>
       ) : null}
 
-      {statusFilter === 'waiting_approval' ? (
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b text-xs uppercase tracking-wide text-gray-500">
-              <tr>
-                <th className="px-4 py-3">Project</th>
-                <th className="px-4 py-3">Waiting stage</th>
-                <th className="px-4 py-3">Waiting since</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(projectsQuery.data || []).map((project) => {
-                const waiting = (project.stages || [])
-                  .filter((stage) => stage.status === 'pending_homeowner_approval')
-                  .sort((a, b) => String(a.submittedForApprovalAt || '').localeCompare(String(b.submittedForApprovalAt || '')));
-                const oldest = waiting[0];
-                const waited = oldest?.submittedForApprovalAt
-                  ? `${Math.max(0, Math.floor((Date.now() - new Date(oldest.submittedForApprovalAt).getTime()) / 86400000))} days`
-                  : '';
-                return (
-                  <tr key={project.id} className="border-b last:border-0">
-                    <td className="px-4 py-3">
-                      <Link href={`/projects/${project.id}`} className="font-medium text-gray-900 hover:underline">
-                        {project.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3">{waiting.map((stage) => stage.name).join(', ')}</td>
-                    <td className="px-4 py-3">{waited}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {!projectsQuery.isLoading && (projectsQuery.data || []).length === 0 ? (
-            <p className="p-6 text-sm text-gray-500">No stages are waiting for homeowner approval.</p>
-          ) : null}
-        </div>
-      ) : null}
+      <ProjectStatusTabs tab={tab} counts={counts} onChange={(next) => setParams({ tab: next === 'needs_attention' ? null : next })} />
+      <ProjectBulkBar
+        count={selectedVisible.length}
+        onExport={() => downloadTextFile('bmh-projects.csv', toCsv(selectedVisible))}
+        onArchive={() => setArchiveManyIds(selectedVisible.map((project) => project.id))}
+        onClear={() => setSelectedIds([])}
+      />
 
-      <div className={`grid grid-cols-1 xl:grid-cols-2 gap-6 ${statusFilter === 'extra_monitoring' || statusFilter === 'waiting_approval' ? 'hidden' : ''}`}>
-        {projectsQuery.isLoading && (
-          <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500 xl:col-span-2">
-            Loading projects…
-          </div>
-        )}
-        {filteredProjects.map((project) => {
-          const progressWidth = `${project.progress}%`;
-          const outstanding = Math.max(project.budget - project.spent, 0);
-          const showConfirm = project.paymentConfirmationStatus === 'declared';
-          const canActivate = !project.archivedAt && (project.status === 'pending_payment' || project.status === 'paused');
-          const canDeactivate = !project.archivedAt && project.status === 'active';
-          const isArchived = Boolean(project.archivedAt);
-          const displayStatus = isArchived ? 'archived' : project.status;
-          const canDeleteProject = true;
-          const isStaleTestCandidate =
-            !isArchived &&
-            ((project.status === 'draft' && project.gc === '—') ||
-              (project.spent === 0 &&
-                project.paymentConfirmationStatus !== 'confirmed' &&
-                project.status !== 'completed'));
-          const gcMailto = project.gcEmail ? `mailto:${project.gcEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}` : null;
-          const homeownerMailto = project.homeownerEmail
-            ? `mailto:${project.homeownerEmail}?subject=${encodeURIComponent(`BuildMyHouse: ${project.name}`)}`
-            : null;
-
-          return (
-            <div key={project.id} className="bg-white rounded-xl shadow p-6 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-gray-600" />
-                  </div>
-                  <div>
-                    <Link href={`/projects/${project.id}`} className="text-lg font-semibold text-gray-950">
-                      {project.name}
-                    </Link>
-                    <p className="text-sm text-gray-500">{project.address}</p>
-                    <Link href={`/projects/${project.id}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-gray-950 md:hidden">
-                      Open project
-                    </Link>
-                    {project.projectType && (
-                      <p className="text-xs text-gray-400 mt-1">Type: {project.projectType.replace('_', ' ')}</p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  {project.planRequestStep?.step === 5 && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-900">
-                      Quote check
-                    </span>
-                  )}
-                  {project.planRequestStep?.state === 'late' && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">
-                      Late
-                    </span>
-                  )}
-                  {project.managedByAdmin && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-700">
-                      managed
-                    </span>
-                  )}
-                  {isStaleTestCandidate && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-amber-100 text-amber-800">
-                      stale test
-                    </span>
-                  )}
-                  {project.gc === '—' && !isArchived && (
-                    <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">
-                      unmatched
-                    </span>
-                  )}
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full ${
-                      statusStyles[displayStatus] || 'bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    {displayStatus}
-                  </span>
-                  <button
-                    type="button"
-                    className={`px-2 py-1 text-xs rounded-full ${riskStyles[project.risk]} hover:opacity-90 disabled:opacity-60`}
-                    disabled={setRiskLevelMutation.isPending}
-                    title="Click to cycle risk level"
-                    onClick={async () => {
-                      setActionError('');
-                      try {
-                        await setRiskLevelMutation.mutateAsync({
-                          projectId: project.id,
-                          riskLevel: cycleRisk(project.risk),
-                        });
-                      } catch (e: any) {
-                        setActionError(e?.message || 'Failed to update risk level');
-                      }
-                    }}
-                  >
-                    {project.risk} risk
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-500">Budget</p>
-                  <p className="font-semibold">₦{project.budget.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Spent</p>
-                  <p className="font-semibold">₦{project.spent.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500">Outstanding</p>
-                  <p className="font-semibold">₦{outstanding.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-gray-500">Progress</span>
-                  <span className="font-semibold">{project.progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-gray-950" style={{ width: progressWidth }} />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 text-sm text-gray-500">
-                <div>
-                  <p>Homeowner</p>
-                  <p className="font-medium text-gray-900">{project.homeowner}</p>
-                </div>
-                <div>
-                  <p>GC</p>
-                  <p className="font-medium text-gray-900">{project.gc}</p>
-                </div>
-                <div>
-                  <p>Last update</p>
-                  <p className="font-medium text-gray-900">{project.lastUpdate}</p>
-                </div>
-                <div>
-                  <p>Next milestone</p>
-                  <p className="font-medium text-gray-900">{project.nextMilestone}</p>
-                </div>
-              </div>
-
-              <div className="hidden md:block border rounded-lg p-3 space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Manual payment</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
-                      {project.paymentConfirmationStatus === 'confirmed'
-                        ? 'Payment is complete.'
-                        : project.paymentConfirmationStatus === 'declared'
-                          ? 'A receipt reply is waiting. Enter the amount on the receipt to record that payment.'
-                          : 'Payment status: not declared'}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      className="px-3 py-2 text-sm border rounded-lg"
-                      onClick={() => {
-                        setActionError('');
-                        setPaymentLinkProjectId(project.id);
-                        setPaymentLinkValue(project.externalPaymentLink || '');
-                      }}
-                    >
-                      {project.externalPaymentLink ? 'Update payment link' : 'Request manual payment'}
-                    </button>
-                    {showConfirm && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <input
-                          type="number"
-                          min="1"
-                          step="0.01"
-                          inputMode="decimal"
-                          placeholder="Amount received"
-                          value={confirmAmounts[project.id] || ''}
-                          onChange={(event) => setConfirmAmounts((current) => ({ ...current, [project.id]: event.target.value }))}
-                          className="w-36 px-3 py-2 text-sm border rounded-lg"
-                        />
-                        <button
-                          disabled={confirmManualPaymentMutation.isPending}
-                          className="px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg disabled:opacity-50"
-                          onClick={async () => {
-                            setActionError('');
-                            const amount = Number(confirmAmounts[project.id]);
-                            if (!Number.isFinite(amount) || amount <= 0) {
-                              setActionError('Enter the amount on the receipt.');
-                              return;
-                            }
-                            try {
-                              await confirmManualPaymentMutation.mutateAsync({ projectId: project.id, amount });
-                            } catch (e: any) {
-                              setActionError(e?.message || 'Failed to confirm payment');
-                            }
-                          }}
-                        >
-                          Confirm payment
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {project.fundingReceiptUrl ? (
-                  <a
-                    href={getBackendAssetUrl(project.fundingReceiptUrl) || project.fundingReceiptUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Open receipt {project.fundingReference ? `(${project.fundingReference})` : ''}
-                  </a>
-                ) : project.externalPaymentLink ? (
-                  <a
-                    href={project.externalPaymentLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View payment instructions
-                  </a>
-                ) : (
-                  <p className="text-xs text-gray-500">No receipt yet. The invoice email collects it.</p>
-                )}
-              </div>
-
-              {project.homeownerEmail && (
-                <div className="hidden md:block">
-                  <ProjectAccessLinksPanel
-                    projectId={project.id}
-                    projectName={project.name}
-                    hasGc={project.gc !== '—'}
-                  />
-                </div>
-              )}
-
-              {project.risk === 'high' && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">
-                  <ShieldAlert className="w-4 h-4" />
-                  Payment or progress issue flagged for review
-                </div>
-              )}
-
-              <div className="hidden md:flex flex-wrap gap-2">
-                <Link
-                  href={`/projects/${project.id}`}
-                  className="px-3 py-2 text-sm bg-gray-900 text-white rounded-lg"
-                >
-                  Manage project
-                </Link>
-                <button
-                  className="px-3 py-2 text-sm border rounded-lg"
-                  onClick={() => setTimelineProjectId(project.id)}
-                >
-                  View timeline
-                </button>
-                {(canActivate || canDeactivate) && (
-                  <button
-                    className={`px-3 py-2 text-sm rounded-lg disabled:opacity-50 ${
-                      canDeactivate ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'
-                    }`}
-                    disabled={activateProjectMutation.isPending || deactivateProjectMutation.isPending}
-                    onClick={async () => {
-                      setActionError('');
-                      try {
-                        if (canDeactivate) {
-                          setDeactivateProjectTarget({ id: project.id, name: project.name });
-                        } else {
-                          setActivateProjectTarget({ id: project.id, name: project.name });
-                        }
-                      } catch (e: any) {
-                        setActionError(e?.message || (canDeactivate ? 'Failed to deactivate project' : 'Failed to activate project'));
-                      }
-                    }}
-                  >
-                    {canDeactivate ? 'Deactivate project' : 'Activate project'}
-                  </button>
-                )}
-                {canDeleteProject && (
-                  <button
-                    className="px-3 py-2 text-sm rounded-lg bg-red-600 text-white disabled:opacity-50 inline-flex items-center gap-2"
-                    disabled={deleteProjectMutation.isPending}
-                    onClick={() => {
-                      setActionError('');
-                      setDeleteProjectTarget({ id: project.id, name: project.name });
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                )}
-                {isArchived ? (
-                  <button
-                    className="px-3 py-2 text-sm rounded-lg border border-slate-300 disabled:opacity-50 inline-flex items-center gap-2"
-                    disabled={unarchiveProjectMutation.isPending}
-                    onClick={async () => {
-                      setActionError('');
-                      try {
-                        await unarchiveProjectMutation.mutateAsync(project.id);
-                      } catch (e: any) {
-                        setActionError(e?.message || 'Failed to unarchive project');
-                      }
-                    }}
-                  >
-                    <ArchiveRestore className="w-4 h-4" />
-                    Unarchive
-                  </button>
-                ) : (
-                  <button
-                    className="px-3 py-2 text-sm rounded-lg border border-slate-300 disabled:opacity-50 inline-flex items-center gap-2"
-                    disabled={archiveProjectMutation.isPending}
-                    onClick={() => {
-                      setActionError('');
-                      setArchiveProjectTarget({ id: project.id, name: project.name });
-                    }}
-                  >
-                    <Archive className="w-4 h-4" />
-                    Archive
-                  </button>
-                )}
-                {gcMailto ? (
-                  <a className="px-3 py-2 text-sm border rounded-lg" href={gcMailto}>
-                    Message GC
-                  </a>
-                ) : (
-                  <button
-                    className="px-3 py-2 text-sm border rounded-lg opacity-50 cursor-not-allowed"
-                    disabled
-                    title="GC email not available"
-                  >
-                    Message GC
-                  </button>
-                )}
-                {homeownerMailto ? (
-                  <a className="px-3 py-2 text-sm border rounded-lg" href={homeownerMailto}>
-                    Message Homeowner
-                  </a>
-                ) : (
-                  <button
-                    className="px-3 py-2 text-sm border rounded-lg opacity-50 cursor-not-allowed"
-                    disabled
-                    title="Homeowner email not available"
-                  >
-                    Message Homeowner
-                  </button>
-                )}
-              </div>
+      <div className="rounded-xl border border-[#E5E7EB] bg-white">
+        <div className="border-b border-gray-100 p-4">
+          {tab === 'drafts_and_tests' ? (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-gray-600">Dormant: no confirmed money, and no update for 28 days or no GC matched.</p>
+              <button
+                type="button"
+                className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-amber-300 px-3 text-sm text-amber-800 disabled:opacity-50"
+                disabled={archiveStaleTestsMutation.isPending}
+                onClick={() => setBulkArchiveTarget(true)}
+              >
+                <Archive className="h-4 w-4" />
+                Archive stale tests
+              </button>
             </div>
-          );
-        })}
-        {!projectsQuery.isLoading && filteredProjects.length === 0 && (
-          <div className="bg-white rounded-xl shadow p-8 text-center text-gray-500">
-            No projects match the current filters.
-          </div>
+          ) : null}
+          <ProjectFilterBar
+            tab={tab}
+            filters={filters}
+            sortBy={sortBy}
+            gcNames={gcNames}
+            onChange={(patch) => setParams({
+              q: patch.q === undefined ? filters.q : patch.q || null,
+              risk: patch.risk === undefined ? filters.risk : patch.risk || null,
+              gc: patch.gc === undefined ? filters.gc : patch.gc || null,
+              pay: patch.pay === undefined ? filters.pay : patch.pay || null,
+              show: patch.show === undefined ? filters.show : patch.show || null,
+            })}
+            onSort={(next) => setParams({ sort: next === 'needs_first' ? null : next })}
+            onClear={() => setParams({ q: null, risk: null, gc: null, pay: null, show: null })}
+            onLeaveDraftsHidden={() => setParams({ tab: 'all' })}
+          />
+        </div>
+        {projectsQuery.isLoading ? <p className="px-4 py-8 text-center text-sm text-gray-500">Loading projects.</p> : (
+        <ProjectsTable
+          projects={projectsQuery.isLoading ? [] : visible}
+          hiddenDraftCount={counts.drafts_and_tests || 0}
+          showHiddenNote={!projectsQuery.isLoading && tab !== 'drafts_and_tests' && tab !== 'archived' && tab !== 'all'}
+          selected={new Set(selectedIds)}
+          onToggle={(id) => setSelectedIds((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id])}
+          onToggleAll={() => {
+            const ids = visible.map((project) => project.id);
+            const allOn = ids.every((id) => selectedIds.includes(id));
+            setSelectedIds(allOn ? selectedIds.filter((id) => !ids.includes(id)) : Array.from(new Set([...selectedIds, ...ids])));
+          }}
+          onOpen={(project) => openDrawer(project)}
+          onViewTimeline={(project) => openDrawer(project, 'stages')}
+          onTrackingLinks={(project) => openDrawer(project, 'tracking')}
+          onPaymentLink={(project) => {
+            setActionError('');
+            setPaymentLinkProjectId(project.id);
+            setPaymentLinkValue(project.externalPaymentLink || '');
+          }}
+          onChangeRisk={changeRisk}
+          onActivate={(project) => setActivateProjectTarget({ id: project.id, name: project.name })}
+          onDeactivate={(project) => setDeactivateProjectTarget({ id: project.id, name: project.name })}
+          onArchive={(project) => setArchiveProjectTarget({ id: project.id, name: project.name })}
+          onUnarchive={async (project) => {
+            setActionError('');
+            try {
+              await unarchiveProjectMutation.mutateAsync(project.id);
+            } catch (error: any) {
+              setActionError(error?.message || 'Failed to unarchive project');
+            }
+          }}
+          onDelete={(project) => {
+            setActionError('');
+            setDeleteProjectTarget({ id: project.id, name: project.name });
+          }}
+          onShowDrafts={() => setParams({ tab: 'drafts_and_tests' })}
+        />
         )}
       </div>
+
+      <ProjectDrawer
+        project={openProject}
+        section={drawerSection}
+        confirmAmount={openProject ? confirmAmounts[openProject.id] || '' : ''}
+        confirmPending={confirmManualPaymentMutation.isPending}
+        onClose={() => setParams({ project: null, section: null })}
+        onChangeRisk={changeRisk}
+        onPaymentLink={(project) => {
+          setPaymentLinkProjectId(project.id);
+          setPaymentLinkValue(project.externalPaymentLink || '');
+        }}
+        onConfirmPayment={confirmPayment}
+        onConfirmAmount={(value) => {
+          if (!openProject) return;
+          setConfirmAmounts((current) => ({ ...current, [openProject.id]: value }));
+        }}
+        onActivate={(project) => setActivateProjectTarget({ id: project.id, name: project.name })}
+        onDeactivate={(project) => setDeactivateProjectTarget({ id: project.id, name: project.name })}
+        onArchive={(project) => setArchiveProjectTarget({ id: project.id, name: project.name })}
+        onUnarchive={async (project) => {
+          try {
+            await unarchiveProjectMutation.mutateAsync(project.id);
+          } catch (error: any) {
+            setActionError(error?.message || 'Failed to unarchive project');
+          }
+        }}
+        onDelete={(project) => setDeleteProjectTarget({ id: project.id, name: project.name })}
+      />
+      <InvoiceBankAccountModal open={accountOpen} onClose={() => setAccountOpen(false)} />
 
       {activateProjectTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="w-5 h-5 text-emerald-600 mt-0.5" />
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-emerald-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Activate Project?</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Activating <span className="font-medium text-gray-900">{activateProjectTarget.name}</span> will open
-                  project execution and timeline tracking for the homeowner and GC.
+                <p className="mt-1 text-sm text-gray-600">
+                  Activating <span className="font-medium text-gray-900">{activateProjectTarget.name}</span> will open project execution and timeline tracking for the homeowner and GC.
                 </p>
               </div>
             </div>
-
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 text-sm text-emerald-800">
-              Proceed only after payment verification and readiness checks are complete. This confirms the project is ready
-              to start.
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+              Proceed only after payment verification and readiness checks are complete. This confirms the project is ready to start.
             </div>
-
             <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setActivateProjectTarget(null)} disabled={activateProjectMutation.isPending}>Cancel</button>
               <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => setActivateProjectTarget(null)}
-                disabled={activateProjectMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-emerald-600 text-white disabled:opacity-50"
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-white disabled:opacity-50"
                 disabled={activateProjectMutation.isPending}
                 onClick={async () => {
                   setActionError('');
                   try {
                     await activateProjectMutation.mutateAsync(activateProjectTarget.id);
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to activate project');
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to activate project');
                   }
                 }}
               >
-                {activateProjectMutation.isPending ? 'Activating…' : 'Proceed and Activate'}
+                {activateProjectMutation.isPending ? 'Activating...' : 'Proceed and Activate'}
               </button>
             </div>
           </div>
@@ -993,45 +402,35 @@ export default function ProjectsPage() {
       )}
 
       {deactivateProjectTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Deactivate Project?</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Deactivating <span className="font-medium text-gray-900">{deactivateProjectTarget.name}</span> will
-                  pause the project for both the homeowner and the GC. They will be notified that work is temporarily
-                  paused.
+                <p className="mt-1 text-sm text-gray-600">
+                  Deactivating <span className="font-medium text-gray-900">{deactivateProjectTarget.name}</span> will pause the project for both the homeowner and the GC. They will be notified that work is temporarily paused.
                 </p>
               </div>
             </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
               Only proceed if this pause is required for review, dispute resolution, or payment issues.
             </div>
-
             <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setDeactivateProjectTarget(null)} disabled={deactivateProjectMutation.isPending}>Cancel</button>
               <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => setDeactivateProjectTarget(null)}
-                disabled={deactivateProjectMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-amber-600 text-white disabled:opacity-50"
+                className="rounded-lg bg-amber-600 px-4 py-2 text-white disabled:opacity-50"
                 disabled={deactivateProjectMutation.isPending}
                 onClick={async () => {
                   setActionError('');
                   try {
                     await deactivateProjectMutation.mutateAsync(deactivateProjectTarget.id);
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to deactivate project');
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to deactivate project');
                   }
                 }}
               >
-                {deactivateProjectMutation.isPending ? 'Pausing…' : 'Proceed and Pause'}
+                {deactivateProjectMutation.isPending ? 'Pausing...' : 'Proceed and Pause'}
               </button>
             </div>
           </div>
@@ -1039,43 +438,65 @@ export default function ProjectsPage() {
       )}
 
       {archiveProjectTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <Archive className="w-5 h-5 text-slate-600 mt-0.5" />
+              <Archive className="mt-0.5 h-5 w-5 text-slate-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Archive Project?</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Archiving <span className="font-medium text-gray-900">{archiveProjectTarget.name}</span> hides it from
-                  project monitoring, stalled alerts, and homeowner/GC app lists. Data is kept for records.
+                <p className="mt-1 text-sm text-gray-600">
+                  Archiving <span className="font-medium text-gray-900">{archiveProjectTarget.name}</span> hides it from project monitoring, stalled alerts, and homeowner/GC app lists. Data is kept for records.
                 </p>
               </div>
             </div>
-            <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700">
-              Use this for test projects, unmatched requests, or jobs that were never paid and should stop appearing as
-              stalled.
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              Use this for test projects, unmatched requests, or jobs that were never paid and should stop appearing as stalled.
             </div>
             <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setArchiveProjectTarget(null)} disabled={archiveProjectMutation.isPending}>Cancel</button>
               <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => setArchiveProjectTarget(null)}
-                disabled={archiveProjectMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-gray-900 text-white disabled:opacity-50"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
                 disabled={archiveProjectMutation.isPending}
                 onClick={async () => {
                   setActionError('');
                   try {
                     await archiveProjectMutation.mutateAsync(archiveProjectTarget.id);
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to archive project');
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to archive project');
                   }
                 }}
               >
-                {archiveProjectMutation.isPending ? 'Archiving…' : 'Archive project'}
+                {archiveProjectMutation.isPending ? 'Archiving...' : 'Archive project'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {archiveManyIds && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
+            <h2 className="text-lg font-semibold text-gray-900">Archive {archiveManyIds.length} projects?</h2>
+            <p className="text-sm text-gray-600">Each selected project is archived one after another. Data is kept for records.</p>
+            <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setArchiveManyIds(null)} disabled={archiveProjectMutation.isPending}>Cancel</button>
+              <button
+                className="rounded-lg bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
+                disabled={archiveProjectMutation.isPending}
+                onClick={async () => {
+                  setActionError('');
+                  try {
+                    for (const id of archiveManyIds) {
+                      await archiveProjectMutation.mutateAsync(id);
+                    }
+                    setSelectedIds((current) => current.filter((id) => !archiveManyIds.includes(id)));
+                    setArchiveManyIds(null);
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to archive project');
+                  }
+                }}
+              >
+                {archiveProjectMutation.isPending ? 'Archiving...' : 'Archive'}
               </button>
             </div>
           </div>
@@ -1083,42 +504,33 @@ export default function ProjectsPage() {
       )}
 
       {bulkArchiveTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <Archive className="w-5 h-5 text-amber-600 mt-0.5" />
+              <Archive className="mt-0.5 h-5 w-5 text-amber-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Archive stale test projects?</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  This archives unmatched draft requests and unpaid projects with no activity for 28+ days. They will
-                  disappear from stalled alerts and the default project list.
+                <p className="mt-1 text-sm text-gray-600">
+                  This archives unmatched draft requests and unpaid projects with no activity for 28+ days. They will disappear from stalled alerts and the default project list.
                 </p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setBulkArchiveTarget(false)} disabled={archiveStaleTestsMutation.isPending}>Cancel</button>
               <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => setBulkArchiveTarget(false)}
-                disabled={archiveStaleTestsMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-amber-600 text-white disabled:opacity-50"
+                className="rounded-lg bg-amber-600 px-4 py-2 text-white disabled:opacity-50"
                 disabled={archiveStaleTestsMutation.isPending}
                 onClick={async () => {
                   setActionError('');
                   try {
                     const result = await archiveStaleTestsMutation.mutateAsync();
-                    if (result.archivedCount === 0) {
-                      setActionError('No eligible stale test projects found to archive.');
-                    }
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to archive stale projects');
+                    if (result.archivedCount === 0) setActionError('No eligible stale test projects found to archive.');
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to archive stale projects');
                   }
                 }}
               >
-                {archiveStaleTestsMutation.isPending ? 'Archiving…' : 'Archive eligible projects'}
+                {archiveStaleTestsMutation.isPending ? 'Archiving...' : 'Archive eligible projects'}
               </button>
             </div>
           </div>
@@ -1126,45 +538,39 @@ export default function ProjectsPage() {
       )}
 
       {deleteProjectTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5" />
+              <AlertTriangle className="mt-0.5 h-5 w-5 text-red-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Delete Project Permanently?</h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Deleting <span className="font-medium text-gray-900">{deleteProjectTarget.name}</span> removes it from
-                  the database. Payment records are preserved but detached from this project.
+                <p className="mt-1 text-sm text-gray-600">
+                  Deleting <span className="font-medium text-gray-900">{deleteProjectTarget.name}</span> removes it from the database. Payment records are preserved but detached from this project.
                 </p>
               </div>
             </div>
-
-            <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-sm text-red-800">
-              This cannot be undone. Prefer <strong>Archive</strong> if you only want to hide test or stalled projects
-              from alerts and monitoring.
+            <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+              This cannot be undone. Prefer <strong>Archive</strong> if you only want to hide test or stalled projects from alerts and monitoring.
             </div>
-
+            <label className="block text-sm text-gray-700">
+              Type the project name to confirm
+              <input className="mt-1 w-full rounded-lg border px-3 py-2" value={deleteConfirmName} onChange={(event) => setDeleteConfirmName(event.target.value)} />
+            </label>
             <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => setDeleteProjectTarget(null)} disabled={deleteProjectMutation.isPending}>Cancel</button>
               <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => setDeleteProjectTarget(null)}
-                disabled={deleteProjectMutation.isPending}
-              >
-                Cancel
-              </button>
-              <button
-                className="px-4 py-2 rounded-lg bg-red-600 text-white disabled:opacity-50"
-                disabled={deleteProjectMutation.isPending}
+                className="rounded-lg bg-red-600 px-4 py-2 text-white disabled:opacity-50"
+                disabled={deleteProjectMutation.isPending || deleteConfirmName.trim() !== deleteProjectTarget.name.trim()}
                 onClick={async () => {
                   setActionError('');
                   try {
                     await deleteProjectMutation.mutateAsync(deleteProjectTarget.id);
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to delete project');
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to delete project');
                   }
                 }}
               >
-                {deleteProjectMutation.isPending ? 'Deleting…' : 'Proceed and Delete'}
+                {deleteProjectMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
@@ -1172,185 +578,69 @@ export default function ProjectsPage() {
       )}
 
       {pausedProjectName && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="w-5 h-5 text-emerald-600 mt-0.5" />
+              <ShieldAlert className="mt-0.5 h-5 w-5 text-emerald-600" />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Project Paused</h2>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="mt-1 text-sm text-gray-600">
                   <span className="font-medium text-gray-900">{pausedProjectName}</span> has been paused successfully.
                 </p>
               </div>
             </div>
             <div className="flex justify-end">
-              <button className="px-4 py-2 rounded-lg bg-gray-900 text-white" onClick={() => setPausedProjectName(null)}>
-                Done
-              </button>
+              <button className="rounded-lg bg-gray-900 px-4 py-2 text-white" onClick={() => setPausedProjectName(null)}>Done</button>
             </div>
           </div>
         </div>
       )}
 
       {paymentLinkProjectId && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-white rounded-xl shadow-lg p-6 space-y-4">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg space-y-4 rounded-xl bg-white p-6 shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold">Set external payment link</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  Paste the bank transfer / invoice URL (Wise, bank instructions, etc). This is shown to the homeowner.
-                </p>
+                <p className="mt-1 text-sm text-gray-500">Paste the bank transfer / invoice URL (Wise, bank instructions, etc). This is shown to the homeowner.</p>
               </div>
-              <button
-                className="text-sm text-gray-500 hover:text-gray-700"
-                onClick={() => {
-                  setPaymentLinkProjectId(null);
-                  setPaymentLinkValue('');
-                }}
-              >
-                Close
-              </button>
+              <button className="text-sm text-gray-500 hover:text-gray-700" onClick={() => { setPaymentLinkProjectId(null); setPaymentLinkValue(''); }}>Close</button>
             </div>
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">External payment link</label>
-              <input
-                type="url"
-                placeholder="https://..."
-                value={paymentLinkValue}
-                onChange={(e) => setPaymentLinkValue(e.target.value)}
-                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-400 mt-2">
-                Project ID: <span className="font-mono">{paymentLinkProjectId}</span>
-              </p>
+              <label className="mb-2 block text-sm font-medium text-gray-700">External payment link</label>
+              <input type="url" placeholder="https://..." value={paymentLinkValue} onChange={(event) => setPaymentLinkValue(event.target.value)} className="w-full rounded-lg border px-4 py-2" />
+              <p className="mt-2 text-xs text-gray-400">Project ID: <span className="font-mono">{paymentLinkProjectId}</span></p>
             </div>
-
-            <div className="flex gap-2 justify-end">
-              <button
-                className="px-4 py-2 border rounded-lg"
-                onClick={() => {
-                  setPaymentLinkProjectId(null);
-                  setPaymentLinkValue('');
-                }}
-              >
-                Cancel
-              </button>
+            <div className="flex justify-end gap-2">
+              <button className="rounded-lg border px-4 py-2" onClick={() => { setPaymentLinkProjectId(null); setPaymentLinkValue(''); }}>Cancel</button>
               <button
                 disabled={setExternalPaymentLinkMutation.isPending || !paymentLinkValue.trim()}
-                className="px-4 py-2 rounded-lg bg-gray-900 text-white disabled:opacity-50"
+                className="rounded-lg bg-gray-900 px-4 py-2 text-white disabled:opacity-50"
                 onClick={async () => {
                   setActionError('');
                   try {
-                    await setExternalPaymentLinkMutation.mutateAsync({
-                      projectId: paymentLinkProjectId,
-                      externalPaymentLink: paymentLinkValue.trim(),
-                    });
-                  } catch (e: any) {
-                    setActionError(e?.message || 'Failed to set payment link');
+                    await setExternalPaymentLinkMutation.mutateAsync({ projectId: paymentLinkProjectId, externalPaymentLink: paymentLinkValue.trim() });
+                  } catch (error: any) {
+                    setActionError(error?.message || 'Failed to set payment link');
                   }
                 }}
               >
-                {setExternalPaymentLinkMutation.isPending ? 'Saving…' : 'Save link'}
+                {setExternalPaymentLinkMutation.isPending ? 'Saving...' : 'Save link'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {timelineProjectId && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-          <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-lg font-semibold">Project timeline</h2>
-                <p className="text-sm text-gray-500 mt-1">
-                  {selectedTimelineProject ? (
-                    <>
-                      <span className="font-medium text-gray-900">{selectedTimelineProject.name}</span>
-                      <span className="text-gray-400"> • </span>
-                      <span className="text-gray-600">{selectedTimelineProject.address}</span>
-                    </>
-                  ) : (
-                    'Loading…'
-                  )}
-                </p>
-              </div>
-              <button
-                className="text-sm text-gray-500 hover:text-gray-700"
-                onClick={() => setTimelineProjectId(null)}
-              >
-                Close
-              </button>
-            </div>
-
-            {selectedTimelineProject && (
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500">Homeowner</p>
-                  <p className="font-medium text-gray-900">{selectedTimelineProject.homeowner}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-500">GC</p>
-                  <p className="font-medium text-gray-900">{selectedTimelineProject.gc}</p>
-                </div>
-              </div>
-            )}
-
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-50 px-4 py-3 flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-900">Stages</p>
-                <p className="text-xs text-gray-500">{selectedStages.length} total</p>
-              </div>
-              {selectedStages.length === 0 ? (
-                <div className="px-4 py-8 text-center text-gray-500 text-sm">No stages found for this project.</div>
-              ) : (
-                <div className="divide-y">
-                  {selectedStages.map((stage) => (
-                    <div key={stage.id} className="px-4 py-3 flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
-                          {stage.order + 1}. {stage.name}
-                        </p>
-                        <div className="text-xs text-gray-500 mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                          {stage.estimatedDuration ? <span>Est. {stage.estimatedDuration}</span> : null}
-                          {stage.startDate ? <span>Start: {formatDateShort(stage.startDate) || '—'}</span> : null}
-                          {stage.completionDate ? (
-                            <span>Done: {formatDateShort(stage.completionDate) || '—'}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                      <span
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          stageStatusStyles[stage.status] || 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {stage.status.replace('_', ' ')}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex justify-end">
-              <button className="px-4 py-2 border rounded-lg" onClick={() => setTimelineProjectId(null)}>
-                Done
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <CreateManagedProjectModal
-        open={createManagedOpen}
-        onClose={() => setCreateManagedOpen(false)}
-        onCreated={invalidateProjectQueries}
-      />
+      <CreateManagedProjectModal open={createManagedOpen} onClose={() => setCreateManagedOpen(false)} onCreated={invalidateProjectQueries} />
     </div>
   );
 }
 
-
-
+export default function ProjectsPageRoute() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-gray-500 md:p-8">Loading projects.</div>}>
+      <ProjectsPage />
+    </Suspense>
+  );
+}
