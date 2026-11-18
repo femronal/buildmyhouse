@@ -100,7 +100,8 @@ jobs:
 
   test-admin-dashboard:
     name: Test Admin Dashboard (E2E)
-    runs-on: ubuntu-latest
+    # Playwright 1.57 cannot install Chromium on Ubuntu 26.04, which is what ubuntu-latest is now.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
       - name: Checkout code
