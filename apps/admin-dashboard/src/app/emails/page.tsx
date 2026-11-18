@@ -139,6 +139,7 @@ export default function AdminEmailsPage() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2"
             placeholder="Important update from BuildMyHouse"
           />
+          <p className="text-xs text-gray-500 mt-1">Replies go to inspect@buildmyhouse.app</p>
         </div>
 
         <div>

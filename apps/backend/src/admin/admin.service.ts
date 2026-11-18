@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { ContractorsService } from '../contractors/contractors.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -72,6 +73,7 @@ export class AdminService {
     private readonly notificationsService: NotificationsService,
     private readonly planFileHealthService: PlanFileHealthService,
     private readonly emailService: EmailService,
+    private readonly config: ConfigService,
   ) {}
 
   async getDashboard(adminUserId: string) {
@@ -508,6 +510,7 @@ export class AdminService {
 
     const htmlBody = html || this.wrapTextInHtml(text);
     const textBody = text || this.stripHtml(html);
+    const replyTo = String(this.config.get<string>('CAMPAIGN_REPLY_TO') || 'inspect@buildmyhouse.app').trim();
 
     // Keep throughput below Resend free-tier API rate limits (~5 req/sec).
     const concurrency = 4;
@@ -524,6 +527,7 @@ export class AdminService {
             subject,
             html: htmlBody,
             text: textBody,
+            replyTo,
           });
           return { to, ok };
         }),
@@ -556,6 +560,7 @@ export class AdminService {
         totalRecipients: recipients.length,
         sent,
         failed,
+        replyTo,
       },
     });
 
@@ -565,10 +570,14 @@ export class AdminService {
       sent,
       failed,
       failedRecipients,
+      replyTo,
     };
   }
 
-  private async sendWithRetry(options: { to: string; subject: string; html: string; text?: string }, maxAttempts = 3) {
+  private async sendWithRetry(
+    options: { to: string; subject: string; html: string; text?: string; replyTo?: string },
+    maxAttempts = 3,
+  ) {
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       const ok = await this.emailService.send(options);
       if (ok) return true;

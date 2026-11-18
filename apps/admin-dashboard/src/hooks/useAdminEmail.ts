@@ -21,6 +21,7 @@ export type SendBulkEmailResult = {
   sent: number;
   failed: number;
   failedRecipients: string[];
+  replyTo?: string;
 };
 
 export type AudienceCounts = {

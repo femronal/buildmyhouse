@@ -47,6 +47,7 @@ describe('admin dashboard', () => {
   const notificationsService = { getMyNotifications: jest.fn() };
   const planFileHealthService = { scanMissingPlanFiles: jest.fn() };
   const emailService = {};
+  const config = { get: jest.fn() };
 
   let service: AdminService;
 
@@ -74,6 +75,7 @@ describe('admin dashboard', () => {
       notificationsService as any,
       planFileHealthService as any,
       emailService as any,
+      config as any,
     );
   });
 
