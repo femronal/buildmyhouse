@@ -27,7 +27,8 @@ export default function SignInPage() {
         <p>A ₦2,000,000 contractor amount pays the partner ₦50,000.</p>
         <p>
           The click window is 30 days. The first partner to refer a homeowner keeps that homeowner&apos;s later
-          projects. Commission is paid after each stage is approved.
+          projects. Commission is paid once, after the project&apos;s final stage is approved and BuildMyHouse has
+          confirmed the homeowner&apos;s payment.
         </p>
       </div>
       <div className="mt-6 lg:hidden">
