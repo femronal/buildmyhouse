@@ -176,8 +176,6 @@ export const diasporaBuildNigeriaFromAbroadPageContent = {
 <p>That was a small plumbing job, not a full house. It is not evidence that every technical challenge of a large building has already been solved. It does show the operating principle: understand the problem, agree the work, fund the required activity, document completion, obtain homeowner approval, then pay the contractor. The same discipline matters more when the work is a foundation, a roof, a renovation or a new building.</p>
 <h2>Step 16: Start smaller before you commit to a full build</h2>
 <p>You do not have to begin by handing over a multimillion-naira construction project. A repair at your parents' home, a site inspection, a material-price check, or a construction payment schedule are all ways to learn the process.</p>
-<p>The BuildMyHouse homepage currently describes a first-project offer for qualifying projects: ₦0 BuildMyHouse platform commission, a free first inspection, and access to homeowner tools. That offer is not a universal promise for every full-build contract. Eligibility and terms can change.</p>
-<p><a class="bmx-article-link" href="/#first-project-offer">Read the current first-project offer</a></p>
 <p>The point is a clearer next property decision, not pressure to start a larger project.</p>
 <p>BuildMyHouse Technologies · 7 Ransome Kuti Rd, Akoka, Lagos 100001 · +234 813 903 6559 · <a class="bmx-article-link" href="https://buildmyhouse.app">buildmyhouse.app</a></p>`,
 

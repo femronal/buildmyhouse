@@ -255,46 +255,6 @@ export const PRODUCT_LADDER_SECTION = {
   secondaryCta: { label: 'Browse Services', href: '/services/home-renovation-nigeria' },
 } as const;
 
-export const OFFER_SECTION = {
-  eyebrow: 'First-project offer for new homeowners',
-  heading: 'Try BuildMyHouse the low-risk way.',
-  supporting:
-    'Before you send another payment into confusion, start with a structured first project. It is built to make trying us feel like a no-brainer, not a leap of faith.',
-  components: [
-    {
-      title: '₦0 BuildMyHouse commission on your first project',
-      description:
-        'For your first project, BuildMyHouse does not charge platform commission. You pay the verified contractor quote through a staged workflow, not an extra platform cut to “try us.”',
-    },
-    {
-      title: 'Free first inspection',
-      description:
-        'Qualifying first-time projects include a free first inspection / site assessment so the job starts from a clearer diagnosis, not a guess on WhatsApp.',
-    },
-    {
-      title: 'Free access to homeowner tools',
-      description:
-        'Use Price Checker and other BuildMyHouse tools to question material prices, quotes, and project decisions before money moves.',
-    },
-    {
-      title: 'Start with a simple repair if you want',
-      description:
-        'Many diaspora owners begin with one urgent repair to test the process. Then they bring larger renovations once they have seen how stages and evidence work.',
-    },
-  ],
-  bonusesHeading: 'Stacked into your first project',
-  bonuses: [
-    'Structured project setup support',
-    'Guided scope clarification before work starts',
-    'Stage tracking with evidence visibility',
-    'Remote Renovation Scope Worksheet for Nigerians abroad',
-  ],
-  scarcity:
-    'Early-user first-project slots are limited each month while we carefully onboard diaspora owners. Support stays personal, not mass-market chaos.',
-  primaryCta: { label: 'Claim Your First-Project Offer', href: '/start' },
-  secondaryCta: { label: 'See How It Works', href: '#how-it-works' },
-} as const;
-
 export const GUARANTEE_SECTION = {
   heading: 'Our process is built to reduce your risk, not increase it.',
   supporting:
@@ -355,10 +315,13 @@ export const FOOTER_CLOSE = {
   line1: 'Ready to stop guessing?',
   line2: 'Start managing with clarity.',
   supporting:
-    'Claim your first-project offer. Get ₦0 BuildMyHouse commission, a free first inspection for qualifying projects, and tools that help you decide before money moves.',
-  ctaLabel: 'Start Your First Tracked Project',
+    'Start a tracked project with clearer scope, stage evidence, and progress updates before money moves forward.',
+  ctaLabel: 'Start a Tracked Project',
   ctaHref: '/start',
 } as const;
+
+export const PARTNER_PORTAL_URL = 'https://partner.buildmyhouse.app';
+export const PARTNER_FOOTER_LABEL = 'Become a partner: earn on every project you refer';
 
 export type PopularChip = {
   label: string;

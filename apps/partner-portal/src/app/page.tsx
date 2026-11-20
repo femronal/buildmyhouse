@@ -20,7 +20,15 @@ export default function SignInPage() {
       <h1 className="mt-2 text-3xl font-bold text-gray-900">Know someone building, renovating, or repairing a property in Nigeria?</h1>
       <div className="mt-3 space-y-3 text-sm leading-6 text-gray-600">
         <p>Introduce them to BuildMyHouse. We manage the project, track progress, and handle payments.</p>
-        <p>You earn when their projects are completed — including future projects from the same homeowner.</p>
+        <p>
+          Partners earn 2.5% of the contractor amount. That commission is paid out of BuildMyHouse&apos;s 10% fee.
+          The homeowner pays nothing extra. Contingency is excluded.
+        </p>
+        <p>A ₦2,000,000 contractor amount pays the partner ₦50,000.</p>
+        <p>
+          The click window is 30 days. The first partner to refer a homeowner keeps that homeowner&apos;s later
+          projects. Commission is paid after each stage is approved.
+        </p>
       </div>
       <div className="mt-6 lg:hidden">
         <LandingArt />

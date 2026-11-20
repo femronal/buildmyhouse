@@ -43,7 +43,8 @@ import {
   GUARANTEE_SECTION,
   HERO_AUDIENCE_CONTENT,
   NAV_ITEMS,
-  OFFER_SECTION,
+  PARTNER_FOOTER_LABEL,
+  PARTNER_PORTAL_URL,
   PROMISED_LAND,
   WORKSHEET_SECTION,
   BUILDMYHOUSE_CONTACT,
@@ -380,6 +381,17 @@ export default function HomeLandingPage() {
                     </Link>
                   ),
                 )}
+                {Platform.OS === 'web' ? (
+                  createElement(
+                    'a',
+                    {
+                      href: PARTNER_PORTAL_URL,
+                      className: 'hidden xl:inline text-sm text-slate-500',
+                      style: { fontFamily: 'Poppins_500Medium' },
+                    },
+                    'Partners',
+                  )
+                ) : null}
               </WebLandmark>
             </View>
             <View className="flex-row items-center gap-4">
@@ -748,92 +760,6 @@ export default function HomeLandingPage() {
         </View>
 
         <TestimonialsSection />
-
-        {/* Godfather offer + bonuses + scarcity */}
-        <View
-          nativeID="first-project-offer"
-          className="py-24 bg-white border-b border-slate-100"
-          onLayout={(e) => recordSectionOffset('first-project-offer', e.nativeEvent.layout.y)}
-        >
-          <View className="max-w-7xl w-full self-center px-6 md:px-12">
-            <View className="max-w-3xl self-center mb-12">
-              <Text
-                className="text-xs uppercase tracking-[0.18em] text-slate-500 mb-3 text-center"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                {OFFER_SECTION.eyebrow}
-              </Text>
-              <SectionHeading className="text-3xl md:text-4xl font-semibold tracking-tight text-black mb-4 text-center">
-                {OFFER_SECTION.heading}
-              </SectionHeading>
-              <Text className="text-base text-slate-500 text-center leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                {OFFER_SECTION.supporting}
-              </Text>
-            </View>
-            <View className="flex-row flex-wrap gap-4 max-w-5xl self-center mb-10">
-              {OFFER_SECTION.components.map((item, index) => (
-                <View
-                  key={item.title}
-                  className="w-full sm:w-[47%] rounded-2xl border border-slate-200 bg-slate-50 p-6"
-                >
-                  <Text className="text-xs text-[#16a34a] mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Bonus {String(index + 1).padStart(2, '0')}
-                  </Text>
-                  <Text className="text-base text-black mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    {item.title}
-                  </Text>
-                  <Text className="text-sm text-slate-500 leading-relaxed" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {item.description}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <View className="max-w-3xl self-center mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-6">
-              <Text className="text-sm text-black mb-3 text-center" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                {OFFER_SECTION.bonusesHeading}
-              </Text>
-              {OFFER_SECTION.bonuses.map((bonus) => (
-                <View key={bonus} className="flex-row items-start gap-2 mb-2">
-                  <CheckCircle size={16} color="#16a34a" weight="fill" style={{ marginTop: 2 }} />
-                  <Text className="text-sm text-slate-600 flex-1" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {bonus}
-                  </Text>
-                </View>
-              ))}
-            </View>
-            <Text
-              className="text-sm text-slate-500 text-center max-w-2xl self-center mb-8 leading-relaxed"
-              style={{ fontFamily: 'Poppins_500Medium' }}
-            >
-              {OFFER_SECTION.scarcity}
-            </Text>
-            <View className="flex-col sm:flex-row gap-3 items-center justify-center">
-              <Link href={OFFER_SECTION.primaryCta.href as any} asChild>
-                <Pressable
-                  onPress={() => trackPrimaryCta('godfather_offer', OFFER_SECTION.primaryCta.href)}
-                  className="h-12 px-8 rounded-lg bg-black justify-center bmh-glass-btn bmh-glass-btn-dark"
-                  accessibilityRole="link"
-                >
-                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    {OFFER_SECTION.primaryCta.label}
-                  </Text>
-                </Pressable>
-              </Link>
-              <Pressable
-                onPress={() => {
-                  trackSecondaryCta('godfather_offer', OFFER_SECTION.secondaryCta.href);
-                  navPress(OFFER_SECTION.secondaryCta.href);
-                }}
-                className="h-12 px-8 rounded-lg bg-white border border-slate-200 justify-center"
-                accessibilityRole="button"
-              >
-                <Text className="text-sm text-black" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  {OFFER_SECTION.secondaryCta.label}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
 
         {/* Risk reversal / guarantee */}
         <View className="py-24 bg-slate-50 border-b border-slate-100">
@@ -1219,6 +1145,28 @@ export default function HomeLandingPage() {
                   </View>
                 </View>
               </View>
+
+              {Platform.OS === 'web' ? (
+                createElement(
+                  'a',
+                  {
+                    href: PARTNER_PORTAL_URL,
+                    className: 'text-sm text-white mt-8 self-start',
+                    style: { fontFamily: 'Poppins_500Medium' },
+                  },
+                  PARTNER_FOOTER_LABEL,
+                )
+              ) : (
+                <Pressable
+                  onPress={() => Linking.openURL(PARTNER_PORTAL_URL)}
+                  className="mt-8 self-start"
+                  accessibilityRole="link"
+                >
+                  <Text className="text-sm text-white" style={{ fontFamily: 'Poppins_500Medium' }}>
+                    {PARTNER_FOOTER_LABEL}
+                  </Text>
+                </Pressable>
+              )}
 
               <Link
                 href={`https://maps.google.com/?q=${encodeURIComponent(BUILDMYHOUSE_CONTACT.mapsQuery)}` as any}

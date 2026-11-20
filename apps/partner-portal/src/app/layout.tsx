@@ -9,7 +9,7 @@ const poppins = Poppins({
 });
 
 const description =
-  'Introduce them to BuildMyHouse. We manage the project, track progress, and handle payments. You earn when their projects are completed, including future projects from the same homeowner.';
+  "Partners earn 2.5% of the contractor amount, paid out of BuildMyHouse's 10% fee. The homeowner pays nothing extra. Contingency is excluded. The click window is 30 days. The first partner to refer a homeowner keeps that homeowner's later projects. Commission is paid after each stage is approved. A ₦2,000,000 contractor amount pays the partner ₦50,000.";
 
 export const metadata = {
   metadataBase: new URL('https://partner.buildmyhouse.app'),

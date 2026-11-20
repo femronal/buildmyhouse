@@ -81,6 +81,22 @@ function handler(event) {
     };
   }
 
+  // Absolute destinations. Same-host redirects above always prefix the request host.
+  var externalRedirects = {
+    '/partners': 'https://partner.buildmyhouse.app',
+  };
+  var externalTarget = externalRedirects[uri];
+  if (externalTarget) {
+    return {
+      statusCode: 301,
+      statusDescription: 'Moved Permanently',
+      headers: {
+        location: { value: externalTarget },
+        'cache-control': { value: 'public, max-age=86400' },
+      },
+    };
+  }
+
   // Filtered directory URLs (/professionals?profession=…) share one static shell.
   // inject-static-seo.mjs writes <route>/query.html with noindex,follow and a
   // canonical pointing at the bare path. Unfiltered listings stay indexable.

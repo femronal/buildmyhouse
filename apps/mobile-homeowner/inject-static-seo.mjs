@@ -26,6 +26,9 @@ const REDIRECTS = {
   // No flooring service URL is published. /services is 404.
   // /renovation/nigeria is the live page with a Tiling and flooring section.
   '/services/german-flooring-installation-nigeria': '/renovation/nigeria',
+  // Partner applications live on the partner host. CloudFront returns the 301.
+  // This file is the fallback if a request reaches S3.
+  '/partners': 'https://partner.buildmyhouse.app',
 };
 
 const API_URL = (process.env.EXPO_PUBLIC_API_URL || 'https://api.buildmyhouse.app/api').replace(
@@ -511,7 +514,12 @@ function writeFilteredDirectoryHtml(route) {
 }
 
 function writeRedirectHtml(route, targetRoute) {
-  const targetUrl = `${WEB_URL}${targetRoute}`;
+  const absolute = /^https?:\/\//i.test(targetRoute);
+  const targetUrl = absolute ? targetRoute : `${WEB_URL}${targetRoute}`;
+  const continueLabel = absolute ? targetUrl : targetRoute;
+  const script = absolute
+    ? `\n  <script>location.replace(${JSON.stringify(targetUrl)});</script>`
+    : '';
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -520,10 +528,10 @@ function writeRedirectHtml(route, targetRoute) {
   <title>Redirecting…</title>
   <meta name="robots" content="noindex,follow" />
   <link rel="canonical" href="${targetUrl}" />
-  <meta http-equiv="refresh" content="0; url=${targetUrl}" />
+  <meta http-equiv="refresh" content="0; url=${targetUrl}" />${script}
 </head>
 <body>
-  <p><a href="${targetUrl}">Continue to ${escapeHtml(targetRoute)}</a></p>
+  <p><a href="${targetUrl}">Continue to ${escapeHtml(continueLabel)}</a></p>
 </body>
 </html>
 `;
