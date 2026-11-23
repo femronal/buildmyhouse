@@ -3398,6 +3398,7 @@ export class ContractorsService {
           include: {
             materials: true,
             teamMembers: true,
+            contractorPayouts: { select: { amount: true, voidedAt: true } },
           },
         },
         payments: {

@@ -142,7 +142,7 @@ export const HR_PERMISSION_CATALOG: PermissionDef[] = [
   {
     key: 'payments.payout',
     groupLabel: 'Finance / Payments',
-    description: 'Trigger payouts',
+    description: 'Record payments sent to contractors',
     isCritical: true,
   },
   {

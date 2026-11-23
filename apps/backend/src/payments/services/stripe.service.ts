@@ -93,29 +93,6 @@ export class StripeService {
   }
 
   /**
-   * Create a payout to a connected account or external account
-   */
-  async createPayout(params: {
-    amount: number;
-    currency: string;
-    destination?: string; // Stripe account ID or bank account
-    description?: string;
-    metadata?: Record<string, string>;
-  }): Promise<Stripe.Payout> {
-    if (!this.stripe) {
-      throw new Error('Stripe is not configured');
-    }
-
-    return this.stripe.payouts.create({
-      amount: Math.round(params.amount * 100), // Convert to cents
-      currency: params.currency,
-      destination: params.destination,
-      description: params.description,
-      metadata: params.metadata || {},
-    });
-  }
-
-  /**
    * Create a transfer to a connected account (for marketplace)
    */
   async createTransfer(params: {

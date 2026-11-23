@@ -53,6 +53,7 @@ export type DashboardStage = {
   materials?: DashboardMaterial[] | null;
   teamMembers?: DashboardTeamMember[] | null;
   media?: DashboardMedia[] | null;
+  contractorPayouts?: Array<{ amount?: number | null; voidedAt?: Date | string | null; sentAt?: Date | string | null }> | null;
 };
 
 export type DashboardPayment = {

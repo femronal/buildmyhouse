@@ -87,6 +87,7 @@ export class AdminService {
       weekPayments,
       weekMaterials,
       weekTeam,
+      weekPayouts,
       failedPayments,
       missingPlanFiles,
       unverifiedGcs,
@@ -142,6 +143,7 @@ export class AdminService {
               media: {
                 select: { id: true, createdAt: true, duplicateOfMediaId: true, distanceFromSiteMeters: true, source: true },
               },
+              contractorPayouts: { select: { amount: true, voidedAt: true } },
             },
           },
           payments: { select: { id: true, amount: true, status: true, method: true, createdAt: true } },
@@ -175,6 +177,10 @@ export class AdminService {
         where: { payStatus: 'paid', paidAt: paidInWeek },
         select: { payStatus: true, paidBy: true, paidAmount: true, dailyRate: true, startDate: true, endDate: true, paidAt: true },
       }),
+      this.prisma.contractorPayout.findMany({
+        where: { sentAt: paidInWeek, voidedAt: null },
+        select: { amount: true, sentAt: true },
+      }),
       this.prisma.payment.findMany({
         where: { status: 'failed', createdAt: { gte: dayAgo } },
         select: { createdAt: true },
@@ -198,6 +204,7 @@ export class AdminService {
       weekPayments,
       weekMaterials,
       weekTeam,
+      weekPayouts,
       failedPayments,
       missingPlanFiles,
       gcsReady,

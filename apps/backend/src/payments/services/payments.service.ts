@@ -3,7 +3,6 @@ import { PrismaClient } from '@prisma/client';
 import { StripeService } from './stripe.service';
 import { WebSocketService } from '../../websocket/websocket.service';
 import { CreatePaymentIntentDto } from '../dto/create-payment-intent.dto';
-import { CreatePayoutDto } from '../dto/create-payout.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -424,22 +423,6 @@ export class PaymentsService {
         snapshotStageName: null,
       },
     });
-  }
-
-  async createPayout(dto: CreatePayoutDto) {
-    const payout = await this.stripeService.createPayout({
-      amount: dto.amount,
-      currency: dto.currency || 'ngn',
-      description: dto.description,
-      metadata: {
-        contractorId: dto.contractorId,
-        ...(dto.projectId ? { projectId: dto.projectId } : {}),
-      },
-    });
-
-    return {
-      payout,
-    };
   }
 
   /**

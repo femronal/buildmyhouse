@@ -117,6 +117,22 @@ describe('weekly report service', () => {
     expect(row?.value).toBe(200);
   });
 
+  it('sent to contractor this week counts payouts inside the week, and paid artisan lines join team members', async () => {
+    const { prisma } = prismaDouble();
+    (prisma as any).contractorPayout.findMany.mockResolvedValue([
+      { amount: 500, sentAt: WEEK.start },
+      { amount: 40, sentAt: new Date('2020-01-01T00:00:00.000Z') },
+    ]);
+    (prisma as any).stageMaterial.findMany.mockResolvedValue([
+      { payeeKind: 'artisan', status: 'paid', totalPrice: 80, paidAt: WEEK.start },
+      { payeeKind: 'shop', status: 'paid', totalPrice: 15, paidAt: WEEK.start },
+    ]);
+    const report = await serviceFor(prisma).buildReport(WEEK);
+    const lines = report.sections.flatMap((section) => section.lines);
+    expect(lines.find((line) => line.key === 'sent_to_contractor')?.value).toBe(500);
+    expect(lines.find((line) => line.key === 'paid_to_team')?.value).toBe(80);
+  });
+
   it('paid to team members excludes lines paid by the GC', async () => {
     const { prisma } = prismaDouble();
     (prisma as any).stageTeamMember.findMany.mockResolvedValue([

@@ -33,8 +33,12 @@ import { UpdateStageMediaDto } from '../stages/dto/update-stage-media.dto';
 import { CreateStageTeamMemberDto } from '../stages/dto/create-stage-team-member.dto';
 import { UpdateStageTeamMemberDto } from '../stages/dto/update-stage-team-member.dto';
 import { UpdateProjectScopeDto } from './dto/update-project-scope.dto';
+import { RecordContractorPayoutDto } from './dto/record-contractor-payout.dto';
+import { VoidContractorPayoutDto } from './dto/void-contractor-payout.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/rbac.guard';
+import { PermissionsGuard } from '../hr/permissions/permissions.guard';
+import { RequirePermissions } from '../hr/permissions/require-permissions.decorator';
 
 @Controller('projects')
 export class ProjectsController {
@@ -244,6 +248,47 @@ export class ProjectsController {
       method: 'admin_on_behalf',
       note: body?.note,
       evidenceUrl: body?.evidenceUrl,
+    });
+  }
+
+  @Post(':projectId/stages/:stageId/contractor-payouts')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('admin')
+  @RequirePermissions('payments.payout')
+  recordContractorPayout(
+    @Param('projectId') projectId: string,
+    @Param('stageId') stageId: string,
+    @Request() req: any,
+    @Body() body: RecordContractorPayoutDto,
+  ) {
+    return this.projectsService.recordContractorPayout({
+      projectId,
+      stageId,
+      actorUserId: req.user.sub,
+      amount: body.amount,
+      bankReference: body.bankReference,
+      proofFileUrl: body.proofFileUrl,
+      sentAt: body.sentAt,
+      bankAccountId: body.bankAccountId,
+      earlyPaymentReason: body.earlyPaymentReason,
+    });
+  }
+
+  @Post(':projectId/contractor-payouts/:payoutId/void')
+  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
+  @Roles('admin')
+  @RequirePermissions('payments.payout')
+  voidContractorPayout(
+    @Param('projectId') projectId: string,
+    @Param('payoutId') payoutId: string,
+    @Request() req: any,
+    @Body() body: VoidContractorPayoutDto,
+  ) {
+    return this.projectsService.voidContractorPayout({
+      projectId,
+      payoutId,
+      actorUserId: req.user.sub,
+      reason: body.reason,
     });
   }
 

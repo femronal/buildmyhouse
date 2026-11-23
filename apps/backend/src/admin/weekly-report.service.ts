@@ -79,6 +79,17 @@ function inWeek(value: Date | string | null | undefined, week: LagosWeek): boole
   return Number.isFinite(time) && time >= week.start.getTime() && time <= week.end.getTime();
 }
 
+function payoutTotal(
+  rows: Array<{ amount?: number | null; voidedAt?: Date | string | null; sentAt?: Date | string | null }> | null | undefined,
+  week: LagosWeek,
+) {
+  return (rows || []).reduce((sum, row) => {
+    if (row.voidedAt) return sum;
+    if (!inWeek(row.sentAt, week)) return sum;
+    return sum + (Number(row.amount) || 0);
+  }, 0);
+}
+
 function range(week: LagosWeek) {
   return { gte: week.start, lte: week.end };
 }
@@ -168,6 +179,7 @@ export class WeeklyReportService {
       payments,
       materials,
       team,
+      weekPayouts,
       approvedStages,
       photos,
       openedDisputes,
@@ -201,6 +213,7 @@ export class WeeklyReportService {
             { archivedAt: span },
             { createdAt: span },
             { payments: { some: { createdAt: span } } },
+            { contractorPayouts: { some: { sentAt: span, voidedAt: null } } },
             { stages: { some: { OR: [{ approvedAt: span }, { media: { some: { createdAt: span } } }, { materials: { some: { paidAt: span } } }, { teamMembers: { some: { paidAt: span } } }] } } },
             { disputes: { some: { OR: [{ createdAt: span }, { resolvedAt: span }] } } },
           ],
@@ -230,6 +243,7 @@ export class WeeklyReportService {
               materials: { select: { status: true, payeeKind: true, totalPrice: true, quantity: true, unitPrice: true, paidAt: true, invoicedAt: true } },
               teamMembers: { select: { payStatus: true, paidBy: true, paidAmount: true, dailyRate: true, startDate: true, endDate: true, paidAt: true, invoicedAt: true } },
               media: { select: { createdAt: true, source: true, distanceFromSiteMeters: true, duplicateOfMediaId: true } },
+              contractorPayouts: { select: { amount: true, sentAt: true, voidedAt: true } },
             },
           },
           payments: { select: { amount: true, status: true, createdAt: true } },
@@ -247,6 +261,10 @@ export class WeeklyReportService {
       this.prisma.stageTeamMember.findMany({
         where: { paidAt: span },
         select: { payStatus: true, paidBy: true, paidAmount: true, dailyRate: true, startDate: true, endDate: true, paidAt: true },
+      }),
+      this.prisma.contractorPayout.findMany({
+        where: { sentAt: span, voidedAt: null },
+        select: { amount: true, sentAt: true },
       }),
       this.prisma.stage.findMany({
         where: { approvedAt: span },
@@ -341,9 +359,9 @@ export class WeeklyReportService {
       medianDays: median(durations),
       moneyIn: completedPayments.reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0),
       moneyInCount: completedPayments.length,
-      sentToContractor: paidMaterials.filter((item) => item.payeeKind === 'artisan').reduce((sum, item) => sum + materialLineAmount(item), 0),
+      sentToContractor: payoutTotal(weekPayouts, week),
       paidToShops: paidMaterials.filter((item) => item.payeeKind === 'shop').reduce((sum, item) => sum + materialLineAmount(item), 0),
-      paidToTeam: paidTeam.reduce((sum, item) => sum + teamLineAmount(item), 0),
+      paidToTeam: paidTeam.reduce((sum, item) => sum + teamLineAmount(item), 0) + paidMaterials.filter((item) => item.payeeKind === 'artisan').reduce((sum, item) => sum + materialLineAmount(item), 0),
       invoicedNotPaid: invoiced.reduce((sum, item) => sum + item.amount, 0),
       invoicedCount: invoiced.length,
       oldestInvoicedDays: oldestInvoiced ? Math.floor(daysBetween(oldestInvoiced, week.end)) : null,
@@ -400,9 +418,10 @@ export class WeeklyReportService {
       const stages = project.stages || [];
       const photos = stages.flatMap((stage) => stage.media || []).filter((media) => inWeek(media.createdAt, week));
       const moneyIn = (project.payments || []).filter((payment) => payment.status === 'completed' && inWeek(payment.createdAt, week)).reduce((sum, payment) => sum + (Number(payment.amount) || 0), 0);
-      const sentToContractor = stages.flatMap((stage) => stage.materials || []).filter((item) => item.status === 'paid' && item.payeeKind === 'artisan' && inWeek(item.paidAt, week)).reduce((sum, item) => sum + materialLineAmount(item), 0);
+      const sentToContractor = payoutTotal(stages.flatMap((stage) => stage.contractorPayouts || []), week);
       const paidToShops = stages.flatMap((stage) => stage.materials || []).filter((item) => item.status === 'paid' && item.payeeKind === 'shop' && inWeek(item.paidAt, week)).reduce((sum, item) => sum + materialLineAmount(item), 0);
-      const paidToTeam = stages.flatMap((stage) => stage.teamMembers || []).filter((item) => item.payStatus === 'paid' && item.paidBy === 'bmh' && inWeek(item.paidAt, week)).reduce((sum, item) => sum + teamLineAmount(item), 0);
+      const paidToTeam = stages.flatMap((stage) => stage.teamMembers || []).filter((item) => item.payStatus === 'paid' && item.paidBy === 'bmh' && inWeek(item.paidAt, week)).reduce((sum, item) => sum + teamLineAmount(item), 0)
+        + stages.flatMap((stage) => stage.materials || []).filter((item) => item.status === 'paid' && item.payeeKind === 'artisan' && inWeek(item.paidAt, week)).reduce((sum, item) => sum + materialLineAmount(item), 0);
       const stagesApproved = stages.filter((stage) => inWeek((stage as { approvedAt?: Date | string | null }).approvedAt, week)).length;
       const disputeEvent = (project.disputes || []).some((dispute) => inWeek(dispute.createdAt, week) || inWeek((dispute as { resolvedAt?: Date | string | null }).resolvedAt, week));
       const live = this.liveAt(project, week);

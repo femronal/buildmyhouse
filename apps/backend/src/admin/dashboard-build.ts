@@ -102,6 +102,7 @@ export type DashboardBuildInput = {
   weekPayments: Array<{ amount?: number | null; status?: string | null; createdAt?: Date | string | null }>;
   weekMaterials: WeekMoneyLine[];
   weekTeam: WeekTeamLine[];
+  weekPayouts: Array<{ amount?: number | null; sentAt?: Date | string | null }>;
   failedPayments: Array<{ createdAt?: Date | string | null }>;
   missingPlanFiles: Array<{ projectId: string }>;
   gcsReady: number;
@@ -596,7 +597,7 @@ export function buildDashboard(input: DashboardBuildInput): DashboardResponse {
       weekEnd: addIsoDays(week.weekStartIso, 6),
       lines: [
         { key: 'moneyIn', label: PENDING_APPROVAL_MONEY_LABELS.moneyIn, amount: moneyInAmount },
-        { key: 'sentToContractor', label: MONEY_LABELS.sentToContractor, amount: paidAmount(input.weekMaterials, 'artisan') },
+        { key: 'sentToContractor', label: MONEY_LABELS.sentToContractor, amount: (input.weekPayouts || []).reduce((sum, row) => sum + (Number(row.amount) || 0), 0) },
         { key: 'paidToShopsForMaterials', label: MONEY_LABELS.paidToShopsForMaterials, amount: paidAmount(input.weekMaterials, 'shop') },
         {
           key: 'paidToTeamMembers',
@@ -604,7 +605,7 @@ export function buildDashboard(input: DashboardBuildInput): DashboardResponse {
           amount: input.weekTeam.reduce((sum, line) => {
             if (line.paidBy !== 'bmh') return sum;
             return sum + teamLineAmount(line as DashboardTeamMember);
-          }, 0),
+          }, 0) + paidAmount(input.weekMaterials, 'artisan'),
         },
         { key: 'invoicedNotPaid', label: PENDING_APPROVAL_MONEY_LABELS.invoicedNotPaid, amount: invoicedNow(input.projects, now) },
         { key: 'stillWithBuildMyHouse', label: MONEY_LABELS.stillWithBuildMyHouse, amount: stillWithBuildMyHouse(input.projects, now) },

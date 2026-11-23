@@ -8,7 +8,6 @@ Complete Stripe payment integration with payment intents, webhooks, and payouts.
 - ✅ Stripe webhook handling for payment events
 - ✅ Automatic payment status updates
 - ✅ Real-time notifications via WebSocket
-- ✅ Payout functionality for contractors
 - ✅ Payment history and tracking
 
 ## Setup
@@ -71,19 +70,6 @@ stripe listen --forward-to localhost:3001/api/payments/webhooks/stripe
 - `GET /api/payments/my` - Get current user's payments
 - `GET /api/payments/:id` - Get payment details
 
-### Payouts
-
-- `POST /api/payments/payout` - Create payout to contractor
-  ```json
-  {
-    "contractorId": "contractor-id",
-    "amount": 500.00,
-    "currency": "ngn",
-    "description": "Payment for completed work",
-    "projectId": "project-id" // optional
-  }
-  ```
-
 ### Webhooks
 
 - `POST /api/payments/webhooks/stripe` - Stripe webhook endpoint
@@ -141,40 +127,9 @@ When payment succeeds, Stripe sends webhook:
 - `failed` - Payment failed
 - `refunded` - Payment was refunded
 
-## Payouts to Contractors
+## Payments to contractors
 
-### Current Implementation
-
-Currently uses direct payouts. For production, consider:
-
-1. **Stripe Connect** - Better for marketplace
-   - Contractors create connected accounts
-   - Transfers instead of payouts
-   - Better fee handling
-   - Tax compliance
-
-2. **Implementation Steps**:
-   ```typescript
-   // Create connected account for contractor
-   const account = await stripeService.createConnectedAccount(
-     contractor.email,
-     contractor.id
-   );
-
-   // Create account link for onboarding
-   const accountLink = await stripeService.createAccountLink(
-     account.id,
-     returnUrl,
-     refreshUrl
-   );
-
-   // Transfer funds (instead of payout)
-   await stripeService.createTransfer({
-     amount: 500,
-     currency: 'ngn',
-     destination: account.id, // Connected account
-   });
-   ```
+Payments to contractors are bank transfers made by an admin and recorded with POST /api/projects/:projectId/stages/:stageId/contractor-payouts.
 
 ## Real-time Updates
 

@@ -230,9 +230,9 @@ export default function DashboardScreen() {
       }
     | undefined;
   const linePayouts = paidPayoutsFromStages(stages);
-  const sentToContractor = Number(moneySummary?.sentToContractor || 0) || linePayouts.artisan;
+  const sentToContractor = Number(moneySummary?.sentToContractor || 0);
   const paidToShopsForMaterials = Number(moneySummary?.paidToShopsForMaterials || 0) || linePayouts.shop;
-  const paidToTeamMembers = Number(moneySummary?.paidToTeamMembers || 0) || linePayouts.team;
+  const paidToTeamMembers = Number(moneySummary?.paidToTeamMembers || 0) || (linePayouts.team + linePayouts.artisan);
 
   // Derive an effective project type to handle legacy rows where projectType may be missing/mismatched.
   const projectType =

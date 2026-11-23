@@ -46,6 +46,7 @@ import { depositForIncrease, feesOnContractorAmount, stageDepositAmounts } from 
 import { notifyPlanRequestLate } from '../contractors/plan-request-notify';
 import { attentionReasons, hasConfirmedMoney, isDormant, lastActivityAt } from '../admin/dashboard-rules';
 import { paymentReference } from '../funding/funding-invoice';
+import { checkContractorPayout } from './contractor-payouts';
 
 const stageMediaQuery = {
   orderBy: [{ order: 'asc' as const }, { createdAt: 'asc' as const }],
@@ -2425,6 +2426,142 @@ export class ProjectsService {
     return updatedStage;
   }
 
+  async recordContractorPayout(params: {
+    projectId: string;
+    stageId: string;
+    actorUserId: string;
+    amount: number;
+    bankReference: string;
+    proofFileUrl: string;
+    sentAt: string;
+    bankAccountId?: string | null;
+    earlyPaymentReason?: string | null;
+  }) {
+    const stage = await this.prisma.stage.findUnique({
+      where: { id: params.stageId },
+      include: {
+        contractorPayouts: true,
+        project: {
+          select: {
+            id: true,
+            generalContractorId: true,
+            generalContractor: { select: { fullName: true } },
+          },
+        },
+      },
+    });
+    if (!stage || stage.projectId !== params.projectId) {
+      throw new NotFoundException('Stage not found');
+    }
+    const projectPayouts = await this.prisma.contractorPayout.findMany({
+      where: { projectId: params.projectId, voidedAt: null },
+      select: { amount: true, voidedAt: true, bankReference: true },
+    });
+    const contractor = stage.project.generalContractorId
+      ? await this.prisma.contractor.findUnique({
+          where: { userId: stage.project.generalContractorId },
+          include: { bankAccounts: true },
+        })
+      : null;
+    const checked = this.prepareContractorPayout(stage, projectPayouts, params);
+    const gcName = String(contractor?.name || stage.project.generalContractor?.fullName || '').trim();
+    if (!gcName) {
+      throw new BadRequestException('This job has no general contractor yet.');
+    }
+    const bankLabel = this.contractorPayoutBankLabel(contractor, params.bankAccountId);
+    const created = await this.prisma.$transaction(async (tx: any) => {
+      const freshStage = await tx.stage.findUnique({
+        where: { id: params.stageId },
+        include: { contractorPayouts: true, project: { select: { generalContractorId: true } } },
+      });
+      if (!freshStage || freshStage.projectId !== params.projectId) {
+        throw new NotFoundException('Stage not found');
+      }
+      const freshPayouts = await tx.contractorPayout.findMany({
+        where: { projectId: params.projectId, voidedAt: null },
+        select: { amount: true, voidedAt: true, bankReference: true },
+      });
+      const again = this.prepareContractorPayout(freshStage, freshPayouts, params);
+      return tx.contractorPayout.create({
+        data: {
+          projectId: params.projectId,
+          stageId: params.stageId,
+          gcUserId: freshStage.project.generalContractorId,
+          gcName,
+          amount: again.amount,
+          method: 'bank_transfer',
+          bankReference: again.bankReference,
+          proofFileUrl: String(params.proofFileUrl || '').trim(),
+          bankAccountId: params.bankAccountId || null,
+          bankLabel,
+          sentById: params.actorUserId,
+          sentAt: new Date(params.sentAt),
+          earlyPaymentReason: again.earlyPaymentReason,
+        },
+      });
+    });
+    this.wsService.emitProjectUpdate(params.projectId, {
+      type: 'status_change',
+      data: { event: 'contractor_payout_recorded', stageId: params.stageId },
+    });
+    return created;
+  }
+
+  async voidContractorPayout(params: { projectId: string; payoutId: string; actorUserId: string; reason: string }) {
+    const reason = String(params.reason || '').trim();
+    if (reason.length < 10) {
+      throw new BadRequestException('Write why this record is wrong.');
+    }
+    const payout = await this.prisma.contractorPayout.findFirst({
+      where: { id: params.payoutId, projectId: params.projectId },
+    });
+    if (!payout) {
+      throw new NotFoundException('Payment record not found');
+    }
+    if (payout.voidedAt) {
+      throw new BadRequestException('This record is already voided.');
+    }
+    return this.prisma.contractorPayout.update({
+      where: { id: payout.id },
+      data: {
+        voidedAt: new Date(),
+        voidedById: params.actorUserId,
+        voidReason: reason,
+      },
+    });
+  }
+
+  private prepareContractorPayout(stage: any, projectPayouts: any[], params: {
+    amount: number;
+    bankReference: string;
+    proofFileUrl: string;
+    sentAt: string;
+    earlyPaymentReason?: string | null;
+  }) {
+    return checkContractorPayout({
+      stage,
+      existingPayouts: (stage.contractorPayouts || []).filter((row: any) => row.stageId ? row.stageId === stage.id : true),
+      referencePayouts: projectPayouts,
+      amount: params.amount,
+      bankReference: params.bankReference,
+      proofFileUrl: params.proofFileUrl,
+      sentAt: params.sentAt,
+      earlyPaymentReason: params.earlyPaymentReason,
+      gcUserId: stage.project?.generalContractorId,
+      now: new Date(),
+    });
+  }
+
+  private contractorPayoutBankLabel(contractor: { bankAccounts?: Array<{ id: string; bankName?: string | null; accountNumber?: string | null }> } | null, bankAccountId?: string | null) {
+    if (!bankAccountId) return null;
+    const account = (contractor?.bankAccounts || []).find((row) => row.id === bankAccountId);
+    if (!account) {
+      throw new BadRequestException('That bank account does not belong to this contractor.');
+    }
+    const last4 = String(account.accountNumber || '').replace(/\D/g, '').slice(-4);
+    return `${account.bankName}, account ending ${last4}`;
+  }
+
   private async notifyApprovalRecipient(params: {
     userId: string;
     email?: string | null;
@@ -2663,6 +2800,13 @@ export class ProjectsService {
             changeRequests: {
               orderBy: { createdAt: 'desc' },
             },
+            contractorPayouts: {
+              orderBy: { sentAt: 'asc' },
+              include: {
+                sentBy: { select: { id: true, fullName: true } },
+                voidedBy: { select: { id: true, fullName: true } },
+              },
+            },
           },
         },
         payments: {
@@ -2756,6 +2900,17 @@ export class ProjectsService {
         teamMembers: Array.isArray(stage.teamMembers)
           ? stage.teamMembers.filter((row: any) => row?.payStatus !== 'rejected')
           : stage.teamMembers,
+        contractorPayouts: Array.isArray(stage.contractorPayouts)
+          ? stage.contractorPayouts
+              .filter((row: any) => !row?.voidedAt)
+              .map((row: any) => ({
+                id: row.id,
+                amount: row.amount,
+                gcName: row.gcName,
+                sentAt: row.sentAt,
+                bankReference: row.bankReference,
+              }))
+          : stage.contractorPayouts,
       })),
     };
   }
@@ -2787,6 +2942,7 @@ export class ProjectsService {
                 endDate: true,
               },
             },
+            contractorPayouts: { select: { amount: true, voidedAt: true } },
           },
         },
       },
@@ -3014,6 +3170,7 @@ export class ProjectsService {
             endDate: true,
           },
         },
+        contractorPayouts: { select: { amount: true, voidedAt: true } },
       },
     });
     const payments = await this.prisma.payment.findMany({

@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { activePayoutTotal } from './contractor-payouts';
 
 export const PAYEE_KINDS = ['artisan', 'shop', 'other'] as const;
 export const LINE_STATUSES = ['planned', 'invoiced', 'paid', 'rejected'] as const;
@@ -37,6 +38,7 @@ export type JobMoneyStage = {
   estimatedCost?: number | null;
   materials?: MaterialLine[] | null;
   teamMembers?: TeamLine[] | null;
+  contractorPayouts?: Array<{ amount?: number | null; voidedAt?: Date | string | null }> | null;
 };
 
 export type JobMoneySummary = {
@@ -112,6 +114,7 @@ export function summarizeJobMoney(input: {
   let shopPaid = 0;
   let otherPaid = 0;
   let teamPaid = 0;
+  let contractorPaid = 0;
 
   for (const stage of input.stages || []) {
     for (const line of stage.materials || []) {
@@ -126,10 +129,11 @@ export function summarizeJobMoney(input: {
       if (cleanToken(line.payStatus) !== 'paid' || cleanToken(line.paidBy) !== 'bmh') continue;
       teamPaid += teamLineAmount(line);
     }
+    contractorPaid += activePayoutTotal(stage.contractorPayouts || []);
   }
 
   const fullJobPrice = Number(input.budget) || 0;
-  const moneyMoved = artisanPaid + shopPaid + otherPaid + teamPaid;
+  const moneyMoved = artisanPaid + shopPaid + otherPaid + teamPaid + contractorPaid;
   const completed = (input.payments || []).filter((payment) => cleanToken(payment.status) === 'completed');
   const refunded = (input.payments || []).filter((payment) => cleanToken(payment.status) === 'refunded');
   const youSentIn = Math.max(
@@ -146,10 +150,10 @@ export function summarizeJobMoney(input: {
     moneyMoved,
     leftOnThisJob: Math.max(0, fullJobPrice - moneyMoved),
     youSentIn,
-    sentToContractor: artisanPaid,
+    sentToContractor: contractorPaid,
     paidToShopsForMaterials: shopPaid,
-    paidToTeamMembers: teamPaid,
-    stillWithBuildMyHouse: Math.max(0, youSentIn - artisanPaid - shopPaid - teamPaid - otherPaid),
+    paidToTeamMembers: teamPaid + artisanPaid,
+    stillWithBuildMyHouse: Math.max(0, youSentIn - contractorPaid - artisanPaid - shopPaid - teamPaid - otherPaid),
     hasHomeownerReceipts: completed.length > 0 || refunded.length > 0,
     receipts: completed.map((payment) => ({
       id: String(payment.id || ''),

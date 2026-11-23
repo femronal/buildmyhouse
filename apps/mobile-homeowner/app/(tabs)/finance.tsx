@@ -270,9 +270,9 @@ export default function FinanceScreen() {
               allProjects.map((p: any) => {
                 const summary = p.moneySummary;
                 const linePayouts = paidPayoutsFromStages(p.stages);
-                const sentToContractor = Number(summary?.sentToContractor || 0) || linePayouts.artisan;
+                const sentToContractor = Number(summary?.sentToContractor || 0);
                 const paidToShopsForMaterials = Number(summary?.paidToShopsForMaterials || 0) || linePayouts.shop;
-                const paidToTeamMembers = Number(summary?.paidToTeamMembers || 0) || linePayouts.team;
+                const paidToTeamMembers = Number(summary?.paidToTeamMembers || 0) || (linePayouts.team + linePayouts.artisan);
                 return (
                   <View key={p.id} className="mb-4">
                     <Text className="text-lg text-white mb-2" style={{ fontFamily: 'Poppins_700Bold' }}>{p.name}</Text>

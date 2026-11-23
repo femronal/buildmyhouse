@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AdminStageEditor } from '@/components/AdminStageEditor';
+import { ContractorPayoutsPanel } from '@/components/ContractorPayoutsPanel';
 import { adminProjectService } from '@/services/adminProjectService';
 import { api } from '@/lib/api';
 import { MEDIA_ACCEPT, friendlyUploadError } from '@/lib/upload-rules';
@@ -135,6 +136,14 @@ export default function AdminStageDetailPage() {
             </button>
           )}
         </div>
+      ) : null}
+      {stage ? (
+        <ContractorPayoutsPanel
+          projectId={projectId}
+          stageId={stageId}
+          stage={stage}
+          gcName={project?.generalContractor?.fullName}
+        />
       ) : null}
       <AdminStageEditor projectId={projectId} stageId={stageId} project={project} stage={stage} />
     </div>

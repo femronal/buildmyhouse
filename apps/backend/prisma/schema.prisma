@@ -360,6 +360,9 @@ model User {
   scamReports                     ScamReport[]
   uploadedStageMedia              StageMedia[]                 @relation("StageMediaUploader")
   paymentsConfirmed               Payment[]                    @relation("PaymentConfirmedBy")
+  contractorPayoutsReceived       ContractorPayout[]           @relation("ContractorPayoutGc")
+  contractorPayoutsSent           ContractorPayout[]           @relation("ContractorPayoutSentBy")
+  contractorPayoutsVoided         ContractorPayout[]           @relation("ContractorPayoutVoidedBy")
 
   @@map("users")
 }
@@ -539,6 +542,7 @@ model Project {
   professionalEngagements  ProfessionalEngagement[]
   listingReviews           ListingReview[]
   partnerCommission        PartnerCommission?
+  contractorPayouts        ContractorPayout[]
 
   @@index([needsExtraMonitoring])
   @@index([referrerId])
@@ -582,6 +586,7 @@ model Stage {
   disputes                 ProjectStageDispute[]
   changeRequests           StageChangeRequest[]
   professionalEngagements  ProfessionalEngagement[]
+  contractorPayouts        ContractorPayout[]
 
   @@index([status])
   @@map("stages")
@@ -854,6 +859,7 @@ model BankAccount {
 
   // Relations
   contractor Contractor @relation("ContractorBankAccounts", fields: [contractorId], references: [id], onDelete: Cascade)
+  contractorPayouts ContractorPayout[]
 
   @@map("bank_accounts")
 }
@@ -1382,6 +1388,45 @@ model StageDocument {
   stage Stage @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   @@map("stage_documents")
+}
+
+model ContractorPayout {
+  id                 String    @id @default(uuid())
+  projectId          String
+  stageId            String
+  /// The project's general contractor (User id) when the money was sent.
+  gcUserId           String
+  /// GC name at the time of payment, so the line never changes later.
+  gcName             String
+  amount             Float
+  /// bank_transfer only for now.
+  method             String    @default("bank_transfer")
+  bankReference      String
+  proofFileUrl       String
+  bankAccountId      String?
+  /// For example "GTBank, account ending 1234". Never the full account number.
+  bankLabel          String?
+  sentById           String
+  sentAt             DateTime
+  /// Required when the stage was not yet approved by the homeowner.
+  earlyPaymentReason String?   @db.Text
+  voidedAt           DateTime?
+  voidedById         String?
+  voidReason         String?   @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stage       Stage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  gc          User         @relation("ContractorPayoutGc", fields: [gcUserId], references: [id])
+  sentBy      User         @relation("ContractorPayoutSentBy", fields: [sentById], references: [id])
+  voidedBy    User?        @relation("ContractorPayoutVoidedBy", fields: [voidedById], references: [id], onDelete: SetNull)
+  bankAccount BankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+
+  @@index([projectId])
+  @@index([stageId])
+  @@index([sentAt])
+  @@map("contractor_payouts")
 }
 
 enum ProjectAccessRole {

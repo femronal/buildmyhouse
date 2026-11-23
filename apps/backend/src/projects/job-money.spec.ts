@@ -45,7 +45,8 @@ describe('job money payout sums', () => {
       }],
       payments: [],
     });
-    expect(money.sentToContractor).toBe(15000);
+    expect(money.sentToContractor).toBe(0);
+    expect(money.paidToTeamMembers).toBe(15000);
     expect(money.paidToShopsForMaterials).toBe(30000);
     expect(money.paidToYou).toBe(15000);
     expect(money.paidToShops).toBe(30000);
@@ -61,7 +62,8 @@ describe('job money payout sums', () => {
     expect(money.paidToShops).toBe(30000);
     expect(money.fullJobPrice).toBe(336000);
     expect(money.leftOnThisJob).toBe(291000);
-    expect(money.sentToContractor).toBe(15000);
+    expect(money.sentToContractor).toBe(0);
+    expect(money.paidToTeamMembers).toBe(15000);
     expect(money.paidToShopsForMaterials).toBe(30000);
     expect(money.youSentIn).toBe(0);
     expect(money.hasHomeownerReceipts).toBe(false);
@@ -88,7 +90,7 @@ describe('job money payout sums', () => {
       payments: [],
     });
     expect(gcPaid.paidToYou).toBe(15000);
-    expect(gcPaid.paidToTeamMembers).toBe(0);
+    expect(gcPaid.paidToTeamMembers).toBe(15000);
     expect(gcPaid.leftOnThisJob).toBe(85000);
 
     const bmhPaid = summarizeJobMoney({
@@ -100,8 +102,8 @@ describe('job money payout sums', () => {
       payments: [],
     });
     expect(bmhPaid.paidToYou).toBe(15000);
-    expect(bmhPaid.paidToTeamMembers).toBe(5000);
-    expect(bmhPaid.sentToContractor).toBe(15000);
+    expect(bmhPaid.paidToTeamMembers).toBe(20000);
+    expect(bmhPaid.sentToContractor).toBe(0);
     expect(bmhPaid.leftOnThisJob).toBe(80000);
   });
 
@@ -139,7 +141,8 @@ describe('job money payout sums', () => {
       ],
     });
     expect(money.youSentIn).toBe(100000);
-    expect(money.sentToContractor).toBe(15000);
+    expect(money.sentToContractor).toBe(0);
+    expect(money.paidToTeamMembers).toBe(15000);
     expect(money.paidToShopsForMaterials).toBe(30000);
     expect(money.stillWithBuildMyHouse).toBe(55000);
     expect(money.receipts.map((row) => row.id)).toEqual(['pay-1']);
@@ -176,10 +179,27 @@ describe('job money payout sums', () => {
       ],
     });
     expect(money.youSentIn).toBe(120000);
-    expect(money.sentToContractor).toBe(10000);
-    expect(money.paidToTeamMembers).toBe(4000);
+    expect(money.sentToContractor).toBe(0);
+    expect(money.paidToTeamMembers).toBe(14000);
     expect(money.stillWithBuildMyHouse).toBe(106000);
     expect(money.hasHomeownerReceipts).toBe(true);
+  });
+
+  it('counts contractor payout records as sent to the contractor and ignores a voided record', () => {
+    const money = summarizeJobMoney({
+      budget: 200000,
+      stages: [{
+        materials: [],
+        teamMembers: [],
+        contractorPayouts: [
+          { amount: 50000, voidedAt: null },
+          { amount: 30000, voidedAt: '2026-11-01T00:00:00.000Z' },
+        ],
+      }],
+      payments: [{ id: 'pay-1', status: 'completed', amount: 200000 }],
+    });
+    expect(money.sentToContractor).toBe(50000);
+    expect(money.stillWithBuildMyHouse).toBe(150000);
   });
 
   it('warns in numbers when BMH paid lines pass the stage price', () => {

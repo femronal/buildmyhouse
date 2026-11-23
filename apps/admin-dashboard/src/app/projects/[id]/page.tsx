@@ -872,6 +872,10 @@ export default function AdminProjectDetailPage() {
                       Est. {stage.estimatedDuration} · ₦{Number(stage.estimatedCost || 0).toLocaleString()}
                       {(stage.materials?.length || 0) > 0 && ` · ${stage.materials!.length} materials`}
                       {(stage.teamMembers?.length || 0) > 0 && ` · ${stage.teamMembers!.length} artisans`}
+                      {(() => {
+                        const sent = (stage.contractorPayouts || []).filter((row) => !row.voidedAt).reduce((sum, row) => sum + Number(row.amount || 0), 0);
+                        return sent > 0 ? ` · ₦${sent.toLocaleString()} sent to contractor` : '';
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

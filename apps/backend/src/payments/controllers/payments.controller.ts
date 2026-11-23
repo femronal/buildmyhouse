@@ -10,13 +10,10 @@ import {
 } from '@nestjs/common';
 import { PaymentsService } from '../services/payments.service';
 import { CreatePaymentIntentDto } from '../dto/create-payment-intent.dto';
-import { CreatePayoutDto } from '../dto/create-payout.dto';
 import { SetDefaultPaymentMethodDto } from '../dto/set-default-payment-method.dto';
 import { CreateSetupCheckoutSessionDto } from '../dto/create-setup-checkout-session.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../../auth/rbac.guard';
-import { PermissionsGuard } from '../../hr/permissions/permissions.guard';
-import { RequirePermissions } from '../../hr/permissions/require-permissions.decorator';
 
 @Controller('payments')
 export class PaymentsController {
@@ -104,13 +101,5 @@ export class PaymentsController {
   @Roles('homeowner', 'general_contractor', 'subcontractor', 'vendor', 'admin')
   getPayment(@Param('id') id: string) {
     return this.paymentsService.getPayment(id);
-  }
-
-  @Post('payout')
-  @UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
-  @Roles('admin', 'vendor')
-  @RequirePermissions('payments.payout')
-  createPayout(@Body() createPayoutDto: CreatePayoutDto) {
-    return this.paymentsService.createPayout(createPayoutDto);
   }
 }

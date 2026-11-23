@@ -595,15 +595,13 @@ export default function HomeScreen() {
                                 hasHomeownerReceipts: project.moneySummary?.hasHomeownerReceipts,
                                 youSentIn: project.moneySummary?.youSentIn,
                                 stillWithBuildMyHouse: project.moneySummary?.stillWithBuildMyHouse,
-                                sentToContractor:
-                                  Number(project.moneySummary?.sentToContractor || 0) ||
-                                  paidPayoutsFromStages(project.stages).artisan,
+                                sentToContractor: Number(project.moneySummary?.sentToContractor || 0),
                                 paidToShopsForMaterials:
                                   Number(project.moneySummary?.paidToShopsForMaterials || 0) ||
                                   paidPayoutsFromStages(project.stages).shop,
                                 paidToTeamMembers:
                                   Number(project.moneySummary?.paidToTeamMembers || 0) ||
-                                  paidPayoutsFromStages(project.stages).team,
+                                  (paidPayoutsFromStages(project.stages).team + paidPayoutsFromStages(project.stages).artisan),
                               }}
                             />
                           </View>

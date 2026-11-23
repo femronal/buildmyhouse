@@ -200,6 +200,21 @@ export type AdminProjectStage = {
   materials?: StageMaterial[];
   media?: StageMedia[];
   documents?: StageDocument[];
+  contractorPayouts?: Array<{
+    id: string;
+    amount: number;
+    gcName: string;
+    bankReference: string;
+    proofFileUrl: string;
+    bankLabel?: string | null;
+    sentAt: string;
+    earlyPaymentReason?: string | null;
+    sentBy?: { fullName?: string | null } | null;
+    voidedAt?: string | null;
+    voidReason?: string | null;
+    voidedBy?: { fullName?: string | null } | null;
+    createdAt: string;
+  }>;
 };
 
 export type AdminProject = {
@@ -257,6 +272,22 @@ export type UpdateProjectScopePayload = {
 
 export const adminProjectService = {
   getProject: (projectId: string) => api.get<AdminProject>(`/projects/${projectId}`),
+
+  recordContractorPayout: (
+    projectId: string,
+    stageId: string,
+    body: {
+      amount: number;
+      bankReference: string;
+      proofFileUrl: string;
+      sentAt: string;
+      bankAccountId?: string;
+      earlyPaymentReason?: string;
+    },
+  ) => api.post(`/projects/${projectId}/stages/${stageId}/contractor-payouts`, body),
+
+  voidContractorPayout: (projectId: string, payoutId: string, reason: string) =>
+    api.post(`/projects/${projectId}/contractor-payouts/${payoutId}/void`, { reason }),
 
   updateProject: (projectId: string, data: Record<string, unknown>) =>
     api.patch<AdminProject>(`/projects/${projectId}`, data),

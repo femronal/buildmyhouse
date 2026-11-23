@@ -36,6 +36,7 @@ describe('admin dashboard', () => {
     payment: { findMany: jest.fn() },
     stageMaterial: { findMany: jest.fn() },
     stageTeamMember: { findMany: jest.fn() },
+    contractorPayout: { findMany: jest.fn() },
     scamReport: { count: jest.fn() },
     listingReview: { count: jest.fn() },
     design: { count: jest.fn() },
@@ -60,6 +61,7 @@ describe('admin dashboard', () => {
     });
     prisma.stageMaterial.findMany.mockResolvedValue([]);
     prisma.stageTeamMember.findMany.mockResolvedValue([]);
+    prisma.contractorPayout.findMany.mockResolvedValue([]);
     prisma.scamReport.count.mockResolvedValue(0);
     prisma.listingReview.count.mockResolvedValue(0);
     prisma.design.count.mockResolvedValue(0);
@@ -217,15 +219,22 @@ describe('admin dashboard', () => {
     expect(result.strip.moneyIn.count).toBe(2);
   });
 
-  it('sent to contractor this week counts only artisan lines paid inside the week', async () => {
+  it('sent to contractor this week counts only payout records inside the week', async () => {
+    prisma.contractorPayout.findMany.mockImplementation(async (args: { where?: { voidedAt?: null; sentAt?: { gte?: Date; lte?: Date } } }) => {
+      expect(args?.where?.voidedAt).toBeNull();
+      expect(args?.where?.sentAt?.gte).toBeInstanceOf(Date);
+      expect(args?.where?.sentAt?.lte).toBeInstanceOf(Date);
+      return [{ amount: 250_000, sentAt: new Date() }];
+    });
     prisma.stageMaterial.findMany.mockResolvedValue([
       { payeeKind: 'artisan', status: 'paid', totalPrice: 900_000 },
       { payeeKind: 'shop', status: 'paid', totalPrice: 410_000 },
       { payeeKind: 'other', status: 'paid', totalPrice: 15_000 },
     ]);
     const result = await service.getDashboard('admin-1');
-    expect(result.moneyThisWeek.lines.find((item) => item.key === 'sentToContractor')?.amount).toBe(900_000);
+    expect(result.moneyThisWeek.lines.find((item) => item.key === 'sentToContractor')?.amount).toBe(250_000);
     expect(result.moneyThisWeek.lines.find((item) => item.key === 'paidToShopsForMaterials')?.amount).toBe(410_000);
+    expect(result.moneyThisWeek.lines.find((item) => item.key === 'paidToTeamMembers')?.amount).toBe(900_000);
   });
 
   it('team lines paid by the GC are not counted as paid to team members', async () => {

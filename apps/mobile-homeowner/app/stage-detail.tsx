@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useProject } from '@/hooks/useProject';
 import { projectService } from '@/services/projectService';
 import { getBackendAssetUrl } from '@/lib/image';
+import { formatContractorPayoutLine } from '@/lib/contractor-payout-line';
 
 const getFileIcon = (type: string) => {
   switch (type) {
@@ -926,6 +927,20 @@ export default function StageDetailScreen() {
             </Text>
           </>
         )}
+        {(stage?.contractorPayouts || []).length ? (
+          <View className="bg-black rounded-2xl p-4 mt-3">
+            <Text className="text-white/80 text-sm" style={{ fontFamily: 'Poppins_400Regular' }}>
+              Money sent to your contractor
+            </Text>
+            {[...(stage?.contractorPayouts || [])]
+              .sort((left, right) => new Date(left.sentAt).getTime() - new Date(right.sentAt).getTime())
+              .map((payout) => (
+                <Text key={payout.id} className="text-white/80 text-sm mt-2" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  {formatContractorPayoutLine(payout)}
+                </Text>
+              ))}
+          </View>
+        ) : null}
       </View>
 
       <Modal visible={showApproveSheet} transparent animationType="slide" onRequestClose={() => setShowApproveSheet(false)}>
