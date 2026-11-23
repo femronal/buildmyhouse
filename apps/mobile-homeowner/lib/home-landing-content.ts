@@ -7,9 +7,9 @@ export const LANDING_SURFACE = '#F5F5F5';
 export const LANDING_ACCENT = '#000000';
 
 export const HOMEPAGE_META = {
-  title: 'BuildMyHouse | Manage Property Work in Nigeria From Abroad',
+  title: 'House Renovation in Nigeria, Managed from Abroad | BuildMyHouse',
   description:
-    'BuildMyHouse helps you manage house building, repairs, renovations, remodeling work, and property work in Nigeria from abroad — with verified workers, clearer scope, stage evidence, and more control over when work and money move forward.',
+    'Renovate your house in Nigeria from abroad. See photo and video evidence of every stage before you approve payment, with scope and progress in one place.',
   canonicalPath: '/',
 } as const;
 

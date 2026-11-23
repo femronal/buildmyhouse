@@ -2,9 +2,9 @@ const WEB = 'https://buildmyhouse.app';
 
 export const renovationNigeriaLandingPageContent = {
   seo: {
-    title: 'Home Renovation & Remodeling in Nigeria | BuildMyHouse',
+    title: 'House Renovation in Nigeria, Stage by Stage | BuildMyHouse',
     description:
-      'Plan and manage home renovation and remodeling work in Nigeria with clearer scope, verified contractor workflows, stage visibility, and stronger payment discipline for local and diaspora homeowners.',
+      'Planning a house renovation in Nigeria while living abroad? Agree the scope, follow each stage with photo and video evidence, and approve before payment moves.',
     canonical: `${WEB}/renovation/nigeria`,
     robots: 'index, follow',
   },
@@ -471,8 +471,9 @@ export function getRenovationNigeriaLandingJsonLd() {
       '@type': 'WebPage',
       '@id': `${canonicalUrl}#webpage`,
       url: canonicalUrl,
-      name: renovationNigeriaLandingPageContent.seo.title,
-      description: renovationNigeriaLandingPageContent.seo.description,
+      name: 'Home Renovation & Remodeling in Nigeria | BuildMyHouse',
+      description:
+        'Plan and manage home renovation and remodeling work in Nigeria with clearer scope, verified contractor workflows, stage visibility, and stronger payment discipline for local and diaspora homeowners.',
       isPartOf: { '@id': `${WEB}/#organization` },
     },
     {

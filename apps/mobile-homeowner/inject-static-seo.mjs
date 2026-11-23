@@ -67,9 +67,9 @@ const PRIVATE_ROUTE_PREFIXES = [
 
 const SEO_PAGES = {
   '/': {
-    title: 'BuildMyHouse | Find Verified Repairers, Renovators & Contractors in Lagos, Nigeria',
+    title: 'House Renovation in Nigeria, Managed from Abroad | BuildMyHouse',
     description:
-      'Find verified repairers, artisans, renovators, interior specialists, and contractors in Lagos, Nigeria. Manage repairs, upgrades, renovations, and property work with clearer scope, evidence, and progress updates.',
+      'Renovate your house in Nigeria from abroad. See photo and video evidence of every stage before you approve payment, with scope and progress in one place.',
   },
   '/for-contractors': {
     title: 'For Contractors | BuildMyHouse',
@@ -282,9 +282,9 @@ const SEO_PAGES = {
       'Build in Lagos with clearer scope, verified contractor workflows, stage tracking, and payment discipline through BuildMyHouse.',
   },
   '/renovation/nigeria': {
-    title: 'Home Renovation in Nigeria | BuildMyHouse',
+    title: 'House Renovation in Nigeria, Stage by Stage | BuildMyHouse',
     description:
-      'Plan and manage renovation projects in Nigeria with clearer scope, contractor accountability, and remote visibility through BuildMyHouse.',
+      'Planning a house renovation in Nigeria while living abroad? Agree the scope, follow each stage with photo and video evidence, and approve before payment moves.',
   },
   '/interior-design/nigeria': {
     title: 'Interior Design in Lagos, Nigeria | BuildMyHouse',
