@@ -75,6 +75,7 @@ export type ReferralProgramSettings = {
   trackVendors: boolean;
   countsWhen: 'undecided' | 'listing' | 'job_created' | 'job_paid' | 'job_completed';
   payoutRules: string | null;
+  leaderboardShowRealNames: boolean;
 };
 
 export function formatLagosDate(value?: string | null) {

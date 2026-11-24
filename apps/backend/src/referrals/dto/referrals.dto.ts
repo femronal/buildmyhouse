@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
 
 export class CreateReferrerDto {
   @IsIn(['referrer', 'affiliate'])
@@ -103,6 +103,10 @@ export class UpdateReferralProgramDto {
   @IsString()
   @MaxLength(4000)
   payoutRules?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  leaderboardShowRealNames?: boolean;
 }
 
 export class AttachReferrerDto {
@@ -137,6 +141,10 @@ export class RecordReferralClickDto {
   @IsString()
   @MaxLength(64)
   anonymousId?: string;
+
+  @IsOptional()
+  @IsIn(['word_of_mouth', 'online'])
+  channel?: 'word_of_mouth' | 'online';
 }
 
 export class LockReferralDto {
@@ -290,6 +298,16 @@ export class UpdatePartnerSettingsDto {
   @IsOptional()
   @IsBoolean()
   notifyEarnings?: boolean;
+
+  @IsOptional()
+  @ValidateIf((_, value) => String(value || '').trim().length > 0)
+  @Matches(/^[A-Za-z0-9 ]{2,24}$/, { message: 'Use 2 to 24 letters, numbers or spaces.' })
+  @MaxLength(24)
+  leaderboardNickname?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  leaderboardHidden?: boolean;
 }
 
 export class SaveLibraryItemDto {
@@ -334,6 +352,11 @@ export class SaveLibraryItemDto {
   @IsString()
   @MaxLength(300)
   destinationPath?: string;
+
+  @IsOptional()
+  @ValidateIf((_, value) => String(value || '').length > 0)
+  @IsIn(['word_of_mouth', 'online', 'thespian_skit'])
+  placement?: string;
 
   @IsBoolean()
   publish!: boolean;

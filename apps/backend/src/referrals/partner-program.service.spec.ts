@@ -241,6 +241,22 @@ describe('Partner library links', () => {
     expect(shared.assetUrl).not.toContain('ref=');
   });
 
+  it('adds utm_medium when a channel is set and leaves the link unchanged without one', () => {
+    const withChannel = campaignShare('CODE1', 'https://buildmyhouse.app', {
+      slug: 'site-video',
+      destinationPath: '/start',
+    }, 'online');
+    expect(withChannel.link).toContain('utm_campaign=site-video');
+    expect(withChannel.link).toContain('utm_medium=online');
+    expect(withChannel.link?.indexOf('utm_campaign')).toBeLessThan(withChannel.link?.indexOf('utm_medium') || 0);
+    const plain = campaignShare('CODE1', 'https://buildmyhouse.app', {
+      slug: 'site-video',
+      destinationPath: '/start',
+    });
+    expect(plain.link).toBe('https://buildmyhouse.app/start?ref=CODE1&utm_campaign=site-video');
+    expect(plain.link).not.toContain('utm_medium');
+  });
+
   it('rejects a file that is not on Google Drive', async () => {
     const prisma = { marketingCampaign: { create: jest.fn(), findUnique: jest.fn() } };
     const program = new PartnerProgramService(prisma as any, { send: async () => true } as any, {} as any, { get: () => '' } as any);
@@ -255,5 +271,69 @@ describe('Partner library links', () => {
       publish: true,
     })).rejects.toThrow(/Google Drive/);
     expect(prisma.marketingCampaign.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('PartnerProgramService leaderboard', () => {
+  function boardPrisma(settings: Record<string, unknown>) {
+    return {
+      referrer: {
+        findUnique: jest.fn(async () => ({
+          id: 'me',
+          name: 'Ada Example',
+          code: 'ADA111',
+          email: 'ada@example.com',
+          type: 'affiliate',
+          applicationStatus: 'approved',
+          archivedAt: null,
+          leaderboardNickname: 'Sparrow',
+          leaderboardHidden: false,
+        })),
+        findMany: jest.fn(async () => [
+          partner('me', 'Ada Example', 'ADA111', 'Sparrow', 50000, 'affiliate', 'approved', null),
+          partner('other', 'Ngozi Falcon', 'NGZ999', 'Heron', 80000, 'affiliate', 'approved', null),
+          partner('gone', 'Suspended Person', 'GONE11', null, 900000, 'affiliate', 'suspended', null),
+          partner('old', 'Archived Person', 'OLD111', null, 700000, 'affiliate', 'approved', new Date()),
+          partner('ref', 'Plain Referrer', 'REF111', null, 600000, 'referrer', 'none', null),
+        ]),
+      },
+      referralProgramSettings: { findUnique: jest.fn(async () => settings) },
+    };
+  }
+
+  function partner(id: string, name: string, code: string, nickname: string | null, amount: number, type: string, applicationStatus: string, archivedAt: Date | null) {
+    return {
+      id,
+      name,
+      code,
+      email: `${id}@example.com`,
+      type,
+      applicationStatus,
+      archivedAt,
+      leaderboardNickname: nickname,
+      leaderboardHidden: false,
+      commissions: [{ referrerId: id, amount, status: 'approved', approvedAt: new Date(), paidAt: null }],
+    };
+  }
+
+  it('hides another partner name, code and amount unless real names are on', async () => {
+    const prisma = boardPrisma({ id: 'default' });
+    const result = await service(prisma).leaderboard('me', 'all');
+    const other = result.rows.find((row) => row.label === 'Heron');
+    expect(other).toEqual({ rank: 1, label: 'Heron', tierKey: 'bronze', tierLabel: 'Bronze', band: '₦1 to ₦100k', isYou: false });
+    expect(JSON.stringify(result)).not.toContain('Ngozi Falcon');
+    expect(JSON.stringify(result)).not.toContain('NGZ999');
+    expect(result.rows.find((row) => row.isYou)?.amount).toBe(50000);
+    expect(result.you.periodAmount).toBe(50000);
+    expect(result.showRealNames).toBe(false);
+    expect(result.rows.map((row) => row.label)).toEqual(['Heron', 'Sparrow']);
+  });
+
+  it('shows real names and exact amounts when the admin switch is on', async () => {
+    const prisma = boardPrisma({ id: 'default', leaderboardShowRealNames: true });
+    const result = await service(prisma).leaderboard('me', 'month');
+    expect(result.showRealNames).toBe(true);
+    expect(result.rows.find((row) => row.rank === 1)).toMatchObject({ label: 'Ngozi Falcon', amount: 80000 });
+    expect(result.rows.find((row) => row.isYou)?.amount).toBe(50000);
   });
 });

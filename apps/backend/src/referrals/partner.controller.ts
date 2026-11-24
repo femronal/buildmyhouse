@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { UpdatePartnerSettingsDto } from './dto/referrals.dto';
@@ -13,6 +13,16 @@ export class PartnerController {
   @Get('overview')
   overview(@Req() req: any) {
     return this.partners.overview(this.referrerId(req));
+  }
+
+  @Get('leaderboard')
+  leaderboard(@Req() req: any, @Query('period') period?: string) {
+    return this.partners.leaderboard(this.referrerId(req), period === 'all' ? 'all' : 'month');
+  }
+
+  @Get('grow')
+  grow(@Req() req: any) {
+    return this.partners.grow(this.referrerId(req));
   }
 
   @Get('links')

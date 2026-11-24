@@ -15,6 +15,7 @@ const EMPTY = {
   caption: '',
   assetUrl: '',
   destinationPath: '',
+  placement: '',
 };
 
 export default function PartnerLibraryPage() {
@@ -38,6 +39,7 @@ export default function PartnerLibraryPage() {
         caption: form.caption,
         assetUrl: form.assetUrl || undefined,
         destinationPath: form.destinationPath || undefined,
+        placement: form.placement || undefined,
         publish,
       });
       setForm(EMPTY);
@@ -87,6 +89,15 @@ export default function PartnerLibraryPage() {
           <Field label="What outcome can they promise?" value={form.promise} onChange={(promise) => setForm({ ...form, promise })} />
           <Field label="Caption" value={form.caption} onChange={(caption) => setForm({ ...form, caption })} />
           <Field label="Tracked page, optional" value={form.destinationPath} onChange={(destinationPath) => setForm({ ...form, destinationPath })} placeholder="/start" />
+          <label className="text-sm">
+            Show on partner dashboard
+            <select className="mt-1 block w-full rounded-lg border px-3 py-2" value={form.placement} onChange={(event) => setForm({ ...form, placement: event.target.value })}>
+              <option value="">Marketing only</option>
+              <option value="word_of_mouth">Word of mouth video</option>
+              <option value="online">Online video</option>
+              <option value="thespian_skit">Thespian skit idea</option>
+            </select>
+          </label>
         </div>
         <p className="mt-2 text-xs text-gray-500">A Drive file does not carry the affiliate code. Add a BuildMyHouse page, such as /start, when the introduction should be recorded.</p>
         <div className="mt-3 flex flex-wrap gap-2">
@@ -101,7 +112,7 @@ export default function PartnerLibraryPage() {
           <article key={row.id} className="rounded-xl border border-gray-200 bg-white p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="font-semibold">{row.title}</h2>
-              <p className="text-xs uppercase tracking-wide text-gray-500">{row.kind} · {row.status}</p>
+              <p className="text-xs uppercase tracking-wide text-gray-500">{row.kind} · {placementLabel(row.placement)} · {row.status}</p>
             </div>
             <p className="mt-2 text-sm text-gray-700">{row.caption}</p>
             {row.assetUrl ? <p className="mt-2 break-all text-xs text-gray-500">{row.assetUrl}</p> : null}
@@ -117,6 +128,7 @@ export default function PartnerLibraryPage() {
                 caption: row.caption,
                 assetUrl: row.assetUrl || '',
                 destinationPath: row.destinationPath || '',
+                placement: row.placement || '',
               })}>Edit</button>
               {row.status === 'approved' ? (
                 <button type="button" className="rounded-lg border px-3 py-2 text-sm" onClick={() => setRowStatus(row, 'draft')}>Unpublish</button>
@@ -139,6 +151,13 @@ export default function PartnerLibraryPage() {
       </section>
     </div>
   );
+}
+
+function placementLabel(placement?: string | null) {
+  if (placement === 'word_of_mouth') return 'Word of mouth video';
+  if (placement === 'online') return 'Online video';
+  if (placement === 'thespian_skit') return 'Thespian skit idea';
+  return 'Marketing only';
 }
 
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder?: string }) {

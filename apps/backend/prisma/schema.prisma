@@ -4531,6 +4531,10 @@ model Referrer {
   approvedAt       DateTime?
   /// Who this affiliate says they can reach. Not a claim we publish for them.
   audience         String?
+  /// Shown to other partners on the leaderboard. Empty means a generated name.
+  leaderboardNickname String? @unique
+  /// Shows as "Private partner" to others. Still ranked.
+  leaderboardHidden Boolean @default(false)
   archivedAt       DateTime?
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
@@ -4565,6 +4569,8 @@ model ReferralProgramSettings {
   /// undecided | listing | job_created | job_paid | job_completed
   countsWhen              String   @default("undecided")
   payoutRules             String?  @db.Text
+  /// false: nickname, tier and band only. true: real name and exact amount.
+  leaderboardShowRealNames Boolean @default(false)
   updatedAt               DateTime @updatedAt
 
   @@map("referral_program_settings")
@@ -4629,6 +4635,8 @@ model ReferralClick {
   code         String
   landingPath  String
   campaignSlug String?
+  /// word_of_mouth | online. From utm_medium on the partner's link. Empty for older or unlabelled links.
+  channel      String?
   anonymousId  String?
   clickedAt    DateTime @default(now())
   expiresAt    DateTime
@@ -4638,6 +4646,7 @@ model ReferralClick {
   attributions  CustomerAttribution[]
 
   @@index([referrerId, clickedAt])
+  @@index([referrerId, channel])
   @@index([anonymousId, clickedAt])
   @@index([code, expiresAt])
   @@map("referral_clicks")
@@ -4651,6 +4660,8 @@ model CustomerAttribution {
   source       String
   clickId      String?
   campaignSlug String?
+  /// Copied from the click that locked this homeowner.
+  channel      String?
   lockedAt     DateTime @default(now())
   createdAt    DateTime @default(now())
 
@@ -4739,6 +4750,8 @@ model MarketingCampaign {
   disclosure      String                  @db.Text
   kind            MarketingCampaignKind   @default(tool)
   assetUrl        String?
+  /// word_of_mouth | online | thespian_skit. Where it shows on the partner dashboard. Empty means Marketing only.
+  placement       String?
   status          MarketingCampaignStatus @default(approved)
   sortOrder       Int                     @default(0)
   createdAt       DateTime                @default(now())

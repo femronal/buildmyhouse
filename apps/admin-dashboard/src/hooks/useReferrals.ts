@@ -84,6 +84,7 @@ export type PartnerLibraryItem = {
   kind: 'tool' | 'post' | 'video' | 'image';
   assetUrl: string | null;
   destinationPath: string;
+  placement: string | null;
   status: 'draft' | 'approved';
 };
 

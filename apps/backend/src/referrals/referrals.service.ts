@@ -55,6 +55,7 @@ export class ReferralsService {
         trackVendors: dto.trackVendors,
         countsWhen: dto.countsWhen,
         payoutRules: dto.payoutRules !== undefined ? blankToNull(dto.payoutRules) : undefined,
+        leaderboardShowRealNames: dto.leaderboardShowRealNames,
       },
     });
   }

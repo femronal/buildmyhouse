@@ -188,6 +188,18 @@ function ReferralRules() {
             <span className="mt-1 block text-xs text-gray-500">Shows a code field when someone starts a job or uploads a plan.</span>
           </span>
         </label>
+        <label className="flex items-start gap-2 text-sm text-gray-800">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={!!current.leaderboardShowRealNames}
+            onChange={(event) => set({ leaderboardShowRealNames: event.target.checked })}
+          />
+          <span>
+            <span className="font-medium">Leaderboard shows real names and amounts</span>
+            <span className="mt-1 block text-xs text-gray-500">Off: partners see nicknames, tiers and bands. On: every partner sees every other partner&apos;s name and exact commission.</span>
+          </span>
+        </label>
         <label className="text-sm text-gray-800">
           <span className="font-medium">A shared link stays valid for</span>
           <span className="mt-1 flex items-center gap-2">
@@ -266,6 +278,7 @@ function ReferralRules() {
                 trackVendors: current.trackVendors,
                 countsWhen: current.countsWhen,
                 payoutRules: current.payoutRules || '',
+                leaderboardShowRealNames: !!current.leaderboardShowRealNames,
               });
               setStatus('Saved.');
               setForm(null);

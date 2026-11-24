@@ -16,6 +16,8 @@ import {
   maskHomeownerName,
   pipelineStage,
 } from './commission-math';
+import { nextTier, publicLabel, rankPartners, tierFor, TIERS } from './leaderboard';
+import { channelFor } from './partner-channel';
 import { normalizeReferralCode, randomReferralCode } from './referral-code';
 
 const AFFILIATE_RULE_ID = '11111111-1111-4111-8111-111111111111';
@@ -208,7 +210,7 @@ export class PartnerProgramService {
     return created;
   }
 
-  async recordClick(input: { code?: string | null; landingPath?: string | null; campaignSlug?: string | null; anonymousId?: string | null }) {
+  async recordClick(input: { code?: string | null; landingPath?: string | null; campaignSlug?: string | null; anonymousId?: string | null; channel?: string | null }) {
     const referrer = await this.resolveActive(input.code);
     if (!referrer) return { recorded: false };
     const rule = await this.publishedRule('affiliate');
@@ -221,6 +223,7 @@ export class PartnerProgramService {
         code: referrer.code,
         landingPath: cleanPath(input.landingPath),
         campaignSlug: cleanSlug(input.campaignSlug),
+        channel: input.channel === 'word_of_mouth' || input.channel === 'online' ? input.channel : null,
         anonymousId: cleanId(input.anonymousId),
         clickedAt,
         expiresAt,
@@ -241,6 +244,7 @@ export class PartnerProgramService {
     let referrerId = '';
     let clickId: string | null = null;
     let campaignSlug: string | null = null;
+    let channel: string | null = null;
     if (source === 'link') {
       const click = await this.findEligibleClick({
         code: input.code,
@@ -251,6 +255,7 @@ export class PartnerProgramService {
       referrerId = click.referrer.id;
       clickId = click.id;
       campaignSlug = click.campaignSlug;
+      channel = click.channel === 'word_of_mouth' || click.channel === 'online' ? click.channel : null;
       if (await this.isSelf(click.referrer, input.userId)) return null;
     } else {
       const referrer = await this.resolveActive(input.code);
@@ -267,6 +272,7 @@ export class PartnerProgramService {
           source,
           clickId,
           campaignSlug,
+          channel: source === 'link' ? channel : null,
         },
         include: { referrer: true },
       });
@@ -696,6 +702,7 @@ export class PartnerProgramService {
     caption: string;
     assetUrl?: string;
     destinationPath?: string;
+    placement?: string | null;
     publish: boolean;
   }) {
     const assetUrl = publicDriveUrl(input.assetUrl, input.kind !== 'post');
@@ -710,6 +717,7 @@ export class PartnerProgramService {
       kind: input.kind,
       assetUrl,
       destinationPath,
+      placement: input.placement === 'word_of_mouth' || input.placement === 'online' || input.placement === 'thespian_skit' ? input.placement : null,
       status: input.publish ? 'approved' as const : 'draft' as const,
       sortOrder: 0,
       updatedAt: new Date(),
@@ -753,17 +761,28 @@ export class PartnerProgramService {
 
   async overview(referrerId: string) {
     const referrer = await this.requirePartner(referrerId);
-    const [commissions, visitors, locked, campaigns] = await Promise.all([
+    const [commissions, visitors, locked, campaigns, channels, payout, board] = await Promise.all([
       this.prisma.partnerCommission.findMany({ where: { referrerId } }),
       this.prisma.referralClick.count({ where: { referrerId } }),
       this.prisma.customerAttribution.count({ where: { referrerId } }),
       this.campaigns(),
+      this.channelStats(referrerId),
+      this.prisma.partnerPayoutProfile.findUnique({ where: { referrerId } }),
+      this.rankBoard(new Date()),
     ]);
     const live = commissions.filter((row) => row.status !== 'reversed');
     const sum = (statuses: string[]) =>
       live.filter((row) => statuses.includes(row.status)).reduce((total, row) => total + row.amount, 0);
     const next = campaigns.find((campaign) => String(campaign.destinationPath || '').trim()) || campaigns[0];
     const shared = next ? campaignShare(referrer.code, this.homeownerWeb(), next) : null;
+    const monthRow = board.month.ranked.find((row) => row.referrerId === referrerId);
+    const allRow = board.all.ranked.find((row) => row.referrerId === referrerId);
+    const progress = nextTier(allRow?.amount || 0);
+    const hasPayable = commissions.some((row) => row.status === 'approved' || row.status === 'paid');
+    let nextStep: 'add_bank' | 'share_first_link' | 'post_skit' | 'tell_people' = 'tell_people';
+    if (hasPayable && !String(payout?.accountNumber || '').trim()) nextStep = 'add_bank';
+    else if (visitors === 0) nextStep = 'share_first_link';
+    else if (channels.online.signUps < channels.word_of_mouth.signUps) nextStep = 'post_skit';
     return {
       name: referrer.name,
       code: referrer.code,
@@ -777,9 +796,92 @@ export class PartnerProgramService {
       visitors,
       lockedHomeowners: locked,
       completedProjects: live.length,
+      channels,
+      nextStep,
+      rank: {
+        month: monthRow?.rank ?? null,
+        monthCount: board.month.rankedCount,
+        allTime: allRow?.rank ?? null,
+        allTimeCount: board.all.rankedCount,
+        tier: progress.tier,
+        nextTier: progress.nextTier,
+        toNextTier: progress.toNextTier,
+        progressPct: progress.progressPct,
+        allTimeAmount: allRow?.amount || 0,
+      },
       nextCampaign: next
         ? { title: next.title, caption: next.caption, link: shared?.link || shared?.assetUrl || '' }
         : null,
+    };
+  }
+
+  async leaderboard(referrerId: string, period: 'month' | 'all') {
+    const referrer = await this.requirePartner(referrerId);
+    const [settings, board] = await Promise.all([
+      this.prisma.referralProgramSettings.findUnique({ where: { id: 'default' } }),
+      this.rankBoard(new Date()),
+    ]);
+    const showRealNames = settings?.leaderboardShowRealNames === true;
+    const chosen = period === 'all' ? board.all : board.month;
+    const allById = new Map(board.all.ranked.map((row) => [row.referrerId, row]));
+    const top = chosen.ranked.slice(0, 50);
+    const rows = top.map((row) => this.publicRankRow(board.partners.get(row.referrerId), row, allById.get(row.referrerId)?.amount || 0, showRealNames, row.referrerId === referrerId));
+    const mine = chosen.ranked.find((row) => row.referrerId === referrerId) || null;
+    const allMine = allById.get(referrerId) || null;
+    const progress = nextTier(allMine?.amount || 0);
+    return {
+      period,
+      showRealNames,
+      rankedCount: chosen.rankedCount,
+      rows,
+      tiers: TIERS,
+      you: {
+        rank: mine?.rank ?? null,
+        rankedCount: chosen.rankedCount,
+        allTimeRank: allMine?.rank ?? null,
+        allTimeAmount: allMine?.amount || 0,
+        periodAmount: mine?.amount || 0,
+        completedProjects: mine?.completedProjects || 0,
+        tier: progress.tier,
+        nextTier: progress.nextTier,
+        toNextTier: progress.toNextTier,
+        progressPct: progress.progressPct,
+        label: publicLabel(referrer, showRealNames),
+        nickname: publicLabel(referrer, false),
+        hidden: referrer.leaderboardHidden,
+      },
+    };
+  }
+
+  async grow(referrerId: string) {
+    const referrer = await this.requirePartner(referrerId);
+    const [channels, settings, videos, skitIdeas] = await Promise.all([
+      this.channelStats(referrerId),
+      this.prisma.referralProgramSettings.findUnique({ where: { id: 'default' } }),
+      this.prisma.marketingCampaign.findMany({
+        where: { status: 'approved', kind: 'video', placement: { in: ['word_of_mouth', 'online'] } },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.marketingCampaign.findMany({
+        where: { status: 'approved', placement: 'thespian_skit' },
+        orderBy: { createdAt: 'desc' },
+        select: { title: true, caption: true, assetUrl: true },
+      }),
+    ]);
+    const videoFor = (placement: 'word_of_mouth' | 'online') => {
+      const video = videos.find((item) => item.placement === placement);
+      return video ? { title: video.title, assetUrl: video.assetUrl, caption: video.caption } : null;
+    };
+    return {
+      links: {
+        wordOfMouth: this.trackedLink(referrer.code, '/start', null, 'word_of_mouth'),
+        online: this.trackedLink(referrer.code, '/start', null, 'online'),
+        code: referrer.code,
+      },
+      channels,
+      videos: { word_of_mouth: videoFor('word_of_mouth'), online: videoFor('online') },
+      skitIdeas,
+      typedCodeOn: settings?.allowHomeownerTypedCode === true,
     };
   }
 
@@ -788,6 +890,8 @@ export class PartnerProgramService {
     const campaigns = await this.campaigns();
     return {
       start: this.trackedLink(referrer.code, '/start'),
+      wordOfMouth: this.trackedLink(referrer.code, '/start', null, 'word_of_mouth'),
+      online: this.trackedLink(referrer.code, '/start', null, 'online'),
       campaigns: campaigns.map((campaign) => ({
         ...campaign,
         ...campaignShare(referrer.code, this.homeownerWeb(), campaign),
@@ -870,6 +974,8 @@ export class PartnerProgramService {
       whatsapp: referrer.whatsapp,
       agreementVersion: agreement?.agreementVersion || null,
       acceptedAt: agreement?.acceptedAt || null,
+      leaderboardNickname: referrer.leaderboardNickname,
+      leaderboardHidden: referrer.leaderboardHidden,
       payout: payout
         ? {
             accountName: payout.accountName,
@@ -895,9 +1001,29 @@ export class PartnerProgramService {
       currency?: string;
       taxId?: string;
       notifyEarnings?: boolean;
+      leaderboardNickname?: string | null;
+      leaderboardHidden?: boolean;
     },
   ) {
     await this.requirePartner(referrerId);
+    if (input.leaderboardNickname !== undefined || input.leaderboardHidden !== undefined) {
+      const data: { leaderboardNickname?: string | null; leaderboardHidden?: boolean } = {};
+      if (input.leaderboardNickname !== undefined) {
+        const nickname = String(input.leaderboardNickname || '').trim().replace(/\s+/g, ' ');
+        if (!nickname) data.leaderboardNickname = null;
+        else {
+          if (/buildmyhouse|bmh/i.test(nickname)) throw new BadRequestException("Pick a nickname that isn't the company name.");
+          const taken = await this.prisma.referrer.findFirst({
+            where: { leaderboardNickname: { equals: nickname, mode: 'insensitive' }, NOT: { id: referrerId } },
+            select: { id: true },
+          });
+          if (taken) throw new BadRequestException('That nickname is taken. Try another.');
+          data.leaderboardNickname = nickname;
+        }
+      }
+      if (input.leaderboardHidden !== undefined) data.leaderboardHidden = input.leaderboardHidden;
+      await this.prisma.referrer.update({ where: { id: referrerId }, data });
+    }
     if (input.name?.trim()) {
       await this.prisma.referrer.update({ where: { id: referrerId }, data: { name: input.name.trim() } });
     }
@@ -1062,8 +1188,98 @@ export class PartnerProgramService {
     throw new BadRequestException('Could not save that title. Try a different one.');
   }
 
-  private trackedLink(code: string, path: string, slug?: string | null) {
-    return campaignShare(code, this.homeownerWeb(), { slug: slug || '', destinationPath: path }).link || '';
+  private trackedLink(code: string, path: string, slug?: string | null, channel?: 'word_of_mouth' | 'online') {
+    return campaignShare(code, this.homeownerWeb(), { slug: slug || '', destinationPath: path }, channel).link || '';
+  }
+
+  private async channelStats(referrerId: string) {
+    const [clicks, locks, commissions] = await Promise.all([
+      this.prisma.referralClick.findMany({ where: { referrerId }, select: { channel: true } }),
+      this.prisma.customerAttribution.findMany({ where: { referrerId }, select: { channel: true, source: true } }),
+      this.prisma.partnerCommission.findMany({
+        where: { referrerId, status: { not: 'reversed' } },
+        select: { homeownerId: true },
+      }),
+    ]);
+    const empty = () => ({ visitors: 0, signUps: 0, completed: 0 });
+    const channels = { word_of_mouth: empty(), online: empty(), not_split: empty() };
+    for (const click of clicks) {
+      const key = click.channel === 'word_of_mouth' || click.channel === 'online' ? click.channel : 'not_split';
+      channels[key].visitors += 1;
+    }
+    for (const lock of locks) channels[channelFor(lock)].signUps += 1;
+    const attributions = commissions.length
+      ? await this.prisma.customerAttribution.findMany({
+          where: { userId: { in: commissions.map((row) => row.homeownerId) } },
+          select: { userId: true, channel: true, source: true },
+        })
+      : [];
+    const byUser = new Map(attributions.map((row) => [row.userId, row]));
+    for (const commission of commissions) {
+      const lock = byUser.get(commission.homeownerId);
+      channels[lock ? channelFor(lock) : 'not_split'].completed += 1;
+    }
+    return channels;
+  }
+
+  private async rankBoard(now: Date) {
+    const partners = await this.prisma.referrer.findMany({
+      where: { type: 'affiliate', applicationStatus: 'approved', archivedAt: null },
+      select: {
+        id: true,
+        name: true,
+        code: true,
+        email: true,
+        type: true,
+        applicationStatus: true,
+        archivedAt: true,
+        leaderboardNickname: true,
+        leaderboardHidden: true,
+        commissions: {
+          where: { status: { in: ['approved', 'paid'] } },
+          select: { referrerId: true, amount: true, status: true, approvedAt: true, paidAt: true },
+        },
+      },
+    });
+    const eligible = partners.filter((partner) => partner.type === 'affiliate' && partner.applicationStatus === 'approved' && !partner.archivedAt);
+    const rows = eligible.flatMap((partner) => partner.commissions);
+    return {
+      partners: new Map(eligible.map((partner) => [partner.id, partner])),
+      month: rankPartners(rows, 'month', now),
+      all: rankPartners(rows, 'all', now),
+    };
+  }
+
+  private publicRankRow(
+    partner: { id: string; name: string; code: string; email: string | null; leaderboardNickname: string | null; leaderboardHidden: boolean } | undefined,
+    row: { rank: number; amount: number; completedProjects: number },
+    allTimeAmount: number,
+    showRealNames: boolean,
+    isYou: boolean,
+  ) {
+    const tier = tierFor(allTimeAmount);
+    const item: {
+      rank: number;
+      label: string;
+      tierKey: string;
+      tierLabel: string;
+      band: string;
+      isYou: boolean;
+      amount?: number;
+      completedProjects?: number;
+    } = {
+      rank: row.rank,
+      label: partner ? publicLabel(partner, showRealNames) : 'Private partner',
+      tierKey: tier.key,
+      tierLabel: tier.label,
+      band: tier.band,
+      isYou,
+    };
+    if (showRealNames || isYou) {
+      item.amount = row.amount;
+      item.completedProjects = row.completedProjects;
+    }
+    return item;
   }
 
   private adminInbox() {
@@ -1152,6 +1368,7 @@ export function campaignShare(
   code: string,
   homeownerWeb: string,
   campaign: { slug?: string | null; destinationPath?: string | null; assetUrl?: string | null },
+  channel?: 'word_of_mouth' | 'online',
 ) {
   const sitePath = String(campaign.destinationPath || '').trim();
   const assetUrl = String(campaign.assetUrl || '').trim() || null;
@@ -1159,6 +1376,7 @@ export function campaignShare(
   const base = `${homeownerWeb.replace(/\/+$/, '')}${sitePath.startsWith('/') ? sitePath : `/${sitePath}`}`;
   const params = new URLSearchParams({ ref: code });
   if (campaign.slug) params.set('utm_campaign', campaign.slug);
+  if (channel) params.set('utm_medium', channel);
   return { link: `${base}?${params.toString()}`, assetUrl, tracksIntroduction: true };
 }
 

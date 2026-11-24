@@ -10,6 +10,8 @@ type Settings = {
   phone: string | null;
   whatsapp: string | null;
   agreementVersion: string | null;
+  leaderboardNickname: string | null;
+  leaderboardHidden: boolean;
   payout: {
     accountName: string | null;
     bankName: string | null;
@@ -58,6 +60,8 @@ export default function SettingsPage() {
                 name: form.name,
                 phone: form.phone || '',
                 whatsapp: form.whatsapp || '',
+                leaderboardNickname: form.leaderboardNickname || '',
+                leaderboardHidden: form.leaderboardHidden,
                 ...form.payout,
               });
               setForm(saved);
@@ -79,6 +83,17 @@ export default function SettingsPage() {
           <label className="text-sm">WhatsApp
             <input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.whatsapp || ''} onChange={(event) => setForm({ ...form, whatsapp: event.target.value })} />
           </label>
+          <div className="rounded-lg border border-gray-200 p-3">
+            <p className="text-sm font-semibold">Leaderboard</p>
+            <label className="mt-2 block text-sm">Nickname on the leaderboard
+              <input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.leaderboardNickname || ''} maxLength={24} onChange={(event) => setForm({ ...form, leaderboardNickname: event.target.value })} />
+            </label>
+            <p className="mt-1 text-xs text-gray-500">Other partners see this nickname and your tier, never your amount.</p>
+            <label className="mt-3 flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={!!form.leaderboardHidden} onChange={(event) => setForm({ ...form, leaderboardHidden: event.target.checked })} />
+              Hide me on the leaderboard (I still get ranked)
+            </label>
+          </div>
           <label className="text-sm">Account name
             <input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.payout.accountName || ''} onChange={(event) => setPayout('accountName', event.target.value)} />
           </label>
