@@ -25,6 +25,7 @@ function isActivePath(pathname: string, href: string): boolean {
   if (href === '/tools' && isToolsPath(pathname)) return true;
   if (href === '/reports/weekly' && pathname.startsWith('/reports')) return true;
   if (href === '/dashboard') return false;
+  if (href === '/growth' && pathname.startsWith('/growth/partnerships')) return false;
   if (href === '/tools' || href === '/vendors') return pathname.startsWith(`${href}/`) || pathname.startsWith(href);
   return pathname.startsWith(`${href}/`);
 }

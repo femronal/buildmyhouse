@@ -35,6 +35,7 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { ProfessionalsModule } from './professionals/professionals.module';
 import { ArtisansModule } from './artisans/artisans.module';
 import { StartRequestsModule } from './start-requests/start-requests.module';
+import { PartnershipsModule } from './partnerships/partnerships.module';
 import { ReferralsModule } from './referrals/referrals.module';
 import { FundingModule } from './funding/funding.module';
 
@@ -84,6 +85,7 @@ import { FundingModule } from './funding/funding.module';
     ArtisansModule,
     StartRequestsModule,
     ReferralsModule,
+    PartnershipsModule,
     FundingModule,
   ],
   controllers: [],

@@ -1,6 +1,6 @@
 /**
  * Visual catalogue for the Growth overview shell.
- * Modules are informational only — no routes, APIs, or workflows yet.
+ * These modules are still coming soon. Live tools are linked from the Growth page.
  */
 export type GrowthModuleStatus = 'coming-soon';
 
@@ -24,15 +24,6 @@ export type GrowthModule = {
 export const GROWTH_STATUS_LABEL = 'Coming Soon';
 
 export const GROWTH_MODULES: readonly GrowthModule[] = [
-  {
-    id: 'partnerships',
-    title: 'Partnerships',
-    description:
-      'Build and manage relationships with companies, professionals, institutions and future strategic partners.',
-    futureHint: 'Outreach, follow-ups, evaluations, pilots and relationship history.',
-    status: 'coming-soon',
-    icon: 'partnerships',
-  },
   {
     id: 'leads',
     title: 'Leads',

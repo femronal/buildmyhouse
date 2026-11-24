@@ -41,8 +41,7 @@ export default function GrowthOverviewPage() {
           Growth systems are being built around real operating behaviour.
         </h2>
         <p className="mt-2 text-sm leading-6 text-gray-600">
-          Partnership workflows are currently being validated manually before automation. The
-          modules below will become active as those systems are validated.
+          Partnerships, referrals and the waitlist are live in this admin. The modules below are still being built.
         </p>
       </section>
 
@@ -63,7 +62,7 @@ export default function GrowthOverviewPage() {
                   Waitlist
                 </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-                  See who joined a waitlist and for what — a tool, webinar, podcast, book or
+                  See who joined a waitlist and for what: a tool, webinar, podcast, book or
                   in-person meeting. Create a new waitlist and attach it to the page that explains
                   why people should join.
                 </p>
@@ -73,6 +72,22 @@ export default function GrowthOverviewPage() {
               Open waitlist
             </span>
           </div>
+        </Link>
+      </section>
+
+      <section className="mb-6" aria-labelledby="growth-partnerships-heading">
+        <Link
+          href="/growth/partnerships"
+          data-testid="growth-module-partnerships-live"
+          className="block rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors hover:border-gray-900"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#22c55e]">Live</p>
+          <h2 id="growth-partnerships-heading" className="mt-1 text-lg font-semibold text-gray-900">
+            Partnerships
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+            Track partner leads, follow-ups and meetings. Every count is worked out from what was logged.
+          </p>
         </Link>
       </section>
 
@@ -115,10 +130,6 @@ export default function GrowthOverviewPage() {
         </p>
       </section>
 
-      <aside className="mt-4 rounded-xl border border-gray-200 bg-gray-50 px-5 py-4 text-sm leading-6 text-gray-600">
-        Partnership development is currently being tested outside the admin system before the
-        workflow is digitised.
-      </aside>
     </div>
   );
 }

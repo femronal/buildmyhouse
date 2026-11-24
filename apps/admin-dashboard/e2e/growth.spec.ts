@@ -1,13 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const MODULE_TITLES = [
-  'Partnerships',
-  'Referrals',
-  'Affiliates',
-  'Leads',
-  'Campaigns',
-  'Growth Dashboard',
-];
+const MODULE_TITLES = ['Leads', 'Campaigns', 'Growth Dashboard'];
 
 test.describe('Growth overview', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,31 +20,31 @@ test.describe('Growth overview', () => {
     await growthNav.click();
     await expect(page).toHaveURL(/\/growth$/);
     await expect(page.getByRole('heading', { level: 1, name: /^Growth$/ })).toBeVisible();
-    await expect(growthNav).toHaveClass(/bg-blue-600/);
+    await expect(growthNav).toHaveClass(/bg-gray-950/);
   });
 
-  test('renders six Coming Soon modules that are not interactive', async ({ page }) => {
+  test('renders three Coming Soon modules and a live Partnerships link', async ({ page }) => {
     await page.goto('/growth');
     await expect(page.getByRole('heading', { level: 1, name: /^Growth$/ })).toBeVisible();
 
     for (const title of MODULE_TITLES) {
-      const card = page.locator('[data-testid^="growth-module-"]').filter({ hasText: title });
+      const card = page.locator('article[data-testid^="growth-module-"]').filter({ hasText: title });
       await expect(card).toBeVisible();
       await expect(card.getByText(/Coming Soon/i)).toBeVisible();
       await expect(card.locator('a')).toHaveCount(0);
       await expect(card.locator('button')).toHaveCount(0);
     }
 
-    await expect(page.locator('[data-testid^="growth-module-"]')).toHaveCount(7);
+    await expect(page.locator('article[data-testid^="growth-module-"]')).toHaveCount(3);
+    await expect(page.getByTestId('growth-module-partnerships-live')).toBeVisible();
     await expect(page.getByRole('link', { name: /Waitlist/i })).toBeVisible();
     await expect(page.locator('a[href="/growth/waitlist"]')).toHaveCount(1);
-    await expect(page.getByRole('link', { name: /Partnerships|Referrals|Affiliates/i })).toHaveCount(0);
     await expect(page.getByText(/%|₦|conversion rate/i)).toHaveCount(0);
   });
 
   test('module cards are not keyboard-activatable', async ({ page }) => {
     await page.goto('/growth');
-    const firstCard = page.locator('[data-testid="growth-module-partnerships"]');
+    const firstCard = page.locator('[data-testid="growth-module-leads"]');
     await expect(firstCard).toBeVisible();
     await expect(firstCard).not.toBeFocused();
   });
@@ -61,7 +54,7 @@ test.describe('Growth overview', () => {
     await page.getByTestId('growth-module-waitlist').click();
     await expect(page).toHaveURL(/\/growth\/waitlist$/);
     await expect(page.getByRole('heading', { level: 1, name: /^Waitlist$/ })).toBeVisible();
-    await expect(page.getByRole('link', { name: /^Growth$/i })).toHaveClass(/bg-blue-600/);
+    await expect(page.getByRole('link', { name: /^Growth$/i })).toHaveClass(/bg-gray-950/);
   });
 
   test('desktop grid keeps existing admin navigation working', async ({ page }) => {
@@ -70,9 +63,9 @@ test.describe('Growth overview', () => {
     await expect(page.getByRole('link', { name: /Projects/i })).toBeVisible();
     await expect(page.getByRole('link', { name: /People & HR/i })).toBeVisible();
 
-    const first = page.locator('[data-testid="growth-module-partnerships"]');
-    const second = page.locator('[data-testid="growth-module-referrals"]');
-    const third = page.locator('[data-testid="growth-module-affiliates"]');
+    const first = page.locator('[data-testid="growth-module-leads"]');
+    const second = page.locator('[data-testid="growth-module-campaigns"]');
+    const third = page.locator('[data-testid="growth-module-dashboard"]');
     const firstBox = await first.boundingBox();
     const secondBox = await second.boundingBox();
     const thirdBox = await third.boundingBox();
@@ -90,8 +83,8 @@ test.describe('Growth overview', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 2);
     expect(overflow).toBeFalsy();
 
-    const first = page.locator('[data-testid="growth-module-partnerships"]');
-    const second = page.locator('[data-testid="growth-module-referrals"]');
+    const first = page.locator('[data-testid="growth-module-leads"]');
+    const second = page.locator('[data-testid="growth-module-campaigns"]');
     const firstBox = await first.boundingBox();
     const secondBox = await second.boundingBox();
     expect((secondBox?.y || 0) > (firstBox?.y || 0) + 40).toBeTruthy();

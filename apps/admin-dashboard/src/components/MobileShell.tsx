@@ -38,6 +38,7 @@ const titles: Array<{ prefix: string; title: string }> = [
   { prefix: '/verification', title: 'Verification' },
   { prefix: '/emails', title: 'Emails' },
   { prefix: '/articles', title: 'Content' },
+  { prefix: '/growth/partnerships', title: 'Partnerships' },
   { prefix: '/growth', title: 'Growth' },
   { prefix: '/people', title: 'People & HR' },
   { prefix: '/tools', title: 'Tools' },

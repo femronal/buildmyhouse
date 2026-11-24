@@ -5,6 +5,7 @@ import {
   Building2,
   CheckCircle2,
   FileText,
+  Handshake,
   HardHat,
   LayoutDashboard,
   Mail,
@@ -62,6 +63,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Growth',
     items: [
       { href: '/growth', label: 'Growth', icon: Waypoints },
+      { href: '/growth/partnerships', label: 'Partnerships', icon: Handshake },
       { href: '/opportunities', label: 'Opportunities', icon: Briefcase },
       { href: '/articles', label: 'Content', icon: FileText },
       { href: '/emails', label: 'Emails', icon: Mail },

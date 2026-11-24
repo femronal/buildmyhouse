@@ -363,6 +363,11 @@ model User {
   contractorPayoutsReceived       ContractorPayout[]           @relation("ContractorPayoutGc")
   contractorPayoutsSent           ContractorPayout[]           @relation("ContractorPayoutSentBy")
   contractorPayoutsVoided         ContractorPayout[]           @relation("ContractorPayoutVoidedBy")
+  ownedPartnershipLeads           PartnershipLead[]            @relation("PartnershipLeadOwner")
+  createdPartnershipLeads         PartnershipLead[]            @relation("PartnershipLeadCreator")
+  loggedPartnershipTouches        PartnershipTouch[]           @relation("PartnershipTouchLogger")
+  bookedPartnershipMeetings       PartnershipMeeting[]         @relation("PartnershipMeetingBooker")
+  partnershipStageChanges         PartnershipStageChange[]     @relation("PartnershipStageChanger")
 
   @@map("users")
 }
@@ -4543,6 +4548,7 @@ model Referrer {
   commissions          PartnerCommission[]
   payoutProfile        PartnerPayoutProfile?
   loginTokens          PartnerLoginToken[]
+  partnershipLead      PartnershipLead?
 
   @@index([type, archivedAt])
   @@index([applicationStatus])
@@ -5229,4 +5235,275 @@ model WeeklyReportRecipient {
 
   @@unique([sendId, userId])
   @@map("weekly_report_recipients")
+}
+
+enum PartnerCategory {
+  quantity_surveyor
+  property_lawyer
+  architect
+  estate_manager
+  small_developer
+  property_investor_adviser
+  diaspora_group
+  other
+}
+
+enum PartnershipStage {
+  researching
+  initial_outreach
+  gatekeeper
+  decision_maker_identified
+  conversation_attempted
+  conversation_booked
+  evaluation_completed
+  authority_nurture
+  pilot_candidate
+  pilot_active
+  partnership_discussion
+  active_partner
+  dormant
+  closed_not_interested
+  closed_poor_fit
+}
+
+enum FollowUpStep {
+  day_0
+  day_4
+  day_10
+  day_21
+  day_60
+  day_90
+  pilot_evaluation
+}
+
+enum LeadTemperature {
+  cold
+  aware
+  warm
+  engaged
+  strong
+  dormant
+}
+
+enum TouchChannel {
+  email
+  phone
+  whatsapp
+  google_meet
+  in_person
+  linkedin
+  other
+}
+
+enum TouchDirection {
+  outbound
+  inbound
+  internal_note
+}
+
+enum TouchKind {
+  first_outreach
+  authority_proof
+  utility
+  close_the_loop
+  nurture
+  reply
+  meeting_request
+  call_attempt
+  call_connected
+  partner_invite
+  note
+  other
+}
+
+enum TouchOutcome {
+  no_answer
+  invalid_number
+  not_on_whatsapp
+  gatekeeper_reached
+  decision_maker_reached
+  replied_positive
+  replied_neutral
+  replied_negative
+  asked_for_proposal
+  meeting_proposed
+  meeting_booked
+  dismissed
+  opted_out
+  delivered
+  other
+}
+
+enum PartnershipMeetingStatus {
+  booked
+  held
+  no_show
+  cancelled
+}
+
+enum LeadSourceType {
+  research_team
+  bot
+  referral
+  inbound
+  event
+  admin
+  sheet_import
+}
+
+model PartnershipLead {
+  id                     String             @id @default(uuid())
+  leadRef                String             @unique
+  companyName            String
+  companyNameNormalised  String
+  category               PartnerCategory
+  website                String?
+  websiteDomain          String?
+  city                   String?
+  state                  String?
+  whyTheyMatter          String?            @db.Text
+  whatWeKnow             String?            @db.Text
+  suspectedProblem       String?            @db.Text
+  stage                  PartnershipStage   @default(researching)
+  followUpStep           FollowUpStep       @default(day_0)
+  temperature            LeadTemperature?
+  nextFollowUpOverride   DateTime?          @db.Date
+  exactNextAction        String?
+  groupName              String?
+  importKey              String?            @unique
+  ownerId                String
+  sourceType             LeadSourceType
+  sourceDetail           String?
+  sourceUrl              String?
+  referrerId             String?            @unique
+  archivedAt             DateTime?
+  createdById            String
+  lastContactAt          DateTime?
+  lastContactChannel     TouchChannel?
+  lastOutcome            TouchOutcome?
+  firstOutreachAt        DateTime?
+  lastInboundAt          DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  owner        User                     @relation("PartnershipLeadOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  createdBy    User                     @relation("PartnershipLeadCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  referrer     Referrer?                @relation(fields: [referrerId], references: [id], onDelete: SetNull)
+  contacts     PartnershipContact[]
+  touches      PartnershipTouch[]
+  meetings     PartnershipMeeting[]
+  stageChanges PartnershipStageChange[]
+
+  @@index([ownerId, stage])
+  @@index([websiteDomain])
+  @@index([companyNameNormalised])
+  @@index([stage, archivedAt])
+  @@map("partnership_leads")
+}
+
+model PartnershipContact {
+  id                 String   @id @default(uuid())
+  leadId             String
+  fullName           String
+  position           String?
+  email              String?
+  emailNormalised    String?  @unique
+  phone              String?
+  whatsapp           String?
+  linkedinUrl        String?
+  isDecisionMaker    Boolean  @default(false)
+  isPrimary          Boolean  @default(false)
+  doNotContact       Boolean  @default(false)
+  doNotContactReason String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  lead     PartnershipLead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  touches  PartnershipTouch[]
+  meetings PartnershipMeeting[]
+
+  @@index([leadId])
+  @@map("partnership_contacts")
+}
+
+model PartnershipTouch {
+  id             String          @id @default(uuid())
+  leadId         String
+  contactId      String?
+  occurredAt     DateTime
+  channel        TouchChannel
+  direction      TouchDirection
+  kind           TouchKind
+  outcome        TouchOutcome?
+  summary        String?         @db.Text
+  stepAtTouch    FollowUpStep
+  dueDateAtTouch DateTime?
+  fromMailbox    String?
+  toAddress      String?
+  emailSubject   String?
+  loggedById     String
+  actorLabel     String?
+  isImported     Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+
+  lead     PartnershipLead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact  PartnershipContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  loggedBy User                @relation("PartnershipTouchLogger", fields: [loggedById], references: [id], onDelete: Restrict)
+
+  @@index([leadId, occurredAt])
+  @@map("partnership_touches")
+}
+
+model PartnershipMeeting {
+  id         String                    @id @default(uuid())
+  leadId     String
+  contactId  String?
+  startsAt   DateTime
+  endsAt     DateTime?
+  meetLink   String?
+  status     PartnershipMeetingStatus  @default(booked)
+  outcome    String?                   @db.Text
+  bookedById String
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+
+  lead     PartnershipLead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact  PartnershipContact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  bookedBy User                @relation("PartnershipMeetingBooker", fields: [bookedById], references: [id], onDelete: Restrict)
+
+  @@index([leadId, startsAt])
+  @@map("partnership_meetings")
+}
+
+model PartnershipStageChange {
+  id          String            @id @default(uuid())
+  leadId      String
+  fromStage   PartnershipStage?
+  toStage     PartnershipStage
+  fromStep    FollowUpStep?
+  toStep      FollowUpStep?
+  reason      String?           @db.Text
+  changedById String?
+  changedAt   DateTime          @default(now())
+
+  lead      PartnershipLead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  changedBy User?           @relation("PartnershipStageChanger", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([leadId, changedAt])
+  @@map("partnership_stage_changes")
+}
+
+model PartnershipAuditLog {
+  id         String   @id @default(uuid())
+  entity     String
+  entityId   String
+  action     String
+  before     Json?
+  after      Json?
+  actorId    String?
+  actorLabel String?
+  at         DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("partnership_audit_logs")
 }

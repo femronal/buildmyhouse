@@ -59,6 +59,9 @@ export const HR_PERMISSION_CATALOG: PermissionDef[] = [
   { key: 'artisans.view', groupLabel: 'Artisans', description: 'View artisan listings and recruitment records' },
   { key: 'referrals.view', groupLabel: 'Growth', description: 'View referrers, affiliates and the listings and jobs they brought in' },
   { key: 'referrals.edit', groupLabel: 'Growth', description: 'Create and edit referrers and attach them to listings and jobs' },
+  { key: 'partnerships.view', groupLabel: 'Growth', description: 'View partner leads, follow-ups and meetings' },
+  { key: 'partnerships.edit', groupLabel: 'Growth', description: 'Add leads and log follow-ups and meetings on leads you own' },
+  { key: 'partnerships.manage', groupLabel: 'Growth', description: 'Edit any partner lead, reassign owners, archive and import' },
   { key: 'artisans.create', groupLabel: 'Artisans', description: 'Create artisan listings that publish immediately' },
   { key: 'artisans.edit', groupLabel: 'Artisans', description: 'Edit artisan listings, recruitment notes and media review' },
   { key: 'artisans.review', groupLabel: 'Artisans', description: 'Review artisan applications and claim requests', isCritical: true },
@@ -330,6 +333,9 @@ export const SYSTEM_ROLE_DEFS: SystemRoleDef[] = [
       'professionals.view',
       'professionals.create',
       'professionals.edit',
+      'partnerships.view',
+      'partnerships.edit',
+      'partnerships.manage',
     ],
   },
   {
@@ -367,6 +373,7 @@ export const SYSTEM_ROLE_DEFS: SystemRoleDef[] = [
       'payments.view',
       'admin_access.view',
       'tools.view',
+      'partnerships.view',
     ],
   },
   {
@@ -374,7 +381,15 @@ export const SYSTEM_ROLE_DEFS: SystemRoleDef[] = [
     name: 'Partnership Development Executive',
     description:
       'Partnership CRM and approved communications. No payroll, payments, or admin management.',
-    permissionKeys: ['dashboard.view', 'hr.view', 'emails.view', 'emails.send', 'content.view'],
+    permissionKeys: [
+      'dashboard.view',
+      'hr.view',
+      'emails.view',
+      'emails.send',
+      'content.view',
+      'partnerships.view',
+      'partnerships.edit',
+    ],
   },
 ];
 
@@ -409,6 +424,7 @@ export const NAV_PERMISSION_MAP: Record<string, string> = {
   '/vendors': 'vendors.view',
   '/artisans': 'artisans.view',
   '/growth/referrals': 'referrals.view',
+  '/growth/partnerships': 'partnerships.view',
   '/professionals': 'professionals.view',
   '/projects': 'projects.view',
   '/verification': 'verification.view',
