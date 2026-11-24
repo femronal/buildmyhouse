@@ -12,6 +12,7 @@ type Settings = {
   agreementVersion: string | null;
   leaderboardNickname: string | null;
   leaderboardHidden: boolean;
+  profileItems?: { key: string; label: string; done: boolean }[];
   payout: {
     accountName: string | null;
     bankName: string | null;
@@ -71,6 +72,7 @@ export default function SettingsPage() {
             }
           }}
         >
+          <ProfileProgress items={form.profileItems || []} />
           <label className="text-sm">Name
             <input className="mt-1 w-full rounded-lg border px-3 py-2" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} />
           </label>
@@ -113,10 +115,22 @@ export default function SettingsPage() {
             <input type="checkbox" checked={form.payout.notifyEarnings} onChange={(event) => setPayout('notifyEarnings', event.target.checked)} />
             Email me when a commission is approved
           </label>
-          <button type="submit" className="rounded-lg bg-black px-4 py-2 text-sm text-white">Save</button>
+          <button type="submit" className="min-h-11 rounded-lg bg-black px-4 py-2 text-sm text-white">Save</button>
           {message ? <p className="text-sm text-gray-700">{message}</p> : null}
         </form>
       </main>
     </Shell>
+  );
+}
+
+function ProfileProgress({ items }: { items: { key: string; label: string; done: boolean }[] }) {
+  if (items.length === 0) return null;
+  const done = items.filter((item) => item.done).length;
+  const missing = items.filter((item) => !item.done);
+  return (
+    <div className="rounded-lg bg-gray-50 p-3 text-sm">
+      <p className="font-semibold">Profile {done} of {items.length} done</p>
+      {missing.length ? <p className="mt-1 text-gray-600">Still to add: {missing.map((item) => item.label).join(', ')}.</p> : <p className="mt-1 text-gray-600">Every profile item is filled in.</p>}
+    </div>
   );
 }

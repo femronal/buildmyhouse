@@ -6,9 +6,8 @@ import Shell from '@/components/Shell';
 import { auth } from '@/lib/api';
 
 const LINKS = [
-  { href: '/links', label: 'My links' },
+  { href: '/latest', label: 'Latest from BuildMyHouse' },
   { href: '/referrals', label: 'Referrals' },
-  { href: '/studio', label: 'Marketing' },
   { href: '/settings', label: 'Settings' },
 ];
 

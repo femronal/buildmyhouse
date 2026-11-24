@@ -95,6 +95,49 @@ export function usePartnerLibrary() {
   });
 }
 
+export type SkitIdea = {
+  id: string;
+  title: string;
+  whoFilms: string | null;
+  format: string;
+  script: string;
+  caption: string;
+  sortOrder: number;
+  status: string;
+  updatedAt: string;
+};
+
+export type BmhPostRow = {
+  id: string;
+  platform: string;
+  platformLabel: string;
+  url: string;
+  summary: string;
+  postedAt: string;
+  status: string;
+};
+
+export function useSkitIdeas() {
+  return useQuery({
+    queryKey: ['admin-skit-ideas'],
+    queryFn: () => api.get<SkitIdea[]>('/admin/referrals/skit-ideas'),
+  });
+}
+
+export function useBmhPosts() {
+  return useQuery({
+    queryKey: ['admin-bmh-posts'],
+    queryFn: () => api.get<BmhPostRow[]>('/admin/referrals/posts'),
+  });
+}
+
+export function useBmhPlatforms() {
+  return useQuery({
+    queryKey: ['admin-bmh-platforms'],
+    queryFn: () => api.get<{ key: string; label: string }[]>('/admin/referrals/posts/platforms'),
+  });
+}
+
 export function usePartnerPerformance() {
   return useQuery({
     queryKey: ['admin-partner-performance'],

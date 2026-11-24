@@ -93,9 +93,8 @@ export default function PartnerLibraryPage() {
             Show on partner dashboard
             <select className="mt-1 block w-full rounded-lg border px-3 py-2" value={form.placement} onChange={(event) => setForm({ ...form, placement: event.target.value })}>
               <option value="">Marketing only</option>
-              <option value="word_of_mouth">Word of mouth video</option>
-              <option value="online">Online video</option>
-              <option value="thespian_skit">Thespian skit idea</option>
+              <option value="word_of_mouth">Word of mouth tutorial: how to get clients</option>
+              <option value="online">Online tutorial: how to post on socials</option>
             </select>
           </label>
         </div>
@@ -154,9 +153,8 @@ export default function PartnerLibraryPage() {
 }
 
 function placementLabel(placement?: string | null) {
-  if (placement === 'word_of_mouth') return 'Word of mouth video';
-  if (placement === 'online') return 'Online video';
-  if (placement === 'thespian_skit') return 'Thespian skit idea';
+  if (placement === 'word_of_mouth') return 'Word of mouth tutorial: how to get clients';
+  if (placement === 'online') return 'Online tutorial: how to post on socials';
   return 'Marketing only';
 }
 

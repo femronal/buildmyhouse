@@ -4552,6 +4552,7 @@ model Referrer {
   commissions          PartnerCommission[]
   payoutProfile        PartnerPayoutProfile?
   loginTokens          PartnerLoginToken[]
+  activityDays         PartnerActivityDay[]
   partnershipLead      PartnershipLead?
 
   @@index([type, archivedAt])
@@ -4635,8 +4636,6 @@ model ReferralClick {
   code         String
   landingPath  String
   campaignSlug String?
-  /// word_of_mouth | online. From utm_medium on the partner's link. Empty for older or unlabelled links.
-  channel      String?
   anonymousId  String?
   clickedAt    DateTime @default(now())
   expiresAt    DateTime
@@ -4646,7 +4645,6 @@ model ReferralClick {
   attributions  CustomerAttribution[]
 
   @@index([referrerId, clickedAt])
-  @@index([referrerId, channel])
   @@index([anonymousId, clickedAt])
   @@index([code, expiresAt])
   @@map("referral_clicks")
@@ -4660,8 +4658,6 @@ model CustomerAttribution {
   source       String
   clickId      String?
   campaignSlug String?
-  /// Copied from the click that locked this homeowner.
-  channel      String?
   lockedAt     DateTime @default(now())
   createdAt    DateTime @default(now())
 
@@ -4738,6 +4734,61 @@ model PartnerLoginToken {
   @@map("partner_login_tokens")
 }
 
+model PartnerActivityDay {
+  id          String   @id @default(uuid())
+  referrerId  String
+  /// Africa/Lagos date as YYYY-MM-DD.
+  day         String
+  logins      Int      @default(0)
+  visits      Int      @default(0)
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  referrer Referrer @relation(fields: [referrerId], references: [id], onDelete: Cascade)
+
+  @@unique([referrerId, day])
+  @@index([referrerId, day])
+  @@map("partner_activity_days")
+}
+
+model PartnerSkitIdea {
+  id        String    @id @default(uuid())
+  slug      String    @unique
+  sortOrder Int       @default(0)
+  title     String
+  whoFilms  String?
+  /// skit | alternative
+  format    String    @default("skit")
+  script    String    @db.Text
+  caption   String    @db.Text
+  /// active | retired
+  status    String    @default("active")
+  source    String?
+  retiredAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, sortOrder])
+  @@map("partner_skit_ideas")
+}
+
+model BmhPost {
+  id          String   @id @default(uuid())
+  /// instagram | tiktok | google_business | x
+  platform    String
+  url         String   @unique
+  summary     String
+  postedAt    DateTime @db.Date
+  /// published | hidden
+  status      String   @default("published")
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, postedAt])
+  @@map("bmh_posts")
+}
+
 model MarketingCampaign {
   id              String                  @id @default(uuid())
   slug            String                  @unique
@@ -4750,7 +4801,7 @@ model MarketingCampaign {
   disclosure      String                  @db.Text
   kind            MarketingCampaignKind   @default(tool)
   assetUrl        String?
-  /// word_of_mouth | online | thespian_skit. Where it shows on the partner dashboard. Empty means Marketing only.
+  /// word_of_mouth | online. Tutorial video on Bring clients. Empty means the library only.
   placement       String?
   status          MarketingCampaignStatus @default(approved)
   sortOrder       Int                     @default(0)

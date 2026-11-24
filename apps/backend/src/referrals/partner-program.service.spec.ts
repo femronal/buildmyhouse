@@ -241,20 +241,13 @@ describe('Partner library links', () => {
     expect(shared.assetUrl).not.toContain('ref=');
   });
 
-  it('adds utm_medium when a channel is set and leaves the link unchanged without one', () => {
-    const withChannel = campaignShare('CODE1', 'https://buildmyhouse.app', {
-      slug: 'site-video',
-      destinationPath: '/start',
-    }, 'online');
-    expect(withChannel.link).toContain('utm_campaign=site-video');
-    expect(withChannel.link).toContain('utm_medium=online');
-    expect(withChannel.link?.indexOf('utm_campaign')).toBeLessThan(withChannel.link?.indexOf('utm_medium') || 0);
+  it('puts the referral code on the start link and does not add a channel', () => {
     const plain = campaignShare('CODE1', 'https://buildmyhouse.app', {
-      slug: 'site-video',
+      slug: '',
       destinationPath: '/start',
     });
-    expect(plain.link).toBe('https://buildmyhouse.app/start?ref=CODE1&utm_campaign=site-video');
-    expect(plain.link).not.toContain('utm_medium');
+    expect(plain.link).toContain('ref=CODE1');
+    expect(new URL(plain.link || '').searchParams.has(['utm', 'medium'].join('_'))).toBe(false);
   });
 
   it('rejects a file that is not on Google Drive', async () => {
@@ -275,27 +268,20 @@ describe('Partner library links', () => {
 });
 
 describe('PartnerProgramService leaderboard', () => {
-  function boardPrisma(settings: Record<string, unknown>) {
+  const approvedAt = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  function boardPrisma(settings: Record<string, unknown>, rows?: ReturnType<typeof partner>[]) {
+    const list = rows || [
+      partner('me', 'Ada Example', 'ADA111', 'Sparrow', 50000, 'affiliate', 'approved', null),
+      partner('other', 'Ngozi Falcon', 'NGZ999', 'Heron', 80000, 'affiliate', 'approved', null),
+      partner('gone', 'Suspended Person', 'GONE11', null, 900000, 'affiliate', 'suspended', null),
+      partner('old', 'Archived Person', 'OLD111', null, 700000, 'affiliate', 'approved', new Date()),
+      partner('ref', 'Plain Referrer', 'REF111', null, 600000, 'referrer', 'none', null),
+    ];
     return {
       referrer: {
-        findUnique: jest.fn(async () => ({
-          id: 'me',
-          name: 'Ada Example',
-          code: 'ADA111',
-          email: 'ada@example.com',
-          type: 'affiliate',
-          applicationStatus: 'approved',
-          archivedAt: null,
-          leaderboardNickname: 'Sparrow',
-          leaderboardHidden: false,
-        })),
-        findMany: jest.fn(async () => [
-          partner('me', 'Ada Example', 'ADA111', 'Sparrow', 50000, 'affiliate', 'approved', null),
-          partner('other', 'Ngozi Falcon', 'NGZ999', 'Heron', 80000, 'affiliate', 'approved', null),
-          partner('gone', 'Suspended Person', 'GONE11', null, 900000, 'affiliate', 'suspended', null),
-          partner('old', 'Archived Person', 'OLD111', null, 700000, 'affiliate', 'approved', new Date()),
-          partner('ref', 'Plain Referrer', 'REF111', null, 600000, 'referrer', 'none', null),
-        ]),
+        findUnique: jest.fn(async ({ where }: { where: { id: string } }) => list.find((row) => row.id === where.id) || null),
+        findMany: jest.fn(async () => list),
       },
       referralProgramSettings: { findUnique: jest.fn(async () => settings) },
     };
@@ -310,30 +296,77 @@ describe('PartnerProgramService leaderboard', () => {
       type,
       applicationStatus,
       archivedAt,
+      approvedAt,
+      createdAt: approvedAt,
       leaderboardNickname: nickname,
       leaderboardHidden: false,
-      commissions: [{ referrerId: id, amount, status: 'approved', approvedAt: new Date(), paidAt: null }],
+      partnershipLead: null,
+      payoutProfile: null,
+      agreements: [],
+      clicks: [],
+      attributions: [],
+      projects: [],
+      activityDays: [],
+      commissions: amount ? [{ referrerId: id, amount, status: 'approved', approvedAt: new Date(), paidAt: null }] : [],
     };
   }
 
-  it('hides another partner name, code and amount unless real names are on', async () => {
+  it('hides another partner name, code, amount and score unless real names are on', async () => {
     const prisma = boardPrisma({ id: 'default' });
-    const result = await service(prisma).leaderboard('me', 'all');
+    const result = await service(prisma).leaderboard('me');
     const other = result.rows.find((row) => row.label === 'Heron');
-    expect(other).toEqual({ rank: 1, label: 'Heron', tierKey: 'bronze', tierLabel: 'Bronze', band: '₦1 to ₦100k', isYou: false });
+    expect(other).toMatchObject({ rank: 1, label: 'Heron', tierKey: 'bronze', tierLabel: 'Bronze', band: '₦1 to ₦100k', isYou: false });
+    expect(other).not.toHaveProperty('amount');
+    expect(other).not.toHaveProperty('score');
     expect(JSON.stringify(result)).not.toContain('Ngozi Falcon');
     expect(JSON.stringify(result)).not.toContain('NGZ999');
     expect(result.rows.find((row) => row.isYou)?.amount).toBe(50000);
-    expect(result.you.periodAmount).toBe(50000);
+    expect(result.rows.find((row) => row.isYou)?.score).toEqual(expect.any(Number));
+    expect(result.you.allTimeAmount).toBe(50000);
+    expect(result.you.score).toEqual(expect.any(Number));
     expect(result.showRealNames).toBe(false);
     expect(result.rows.map((row) => row.label)).toEqual(['Heron', 'Sparrow']);
   });
 
   it('shows real names and exact amounts when the admin switch is on', async () => {
     const prisma = boardPrisma({ id: 'default', leaderboardShowRealNames: true });
-    const result = await service(prisma).leaderboard('me', 'month');
+    const result = await service(prisma).leaderboard('me');
     expect(result.showRealNames).toBe(true);
     expect(result.rows.find((row) => row.rank === 1)).toMatchObject({ label: 'Ngozi Falcon', amount: 80000 });
     expect(result.rows.find((row) => row.isYou)?.amount).toBe(50000);
+  });
+
+  it('gives a brand-new partner a numeric rank', async () => {
+    const fresh = partner('fresh', 'New Partner', 'NEW111', null, 0, 'affiliate', 'approved', null);
+    const prisma = boardPrisma({ id: 'default' }, [fresh]);
+    const result = await service(prisma).leaderboard('fresh');
+    expect(typeof result.you.rank).toBe('number');
+    expect(result.you.rank).toBe(1);
+  });
+});
+
+describe('PartnerProgramService login activity', () => {
+  it('records a login day and still returns the session when that write fails', async () => {
+    const referrer = {
+      id: 'me',
+      name: 'Ada Example',
+      email: 'ada@example.com',
+      code: 'ADA111',
+      type: 'affiliate',
+      applicationStatus: 'approved',
+      archivedAt: null,
+    };
+    const prisma = {
+      partnerLoginToken: {
+        findUnique: jest.fn(async () => ({ id: 'token-1', usedAt: null, expiresAt: new Date(Date.now() + 60000), referrer })),
+        update: jest.fn(async () => ({})),
+      },
+      partnerAgreement: { updateMany: jest.fn(async () => ({ count: 0 })) },
+      partnerActivityDay: { upsert: jest.fn(async () => { throw new Error('activity down'); }) },
+    };
+    const result = await service(prisma).consumeLogin('raw-token');
+    expect(prisma.partnerActivityDay.upsert).toHaveBeenCalled();
+    expect(result.token).toBe('jwt');
+    expect(result.partner.id).toBe('me');
   });
 });

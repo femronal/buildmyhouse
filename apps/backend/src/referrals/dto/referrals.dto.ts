@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsIn, IsInt, IsOptional, IsString, IsUUID, Matches, Max, MaxLength, Min, MinLength, ValidateIf } from 'class-validator';
 
 export class CreateReferrerDto {
   @IsIn(['referrer', 'affiliate'])
@@ -141,10 +141,6 @@ export class RecordReferralClickDto {
   @IsString()
   @MaxLength(64)
   anonymousId?: string;
-
-  @IsOptional()
-  @IsIn(['word_of_mouth', 'online'])
-  channel?: 'word_of_mouth' | 'online';
 }
 
 export class LockReferralDto {
@@ -355,7 +351,7 @@ export class SaveLibraryItemDto {
 
   @IsOptional()
   @ValidateIf((_, value) => String(value || '').length > 0)
-  @IsIn(['word_of_mouth', 'online', 'thespian_skit'])
+  @IsIn(['word_of_mouth', 'online'])
   placement?: string;
 
   @IsBoolean()
@@ -365,4 +361,68 @@ export class SaveLibraryItemDto {
 export class LibraryStatusDto {
   @IsIn(['draft', 'approved'])
   status!: 'draft' | 'approved';
+}
+
+export class SaveSkitIdeaDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(120)
+  title!: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  whoFilms?: string;
+
+  @IsIn(['skit', 'alternative'])
+  format!: 'skit' | 'alternative';
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(4000)
+  script!: string;
+
+  @IsString()
+  @MinLength(2)
+  @MaxLength(1000)
+  caption!: string;
+
+  @IsOptional()
+  @IsInt()
+  sortOrder?: number;
+}
+
+export class SkitIdeaStatusDto {
+  @IsIn(['active', 'retired'])
+  status!: 'active' | 'retired';
+}
+
+export class SaveBmhPostDto {
+  @IsOptional()
+  @IsUUID()
+  id?: string;
+
+  @IsIn(['instagram', 'tiktok', 'google_business', 'x'])
+  platform!: 'instagram' | 'tiktok' | 'google_business' | 'x';
+
+  @IsString()
+  @MaxLength(500)
+  url!: string;
+
+  @IsString()
+  @MinLength(10)
+  @MaxLength(160)
+  summary!: string;
+
+  @IsDateString()
+  postedAt!: string;
+}
+
+export class BmhPostStatusDto {
+  @IsIn(['published', 'hidden'])
+  status!: 'published' | 'hidden';
 }

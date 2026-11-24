@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { UpdatePartnerSettingsDto } from './dto/referrals.dto';
@@ -16,8 +16,21 @@ export class PartnerController {
   }
 
   @Get('leaderboard')
-  leaderboard(@Req() req: any, @Query('period') period?: string) {
-    return this.partners.leaderboard(this.referrerId(req), period === 'all' ? 'all' : 'month');
+  leaderboard(@Req() req: any) {
+    return this.partners.leaderboard(this.referrerId(req));
+  }
+
+  @Post('ping')
+  @HttpCode(204)
+  async ping(@Req() req: any) {
+    await this.partners.recordActivity(this.referrerId(req), 'visit');
+  }
+
+  @Get('latest')
+  latest(@Query('limit') limit?: string) {
+    const parsed = Number(limit);
+    const take = Number.isFinite(parsed) ? Math.min(50, Math.max(1, Math.round(parsed))) : 20;
+    return this.partners.latestPosts(take);
   }
 
   @Get('grow')

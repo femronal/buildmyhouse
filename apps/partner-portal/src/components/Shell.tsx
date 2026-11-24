@@ -3,16 +3,15 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
-import { auth } from '@/lib/api';
+import { api, auth } from '@/lib/api';
 
 const LINKS = [
   { href: '/overview', label: 'Overview' },
   { href: '/leaderboard', label: 'Leaderboard' },
-  { href: '/grow', label: 'Bring clients' },
-  { href: '/links', label: 'My links' },
+  { href: '/grow/word-of-mouth', label: 'Bring clients' },
+  { href: '/latest', label: 'Latest from BuildMyHouse' },
   { href: '/referrals', label: 'Referrals' },
   { href: '/earnings', label: 'Earnings' },
-  { href: '/studio', label: 'Marketing' },
   { href: '/settings', label: 'Settings' },
 ];
 
@@ -24,7 +23,7 @@ const MOBILE = [
   { href: '/more', label: 'More', icon: 'more' },
 ];
 
-const MORE_PATHS = ['/more', '/links', '/referrals', '/studio', '/settings'];
+const MORE_PATHS = ['/more', '/latest', '/referrals', '/settings'];
 
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -37,6 +36,7 @@ export default function Shell({ children }: { children: ReactNode }) {
       return;
     }
     setReady(true);
+    api.post('/partner/ping').catch(() => undefined);
   }, [router]);
 
   if (!ready) return <p className="p-6 text-sm text-gray-500">Loading…</p>;
@@ -45,7 +45,11 @@ export default function Shell({ children }: { children: ReactNode }) {
     auth.clear();
     router.replace('/');
   };
-  const active = (href: string) => (href === '/more' ? MORE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`)) : pathname === href || pathname.startsWith(`${href}/`));
+  const active = (href: string) => {
+    if (href.startsWith('/grow')) return pathname.startsWith('/grow');
+    if (href === '/more') return MORE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-100 md:flex">
@@ -61,7 +65,7 @@ export default function Shell({ children }: { children: ReactNode }) {
             <Link
               key={link.href}
               href={link.href}
-              className={`block rounded-lg px-3 py-2 text-sm ${pathname === link.href ? 'bg-black text-white' : 'text-gray-700'}`}
+              className={`block rounded-lg px-3 py-2 text-sm ${active(link.href) ? 'bg-black text-white' : 'text-gray-700'}`}
             >
               {link.label}
             </Link>

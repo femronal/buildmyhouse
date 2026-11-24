@@ -85,21 +85,16 @@ export function captureReferralCode() {
   if (!/^[A-Za-z0-9-]{3,20}$/.test(incoming)) return;
   const existing = readStored();
   const stillValid = existing && Date.now() - existing.capturedAt < maxAgeMs();
-  const channel = referralChannel(params.get('utm_medium'));
   if (stillValid && program.attributionRule !== 'latest_code') {
-    void reportReferralTouch(incoming.toUpperCase(), params.get('utm_campaign'), channel);
+    void reportReferralTouch(incoming.toUpperCase(), params.get('utm_campaign'));
     return;
   }
   const code = incoming.toUpperCase();
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ code, capturedAt: Date.now() }));
-  void reportReferralTouch(code, params.get('utm_campaign'), channel);
+  void reportReferralTouch(code, params.get('utm_campaign'));
 }
 
-function referralChannel(value: string | null): 'word_of_mouth' | 'online' | undefined {
-  return value === 'word_of_mouth' || value === 'online' ? value : undefined;
-}
-
-async function reportReferralTouch(code: string, campaign: string | null, channel?: 'word_of_mouth' | 'online') {
+async function reportReferralTouch(code: string, campaign: string | null) {
   const anonymousId = anonymousReferralId();
   const landingPath = `${window.location.pathname || '/'}`;
   try {
@@ -110,7 +105,6 @@ async function reportReferralTouch(code: string, campaign: string | null, channe
         code,
         landingPath,
         campaignSlug: campaign || undefined,
-        channel,
         anonymousId,
       }),
     });

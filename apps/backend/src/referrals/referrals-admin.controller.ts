@@ -3,7 +3,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles, RolesGuard } from '../auth/rbac.guard';
 import { PermissionsGuard } from '../hr/permissions/permissions.guard';
 import { RequirePermissions } from '../hr/permissions/require-permissions.decorator';
-import { AttachReferrerDto, CommissionDecisionDto, CreateReferrerDto, LibraryStatusDto, PublishReferralRuleDto, SaveLibraryItemDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { AttachReferrerDto, BmhPostStatusDto, CommissionDecisionDto, CreateReferrerDto, LibraryStatusDto, PublishReferralRuleDto, SaveBmhPostDto, SaveLibraryItemDto, SaveSkitIdeaDto, SkitIdeaStatusDto, UpdateReferralProgramDto, UpdateReferrerDto } from './dto/referrals.dto';
+import { BMH_POST_PLATFORMS } from './bmh-post-platforms';
 import { PartnerProgramService } from './partner-program.service';
 import { ReferralsService } from './referrals.service';
 
@@ -116,6 +117,60 @@ export class ReferralsAdminController {
   @RequirePermissions('referrals.edit')
   setLibraryStatus(@Param('campaignId') campaignId: string, @Body() body: LibraryStatusDto) {
     return this.partners.setLibraryStatus(campaignId, body.status);
+  }
+
+  @Get('skit-ideas')
+  @RequirePermissions('referrals.view')
+  skitIdeas() {
+    return this.partners.adminSkitIdeas();
+  }
+
+  @Post('skit-ideas')
+  @RequirePermissions('referrals.edit')
+  createSkitIdea(@Body() body: SaveSkitIdeaDto) {
+    return this.partners.saveSkitIdea(body);
+  }
+
+  @Patch('skit-ideas/:id/status')
+  @RequirePermissions('referrals.edit')
+  setSkitIdeaStatus(@Param('id') id: string, @Body() body: SkitIdeaStatusDto) {
+    return this.partners.setSkitIdeaStatus(id, body.status);
+  }
+
+  @Patch('skit-ideas/:id')
+  @RequirePermissions('referrals.edit')
+  updateSkitIdea(@Param('id') id: string, @Body() body: SaveSkitIdeaDto) {
+    return this.partners.saveSkitIdea({ ...body, id });
+  }
+
+  @Get('posts/platforms')
+  @RequirePermissions('referrals.view')
+  postPlatforms() {
+    return BMH_POST_PLATFORMS.map((item) => ({ key: item.key, label: item.label }));
+  }
+
+  @Get('posts')
+  @RequirePermissions('referrals.view')
+  posts() {
+    return this.partners.adminPosts();
+  }
+
+  @Post('posts')
+  @RequirePermissions('referrals.edit')
+  createPost(@Body() body: SaveBmhPostDto) {
+    return this.partners.savePost(body);
+  }
+
+  @Patch('posts/:id/status')
+  @RequirePermissions('referrals.edit')
+  setPostStatus(@Param('id') id: string, @Body() body: BmhPostStatusDto) {
+    return this.partners.setPostStatus(id, body.status);
+  }
+
+  @Patch('posts/:id')
+  @RequirePermissions('referrals.edit')
+  updatePost(@Param('id') id: string, @Body() body: SaveBmhPostDto) {
+    return this.partners.savePost({ ...body, id });
   }
 
   @Get(':id')
